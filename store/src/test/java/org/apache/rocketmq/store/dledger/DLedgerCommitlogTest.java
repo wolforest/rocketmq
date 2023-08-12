@@ -37,9 +37,9 @@ import org.apache.rocketmq.store.GetMessageStatus;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.Assume;
 import org.apache.rocketmq.common.MixAll;
+import org.junit.Test;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.rocketmq.store.StoreTestUtil.releaseMmapFilesOnWindows;

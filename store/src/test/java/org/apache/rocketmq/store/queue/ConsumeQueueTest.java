@@ -69,7 +69,7 @@ public class ConsumeQueueTest extends QueueTestBase {
         MessageStoreConfig messageStoreConfig = buildStoreConfig(
             COMMIT_LOG_FILE_SIZE, CQ_FILE_SIZE, true, CQ_EXT_FILE_SIZE
         );
-
+        messageStoreConfig.setHaListenPort(nextPort());
         BrokerConfig brokerConfig = new BrokerConfig();
 
         DefaultMessageStore master = new DefaultMessageStore(
