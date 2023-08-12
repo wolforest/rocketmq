@@ -399,7 +399,7 @@ public class MappedFileQueueTest {
         final int mappedFileSize = 5 * 1024 * 1024;
 
         MappedFileQueue mappedFileQueue =
-            new MappedFileQueue("target/unit_test_store", mappedFileSize, null);
+            new MappedFileQueue("target/unit_test_store/rename", mappedFileSize, null);
 
         int currentSize = 0;
         while (currentSize <= 2 * mappedFileSize) {

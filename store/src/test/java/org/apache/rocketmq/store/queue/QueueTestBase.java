@@ -40,7 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class QueueTestBase extends StoreTestBase {
-
     protected ConcurrentMap<String, TopicConfig> createTopicConfigTable(String topic, CQType cqType) {
         ConcurrentMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>();
         TopicConfig topicConfigToBeAdded = new TopicConfig();
@@ -80,7 +79,7 @@ public class QueueTestBase extends StoreTestBase {
 
         messageStoreConfig.setFlushIntervalCommitLog(1);
         messageStoreConfig.setFlushCommitLogThoroughInterval(2);
-
+        messageStoreConfig.setHaListenPort(nextPort());
         return new DefaultMessageStore(
             messageStoreConfig,
             new BrokerStatsManager("simpleTest", true),

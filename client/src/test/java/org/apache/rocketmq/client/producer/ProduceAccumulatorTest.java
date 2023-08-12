@@ -66,16 +66,16 @@ public class ProduceAccumulatorTest {
     public void testProduceAccumulator_async() throws MQBrokerException, RemotingException, InterruptedException, MQClientException {
         MockMQProducer mockMQProducer = new MockMQProducer();
 
-        ProduceAccumulator produceAccumulator = new ProduceAccumulator("test");
+        ProduceAccumulator produceAccumulator = new ProduceAccumulator("testProduceAccumulator_async_Topic");
         produceAccumulator.start();
 
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         List<Message> messages = new ArrayList<Message>();
-        messages.add(new Message("testTopic", "1".getBytes()));
-        messages.add(new Message("testTopic", "22".getBytes()));
-        messages.add(new Message("testTopic", "333".getBytes()));
-        messages.add(new Message("testTopic", "4444".getBytes()));
-        messages.add(new Message("testTopic", "55555".getBytes()));
+        messages.add(new Message("testProduceAccumulator_async_Topic", "1".getBytes()));
+        messages.add(new Message("testProduceAccumulator_async_Topic", "22".getBytes()));
+        messages.add(new Message("testProduceAccumulator_async_Topic", "333".getBytes()));
+        messages.add(new Message("testProduceAccumulator_async_Topic", "4444".getBytes()));
+        messages.add(new Message("testProduceAccumulator_async_Topic", "55555".getBytes()));
         for (Message message : messages) {
             produceAccumulator.send(message, new SendCallback() {
                 final CountDownLatch finalCountDownLatch = countDownLatch;
@@ -105,15 +105,15 @@ public class ProduceAccumulatorTest {
     public void testProduceAccumulator_sync() throws MQBrokerException, RemotingException, InterruptedException, MQClientException {
         final MockMQProducer mockMQProducer = new MockMQProducer();
 
-        final ProduceAccumulator produceAccumulator = new ProduceAccumulator("test");
+        final ProduceAccumulator produceAccumulator = new ProduceAccumulator("testProduceAccumulator_sync");
         produceAccumulator.start();
 
         List<Message> messages = new ArrayList<Message>();
-        messages.add(new Message("testTopic", "1".getBytes()));
-        messages.add(new Message("testTopic", "22".getBytes()));
-        messages.add(new Message("testTopic", "333".getBytes()));
-        messages.add(new Message("testTopic", "4444".getBytes()));
-        messages.add(new Message("testTopic", "55555".getBytes()));
+        messages.add(new Message("testProduceAccumulator_sync_Topic", "1".getBytes()));
+        messages.add(new Message("testProduceAccumulator_sync_Topic", "22".getBytes()));
+        messages.add(new Message("testProduceAccumulator_sync_Topic", "333".getBytes()));
+        messages.add(new Message("testProduceAccumulator_sync_Topic", "4444".getBytes()));
+        messages.add(new Message("testProduceAccumulator_sync_Topic", "55555".getBytes()));
         final CountDownLatch countDownLatch = new CountDownLatch(messages.size());
 
         for (final Message message : messages) {
@@ -150,11 +150,11 @@ public class ProduceAccumulatorTest {
     public void testProduceAccumulator_sendWithMessageQueue() throws MQBrokerException, RemotingException, InterruptedException, MQClientException {
         MockMQProducer mockMQProducer = new MockMQProducer();
 
-        MessageQueue messageQueue = new MessageQueue("topicTest", "brokerTest", 0);
-        final ProduceAccumulator produceAccumulator = new ProduceAccumulator("test");
+        MessageQueue messageQueue = new MessageQueue("testProduceAccumulator_sendWithMessageQueue_Topic", "testProduceAccumulator_sendWithMessageQueue_broker", 0);
+        final ProduceAccumulator produceAccumulator = new ProduceAccumulator("testProduceAccumulator_sendWithMessageQueue");
         produceAccumulator.start();
 
-        Message message = new Message("testTopic", "1".getBytes());
+        Message message = new Message("testProduceAccumulator_sendWithMessageQueue_Topic", "1".getBytes());
         produceAccumulator.send(message, messageQueue, mockMQProducer);
         assertThat(mockMQProducer.beSendMessageQueue).isEqualTo(messageQueue);
 
