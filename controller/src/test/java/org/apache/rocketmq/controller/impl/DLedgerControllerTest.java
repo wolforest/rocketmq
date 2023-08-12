@@ -171,7 +171,7 @@ public class DLedgerControllerTest {
 
     public DLedgerController mockMetaData(boolean enableElectUncleanMaster) throws Exception {
         String group = UUID.randomUUID().toString();
-        String peers = String.format("n0-localhost:%d;n1-localhost:%d;n2-localhost:%d", 30000, 30001, 30002);
+        String peers = String.format("n0-localhost:%d;n1-localhost:%d;n2-localhost:%d", 20000, 20001, 20002);
         DLedgerController c0 = launchController(group, peers, "n0", enableElectUncleanMaster);
         DLedgerController c1 = launchController(group, peers, "n1", enableElectUncleanMaster);
         DLedgerController c2 = launchController(group, peers, "n2", enableElectUncleanMaster);

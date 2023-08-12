@@ -407,6 +407,8 @@
                 <configuration>
                     <skipAfterFailureCount>1</skipAfterFailureCount>
                     <forkCount>16</forkCount>
+                    <parallel>classes</parallel>
+                    <threadCountClasses>1</threadCountClasses>
                     <reuseForks>false</reuseForks>
                     <excludes>
                         <exclude>**/IT*.java</exclude>
