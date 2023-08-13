@@ -18,6 +18,7 @@
 package org.apache.rocketmq.store;
 
 import com.google.common.collect.Sets;
+
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
@@ -44,7 +45,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageBatch;
@@ -150,9 +150,9 @@ public class DefaultMessageStoreTest {
         }
         messageStoreConfig.setStorePathRootDir(storePathRootDir);
         return new DefaultMessageStore(messageStoreConfig,
-            new BrokerStatsManager("simpleTest", true),
-            new MyMessageArrivingListener(),
-            new BrokerConfig(), new ConcurrentHashMap<>());
+                new BrokerStatsManager("simpleTest", true),
+                new MyMessageArrivingListener(),
+                new BrokerConfig(), new ConcurrentHashMap<>());
     }
 
     @Test
@@ -402,7 +402,7 @@ public class DefaultMessageStoreTest {
             String messageBody = buildMessageBodyByOffset(storeMessage, i);
 
             MessageExtBrokerInner msgInner =
-                i < totalCount / 2 ? buildMessage(messageBody.getBytes(), topic) : buildIPv6HostMessage(messageBody.getBytes(), topic);
+                    i < totalCount / 2 ? buildMessage(messageBody.getBytes(), topic) : buildIPv6HostMessage(messageBody.getBytes(), topic);
             msgInner.setQueueId(queueId);
             PutMessageResult result = messageStore.putMessage(msgInner);
             appendMessageResultArray[i] = result.getAppendMessageResult();
@@ -434,7 +434,7 @@ public class DefaultMessageStoreTest {
         try {
             Field field = getDefaultMessageStore().getClass().getDeclaredField("consumeQueueService");
             field.setAccessible(true);
-            ConsumeQueueService consumeQueueService =(ConsumeQueueService) field.get(getDefaultMessageStore());
+            ConsumeQueueService consumeQueueService = (ConsumeQueueService) field.get(getDefaultMessageStore());
             Method getStoreTime = consumeQueueService.getClass().getDeclaredMethod("getStoreTime", CqUnit.class);
             getStoreTime.setAccessible(true);
             return (long) getStoreTime.invoke(consumeQueueService, cqUnit);
@@ -910,13 +910,13 @@ public class DefaultMessageStoreTest {
     public void testDeleteTopics() {
         MessageStoreConfig messageStoreConfig = messageStore.getMessageStoreConfig();
         ConcurrentMap<String, ConcurrentMap<Integer, ConsumeQueueInterface>> consumeQueueTable =
-            ((DefaultMessageStore) messageStore).getConsumeQueueTable();
+                ((DefaultMessageStore) messageStore).getConsumeQueueTable();
         for (int i = 0; i < 10; i++) {
             ConcurrentMap<Integer, ConsumeQueueInterface> cqTable = new ConcurrentHashMap<>();
             String topicName = "topic-" + i;
             for (int j = 0; j < 4; j++) {
                 ConsumeQueue consumeQueue = new ConsumeQueue(topicName, j, messageStoreConfig.getStorePathRootDir(),
-                    messageStoreConfig.getMappedFileSizeConsumeQueue(), messageStore);
+                        messageStoreConfig.getMappedFileSizeConsumeQueue(), messageStore);
                 cqTable.put(j, consumeQueue);
             }
             consumeQueueTable.put(topicName, cqTable);
@@ -932,13 +932,13 @@ public class DefaultMessageStoreTest {
     public void testCleanUnusedTopic() {
         MessageStoreConfig messageStoreConfig = messageStore.getMessageStoreConfig();
         ConcurrentMap<String, ConcurrentMap<Integer, ConsumeQueueInterface>> consumeQueueTable =
-            ((DefaultMessageStore) messageStore).getConsumeQueueTable();
+                ((DefaultMessageStore) messageStore).getConsumeQueueTable();
         for (int i = 0; i < 10; i++) {
             ConcurrentMap<Integer, ConsumeQueueInterface> cqTable = new ConcurrentHashMap<>();
             String topicName = "topic-" + i;
             for (int j = 0; j < 4; j++) {
                 ConsumeQueue consumeQueue = new ConsumeQueue(topicName, j, messageStoreConfig.getStorePathRootDir(),
-                    messageStoreConfig.getMappedFileSizeConsumeQueue(), messageStore);
+                        messageStoreConfig.getMappedFileSizeConsumeQueue(), messageStore);
                 cqTable.put(j, consumeQueue);
             }
             consumeQueueTable.put(topicName, cqTable);
@@ -962,7 +962,7 @@ public class DefaultMessageStoreTest {
     private class MyMessageArrivingListener implements MessageArrivingListener {
         @Override
         public void arriving(String topic, int queueId, long logicOffset, long tagsCode, long msgStoreTime,
-            byte[] filterBitMap, Map<String, String> properties) {
+                             byte[] filterBitMap, Map<String, String> properties) {
         }
     }
 }
