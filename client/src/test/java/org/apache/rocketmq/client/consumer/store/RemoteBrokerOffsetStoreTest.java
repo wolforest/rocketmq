@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.client.consumer.store;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.HashSet;
 import org.apache.rocketmq.client.ClientConfig;

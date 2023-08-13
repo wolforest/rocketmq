@@ -18,6 +18,7 @@
 package org.apache.rocketmq.client.consumer;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.time.Duration;
