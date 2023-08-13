@@ -29,27 +29,19 @@ import org.apache.rocketmq.store.ha.autoswitch.AutoSwitchHAService;
 
 public class CleanCommitLogService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-
     private final static int MAX_MANUAL_DELETE_FILE_TIMES = 20;
-    private final String diskSpaceWarningLevelRatio =
-        System.getProperty("rocketmq.broker.diskSpaceWarningLevelRatio", "");
+    private final String diskSpaceWarningLevelRatio = System.getProperty("rocketmq.broker.diskSpaceWarningLevelRatio", "");
 
-    private final String diskSpaceCleanForciblyRatio =
-        System.getProperty("rocketmq.broker.diskSpaceCleanForciblyRatio", "");
+    private final String diskSpaceCleanForciblyRatio = System.getProperty("rocketmq.broker.diskSpaceCleanForciblyRatio", "");
     private long lastRedeleteTimestamp = 0;
-
     private volatile int manualDeleteFileSeveralTimes = 0;
-
     private volatile boolean cleanImmediately = false;
-
     private int forceCleanFailedTimes = 0;
-
     private final DefaultMessageStore messageStore;
 
     public CleanCommitLogService(DefaultMessageStore messageStore) {
         this.messageStore = messageStore;
     }
-
 
     public double getDiskSpaceWarningLevelRatio() {
         double finalDiskSpaceWarningLevelRatio;
@@ -174,14 +166,18 @@ public class CleanCommitLogService {
         return false;
     }
 
+    private String[] getCommitLogStorePath() {
+        String commitLogStorePath = messageStore.getMessageStoreConfig().getStorePathCommitLog();
+        return commitLogStorePath.trim().split(MixAll.MULTI_PATH_SPLITTER);
+    }
+
     private boolean isSpaceToDelete() {
         cleanImmediately = false;
-
-        String commitLogStorePath = messageStore.getMessageStoreConfig().getStorePathCommitLog();
-        String[] storePaths = commitLogStorePath.trim().split(MixAll.MULTI_PATH_SPLITTER);
         Set<String> fullStorePath = new HashSet<>();
         double minPhysicRatio = 100;
         String minStorePath = null;
+        String[] storePaths = getCommitLogStorePath();
+
         for (String storePathPhysic : storePaths) {
             double physicRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathPhysic);
             if (minPhysicRatio > physicRatio) {
