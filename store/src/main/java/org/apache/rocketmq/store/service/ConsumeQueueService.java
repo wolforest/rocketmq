@@ -130,44 +130,56 @@ public class ConsumeQueueService {
         }
 
         ConsumeQueueInterface consumeQueue = findConsumeQueue(topic, queueId);
-        if (consumeQueue != null) {
-            minOffset = Math.max(minOffset, consumeQueue.getMinOffsetInQueue());
-            maxOffset = Math.min(maxOffset, consumeQueue.getMaxOffsetInQueue());
+        if (consumeQueue == null) {
+            return messageIds;
+        }
 
-            if (maxOffset == 0) {
+        minOffset = Math.max(minOffset, consumeQueue.getMinOffsetInQueue());
+        maxOffset = Math.min(maxOffset, consumeQueue.getMaxOffsetInQueue());
+        if (maxOffset == 0) {
+            return messageIds;
+        }
+
+        return getMessageIdsFromQueueList(messageIds, consumeQueue, minOffset, maxOffset, storeHost);
+    }
+
+    private Map<String, Long> getMessageIdsFromQueueList(Map<String, Long> messageIds, ConsumeQueueInterface consumeQueue, long minOffset, long maxOffset, SocketAddress storeHost) {
+        long nextOffset = minOffset;
+        while (nextOffset < maxOffset) {
+            ReferredIterator<CqUnit> bufferConsumeQueue = consumeQueue.iterateFrom(nextOffset);
+            if (bufferConsumeQueue == null || !bufferConsumeQueue.hasNext()) {
                 return messageIds;
             }
 
-            long nextOffset = minOffset;
-            while (nextOffset < maxOffset) {
-                ReferredIterator<CqUnit> bufferConsumeQueue = consumeQueue.iterateFrom(nextOffset);
-                try {
-                    if (bufferConsumeQueue != null && bufferConsumeQueue.hasNext()) {
-                        while (bufferConsumeQueue.hasNext()) {
-                            CqUnit cqUnit = bufferConsumeQueue.next();
-                            long offsetPy = cqUnit.getPos();
-                            InetSocketAddress inetSocketAddress = (InetSocketAddress) storeHost;
-                            int msgIdLength = (inetSocketAddress.getAddress() instanceof Inet6Address) ? 16 + 4 + 8 : 4 + 4 + 8;
-                            final ByteBuffer msgIdMemory = ByteBuffer.allocate(msgIdLength);
-                            String msgId =
-                                MessageDecoder.createMessageId(msgIdMemory, MessageExt.socketAddress2ByteBuffer(storeHost), offsetPy);
-                            messageIds.put(msgId, cqUnit.getQueueOffset());
-                            nextOffset = cqUnit.getQueueOffset() + cqUnit.getBatchNum();
-                            if (nextOffset >= maxOffset) {
-                                return messageIds;
-                            }
-                        }
-                    } else {
-                        return messageIds;
-                    }
-                } finally {
-                    if (bufferConsumeQueue != null) {
-                        bufferConsumeQueue.release();
-                    }
-                }
+            nextOffset = getMessageIdsFromQueue(messageIds, bufferConsumeQueue, nextOffset, maxOffset, storeHost);
+            if (nextOffset <= 0) {
+                return messageIds;
             }
         }
         return messageIds;
+    }
+
+    private long getMessageIdsFromQueue(Map<String, Long> messageIds, ReferredIterator<CqUnit> bufferConsumeQueue, long nextOffset, long maxOffset, SocketAddress storeHost) {
+        try {
+            while (bufferConsumeQueue.hasNext()) {
+                CqUnit cqUnit = bufferConsumeQueue.next();
+                long offsetPy = cqUnit.getPos();
+                InetSocketAddress inetSocketAddress = (InetSocketAddress) storeHost;
+                int msgIdLength = (inetSocketAddress.getAddress() instanceof Inet6Address) ? 16 + 4 + 8 : 4 + 4 + 8;
+                final ByteBuffer msgIdMemory = ByteBuffer.allocate(msgIdLength);
+                String msgId =
+                    MessageDecoder.createMessageId(msgIdMemory, MessageExt.socketAddress2ByteBuffer(storeHost), offsetPy);
+                messageIds.put(msgId, cqUnit.getQueueOffset());
+                nextOffset = cqUnit.getQueueOffset() + cqUnit.getBatchNum();
+                if (nextOffset >= maxOffset) {
+                    return -1;
+                }
+            }
+        } finally {
+            bufferConsumeQueue.release();
+        }
+
+        return nextOffset;
     }
 
     public boolean checkInMemByConsumeOffset(final String topic, final int queueId, long consumeOffset, int batchSize) {
