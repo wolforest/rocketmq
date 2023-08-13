@@ -109,29 +109,25 @@ public class TopicConfig {
 
     public boolean decode(final String in) {
         String[] strs = in.split(SEPARATOR);
-        if (strs.length >= 5) {
-            this.topicName = strs[0];
-
-            this.readQueueNums = Integer.parseInt(strs[1]);
-
-            this.writeQueueNums = Integer.parseInt(strs[2]);
-
-            this.perm = Integer.parseInt(strs[3]);
-
-            this.topicFilterType = TopicFilterType.valueOf(strs[4]);
-
-            if (strs.length >= 6) {
-                try {
-                    this.attributes = JSON.parseObject(strs[5], ATTRIBUTES_TYPE_REFERENCE.getType());
-                } catch (Exception e) {
-                    // ignore exception when parse failed, cause map's key/value can have ' ' char.
-                }
-            }
-
-            return true;
+        if (strs.length < 5) {
+            return false;
         }
 
-        return false;
+        this.topicName = strs[0];
+        this.readQueueNums = Integer.parseInt(strs[1]);
+        this.writeQueueNums = Integer.parseInt(strs[2]);
+        this.perm = Integer.parseInt(strs[3]);
+        this.topicFilterType = TopicFilterType.valueOf(strs[4]);
+
+        if (strs.length >= 6) {
+            try {
+                this.attributes = JSON.parseObject(strs[5], ATTRIBUTES_TYPE_REFERENCE.getType());
+            } catch (Exception e) {
+                // ignore exception when parse failed, cause map's key/value can have ' ' char.
+            }
+        }
+
+        return true;
     }
 
     public String getTopicName() {
