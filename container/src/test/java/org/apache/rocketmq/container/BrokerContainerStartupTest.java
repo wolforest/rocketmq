@@ -72,7 +72,7 @@ public class BrokerContainerStartupTest {
         storeConfig.setStorePathRootDir(baseDir);
         storeConfig.setStorePathCommitLog(baseDir + File.separator + "commitlog");
 
-        brokerConfigPath = TMP + brokerName;
+        brokerConfigPath = tmp + brokerName;
         brokerConfig.setBrokerConfigPath(brokerConfigPath);
         File file = new File(brokerConfigPath);
         TMP_FILE_LIST.add(file);
