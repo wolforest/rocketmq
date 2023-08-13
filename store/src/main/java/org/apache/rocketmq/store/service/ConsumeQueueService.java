@@ -330,43 +330,52 @@ public class ConsumeQueueService {
 
         int deleteCount = 0;
         for (String topic : deleteTopics) {
-            ConcurrentMap<Integer, ConsumeQueueInterface> queueTable =
-                messageStore.getConsumeQueueStore().getConsumeQueueTable().get(topic);
-
-            if (queueTable == null || queueTable.isEmpty()) {
-                continue;
-            }
-
-            for (ConsumeQueueInterface cq : queueTable.values()) {
-                messageStore.getConsumeQueueStore().destroy(cq);
-                LOGGER.info("DeleteTopic: ConsumeQueue has been cleaned, topic={}, queueId={}",
-                    cq.getTopic(), cq.getQueueId());
-                messageStore.getConsumeQueueStore().removeTopicQueueTable(cq.getTopic(), cq.getQueueId());
-            }
-
-            // remove topic from cq table
-            messageStore.getConsumeQueueStore().getConsumeQueueTable().remove(topic);
-
-            if (messageStore.getBrokerConfig().isAutoDeleteUnusedStats()) {
-                messageStore.getBrokerStatsManager().onTopicDeleted(topic);
-            }
-
-            // destroy consume queue dir
-            String consumeQueueDir = StorePathConfigHelper.getStorePathConsumeQueue(
-                messageStore.getMessageStoreConfig().getStorePathRootDir()) + File.separator + topic;
-            String consumeQueueExtDir = StorePathConfigHelper.getStorePathConsumeQueueExt(
-                messageStore.getMessageStoreConfig().getStorePathRootDir()) + File.separator + topic;
-            String batchConsumeQueueDir = StorePathConfigHelper.getStorePathBatchConsumeQueue(
-                messageStore.getMessageStoreConfig().getStorePathRootDir()) + File.separator + topic;
-
-            UtilAll.deleteEmptyDirectory(new File(consumeQueueDir));
-            UtilAll.deleteEmptyDirectory(new File(consumeQueueExtDir));
-            UtilAll.deleteEmptyDirectory(new File(batchConsumeQueueDir));
+            deleteTopicQueueTable(topic);
+            deleteConsumeQueueTopic(topic);
+            deleteConsumeQueueDir(topic);
 
             LOGGER.info("DeleteTopic: Topic has been destroyed, topic={}", topic);
             deleteCount++;
         }
         return deleteCount;
+    }
+
+    private void deleteConsumeQueueTopic(String topic) {
+        // remove topic from cq table
+        messageStore.getConsumeQueueStore().getConsumeQueueTable().remove(topic);
+        if (messageStore.getBrokerConfig().isAutoDeleteUnusedStats()) {
+            messageStore.getBrokerStatsManager().onTopicDeleted(topic);
+        }
+    }
+
+    private void deleteTopicQueueTable(String topic) {
+        ConcurrentMap<Integer, ConsumeQueueInterface> queueTable =
+            messageStore.getConsumeQueueStore().getConsumeQueueTable().get(topic);
+
+        if (queueTable == null || queueTable.isEmpty()) {
+            return;
+        }
+
+        for (ConsumeQueueInterface cq : queueTable.values()) {
+            messageStore.getConsumeQueueStore().destroy(cq);
+            LOGGER.info("DeleteTopic: ConsumeQueue has been cleaned, topic={}, queueId={}",
+                cq.getTopic(), cq.getQueueId());
+            messageStore.getConsumeQueueStore().removeTopicQueueTable(cq.getTopic(), cq.getQueueId());
+        }
+    }
+
+    private void deleteConsumeQueueDir(String topic) {
+        // destroy consume queue dir
+        String consumeQueueDir = StorePathConfigHelper.getStorePathConsumeQueue(
+            messageStore.getMessageStoreConfig().getStorePathRootDir()) + File.separator + topic;
+        String consumeQueueExtDir = StorePathConfigHelper.getStorePathConsumeQueueExt(
+            messageStore.getMessageStoreConfig().getStorePathRootDir()) + File.separator + topic;
+        String batchConsumeQueueDir = StorePathConfigHelper.getStorePathBatchConsumeQueue(
+            messageStore.getMessageStoreConfig().getStorePathRootDir()) + File.separator + topic;
+
+        UtilAll.deleteEmptyDirectory(new File(consumeQueueDir));
+        UtilAll.deleteEmptyDirectory(new File(consumeQueueExtDir));
+        UtilAll.deleteEmptyDirectory(new File(batchConsumeQueueDir));
     }
 
     public int cleanUnusedTopic(final Set<String> retainTopics) {
