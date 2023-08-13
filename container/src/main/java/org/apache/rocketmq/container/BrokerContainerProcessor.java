@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Properties;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerStartup;
+import org.apache.rocketmq.broker.bootstrap.SystemConfigFileHelper;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.MixAll;
@@ -82,7 +83,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         String configPath = requestHeader.getConfigPath();
 
         if (configPath != null && !configPath.isEmpty()) {
-            BrokerStartup.SystemConfigFileHelper configFileHelper = new BrokerStartup.SystemConfigFileHelper();
+            SystemConfigFileHelper configFileHelper = new SystemConfigFileHelper();
             configFileHelper.setFile(configPath);
 
             try {

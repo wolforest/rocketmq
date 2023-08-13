@@ -16,18 +16,14 @@
  */
 package org.apache.rocketmq.broker;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.bootstrap.BrokerShutdownThread;
+import org.apache.rocketmq.broker.bootstrap.SystemConfigFileHelper;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
@@ -109,6 +105,23 @@ public class BrokerStartup {
         controller.getConfiguration().registerConfig(properties);
 
         return controller;
+    }
+
+    public static BrokerController createBrokerController(String[] args) {
+        try {
+            BrokerController controller = buildBrokerController(args);
+            boolean initResult = controller.initialize();
+            if (!initResult) {
+                controller.shutdown();
+                System.exit(-3);
+            }
+            Runtime.getRuntime().addShutdownHook(new Thread(buildShutdownHook(controller)));
+            return controller;
+        } catch (Throwable e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+        return null;
     }
 
     private static Properties initProperties(CommandLine commandLine, BrokerConfig brokerConfig, NettyServerConfig nettyServerConfig, NettyClientConfig nettyClientConfig, MessageStoreConfig messageStoreConfig) throws Exception {
@@ -258,25 +271,8 @@ public class BrokerStartup {
         MixAll.printObjectProperties(log, messageStoreConfig);
     }
 
-    public static Runnable buildShutdownHook(BrokerController brokerController) {
+    private static Runnable buildShutdownHook(BrokerController brokerController) {
         return new BrokerShutdownThread(brokerController);
-    }
-
-    public static BrokerController createBrokerController(String[] args) {
-        try {
-            BrokerController controller = buildBrokerController(args);
-            boolean initResult = controller.initialize();
-            if (!initResult) {
-                controller.shutdown();
-                System.exit(-3);
-            }
-            Runtime.getRuntime().addShutdownHook(new Thread(buildShutdownHook(controller)));
-            return controller;
-        } catch (Throwable e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
-        return null;
     }
 
     private static void properties2SystemEnv(Properties properties) {
@@ -305,32 +301,4 @@ public class BrokerStartup {
         return options;
     }
 
-    public static class SystemConfigFileHelper {
-        private static final Logger LOGGER = LoggerFactory.getLogger(SystemConfigFileHelper.class);
-
-        private String file;
-
-        public SystemConfigFileHelper() {
-        }
-
-        public Properties loadConfig() throws Exception {
-            InputStream in = new BufferedInputStream(Files.newInputStream(Paths.get(file)));
-            Properties properties = new Properties();
-            properties.load(in);
-            in.close();
-            return properties;
-        }
-
-        public void update(Properties properties) throws Exception {
-            LOGGER.error("[SystemConfigFileHelper] update no thing.");
-        }
-
-        public void setFile(String file) {
-            this.file = file;
-        }
-
-        public String getFile() {
-            return file;
-        }
-    }
 }
