@@ -66,6 +66,7 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.timer.service.TimerEnqueueGetService;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 public class TimerMessageStore {
@@ -210,7 +211,7 @@ public class TimerMessageStore {
     }
 
     public void initService() {
-        enqueueGetService = new TimerEnqueueGetService();
+        enqueueGetService = new TimerEnqueueGetService(this);
         enqueuePutService = new TimerEnqueuePutService();
         dequeueWarmService = new TimerDequeueWarmService();
         dequeueGetService = new TimerDequeueGetService();
@@ -1254,28 +1255,6 @@ public class TimerMessageStore {
 
     }
 
-    public class TimerEnqueueGetService extends ServiceThread {
-
-        @Override
-        public String getServiceName() {
-            return getServiceThreadName() + this.getClass().getSimpleName();
-        }
-
-        @Override
-        public void run() {
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service start");
-            while (!this.isStopped()) {
-                try {
-                    if (!TimerMessageStore.this.enqueue(0)) {
-                        waitForRunning(100L * precisionMs / 1000);
-                    }
-                } catch (Throwable e) {
-                    TimerMessageStore.LOGGER.error("Error occurred in " + getServiceName(), e);
-                }
-            }
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service end");
-        }
-    }
 
     public String getServiceThreadName() {
         String brokerIdentifier = "";
