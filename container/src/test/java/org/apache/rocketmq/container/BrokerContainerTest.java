@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.BrokerConfig;
@@ -69,9 +70,9 @@ public class BrokerContainerTest {
     @Test
     public void testBrokerContainerRestart() throws Exception {
         BrokerContainer brokerController = new BrokerContainer(
-            new BrokerContainerConfig(),
-            new NettyServerConfig(),
-            new NettyClientConfig());
+                new BrokerContainerConfig(),
+                new NettyServerConfig(),
+                new NettyClientConfig());
         assertThat(brokerController.initialize()).isTrue();
         brokerController.start();
         brokerController.shutdown();
@@ -81,16 +82,16 @@ public class BrokerContainerTest {
     public void testRegisterIncrementBrokerData() throws Exception {
 
         BrokerController brokerController = new BrokerController(
-            new BrokerConfig(),
-            new NettyServerConfig(),
-            new NettyClientConfig(),
-            new MessageStoreConfig());
+                new BrokerConfig(),
+                new NettyServerConfig(),
+                new NettyClientConfig(),
+                new MessageStoreConfig());
         brokerController.getBrokerConfig().setEnableSlaveActingMaster(true);
 
         BrokerOuterAPI brokerOuterAPI = mock(BrokerOuterAPI.class);
         Method method = BrokerController.class.getDeclaredMethod("setBrokerOuterAPI", BrokerOuterAPI.class);
         method.setAccessible(true);
-        method.invoke(brokerController,brokerOuterAPI);
+        method.invoke(brokerController, brokerOuterAPI);
         List<TopicConfig> topicConfigList = new ArrayList<>(2);
         for (int i = 0; i < 2; i++) {
             topicConfigList.add(new TopicConfig("topic-" + i));
@@ -99,28 +100,28 @@ public class BrokerContainerTest {
 
         // Check normal condition.
         testRegisterIncrementBrokerDataWithPerm(brokerController, brokerOuterAPI,
-            topicConfigList, dataVersion, PermName.PERM_READ | PermName.PERM_WRITE, 1);
+                topicConfigList, dataVersion, PermName.PERM_READ | PermName.PERM_WRITE, 1);
         // Check unwritable broker.
         testRegisterIncrementBrokerDataWithPerm(brokerController, brokerOuterAPI,
-            topicConfigList, dataVersion, PermName.PERM_READ, 2);
+                topicConfigList, dataVersion, PermName.PERM_READ, 2);
         // Check unreadable broker.
         testRegisterIncrementBrokerDataWithPerm(brokerController, brokerOuterAPI,
-            topicConfigList, dataVersion, PermName.PERM_WRITE, 3);
+                topicConfigList, dataVersion, PermName.PERM_WRITE, 3);
     }
 
     @Test
     public void testRegisterIncrementBrokerDataPerm() throws Exception {
         BrokerController brokerController = new BrokerController(
-            new BrokerConfig(),
-            new NettyServerConfig(),
-            new NettyClientConfig(),
-            new MessageStoreConfig());
+                new BrokerConfig(),
+                new NettyServerConfig(),
+                new NettyClientConfig(),
+                new MessageStoreConfig());
         brokerController.getBrokerConfig().setEnableSlaveActingMaster(true);
 
         BrokerOuterAPI brokerOuterAPI = mock(BrokerOuterAPI.class);
         Method method = BrokerController.class.getDeclaredMethod("setBrokerOuterAPI", BrokerOuterAPI.class);
         method.setAccessible(true);
-        method.invoke(brokerController,brokerOuterAPI);
+        method.invoke(brokerController, brokerOuterAPI);
 
         List<TopicConfig> topicConfigList = new ArrayList<>(2);
         for (int i = 0; i < 2; i++) {
@@ -135,7 +136,7 @@ public class BrokerContainerTest {
         ArgumentCaptor<TopicConfigSerializeWrapper> captor = ArgumentCaptor.forClass(TopicConfigSerializeWrapper.class);
         ArgumentCaptor<BrokerIdentity> brokerIdentityCaptor = ArgumentCaptor.forClass(BrokerIdentity.class);
         verify(brokerOuterAPI).registerBrokerAll(anyString(), anyString(), anyString(), anyLong(), anyString(),
-            captor.capture(), ArgumentMatchers.anyList(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean(), anyLong(), brokerIdentityCaptor.capture());
+                captor.capture(), ArgumentMatchers.anyList(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean(), anyLong(), brokerIdentityCaptor.capture());
         TopicConfigSerializeWrapper wrapper = captor.getValue();
         for (Map.Entry<String, TopicConfig> entry : wrapper.getTopicConfigTable().entrySet()) {
             assertThat(entry.getValue().getPerm()).isEqualTo(brokerController.getBrokerConfig().getBrokerPermission());
@@ -146,9 +147,9 @@ public class BrokerContainerTest {
     @Test
     public void testMasterScaleOut() throws Exception {
         BrokerContainer brokerContainer = new BrokerContainer(
-            new BrokerContainerConfig(),
-            new NettyServerConfig(),
-            new NettyClientConfig());
+                new BrokerContainerConfig(),
+                new NettyServerConfig(),
+                new NettyClientConfig());
         assertThat(brokerContainer.initialize()).isTrue();
         brokerContainer.getBrokerContainerConfig().setNamesrvAddr("127.0.0.1:9876");
         brokerContainer.start();
@@ -169,9 +170,9 @@ public class BrokerContainerTest {
     @Test
     public void testAddMasterFailed() throws Exception {
         BrokerContainer brokerContainer = new BrokerContainer(
-            new BrokerContainerConfig(),
-            new NettyServerConfig(),
-            new NettyClientConfig());
+                new BrokerContainerConfig(),
+                new NettyServerConfig(),
+                new NettyClientConfig());
         assertThat(brokerContainer.initialize()).isTrue();
         brokerContainer.start();
 
@@ -197,9 +198,9 @@ public class BrokerContainerTest {
     @Test
     public void testAddSlaveFailed() throws Exception {
         BrokerContainer sharedBrokerController = new BrokerContainer(
-            new BrokerContainerConfig(),
-            new NettyServerConfig(),
-            new NettyClientConfig());
+                new BrokerContainerConfig(),
+                new NettyServerConfig(),
+                new NettyClientConfig());
         assertThat(sharedBrokerController.initialize()).isTrue();
         sharedBrokerController.start();
 
@@ -226,9 +227,9 @@ public class BrokerContainerTest {
     //@Test
     public void testAddAndRemoveMaster() throws Exception {
         BrokerContainer brokerContainer = new BrokerContainer(
-            new BrokerContainerConfig(),
-            new NettyServerConfig(),
-            new NettyClientConfig());
+                new BrokerContainerConfig(),
+                new NettyServerConfig(),
+                new NettyClientConfig());
         assertThat(brokerContainer.initialize()).isTrue();
         brokerContainer.start();
         BrokerConfig masterBrokerConfig = new BrokerConfig();
@@ -253,9 +254,9 @@ public class BrokerContainerTest {
     @Test
     public void testAddAndRemoveDLedgerBroker() throws Exception {
         BrokerContainer brokerContainer = new BrokerContainer(
-            new BrokerContainerConfig(),
-            new NettyServerConfig(),
-            new NettyClientConfig());
+                new BrokerContainerConfig(),
+                new NettyServerConfig(),
+                new NettyClientConfig());
         assertThat(brokerContainer.initialize()).isTrue();
         brokerContainer.start();
 
@@ -267,8 +268,9 @@ public class BrokerContainerTest {
         messageStoreConfig.setEnableDLegerCommitLog(true);
         messageStoreConfig.setdLegerSelfId("n0");
         messageStoreConfig.setdLegerGroup("group");
-        messageStoreConfig.setHaListenPort(generatePort(0,1));
-        messageStoreConfig.setdLegerPeers(String.format("n0-localhost:%d", generatePort(30900, 10000)));
+        messageStoreConfig.setHaListenPort(generatePort());
+        dLedgerBrokerConfig.setListenPort(generatePort());
+        messageStoreConfig.setdLegerPeers(String.format("n0-localhost:%d", generatePort()));
         InnerBrokerController dLedger = brokerContainer.addBroker(dLedgerBrokerConfig, messageStoreConfig);
         assertThat(dLedger).isNotNull();
         dLedger.start();
@@ -284,18 +286,18 @@ public class BrokerContainerTest {
     @Test
     public void testAddAndRemoveSlaveSuccess() throws Exception {
         BrokerContainer brokerContainer = new BrokerContainer(
-            new BrokerContainerConfig(),
-            new NettyServerConfig(),
-            new NettyClientConfig());
+                new BrokerContainerConfig(),
+                new NettyServerConfig(),
+                new NettyClientConfig());
         assertThat(brokerContainer.initialize()).isTrue();
         brokerContainer.start();
 
         BrokerConfig masterBrokerConfig = new BrokerConfig();
-        masterBrokerConfig.setListenPort(generatePort(0,0));
+        masterBrokerConfig.setListenPort(NetworkPortUtils.nextPort());
         String baseDir = createBaseDir("unnittest-master").getAbsolutePath();
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setStorePathRootDir(baseDir);
-        messageStoreConfig.setHaListenPort(generatePort(0,0));
+        messageStoreConfig.setHaListenPort(NetworkPortUtils.nextPort());
         messageStoreConfig.setStorePathCommitLog(baseDir + File.separator + "commitlog");
         InnerBrokerController master = brokerContainer.addBroker(masterBrokerConfig, messageStoreConfig);
         assertThat(master).isNotNull();
@@ -303,15 +305,14 @@ public class BrokerContainerTest {
         assertThat(master.isIsolated()).isFalse();
 
         BrokerConfig slaveBrokerConfig = new BrokerConfig();
-        slaveBrokerConfig.setListenPort(generatePort(0,0));
+        slaveBrokerConfig.setListenPort(generatePort());
         slaveBrokerConfig.setBrokerId(1);
         MessageStoreConfig slaveMessageStoreConfig = new MessageStoreConfig();
         slaveMessageStoreConfig.setBrokerRole(BrokerRole.SLAVE);
-        slaveMessageStoreConfig.setHaListenPort(generatePort(0,0));
+        slaveMessageStoreConfig.setHaListenPort(generatePort());
         baseDir = createBaseDir("unnittest-slave").getAbsolutePath();
         slaveMessageStoreConfig.setStorePathRootDir(baseDir);
         slaveMessageStoreConfig.setStorePathCommitLog(baseDir + File.separator + "commitlog");
-        slaveMessageStoreConfig.setHaListenPort(generatePort(0,0));
         InnerBrokerController slave = brokerContainer.addBroker(slaveBrokerConfig, slaveMessageStoreConfig);
         assertThat(slave).isNotNull();
         slave.start();
@@ -339,8 +340,14 @@ public class BrokerContainerTest {
         }
     }
 
-    public static int generatePort(int base, int range) {
-        return NetworkPortUtils.nextPort();
+    public static int generatePort() {
+        int result = NetworkPortUtils.nextPort();
+        while (PORTS_IN_USE.contains(result) || PORTS_IN_USE.contains(result - 2)) {
+            result = NetworkPortUtils.nextPort();
+        }
+        PORTS_IN_USE.add(result);
+        PORTS_IN_USE.add(result - 2);
+        return result;
     }
 
     @After
@@ -351,8 +358,8 @@ public class BrokerContainerTest {
     }
 
     private void testRegisterIncrementBrokerDataWithPerm(BrokerController brokerController,
-        BrokerOuterAPI brokerOuterAPI,
-        List<TopicConfig> topicConfigList, DataVersion dataVersion, int perm, int times) {
+                                                         BrokerOuterAPI brokerOuterAPI,
+                                                         List<TopicConfig> topicConfigList, DataVersion dataVersion, int perm, int times) {
         brokerController.getBrokerConfig().setBrokerPermission(perm);
 
         brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfigList, dataVersion);
@@ -360,7 +367,7 @@ public class BrokerContainerTest {
         ArgumentCaptor<TopicConfigSerializeWrapper> captor = ArgumentCaptor.forClass(TopicConfigSerializeWrapper.class);
         ArgumentCaptor<BrokerIdentity> brokerIdentityCaptor = ArgumentCaptor.forClass(BrokerIdentity.class);
         verify(brokerOuterAPI, times(times)).registerBrokerAll(anyString(), anyString(), anyString(), anyLong(),
-            anyString(), captor.capture(), ArgumentMatchers.anyList(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean(), anyLong(), brokerIdentityCaptor.capture());
+                anyString(), captor.capture(), ArgumentMatchers.anyList(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean(), anyLong(), brokerIdentityCaptor.capture());
         TopicConfigSerializeWrapper wrapper = captor.getValue();
 
         for (TopicConfig topicConfig : topicConfigList) {
@@ -368,8 +375,8 @@ public class BrokerContainerTest {
         }
         assertThat(wrapper.getDataVersion()).isEqualTo(dataVersion);
         assertThat(wrapper.getTopicConfigTable()).containsExactly(
-            entry("topic-0", topicConfigList.get(0)),
-            entry("topic-1", topicConfigList.get(1)));
+                entry("topic-0", topicConfigList.get(0)),
+                entry("topic-1", topicConfigList.get(1)));
         for (TopicConfig topicConfig : topicConfigList) {
             topicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
         }

@@ -24,7 +24,7 @@ public class NetworkPortUtils {
     private static AtomicInteger port = new AtomicInteger(uniquePort());
 
     public static int nextPort() {
-        return port.addAndGet(1);
+        return port.addAndGet(5);
     }
 
     private static final int uniquePort() {
