@@ -17,6 +17,7 @@
 
 package org.apache.rocketmq.broker.topic;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
