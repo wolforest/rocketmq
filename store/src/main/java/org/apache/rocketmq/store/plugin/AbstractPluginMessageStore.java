@@ -274,7 +274,7 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     @Override
     @Deprecated
     public boolean checkInDiskByConsumeOffset(String topic, int queueId, long consumeOffset) {
-        return next.checkInDiskByConsumeOffset(topic, queueId, consumeOffset);
+        return false;
     }
 
     @Override
@@ -573,8 +573,8 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     }
 
     @Override
-    public ConsumeQueueStore getQueueStore() {
-        return next.getQueueStore();
+    public ConsumeQueueStore getConsumeQueueStore() {
+        return next.getConsumeQueueStore();
     }
 
     @Override
