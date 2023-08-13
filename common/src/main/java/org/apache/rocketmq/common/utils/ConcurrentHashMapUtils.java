@@ -42,26 +42,27 @@ public abstract class ConcurrentHashMapUtils {
      */
     public static <K, V> V computeIfAbsent(ConcurrentMap<K, V> map, K key, Function<? super K, ? extends V> func) {
         Objects.requireNonNull(func);
-        if (isJdk8) {
-            V v = map.get(key);
-            if (null == v) {
-//                v = map.computeIfAbsent(key, func);
-
-                // this bug fix methods maybe cause `func.apply` multiple calls.
-                v = func.apply(key);
-                if (null == v) {
-                    return null;
-                }
-                final V res = map.putIfAbsent(key, v);
-                if (null != res) {
-                    // if pre value present, means other thread put value already, and putIfAbsent not effect
-                    // return exist value
-                    return res;
-                }
-            }
-            return v;
-        } else {
+        if (!isJdk8) {
             return map.computeIfAbsent(key, func);
         }
+
+        V v = map.get(key);
+        if (null != v) {
+           return v;
+        }
+
+        // this bug fix methods maybe cause `func.apply` multiple calls.
+        v = func.apply(key);
+        if (null == v) {
+            return null;
+        }
+        final V res = map.putIfAbsent(key, v);
+        if (null != res) {
+            // if pre value present, means other thread put value already, and putIfAbsent not effect
+            // return exist value
+            return res;
+        }
+
+        return v;
     }
 }
