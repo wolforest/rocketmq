@@ -72,9 +72,16 @@ public final class ThreadUtils {
     }
 
     public static void sleep(long millis) {
+        sleep(millis, false);
+    }
+
+    public static void sleep(long millis, boolean logException) {
         try {
             Thread.sleep(millis);
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
+            if (logException) {
+                LOGGER.error("Interrupted", e);
+            }
         }
     }
 
