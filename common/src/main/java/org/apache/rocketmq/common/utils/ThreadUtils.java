@@ -85,7 +85,7 @@ public final class ThreadUtils {
 
     public static void sleep(long millis, boolean logException, String msg) {
         if (null == msg) {
-            msg = "Interrupted"
+            msg = "Interrupted";
         }
 
         try {
