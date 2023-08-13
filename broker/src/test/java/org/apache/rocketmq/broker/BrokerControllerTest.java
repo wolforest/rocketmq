@@ -48,7 +48,7 @@ public class BrokerControllerTest {
     @Before
     public void setUp() {
         messageStoreConfig = new MessageStoreConfig();
-        String storePathRootDir = System.getProperty("java.io.tmpdir") + File.separator + "store-"
+        String storePathRootDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "store-"
                 + UUID.randomUUID().toString();
         messageStoreConfig.setStorePathRootDir(storePathRootDir);
 

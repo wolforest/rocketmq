@@ -103,7 +103,7 @@ public class UtilAllTest {
 
     @Test
     public void testGetDiskPartitionSpaceUsedPercent() {
-        String tmpDir = System.getProperty("java.io.tmpdir");
+        String tmpDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test";
 
         assertThat(UtilAll.getDiskPartitionSpaceUsedPercent(null)).isCloseTo(-1, within(0.000001));
         assertThat(UtilAll.getDiskPartitionSpaceUsedPercent("")).isCloseTo(-1, within(0.000001));
@@ -238,7 +238,7 @@ public class UtilAllTest {
          *          - file_1_2_0
          *  - dir_2
          */
-        String basePath = System.getProperty("java.io.tmpdir") + File.separator + "testCalculateFileSizeInPath";
+        String basePath = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "testCalculateFileSizeInPath";
         File baseFile = new File(basePath);
         // test empty path
         assertEquals(0, UtilAll.calculateFileSizeInPath(baseFile));

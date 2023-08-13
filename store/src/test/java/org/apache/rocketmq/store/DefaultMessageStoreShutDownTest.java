@@ -72,7 +72,7 @@ public class DefaultMessageStoreShutDownTest {
         messageStoreConfig.setMaxIndexNum(100 * 100);
         messageStoreConfig.setFlushDiskType(FlushDiskType.SYNC_FLUSH);
         messageStoreConfig.setHaListenPort(0);
-        String storeRootPath = System.getProperty("java.io.tmpdir") + File.separator + "store";
+        String storeRootPath = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "store";
         messageStoreConfig.setStorePathRootDir(storeRootPath);
         messageStoreConfig.setHaListenPort(0);
         return new DefaultMessageStore(messageStoreConfig, new BrokerStatsManager("simpleTest", true), null, new BrokerConfig(), new ConcurrentHashMap<>());

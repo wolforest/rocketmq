@@ -34,7 +34,7 @@ public class MappedFileTest {
 
     @Test
     public void testSelectMappedBuffer() throws IOException {
-        DefaultMappedFile mappedFile = new DefaultMappedFile("target/unit_test_store/MappedFileTest/000", 1024 * 64);
+        DefaultMappedFile mappedFile = new DefaultMappedFile("target/unit_test_store_MappedFileTest/MappedFileTest/000", 1024 * 64);
         boolean result = mappedFile.appendMessage(storeMessage.getBytes());
         assertThat(result).isTrue();
 
@@ -54,7 +54,7 @@ public class MappedFileTest {
 
     @After
     public void destroy() {
-        File file = new File("target/unit_test_store");
+        File file = new File("target/unit_test_store_MappedFileTest");
         UtilAll.deleteFile(file);
     }
 }

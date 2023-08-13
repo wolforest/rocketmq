@@ -101,7 +101,7 @@ public class DefaultMessageStoreTest {
         messageStoreConfig.setMappedFileSizeConsumeQueue(1024 * 4);
         messageStoreConfig.setMaxHashSlotNum(100);
         messageStoreConfig.setMaxIndexNum(100 * 10);
-        messageStoreConfig.setStorePathRootDir(System.getProperty("java.io.tmpdir") + File.separator + "store");
+        messageStoreConfig.setStorePathRootDir(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "store");
         messageStoreConfig.setHaListenPort(0);
         MessageStore master = new DefaultMessageStore(messageStoreConfig, null, new MyMessageArrivingListener(), new BrokerConfig(), new ConcurrentHashMap<>());
 
@@ -142,7 +142,7 @@ public class DefaultMessageStoreTest {
         messageStoreConfig.setHaListenPort(0);
         if (Strings.isNullOrEmpty(storePathRootDir)) {
             UUID uuid = UUID.randomUUID();
-            storePathRootDir = System.getProperty("java.io.tmpdir") + File.separator + "store-" + uuid.toString();
+            storePathRootDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "store-" + uuid.toString();
         }
         messageStoreConfig.setStorePathRootDir(storePathRootDir);
         return new DefaultMessageStore(messageStoreConfig,

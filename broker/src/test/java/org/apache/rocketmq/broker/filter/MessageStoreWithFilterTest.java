@@ -63,7 +63,7 @@ public class MessageStoreWithFilterTest {
 
     private static final String TOPIC = "topic";
     private static final int QUEUE_ID = 0;
-    private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "unit_test_store";
+    private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unit_test_store";
     private static final int COMMIT_LOG_FILE_SIZE = 1024 * 1024 * 256;
     private static final int CQ_FILE_SIZE = 300000 * 20;
     private static final int CQ_EXT_FILE_SIZE = 300000 * 128;

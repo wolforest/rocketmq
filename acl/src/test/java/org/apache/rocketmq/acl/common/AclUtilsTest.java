@@ -212,7 +212,7 @@ public class AclUtilsTest {
     }
 
     private static String randomTmpFile() {
-        String tmpFileName = System.getProperty("java.io.tmpdir");
+        String tmpFileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test";
         // https://rationalpi.wordpress.com/2007/01/26/javaiotmpdir-inconsitency/
         if (!tmpFileName.endsWith(File.separator)) {
             tmpFileName += File.separator;

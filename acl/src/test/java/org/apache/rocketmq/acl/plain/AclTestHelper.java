@@ -97,7 +97,7 @@ public final class AclTestHelper {
     }
 
     public static File copyResources(String folder, boolean into) throws IOException {
-        File home = new File(System.getProperty("java.io.tmpdir"), UUID.randomUUID().toString().replace('-', '_'));
+        File home = new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test", UUID.randomUUID().toString().replace('-', '_'));
         if (!home.exists()) {
             Assert.assertTrue(home.mkdirs());
         }

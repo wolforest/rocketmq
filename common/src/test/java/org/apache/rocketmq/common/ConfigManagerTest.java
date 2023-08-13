@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ConfigManagerTest {
-    private static final String PATH_FILE = System.getProperty("java.io.tmpdir") + File.separator + "org.apache.rocketmq.common.ConfigManagerTest";
+    private static final String PATH_FILE = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "org.apache.rocketmq.common.ConfigManagerTest";
     private static final String CONTENT_ENCODE = "Encode content for ConfigManager";
 
     @Test

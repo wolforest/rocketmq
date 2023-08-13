@@ -53,8 +53,8 @@ public class AppendCallbackTest {
         messageStoreConfig.setMappedFileSizeConsumeQueue(1024 * 4);
         messageStoreConfig.setMaxHashSlotNum(100);
         messageStoreConfig.setMaxIndexNum(100 * 10);
-        messageStoreConfig.setStorePathRootDir(System.getProperty("java.io.tmpdir") + File.separator + "unitteststore");
-        messageStoreConfig.setStorePathCommitLog(System.getProperty("java.io.tmpdir") + File.separator + "unitteststore" + File.separator + "commitlog");
+        messageStoreConfig.setStorePathRootDir(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore");
+        messageStoreConfig.setStorePathCommitLog(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore" + File.separator + "commitlog");
         //too much reference
         DefaultMessageStore messageStore = new DefaultMessageStore(messageStoreConfig, null, null, new BrokerConfig(), new ConcurrentHashMap<>());
         CommitLog commitLog = new CommitLog(messageStore);
@@ -63,7 +63,7 @@ public class AppendCallbackTest {
 
     @After
     public void destroy() {
-        UtilAll.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "unitteststore"));
+        UtilAll.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore"));
     }
 
     @Test

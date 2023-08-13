@@ -63,7 +63,7 @@ import static org.mockito.Mockito.when;
 @PrepareForTest(ReplicasManager.class)
 public class ReplicasManagerRegisterTest {
 
-    public static final String STORE_BASE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "ReplicasManagerRegisterTest";
+    public static final String STORE_BASE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "ReplicasManagerRegisterTest";
 
     public static final String STORE_PATH = STORE_BASE_PATH + File.separator + UUID.randomUUID();
 

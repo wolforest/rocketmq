@@ -56,7 +56,7 @@ public class ConsumeQueueTest {
 
     private static final String TOPIC = "abc";
     private static final int QUEUE_ID = 0;
-    private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "unit_test_store";
+    private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unit_test_store";
     private static final int COMMIT_LOG_FILE_SIZE = 1024 * 8;
     private static final int CQ_FILE_SIZE = 10 * 20;
     private static final int CQ_EXT_FILE_SIZE = 10 * (ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE + 64);
@@ -463,7 +463,7 @@ public class ConsumeQueueTest {
         String topic = "T1";
         int queueId = 0;
         MessageStoreConfig storeConfig = new MessageStoreConfig();
-        File tmpDir = new File(System.getProperty("java.io.tmpdir"), "test_correct_min_offset");
+        File tmpDir = new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test", "test_correct_min_offset");
         tmpDir.deleteOnExit();
         storeConfig.setStorePathRootDir(tmpDir.getAbsolutePath());
         storeConfig.setEnableConsumeQueueExt(false);

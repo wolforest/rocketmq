@@ -29,7 +29,7 @@ public class ConsumeQueueExtTest {
 
     private static final String TOPIC = "abc";
     private static final int QUEUE_ID = 0;
-    private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "unit_test_store";
+    private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unit_test_store";
     private static final int BIT_MAP_LENGTH = 64;
     private static final int UNIT_SIZE_WITH_BIT_MAP = ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE + BIT_MAP_LENGTH / Byte.SIZE;
     private static final int CQ_EXT_FILE_SIZE = 10 * UNIT_SIZE_WITH_BIT_MAP;

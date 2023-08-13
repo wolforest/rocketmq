@@ -392,7 +392,7 @@ public class TopicQueueMappingUtils {
         if (after) {
             suffix = TopicRemappingDetailWrapper.SUFFIX_AFTER;
         }
-        String fileName = System.getProperty("java.io.tmpdir") + File.separator + topic + "-" + wrapper.getEpoch() + suffix;
+        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + topic + "-" + wrapper.getEpoch() + suffix;
         try {
             MixAll.string2File(data, fileName);
             return fileName;

@@ -62,7 +62,7 @@ public class ProxyStartupTest {
 
     @Before
     public void before() throws Throwable {
-        proxyHome = new File(System.getProperty("java.io.tmpdir"), UUID.randomUUID().toString().replace('-', '_'));
+        proxyHome = new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test", UUID.randomUUID().toString().replace('-', '_'));
         if (!proxyHome.exists()) {
             proxyHome.mkdirs();
         }

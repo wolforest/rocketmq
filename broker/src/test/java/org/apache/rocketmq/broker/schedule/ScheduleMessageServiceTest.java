@@ -74,7 +74,7 @@ public class ScheduleMessageServiceTest {
      */
     int delayLevel = 3;
 
-    private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "schedule_test#" + UUID.randomUUID();
+    private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "schedule_test#" + UUID.randomUUID();
     private static final int COMMIT_LOG_FILE_SIZE = 1024;
     private static final int CQ_FILE_SIZE = 10;
     private static final int CQ_EXT_FILE_SIZE = 10 * (ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE + 64);

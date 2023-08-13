@@ -66,7 +66,7 @@ public class HATest {
     private MessageStoreConfig masterMessageStoreConfig;
     private MessageStoreConfig slaveStoreConfig;
     private BrokerStatsManager brokerStatsManager = new BrokerStatsManager("simpleTest", true);
-    private String storePathRootParentDir = System.getProperty("java.io.tmpdir") + File.separator + UUID.randomUUID();
+    private String storePathRootParentDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + UUID.randomUUID();
     private String storePathRootDir = storePathRootParentDir + File.separator + "store";
 
     @Before

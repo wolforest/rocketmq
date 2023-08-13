@@ -53,7 +53,7 @@ public class MixAllTest {
 
     @Test
     public void testFile2String() throws IOException {
-        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "MixAllTest" + System.currentTimeMillis();
+        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "MixAllTest" + System.currentTimeMillis();
         File file = new File(fileName);
         if (file.exists()) {
             file.delete();
@@ -69,7 +69,7 @@ public class MixAllTest {
 
     @Test
     public void testString2File() throws IOException {
-        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "MixAllTest" + System.currentTimeMillis();
+        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "MixAllTest" + System.currentTimeMillis();
         MixAll.string2File("MixAll_testString2File", fileName);
         assertThat(MixAll.file2String(fileName)).isEqualTo("MixAll_testString2File");
     }
