@@ -26,6 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.rocketmq.common.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -296,12 +297,8 @@ public class IndexService {
                 break;
             }
 
-            try {
-                LOGGER.info("Tried to create index file " + times + " times");
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                LOGGER.error("Interrupted", e);
-            }
+            LOGGER.info("Tried to create index file " + times + " times");
+            ThreadUtils.sleep(1000, true);
         }
 
         if (null == indexFile) {
