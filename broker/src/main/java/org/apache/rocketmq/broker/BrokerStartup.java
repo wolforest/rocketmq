@@ -39,7 +39,6 @@ import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 public class BrokerStartup {
-
     public static Logger log;
     public static final SystemConfigFileHelper CONFIG_FILE_HELPER = new SystemConfigFileHelper();
 
@@ -50,17 +49,7 @@ public class BrokerStartup {
     public static BrokerController start(BrokerController controller) {
         try {
             controller.start();
-
-            String tip = String.format("The broker[%s, %s] boot success. serializeType=%s",
-                controller.getBrokerConfig().getBrokerName(), controller.getBrokerAddr(),
-                RemotingCommand.getSerializeTypeConfigInThisServer());
-
-            if (null != controller.getBrokerConfig().getNamesrvAddr()) {
-                tip += " and name server is " + controller.getBrokerConfig().getNamesrvAddr();
-            }
-
-            log.info(tip);
-            System.out.printf("%s%n", tip);
+            printBrokerStartInfo(controller);
             return controller;
         } catch (Throwable e) {
             e.printStackTrace();
@@ -273,6 +262,19 @@ public class BrokerStartup {
 
     private static Runnable buildShutdownHook(BrokerController brokerController) {
         return new BrokerShutdownThread(brokerController);
+    }
+
+    private static void printBrokerStartInfo(BrokerController controller) {
+        String tip = String.format("The broker[%s, %s] boot success. serializeType=%s",
+            controller.getBrokerConfig().getBrokerName(), controller.getBrokerAddr(),
+            RemotingCommand.getSerializeTypeConfigInThisServer());
+
+        if (null != controller.getBrokerConfig().getNamesrvAddr()) {
+            tip += " and name server is " + controller.getBrokerConfig().getNamesrvAddr();
+        }
+
+        log.info(tip);
+        System.out.printf("%s%n", tip);
     }
 
     private static void properties2SystemEnv(Properties properties) {
