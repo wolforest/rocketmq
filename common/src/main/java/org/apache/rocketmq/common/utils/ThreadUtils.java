@@ -71,6 +71,32 @@ public final class ThreadUtils {
         return new ThreadFactoryImpl(String.format("%s_%d_", processName, threads), isDaemon);
     }
 
+    public static void sleep(long millis) {
+        sleep(millis, false, null);
+    }
+
+    public static void sleep(long millis, boolean logException) {
+        sleep(millis, logException, null);
+    }
+
+    public static void sleep(long millis, String msg) {
+        sleep(millis, false, msg);
+    }
+
+    public static void sleep(long millis, boolean logException, String msg) {
+        if (null == msg) {
+            msg = "Interrupted";
+        }
+
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            if (logException) {
+                LOGGER.error(msg, e);
+            }
+        }
+    }
+
     /**
      * Create a new thread
      *

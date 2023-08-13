@@ -17,6 +17,7 @@
 package org.apache.rocketmq.store.util;
 
 import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 
 import java.sql.Timestamp;
@@ -357,11 +358,7 @@ public class PerfCounter {
 
                 } catch (Exception e) {
                     logger.error("{} get unknown errror", getServiceName(), e);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (Throwable ignored) {
-
-                    }
+                    ThreadUtils.sleep(1000);
                 }
             }
             logger.info("{} get stopped", getServiceName());
