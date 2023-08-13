@@ -269,6 +269,7 @@ public class BrokerContainerTest {
         messageStoreConfig.setdLegerSelfId("n0");
         messageStoreConfig.setdLegerGroup("group");
         messageStoreConfig.setHaListenPort(generatePort(0, 1));
+        dLedgerBrokerConfig.setListenPort(generatePort(0,1));
         messageStoreConfig.setdLegerPeers(String.format("n0-localhost:%d", generatePort(30900, 10000)));
         InnerBrokerController dLedger = brokerContainer.addBroker(dLedgerBrokerConfig, messageStoreConfig);
         assertThat(dLedger).isNotNull();
