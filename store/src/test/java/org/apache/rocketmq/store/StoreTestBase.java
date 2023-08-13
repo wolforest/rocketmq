@@ -21,13 +21,11 @@ import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.junit.After;
-
 import java.io.File;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -49,45 +47,9 @@ public class StoreTestBase {
     private byte[] messageBody = new byte[1024];
 
     protected Set<String> baseDirs = new HashSet<>();
-    private static AtomicInteger port = new AtomicInteger(uniquePort());
-
-    public static final int uniquePort() {
-        int minPort = 5000;
-        int step = 500;
-        int forkNumber = getForkNumber();
-        if (forkNumber != 0) {
-            return minPort + forkNumber * step;
-        }
-        int processId = getProcessID();
-        // it's unreliable,Just for single run
-        int firstNumber = processId;
-        while (firstNumber >= 10) {
-            firstNumber /= 10;
-        }
-        int lastNumber = processId % 10;
-        return minPort + (firstNumber * 10 + lastNumber) * step;
-    }
-
-    public static final int getForkNumber() {
-        String forkNumberString = System.getProperty("forkNumber");
-        if (forkNumberString == null) {
-            return 0;
-        }
-        try {
-            return Integer.parseInt(forkNumberString);
-        } catch (Exception e) {
-            LOGGER.warn("No forkNumber setting ");
-            return 0;
-        }
-    }
-
-    public static final int getProcessID() {
-        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
-        return Integer.valueOf(runtimeMXBean.getName().split("@")[0]).intValue();
-    }
 
     public static synchronized int nextPort() {
-        return port.addAndGet(5);
+        return NetworkPortUtils.nextPort();
     }
 
     protected MessageExtBatch buildBatchMessage(int size) {
@@ -189,7 +151,7 @@ public class StoreTestBase {
     }
 
     public static String createBaseDir() {
-        String baseDir = System.getProperty("java.io.tmpdir") + File.separator + "unitteststore" + File.separator + UUID.randomUUID();
+        String baseDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore" + File.separator + UUID.randomUUID();
         final File file = new File(baseDir);
         if (file.exists()) {
             System.exit(1);

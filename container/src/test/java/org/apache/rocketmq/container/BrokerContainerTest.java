@@ -34,6 +34,7 @@ import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.PermName;
+import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
@@ -335,13 +336,7 @@ public class BrokerContainerTest {
     }
 
     public static int generatePort(int base, int range) {
-        int result = base + RANDOM.nextInt(range);
-        while (PORTS_IN_USE.contains(result) || PORTS_IN_USE.contains(result - 2)) {
-            result = base + RANDOM.nextInt(range);
-        }
-        PORTS_IN_USE.add(result);
-        PORTS_IN_USE.add(result - 2);
-        return result;
+        return NetworkPortUtils.nextPort();
     }
 
     @After

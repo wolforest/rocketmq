@@ -405,9 +405,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
                 <configuration>
+                    <argLine>-Xmx4048m -XX:MaxPermSize=1024m</argLine>
                     <skipAfterFailureCount>1</skipAfterFailureCount>
-                    <forkCount>16</forkCount>
-                    <parallel>classes</parallel>
+                    <forkCount>64</forkCount>
                     <threadCountClasses>1</threadCountClasses>
                     <reuseForks>false</reuseForks>
                     <excludes>

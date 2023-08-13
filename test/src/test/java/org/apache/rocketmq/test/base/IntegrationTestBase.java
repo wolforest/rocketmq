@@ -58,7 +58,7 @@ public class IntegrationTestBase {
 
     static {
 
-        System.setProperty("rocketmq.client.logRoot", System.getProperty("java.io.tmpdir"));
+        System.setProperty("rocketmq.client.logRoot", System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test");
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -95,7 +95,7 @@ public class IntegrationTestBase {
     }
 
     public static String createBaseDir() {
-        String baseDir = System.getProperty("java.io.tmpdir") + SEP + "unitteststore-" + UUID.randomUUID();
+        String baseDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + SEP + "unitteststore-" + UUID.randomUUID();
         final File file = new File(baseDir);
         if (file.exists()) {
             logger.info(String.format("[%s] has already existed, please back up and remove it for integration tests", baseDir));

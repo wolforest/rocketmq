@@ -80,7 +80,7 @@ public class AutoSwitchHATest {
     private String store2HaAddress;
 
     private BrokerStatsManager brokerStatsManager = new BrokerStatsManager("simpleTest", true);
-    private String tmpdir = System.getProperty("java.io.tmpdir");
+    private String tmpdir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test";
     private String storePathRootParentDir = (StringUtils.endsWith(tmpdir, File.separator) ? tmpdir : tmpdir + File.separator) + UUID.randomUUID();
     private String storePathRootDir = storePathRootParentDir + File.separator + "store";
     private Random random = new Random();

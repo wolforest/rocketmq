@@ -43,7 +43,7 @@ public class IOTinyUtilsTest {
     /**
      * https://bazel.build/reference/test-encyclopedia#filesystem
      */
-    private String testRootDir = System.getProperty("java.io.tmpdir") + File.separator + "iotinyutilstest";
+    private String testRootDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "iotinyutilstest";
 
     @Before
     public void init() {

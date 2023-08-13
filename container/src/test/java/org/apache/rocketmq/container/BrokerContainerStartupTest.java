@@ -43,6 +43,8 @@ import static org.assertj.core.api.Java6Assertions.assertThat;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BrokerContainerStartupTest {
+    public static final String tmp = "/tmp/rocketmq-test";
+
     private static final List<File> TMP_FILE_LIST = new ArrayList<>();
     private static final String BROKER_NAME_PREFIX = "TestBroker";
     private static final String SHARED_BROKER_NAME_PREFIX = "TestBrokerContainer";
@@ -70,7 +72,7 @@ public class BrokerContainerStartupTest {
         storeConfig.setStorePathRootDir(baseDir);
         storeConfig.setStorePathCommitLog(baseDir + File.separator + "commitlog");
 
-        brokerConfigPath = "/tmp/" + brokerName;
+        brokerConfigPath = tmp + brokerName;
         brokerConfig.setBrokerConfigPath(brokerConfigPath);
         File file = new File(brokerConfigPath);
         TMP_FILE_LIST.add(file);
@@ -82,7 +84,7 @@ public class BrokerContainerStartupTest {
         }
         MixAll.string2File(MixAll.properties2String(brokerConfigProp), brokerConfigPath);
 
-        brokerContainerConfigPath = "/tmp/" + SHARED_BROKER_NAME_PREFIX + System.currentTimeMillis();
+        brokerContainerConfigPath = tmp + SHARED_BROKER_NAME_PREFIX + System.currentTimeMillis();
         BrokerContainerConfig brokerContainerConfig = new BrokerContainerConfig();
         brokerContainerConfig.setBrokerConfigPaths(brokerConfigPath);
         if (brokerContainerConfig.getRocketmqHome() == null) {

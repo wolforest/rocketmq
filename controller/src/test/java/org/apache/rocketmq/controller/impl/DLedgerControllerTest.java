@@ -64,7 +64,7 @@ public class DLedgerControllerTest {
     private List<DLedgerController> controllers;
 
     public DLedgerController launchController(final String group, final String peers, final String selfId, final boolean isEnableElectUncleanMaster) {
-        String tmpdir = System.getProperty("java.io.tmpdir");
+        String tmpdir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test";
         final String path = (StringUtils.endsWith(tmpdir, File.separator) ? tmpdir : tmpdir + File.separator) + group + File.separator + selfId;
         baseDirs.add(path);
 

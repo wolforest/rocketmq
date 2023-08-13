@@ -52,7 +52,7 @@ public class MessageStoreTestBase extends StoreTestBase {
         storeConfig.setStorePathRootDir(base);
         storeConfig.setStorePathCommitLog(base + File.separator + "commitlog");
         storeConfig.setFlushDiskType(FlushDiskType.ASYNC_FLUSH);
-        storeConfig.setHaListenPort(nextPort());
+        //storeConfig.setHaListenPort(nextPort());
         storeConfig.setEnableDLegerCommitLog(true);
         storeConfig.setdLegerGroup(group);
         storeConfig.setdLegerPeers(peers);

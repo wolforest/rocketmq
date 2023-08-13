@@ -476,7 +476,7 @@ public class DefaultMessageStoreCleanFilesTest {
         messageStoreConfig.setDeleteWhen(deleteWhen);
         messageStoreConfig.setDiskMaxUsedSpaceRatio(diskMaxUsedSpaceRatio);
 
-        String storePathRootDir = System.getProperty("java.io.tmpdir") + File.separator
+        String storePathRootDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator
                 + "DefaultMessageStoreCleanFilesTest-" + UUID.randomUUID();
         String storePathCommitLog = storePathRootDir + File.separator + "commitlog";
         messageStoreConfig.setStorePathRootDir(storePathRootDir);

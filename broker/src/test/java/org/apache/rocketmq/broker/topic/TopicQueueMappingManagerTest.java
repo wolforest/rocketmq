@@ -52,7 +52,7 @@ public class TopicQueueMappingManagerTest {
         when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        messageStoreConfig.setStorePathRootDir(System.getProperty("java.io.tmpdir"));
+        messageStoreConfig.setStorePathRootDir(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test");
         messageStoreConfig.setDeleteWhen("01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23;00");
         when(brokerController.getMessageStoreConfig()).thenReturn(messageStoreConfig);
     }

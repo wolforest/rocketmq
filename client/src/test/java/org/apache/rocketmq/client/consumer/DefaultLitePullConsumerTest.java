@@ -102,7 +102,7 @@ public class DefaultLitePullConsumerTest {
 
     @BeforeClass
     public static void setEnv() {
-        System.setProperty("rocketmq.client.logRoot", System.getProperty("java.io.tmpdir"));
+        System.setProperty("rocketmq.client.logRoot", System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test");
     }
 
     @Before
