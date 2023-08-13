@@ -268,9 +268,9 @@ public class BrokerContainerTest {
         messageStoreConfig.setEnableDLegerCommitLog(true);
         messageStoreConfig.setdLegerSelfId("n0");
         messageStoreConfig.setdLegerGroup("group");
-        messageStoreConfig.setHaListenPort(generatePort(0, 1));
-        dLedgerBrokerConfig.setListenPort(generatePort(0,1));
-        messageStoreConfig.setdLegerPeers(String.format("n0-localhost:%d", generatePort(30900, 10000)));
+        messageStoreConfig.setHaListenPort(generatePort());
+        dLedgerBrokerConfig.setListenPort(generatePort());
+        messageStoreConfig.setdLegerPeers(String.format("n0-localhost:%d", generatePort()));
         InnerBrokerController dLedger = brokerContainer.addBroker(dLedgerBrokerConfig, messageStoreConfig);
         assertThat(dLedger).isNotNull();
         dLedger.start();
@@ -305,11 +305,11 @@ public class BrokerContainerTest {
         assertThat(master.isIsolated()).isFalse();
 
         BrokerConfig slaveBrokerConfig = new BrokerConfig();
-        slaveBrokerConfig.setListenPort(generatePort(masterBrokerConfig.getListenPort(), 10000));
+        slaveBrokerConfig.setListenPort(generatePort());
         slaveBrokerConfig.setBrokerId(1);
         MessageStoreConfig slaveMessageStoreConfig = new MessageStoreConfig();
         slaveMessageStoreConfig.setBrokerRole(BrokerRole.SLAVE);
-        slaveMessageStoreConfig.setHaListenPort(generatePort(messageStoreConfig.getHaListenPort(), 10000));
+        slaveMessageStoreConfig.setHaListenPort(generatePort());
         baseDir = createBaseDir("unnittest-slave").getAbsolutePath();
         slaveMessageStoreConfig.setStorePathRootDir(baseDir);
         slaveMessageStoreConfig.setStorePathCommitLog(baseDir + File.separator + "commitlog");
@@ -340,7 +340,7 @@ public class BrokerContainerTest {
         }
     }
 
-    public static int generatePort(int base, int range) {
+    public static int generatePort() {
         int result = NetworkPortUtils.nextPort();
         while (PORTS_IN_USE.contains(result) || PORTS_IN_USE.contains(result - 2)) {
             result = NetworkPortUtils.nextPort();
