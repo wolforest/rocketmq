@@ -73,44 +73,49 @@ public class ConcurrentReputMessageService extends ReputMessageService {
     }
 
     private boolean reputMappedFile(SelectMappedBufferResult result, boolean doNext) {
-        int batchDispatchRequestStart = -1;
-        int batchDispatchRequestSize = -1;
+        int start = -1;
+        int size = -1;
         try {
             this.reputFromOffset = result.getStartOffset();
+            ByteBuffer byteBuffer = result.getByteBuffer();
 
             for (int readSize = 0; readSize < result.getSize() && reputFromOffset < messageStore.getConfirmOffset() && doNext; ) {
-                ByteBuffer byteBuffer = result.getByteBuffer();
                 int totalSize = preCheckMessageAndReturnSize(byteBuffer);
-
-                if (totalSize > 0) {
-                    if (batchDispatchRequestStart == -1) {
-                        batchDispatchRequestStart = byteBuffer.position();
-                        batchDispatchRequestSize = 0;
-                    }
-                    batchDispatchRequestSize += totalSize;
-                    if (batchDispatchRequestSize > BATCH_SIZE) {
-                        this.createBatchDispatchRequest(byteBuffer, batchDispatchRequestStart, batchDispatchRequestSize);
-                        batchDispatchRequestStart = -1;
-                        batchDispatchRequestSize = -1;
-                    }
-                    byteBuffer.position(byteBuffer.position() + totalSize);
-                    this.reputFromOffset += totalSize;
-                    readSize += totalSize;
-                } else {
-                    doNext = false;
-                    if (totalSize == 0) {
-                        this.reputFromOffset = messageStore.getCommitLog().rollNextFile(this.reputFromOffset);
-                    }
-                    this.createBatchDispatchRequest(byteBuffer, batchDispatchRequestStart, batchDispatchRequestSize);
-                    batchDispatchRequestStart = -1;
-                    batchDispatchRequestSize = -1;
+                if (totalSize <= 0) {
+                    doNext = rollNextFile(byteBuffer, totalSize, start, size);
+                    start = -1;
+                    size = -1;
+                    continue;
                 }
+
+                if (start == -1) {
+                    start = byteBuffer.position();
+                    size = 0;
+                }
+                size += totalSize;
+                if (size > BATCH_SIZE) {
+                    this.createBatchDispatchRequest(byteBuffer, start, size);
+                    start = -1;
+                    size = -1;
+                }
+
+                byteBuffer.position(byteBuffer.position() + totalSize);
+                this.reputFromOffset += totalSize;
+                readSize += totalSize;
             }
         } finally {
-            releaseReputResult(result, batchDispatchRequestStart, batchDispatchRequestSize);
+            releaseReputResult(result, start, size);
         }
 
         return doNext;
+    }
+
+    private boolean rollNextFile(ByteBuffer byteBuffer, int totalSize, int start, int size) {
+        if (totalSize == 0) {
+            this.reputFromOffset = messageStore.getCommitLog().rollNextFile(this.reputFromOffset);
+        }
+        this.createBatchDispatchRequest(byteBuffer, start, size);
+        return false;
     }
 
     private void releaseReputResult(SelectMappedBufferResult result, int batchDispatchRequestStart, int batchDispatchRequestSize) {
