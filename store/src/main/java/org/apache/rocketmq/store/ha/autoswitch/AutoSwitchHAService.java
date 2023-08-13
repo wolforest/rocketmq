@@ -21,6 +21,7 @@ package org.apache.rocketmq.store.ha.autoswitch;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ConcurrentHashMapUtils;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.EpochEntry;
@@ -142,11 +143,7 @@ public class AutoSwitchHAService extends DefaultHAService {
 
         // Waiting consume queue dispatch
         while (defaultMessageStore.dispatchBehindBytes() > 0) {
-            try {
-                Thread.sleep(100);
-            } catch (Exception ignored) {
-
-            }
+            ThreadUtils.sleep(100);
         }
 
         if (defaultMessageStore.isTransientStorePoolEnable()) {
