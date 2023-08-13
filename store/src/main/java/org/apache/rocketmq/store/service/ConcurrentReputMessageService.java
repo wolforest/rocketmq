@@ -63,61 +63,68 @@ public class ConcurrentReputMessageService extends ReputMessageService {
             this.reputFromOffset = messageStore.getCommitLog().getMinOffset();
         }
         for (boolean doNext = true; this.isCommitLogAvailable() && doNext; ) {
-
             SelectMappedBufferResult result = messageStore.getCommitLog().getData(reputFromOffset);
-
             if (result == null) {
                 break;
             }
 
-            int batchDispatchRequestStart = -1;
-            int batchDispatchRequestSize = -1;
-            try {
-                this.reputFromOffset = result.getStartOffset();
+            doNext = reputMappedFile(result, doNext);
+        }
+    }
 
-                for (int readSize = 0; readSize < result.getSize() && reputFromOffset < messageStore.getConfirmOffset() && doNext; ) {
-                    ByteBuffer byteBuffer = result.getByteBuffer();
+    private boolean reputMappedFile(SelectMappedBufferResult result, boolean doNext) {
+        int batchDispatchRequestStart = -1;
+        int batchDispatchRequestSize = -1;
+        try {
+            this.reputFromOffset = result.getStartOffset();
 
-                    int totalSize = preCheckMessageAndReturnSize(byteBuffer);
+            for (int readSize = 0; readSize < result.getSize() && reputFromOffset < messageStore.getConfirmOffset() && doNext; ) {
+                ByteBuffer byteBuffer = result.getByteBuffer();
+                int totalSize = preCheckMessageAndReturnSize(byteBuffer);
 
-                    if (totalSize > 0) {
-                        if (batchDispatchRequestStart == -1) {
-                            batchDispatchRequestStart = byteBuffer.position();
-                            batchDispatchRequestSize = 0;
-                        }
-                        batchDispatchRequestSize += totalSize;
-                        if (batchDispatchRequestSize > BATCH_SIZE) {
-                            this.createBatchDispatchRequest(byteBuffer, batchDispatchRequestStart, batchDispatchRequestSize);
-                            batchDispatchRequestStart = -1;
-                            batchDispatchRequestSize = -1;
-                        }
-                        byteBuffer.position(byteBuffer.position() + totalSize);
-                        this.reputFromOffset += totalSize;
-                        readSize += totalSize;
-                    } else {
-                        doNext = false;
-                        if (totalSize == 0) {
-                            this.reputFromOffset = messageStore.getCommitLog().rollNextFile(this.reputFromOffset);
-                        }
+                if (totalSize > 0) {
+                    if (batchDispatchRequestStart == -1) {
+                        batchDispatchRequestStart = byteBuffer.position();
+                        batchDispatchRequestSize = 0;
+                    }
+                    batchDispatchRequestSize += totalSize;
+                    if (batchDispatchRequestSize > BATCH_SIZE) {
                         this.createBatchDispatchRequest(byteBuffer, batchDispatchRequestStart, batchDispatchRequestSize);
                         batchDispatchRequestStart = -1;
                         batchDispatchRequestSize = -1;
                     }
-                }
-            } finally {
-                this.createBatchDispatchRequest(result.getByteBuffer(), batchDispatchRequestStart, batchDispatchRequestSize);
-                boolean over = messageStore.getMappedPageHoldCount().get() == 0;
-                while (!over) {
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(1);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    byteBuffer.position(byteBuffer.position() + totalSize);
+                    this.reputFromOffset += totalSize;
+                    readSize += totalSize;
+                } else {
+                    doNext = false;
+                    if (totalSize == 0) {
+                        this.reputFromOffset = messageStore.getCommitLog().rollNextFile(this.reputFromOffset);
                     }
-                    over = messageStore.getMappedPageHoldCount().get() == 0;
+                    this.createBatchDispatchRequest(byteBuffer, batchDispatchRequestStart, batchDispatchRequestSize);
+                    batchDispatchRequestStart = -1;
+                    batchDispatchRequestSize = -1;
                 }
-                result.release();
             }
+        } finally {
+            releaseReputResult(result, batchDispatchRequestStart, batchDispatchRequestSize);
         }
+
+        return doNext;
+    }
+
+    private void releaseReputResult(SelectMappedBufferResult result, int batchDispatchRequestStart, int batchDispatchRequestSize) {
+        this.createBatchDispatchRequest(result.getByteBuffer(), batchDispatchRequestStart, batchDispatchRequestSize);
+        boolean over = messageStore.getMappedPageHoldCount().get() == 0;
+        while (!over) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(1);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            over = messageStore.getMappedPageHoldCount().get() == 0;
+        }
+        result.release();
     }
 
     /**
