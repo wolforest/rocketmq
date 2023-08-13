@@ -149,12 +149,14 @@ public class CleanCommitLogService {
     private void reDeleteHangedFile() {
         int interval = messageStore.getMessageStoreConfig().getRedeleteHangedFileInterval();
         long currentTimestamp = System.currentTimeMillis();
-        if ((currentTimestamp - this.lastRedeleteTimestamp) > interval) {
-            this.lastRedeleteTimestamp = currentTimestamp;
-            int destroyMappedFileIntervalForcibly =
-                messageStore.getMessageStoreConfig().getDestroyMapedFileIntervalForcibly();
-            if (messageStore.getCommitLog().retryDeleteFirstFile(destroyMappedFileIntervalForcibly)) {
-            }
+        if ((currentTimestamp - this.lastRedeleteTimestamp) <= interval) {
+            return;
+        }
+
+        this.lastRedeleteTimestamp = currentTimestamp;
+        int destroyMappedFileIntervalForcibly =
+            messageStore.getMessageStoreConfig().getDestroyMapedFileIntervalForcibly();
+        if (messageStore.getCommitLog().retryDeleteFirstFile(destroyMappedFileIntervalForcibly)) {
         }
     }
 
