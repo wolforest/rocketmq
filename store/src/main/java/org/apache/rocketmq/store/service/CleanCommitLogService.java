@@ -104,37 +104,37 @@ public class CleanCommitLogService {
         boolean isUsageExceedsThreshold = this.isSpaceToDelete();
         boolean isManualDelete = this.manualDeleteFileSeveralTimes > 0;
 
-        if (isTimeUp || isUsageExceedsThreshold || isManualDelete) {
+        if (isTimeUp && isUsageExceedsThreshold && isManualDelete) {
+            return;
+        }
 
-            if (isManualDelete) {
-                this.manualDeleteFileSeveralTimes--;
-            }
+        if (isManualDelete) {
+            this.manualDeleteFileSeveralTimes--;
+        }
 
-            boolean cleanAtOnce = messageStore.getMessageStoreConfig().isCleanFileForciblyEnable() && this.cleanImmediately;
+        boolean cleanAtOnce = messageStore.getMessageStoreConfig().isCleanFileForciblyEnable() && this.cleanImmediately;
 
-            LOGGER.info("begin to delete before {} hours file. isTimeUp: {} isUsageExceedsThreshold: {} manualDeleteFileSeveralTimes: {} cleanAtOnce: {} deleteFileBatchMax: {}",
-                fileReservedTime,
-                isTimeUp,
-                isUsageExceedsThreshold,
-                manualDeleteFileSeveralTimes,
-                cleanAtOnce,
-                deleteFileBatchMax);
+        LOGGER.info("begin to delete before {} hours file. isTimeUp: {} isUsageExceedsThreshold: {} manualDeleteFileSeveralTimes: {} cleanAtOnce: {} deleteFileBatchMax: {}",
+            fileReservedTime,
+            isTimeUp,
+            isUsageExceedsThreshold,
+            manualDeleteFileSeveralTimes,
+            cleanAtOnce,
+            deleteFileBatchMax);
 
-            fileReservedTime *= 60 * 60 * 1000;
-
-            deleteCount = messageStore.getCommitLog().deleteExpiredFile(fileReservedTime, deletePhysicFilesInterval,
-                destroyMappedFileIntervalForcibly, cleanAtOnce, deleteFileBatchMax);
-            if (deleteCount > 0) {
-                // If in the controller mode, we should notify the AutoSwitchHaService to truncateEpochFile
-                if (messageStore.getBrokerConfig().isEnableControllerMode()) {
-                    if (messageStore.getHaService() instanceof AutoSwitchHAService) {
-                        final long minPhyOffset = messageStore.getMinPhyOffset();
-                        ((AutoSwitchHAService) messageStore.getHaService()).truncateEpochFilePrefix(minPhyOffset - 1);
-                    }
+        fileReservedTime *= 60 * 60 * 1000;
+        deleteCount = messageStore.getCommitLog().deleteExpiredFile(fileReservedTime, deletePhysicFilesInterval,
+            destroyMappedFileIntervalForcibly, cleanAtOnce, deleteFileBatchMax);
+        if (deleteCount > 0) {
+            // If in the controller mode, we should notify the AutoSwitchHaService to truncateEpochFile
+            if (messageStore.getBrokerConfig().isEnableControllerMode()) {
+                if (messageStore.getHaService() instanceof AutoSwitchHAService) {
+                    final long minPhyOffset = messageStore.getMinPhyOffset();
+                    ((AutoSwitchHAService) messageStore.getHaService()).truncateEpochFilePrefix(minPhyOffset - 1);
                 }
-            } else if (isUsageExceedsThreshold) {
-                LOGGER.warn("disk space will be full soon, but delete file failed.");
             }
+        } else if (isUsageExceedsThreshold) {
+            LOGGER.warn("disk space will be full soon, but delete file failed.");
         }
     }
 
