@@ -42,29 +42,38 @@ public  class CleanConsumeQueueService {
         }
     }
 
-    private void deleteExpiredFiles() {
+    private void deleteExpiredFilesByQueueTable(long minOffset) {
+        ConcurrentMap<String, ConcurrentMap<Integer, ConsumeQueueInterface>> tables = messageStore.getConsumeQueueTable();
+
+        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : tables.values()) {
+            deleteExpiredFilesByQueue(maps, minOffset);
+        }
+    }
+
+    private void deleteExpiredFilesByQueue(ConcurrentMap<Integer, ConsumeQueueInterface> maps, long minOffset) {
         int deleteLogicsFilesInterval = messageStore.getMessageStoreConfig().getDeleteConsumeQueueFilesInterval();
-
-        long minOffset = messageStore.getCommitLog().getMinOffset();
-        if (minOffset > this.lastPhysicalMinOffset) {
-            this.lastPhysicalMinOffset = minOffset;
-
-            ConcurrentMap<String, ConcurrentMap<Integer, ConsumeQueueInterface>> tables = messageStore.getConsumeQueueTable();
-
-            for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : tables.values()) {
-                for (ConsumeQueueInterface logic : maps.values()) {
-                    int deleteCount = messageStore.getConsumeQueueStore().deleteExpiredFile(logic, minOffset);
-                    if (deleteCount > 0 && deleteLogicsFilesInterval > 0) {
-                        try {
-                            Thread.sleep(deleteLogicsFilesInterval);
-                        } catch (InterruptedException ignored) {
-                        }
-                    }
-                }
+        for (ConsumeQueueInterface logic : maps.values()) {
+            int deleteCount = messageStore.getConsumeQueueStore().deleteExpiredFile(logic, minOffset);
+            if (deleteCount <= 0 || deleteLogicsFilesInterval <= 0) {
+                continue;
             }
 
-            messageStore.getIndexService().deleteExpiredFile(minOffset);
+            try {
+                Thread.sleep(deleteLogicsFilesInterval);
+            } catch (InterruptedException ignored) {
+            }
         }
+    }
+
+    private void deleteExpiredFiles() {
+        long minOffset = messageStore.getCommitLog().getMinOffset();
+        if (minOffset <= this.lastPhysicalMinOffset) {
+            return;
+        }
+
+        this.lastPhysicalMinOffset = minOffset;
+        deleteExpiredFilesByQueueTable(minOffset);
+        messageStore.getIndexService().deleteExpiredFile(minOffset);
     }
 
     public String getServiceName() {
