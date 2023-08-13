@@ -20,6 +20,7 @@ package org.apache.rocketmq.store;
 import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -42,6 +43,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageBatch;
@@ -56,6 +59,7 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.queue.CqUnit;
+import org.apache.rocketmq.store.service.ConsumeQueueService;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.assertj.core.util.Strings;
 import org.junit.After;
@@ -428,10 +432,13 @@ public class DefaultMessageStoreTest {
 
     private long getStoreTime(CqUnit cqUnit) {
         try {
-            Method getStoreTime = getDefaultMessageStore().getClass().getDeclaredMethod("getStoreTime", CqUnit.class);
+            Field field = getDefaultMessageStore().getClass().getDeclaredField("consumeQueueService");
+            field.setAccessible(true);
+            ConsumeQueueService consumeQueueService =(ConsumeQueueService) field.get(getDefaultMessageStore());
+            Method getStoreTime = consumeQueueService.getClass().getDeclaredMethod("getStoreTime", CqUnit.class);
             getStoreTime.setAccessible(true);
-            return (long) getStoreTime.invoke(getDefaultMessageStore(), cqUnit);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            return (long) getStoreTime.invoke(consumeQueueService, cqUnit);
+        } catch (NoSuchMethodException | IllegalAccessException | NoSuchFieldException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }
