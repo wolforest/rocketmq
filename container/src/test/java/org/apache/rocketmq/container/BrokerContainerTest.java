@@ -267,6 +267,7 @@ public class BrokerContainerTest {
         messageStoreConfig.setEnableDLegerCommitLog(true);
         messageStoreConfig.setdLegerSelfId("n0");
         messageStoreConfig.setdLegerGroup("group");
+        messageStoreConfig.setHaListenPort(generatePort(0,1));
         messageStoreConfig.setdLegerPeers(String.format("n0-localhost:%d", generatePort(30900, 10000)));
         InnerBrokerController dLedger = brokerContainer.addBroker(dLedgerBrokerConfig, messageStoreConfig);
         assertThat(dLedger).isNotNull();
@@ -290,9 +291,11 @@ public class BrokerContainerTest {
         brokerContainer.start();
 
         BrokerConfig masterBrokerConfig = new BrokerConfig();
+        masterBrokerConfig.setListenPort(generatePort(0,0));
         String baseDir = createBaseDir("unnittest-master").getAbsolutePath();
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setStorePathRootDir(baseDir);
+        messageStoreConfig.setHaListenPort(generatePort(0,0));
         messageStoreConfig.setStorePathCommitLog(baseDir + File.separator + "commitlog");
         InnerBrokerController master = brokerContainer.addBroker(masterBrokerConfig, messageStoreConfig);
         assertThat(master).isNotNull();
@@ -300,14 +303,15 @@ public class BrokerContainerTest {
         assertThat(master.isIsolated()).isFalse();
 
         BrokerConfig slaveBrokerConfig = new BrokerConfig();
-        slaveBrokerConfig.setListenPort(generatePort(masterBrokerConfig.getListenPort(), 10000));
+        slaveBrokerConfig.setListenPort(generatePort(0,0));
         slaveBrokerConfig.setBrokerId(1);
         MessageStoreConfig slaveMessageStoreConfig = new MessageStoreConfig();
         slaveMessageStoreConfig.setBrokerRole(BrokerRole.SLAVE);
-        slaveMessageStoreConfig.setHaListenPort(generatePort(messageStoreConfig.getHaListenPort(), 10000));
+        slaveMessageStoreConfig.setHaListenPort(generatePort(0,0));
         baseDir = createBaseDir("unnittest-slave").getAbsolutePath();
         slaveMessageStoreConfig.setStorePathRootDir(baseDir);
         slaveMessageStoreConfig.setStorePathCommitLog(baseDir + File.separator + "commitlog");
+        slaveMessageStoreConfig.setHaListenPort(generatePort(0,0));
         InnerBrokerController slave = brokerContainer.addBroker(slaveBrokerConfig, slaveMessageStoreConfig);
         assertThat(slave).isNotNull();
         slave.start();
