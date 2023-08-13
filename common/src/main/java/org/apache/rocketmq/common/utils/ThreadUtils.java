@@ -72,15 +72,27 @@ public final class ThreadUtils {
     }
 
     public static void sleep(long millis) {
-        sleep(millis, false);
+        sleep(millis, false, null);
     }
 
     public static void sleep(long millis, boolean logException) {
+        sleep(millis, logException, null);
+    }
+
+    public static void sleep(long millis, String msg) {
+        sleep(millis, false, msg);
+    }
+
+    public static void sleep(long millis, boolean logException, String msg) {
+        if (null == msg) {
+            msg = "Interrupted"
+        }
+
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
             if (logException) {
-                LOGGER.error("Interrupted", e);
+                LOGGER.error(msg, e);
             }
         }
     }
