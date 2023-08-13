@@ -71,6 +71,13 @@ public final class ThreadUtils {
         return new ThreadFactoryImpl(String.format("%s_%d_", processName, threads), isDaemon);
     }
 
+    public static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ignored) {
+        }
+    }
+
     /**
      * Create a new thread
      *

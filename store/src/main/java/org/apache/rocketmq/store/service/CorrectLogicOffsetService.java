@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -138,10 +139,7 @@ public class CorrectLogicOffsetService {
         messageStore.getConsumeQueueStore().deleteExpiredFile(logic, minPhyOffset);
         int sleepIntervalWhenCorrectMinOffset = messageStore.getMessageStoreConfig().getCorrectLogicMinOffsetSleepInterval();
         if (sleepIntervalWhenCorrectMinOffset > 0) {
-            try {
-                Thread.sleep(sleepIntervalWhenCorrectMinOffset);
-            } catch (InterruptedException ignored) {
-            }
+            ThreadUtils.sleep(sleepIntervalWhenCorrectMinOffset);
         }
     }
 
