@@ -298,23 +298,13 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         return false;
     }
 
-    private RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend, boolean brokerAllowFlowCtrSuspend)
-        throws RemotingCommandException {
-        RemotingCommand response = RemotingCommand.createResponseCommand(PullMessageResponseHeader.class);
-        final PullMessageResponseHeader responseHeader = (PullMessageResponseHeader) response.readCustomHeader();
-        final PullMessageRequestHeader requestHeader =
-            (PullMessageRequestHeader) request.decodeCommandCustomHeader(PullMessageRequestHeader.class);
-
-        response.setOpaque(request.getOpaque());
-
-        LOGGER.debug("receive PullMessage request command, {}", request);
-
+    private boolean allowAccess(RemotingCommand response, PullMessageResponseHeader responseHeader, Channel channel, RemotingCommand request, PullMessageRequestHeader requestHeader) {
         if (!PermName.isReadable(this.brokerController.getBrokerConfig().getBrokerPermission())) {
             response.setCode(ResponseCode.NO_PERMISSION);
             responseHeader.setForbiddenType(ForbiddenType.BROKER_FORBIDDEN);
             response.setRemark(String.format("the broker[%s] pulling message is forbidden",
                 this.brokerController.getBrokerConfig().getBrokerIP1()));
-            return response;
+            return false;
         }
 
         if (request.getCode() == RequestCode.LITE_PULL_MESSAGE && !this.brokerController.getBrokerConfig().isLitePullMessageEnable()) {
@@ -322,22 +312,21 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             responseHeader.setForbiddenType(ForbiddenType.BROKER_FORBIDDEN);
             response.setRemark(
                 "the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1() + "] for lite pull consumer is forbidden");
-            return response;
+            return false;
         }
 
-        SubscriptionGroupConfig subscriptionGroupConfig =
-            this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
+        SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
         if (null == subscriptionGroupConfig) {
             response.setCode(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST);
             response.setRemark(String.format("subscription group [%s] does not exist, %s", requestHeader.getConsumerGroup(), FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST)));
-            return response;
+            return false;
         }
 
         if (!subscriptionGroupConfig.isConsumeEnable()) {
             response.setCode(ResponseCode.NO_PERMISSION);
             responseHeader.setForbiddenType(ForbiddenType.GROUP_FORBIDDEN);
             response.setRemark("subscription group no permission, " + requestHeader.getConsumerGroup());
-            return response;
+            return false;
         }
 
         TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
@@ -345,23 +334,14 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             LOGGER.error("the topic {} not exist, consumer: {}", requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(channel));
             response.setCode(ResponseCode.TOPIC_NOT_EXIST);
             response.setRemark(String.format("topic[%s] not exist, apply first please! %s", requestHeader.getTopic(), FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)));
-            return response;
+            return false;
         }
 
         if (!PermName.isReadable(topicConfig.getPerm())) {
             response.setCode(ResponseCode.NO_PERMISSION);
             responseHeader.setForbiddenType(ForbiddenType.TOPIC_FORBIDDEN);
             response.setRemark("the topic[" + requestHeader.getTopic() + "] pulling message is forbidden");
-            return response;
-        }
-
-        TopicQueueMappingContext mappingContext = this.brokerController.getTopicQueueMappingManager().buildTopicQueueMappingContext(requestHeader, false);
-
-        {
-            RemotingCommand rewriteResult = rewriteRequestForStaticTopic(requestHeader, mappingContext);
-            if (rewriteResult != null) {
-                return rewriteResult;
-            }
+            return false;
         }
 
         if (requestHeader.getQueueId() < 0 || requestHeader.getQueueId() >= topicConfig.getReadQueueNums()) {
@@ -370,10 +350,13 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             LOGGER.warn(errorInfo);
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(errorInfo);
-            return response;
+            return false;
         }
 
-        ConsumerManager consumerManager = brokerController.getConsumerManager();
+        return true;
+    }
+
+    private void compensateBasicConsumerInfo(ConsumerManager consumerManager, PullMessageRequestHeader requestHeader) {
         switch (RequestSource.parseInteger(requestHeader.getRequestSource())) {
             case PROXY_FOR_BROADCAST:
                 consumerManager.compensateBasicConsumerInfo(requestHeader.getConsumerGroup(), ConsumeType.CONSUME_PASSIVELY, MessageModel.BROADCASTING);
@@ -385,98 +368,100 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                 consumerManager.compensateBasicConsumerInfo(requestHeader.getConsumerGroup(), ConsumeType.CONSUME_PASSIVELY, MessageModel.CLUSTERING);
                 break;
         }
+    }
 
-        SubscriptionData subscriptionData = null;
-        ConsumerFilterData consumerFilterData = null;
-        final boolean hasSubscriptionFlag = PullSysFlag.hasSubscriptionFlag(requestHeader.getSysFlag());
-        if (hasSubscriptionFlag) {
-            try {
-                subscriptionData = FilterAPI.build(
-                    requestHeader.getTopic(), requestHeader.getSubscription(), requestHeader.getExpressionType()
-                );
-                consumerManager.compensateSubscribeData(requestHeader.getConsumerGroup(), requestHeader.getTopic(), subscriptionData);
+    private RemotingCommand buildResponse(RemotingCommand response, int code, String remark) {
+        response.setCode(code);
+        response.setRemark(remark);
 
-                if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
-                    consumerFilterData = ConsumerFilterManager.build(
-                        requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getSubscription(),
-                        requestHeader.getExpressionType(), requestHeader.getSubVersion()
-                    );
-                    assert consumerFilterData != null;
-                }
-            } catch (Exception e) {
-                LOGGER.warn("Parse the consumer's subscription[{}] failed, group: {}", requestHeader.getSubscription(),
-                    requestHeader.getConsumerGroup());
-                response.setCode(ResponseCode.SUBSCRIPTION_PARSE_FAILED);
-                response.setRemark("parse the consumer's subscription failed");
-                return response;
-            }
-        } else {
-            ConsumerGroupInfo consumerGroupInfo =
-                this.brokerController.getConsumerManager().getConsumerGroupInfo(requestHeader.getConsumerGroup());
-            if (null == consumerGroupInfo) {
-                LOGGER.warn("the consumer's group info not exist, group: {}", requestHeader.getConsumerGroup());
-                response.setCode(ResponseCode.SUBSCRIPTION_NOT_EXIST);
-                response.setRemark("the consumer's group info not exist" + FAQUrl.suggestTodo(FAQUrl.SAME_GROUP_DIFFERENT_TOPIC));
-                return response;
-            }
+        return response;
+    }
 
-            if (!subscriptionGroupConfig.isConsumeBroadcastEnable()
-                && consumerGroupInfo.getMessageModel() == MessageModel.BROADCASTING) {
-                response.setCode(ResponseCode.NO_PERMISSION);
-                responseHeader.setForbiddenType(ForbiddenType.BROADCASTING_DISABLE_FORBIDDEN);
-                response.setRemark("the consumer group[" + requestHeader.getConsumerGroup() + "] can not consume by broadcast way");
-                return response;
-            }
+    private boolean processWithSubscriptionFlag(SubscriptionData subscriptionData, ConsumerFilterData consumerFilterData, ConsumerManager consumerManager, PullMessageRequestHeader requestHeader, RemotingCommand response) {
+        try {
+            subscriptionData = FilterAPI.build(
+                requestHeader.getTopic(), requestHeader.getSubscription(), requestHeader.getExpressionType()
+            );
+            consumerManager.compensateSubscribeData(requestHeader.getConsumerGroup(), requestHeader.getTopic(), subscriptionData);
 
-            boolean readForbidden = this.brokerController.getSubscriptionGroupManager().getForbidden(//
-                subscriptionGroupConfig.getGroupName(), requestHeader.getTopic(), PermName.INDEX_PERM_READ);
-            if (readForbidden) {
-                response.setCode(ResponseCode.NO_PERMISSION);
-                responseHeader.setForbiddenType(ForbiddenType.SUBSCRIPTION_FORBIDDEN);
-                response.setRemark("the consumer group[" + requestHeader.getConsumerGroup() + "] is forbidden for topic[" + requestHeader.getTopic() + "]");
-                return response;
-            }
-
-            subscriptionData = consumerGroupInfo.findSubscriptionData(requestHeader.getTopic());
-            if (null == subscriptionData) {
-                LOGGER.warn("the consumer's subscription not exist, group: {}, topic:{}", requestHeader.getConsumerGroup(), requestHeader.getTopic());
-                response.setCode(ResponseCode.SUBSCRIPTION_NOT_EXIST);
-                response.setRemark("the consumer's subscription not exist" + FAQUrl.suggestTodo(FAQUrl.SAME_GROUP_DIFFERENT_TOPIC));
-                return response;
-            }
-
-            if (subscriptionData.getSubVersion() < requestHeader.getSubVersion()) {
-                LOGGER.warn("The broker's subscription is not latest, group: {} {}", requestHeader.getConsumerGroup(),
-                    subscriptionData.getSubString());
-                response.setCode(ResponseCode.SUBSCRIPTION_NOT_LATEST);
-                response.setRemark("the consumer's subscription not latest");
-                return response;
-            }
             if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
-                consumerFilterData = this.brokerController.getConsumerFilterManager().get(requestHeader.getTopic(),
-                    requestHeader.getConsumerGroup());
-                if (consumerFilterData == null) {
-                    response.setCode(ResponseCode.FILTER_DATA_NOT_EXIST);
-                    response.setRemark("The broker's consumer filter data is not exist!Your expression may be wrong!");
-                    return response;
-                }
-                if (consumerFilterData.getClientVersion() < requestHeader.getSubVersion()) {
-                    LOGGER.warn("The broker's consumer filter data is not latest, group: {}, topic: {}, serverV: {}, clientV: {}",
-                        requestHeader.getConsumerGroup(), requestHeader.getTopic(), consumerFilterData.getClientVersion(), requestHeader.getSubVersion());
-                    response.setCode(ResponseCode.FILTER_DATA_NOT_LATEST);
-                    response.setRemark("the consumer's consumer filter data not latest");
-                    return response;
-                }
+                consumerFilterData = ConsumerFilterManager.build(
+                    requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getSubscription(),
+                    requestHeader.getExpressionType(), requestHeader.getSubVersion()
+                );
+                assert consumerFilterData != null;
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Parse the consumer's subscription[{}] failed, group: {}", requestHeader.getSubscription(), requestHeader.getConsumerGroup());
+            buildResponse(response, ResponseCode.SUBSCRIPTION_PARSE_FAILED, "parse the consumer's subscription failed");
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean processWithoutSubscriptionFlag(SubscriptionGroupConfig subscriptionGroupConfig, SubscriptionData subscriptionData, ConsumerFilterData consumerFilterData, PullMessageRequestHeader requestHeader, PullMessageResponseHeader responseHeader, RemotingCommand response) {
+        ConsumerGroupInfo consumerGroupInfo =
+            this.brokerController.getConsumerManager().getConsumerGroupInfo(requestHeader.getConsumerGroup());
+        if (null == consumerGroupInfo) {
+            LOGGER.warn("the consumer's group info not exist, group: {}", requestHeader.getConsumerGroup());
+            buildResponse(response, ResponseCode.SUBSCRIPTION_NOT_EXIST, "the consumer's group info not exist" + FAQUrl.suggestTodo(FAQUrl.SAME_GROUP_DIFFERENT_TOPIC));
+            return false;
+        }
+
+        if (!subscriptionGroupConfig.isConsumeBroadcastEnable()
+            && consumerGroupInfo.getMessageModel() == MessageModel.BROADCASTING) {
+            responseHeader.setForbiddenType(ForbiddenType.BROADCASTING_DISABLE_FORBIDDEN);
+            buildResponse(response, ResponseCode.NO_PERMISSION, "the consumer group[" + requestHeader.getConsumerGroup() + "] can not consume by broadcast way");
+            return false;
+        }
+
+        boolean readForbidden = this.brokerController.getSubscriptionGroupManager().getForbidden(//
+            subscriptionGroupConfig.getGroupName(), requestHeader.getTopic(), PermName.INDEX_PERM_READ);
+        if (readForbidden) {
+            response.setCode(ResponseCode.NO_PERMISSION);
+            responseHeader.setForbiddenType(ForbiddenType.SUBSCRIPTION_FORBIDDEN);
+            response.setRemark("the consumer group[" + requestHeader.getConsumerGroup() + "] is forbidden for topic[" + requestHeader.getTopic() + "]");
+            return false;
+        }
+
+        subscriptionData = consumerGroupInfo.findSubscriptionData(requestHeader.getTopic());
+        if (null == subscriptionData) {
+            LOGGER.warn("the consumer's subscription not exist, group: {}, topic:{}", requestHeader.getConsumerGroup(), requestHeader.getTopic());
+            response.setCode(ResponseCode.SUBSCRIPTION_NOT_EXIST);
+            response.setRemark("the consumer's subscription not exist" + FAQUrl.suggestTodo(FAQUrl.SAME_GROUP_DIFFERENT_TOPIC));
+            return false;
+        }
+
+        if (subscriptionData.getSubVersion() < requestHeader.getSubVersion()) {
+            LOGGER.warn("The broker's subscription is not latest, group: {} {}", requestHeader.getConsumerGroup(),
+                subscriptionData.getSubString());
+            response.setCode(ResponseCode.SUBSCRIPTION_NOT_LATEST);
+            response.setRemark("the consumer's subscription not latest");
+            return false;
+        }
+
+        if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
+            consumerFilterData = this.brokerController.getConsumerFilterManager().get(requestHeader.getTopic(),
+                requestHeader.getConsumerGroup());
+            if (consumerFilterData == null) {
+                response.setCode(ResponseCode.FILTER_DATA_NOT_EXIST);
+                response.setRemark("The broker's consumer filter data is not exist!Your expression may be wrong!");
+                return false;
+            }
+            if (consumerFilterData.getClientVersion() < requestHeader.getSubVersion()) {
+                LOGGER.warn("The broker's consumer filter data is not latest, group: {}, topic: {}, serverV: {}, clientV: {}",
+                    requestHeader.getConsumerGroup(), requestHeader.getTopic(), consumerFilterData.getClientVersion(), requestHeader.getSubVersion());
+                response.setCode(ResponseCode.FILTER_DATA_NOT_LATEST);
+                response.setRemark("the consumer's consumer filter data not latest");
+                return false;
             }
         }
 
-        if (!ExpressionType.isTagType(subscriptionData.getExpressionType())
-            && !this.brokerController.getBrokerConfig().isEnablePropertyFilter()) {
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark("The broker does not support consumer to filter message by " + subscriptionData.getExpressionType());
-            return response;
-        }
+        return true;
+    }
 
+    private MessageFilter initMessageFilter(SubscriptionData subscriptionData, ConsumerFilterData consumerFilterData) {
         MessageFilter messageFilter;
         if (this.brokerController.getBrokerConfig().isFilterSupportRetry()) {
             messageFilter = new ExpressionForRetryMessageFilter(subscriptionData, consumerFilterData,
@@ -486,31 +471,93 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                 this.brokerController.getConsumerFilterManager());
         }
 
-        final MessageStore messageStore = brokerController.getMessageStore();
-        if (this.brokerController.getMessageStore() instanceof DefaultMessageStore) {
-            DefaultMessageStore defaultMessageStore = (DefaultMessageStore)this.brokerController.getMessageStore();
-            boolean cgNeedColdDataFlowCtr = brokerController.getColdDataCgCtrService().isCgNeedColdDataFlowCtr(requestHeader.getConsumerGroup());
-            if (cgNeedColdDataFlowCtr) {
-                boolean isMsgLogicCold = defaultMessageStore.getCommitLog()
-                    .getColdDataCheckService().isMsgInColdArea(requestHeader.getConsumerGroup(),
-                        requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getQueueOffset());
-                if (isMsgLogicCold) {
-                    ConsumeType consumeType = this.brokerController.getConsumerManager().getConsumerGroupInfo(requestHeader.getConsumerGroup()).getConsumeType();
-                    if (consumeType == ConsumeType.CONSUME_PASSIVELY) {
-                        response.setCode(ResponseCode.SYSTEM_BUSY);
-                        response.setRemark("This consumer group is reading cold data. It has been flow control");
-                        return response;
-                    } else if (consumeType == ConsumeType.CONSUME_ACTIVELY) {
-                        if (brokerAllowFlowCtrSuspend) {  // second arrived, which will not be held
-                            PullRequest pullRequest = new PullRequest(request, channel, 1000,
-                                this.brokerController.getMessageStore().now(), requestHeader.getQueueOffset(), subscriptionData, messageFilter);
-                            this.brokerController.getColdDataPullRequestHoldService().suspendColdDataReadRequest(pullRequest);
-                            return null;
-                        }
-                        requestHeader.setMaxMsgNums(1);
-                    }
-                }
+        return messageFilter;
+    }
+
+    private boolean checkStoreRules(RemotingCommand request, PullMessageRequestHeader requestHeader, Channel channel, RemotingCommand response, boolean brokerAllowFlowCtrSuspend, SubscriptionData subscriptionData, MessageFilter messageFilter) {
+        if (!(this.brokerController.getMessageStore() instanceof DefaultMessageStore)) {
+            return true;
+        }
+
+        DefaultMessageStore defaultMessageStore = (DefaultMessageStore)this.brokerController.getMessageStore();
+        boolean cgNeedColdDataFlowCtr = brokerController.getColdDataCgCtrService().isCgNeedColdDataFlowCtr(requestHeader.getConsumerGroup());
+        if (!cgNeedColdDataFlowCtr) {
+            return true;
+        }
+
+        boolean isMsgLogicCold = defaultMessageStore.getCommitLog()
+            .getColdDataCheckService().isMsgInColdArea(requestHeader.getConsumerGroup(),
+                requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getQueueOffset());
+        if (!isMsgLogicCold) {
+            return true;
+        }
+
+        ConsumeType consumeType = this.brokerController.getConsumerManager().getConsumerGroupInfo(requestHeader.getConsumerGroup()).getConsumeType();
+        if (consumeType == ConsumeType.CONSUME_PASSIVELY) {
+            response.setCode(ResponseCode.SYSTEM_BUSY);
+            response.setRemark("This consumer group is reading cold data. It has been flow control");
+            return false;
+        } else if (consumeType == ConsumeType.CONSUME_ACTIVELY) {
+            if (brokerAllowFlowCtrSuspend) {  // second arrived, which will not be held
+                PullRequest pullRequest = new PullRequest(request, channel, 1000,
+                    this.brokerController.getMessageStore().now(), requestHeader.getQueueOffset(), subscriptionData, messageFilter);
+                this.brokerController.getColdDataPullRequestHoldService().suspendColdDataReadRequest(pullRequest);
+
+                response = null;
+                return false;
             }
+            requestHeader.setMaxMsgNums(1);
+        }
+
+        return true;
+    }
+
+    private RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend, boolean brokerAllowFlowCtrSuspend) throws RemotingCommandException {
+        RemotingCommand response = RemotingCommand.createResponseCommand(PullMessageResponseHeader.class);
+        final PullMessageResponseHeader responseHeader = (PullMessageResponseHeader) response.readCustomHeader();
+        final PullMessageRequestHeader requestHeader = (PullMessageRequestHeader) request.decodeCommandCustomHeader(PullMessageRequestHeader.class);
+        response.setOpaque(request.getOpaque());
+        LOGGER.debug("receive PullMessage request command, {}", request);
+
+        if (!allowAccess(response, responseHeader, channel, request, requestHeader)) {
+            return response;
+        }
+
+        SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
+        TopicQueueMappingContext mappingContext = this.brokerController.getTopicQueueMappingManager().buildTopicQueueMappingContext(requestHeader, false);
+        ConsumerManager consumerManager = brokerController.getConsumerManager();
+
+        RemotingCommand rewriteResult = rewriteRequestForStaticTopic(requestHeader, mappingContext);
+        if (rewriteResult != null) {
+            return rewriteResult;
+        }
+
+        compensateBasicConsumerInfo(consumerManager, requestHeader);
+
+        SubscriptionData subscriptionData = null;
+        ConsumerFilterData consumerFilterData = null;
+        if (PullSysFlag.hasSubscriptionFlag(requestHeader.getSysFlag())) {
+            if (!processWithSubscriptionFlag(subscriptionData, consumerFilterData, consumerManager, requestHeader, response)) {
+                return response;
+            }
+        } else {
+            if (!processWithoutSubscriptionFlag(subscriptionGroupConfig, subscriptionData, consumerFilterData, requestHeader, responseHeader, response)) {
+                return response;
+            }
+        }
+        assert consumerFilterData != null;
+        assert subscriptionData != null;
+
+
+        if (!ExpressionType.isTagType(subscriptionData.getExpressionType()) && !this.brokerController.getBrokerConfig().isEnablePropertyFilter()) {
+            return  buildResponse(response, ResponseCode.SYSTEM_ERROR, "The broker does not support consumer to filter message by " + subscriptionData.getExpressionType());
+        }
+
+        MessageFilter messageFilter = initMessageFilter(subscriptionData, consumerFilterData);
+        final MessageStore messageStore = brokerController.getMessageStore();
+
+        if (!checkStoreRules(request,requestHeader, channel, response, brokerAllowFlowCtrSuspend, subscriptionData, messageFilter)) {
+            return response;
         }
 
         final boolean useResetOffsetFeature = brokerController.getBrokerConfig().isUseServerSideResetOffset();
@@ -562,22 +609,11 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             }
         }
 
-        if (getMessageResult != null) {
-
-            return this.pullMessageResultHandler.handle(
-                getMessageResult,
-                request,
-                requestHeader,
-                channel,
-                subscriptionData,
-                subscriptionGroupConfig,
-                brokerAllowSuspend,
-                messageFilter,
-                response,
-                mappingContext
-            );
+        if (getMessageResult == null) {
+            return null;
         }
-        return null;
+
+        return this.pullMessageResultHandler.handle(getMessageResult, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
     }
 
     public boolean hasConsumeMessageHook() {
