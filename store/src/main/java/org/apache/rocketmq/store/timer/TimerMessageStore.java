@@ -77,6 +77,7 @@ public class TimerMessageStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     public static final int INITIAL = 0, RUNNING = 1, HAULT = 2, SHUTDOWN = 3;
+    protected final Pointer pointer = new Pointer();
     private volatile int state = INITIAL;
 
     public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
@@ -124,15 +125,6 @@ public class TimerMessageStore {
     private TimerDequeuePutMessageService[] dequeuePutMessageServices;
     private TimerDequeueGetMessageService[] dequeueGetMessageServices;
     private TimerFlushService timerFlushService;
-
-    protected volatile long currReadTimeMs;
-    protected volatile long currWriteTimeMs;
-    protected volatile long preReadTimeMs;
-    protected volatile long commitReadTimeMs;
-    protected volatile long currQueueOffset; //only one queue that is 0
-    protected volatile long commitQueueOffset;
-    protected volatile long lastCommitReadTimeMs;
-    protected volatile long lastCommitQueueOffset;
 
     private long lastEnqueueButExpiredTime;
     private long lastEnqueueButExpiredStoreTime;
@@ -284,23 +276,23 @@ public class TimerMessageStore {
         //revise queue offset
         long queueOffset = reviseQueueOffset(processOffset);
         if (-1 == queueOffset) {
-            currQueueOffset = timerCheckpoint.getLastTimerQueueOffset();
+            pointer.currQueueOffset = timerCheckpoint.getLastTimerQueueOffset();
         } else {
-            currQueueOffset = queueOffset + 1;
+            pointer.currQueueOffset = queueOffset + 1;
         }
-        currQueueOffset = Math.min(currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
+        pointer.currQueueOffset = Math.min(pointer.currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
 
         //check timer wheel
-        currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
+        pointer.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
         long nextReadTimeMs = formatTimeMs(
             System.currentTimeMillis()) - (long) slotsTotal * precisionMs + (long) TIMER_BLANK_SLOTS * precisionMs;
-        if (currReadTimeMs < nextReadTimeMs) {
-            currReadTimeMs = nextReadTimeMs;
+        if (pointer.currReadTimeMs < nextReadTimeMs) {
+            pointer.currReadTimeMs = nextReadTimeMs;
         }
         //the timer wheel may contain physical offset bigger than timerLog
         //This will only happen when the timerLog is damaged
         //hard to test
-        long minFirst = timerWheel.checkPhyPos(currReadTimeMs, processOffset);
+        long minFirst = timerWheel.checkPhyPos(pointer.currReadTimeMs, processOffset);
         if (debug) {
             minFirst = 0;
         }
@@ -309,10 +301,10 @@ public class TimerMessageStore {
             recoverAndRevise(minFirst, false);
         }
         LOGGER.info("Timer recover ok currReadTimerMs:{} currQueueOffset:{} checkQueueOffset:{} processOffset:{}",
-            currReadTimeMs, currQueueOffset, timerCheckpoint.getLastTimerQueueOffset(), processOffset);
+                pointer.currReadTimeMs, pointer.currQueueOffset, timerCheckpoint.getLastTimerQueueOffset(), processOffset);
 
-        commitReadTimeMs = currReadTimeMs;
-        commitQueueOffset = currQueueOffset;
+        pointer.commitReadTimeMs = pointer.currReadTimeMs;
+        pointer.commitQueueOffset = pointer.currQueueOffset;
 
         prepareTimerCheckPoint();
     }
@@ -495,7 +487,7 @@ public class TimerMessageStore {
         }, 45, 45, TimeUnit.MINUTES);
 
         state = RUNNING;
-        LOGGER.info("Timer start ok currReadTimerMs:[{}] queueOffset:[{}]", new Timestamp(currReadTimeMs), currQueueOffset);
+        LOGGER.info("Timer start ok currReadTimerMs:[{}] queueOffset:[{}]", new Timestamp(pointer.currReadTimeMs), pointer.currQueueOffset);
     }
 
     public void start(boolean shouldRunningDequeue) {
@@ -536,14 +528,14 @@ public class TimerMessageStore {
     }
 
     protected void maybeMoveWriteTime() {
-        if (currWriteTimeMs < formatTimeMs(System.currentTimeMillis())) {
-            currWriteTimeMs = formatTimeMs(System.currentTimeMillis());
+        if (pointer.currWriteTimeMs < formatTimeMs(System.currentTimeMillis())) {
+            pointer.currWriteTimeMs = formatTimeMs(System.currentTimeMillis());
         }
     }
 
     private void moveReadTime() {
-        currReadTimeMs = currReadTimeMs + precisionMs;
-        commitReadTimeMs = currReadTimeMs;
+        pointer.currReadTimeMs = pointer.currReadTimeMs + precisionMs;
+        pointer.commitReadTimeMs = pointer.currReadTimeMs;
     }
 
     private boolean isRunning() {
@@ -557,12 +549,12 @@ public class TimerMessageStore {
                 LOGGER.info("Broker role change from {} to {}", lastBrokerRole, currRole);
                 //if change to master, do something
                 if (BrokerRole.SLAVE != currRole) {
-                    currQueueOffset = Math.min(currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
-                    commitQueueOffset = currQueueOffset;
+                    pointer.currQueueOffset = Math.min(pointer.currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
+                    pointer.commitQueueOffset = pointer.currQueueOffset;
                     prepareTimerCheckPoint();
                     timerCheckpoint.flush();
-                    currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
-                    commitReadTimeMs = currReadTimeMs;
+                    pointer.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
+                    pointer.commitReadTimeMs = pointer.currReadTimeMs;
                 }
                 //if change to slave, just let it go
                 lastBrokerRole = currRole;
@@ -572,7 +564,7 @@ public class TimerMessageStore {
 
     private boolean isRunningEnqueue() {
         checkBrokerRole();
-        if (!shouldRunningDequeue && !isMaster() && currQueueOffset >= timerCheckpoint.getMasterTimerQueueOffset()) {
+        if (!shouldRunningDequeue && !isMaster() && pointer.currQueueOffset >= timerCheckpoint.getMasterTimerQueueOffset()) {
             return false;
         }
 
@@ -588,8 +580,8 @@ public class TimerMessageStore {
     }
 
     public void syncLastReadTimeMs() {
-        currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
-        commitReadTimeMs = currReadTimeMs;
+        pointer.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
+        pointer.commitReadTimeMs = pointer.currReadTimeMs;
     }
 
     public void setShouldRunningDequeue(final boolean shouldRunningDequeue) {
@@ -633,12 +625,12 @@ public class TimerMessageStore {
         if (null == cq) {
             return false;
         }
-        if (currQueueOffset < cq.getMinOffsetInQueue()) {
+        if (pointer.currQueueOffset < cq.getMinOffsetInQueue()) {
             LOGGER.warn("Timer currQueueOffset:{} is smaller than minOffsetInQueue:{}",
-                currQueueOffset, cq.getMinOffsetInQueue());
-            currQueueOffset = cq.getMinOffsetInQueue();
+                    pointer.currQueueOffset, cq.getMinOffsetInQueue());
+            pointer.currQueueOffset = cq.getMinOffsetInQueue();
         }
-        long offset = currQueueOffset;
+        long offset = pointer.currQueueOffset;
         SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(offset);
         if (null == bufferCQ) {
             return false;
@@ -683,9 +675,9 @@ public class TimerMessageStore {
                 if (!isRunningEnqueue()) {
                     return false;
                 }
-                currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
+                pointer.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
             }
-            currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
+            pointer.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
             return i > 0;
         } catch (Exception e) {
             LOGGER.error("Unknown exception in enqueuing", e);
@@ -698,7 +690,7 @@ public class TimerMessageStore {
     public boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
         //copy the value first, avoid concurrent problem
-        long tmpWriteTimeMs = currWriteTimeMs;
+        long tmpWriteTimeMs = pointer.currWriteTimeMs;
         boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) timerRollWindowSlots * precisionMs;
         int magic = MAGIC_DEFAULT;
         if (needRoll) {
@@ -746,18 +738,18 @@ public class TimerMessageStore {
         if (!storeConfig.isTimerWarmEnable()) {
             return -1;
         }
-        if (preReadTimeMs <= currReadTimeMs) {
-            preReadTimeMs = currReadTimeMs + precisionMs;
+        if (pointer.preReadTimeMs <= pointer.currReadTimeMs) {
+            pointer.preReadTimeMs = pointer.currReadTimeMs + precisionMs;
         }
-        if (preReadTimeMs >= currWriteTimeMs) {
+        if (pointer.preReadTimeMs >= pointer.currWriteTimeMs) {
             return -1;
         }
-        if (preReadTimeMs >= currReadTimeMs + 3L * precisionMs) {
+        if (pointer.preReadTimeMs >= pointer.currReadTimeMs + 3L * precisionMs) {
             return -1;
         }
-        Slot slot = timerWheel.getSlot(preReadTimeMs);
+        Slot slot = timerWheel.getSlot(pointer.preReadTimeMs);
         if (-1 == slot.timeMs) {
-            preReadTimeMs = preReadTimeMs + precisionMs;
+            pointer.preReadTimeMs = pointer.preReadTimeMs + precisionMs;
             return 0;
         }
         long currOffsetPy = slot.lastPos;
@@ -816,7 +808,7 @@ public class TimerMessageStore {
                 }
             }
         } finally {
-            preReadTimeMs = preReadTimeMs + precisionMs;
+            pointer.preReadTimeMs = pointer.preReadTimeMs + precisionMs;
         }
         return 1;
     }
@@ -871,11 +863,11 @@ public class TimerMessageStore {
         if (!isRunningDequeue()) {
             return -1;
         }
-        if (currReadTimeMs >= currWriteTimeMs) {
+        if (pointer.currReadTimeMs >= pointer.currWriteTimeMs) {
             return -1;
         }
 
-        Slot slot = timerWheel.getSlot(currReadTimeMs);
+        Slot slot = timerWheel.getSlot(pointer.currReadTimeMs);
         if (-1 == slot.timeMs) {
             moveReadTime();
             return 0;
@@ -928,7 +920,7 @@ public class TimerMessageStore {
                 }
             }
             if (deleteMsgStack.size() == 0 && normalMsgStack.size() == 0) {
-                LOGGER.warn("dequeue time:{} but read nothing from timerLog", currReadTimeMs);
+                LOGGER.warn("dequeue time:{} but read nothing from timerLog", pointer.currReadTimeMs);
             }
             for (SelectMappedBufferResult sbr : sbrs) {
                 if (null != sbr) {
@@ -947,7 +939,7 @@ public class TimerMessageStore {
                 dequeueGetQueue.put(deleteList);
             }
             //do we need to use loop with tryAcquire
-            checkDequeueLatch(deleteLatch, currReadTimeMs);
+            checkDequeueLatch(deleteLatch, pointer.currReadTimeMs);
 
             CountDownLatch normalLatch = new CountDownLatch(normalMsgStack.size());
             //read the normal msg
@@ -957,7 +949,7 @@ public class TimerMessageStore {
                 }
                 dequeueGetQueue.put(normalList);
             }
-            checkDequeueLatch(normalLatch, currReadTimeMs);
+            checkDequeueLatch(normalLatch, pointer.currReadTimeMs);
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (dequeueStatusChangeFlag) {
                 return -1;
@@ -1184,7 +1176,7 @@ public class TimerMessageStore {
         }
 
         //travel the timer log
-        long readTimeMs = currReadTimeMs;
+        long readTimeMs = pointer.currReadTimeMs;
         long currOffsetPy = timerWheel.checkPhyPos(readTimeMs, 0);
         LinkedList<SelectMappedBufferResult> sbrs = new LinkedList<>();
         boolean hasError = false;
@@ -1302,7 +1294,7 @@ public class TimerMessageStore {
             try {
                 perfCounterTicks.startTick(ENQUEUE_PUT);
                 DefaultStoreMetricsManager.incTimerEnqueueCount(getRealTopic(req.getMsg()));
-                if (shouldRunningDequeue && req.getDelayTime() < currWriteTimeMs) {
+                if (shouldRunningDequeue && req.getDelayTime() < pointer.currWriteTimeMs) {
                     dequeuePutQueue.put(req);
                 } else {
                     boolean doEnqueueRes = doEnqueue(
@@ -1321,10 +1313,10 @@ public class TimerMessageStore {
         }
 
         protected void fetchAndPutTimerRequest() throws Exception {
-            long tmpCommitQueueOffset = currQueueOffset;
+            long tmpCommitQueueOffset = pointer.currQueueOffset;
             List<TimerRequest> trs = this.fetchTimerRequests();
             if (CollectionUtils.isEmpty(trs)) {
-                commitQueueOffset = tmpCommitQueueOffset;
+                pointer.commitQueueOffset = tmpCommitQueueOffset;
                 maybeMoveWriteTime();
                 return;
             }
@@ -1343,7 +1335,7 @@ public class TimerMessageStore {
                     holdMomentForUnknownError();
                 }
             }
-            commitQueueOffset = trs.get(trs.size() - 1).getMsg().getQueueOffset();
+            pointer.commitQueueOffset = trs.get(trs.size() - 1).getMsg().getQueueOffset();
             maybeMoveWriteTime();
         }
 
@@ -1543,13 +1535,13 @@ public class TimerMessageStore {
                     timerCheckpoint.flush();
                     if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
                         start = System.currentTimeMillis();
-                        long tmpQueueOffset = currQueueOffset;
+                        long tmpQueueOffset = pointer.currQueueOffset;
                         ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TIMER_TOPIC, 0);
                         long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
                         TimerMessageStore.LOGGER.info("[{}]Timer progress-check commitRead:[{}] currRead:[{}] currWrite:[{}] readBehind:{} currReadOffset:{} offsetBehind:{} behindMaster:{} " +
                                 "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
                             storeConfig.getBrokerRole(),
-                            format(commitReadTimeMs), format(currReadTimeMs), format(currWriteTimeMs), getDequeueBehind(),
+                            format(pointer.commitReadTimeMs), format(pointer.currReadTimeMs), format(pointer.currWriteTimeMs), getDequeueBehind(),
                             tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerCheckpoint.getMasterTimerQueueOffset() - tmpQueueOffset,
                             enqueuePutQueue.size(), dequeueGetQueue.size(), dequeuePutQueue.size(), getAllCongestNum(), format(lastEnqueueButExpiredStoreTime));
                     }
@@ -1564,7 +1556,7 @@ public class TimerMessageStore {
     }
 
     public long getAllCongestNum() {
-        return timerWheel.getAllNum(currReadTimeMs);
+        return timerWheel.getAllNum(pointer.currReadTimeMs);
     }
 
     public long getCongestNum(long deliverTimeMs) {
@@ -1586,7 +1578,7 @@ public class TimerMessageStore {
     }
 
     public long getEnqueueBehindMessages() {
-        long tmpQueueOffset = currQueueOffset;
+        long tmpQueueOffset = pointer.currQueueOffset;
         ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TIMER_TOPIC, 0);
         long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
         return maxOffsetInQueue - tmpQueueOffset;
@@ -1604,11 +1596,11 @@ public class TimerMessageStore {
     }
 
     public long getDequeueBehindMessages() {
-        return timerWheel.getAllNum(currReadTimeMs);
+        return timerWheel.getAllNum(pointer.currReadTimeMs);
     }
 
     public long getDequeueBehindMillis() {
-        return System.currentTimeMillis() - currReadTimeMs;
+        return System.currentTimeMillis() - pointer.currReadTimeMs;
     }
 
     public long getDequeueBehind() {
@@ -1625,16 +1617,16 @@ public class TimerMessageStore {
 
     public void prepareTimerCheckPoint() {
         timerCheckpoint.setLastTimerLogFlushPos(timerLog.getMappedFileQueue().getFlushedWhere());
-        timerCheckpoint.setLastReadTimeMs(commitReadTimeMs);
+        timerCheckpoint.setLastReadTimeMs(pointer.commitReadTimeMs);
         if (shouldRunningDequeue) {
-            timerCheckpoint.setMasterTimerQueueOffset(commitQueueOffset);
-            if (commitReadTimeMs != lastCommitReadTimeMs || commitQueueOffset != lastCommitQueueOffset) {
+            timerCheckpoint.setMasterTimerQueueOffset(pointer.commitQueueOffset);
+            if (pointer.commitReadTimeMs != pointer.lastCommitReadTimeMs || pointer.commitQueueOffset != pointer.lastCommitQueueOffset) {
                 timerCheckpoint.updateDateVersion(messageStore.getStateMachineVersion());
-                lastCommitReadTimeMs = commitReadTimeMs;
-                lastCommitQueueOffset = commitQueueOffset;
+                pointer.lastCommitReadTimeMs = pointer.commitReadTimeMs;
+                pointer.lastCommitQueueOffset = pointer.commitQueueOffset;
             }
         }
-        timerCheckpoint.setLastTimerQueueOffset(Math.min(commitQueueOffset, timerCheckpoint.getMasterTimerQueueOffset()));
+        timerCheckpoint.setLastTimerQueueOffset(Math.min(pointer.commitQueueOffset, timerCheckpoint.getMasterTimerQueueOffset()));
     }
 
     public void registerEscapeBridgeHook(Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook) {
@@ -1646,19 +1638,19 @@ public class TimerMessageStore {
     }
 
     public long getCurrReadTimeMs() {
-        return this.currReadTimeMs;
+        return this.pointer.currReadTimeMs;
     }
 
     public long getQueueOffset() {
-        return currQueueOffset;
+        return pointer.currQueueOffset;
     }
 
     public long getCommitQueueOffset() {
-        return this.commitQueueOffset;
+        return this.pointer.commitQueueOffset;
     }
 
     public long getCommitReadTimeMs() {
-        return this.commitReadTimeMs;
+        return this.pointer.commitReadTimeMs;
     }
 
     public MessageStore getMessageStore() {
