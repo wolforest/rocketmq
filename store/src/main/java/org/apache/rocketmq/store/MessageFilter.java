@@ -16,6 +16,8 @@
  */
 package org.apache.rocketmq.store;
 
+import org.apache.rocketmq.store.queue.ConsumeQueueExt;
+
 import java.nio.ByteBuffer;
 import java.util.Map;
 

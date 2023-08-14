@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.apache.rocketmq.common.message.MessageDecoder.CHARSET_UTF8;
-import static org.apache.rocketmq.store.ConsumeQueue.CQ_STORE_UNIT_SIZE;
+import static org.apache.rocketmq.store.queue.ConsumeQueue.CQ_STORE_UNIT_SIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;

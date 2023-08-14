@@ -17,8 +17,6 @@
 
 package org.apache.rocketmq.store.queue;
 
-import org.apache.rocketmq.store.ConsumeQueueExt;
-
 import java.nio.ByteBuffer;
 
 public class CqUnit {

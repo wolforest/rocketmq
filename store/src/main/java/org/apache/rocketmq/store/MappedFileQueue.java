@@ -36,6 +36,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
 import org.apache.rocketmq.store.logfile.MappedFile;
+import org.apache.rocketmq.store.queue.ConsumeQueue;
 
 public class MappedFileQueue implements Swappable {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -212,7 +213,7 @@ public class MappedFileQueue implements Swappable {
         this.deleteExpiredFile(willRemoveFiles);
     }
 
-    void deleteExpiredFile(List<MappedFile> files) {
+    public void deleteExpiredFile(List<MappedFile> files) {
         if (files.isEmpty()) {
             return;
         }

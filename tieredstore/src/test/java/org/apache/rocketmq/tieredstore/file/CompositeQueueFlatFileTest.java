@@ -19,7 +19,7 @@ package org.apache.rocketmq.tieredstore.file;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.store.ConsumeQueue;
+import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.tieredstore.TieredStoreTestUtil;
 import org.apache.rocketmq.tieredstore.common.AppendResult;

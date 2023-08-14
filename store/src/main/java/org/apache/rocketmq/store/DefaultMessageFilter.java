@@ -19,6 +19,7 @@ package org.apache.rocketmq.store;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
+import org.apache.rocketmq.store.queue.ConsumeQueueExt;
 
 public class DefaultMessageFilter implements MessageFilter {
 

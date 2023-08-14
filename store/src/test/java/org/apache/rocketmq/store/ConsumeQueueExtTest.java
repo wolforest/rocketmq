@@ -20,6 +20,7 @@ package org.apache.rocketmq.store;
 import java.io.File;
 import java.util.Random;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.store.queue.ConsumeQueueExt;
 import org.junit.After;
 import org.junit.Test;
 
