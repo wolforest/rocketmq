@@ -898,21 +898,21 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         boolean proxyPullBroadcast = Objects.equals(
             RequestSource.PROXY_FOR_BROADCAST.getValue(), requestHeader.getRequestSource());
 
-        if (isBroadcast(proxyPullBroadcast, consumerGroupInfo)) {
-            String clientId;
-            if (proxyPullBroadcast) {
-                clientId = requestHeader.getProxyFrowardClientId();
-            } else {
-                ClientChannelInfo clientChannelInfo = consumerGroupInfo.findChannel(channel);
-                if (clientChannelInfo == null) {
-                    return -1;
-                }
-                clientId = clientChannelInfo.getClientId();
-            }
-
-            return this.brokerController.getBroadcastOffsetManager()
-                .queryInitOffset(topic, group, queueId, clientId, requestHeader.getQueueOffset(), proxyPullBroadcast);
+        if (!isBroadcast(proxyPullBroadcast, consumerGroupInfo)) {
+            return -1L;
         }
-        return -1L;
+
+        String clientId;
+        if (proxyPullBroadcast) {
+            clientId = requestHeader.getProxyFrowardClientId();
+        } else {
+            ClientChannelInfo clientChannelInfo = consumerGroupInfo.findChannel(channel);
+            if (clientChannelInfo == null) {
+                return -1;
+            }
+            clientId = clientChannelInfo.getClientId();
+        }
+
+        return this.brokerController.getBroadcastOffsetManager().queryInitOffset(topic, group, queueId, clientId, requestHeader.getQueueOffset(), proxyPullBroadcast);
     }
 }
