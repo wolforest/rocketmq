@@ -68,6 +68,7 @@ import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.service.AbstractStateService;
 import org.apache.rocketmq.store.timer.service.TimerDequeueGetService;
+import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
 import org.apache.rocketmq.store.timer.service.TimerEnqueueGetService;
 import org.apache.rocketmq.store.util.PerfCounter;
 
@@ -213,7 +214,7 @@ public class TimerMessageStore {
     public void initService() {
         enqueueGetService = new TimerEnqueueGetService(this);
         enqueuePutService = new TimerEnqueuePutService();
-        dequeueWarmService = new TimerDequeueWarmService();
+        dequeueWarmService = new TimerDequeueWarmService(this);
         dequeueGetService = new TimerDequeueGetService(this);
         timerFlushService = new TimerFlushService();
 
@@ -1506,32 +1507,6 @@ public class TimerMessageStore {
         }
     }
 
-    public class TimerDequeueWarmService extends ServiceThread {
-
-        @Override
-        public String getServiceName() {
-            String brokerIdentifier = "";
-            if (TimerMessageStore.this.messageStore instanceof DefaultMessageStore && ((DefaultMessageStore) TimerMessageStore.this.messageStore).getBrokerConfig().isInBrokerContainer()) {
-                brokerIdentifier = ((DefaultMessageStore) TimerMessageStore.this.messageStore).getBrokerConfig().getIdentifier();
-            }
-            return brokerIdentifier + this.getClass().getSimpleName();
-        }
-
-        @Override
-        public void run() {
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service start");
-            while (!this.isStopped()) {
-                try {
-                    //if (!storeConfig.isTimerWarmEnable() || -1 == TimerMessageStore.this.warmDequeue()) {
-                    waitForRunning(50);
-                    //}
-                } catch (Throwable e) {
-                    TimerMessageStore.LOGGER.error("Error occurred in " + getServiceName(), e);
-                }
-            }
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service end");
-        }
-    }
 
     public boolean needRoll(int magic) {
         return (magic & MAGIC_ROLL) != 0;
