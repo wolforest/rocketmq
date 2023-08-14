@@ -19,7 +19,7 @@ package org.apache.rocketmq.store;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
-import org.apache.rocketmq.store.queue.ConsumeQueueExt;
+import org.apache.rocketmq.store.queue.CqExtUnit;
 
 public class DefaultMessageFilter implements MessageFilter {
 
@@ -30,7 +30,7 @@ public class DefaultMessageFilter implements MessageFilter {
     }
 
     @Override
-    public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+    public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
         if (null == tagsCode || null == subscriptionData) {
             return true;
         }

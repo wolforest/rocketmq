@@ -682,7 +682,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         for (int i = 0; i < maxRetries && canWrite; i++) {
             long tagsCode = request.getTagsCode();
             if (isExtWriteEnable()) {
-                ConsumeQueueExt.CqExtUnit cqExtUnit = new ConsumeQueueExt.CqExtUnit();
+                CqExtUnit cqExtUnit = new CqExtUnit();
                 cqExtUnit.setFilterBitMap(request.getBitMap());
                 cqExtUnit.setMsgStoreTime(request.getStoreTimestamp());
                 cqExtUnit.setTagsCode(request.getTagsCode());
@@ -962,7 +962,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         if (sbr == null) {
             return null;
         }
-        return new ConsumeQueueIterator(sbr);
+        return new ConsumeQueueIterator(sbr, this);
     }
 
     @Override
@@ -1005,83 +1005,16 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         return false;
     }
 
-    private class ConsumeQueueIterator implements ReferredIterator<CqUnit> {
-        private SelectMappedBufferResult sbr;
-        private int relativePos = 0;
 
-        public ConsumeQueueIterator(SelectMappedBufferResult sbr) {
-            this.sbr = sbr;
-            if (sbr != null && sbr.getByteBuffer() != null) {
-                relativePos = sbr.getByteBuffer().position();
-            }
-        }
 
-        @Override
-        public boolean hasNext() {
-            if (sbr == null || sbr.getByteBuffer() == null) {
-                return false;
-            }
-
-            return sbr.getByteBuffer().hasRemaining();
-        }
-
-        @Override
-        public CqUnit next() {
-            if (!hasNext()) {
-                return null;
-            }
-            long queueOffset = (sbr.getStartOffset() + sbr.getByteBuffer().position() - relativePos) / CQ_STORE_UNIT_SIZE;
-            CqUnit cqUnit = new CqUnit(queueOffset,
-                sbr.getByteBuffer().getLong(),
-                sbr.getByteBuffer().getInt(),
-                sbr.getByteBuffer().getLong());
-
-            if (isExtAddr(cqUnit.getTagsCode())) {
-                ConsumeQueueExt.CqExtUnit cqExtUnit = new ConsumeQueueExt.CqExtUnit();
-                boolean extRet = getExt(cqUnit.getTagsCode(), cqExtUnit);
-                if (extRet) {
-                    cqUnit.setTagsCode(cqExtUnit.getTagsCode());
-                    cqUnit.setCqExtUnit(cqExtUnit);
-                } else {
-                    // can't find ext content.Client will filter messages by tag also.
-                    log.error("[BUG] can't find consume queue extend file content! addr={}, offsetPy={}, sizePy={}, topic={}",
-                        cqUnit.getTagsCode(), cqUnit.getPos(), cqUnit.getPos(), getTopic());
-                }
-            }
-            return cqUnit;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("remove");
-        }
-
-        @Override
-        public void release() {
-            if (sbr != null) {
-                sbr.release();
-                sbr = null;
-            }
-        }
-
-        @Override
-        public CqUnit nextAndRelease() {
-            try {
-                return next();
-            } finally {
-                release();
-            }
-        }
-    }
-
-    public ConsumeQueueExt.CqExtUnit getExt(final long offset) {
+    public CqExtUnit getExt(final long offset) {
         if (isExtReadEnable()) {
             return this.consumeQueueExt.get(offset);
         }
         return null;
     }
 
-    public boolean getExt(final long offset, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+    public boolean getExt(final long offset, CqExtUnit cqExtUnit) {
         if (isExtReadEnable()) {
             return this.consumeQueueExt.get(offset, cqExtUnit);
         }
@@ -1226,7 +1159,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                         // skip physicalOffset and message length fields.
                         buffer.position(current + MSG_TAG_OFFSET_INDEX);
                         long tagCode = buffer.getLong();
-                        ConsumeQueueExt.CqExtUnit ext = null;
+                        CqExtUnit ext = null;
                         if (isExtWriteEnable()) {
                             ext = consumeQueueExt.get(tagCode);
                             tagCode = ext.getTagsCode();

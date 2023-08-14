@@ -27,8 +27,8 @@ import org.apache.rocketmq.filter.util.BloomFilter;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
-import org.apache.rocketmq.store.queue.ConsumeQueueExt;
 import org.apache.rocketmq.store.MessageFilter;
+import org.apache.rocketmq.store.queue.CqExtUnit;
 
 public class ExpressionMessageFilter implements MessageFilter {
 
@@ -57,7 +57,7 @@ public class ExpressionMessageFilter implements MessageFilter {
     }
 
     @Override
-    public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+    public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
         if (null == subscriptionData) {
             return true;
         }

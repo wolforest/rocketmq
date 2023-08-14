@@ -40,13 +40,13 @@ import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.store.queue.ConsumeQueueExt;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.GetMessageStatus;
 import org.apache.rocketmq.store.MessageArrivingListener;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.queue.CqExtUnit;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.junit.After;
 import org.junit.Before;
@@ -77,7 +77,7 @@ public class ScheduleMessageServiceTest {
     private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "schedule_test#" + UUID.randomUUID();
     private static final int COMMIT_LOG_FILE_SIZE = 1024;
     private static final int CQ_FILE_SIZE = 10;
-    private static final int CQ_EXT_FILE_SIZE = 10 * (ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE + 64);
+    private static final int CQ_EXT_FILE_SIZE = 10 * (CqExtUnit.MIN_EXT_UNIT_SIZE + 64);
 
     private static SocketAddress bornHost;
     private static SocketAddress storeHost;

@@ -174,7 +174,6 @@ import org.apache.rocketmq.remoting.rpc.RpcClientUtils;
 import org.apache.rocketmq.remoting.rpc.RpcException;
 import org.apache.rocketmq.remoting.rpc.RpcRequest;
 import org.apache.rocketmq.remoting.rpc.RpcResponse;
-import org.apache.rocketmq.store.queue.ConsumeQueueExt;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.MessageFilter;
 import org.apache.rocketmq.store.MessageStore;
@@ -183,6 +182,7 @@ import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
+import org.apache.rocketmq.store.queue.CqExtUnit;
 import org.apache.rocketmq.store.queue.CqUnit;
 import org.apache.rocketmq.store.queue.ReferredIterator;
 import org.apache.rocketmq.store.timer.TimerCheckpoint;
@@ -2547,7 +2547,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 }
 
                 if (cqUnit.getCqExtUnit() != null) {
-                    ConsumeQueueExt.CqExtUnit cqExtUnit = cqUnit.getCqExtUnit();
+                    CqExtUnit cqExtUnit = cqUnit.getCqExtUnit();
                     one.setExtendDataJson(JSON.toJSONString(cqExtUnit));
                     if (cqExtUnit.getFilterBitMap() != null) {
                         one.setBitMap(BitsArray.create(cqExtUnit.getFilterBitMap()).toString());

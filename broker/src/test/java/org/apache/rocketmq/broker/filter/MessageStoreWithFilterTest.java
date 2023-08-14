@@ -37,7 +37,6 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.store.CommitLogDispatcher;
-import org.apache.rocketmq.store.queue.ConsumeQueueExt;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.GetMessageResult;
@@ -46,6 +45,8 @@ import org.apache.rocketmq.store.MessageArrivingListener;
 import org.apache.rocketmq.store.MessageFilter;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.queue.ConsumeQueueExt;
+import org.apache.rocketmq.store.queue.CqExtUnit;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.awaitility.core.ThrowingRunnable;
 import org.junit.After;
@@ -367,7 +368,7 @@ public class MessageStoreWithFilterTest {
                         new MessageFilter() {
                             @Override
                             public boolean isMatchedByConsumeQueue(Long tagsCode,
-                                ConsumeQueueExt.CqExtUnit cqExtUnit) {
+                                CqExtUnit cqExtUnit) {
                                 if (tagsCode != null && tagsCode <= ConsumeQueueExt.MAX_ADDR) {
                                     return false;
                                 }

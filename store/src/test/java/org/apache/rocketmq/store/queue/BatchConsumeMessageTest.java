@@ -505,7 +505,7 @@ public class BatchConsumeMessageTest extends QueueTestBase {
         ConsumeQueueInterface consumeQueue = messageStore.findConsumeQueue(topic, 0);
         MessageFilter filter = new MessageFilter() {
             @Override
-            public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+            public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
                 return tagsCode == "TagA".hashCode();
             }
 
@@ -531,7 +531,7 @@ public class BatchConsumeMessageTest extends QueueTestBase {
         ConsumeQueueInterface cq = messageStore.findConsumeQueue(topic, 0);
         MessageFilter filter = new MessageFilter() {
             @Override
-            public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+            public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
                 return tagsCode == "TagA".hashCode();
             }
 
@@ -561,7 +561,7 @@ public class BatchConsumeMessageTest extends QueueTestBase {
         ConsumeQueueInterface cq = messageStore.findConsumeQueue(topic, 0);
         MessageFilter filter = new MessageFilter() {
             @Override
-            public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+            public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
                 return tagsCode == "TagA".hashCode();
             }
 
