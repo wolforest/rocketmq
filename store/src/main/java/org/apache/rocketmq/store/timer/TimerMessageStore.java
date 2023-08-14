@@ -66,6 +66,7 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.timer.service.TimerDequeueGetService;
 import org.apache.rocketmq.store.timer.service.TimerEnqueueGetService;
 import org.apache.rocketmq.store.util.PerfCounter;
 
@@ -214,7 +215,7 @@ public class TimerMessageStore {
         enqueueGetService = new TimerEnqueueGetService(this);
         enqueuePutService = new TimerEnqueuePutService();
         dequeueWarmService = new TimerDequeueWarmService();
-        dequeueGetService = new TimerDequeueGetService();
+        dequeueGetService = new TimerDequeueGetService(this);
         timerFlushService = new TimerFlushService();
 
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
@@ -447,7 +448,7 @@ public class TimerMessageStore {
         enqueueGetService.start();
         enqueuePutService.start();
         dequeueWarmService.start();
-        dequeueGetService.start();
+        dequeueGetService.start(shouldStartTime);
         for (int i = 0; i < dequeueGetMessageServices.length; i++) {
             dequeueGetMessageServices[i].start();
         }
@@ -1360,33 +1361,6 @@ public class TimerMessageStore {
         }
     }
 
-    public class TimerDequeueGetService extends ServiceThread {
-
-        @Override
-        public String getServiceName() {
-            return getServiceThreadName() + this.getClass().getSimpleName();
-        }
-
-        @Override
-        public void run() {
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service start");
-            while (!this.isStopped()) {
-                try {
-                    if (System.currentTimeMillis() < shouldStartTime) {
-                        TimerMessageStore.LOGGER.info("TimerDequeueGetService ready to run after {}.", shouldStartTime);
-                        waitForRunning(1000);
-                        continue;
-                    }
-                    if (-1 == TimerMessageStore.this.dequeue()) {
-                        waitForRunning(100L * precisionMs / 1000);
-                    }
-                } catch (Throwable e) {
-                    TimerMessageStore.LOGGER.error("Error occurred in " + getServiceName(), e);
-                }
-            }
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service end");
-        }
-    }
 
     abstract class AbstractStateService extends ServiceThread {
         public static final int INITIAL = -1, START = 0, WAITING = 1, RUNNING = 2, END = 3;
