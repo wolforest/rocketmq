@@ -112,63 +112,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
 
         switch (response.getCode()) {
             case ResponseCode.SUCCESS:
-                this.brokerController.getBrokerStatsManager().incGroupGetNums(requestHeader.getConsumerGroup(), requestHeader.getTopic(),
-                    getMessageResult.getMessageCount());
-
-                this.brokerController.getBrokerStatsManager().incGroupGetSize(requestHeader.getConsumerGroup(), requestHeader.getTopic(),
-                    getMessageResult.getBufferTotalSize());
-
-                this.brokerController.getBrokerStatsManager().incBrokerGetNums(requestHeader.getTopic(), getMessageResult.getMessageCount());
-
-                if (!BrokerMetricsManager.isRetryOrDlqTopic(requestHeader.getTopic())) {
-                    Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
-                        .put(LABEL_TOPIC, requestHeader.getTopic())
-                        .put(LABEL_CONSUMER_GROUP, requestHeader.getConsumerGroup())
-                        .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(requestHeader.getTopic()) || MixAll.isSysConsumerGroup(requestHeader.getConsumerGroup()))
-                        .build();
-                    BrokerMetricsManager.messagesOutTotal.add(getMessageResult.getMessageCount(), attributes);
-                    BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);
-                }
-
-                if (!channelIsWritable(channel, requestHeader)) {
-                    getMessageResult.release();
-                    //ignore pull request
-                    return null;
-                }
-
-                if (this.brokerController.getBrokerConfig().isTransferMsgByHeap()) {
-
-                    final long beginTimeMills = this.brokerController.getMessageStore().now();
-                    final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
-                    this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
-                        requestHeader.getTopic(), requestHeader.getQueueId(),
-                        (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
-                    response.setBody(r);
-                    return response;
-                } else {
-                    try {
-                        FileRegion fileRegion =
-                            new ManyMessageTransfer(response.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
-                        RemotingCommand finalResponse = response;
-                        channel.writeAndFlush(fileRegion)
-                            .addListener((ChannelFutureListener) future -> {
-                                getMessageResult.release();
-                                Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
-                                    .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
-                                    .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
-                                    .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
-                                    .build();
-                                RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
-                                if (!future.isSuccess()) {
-                                    log.error("Fail to transfer messages from page cache to {}", channel.remoteAddress(), future.cause());
-                                }
-                            });
-                    } catch (Throwable e) {
-                        log.error("Error occurred when transferring messages from page cache", e);
-                        getMessageResult.release();
-                    }
-                    return null;
-                }
+                return handleSuccess(requestHeader, request, channel, response, getMessageResult);
             case ResponseCode.PULL_NOT_FOUND:
                 if (!handlePullNotFound(requestHeader, brokerAllowSuspend, request, channel, subscriptionData, messageFilter)) {
                     return null;
@@ -184,6 +128,67 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         }
 
         return response;
+    }
+
+    private RemotingCommand handleSuccess(PullMessageRequestHeader requestHeader, RemotingCommand request, Channel channel, RemotingCommand response, GetMessageResult getMessageResult) {
+        this.brokerController.getBrokerStatsManager().incGroupGetNums(requestHeader.getConsumerGroup(), requestHeader.getTopic(),
+            getMessageResult.getMessageCount());
+
+        this.brokerController.getBrokerStatsManager().incGroupGetSize(requestHeader.getConsumerGroup(), requestHeader.getTopic(),
+            getMessageResult.getBufferTotalSize());
+
+        this.brokerController.getBrokerStatsManager().incBrokerGetNums(requestHeader.getTopic(), getMessageResult.getMessageCount());
+
+        if (!BrokerMetricsManager.isRetryOrDlqTopic(requestHeader.getTopic())) {
+            Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
+                .put(LABEL_TOPIC, requestHeader.getTopic())
+                .put(LABEL_CONSUMER_GROUP, requestHeader.getConsumerGroup())
+                .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(requestHeader.getTopic()) || MixAll.isSysConsumerGroup(requestHeader.getConsumerGroup()))
+                .build();
+            BrokerMetricsManager.messagesOutTotal.add(getMessageResult.getMessageCount(), attributes);
+            BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);
+        }
+
+        if (!channelIsWritable(channel, requestHeader)) {
+            getMessageResult.release();
+            //ignore pull request
+            return null;
+        }
+
+        if (this.brokerController.getBrokerConfig().isTransferMsgByHeap()) {
+
+            final long beginTimeMills = this.brokerController.getMessageStore().now();
+            final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
+            this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
+                requestHeader.getTopic(), requestHeader.getQueueId(),
+                (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
+            response.setBody(r);
+            return response;
+        } else {
+            try {
+                FileRegion fileRegion =
+                    new ManyMessageTransfer(response.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
+                RemotingCommand finalResponse = response;
+                channel.writeAndFlush(fileRegion)
+                    .addListener((ChannelFutureListener) future -> {
+                        getMessageResult.release();
+                        Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
+                            .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
+                            .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
+                            .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
+                            .build();
+                        RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
+                        if (!future.isSuccess()) {
+                            log.error("Fail to transfer messages from page cache to {}", channel.remoteAddress(), future.cause());
+                        }
+                    });
+            } catch (Throwable e) {
+                log.error("Error occurred when transferring messages from page cache", e);
+                getMessageResult.release();
+            }
+            return null;
+        }
+
     }
 
     private boolean handlePullNotFound(PullMessageRequestHeader requestHeader, boolean brokerAllowSuspend, RemotingCommand request, Channel channel, SubscriptionData subscriptionData, MessageFilter messageFilter) {
