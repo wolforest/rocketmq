@@ -170,50 +170,13 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
                     return null;
                 }
             case ResponseCode.PULL_NOT_FOUND:
-                final boolean hasSuspendFlag = PullSysFlag.hasSuspendFlag(requestHeader.getSysFlag());
-                final long suspendTimeoutMillisLong = hasSuspendFlag ? requestHeader.getSuspendTimeoutMillis() : 0;
-
-                if (brokerAllowSuspend && hasSuspendFlag) {
-                    long pollingTimeMills = suspendTimeoutMillisLong;
-                    if (!this.brokerController.getBrokerConfig().isLongPollingEnable()) {
-                        pollingTimeMills = this.brokerController.getBrokerConfig().getShortPollingTimeMills();
-                    }
-
-                    String topic = requestHeader.getTopic();
-                    long offset = requestHeader.getQueueOffset();
-                    int queueId = requestHeader.getQueueId();
-                    PullRequest pullRequest = new PullRequest(request, channel, pollingTimeMills,
-                        this.brokerController.getMessageStore().now(), offset, subscriptionData, messageFilter);
-                    this.brokerController.getBrokerNettyServer().getPullRequestHoldService().suspendPullRequest(topic, queueId, pullRequest);
+                if (!handlePullNotFound(requestHeader, brokerAllowSuspend, request, channel, subscriptionData, messageFilter)) {
                     return null;
                 }
             case ResponseCode.PULL_RETRY_IMMEDIATELY:
                 break;
             case ResponseCode.PULL_OFFSET_MOVED:
-                if (this.brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE
-                    || this.brokerController.getMessageStoreConfig().isOffsetCheckInSlave()) {
-                    MessageQueue mq = new MessageQueue();
-                    mq.setTopic(requestHeader.getTopic());
-                    mq.setQueueId(requestHeader.getQueueId());
-                    mq.setBrokerName(this.brokerController.getBrokerConfig().getBrokerName());
-
-                    OffsetMovedEvent event = new OffsetMovedEvent();
-                    event.setConsumerGroup(requestHeader.getConsumerGroup());
-                    event.setMessageQueue(mq);
-                    event.setOffsetRequest(requestHeader.getQueueOffset());
-                    event.setOffsetNew(getMessageResult.getNextBeginOffset());
-                    log.warn(
-                        "PULL_OFFSET_MOVED:correction offset. topic={}, groupId={}, requestOffset={}, newOffset={}, suggestBrokerId={}",
-                        requestHeader.getTopic(), requestHeader.getConsumerGroup(), event.getOffsetRequest(), event.getOffsetNew(),
-                        responseHeader.getSuggestWhichBrokerId());
-                } else {
-                    responseHeader.setSuggestWhichBrokerId(subscriptionGroupConfig.getBrokerId());
-                    response.setCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
-                    log.warn("PULL_OFFSET_MOVED:none correction. topic={}, groupId={}, requestOffset={}, suggestBrokerId={}",
-                        requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueOffset(),
-                        responseHeader.getSuggestWhichBrokerId());
-                }
-
+                handlePullOffsetMoved(requestHeader, responseHeader, response, subscriptionGroupConfig, getMessageResult);
                 break;
             default:
                 log.warn("[BUG] impossible result code of get message: {}", response.getCode());
@@ -221,6 +184,54 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         }
 
         return response;
+    }
+
+    private boolean handlePullNotFound(PullMessageRequestHeader requestHeader, boolean brokerAllowSuspend, RemotingCommand request, Channel channel, SubscriptionData subscriptionData, MessageFilter messageFilter) {
+        final boolean hasSuspendFlag = PullSysFlag.hasSuspendFlag(requestHeader.getSysFlag());
+        final long suspendTimeoutMillisLong = hasSuspendFlag ? requestHeader.getSuspendTimeoutMillis() : 0;
+
+        if (!brokerAllowSuspend || !hasSuspendFlag) {
+            return true;
+        }
+
+        long pollingTimeMills = suspendTimeoutMillisLong;
+        if (!this.brokerController.getBrokerConfig().isLongPollingEnable()) {
+            pollingTimeMills = this.brokerController.getBrokerConfig().getShortPollingTimeMills();
+        }
+
+        String topic = requestHeader.getTopic();
+        long offset = requestHeader.getQueueOffset();
+        int queueId = requestHeader.getQueueId();
+        PullRequest pullRequest = new PullRequest(request, channel, pollingTimeMills,
+            this.brokerController.getMessageStore().now(), offset, subscriptionData, messageFilter);
+        this.brokerController.getBrokerNettyServer().getPullRequestHoldService().suspendPullRequest(topic, queueId, pullRequest);
+        return false;
+    }
+
+    private void handlePullOffsetMoved(PullMessageRequestHeader requestHeader, PullMessageResponseHeader responseHeader, RemotingCommand response, SubscriptionGroupConfig subscriptionGroupConfig, GetMessageResult getMessageResult) {
+        if (this.brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE
+            || this.brokerController.getMessageStoreConfig().isOffsetCheckInSlave()) {
+            MessageQueue mq = new MessageQueue();
+            mq.setTopic(requestHeader.getTopic());
+            mq.setQueueId(requestHeader.getQueueId());
+            mq.setBrokerName(this.brokerController.getBrokerConfig().getBrokerName());
+
+            OffsetMovedEvent event = new OffsetMovedEvent();
+            event.setConsumerGroup(requestHeader.getConsumerGroup());
+            event.setMessageQueue(mq);
+            event.setOffsetRequest(requestHeader.getQueueOffset());
+            event.setOffsetNew(getMessageResult.getNextBeginOffset());
+            log.warn(
+                "PULL_OFFSET_MOVED:correction offset. topic={}, groupId={}, requestOffset={}, newOffset={}, suggestBrokerId={}",
+                requestHeader.getTopic(), requestHeader.getConsumerGroup(), event.getOffsetRequest(), event.getOffsetNew(),
+                responseHeader.getSuggestWhichBrokerId());
+        } else {
+            responseHeader.setSuggestWhichBrokerId(subscriptionGroupConfig.getBrokerId());
+            response.setCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
+            log.warn("PULL_OFFSET_MOVED:none correction. topic={}, groupId={}, requestOffset={}, suggestBrokerId={}",
+                requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueOffset(),
+                responseHeader.getSuggestWhichBrokerId());
+        }
     }
 
     private boolean channelIsWritable(Channel channel, PullMessageRequestHeader requestHeader) {
