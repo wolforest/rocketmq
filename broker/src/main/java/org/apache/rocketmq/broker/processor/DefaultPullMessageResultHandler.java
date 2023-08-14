@@ -156,39 +156,45 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         }
 
         if (this.brokerController.getBrokerConfig().isTransferMsgByHeap()) {
-
-            final long beginTimeMills = this.brokerController.getMessageStore().now();
-            final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
-            this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
-                requestHeader.getTopic(), requestHeader.getQueueId(),
-                (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
-            response.setBody(r);
-            return response;
+            return handleTransferMsgByHeap(requestHeader, response, getMessageResult);
         } else {
-            try {
-                FileRegion fileRegion =
-                    new ManyMessageTransfer(response.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
-                RemotingCommand finalResponse = response;
-                channel.writeAndFlush(fileRegion)
-                    .addListener((ChannelFutureListener) future -> {
-                        getMessageResult.release();
-                        Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
-                            .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
-                            .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
-                            .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
-                            .build();
-                        RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
-                        if (!future.isSuccess()) {
-                            log.error("Fail to transfer messages from page cache to {}", channel.remoteAddress(), future.cause());
-                        }
-                    });
-            } catch (Throwable e) {
-                log.error("Error occurred when transferring messages from page cache", e);
-                getMessageResult.release();
-            }
-            return null;
+            return handleSuccessMsg(request, channel, response, getMessageResult);
         }
+    }
 
+    private RemotingCommand handleSuccessMsg(RemotingCommand request, Channel channel, RemotingCommand response, GetMessageResult getMessageResult) {
+        try {
+            FileRegion fileRegion =
+                new ManyMessageTransfer(response.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
+            RemotingCommand finalResponse = response;
+            channel.writeAndFlush(fileRegion)
+                .addListener((ChannelFutureListener) future -> {
+                    getMessageResult.release();
+                    Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
+                        .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
+                        .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
+                        .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
+                        .build();
+                    RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
+                    if (!future.isSuccess()) {
+                        log.error("Fail to transfer messages from page cache to {}", channel.remoteAddress(), future.cause());
+                    }
+                });
+        } catch (Throwable e) {
+            log.error("Error occurred when transferring messages from page cache", e);
+            getMessageResult.release();
+        }
+        return null;
+    }
+
+    private RemotingCommand handleTransferMsgByHeap(PullMessageRequestHeader requestHeader, RemotingCommand response, GetMessageResult getMessageResult) {
+        final long beginTimeMills = this.brokerController.getMessageStore().now();
+        final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
+        this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
+            requestHeader.getTopic(), requestHeader.getQueueId(),
+            (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
+        response.setBody(r);
+        return response;
     }
 
     private boolean handlePullNotFound(PullMessageRequestHeader requestHeader, boolean brokerAllowSuspend, RemotingCommand request, Channel channel, SubscriptionData subscriptionData, MessageFilter messageFilter) {
