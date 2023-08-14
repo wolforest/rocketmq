@@ -66,6 +66,7 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.timer.service.AbstractStateService;
 import org.apache.rocketmq.store.timer.service.TimerDequeueGetService;
 import org.apache.rocketmq.store.timer.service.TimerEnqueueGetService;
 import org.apache.rocketmq.store.util.PerfCounter;
@@ -1359,19 +1360,6 @@ public class TimerMessageStore {
         }
     }
 
-
-    abstract class AbstractStateService extends ServiceThread {
-        public static final int INITIAL = -1, START = 0, WAITING = 1, RUNNING = 2, END = 3;
-        protected int state = INITIAL;
-
-        protected void setState(int state) {
-            this.state = state;
-        }
-
-        protected boolean isState(int state) {
-            return this.state == state;
-        }
-    }
 
     public class TimerDequeuePutMessageService extends AbstractStateService {
 
