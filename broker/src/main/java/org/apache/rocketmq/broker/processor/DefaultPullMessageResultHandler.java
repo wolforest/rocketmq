@@ -224,14 +224,16 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
     }
 
     private boolean channelIsWritable(Channel channel, PullMessageRequestHeader requestHeader) {
-        if (this.brokerController.getBrokerConfig().isEnableNetWorkFlowControl()) {
-            if (!channel.isWritable()) {
-                log.warn("channel {} not writable ,cid {}", channel.remoteAddress(), requestHeader.getConsumerGroup());
-                return false;
-            }
-
+        if (!this.brokerController.getBrokerConfig().isEnableNetWorkFlowControl()) {
+            return true;
         }
-        return true;
+
+        if (channel.isWritable()) {
+            return true;
+        }
+
+        log.warn("channel {} not writable ,cid {}", channel.remoteAddress(), requestHeader.getConsumerGroup());
+        return false;
     }
 
     protected byte[] readGetMessageResult(final GetMessageResult getMessageResult, final String group,
