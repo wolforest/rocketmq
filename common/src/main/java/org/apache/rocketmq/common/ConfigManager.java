@@ -78,13 +78,15 @@ public abstract class ConfigManager {
 
     public synchronized void persist() {
         String jsonString = this.encode(true);
-        if (jsonString != null) {
-            String fileName = this.configFilePath();
-            try {
-                MixAll.string2File(jsonString, fileName);
-            } catch (IOException e) {
-                log.error("persist file " + fileName + " exception", e);
-            }
+        if (jsonString == null) {
+            return;
+        }
+
+        String fileName = this.configFilePath();
+        try {
+            MixAll.string2File(jsonString, fileName);
+        } catch (IOException e) {
+            log.error("persist file " + fileName + " exception", e);
         }
     }
 
