@@ -350,10 +350,9 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         return ackCount;
     }
 
-    private int getRqid(final AckMessageRequestHeader requestHeader, final BatchAck batchAck) {
-        String[] extraInfo = ExtraInfoUtil.split(requestHeader.getExtraInfo());
-
+    private int getRqid(AckMessageRequestHeader requestHeader, final BatchAck batchAck) {
         if (batchAck == null) {
+            String[] extraInfo = ExtraInfoUtil.split(requestHeader.getExtraInfo());
             return ExtraInfoUtil.getReviveQid(extraInfo);
         } else {
             return batchAck.getReviveQueueId();
@@ -361,9 +360,8 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     }
 
     private long getInvisibleTime(final AckMessageRequestHeader requestHeader, final BatchAck batchAck) {
-        String[] extraInfo = ExtraInfoUtil.split(requestHeader.getExtraInfo());
-
         if (batchAck == null) {
+            String[] extraInfo = ExtraInfoUtil.split(requestHeader.getExtraInfo());
             return ExtraInfoUtil.getInvisibleTime(extraInfo);
         } else {
             return batchAck.getInvisibleTime();
