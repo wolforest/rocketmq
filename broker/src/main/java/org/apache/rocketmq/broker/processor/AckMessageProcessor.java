@@ -236,9 +236,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(ackMsg.getTopic(), ackMsg.getConsumerGroup(), ackMsg.getPopTime(), ackMsg.getQueueId(), ackCount);
     }
 
-    private int countSingleAckMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, AckMsg ackMsg) {
-        // single ack
-        String[] extraInfo = ExtraInfoUtil.split(requestHeader.getExtraInfo());
+    private void initAckMsg(AckMessageRequestHeader requestHeader, String[] extraInfo, AckMsg ackMsg) {
         ackMsg.setConsumerGroup(requestHeader.getConsumerGroup());
         ackMsg.setTopic(requestHeader.getTopic());
         ackMsg.setQueueId(requestHeader.getQueueId());
@@ -246,53 +244,61 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         ackMsg.setAckOffset(requestHeader.getOffset());
         ackMsg.setPopTime(ExtraInfoUtil.getPopTime(extraInfo));
         ackMsg.setBrokerName(ExtraInfoUtil.getBrokerName(extraInfo));
+    }
 
-        if (ExtraInfoUtil.getReviveQid(extraInfo) == KeyBuilder.POP_ORDER_REVIVE_QUEUE) {
-            // order
-            String lockKey = requestHeader.getTopic() + PopAckConstants.SPLIT + requestHeader.getConsumerGroup() + PopAckConstants.SPLIT + requestHeader.getQueueId();
-            long oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
+    private int countSingleAckMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, AckMsg ackMsg) {
+        // single ack
+        String[] extraInfo = ExtraInfoUtil.split(requestHeader.getExtraInfo());
+        initAckMsg(requestHeader, extraInfo, ackMsg);
+
+        if (ExtraInfoUtil.getReviveQid(extraInfo) != KeyBuilder.POP_ORDER_REVIVE_QUEUE) {
+            return 1;
+        }
+
+        // order
+        String lockKey = requestHeader.getTopic() + PopAckConstants.SPLIT + requestHeader.getConsumerGroup() + PopAckConstants.SPLIT + requestHeader.getQueueId();
+        long oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
+        if (requestHeader.getOffset() < oldOffset) {
+            return -1;
+        }
+        while (!this.brokerController.getBrokerNettyServer().getPopMessageProcessor().getQueueLockManager().tryLock(lockKey)) {
+        }
+
+        try {
+            oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
             if (requestHeader.getOffset() < oldOffset) {
                 return -1;
             }
-            while (!this.brokerController.getBrokerNettyServer().getPopMessageProcessor().getQueueLockManager().tryLock(lockKey)) {
-            }
-            try {
-                oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
-                if (requestHeader.getOffset() < oldOffset) {
-                    return -1;
+            long nextOffset = brokerController.getConsumerOrderInfoManager().commitAndNext(
+                requestHeader.getTopic(), requestHeader.getConsumerGroup(),
+                requestHeader.getQueueId(), requestHeader.getOffset(),
+                ExtraInfoUtil.getPopTime(extraInfo));
+
+            if (nextOffset > -1) {
+                if (!this.brokerController.getConsumerOffsetManager().hasOffsetReset(
+                    requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId())) {
+                    this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(),
+                        requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), nextOffset);
                 }
-                long nextOffset = brokerController.getConsumerOrderInfoManager().commitAndNext(
-                    requestHeader.getTopic(), requestHeader.getConsumerGroup(),
-                    requestHeader.getQueueId(), requestHeader.getOffset(),
-                    ExtraInfoUtil.getPopTime(extraInfo));
-                if (nextOffset > -1) {
-                    if (!this.brokerController.getConsumerOffsetManager().hasOffsetReset(
-                        requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId())) {
-                        this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(),
-                            requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), nextOffset);
-                    }
-                    if (!this.brokerController.getConsumerOrderInfoManager().checkBlock(null, requestHeader.getTopic(),
-                        requestHeader.getConsumerGroup(), requestHeader.getQueueId(), ExtraInfoUtil.getInvisibleTime(extraInfo))) {
-                        this.brokerController.getBrokerNettyServer().getPopMessageProcessor().notifyMessageArriving(
-                            requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
-                    }
-                } else if (nextOffset == -1) {
-                    String errorInfo = String.format("offset is illegal, key:%s, old:%d, commit:%d, next:%d, %s",
-                        lockKey, oldOffset, requestHeader.getOffset(), nextOffset, channel.remoteAddress());
-                    POP_LOGGER.warn(errorInfo);
-                    response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-                    response.setRemark(errorInfo);
-                    return -1;
+                if (!this.brokerController.getConsumerOrderInfoManager().checkBlock(null, requestHeader.getTopic(),
+                    requestHeader.getConsumerGroup(), requestHeader.getQueueId(), ExtraInfoUtil.getInvisibleTime(extraInfo))) {
+                    this.brokerController.getBrokerNettyServer().getPopMessageProcessor().notifyMessageArriving(
+                        requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
                 }
-            } finally {
-                this.brokerController.getBrokerNettyServer().getPopMessageProcessor().getQueueLockManager().unLock(lockKey);
+            } else if (nextOffset == -1) {
+                String errorInfo = String.format("offset is illegal, key:%s, old:%d, commit:%d, next:%d, %s",
+                    lockKey, oldOffset, requestHeader.getOffset(), nextOffset, channel.remoteAddress());
+                POP_LOGGER.warn(errorInfo);
+                response.setCode(ResponseCode.MESSAGE_ILLEGAL);
+                response.setRemark(errorInfo);
+                return -1;
             }
-            brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(requestHeader.getTopic(), requestHeader.getConsumerGroup(), ExtraInfoUtil.getPopTime(extraInfo), requestHeader.getQueueId(), 0);
-            return -1;
+        } finally {
+            this.brokerController.getBrokerNettyServer().getPopMessageProcessor().getQueueLockManager().unLock(lockKey);
         }
 
-
-        return 1;
+        brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(requestHeader.getTopic(), requestHeader.getConsumerGroup(), ExtraInfoUtil.getPopTime(extraInfo), requestHeader.getQueueId(), 0);
+        return -1;
     }
 
     private int countBatchAckMsg(final BatchAck batchAck, String brokerName, AckMsg ackMsg) {
