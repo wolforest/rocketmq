@@ -118,48 +118,6 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         }
     }
 
-    private TopicConfig getTopicConfig(AckMessageRequestHeader requestHeader, Channel channel, RemotingCommand response) {
-        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
-        if (null != topicConfig) {
-            return topicConfig;
-        }
-
-        POP_LOGGER.error("The topic {} not exist, consumer: {} ", requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(channel));
-        response.setCode(ResponseCode.TOPIC_NOT_EXIST);
-        response.setRemark(String.format("topic[%s] not exist, apply first please! %s", requestHeader.getTopic(), FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)));
-        return null;
-    }
-
-    private boolean checkQueueId(Channel channel, AckMessageRequestHeader requestHeader, TopicConfig topicConfig, RemotingCommand response) {
-        if (requestHeader.getQueueId() < topicConfig.getReadQueueNums() && requestHeader.getQueueId() >= 0) {
-            return true;
-        }
-
-        String errorInfo = String.format("queueId[%d] is illegal, topic:[%s] topicConfig.readQueueNums:[%d] consumer:[%s]",
-            requestHeader.getQueueId(), requestHeader.getTopic(), topicConfig.getReadQueueNums(), channel.remoteAddress());
-        POP_LOGGER.warn(errorInfo);
-        response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-        response.setRemark(errorInfo);
-        return false;
-    }
-
-    private boolean checkOffset(AckMessageRequestHeader requestHeader, RemotingCommand response) {
-        long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
-        long maxOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
-
-        if (requestHeader.getOffset() >= minOffset && requestHeader.getOffset() <= maxOffset) {
-            return true;
-        }
-
-        String errorInfo = String.format("offset is illegal, key:%s@%d, commit:%d, store:%d~%d",
-            requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getOffset(), minOffset, maxOffset);
-        POP_LOGGER.warn(errorInfo);
-        response.setCode(ResponseCode.NO_MESSAGE);
-        response.setRemark(errorInfo);
-
-        return false;
-    }
-
     private RemotingCommand handleAckMessage(final Channel channel, RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.SUCCESS, null);
         response.setOpaque(request.getOpaque());
@@ -200,6 +158,48 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             appendAck(null, bAck, response, channel, reqBody.getBrokerName());
         }
         return response;
+    }
+
+    private TopicConfig getTopicConfig(AckMessageRequestHeader requestHeader, Channel channel, RemotingCommand response) {
+        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+        if (null != topicConfig) {
+            return topicConfig;
+        }
+
+        POP_LOGGER.error("The topic {} not exist, consumer: {} ", requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(channel));
+        response.setCode(ResponseCode.TOPIC_NOT_EXIST);
+        response.setRemark(String.format("topic[%s] not exist, apply first please! %s", requestHeader.getTopic(), FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)));
+        return null;
+    }
+
+    private boolean checkQueueId(Channel channel, AckMessageRequestHeader requestHeader, TopicConfig topicConfig, RemotingCommand response) {
+        if (requestHeader.getQueueId() < topicConfig.getReadQueueNums() && requestHeader.getQueueId() >= 0) {
+            return true;
+        }
+
+        String errorInfo = String.format("queueId[%d] is illegal, topic:[%s] topicConfig.readQueueNums:[%d] consumer:[%s]",
+            requestHeader.getQueueId(), requestHeader.getTopic(), topicConfig.getReadQueueNums(), channel.remoteAddress());
+        POP_LOGGER.warn(errorInfo);
+        response.setCode(ResponseCode.MESSAGE_ILLEGAL);
+        response.setRemark(errorInfo);
+        return false;
+    }
+
+    private boolean checkOffset(AckMessageRequestHeader requestHeader, RemotingCommand response) {
+        long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
+        long maxOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
+
+        if (requestHeader.getOffset() >= minOffset && requestHeader.getOffset() <= maxOffset) {
+            return true;
+        }
+
+        String errorInfo = String.format("offset is illegal, key:%s@%d, commit:%d, store:%d~%d",
+            requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getOffset(), minOffset, maxOffset);
+        POP_LOGGER.warn(errorInfo);
+        response.setCode(ResponseCode.NO_MESSAGE);
+        response.setRemark(errorInfo);
+
+        return false;
     }
 
     private RemotingCommand handleIllegalRequest(final Channel channel, RemotingCommand request) {
@@ -332,6 +332,12 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         }
 
         ackMsg = batchAckMsg;
+        initAckMsg(ackMsg, batchAck, topic, brokerName);
+
+        return batchAckMsg.getAckOffsetList().size();
+    }
+
+    private void initAckMsg(AckMsg ackMsg, BatchAck batchAck, String topic, String brokerName) {
         ackMsg.setConsumerGroup(batchAck.getConsumerGroup());
         ackMsg.setTopic(topic);
         ackMsg.setQueueId(batchAck.getQueueId());
@@ -339,8 +345,6 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         ackMsg.setAckOffset(-1);
         ackMsg.setPopTime(batchAck.getPopTime());
         ackMsg.setBrokerName(brokerName);
-
-        return batchAckMsg.getAckOffsetList().size();
     }
 
     private int countAckMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, AckMsg ackMsg) {
