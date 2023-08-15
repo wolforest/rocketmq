@@ -131,16 +131,21 @@ public class ScheduleMessageService extends ConfigManager {
         return storeTimestamp + 1000;
     }
 
+    private void initExecutorService() {
+        this.deliverExecutorService = new ScheduledThreadPoolExecutor(this.maxDelayLevel, new ThreadFactoryImpl("ScheduleMessageTimerThread_"));
+        if (this.enableAsyncDeliver) {
+            this.handleExecutorService = new ScheduledThreadPoolExecutor(this.maxDelayLevel, new ThreadFactoryImpl("ScheduleMessageExecutorHandleThread_"));
+        }
+    }
+
     public void start() {
         if (!started.compareAndSet(false, true)) {
             return;
         }
 
         this.load();
-        this.deliverExecutorService = new ScheduledThreadPoolExecutor(this.maxDelayLevel, new ThreadFactoryImpl("ScheduleMessageTimerThread_"));
-        if (this.enableAsyncDeliver) {
-            this.handleExecutorService = new ScheduledThreadPoolExecutor(this.maxDelayLevel, new ThreadFactoryImpl("ScheduleMessageExecutorHandleThread_"));
-        }
+        this.initExecutorService();
+
         for (Map.Entry<Integer, Long> entry : this.delayLevelTable.entrySet()) {
             Integer level = entry.getKey();
             Long timeDelay = entry.getValue();
