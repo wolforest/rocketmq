@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
-import org.apache.rocketmq.store.CommitLog;
 import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.commitlog.GroupCommitRequest;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 public interface HAService {
@@ -121,7 +121,7 @@ public interface HAService {
      *
      * @param request
      */
-    void putRequest(final CommitLog.GroupCommitRequest request);
+    void putRequest(final GroupCommitRequest request);
 
     /**
      * Put GroupConnectionStateRequest for preOnline

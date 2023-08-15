@@ -28,7 +28,7 @@ import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.Configuration;
-import org.apache.rocketmq.store.CommitLog;
+import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.GetMessageStatus;
