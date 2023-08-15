@@ -192,7 +192,16 @@ public class ScheduleMessageService extends ConfigManager {
     }
 
     private void stopHandleExecutorService() {
+        if (this.handleExecutorService == null) {
+            return;
+        }
 
+        this.handleExecutorService.shutdown();
+        try {
+            this.handleExecutorService.awaitTermination(WAIT_FOR_SHUTDOWN, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.error("handleExecutorService awaitTermination error", e);
+        }
     }
 
     public boolean stop() {
@@ -201,15 +210,7 @@ public class ScheduleMessageService extends ConfigManager {
         }
 
         stopDeliverExecutorService();
-
-        if (this.handleExecutorService != null) {
-            this.handleExecutorService.shutdown();
-            try {
-                this.handleExecutorService.awaitTermination(WAIT_FOR_SHUTDOWN, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                log.error("handleExecutorService awaitTermination error", e);
-            }
-        }
+        stopHandleExecutorService();
 
         for (int i = 1; i <= this.deliverPendingTable.size(); i++) {
             log.warn("deliverPendingTable level: {}, size: {}", i, this.deliverPendingTable.get(i).size());
