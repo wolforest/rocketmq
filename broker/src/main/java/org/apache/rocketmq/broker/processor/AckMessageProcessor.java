@@ -106,61 +106,83 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         return false;
     }
 
-    private RemotingCommand processRequest(final Channel channel, RemotingCommand request,
-                                           boolean brokerAllowSuspend) throws RemotingCommandException {
+    private RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend) throws RemotingCommandException {
+        if (request.getCode() == RequestCode.ACK_MESSAGE) {
+            return handleAckMessage(channel, request);
+        } else if (request.getCode() == RequestCode.BATCH_ACK_MESSAGE) {
+            return handleBatchAckMessage(channel, request);
+        } else {
+            return handleIllegalRequest(channel, request);
+        }
+    }
+
+    private RemotingCommand handleAckMessage(final Channel channel, RemotingCommand request) throws RemotingCommandException {
         AckMessageRequestHeader requestHeader;
         BatchAckMessageRequestBody reqBody = null;
         final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.SUCCESS, null);
         response.setOpaque(request.getOpaque());
-        if (request.getCode() == RequestCode.ACK_MESSAGE) {
-            requestHeader = (AckMessageRequestHeader) request.decodeCommandCustomHeader(AckMessageRequestHeader.class);
 
-            TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
-            if (null == topicConfig) {
-                POP_LOGGER.error("The topic {} not exist, consumer: {} ", requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(channel));
-                response.setCode(ResponseCode.TOPIC_NOT_EXIST);
-                response.setRemark(String.format("topic[%s] not exist, apply first please! %s", requestHeader.getTopic(), FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)));
-                return response;
-            }
+        requestHeader = (AckMessageRequestHeader) request.decodeCommandCustomHeader(AckMessageRequestHeader.class);
 
-            if (requestHeader.getQueueId() >= topicConfig.getReadQueueNums() || requestHeader.getQueueId() < 0) {
-                String errorInfo = String.format("queueId[%d] is illegal, topic:[%s] topicConfig.readQueueNums:[%d] consumer:[%s]",
-                        requestHeader.getQueueId(), requestHeader.getTopic(), topicConfig.getReadQueueNums(), channel.remoteAddress());
-                POP_LOGGER.warn(errorInfo);
-                response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-                response.setRemark(errorInfo);
-                return response;
-            }
-
-            long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
-            long maxOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
-            if (requestHeader.getOffset() < minOffset || requestHeader.getOffset() > maxOffset) {
-                String errorInfo = String.format("offset is illegal, key:%s@%d, commit:%d, store:%d~%d",
-                        requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getOffset(), minOffset, maxOffset);
-                POP_LOGGER.warn(errorInfo);
-                response.setCode(ResponseCode.NO_MESSAGE);
-                response.setRemark(errorInfo);
-                return response;
-            }
-
-            appendAck(requestHeader, null, response, channel, null);
-        } else if (request.getCode() == RequestCode.BATCH_ACK_MESSAGE) {
-            if (request.getBody() != null) {
-                reqBody = BatchAckMessageRequestBody.decode(request.getBody(), BatchAckMessageRequestBody.class);
-            }
-            if (reqBody == null || reqBody.getAcks() == null || reqBody.getAcks().isEmpty()) {
-                response.setCode(ResponseCode.NO_MESSAGE);
-                return response;
-            }
-            for (BatchAck bAck : reqBody.getAcks()) {
-                appendAck(null, bAck, response, channel, reqBody.getBrokerName());
-            }
-        } else {
-            POP_LOGGER.error("AckMessageProcessor failed to process RequestCode: {}, consumer: {} ", request.getCode(), RemotingHelper.parseChannelRemoteAddr(channel));
-            response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-            response.setRemark(String.format("AckMessageProcessor failed to process RequestCode: %d", request.getCode()));
+        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+        if (null == topicConfig) {
+            POP_LOGGER.error("The topic {} not exist, consumer: {} ", requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(channel));
+            response.setCode(ResponseCode.TOPIC_NOT_EXIST);
+            response.setRemark(String.format("topic[%s] not exist, apply first please! %s", requestHeader.getTopic(), FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)));
             return response;
         }
+
+        if (requestHeader.getQueueId() >= topicConfig.getReadQueueNums() || requestHeader.getQueueId() < 0) {
+            String errorInfo = String.format("queueId[%d] is illegal, topic:[%s] topicConfig.readQueueNums:[%d] consumer:[%s]",
+                requestHeader.getQueueId(), requestHeader.getTopic(), topicConfig.getReadQueueNums(), channel.remoteAddress());
+            POP_LOGGER.warn(errorInfo);
+            response.setCode(ResponseCode.MESSAGE_ILLEGAL);
+            response.setRemark(errorInfo);
+            return response;
+        }
+
+        long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
+        long maxOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
+        if (requestHeader.getOffset() < minOffset || requestHeader.getOffset() > maxOffset) {
+            String errorInfo = String.format("offset is illegal, key:%s@%d, commit:%d, store:%d~%d",
+                requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getOffset(), minOffset, maxOffset);
+            POP_LOGGER.warn(errorInfo);
+            response.setCode(ResponseCode.NO_MESSAGE);
+            response.setRemark(errorInfo);
+            return response;
+        }
+
+        appendAck(requestHeader, null, response, channel, null);
+        return response;
+    }
+
+    private RemotingCommand handleBatchAckMessage(final Channel channel, RemotingCommand request) {
+        AckMessageRequestHeader requestHeader;
+        BatchAckMessageRequestBody reqBody = null;
+        final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.SUCCESS, null);
+        response.setOpaque(request.getOpaque());
+
+        if (request.getBody() != null) {
+            reqBody = BatchAckMessageRequestBody.decode(request.getBody(), BatchAckMessageRequestBody.class);
+        }
+        if (reqBody == null || reqBody.getAcks() == null || reqBody.getAcks().isEmpty()) {
+            response.setCode(ResponseCode.NO_MESSAGE);
+            return response;
+        }
+        for (BatchAck bAck : reqBody.getAcks()) {
+            appendAck(null, bAck, response, channel, reqBody.getBrokerName());
+        }
+        return response;
+    }
+
+    private RemotingCommand handleIllegalRequest(final Channel channel, RemotingCommand request) {
+        POP_LOGGER.error("AckMessageProcessor failed to process RequestCode: {}, consumer: {} ", request.getCode(), RemotingHelper.parseChannelRemoteAddr(channel));
+
+        final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.SUCCESS, null);
+        response.setOpaque(request.getOpaque());
+        response.setCode(ResponseCode.MESSAGE_ILLEGAL);
+        response.setRemark(String.format("AckMessageProcessor failed to process RequestCode: %d", request.getCode()));
+
         return response;
     }
 
