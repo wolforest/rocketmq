@@ -132,36 +132,38 @@ public class ScheduleMessageService extends ConfigManager {
     }
 
     public void start() {
-        if (started.compareAndSet(false, true)) {
-            this.load();
-            this.deliverExecutorService = new ScheduledThreadPoolExecutor(this.maxDelayLevel, new ThreadFactoryImpl("ScheduleMessageTimerThread_"));
-            if (this.enableAsyncDeliver) {
-                this.handleExecutorService = new ScheduledThreadPoolExecutor(this.maxDelayLevel, new ThreadFactoryImpl("ScheduleMessageExecutorHandleThread_"));
-            }
-            for (Map.Entry<Integer, Long> entry : this.delayLevelTable.entrySet()) {
-                Integer level = entry.getKey();
-                Long timeDelay = entry.getValue();
-                Long offset = this.offsetTable.get(level);
-                if (null == offset) {
-                    offset = 0L;
-                }
-
-                if (timeDelay != null) {
-                    if (this.enableAsyncDeliver) {
-                        this.handleExecutorService.schedule(new HandlePutResultTask(level), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
-                    }
-                    this.deliverExecutorService.schedule(new DeliverDelayedMessageTimerTask(level, offset), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
-                }
-            }
-
-            scheduledPersistService.scheduleAtFixedRate(() -> {
-                try {
-                    ScheduleMessageService.this.persist();
-                } catch (Throwable e) {
-                    log.error("scheduleAtFixedRate flush exception", e);
-                }
-            }, 10000, this.brokerController.getMessageStoreConfig().getFlushDelayOffsetInterval(), TimeUnit.MILLISECONDS);
+        if (!started.compareAndSet(false, true)) {
+            return;
         }
+
+        this.load();
+        this.deliverExecutorService = new ScheduledThreadPoolExecutor(this.maxDelayLevel, new ThreadFactoryImpl("ScheduleMessageTimerThread_"));
+        if (this.enableAsyncDeliver) {
+            this.handleExecutorService = new ScheduledThreadPoolExecutor(this.maxDelayLevel, new ThreadFactoryImpl("ScheduleMessageExecutorHandleThread_"));
+        }
+        for (Map.Entry<Integer, Long> entry : this.delayLevelTable.entrySet()) {
+            Integer level = entry.getKey();
+            Long timeDelay = entry.getValue();
+            Long offset = this.offsetTable.get(level);
+            if (null == offset) {
+                offset = 0L;
+            }
+
+            if (timeDelay != null) {
+                if (this.enableAsyncDeliver) {
+                    this.handleExecutorService.schedule(new HandlePutResultTask(level), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
+                }
+                this.deliverExecutorService.schedule(new DeliverDelayedMessageTimerTask(level, offset), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
+            }
+        }
+
+        scheduledPersistService.scheduleAtFixedRate(() -> {
+            try {
+                ScheduleMessageService.this.persist();
+            } catch (Throwable e) {
+                log.error("scheduleAtFixedRate flush exception", e);
+            }
+        }, 10000, this.brokerController.getMessageStoreConfig().getFlushDelayOffsetInterval(), TimeUnit.MILLISECONDS);
     }
 
     public void shutdown() {
