@@ -14,23 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.rocketmq.store.commitlog.service;
 
-package org.apache.rocketmq.store;
+import org.apache.rocketmq.common.ServiceThread;
 
-import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.common.message.MessageExt;
-
-public interface FlushManager {
-
-    void start();
-
-    void shutdown();
-
-    void wakeUpFlush();
-
-    void wakeUpCommit();
-
-    void handleDiskFlush(AppendMessageResult result, PutMessageResult putMessageResult, MessageExt messageExt);
-
-    CompletableFuture<PutMessageStatus> handleDiskFlush(AppendMessageResult result, MessageExt messageExt);
+public abstract class FlushCommitLogService extends ServiceThread {
+    protected static final int RETRY_TIMES_OVER = 10;
 }

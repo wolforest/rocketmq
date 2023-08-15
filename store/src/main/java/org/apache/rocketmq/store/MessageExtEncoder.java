@@ -97,7 +97,7 @@ public class MessageExtEncoder {
 
         // Exceeds the maximum message body
         if (bodyLength > this.maxMessageBodySize) {
-            CommitLog.log.warn("message body size exceeded, msg total size: " + msgLen + ", msg body size: " + bodyLength
+            log.warn("message body size exceeded, msg total size: " + msgLen + ", msg body size: " + bodyLength
                 + ", maxMessageSize: " + this.maxMessageBodySize);
             return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, null);
         }
@@ -106,7 +106,7 @@ public class MessageExtEncoder {
 
         // Exceeds the maximum message
         if (msgLen > this.maxMessageSize) {
-            CommitLog.log.warn("message size exceeded, msg total size: " + msgLen + ", msg body size: " + bodyLength
+            log.warn("message size exceeded, msg total size: " + msgLen + ", msg body size: " + bodyLength
                 + ", maxMessageSize: " + this.maxMessageSize);
             return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, null);
         }
@@ -173,7 +173,7 @@ public class MessageExtEncoder {
 
         int totalLength = messagesByteBuff.limit();
         if (totalLength > this.maxMessageBodySize) {
-            CommitLog.log.warn("message body size exceeded, msg body size: " + totalLength + ", maxMessageSize: " + this.maxMessageBodySize);
+            log.warn("message body size exceeded, msg body size: " + totalLength + ", maxMessageSize: " + this.maxMessageBodySize);
             throw new RuntimeException("message body size exceeded");
         }
 
@@ -182,7 +182,7 @@ public class MessageExtEncoder {
         final byte[] batchPropData = batchPropStr.getBytes(MessageDecoder.CHARSET_UTF8);
         int batchPropDataLen = batchPropData.length;
         if (batchPropDataLen > Short.MAX_VALUE) {
-            CommitLog.log.warn("Properties size of messageExtBatch exceeded, properties size: {}, maxSize: {}.", batchPropDataLen, Short.MAX_VALUE);
+            log.warn("Properties size of messageExtBatch exceeded, properties size: {}, maxSize: {}.", batchPropDataLen, Short.MAX_VALUE);
             throw new RuntimeException("Properties size of messageExtBatch exceeded!");
         }
         final short batchPropLen = (short) batchPropDataLen;
@@ -301,10 +301,10 @@ public class MessageExtEncoder {
         this.byteBuf.capacity(this.maxMessageSize);
     }
 
-    static class PutMessageThreadLocal {
+    public static class PutMessageThreadLocal {
         private final MessageExtEncoder encoder;
         private final StringBuilder keyBuilder;
-        PutMessageThreadLocal(int size) {
+        public PutMessageThreadLocal(int size) {
             encoder = new MessageExtEncoder(size);
             keyBuilder = new StringBuilder();
         }

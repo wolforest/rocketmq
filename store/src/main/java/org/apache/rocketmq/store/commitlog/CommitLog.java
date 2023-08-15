@@ -14,30 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store;
+package org.apache.rocketmq.store.commitlog;
 
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.ServiceThread;
-import org.apache.rocketmq.common.SystemClock;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.attribute.CQType;
@@ -53,13 +45,32 @@ import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.AppendMessageResult;
+import org.apache.rocketmq.store.AppendMessageStatus;
+import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.DispatchRequest;
+import org.apache.rocketmq.store.MappedFileQueue;
+import org.apache.rocketmq.store.MessageExtEncoder;
 import org.apache.rocketmq.store.MessageExtEncoder.PutMessageThreadLocal;
+import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.MultiPathMappedFileQueue;
+import org.apache.rocketmq.store.PutMessageContext;
+import org.apache.rocketmq.store.PutMessageLock;
+import org.apache.rocketmq.store.PutMessageReentrantLock;
+import org.apache.rocketmq.store.PutMessageResult;
+import org.apache.rocketmq.store.PutMessageSpinLock;
+import org.apache.rocketmq.store.PutMessageStatus;
+import org.apache.rocketmq.store.SelectMappedBufferResult;
+import org.apache.rocketmq.store.SelectMappedFileResult;
+import org.apache.rocketmq.store.StoreStatsService;
+import org.apache.rocketmq.store.Swappable;
+import org.apache.rocketmq.store.TopicQueueLock;
 import org.apache.rocketmq.store.config.BrokerRole;
-import org.apache.rocketmq.store.config.FlushDiskType;
 import org.apache.rocketmq.store.ha.HAService;
 import org.apache.rocketmq.store.ha.autoswitch.AutoSwitchHAService;
 import org.apache.rocketmq.store.logfile.MappedFile;
-import org.apache.rocketmq.store.queue.ConsumeQueue;
+import org.apache.rocketmq.store.commitlog.service.ColdDataCheckService;
+import org.apache.rocketmq.store.commitlog.service.CommitLogRecoverService;
 import org.apache.rocketmq.store.util.LibC;
 import sun.nio.ch.DirectBuffer;
 
@@ -77,6 +88,7 @@ public class CommitLog implements Swappable {
 
     private final FlushManager flushManager;
     private final ColdDataCheckService coldDataCheckService;
+    private final CommitLogRecoverService commitLogRecoverService;
 
     private final AppendMessageCallback appendMessageCallback;
     private final ThreadLocal<PutMessageThreadLocal> putMessageThreadLocal;
@@ -109,10 +121,11 @@ public class CommitLog implements Swappable {
 
         this.defaultMessageStore = messageStore;
 
-        this.flushManager = new DefaultFlushManager();
-        this.coldDataCheckService = new ColdDataCheckService();
+        this.flushManager = new DefaultFlushManager(messageStore, this);
+        this.coldDataCheckService = new ColdDataCheckService(messageStore);
+        this.commitLogRecoverService = new CommitLogRecoverService(messageStore, this);
 
-        this.appendMessageCallback = new DefaultAppendMessageCallback();
+        this.appendMessageCallback = new DefaultAppendMessageCallback(messageStore, this);
         putMessageThreadLocal = new ThreadLocal<PutMessageThreadLocal>() {
             @Override
             protected PutMessageThreadLocal initialValue() {
@@ -302,90 +315,7 @@ public class CommitLog implements Swappable {
      * When the normal exit, data recovery, all memory data have been flush
      */
     public void recoverNormally(long maxPhyOffsetOfConsumeQueue) {
-        boolean checkCRCOnRecover = this.defaultMessageStore.getMessageStoreConfig().isCheckCRCOnRecover();
-        boolean checkDupInfo = this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable();
-        final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
-        if (!mappedFiles.isEmpty()) {
-            // Began to recover from the last third file
-            int index = mappedFiles.size() - 3;
-            if (index < 0) {
-                index = 0;
-            }
-
-            MappedFile mappedFile = mappedFiles.get(index);
-            ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-            long processOffset = mappedFile.getFileFromOffset();
-            long mappedFileOffset = 0;
-            long lastValidMsgPhyOffset = this.getConfirmOffset();
-            // normal recover doesn't require dispatching
-            boolean doDispatch = false;
-            while (true) {
-                DispatchRequest dispatchRequest = this.checkMessageAndReturnSize(byteBuffer, checkCRCOnRecover, checkDupInfo);
-                int size = dispatchRequest.getMsgSize();
-                // Normal data
-                if (dispatchRequest.isSuccess() && size > 0) {
-                    lastValidMsgPhyOffset = processOffset + mappedFileOffset;
-                    mappedFileOffset += size;
-                    this.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, false);
-                }
-                // Come the end of the file, switch to the next file Since the
-                // return 0 representatives met last hole,
-                // this can not be included in truncate offset
-                else if (dispatchRequest.isSuccess() && size == 0) {
-                    this.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, true);
-                    index++;
-                    if (index >= mappedFiles.size()) {
-                        // Current branch can not happen
-                        log.info("recover last 3 physics file over, last mapped file " + mappedFile.getFileName());
-                        break;
-                    } else {
-                        mappedFile = mappedFiles.get(index);
-                        byteBuffer = mappedFile.sliceByteBuffer();
-                        processOffset = mappedFile.getFileFromOffset();
-                        mappedFileOffset = 0;
-                        log.info("recover next physics file, " + mappedFile.getFileName());
-                    }
-                }
-                // Intermediate file read error
-                else if (!dispatchRequest.isSuccess()) {
-                    if (size > 0) {
-                        log.warn("found a half message at {}, it will be truncated.", processOffset + mappedFileOffset);
-                    }
-                    log.info("recover physics file end, " + mappedFile.getFileName());
-                    break;
-                }
-            }
-
-            processOffset += mappedFileOffset;
-
-            if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-                if (this.defaultMessageStore.getConfirmOffset() < this.defaultMessageStore.getMinPhyOffset()) {
-                    log.error("confirmOffset {} is less than minPhyOffset {}, correct confirmOffset to minPhyOffset", this.defaultMessageStore.getConfirmOffset(), this.defaultMessageStore.getMinPhyOffset());
-                    this.defaultMessageStore.setConfirmOffset(this.defaultMessageStore.getMinPhyOffset());
-                } else if (this.defaultMessageStore.getConfirmOffset() > processOffset) {
-                    log.error("confirmOffset {} is larger than processOffset {}, correct confirmOffset to processOffset", this.defaultMessageStore.getConfirmOffset(), processOffset);
-                    this.defaultMessageStore.setConfirmOffset(processOffset);
-                }
-            } else {
-                this.setConfirmOffset(lastValidMsgPhyOffset);
-            }
-
-            this.mappedFileQueue.setFlushedWhere(processOffset);
-            this.mappedFileQueue.setCommittedWhere(processOffset);
-            this.mappedFileQueue.truncateDirtyFiles(processOffset);
-
-            // Clear ConsumeQueue redundant data
-            if (maxPhyOffsetOfConsumeQueue >= processOffset) {
-                log.warn("maxPhyOffsetOfConsumeQueue({}) >= processOffset({}), truncate dirty logic files", maxPhyOffsetOfConsumeQueue, processOffset);
-                this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
-            }
-        } else {
-            // Commitlog case files are deleted
-            log.warn("The commitlog files are deleted, and delete the consume queue files");
-            this.mappedFileQueue.setFlushedWhere(0);
-            this.mappedFileQueue.setCommittedWhere(0);
-            this.defaultMessageStore.destroyLogics();
-        }
+        this.commitLogRecoverService.recoverNormally(maxPhyOffsetOfConsumeQueue);
     }
 
     public DispatchRequest checkMessageAndReturnSize(java.nio.ByteBuffer byteBuffer, final boolean checkCRC,
@@ -629,112 +559,7 @@ public class CommitLog implements Swappable {
 
     @Deprecated
     public void recoverAbnormally(long maxPhyOffsetOfConsumeQueue) {
-        // recover by the minimum time stamp
-        boolean checkCRCOnRecover = this.defaultMessageStore.getMessageStoreConfig().isCheckCRCOnRecover();
-        boolean checkDupInfo = this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable();
-        final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
-        if (!mappedFiles.isEmpty()) {
-            // Looking beginning to recover from which file
-            int index = mappedFiles.size() - 1;
-            MappedFile mappedFile = null;
-            for (; index >= 0; index--) {
-                mappedFile = mappedFiles.get(index);
-                if (this.isMappedFileMatchedRecover(mappedFile)) {
-                    log.info("recover from this mapped file " + mappedFile.getFileName());
-                    break;
-                }
-            }
-
-            if (index < 0) {
-                index = 0;
-                mappedFile = mappedFiles.get(index);
-            }
-
-            ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-            long processOffset = mappedFile.getFileFromOffset();
-            long mappedFileOffset = 0;
-            long lastValidMsgPhyOffset = processOffset;
-            long lastConfirmValidMsgPhyOffset = processOffset;
-            // abnormal recover require dispatching
-            boolean doDispatch = true;
-            while (true) {
-                DispatchRequest dispatchRequest = this.checkMessageAndReturnSize(byteBuffer, checkCRCOnRecover, checkDupInfo);
-                int size = dispatchRequest.getMsgSize();
-
-                if (dispatchRequest.isSuccess()) {
-                    // Normal data
-                    if (size > 0) {
-                        lastValidMsgPhyOffset = processOffset + mappedFileOffset;
-                        mappedFileOffset += size;
-
-                        if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable() || this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-                            if (dispatchRequest.getCommitLogOffset() + size <= this.defaultMessageStore.getCommitLog().getConfirmOffset()) {
-                                this.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, false);
-                                lastConfirmValidMsgPhyOffset = dispatchRequest.getCommitLogOffset() + size;
-                            }
-                        } else {
-                            this.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, false);
-                        }
-                    }
-                    // Come the end of the file, switch to the next file
-                    // Since the return 0 representatives met last hole, this can
-                    // not be included in truncate offset
-                    else if (size == 0) {
-                        this.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, true);
-                        index++;
-                        if (index >= mappedFiles.size()) {
-                            // The current branch under normal circumstances should
-                            // not happen
-                            log.info("recover physics file over, last mapped file " + mappedFile.getFileName());
-                            break;
-                        } else {
-                            mappedFile = mappedFiles.get(index);
-                            byteBuffer = mappedFile.sliceByteBuffer();
-                            processOffset = mappedFile.getFileFromOffset();
-                            mappedFileOffset = 0;
-                            log.info("recover next physics file, " + mappedFile.getFileName());
-                        }
-                    }
-                } else {
-
-                    if (size > 0) {
-                        log.warn("found a half message at {}, it will be truncated.", processOffset + mappedFileOffset);
-                    }
-
-                    log.info("recover physics file end, " + mappedFile.getFileName() + " pos=" + byteBuffer.position());
-                    break;
-                }
-            }
-
-            processOffset += mappedFileOffset;
-            if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-                if (this.defaultMessageStore.getConfirmOffset() < this.defaultMessageStore.getMinPhyOffset()) {
-                    log.error("confirmOffset {} is less than minPhyOffset {}, correct confirmOffset to minPhyOffset", this.defaultMessageStore.getConfirmOffset(), this.defaultMessageStore.getMinPhyOffset());
-                    this.defaultMessageStore.setConfirmOffset(this.defaultMessageStore.getMinPhyOffset());
-                } else if (this.defaultMessageStore.getConfirmOffset() > lastConfirmValidMsgPhyOffset) {
-                    log.error("confirmOffset {} is larger than lastConfirmValidMsgPhyOffset {}, correct confirmOffset to lastConfirmValidMsgPhyOffset", this.defaultMessageStore.getConfirmOffset(), lastConfirmValidMsgPhyOffset);
-                    this.defaultMessageStore.setConfirmOffset(lastConfirmValidMsgPhyOffset);
-                }
-            } else {
-                this.setConfirmOffset(lastValidMsgPhyOffset);
-            }
-            this.mappedFileQueue.setFlushedWhere(processOffset);
-            this.mappedFileQueue.setCommittedWhere(processOffset);
-            this.mappedFileQueue.truncateDirtyFiles(processOffset);
-
-            // Clear ConsumeQueue redundant data
-            if (maxPhyOffsetOfConsumeQueue >= processOffset) {
-                log.warn("maxPhyOffsetOfConsumeQueue({}) >= processOffset({}), truncate dirty logic files", maxPhyOffsetOfConsumeQueue, processOffset);
-                this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
-            }
-        }
-        // Commitlog case files are deleted
-        else {
-            log.warn("The commitlog files are deleted, and delete the consume queue files");
-            this.mappedFileQueue.setFlushedWhere(0);
-            this.mappedFileQueue.setCommittedWhere(0);
-            this.defaultMessageStore.destroyLogics();
-        }
+        this.commitLogRecoverService.recoverAbnormally(maxPhyOffsetOfConsumeQueue);
     }
 
     public void truncateDirtyFiles(long phyOffset) {
@@ -756,7 +581,7 @@ public class CommitLog implements Swappable {
         this.getMessageStore().onCommitLogAppend(msg, result, commitLogFile);
     }
 
-    private boolean isMappedFileMatchedRecover(final MappedFile mappedFile) {
+    public boolean isMappedFileMatchedRecover(final MappedFile mappedFile) {
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
 
         int magicCode = byteBuffer.getInt(MessageDecoder.MESSAGE_MAGIC_CODE_POSITION);
@@ -1322,7 +1147,7 @@ public class CommitLog implements Swappable {
         return diff;
     }
 
-    protected short getMessageNum(MessageExtBrokerInner msgInner) {
+    public short getMessageNum(MessageExtBrokerInner msgInner) {
         short messageNum = 1;
         // IF inner batch, build batchQueueOffset and batchNum property.
         CQType cqType = getCqType(msgInner);
@@ -1342,687 +1167,6 @@ public class CommitLog implements Swappable {
         return QueueTypeUtils.getCQType(topicConfig);
     }
 
-    abstract class FlushCommitLogService extends ServiceThread {
-        protected static final int RETRY_TIMES_OVER = 10;
-    }
-
-    class CommitRealTimeService extends FlushCommitLogService {
-
-        private long lastCommitTimestamp = 0;
-
-        @Override
-        public String getServiceName() {
-            if (CommitLog.this.defaultMessageStore.getBrokerConfig().isInBrokerContainer()) {
-                return CommitLog.this.defaultMessageStore.getBrokerIdentity().getIdentifier() + CommitRealTimeService.class.getSimpleName();
-            }
-            return CommitRealTimeService.class.getSimpleName();
-        }
-
-        @Override
-        public void run() {
-            CommitLog.log.info(this.getServiceName() + " service started");
-            while (!this.isStopped()) {
-                int interval = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitIntervalCommitLog();
-
-                int commitDataLeastPages = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitCommitLogLeastPages();
-
-                int commitDataThoroughInterval =
-                    CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitCommitLogThoroughInterval();
-
-                long begin = System.currentTimeMillis();
-                if (begin >= (this.lastCommitTimestamp + commitDataThoroughInterval)) {
-                    this.lastCommitTimestamp = begin;
-                    commitDataLeastPages = 0;
-                }
-
-                try {
-                    boolean result = CommitLog.this.mappedFileQueue.commit(commitDataLeastPages);
-                    long end = System.currentTimeMillis();
-                    if (!result) {
-                        this.lastCommitTimestamp = end; // result = false means some data committed.
-                        CommitLog.this.flushManager.wakeUpFlush();
-                    }
-                    CommitLog.this.getMessageStore().getPerfCounter().flowOnce("COMMIT_DATA_TIME_MS", (int) (end - begin));
-                    if (end - begin > 500) {
-                        log.info("Commit data to file costs {} ms", end - begin);
-                    }
-                    this.waitForRunning(interval);
-                } catch (Throwable e) {
-                    CommitLog.log.error(this.getServiceName() + " service has exception. ", e);
-                }
-            }
-
-            boolean result = false;
-            for (int i = 0; i < RETRY_TIMES_OVER && !result; i++) {
-                result = CommitLog.this.mappedFileQueue.commit(0);
-                CommitLog.log.info(this.getServiceName() + " service shutdown, retry " + (i + 1) + " times " + (result ? "OK" : "Not OK"));
-            }
-            CommitLog.log.info(this.getServiceName() + " service end");
-        }
-    }
-
-    class FlushRealTimeService extends FlushCommitLogService {
-        private long lastFlushTimestamp = 0;
-        private long printTimes = 0;
-
-        @Override
-        public void run() {
-            CommitLog.log.info(this.getServiceName() + " service started");
-
-            while (!this.isStopped()) {
-                boolean flushCommitLogTimed = CommitLog.this.defaultMessageStore.getMessageStoreConfig().isFlushCommitLogTimed();
-
-                int interval = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushIntervalCommitLog();
-                int flushPhysicQueueLeastPages = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushCommitLogLeastPages();
-
-                int flushPhysicQueueThoroughInterval =
-                    CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushCommitLogThoroughInterval();
-
-                boolean printFlushProgress = false;
-
-                // Print flush progress
-                long currentTimeMillis = System.currentTimeMillis();
-                if (currentTimeMillis >= (this.lastFlushTimestamp + flushPhysicQueueThoroughInterval)) {
-                    this.lastFlushTimestamp = currentTimeMillis;
-                    flushPhysicQueueLeastPages = 0;
-                    printFlushProgress = (printTimes++ % 10) == 0;
-                }
-
-                try {
-                    if (flushCommitLogTimed) {
-                        Thread.sleep(interval);
-                    } else {
-                        this.waitForRunning(interval);
-                    }
-
-                    if (printFlushProgress) {
-                        this.printFlushProgress();
-                    }
-
-                    long begin = System.currentTimeMillis();
-                    CommitLog.this.mappedFileQueue.flush(flushPhysicQueueLeastPages);
-                    long storeTimestamp = CommitLog.this.mappedFileQueue.getStoreTimestamp();
-                    if (storeTimestamp > 0) {
-                        CommitLog.this.defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
-                    }
-                    long past = System.currentTimeMillis() - begin;
-                    CommitLog.this.getMessageStore().getPerfCounter().flowOnce("FLUSH_DATA_TIME_MS", (int) past);
-                    if (past > 500) {
-                        log.info("Flush data to disk costs {} ms", past);
-                    }
-                } catch (Throwable e) {
-                    CommitLog.log.warn(this.getServiceName() + " service has exception. ", e);
-                    this.printFlushProgress();
-                }
-            }
-
-            // Normal shutdown, to ensure that all the flush before exit
-            boolean result = false;
-            for (int i = 0; i < RETRY_TIMES_OVER && !result; i++) {
-                result = CommitLog.this.mappedFileQueue.flush(0);
-                CommitLog.log.info(this.getServiceName() + " service shutdown, retry " + (i + 1) + " times " + (result ? "OK" : "Not OK"));
-            }
-
-            this.printFlushProgress();
-
-            CommitLog.log.info(this.getServiceName() + " service end");
-        }
-
-        @Override
-        public String getServiceName() {
-            if (CommitLog.this.defaultMessageStore.getBrokerConfig().isInBrokerContainer()) {
-                return CommitLog.this.defaultMessageStore.getBrokerConfig().getIdentifier() + FlushRealTimeService.class.getSimpleName();
-            }
-            return FlushRealTimeService.class.getSimpleName();
-        }
-
-        private void printFlushProgress() {
-            // CommitLog.log.info("how much disk fall behind memory, "
-            // + CommitLog.this.mappedFileQueue.howMuchFallBehind());
-        }
-
-        @Override
-        public long getJoinTime() {
-            return 1000 * 60 * 5;
-        }
-    }
-
-    public static class GroupCommitRequest {
-        private final long nextOffset;
-        // Indicate the GroupCommitRequest result: true or false
-        private final CompletableFuture<PutMessageStatus> flushOKFuture = new CompletableFuture<>();
-        private volatile int ackNums = 1;
-        private final long deadLine;
-
-        public GroupCommitRequest(long nextOffset, long timeoutMillis) {
-            this.nextOffset = nextOffset;
-            this.deadLine = System.nanoTime() + (timeoutMillis * 1_000_000);
-        }
-
-        public GroupCommitRequest(long nextOffset, long timeoutMillis, int ackNums) {
-            this(nextOffset, timeoutMillis);
-            this.ackNums = ackNums;
-        }
-
-        public long getNextOffset() {
-            return nextOffset;
-        }
-
-        public int getAckNums() {
-            return ackNums;
-        }
-
-        public long getDeadLine() {
-            return deadLine;
-        }
-
-        public void wakeupCustomer(final PutMessageStatus status) {
-            this.flushOKFuture.complete(status);
-        }
-
-        public CompletableFuture<PutMessageStatus> future() {
-            return flushOKFuture;
-        }
-    }
-
-    /**
-     * GroupCommit Service
-     */
-    class GroupCommitService extends FlushCommitLogService {
-        private volatile LinkedList<GroupCommitRequest> requestsWrite = new LinkedList<>();
-        private volatile LinkedList<GroupCommitRequest> requestsRead = new LinkedList<>();
-        private final PutMessageSpinLock lock = new PutMessageSpinLock();
-
-        public void putRequest(final GroupCommitRequest request) {
-            lock.lock();
-            try {
-                this.requestsWrite.add(request);
-            } finally {
-                lock.unlock();
-            }
-            this.wakeup();
-        }
-
-        private void swapRequests() {
-            lock.lock();
-            try {
-                LinkedList<GroupCommitRequest> tmp = this.requestsWrite;
-                this.requestsWrite = this.requestsRead;
-                this.requestsRead = tmp;
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        private void doCommit() {
-            if (!this.requestsRead.isEmpty()) {
-                for (GroupCommitRequest req : this.requestsRead) {
-                    // There may be a message in the next file, so a maximum of
-                    // two times the flush
-                    boolean flushOK = CommitLog.this.mappedFileQueue.getFlushedWhere() >= req.getNextOffset();
-                    for (int i = 0; i < 2 && !flushOK; i++) {
-                        CommitLog.this.mappedFileQueue.flush(0);
-                        flushOK = CommitLog.this.mappedFileQueue.getFlushedWhere() >= req.getNextOffset();
-                    }
-
-                    req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);
-                }
-
-                long storeTimestamp = CommitLog.this.mappedFileQueue.getStoreTimestamp();
-                if (storeTimestamp > 0) {
-                    CommitLog.this.defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
-                }
-
-                this.requestsRead = new LinkedList<>();
-            } else {
-                // Because of individual messages is set to not sync flush, it
-                // will come to this process
-                CommitLog.this.mappedFileQueue.flush(0);
-            }
-        }
-
-        @Override
-        public void run() {
-            CommitLog.log.info(this.getServiceName() + " service started");
-
-            while (!this.isStopped()) {
-                try {
-                    this.waitForRunning(10);
-                    this.doCommit();
-                } catch (Exception e) {
-                    CommitLog.log.warn(this.getServiceName() + " service has exception. ", e);
-                }
-            }
-
-            // Under normal circumstances shutdown, wait for the arrival of the
-            // request, and then flush
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                CommitLog.log.warn("GroupCommitService Exception, ", e);
-            }
-
-            this.swapRequests();
-            this.doCommit();
-
-            CommitLog.log.info(this.getServiceName() + " service end");
-        }
-
-        @Override
-        protected void onWaitEnd() {
-            this.swapRequests();
-        }
-
-        @Override
-        public String getServiceName() {
-            if (CommitLog.this.defaultMessageStore.getBrokerConfig().isInBrokerContainer()) {
-                return CommitLog.this.defaultMessageStore.getBrokerConfig().getIdentifier() + GroupCommitService.class.getSimpleName();
-            }
-            return GroupCommitService.class.getSimpleName();
-        }
-
-        @Override
-        public long getJoinTime() {
-            return 1000 * 60 * 5;
-        }
-    }
-
-    class GroupCheckService extends FlushCommitLogService {
-        private volatile List<GroupCommitRequest> requestsWrite = new ArrayList<>();
-        private volatile List<GroupCommitRequest> requestsRead = new ArrayList<>();
-
-        public boolean isAsyncRequestsFull() {
-            return requestsWrite.size() > CommitLog.this.defaultMessageStore.getMessageStoreConfig().getMaxAsyncPutMessageRequests() * 2;
-        }
-
-        public synchronized boolean putRequest(final GroupCommitRequest request) {
-            synchronized (this.requestsWrite) {
-                this.requestsWrite.add(request);
-            }
-            if (hasNotified.compareAndSet(false, true)) {
-                waitPoint.countDown(); // notify
-            }
-            boolean flag = this.requestsWrite.size() >
-                CommitLog.this.defaultMessageStore.getMessageStoreConfig().getMaxAsyncPutMessageRequests();
-            if (flag) {
-                log.info("Async requests {} exceeded the threshold {}", requestsWrite.size(),
-                    CommitLog.this.defaultMessageStore.getMessageStoreConfig().getMaxAsyncPutMessageRequests());
-            }
-
-            return flag;
-        }
-
-        private void swapRequests() {
-            List<GroupCommitRequest> tmp = this.requestsWrite;
-            this.requestsWrite = this.requestsRead;
-            this.requestsRead = tmp;
-        }
-
-        private void doCommit() {
-            synchronized (this.requestsRead) {
-                if (!this.requestsRead.isEmpty()) {
-                    for (GroupCommitRequest req : this.requestsRead) {
-                        // There may be a message in the next file, so a maximum of
-                        // two times the flush
-                        boolean flushOK = false;
-                        for (int i = 0; i < 1000; i++) {
-                            flushOK = CommitLog.this.mappedFileQueue.getFlushedWhere() >= req.getNextOffset();
-                            if (flushOK) {
-                                break;
-                            } else {
-                                try {
-                                    Thread.sleep(1);
-                                } catch (Throwable ignored) {
-
-                                }
-                            }
-                        }
-                        req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);
-                    }
-
-                    long storeTimestamp = CommitLog.this.mappedFileQueue.getStoreTimestamp();
-                    if (storeTimestamp > 0) {
-                        CommitLog.this.defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
-                    }
-
-                    this.requestsRead.clear();
-                }
-            }
-        }
-
-        public void run() {
-            CommitLog.log.info(this.getServiceName() + " service started");
-
-            while (!this.isStopped()) {
-                try {
-                    this.waitForRunning(1);
-                    this.doCommit();
-                } catch (Exception e) {
-                    CommitLog.log.warn(this.getServiceName() + " service has exception. ", e);
-                }
-            }
-
-            // Under normal circumstances shutdown, wait for the arrival of the
-            // request, and then flush
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                CommitLog.log.warn("GroupCommitService Exception, ", e);
-            }
-
-            synchronized (this) {
-                this.swapRequests();
-            }
-
-            this.doCommit();
-
-            CommitLog.log.info(this.getServiceName() + " service end");
-        }
-
-        @Override
-        protected void onWaitEnd() {
-            this.swapRequests();
-        }
-
-        @Override
-        public String getServiceName() {
-            if (CommitLog.this.defaultMessageStore.getBrokerConfig().isInBrokerContainer()) {
-                return CommitLog.this.defaultMessageStore.getBrokerConfig().getIdentifier() + GroupCheckService.class.getSimpleName();
-            }
-            return GroupCheckService.class.getSimpleName();
-        }
-
-        @Override
-        public long getJoinTime() {
-            return 1000 * 60 * 5;
-        }
-    }
-
-    class DefaultAppendMessageCallback implements AppendMessageCallback {
-        // File at the end of the minimum fixed length empty
-        private static final int END_FILE_MIN_BLANK_LENGTH = 4 + 4;
-        // Store the message content
-        private final ByteBuffer msgStoreItemMemory;
-
-        DefaultAppendMessageCallback() {
-            this.msgStoreItemMemory = ByteBuffer.allocate(END_FILE_MIN_BLANK_LENGTH);
-        }
-
-        public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
-            final MessageExtBrokerInner msgInner, PutMessageContext putMessageContext) {
-            // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
-
-            // PHY OFFSET
-            long wroteOffset = fileFromOffset + byteBuffer.position();
-
-            Supplier<String> msgIdSupplier = () -> {
-                int sysflag = msgInner.getSysFlag();
-                int msgIdLen = (sysflag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0 ? 4 + 4 + 8 : 16 + 4 + 8;
-                ByteBuffer msgIdBuffer = ByteBuffer.allocate(msgIdLen);
-                MessageExt.socketAddress2ByteBuffer(msgInner.getStoreHost(), msgIdBuffer);
-                msgIdBuffer.clear();//because socketAddress2ByteBuffer flip the buffer
-                msgIdBuffer.putLong(msgIdLen - 8, wroteOffset);
-                return UtilAll.bytes2string(msgIdBuffer.array());
-            };
-
-            // Record ConsumeQueue information
-            Long queueOffset = msgInner.getQueueOffset();
-
-            // this msg maybe a inner-batch msg.
-            short messageNum = getMessageNum(msgInner);
-
-            // Transaction messages that require special handling
-            final int tranType = MessageSysFlag.getTransactionValue(msgInner.getSysFlag());
-            switch (tranType) {
-                // Prepared and Rollback message is not consumed, will not enter the consume queue
-                case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
-                case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE:
-                    queueOffset = 0L;
-                    break;
-                case MessageSysFlag.TRANSACTION_NOT_TYPE:
-                case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
-                default:
-                    break;
-            }
-
-            ByteBuffer preEncodeBuffer = msgInner.getEncodedBuff();
-            final int msgLen = preEncodeBuffer.getInt(0);
-
-            // Determines whether there is sufficient free space
-            if ((msgLen + END_FILE_MIN_BLANK_LENGTH) > maxBlank) {
-                this.msgStoreItemMemory.clear();
-                // 1 TOTALSIZE
-                this.msgStoreItemMemory.putInt(maxBlank);
-                // 2 MAGICCODE
-                this.msgStoreItemMemory.putInt(CommitLog.BLANK_MAGIC_CODE);
-                // 3 The remaining space may be any value
-                // Here the length of the specially set maxBlank
-                final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
-                byteBuffer.put(this.msgStoreItemMemory.array(), 0, 8);
-                return new AppendMessageResult(AppendMessageStatus.END_OF_FILE, wroteOffset,
-                    maxBlank, /* only wrote 8 bytes, but declare wrote maxBlank for compute write position */
-                    msgIdSupplier, msgInner.getStoreTimestamp(),
-                    queueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills);
-            }
-
-            int pos = 4 + 4 + 4 + 4 + 4;
-            // 6 QUEUEOFFSET
-            preEncodeBuffer.putLong(pos, queueOffset);
-            pos += 8;
-            // 7 PHYSICALOFFSET
-            preEncodeBuffer.putLong(pos, fileFromOffset + byteBuffer.position());
-            int ipLen = (msgInner.getSysFlag() & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 4 + 4 : 16 + 4;
-            // 8 SYSFLAG, 9 BORNTIMESTAMP, 10 BORNHOST, 11 STORETIMESTAMP
-            pos += 8 + 4 + 8 + ipLen;
-            // refresh store time stamp in lock
-            preEncodeBuffer.putLong(pos, msgInner.getStoreTimestamp());
-
-            final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
-            CommitLog.this.getMessageStore().getPerfCounter().startTick("WRITE_MEMORY_TIME_MS");
-            // Write messages to the queue buffer
-            byteBuffer.put(preEncodeBuffer);
-            CommitLog.this.getMessageStore().getPerfCounter().endTick("WRITE_MEMORY_TIME_MS");
-            msgInner.setEncodedBuff(null);
-            return new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, msgLen, msgIdSupplier,
-                msgInner.getStoreTimestamp(), queueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills, messageNum);
-        }
-
-        public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
-            final MessageExtBatch messageExtBatch, PutMessageContext putMessageContext) {
-            byteBuffer.mark();
-            //physical offset
-            long wroteOffset = fileFromOffset + byteBuffer.position();
-            // Record ConsumeQueue information
-            Long queueOffset = messageExtBatch.getQueueOffset();
-            long beginQueueOffset = queueOffset;
-            int totalMsgLen = 0;
-            int msgNum = 0;
-
-            final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
-            ByteBuffer messagesByteBuff = messageExtBatch.getEncodedBuff();
-
-            int sysFlag = messageExtBatch.getSysFlag();
-            int bornHostLength = (sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 4 + 4 : 16 + 4;
-            int storeHostLength = (sysFlag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0 ? 4 + 4 : 16 + 4;
-            Supplier<String> msgIdSupplier = () -> {
-                int msgIdLen = storeHostLength + 8;
-                int batchCount = putMessageContext.getBatchSize();
-                long[] phyPosArray = putMessageContext.getPhyPos();
-                ByteBuffer msgIdBuffer = ByteBuffer.allocate(msgIdLen);
-                MessageExt.socketAddress2ByteBuffer(messageExtBatch.getStoreHost(), msgIdBuffer);
-                msgIdBuffer.clear();//because socketAddress2ByteBuffer flip the buffer
-
-                StringBuilder buffer = new StringBuilder(batchCount * msgIdLen * 2 + batchCount - 1);
-                for (int i = 0; i < phyPosArray.length; i++) {
-                    msgIdBuffer.putLong(msgIdLen - 8, phyPosArray[i]);
-                    String msgId = UtilAll.bytes2string(msgIdBuffer.array());
-                    if (i != 0) {
-                        buffer.append(',');
-                    }
-                    buffer.append(msgId);
-                }
-                return buffer.toString();
-            };
-
-            messagesByteBuff.mark();
-            int index = 0;
-            while (messagesByteBuff.hasRemaining()) {
-                // 1 TOTALSIZE
-                final int msgPos = messagesByteBuff.position();
-                final int msgLen = messagesByteBuff.getInt();
-
-                totalMsgLen += msgLen;
-                // Determines whether there is sufficient free space
-                if ((totalMsgLen + END_FILE_MIN_BLANK_LENGTH) > maxBlank) {
-                    this.msgStoreItemMemory.clear();
-                    // 1 TOTALSIZE
-                    this.msgStoreItemMemory.putInt(maxBlank);
-                    // 2 MAGICCODE
-                    this.msgStoreItemMemory.putInt(CommitLog.BLANK_MAGIC_CODE);
-                    // 3 The remaining space may be any value
-                    //ignore previous read
-                    messagesByteBuff.reset();
-                    // Here the length of the specially set maxBlank
-                    byteBuffer.reset(); //ignore the previous appended messages
-                    byteBuffer.put(this.msgStoreItemMemory.array(), 0, 8);
-                    return new AppendMessageResult(AppendMessageStatus.END_OF_FILE, wroteOffset, maxBlank, msgIdSupplier, messageExtBatch.getStoreTimestamp(),
-                        beginQueueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills);
-                }
-                //move to add queue offset and commitlog offset
-                int pos = msgPos + 20;
-                messagesByteBuff.putLong(pos, queueOffset);
-                pos += 8;
-                messagesByteBuff.putLong(pos, wroteOffset + totalMsgLen - msgLen);
-                // 8 SYSFLAG, 9 BORNTIMESTAMP, 10 BORNHOST, 11 STORETIMESTAMP
-                pos += 8 + 4 + 8 + bornHostLength;
-                // refresh store time stamp in lock
-                messagesByteBuff.putLong(pos, messageExtBatch.getStoreTimestamp());
-
-                putMessageContext.getPhyPos()[index++] = wroteOffset + totalMsgLen - msgLen;
-                queueOffset++;
-                msgNum++;
-                messagesByteBuff.position(msgPos + msgLen);
-            }
-
-            messagesByteBuff.position(0);
-            messagesByteBuff.limit(totalMsgLen);
-            byteBuffer.put(messagesByteBuff);
-            messageExtBatch.setEncodedBuff(null);
-            AppendMessageResult result = new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, totalMsgLen, msgIdSupplier,
-                messageExtBatch.getStoreTimestamp(), beginQueueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills);
-            result.setMsgNum(msgNum);
-
-            return result;
-        }
-
-    }
-
-    class DefaultFlushManager implements FlushManager {
-
-        private final FlushCommitLogService flushCommitLogService;
-
-        //If TransientStorePool enabled, we must flush message to FileChannel at fixed periods
-        private final FlushCommitLogService commitRealTimeService;
-
-        public DefaultFlushManager() {
-            if (FlushDiskType.SYNC_FLUSH == CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
-                this.flushCommitLogService = new CommitLog.GroupCommitService();
-            } else {
-                this.flushCommitLogService = new CommitLog.FlushRealTimeService();
-            }
-
-            this.commitRealTimeService = new CommitLog.CommitRealTimeService();
-        }
-
-        @Override public void start() {
-            this.flushCommitLogService.start();
-
-            if (defaultMessageStore.isTransientStorePoolEnable()) {
-                this.commitRealTimeService.start();
-            }
-        }
-
-        public void handleDiskFlush(AppendMessageResult result, PutMessageResult putMessageResult,
-            MessageExt messageExt) {
-            // Synchronization flush
-            if (FlushDiskType.SYNC_FLUSH == CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
-                final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
-                if (messageExt.isWaitStoreMsgOK()) {
-                    GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(), CommitLog.this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
-                    service.putRequest(request);
-                    CompletableFuture<PutMessageStatus> flushOkFuture = request.future();
-                    PutMessageStatus flushStatus = null;
-                    try {
-                        flushStatus = flushOkFuture.get(CommitLog.this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout(), TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                        //flushOK=false;
-                    }
-                    if (flushStatus != PutMessageStatus.PUT_OK) {
-                        log.error("do groupcommit, wait for flush failed, topic: " + messageExt.getTopic() + " tags: " + messageExt.getTags() + " client address: " + messageExt.getBornHostString());
-                        putMessageResult.setPutMessageStatus(PutMessageStatus.FLUSH_DISK_TIMEOUT);
-                    }
-                } else {
-                    service.wakeup();
-                }
-            }
-            // Asynchronous flush
-            else {
-                if (!CommitLog.this.defaultMessageStore.isTransientStorePoolEnable()) {
-                    flushCommitLogService.wakeup();
-                } else {
-                    commitRealTimeService.wakeup();
-                }
-            }
-        }
-
-        @Override
-        public CompletableFuture<PutMessageStatus> handleDiskFlush(AppendMessageResult result, MessageExt messageExt) {
-            // Synchronization flush
-            if (FlushDiskType.SYNC_FLUSH == CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
-                final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
-                if (messageExt.isWaitStoreMsgOK()) {
-                    GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(), CommitLog.this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
-                    flushDiskWatcher.add(request);
-                    service.putRequest(request);
-                    return request.future();
-                } else {
-                    service.wakeup();
-                    return CompletableFuture.completedFuture(PutMessageStatus.PUT_OK);
-                }
-            }
-            // Asynchronous flush
-            else {
-                if (!CommitLog.this.defaultMessageStore.isTransientStorePoolEnable()) {
-                    flushCommitLogService.wakeup();
-                } else {
-                    commitRealTimeService.wakeup();
-                }
-                return CompletableFuture.completedFuture(PutMessageStatus.PUT_OK);
-            }
-        }
-
-        @Override
-        public void wakeUpFlush() {
-            // now wake up flush thread.
-            flushCommitLogService.wakeup();
-        }
-
-        @Override
-        public void wakeUpCommit() {
-            // now wake up commit log thread.
-            commitRealTimeService.wakeup();
-        }
-
-        @Override
-        public void shutdown() {
-            if (defaultMessageStore.isTransientStorePoolEnable()) {
-                this.commitRealTimeService.shutdown();
-            }
-
-            this.flushCommitLogService.shutdown();
-        }
-
-    }
 
     public int getCommitLogSize() {
         return commitLogSize;
@@ -2034,6 +1178,10 @@ public class CommitLog implements Swappable {
 
     public MessageStore getMessageStore() {
         return defaultMessageStore;
+    }
+
+    public FlushDiskWatcher getFlushDiskWatcher() {
+        return flushDiskWatcher;
     }
 
     @Override
@@ -2056,178 +1204,6 @@ public class CommitLog implements Swappable {
 
     private boolean isCloseReadAhead() {
         return !MixAll.isWindows() && !defaultMessageStore.getMessageStoreConfig().isDataReadAheadEnable();
-    }
-
-    public class ColdDataCheckService extends ServiceThread {
-        private final SystemClock systemClock = new SystemClock();
-        private final ConcurrentHashMap<String, byte[]> pageCacheMap = new ConcurrentHashMap<>();
-        private int pageSize = -1;
-        private int sampleSteps = 32;
-
-        public ColdDataCheckService() {
-            sampleSteps = defaultMessageStore.getMessageStoreConfig().getSampleSteps();
-            if (sampleSteps <= 0) {
-                sampleSteps = 32;
-            }
-            initPageSize();
-            scanFilesInPageCache();
-        }
-
-        @Override
-        public String getServiceName() {
-            return ColdDataCheckService.class.getSimpleName();
-        }
-
-        @Override
-        public void run() {
-            log.info("{} service started", this.getServiceName());
-            while (!this.isStopped()) {
-                try {
-                    if (MixAll.isWindows() || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable() || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable()) {
-                        pageCacheMap.clear();
-                        this.waitForRunning(180 * 1000);
-                        continue;
-                    } else {
-                        this.waitForRunning(defaultMessageStore.getMessageStoreConfig().getTimerColdDataCheckIntervalMs());
-                    }
-
-                    if (pageSize < 0) {
-                        initPageSize();
-                    }
-
-                    long beginClockTimestamp = this.systemClock.now();
-                    scanFilesInPageCache();
-                    long costTime = this.systemClock.now() - beginClockTimestamp;
-                    log.info("[{}] scanFilesInPageCache-cost {} ms.", costTime > 30 * 1000 ? "NOTIFYME" : "OK", costTime);
-                } catch (Throwable e) {
-                    log.warn(this.getServiceName() + " service has e: {}", e);
-                }
-            }
-            log.info("{} service end", this.getServiceName());
-        }
-
-        public boolean isDataInPageCache(final long offset) {
-            if (!defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
-                return true;
-            }
-            if (pageSize <= 0 || sampleSteps <= 0) {
-                return true;
-            }
-            if (!defaultMessageStore.checkInColdAreaByCommitOffset(offset, getMaxOffset())) {
-                return true;
-            }
-            if (!defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable()) {
-                return false;
-            }
-
-            MappedFile mappedFile = mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
-            if (null == mappedFile) {
-                return true;
-            }
-            byte[] bytes = pageCacheMap.get(mappedFile.getFileName());
-            if (null == bytes) {
-                return true;
-            }
-
-            int pos = (int)(offset % defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog());
-            int realIndex = pos / pageSize / sampleSteps;
-            return bytes.length - 1 >= realIndex && bytes[realIndex] != 0;
-        }
-
-        private void scanFilesInPageCache() {
-            if (MixAll.isWindows() || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable() || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable() || pageSize <= 0) {
-                return;
-            }
-            try {
-                log.info("pageCacheMap key size: {}", pageCacheMap.size());
-                clearExpireMappedFile();
-                mappedFileQueue.getMappedFiles().forEach(mappedFile -> {
-                    byte[] pageCacheTable = checkFileInPageCache(mappedFile);
-                    if (sampleSteps > 1) {
-                        pageCacheTable = sampling(pageCacheTable, sampleSteps);
-                    }
-                    pageCacheMap.put(mappedFile.getFileName(), pageCacheTable);
-                });
-            } catch (Exception e) {
-                log.error("scanFilesInPageCache exception", e);
-            }
-        }
-
-        private void clearExpireMappedFile() {
-            Set<String> currentFileSet = mappedFileQueue.getMappedFiles().stream().map(MappedFile::getFileName).collect(Collectors.toSet());
-            pageCacheMap.forEach((key, value) -> {
-                if (!currentFileSet.contains(key)) {
-                    pageCacheMap.remove(key);
-                    log.info("clearExpireMappedFile fileName: {}, has been clear", key);
-                }
-            });
-        }
-
-        private byte[] sampling(byte[] pageCacheTable, int sampleStep) {
-            byte[] sample = new byte[(pageCacheTable.length + sampleStep - 1) / sampleStep];
-            for (int i = 0, j = 0; i < pageCacheTable.length && j < sample.length; i += sampleStep) {
-                sample[j++] = pageCacheTable[i];
-            }
-            return sample;
-        }
-
-        private byte[] checkFileInPageCache(MappedFile mappedFile) {
-            long fileSize = mappedFile.getFileSize();
-            final long address = ((DirectBuffer)mappedFile.getMappedByteBuffer()).address();
-            int pageNums = (int)(fileSize + this.pageSize - 1) / this.pageSize;
-            byte[] pageCacheRst = new byte[pageNums];
-            int mincore = LibC.INSTANCE.mincore(new Pointer(address), new NativeLong(fileSize), pageCacheRst);
-            if (mincore != 0) {
-                log.error("checkFileInPageCache call the LibC.INSTANCE.mincore error, fileName: {}, fileSize: {}",
-                    mappedFile.getFileName(), fileSize);
-                for (int i = 0; i < pageNums; i++) {
-                    pageCacheRst[i] = 1;
-                }
-            }
-            return pageCacheRst;
-        }
-
-        private void initPageSize() {
-            if (pageSize < 0 && defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
-                try {
-                    if (!MixAll.isWindows()) {
-                        pageSize = LibC.INSTANCE.getpagesize();
-                    } else {
-                        defaultMessageStore.getMessageStoreConfig().setColdDataFlowControlEnable(false);
-                        log.info("windows os, coldDataCheckEnable force setting to be false");
-                    }
-                    log.info("initPageSize pageSize: {}", pageSize);
-                } catch (Exception e) {
-                    defaultMessageStore.getMessageStoreConfig().setColdDataFlowControlEnable(false);
-                    log.error("initPageSize error, coldDataCheckEnable force setting to be false ", e);
-                }
-            }
-        }
-
-        /**
-         * this result is not high accurate.
-         */
-        public boolean isMsgInColdArea(String group, String topic, int queueId, long offset) {
-            if (!defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
-                return false;
-            }
-            try {
-                ConsumeQueue consumeQueue = (ConsumeQueue)defaultMessageStore.findConsumeQueue(topic, queueId);
-                if (null == consumeQueue) {
-                    return false;
-                }
-                SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(offset);
-                if (null == bufferConsumeQueue || null == bufferConsumeQueue.getByteBuffer()) {
-                    return false;
-                }
-                long offsetPy = bufferConsumeQueue.getByteBuffer().getLong();
-                return defaultMessageStore.checkInColdAreaByCommitOffset(offsetPy, getMaxOffset());
-            } catch (Exception e) {
-                log.error("isMsgInColdArea group: {}, topic: {}, queueId: {}, offset: {}",
-                    group, topic, queueId, offset, e);
-            }
-            return false;
-        }
     }
 
     public void scanFileAndSetReadMode(int mode) {

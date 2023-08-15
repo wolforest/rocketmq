@@ -35,8 +35,8 @@ import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
-import org.apache.rocketmq.store.CommitLog;
 import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.commitlog.GroupCommitRequest;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
@@ -90,7 +90,7 @@ public class DefaultHAService implements HAService {
     }
 
     @Override
-    public void putRequest(final CommitLog.GroupCommitRequest request) {
+    public void putRequest(final GroupCommitRequest request) {
         this.groupTransferService.putRequest(request);
     }
 
