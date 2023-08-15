@@ -128,6 +128,19 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         return null;
     }
 
+    private boolean checkQueueId(Channel channel, AckMessageRequestHeader requestHeader, TopicConfig topicConfig, RemotingCommand response) {
+        if (requestHeader.getQueueId() < topicConfig.getReadQueueNums() && requestHeader.getQueueId() >= 0) {
+            return true;
+        }
+
+        String errorInfo = String.format("queueId[%d] is illegal, topic:[%s] topicConfig.readQueueNums:[%d] consumer:[%s]",
+            requestHeader.getQueueId(), requestHeader.getTopic(), topicConfig.getReadQueueNums(), channel.remoteAddress());
+        POP_LOGGER.warn(errorInfo);
+        response.setCode(ResponseCode.MESSAGE_ILLEGAL);
+        response.setRemark(errorInfo);
+        return false;
+    }
+
     private RemotingCommand handleAckMessage(final Channel channel, RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.SUCCESS, null);
         response.setOpaque(request.getOpaque());
@@ -140,12 +153,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             return response;
         }
 
-        if (requestHeader.getQueueId() >= topicConfig.getReadQueueNums() || requestHeader.getQueueId() < 0) {
-            String errorInfo = String.format("queueId[%d] is illegal, topic:[%s] topicConfig.readQueueNums:[%d] consumer:[%s]",
-                requestHeader.getQueueId(), requestHeader.getTopic(), topicConfig.getReadQueueNums(), channel.remoteAddress());
-            POP_LOGGER.warn(errorInfo);
-            response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-            response.setRemark(errorInfo);
+        if (checkQueueId(channel, requestHeader, topicConfig, response)) {
             return response;
         }
 
