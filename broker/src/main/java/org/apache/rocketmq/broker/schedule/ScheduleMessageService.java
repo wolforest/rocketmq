@@ -182,17 +182,25 @@ public class ScheduleMessageService extends ConfigManager {
         ThreadUtils.shutdown(scheduledPersistService);
     }
 
-    public boolean stop() {
-        if (!this.started.compareAndSet(true, false) || null == this.deliverExecutorService) {
-            return true;
-        }
-
+    private void stopDeliverExecutorService() {
         this.deliverExecutorService.shutdown();
         try {
             this.deliverExecutorService.awaitTermination(WAIT_FOR_SHUTDOWN, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             log.error("deliverExecutorService awaitTermination error", e);
         }
+    }
+
+    private void stopHandleExecutorService() {
+
+    }
+
+    public boolean stop() {
+        if (!this.started.compareAndSet(true, false) || null == this.deliverExecutorService) {
+            return true;
+        }
+
+        stopDeliverExecutorService();
 
         if (this.handleExecutorService != null) {
             this.handleExecutorService.shutdown();
