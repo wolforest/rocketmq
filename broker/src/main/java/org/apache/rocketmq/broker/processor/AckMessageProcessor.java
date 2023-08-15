@@ -183,7 +183,6 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand handleBatchAckMessage(final Channel channel, RemotingCommand request) {
-        AckMessageRequestHeader requestHeader;
         BatchAckMessageRequestBody reqBody = null;
         final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.SUCCESS, null);
         response.setOpaque(request.getOpaque());
