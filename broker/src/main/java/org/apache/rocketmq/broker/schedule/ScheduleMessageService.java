@@ -183,29 +183,31 @@ public class ScheduleMessageService extends ConfigManager {
     }
 
     public boolean stop() {
-        if (this.started.compareAndSet(true, false) && null != this.deliverExecutorService) {
-            this.deliverExecutorService.shutdown();
-            try {
-                this.deliverExecutorService.awaitTermination(WAIT_FOR_SHUTDOWN, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                log.error("deliverExecutorService awaitTermination error", e);
-            }
-
-            if (this.handleExecutorService != null) {
-                this.handleExecutorService.shutdown();
-                try {
-                    this.handleExecutorService.awaitTermination(WAIT_FOR_SHUTDOWN, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    log.error("handleExecutorService awaitTermination error", e);
-                }
-            }
-
-            for (int i = 1; i <= this.deliverPendingTable.size(); i++) {
-                log.warn("deliverPendingTable level: {}, size: {}", i, this.deliverPendingTable.get(i).size());
-            }
-
-            this.persist();
+        if (!this.started.compareAndSet(true, false) || null == this.deliverExecutorService) {
+            return true;
         }
+
+        this.deliverExecutorService.shutdown();
+        try {
+            this.deliverExecutorService.awaitTermination(WAIT_FOR_SHUTDOWN, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.error("deliverExecutorService awaitTermination error", e);
+        }
+
+        if (this.handleExecutorService != null) {
+            this.handleExecutorService.shutdown();
+            try {
+                this.handleExecutorService.awaitTermination(WAIT_FOR_SHUTDOWN, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                log.error("handleExecutorService awaitTermination error", e);
+            }
+        }
+
+        for (int i = 1; i <= this.deliverPendingTable.size(); i++) {
+            log.warn("deliverPendingTable level: {}, size: {}", i, this.deliverPendingTable.get(i).size());
+        }
+
+        this.persist();
         return true;
     }
 
