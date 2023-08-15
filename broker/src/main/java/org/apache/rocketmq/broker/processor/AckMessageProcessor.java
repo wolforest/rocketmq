@@ -153,7 +153,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             return response;
         }
 
-        if (checkQueueId(channel, requestHeader, topicConfig, response)) {
+        if (!checkQueueId(channel, requestHeader, topicConfig, response)) {
             return response;
         }
 
