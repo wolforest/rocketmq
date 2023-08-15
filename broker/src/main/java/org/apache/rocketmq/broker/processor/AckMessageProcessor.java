@@ -141,6 +141,23 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         return false;
     }
 
+    private boolean checkOffset(AckMessageRequestHeader requestHeader, RemotingCommand response) {
+        long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
+        long maxOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
+
+        if (requestHeader.getOffset() >= minOffset && requestHeader.getOffset() <= maxOffset) {
+            return true;
+        }
+
+        String errorInfo = String.format("offset is illegal, key:%s@%d, commit:%d, store:%d~%d",
+            requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getOffset(), minOffset, maxOffset);
+        POP_LOGGER.warn(errorInfo);
+        response.setCode(ResponseCode.NO_MESSAGE);
+        response.setRemark(errorInfo);
+
+        return false;
+    }
+
     private RemotingCommand handleAckMessage(final Channel channel, RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.SUCCESS, null);
         response.setOpaque(request.getOpaque());
@@ -157,14 +174,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             return response;
         }
 
-        long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
-        long maxOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId());
-        if (requestHeader.getOffset() < minOffset || requestHeader.getOffset() > maxOffset) {
-            String errorInfo = String.format("offset is illegal, key:%s@%d, commit:%d, store:%d~%d",
-                requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getOffset(), minOffset, maxOffset);
-            POP_LOGGER.warn(errorInfo);
-            response.setCode(ResponseCode.NO_MESSAGE);
-            response.setRemark(errorInfo);
+        if (!checkOffset(requestHeader, response)) {
             return response;
         }
 
