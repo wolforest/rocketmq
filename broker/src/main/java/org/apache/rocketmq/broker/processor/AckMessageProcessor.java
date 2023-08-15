@@ -21,6 +21,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.metrics.PopMetricsManager;
+import org.apache.rocketmq.broker.offset.ConsumerOffsetManager;
+import org.apache.rocketmq.broker.offset.ConsumerOrderInfoManager;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.PopAckConstants;
 import org.apache.rocketmq.common.TopicConfig;
@@ -255,9 +257,13 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             return 1;
         }
 
+        ConsumerOffsetManager offsetManager = this.brokerController.getConsumerOffsetManager();
+        ConsumerOrderInfoManager orderInfoManager = this.brokerController.getConsumerOrderInfoManager();
+        PopMessageProcessor popMessageProcessor = this.brokerController.getBrokerNettyServer().getPopMessageProcessor();
+
         // order
         String lockKey = requestHeader.getTopic() + PopAckConstants.SPLIT + requestHeader.getConsumerGroup() + PopAckConstants.SPLIT + requestHeader.getQueueId();
-        long oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
+        long oldOffset = offsetManager.queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
         if (requestHeader.getOffset() < oldOffset) {
             return -1;
         }
@@ -265,24 +271,22 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         }
 
         try {
-            oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
+            oldOffset = offsetManager.queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
             if (requestHeader.getOffset() < oldOffset) {
                 return -1;
             }
-            long nextOffset = brokerController.getConsumerOrderInfoManager().commitAndNext(
+            long nextOffset = orderInfoManager.commitAndNext(
                 requestHeader.getTopic(), requestHeader.getConsumerGroup(),
                 requestHeader.getQueueId(), requestHeader.getOffset(),
                 ExtraInfoUtil.getPopTime(extraInfo));
 
             if (nextOffset > -1) {
-                if (!this.brokerController.getConsumerOffsetManager().hasOffsetReset(
-                    requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId())) {
-                    this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(),
+                if (!offsetManager.hasOffsetReset( requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId())) {
+                    offsetManager.commitOffset(channel.remoteAddress().toString(),
                         requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), nextOffset);
                 }
-                if (!this.brokerController.getConsumerOrderInfoManager().checkBlock(null, requestHeader.getTopic(),
-                    requestHeader.getConsumerGroup(), requestHeader.getQueueId(), ExtraInfoUtil.getInvisibleTime(extraInfo))) {
-                    this.brokerController.getBrokerNettyServer().getPopMessageProcessor().notifyMessageArriving(
+                if (!orderInfoManager.checkBlock(null, requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId(), ExtraInfoUtil.getInvisibleTime(extraInfo))) {
+                    popMessageProcessor.notifyMessageArriving(
                         requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
                 }
             } else if (nextOffset == -1) {
@@ -294,7 +298,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
                 return -1;
             }
         } finally {
-            this.brokerController.getBrokerNettyServer().getPopMessageProcessor().getQueueLockManager().unLock(lockKey);
+            popMessageProcessor.getQueueLockManager().unLock(lockKey);
         }
 
         brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(requestHeader.getTopic(), requestHeader.getConsumerGroup(), ExtraInfoUtil.getPopTime(extraInfo), requestHeader.getQueueId(), 0);
