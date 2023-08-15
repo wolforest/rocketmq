@@ -124,69 +124,70 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     @Override
     public void recover() {
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
-        if (!mappedFiles.isEmpty()) {
+        if (mappedFiles.isEmpty()) {
+            return;
+        }
 
-            int index = mappedFiles.size() - 3;
-            if (index < 0) {
-                index = 0;
-            }
+        int index = mappedFiles.size() - 3;
+        if (index < 0) {
+            index = 0;
+        }
 
-            int mappedFileSizeLogics = this.mappedFileSize;
-            MappedFile mappedFile = mappedFiles.get(index);
-            ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-            long processOffset = mappedFile.getFileFromOffset();
-            long mappedFileOffset = 0;
-            long maxExtAddr = 1;
-            while (true) {
-                for (int i = 0; i < mappedFileSizeLogics; i += CQ_STORE_UNIT_SIZE) {
-                    long offset = byteBuffer.getLong();
-                    int size = byteBuffer.getInt();
-                    long tagsCode = byteBuffer.getLong();
+        int mappedFileSizeLogics = this.mappedFileSize;
+        MappedFile mappedFile = mappedFiles.get(index);
+        ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
+        long processOffset = mappedFile.getFileFromOffset();
+        long mappedFileOffset = 0;
+        long maxExtAddr = 1;
+        while (true) {
+            for (int i = 0; i < mappedFileSizeLogics; i += CQ_STORE_UNIT_SIZE) {
+                long offset = byteBuffer.getLong();
+                int size = byteBuffer.getInt();
+                long tagsCode = byteBuffer.getLong();
 
-                    if (offset >= 0 && size > 0) {
-                        mappedFileOffset = i + CQ_STORE_UNIT_SIZE;
-                        this.maxPhysicOffset = offset + size;
-                        if (isExtAddr(tagsCode)) {
-                            maxExtAddr = tagsCode;
-                        }
-                    } else {
-                        log.info("recover current consume queue file over,  " + mappedFile.getFileName() + " "
-                            + offset + " " + size + " " + tagsCode);
-                        break;
-                    }
-                }
-
-                if (mappedFileOffset == mappedFileSizeLogics) {
-                    index++;
-                    if (index >= mappedFiles.size()) {
-
-                        log.info("recover last consume queue file over, last mapped file "
-                            + mappedFile.getFileName());
-                        break;
-                    } else {
-                        mappedFile = mappedFiles.get(index);
-                        byteBuffer = mappedFile.sliceByteBuffer();
-                        processOffset = mappedFile.getFileFromOffset();
-                        mappedFileOffset = 0;
-                        log.info("recover next consume queue file, " + mappedFile.getFileName());
+                if (offset >= 0 && size > 0) {
+                    mappedFileOffset = i + CQ_STORE_UNIT_SIZE;
+                    this.maxPhysicOffset = offset + size;
+                    if (isExtAddr(tagsCode)) {
+                        maxExtAddr = tagsCode;
                     }
                 } else {
-                    log.info("recover current consume queue over " + mappedFile.getFileName() + " "
-                        + (processOffset + mappedFileOffset));
+                    log.info("recover current consume queue file over,  " + mappedFile.getFileName() + " "
+                        + offset + " " + size + " " + tagsCode);
                     break;
                 }
             }
 
-            processOffset += mappedFileOffset;
-            this.mappedFileQueue.setFlushedWhere(processOffset);
-            this.mappedFileQueue.setCommittedWhere(processOffset);
-            this.mappedFileQueue.truncateDirtyFiles(processOffset);
+            if (mappedFileOffset == mappedFileSizeLogics) {
+                index++;
+                if (index >= mappedFiles.size()) {
 
-            if (isExtReadEnable()) {
-                this.consumeQueueExt.recover();
-                log.info("Truncate consume queue extend file by max {}", maxExtAddr);
-                this.consumeQueueExt.truncateByMaxAddress(maxExtAddr);
+                    log.info("recover last consume queue file over, last mapped file "
+                        + mappedFile.getFileName());
+                    break;
+                } else {
+                    mappedFile = mappedFiles.get(index);
+                    byteBuffer = mappedFile.sliceByteBuffer();
+                    processOffset = mappedFile.getFileFromOffset();
+                    mappedFileOffset = 0;
+                    log.info("recover next consume queue file, " + mappedFile.getFileName());
+                }
+            } else {
+                log.info("recover current consume queue over " + mappedFile.getFileName() + " "
+                    + (processOffset + mappedFileOffset));
+                break;
             }
+        }
+
+        processOffset += mappedFileOffset;
+        this.mappedFileQueue.setFlushedWhere(processOffset);
+        this.mappedFileQueue.setCommittedWhere(processOffset);
+        this.mappedFileQueue.truncateDirtyFiles(processOffset);
+
+        if (isExtReadEnable()) {
+            this.consumeQueueExt.recover();
+            log.info("Truncate consume queue extend file by max {}", maxExtAddr);
+            this.consumeQueueExt.truncateByMaxAddress(maxExtAddr);
         }
     }
 
@@ -221,180 +222,182 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
 
     private long binarySearchInQueueByTime(final MappedFile mappedFile, final long timestamp,
         BoundaryType boundaryType) {
-        if (mappedFile != null) {
-            long offset = 0;
-            int low = minLogicOffset > mappedFile.getFileFromOffset() ? (int) (minLogicOffset - mappedFile.getFileFromOffset()) : 0;
-            int high = 0;
-            int midOffset = -1, targetOffset = -1, leftOffset = -1, rightOffset = -1;
-            long minPhysicOffset = this.messageStore.getMinPhyOffset();
-            int range = mappedFile.getFileSize();
-            if (mappedFile.getWrotePosition() != 0 && mappedFile.getWrotePosition() != mappedFile.getFileSize()) {
-                // mappedFile is the last one and is currently being written.
-                range = mappedFile.getWrotePosition();
-            }
-            SelectMappedBufferResult sbr = mappedFile.selectMappedBuffer(0, range);
-            if (null != sbr) {
-                ByteBuffer byteBuffer = sbr.getByteBuffer();
-                int ceiling = byteBuffer.limit() - CQ_STORE_UNIT_SIZE;
-                int floor = low;
-                high = ceiling;
-                try {
-                    // Handle the following corner cases first:
-                    // 1. store time of (high) < timestamp
-                    // 2. store time of (low) > timestamp
-                    long storeTime;
-                    long phyOffset;
-                    int size;
-                    // Handle case 1
-                    byteBuffer.position(ceiling);
-                    phyOffset = byteBuffer.getLong();
-                    size = byteBuffer.getInt();
-                    storeTime = messageStore.getCommitLog().pickupStoreTimestamp(phyOffset, size);
-                    if (storeTime < timestamp) {
-                        switch (boundaryType) {
-                            case LOWER:
-                                return (mappedFile.getFileFromOffset() + ceiling + CQ_STORE_UNIT_SIZE) / CQ_STORE_UNIT_SIZE;
-                            case UPPER:
-                                return (mappedFile.getFileFromOffset() + ceiling) / CQ_STORE_UNIT_SIZE;
-                            default:
-                                log.warn("Unknown boundary type");
-                                break;
-                        }
-                    }
+        if (null == mappedFile) {
+            return 0;
+        }
 
-                    // Handle case 2
-                    byteBuffer.position(floor);
-                    phyOffset = byteBuffer.getLong();
-                    size = byteBuffer.getInt();
-                    storeTime = messageStore.getCommitLog().pickupStoreTimestamp(phyOffset, size);
-                    if (storeTime > timestamp) {
-                        switch (boundaryType) {
-                            case LOWER:
-                                return mappedFile.getFileFromOffset() / CQ_STORE_UNIT_SIZE;
-                            case UPPER:
-                                return 0;
-                            default:
-                                log.warn("Unknown boundary type");
-                                break;
-                        }
-                    }
-
-                    // Perform binary search
-                    while (high >= low) {
-                        midOffset = (low + high) / (2 * CQ_STORE_UNIT_SIZE) * CQ_STORE_UNIT_SIZE;
-                        byteBuffer.position(midOffset);
-                        phyOffset = byteBuffer.getLong();
-                        size = byteBuffer.getInt();
-                        if (phyOffset < minPhysicOffset) {
-                            low = midOffset + CQ_STORE_UNIT_SIZE;
-                            leftOffset = midOffset;
-                            continue;
-                        }
-
-                        storeTime = this.messageStore.getCommitLog().pickupStoreTimestamp(phyOffset, size);
-                        if (storeTime < 0) {
-                            log.warn("Failed to query store timestamp for commit log offset: {}", phyOffset);
-                            return 0;
-                        } else if (storeTime == timestamp) {
-                            targetOffset = midOffset;
+        long offset = 0;
+        int low = minLogicOffset > mappedFile.getFileFromOffset() ? (int) (minLogicOffset - mappedFile.getFileFromOffset()) : 0;
+        int high = 0;
+        int midOffset = -1, targetOffset = -1, leftOffset = -1, rightOffset = -1;
+        long minPhysicOffset = this.messageStore.getMinPhyOffset();
+        int range = mappedFile.getFileSize();
+        if (mappedFile.getWrotePosition() != 0 && mappedFile.getWrotePosition() != mappedFile.getFileSize()) {
+            // mappedFile is the last one and is currently being written.
+            range = mappedFile.getWrotePosition();
+        }
+        SelectMappedBufferResult sbr = mappedFile.selectMappedBuffer(0, range);
+        if (null != sbr) {
+            ByteBuffer byteBuffer = sbr.getByteBuffer();
+            int ceiling = byteBuffer.limit() - CQ_STORE_UNIT_SIZE;
+            int floor = low;
+            high = ceiling;
+            try {
+                // Handle the following corner cases first:
+                // 1. store time of (high) < timestamp
+                // 2. store time of (low) > timestamp
+                long storeTime;
+                long phyOffset;
+                int size;
+                // Handle case 1
+                byteBuffer.position(ceiling);
+                phyOffset = byteBuffer.getLong();
+                size = byteBuffer.getInt();
+                storeTime = messageStore.getCommitLog().pickupStoreTimestamp(phyOffset, size);
+                if (storeTime < timestamp) {
+                    switch (boundaryType) {
+                        case LOWER:
+                            return (mappedFile.getFileFromOffset() + ceiling + CQ_STORE_UNIT_SIZE) / CQ_STORE_UNIT_SIZE;
+                        case UPPER:
+                            return (mappedFile.getFileFromOffset() + ceiling) / CQ_STORE_UNIT_SIZE;
+                        default:
+                            log.warn("Unknown boundary type");
                             break;
-                        } else if (storeTime > timestamp) {
-                            high = midOffset - CQ_STORE_UNIT_SIZE;
-                            rightOffset = midOffset;
-                        } else {
-                            low = midOffset + CQ_STORE_UNIT_SIZE;
-                            leftOffset = midOffset;
-                        }
                     }
-
-                    if (targetOffset != -1) {
-                        // We just found ONE matched record. These next to it might also share the same store-timestamp.
-                        offset = targetOffset;
-                        switch (boundaryType) {
-                            case LOWER: {
-                                int previousAttempt = targetOffset;
-                                while (true) {
-                                    int attempt = previousAttempt - CQ_STORE_UNIT_SIZE;
-                                    if (attempt < floor) {
-                                        break;
-                                    }
-                                    byteBuffer.position(attempt);
-                                    long physicalOffset = byteBuffer.getLong();
-                                    int messageSize = byteBuffer.getInt();
-                                    long messageStoreTimestamp = messageStore.getCommitLog()
-                                        .pickupStoreTimestamp(physicalOffset, messageSize);
-                                    if (messageStoreTimestamp == timestamp) {
-                                        previousAttempt = attempt;
-                                        continue;
-                                    }
-                                    break;
-                                }
-                                offset = previousAttempt;
-                                break;
-                            }
-                            case UPPER: {
-                                int previousAttempt = targetOffset;
-                                while (true) {
-                                    int attempt = previousAttempt + CQ_STORE_UNIT_SIZE;
-                                    if (attempt > ceiling) {
-                                        break;
-                                    }
-                                    byteBuffer.position(attempt);
-                                    long physicalOffset = byteBuffer.getLong();
-                                    int messageSize = byteBuffer.getInt();
-                                    long messageStoreTimestamp = messageStore.getCommitLog()
-                                        .pickupStoreTimestamp(physicalOffset, messageSize);
-                                    if (messageStoreTimestamp == timestamp) {
-                                        previousAttempt = attempt;
-                                        continue;
-                                    }
-                                    break;
-                                }
-                                offset = previousAttempt;
-                                break;
-                            }
-                            default: {
-                                log.warn("Unknown boundary type");
-                                break;
-                            }
-                        }
-                    } else {
-                        // Given timestamp does not have any message records. But we have a range enclosing the
-                        // timestamp.
-                        /*
-                         * Consider the follow case: t2 has no consume queue entry and we are searching offset of
-                         * t2 for lower and upper boundaries.
-                         *  --------------------------
-                         *   timestamp   Consume Queue
-                         *       t1          1
-                         *       t1          2
-                         *       t1          3
-                         *       t3          4
-                         *       t3          5
-                         *   --------------------------
-                         * Now, we return 3 as upper boundary of t2 and 4 as its lower boundary. It looks
-                         * contradictory at first sight, but it does make sense when performing range queries.
-                         */
-                        switch (boundaryType) {
-                            case LOWER: {
-                                offset = rightOffset;
-                                break;
-                            }
-
-                            case UPPER: {
-                                offset = leftOffset;
-                                break;
-                            }
-                            default: {
-                                log.warn("Unknown boundary type");
-                                break;
-                            }
-                        }
-                    }
-                    return (mappedFile.getFileFromOffset() + offset) / CQ_STORE_UNIT_SIZE;
-                } finally {
-                    sbr.release();
                 }
+
+                // Handle case 2
+                byteBuffer.position(floor);
+                phyOffset = byteBuffer.getLong();
+                size = byteBuffer.getInt();
+                storeTime = messageStore.getCommitLog().pickupStoreTimestamp(phyOffset, size);
+                if (storeTime > timestamp) {
+                    switch (boundaryType) {
+                        case LOWER:
+                            return mappedFile.getFileFromOffset() / CQ_STORE_UNIT_SIZE;
+                        case UPPER:
+                            return 0;
+                        default:
+                            log.warn("Unknown boundary type");
+                            break;
+                    }
+                }
+
+                // Perform binary search
+                while (high >= low) {
+                    midOffset = (low + high) / (2 * CQ_STORE_UNIT_SIZE) * CQ_STORE_UNIT_SIZE;
+                    byteBuffer.position(midOffset);
+                    phyOffset = byteBuffer.getLong();
+                    size = byteBuffer.getInt();
+                    if (phyOffset < minPhysicOffset) {
+                        low = midOffset + CQ_STORE_UNIT_SIZE;
+                        leftOffset = midOffset;
+                        continue;
+                    }
+
+                    storeTime = this.messageStore.getCommitLog().pickupStoreTimestamp(phyOffset, size);
+                    if (storeTime < 0) {
+                        log.warn("Failed to query store timestamp for commit log offset: {}", phyOffset);
+                        return 0;
+                    } else if (storeTime == timestamp) {
+                        targetOffset = midOffset;
+                        break;
+                    } else if (storeTime > timestamp) {
+                        high = midOffset - CQ_STORE_UNIT_SIZE;
+                        rightOffset = midOffset;
+                    } else {
+                        low = midOffset + CQ_STORE_UNIT_SIZE;
+                        leftOffset = midOffset;
+                    }
+                }
+
+                if (targetOffset != -1) {
+                    // We just found ONE matched record. These next to it might also share the same store-timestamp.
+                    offset = targetOffset;
+                    switch (boundaryType) {
+                        case LOWER: {
+                            int previousAttempt = targetOffset;
+                            while (true) {
+                                int attempt = previousAttempt - CQ_STORE_UNIT_SIZE;
+                                if (attempt < floor) {
+                                    break;
+                                }
+                                byteBuffer.position(attempt);
+                                long physicalOffset = byteBuffer.getLong();
+                                int messageSize = byteBuffer.getInt();
+                                long messageStoreTimestamp = messageStore.getCommitLog()
+                                    .pickupStoreTimestamp(physicalOffset, messageSize);
+                                if (messageStoreTimestamp == timestamp) {
+                                    previousAttempt = attempt;
+                                    continue;
+                                }
+                                break;
+                            }
+                            offset = previousAttempt;
+                            break;
+                        }
+                        case UPPER: {
+                            int previousAttempt = targetOffset;
+                            while (true) {
+                                int attempt = previousAttempt + CQ_STORE_UNIT_SIZE;
+                                if (attempt > ceiling) {
+                                    break;
+                                }
+                                byteBuffer.position(attempt);
+                                long physicalOffset = byteBuffer.getLong();
+                                int messageSize = byteBuffer.getInt();
+                                long messageStoreTimestamp = messageStore.getCommitLog()
+                                    .pickupStoreTimestamp(physicalOffset, messageSize);
+                                if (messageStoreTimestamp == timestamp) {
+                                    previousAttempt = attempt;
+                                    continue;
+                                }
+                                break;
+                            }
+                            offset = previousAttempt;
+                            break;
+                        }
+                        default: {
+                            log.warn("Unknown boundary type");
+                            break;
+                        }
+                    }
+                } else {
+                    // Given timestamp does not have any message records. But we have a range enclosing the
+                    // timestamp.
+                    /*
+                     * Consider the follow case: t2 has no consume queue entry and we are searching offset of
+                     * t2 for lower and upper boundaries.
+                     *  --------------------------
+                     *   timestamp   Consume Queue
+                     *       t1          1
+                     *       t1          2
+                     *       t1          3
+                     *       t3          4
+                     *       t3          5
+                     *   --------------------------
+                     * Now, we return 3 as upper boundary of t2 and 4 as its lower boundary. It looks
+                     * contradictory at first sight, but it does make sense when performing range queries.
+                     */
+                    switch (boundaryType) {
+                        case LOWER: {
+                            offset = rightOffset;
+                            break;
+                        }
+
+                        case UPPER: {
+                            offset = leftOffset;
+                            break;
+                        }
+                        default: {
+                            log.warn("Unknown boundary type");
+                            break;
+                        }
+                    }
+                }
+                return (mappedFile.getFileFromOffset() + offset) / CQ_STORE_UNIT_SIZE;
+            } finally {
+                sbr.release();
             }
         }
         return 0;
@@ -414,69 +417,68 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         boolean shouldDeleteFile = false;
         while (true) {
             MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
-            if (mappedFile != null) {
-                ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
+            if (null == mappedFile) {
+                break;
+            }
 
-                mappedFile.setWrotePosition(0);
-                mappedFile.setCommittedPosition(0);
-                mappedFile.setFlushedPosition(0);
+            ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
 
-                for (int i = 0; i < logicFileSize; i += CQ_STORE_UNIT_SIZE) {
-                    long offset = byteBuffer.getLong();
-                    int size = byteBuffer.getInt();
-                    long tagsCode = byteBuffer.getLong();
+            mappedFile.setWrotePosition(0);
+            mappedFile.setCommittedPosition(0);
+            mappedFile.setFlushedPosition(0);
 
-                    if (0 == i) {
-                        if (offset >= phyOffset) {
-                            shouldDeleteFile = true;
-                            break;
-                        } else {
-                            int pos = i + CQ_STORE_UNIT_SIZE;
-                            mappedFile.setWrotePosition(pos);
-                            mappedFile.setCommittedPosition(pos);
-                            mappedFile.setFlushedPosition(pos);
-                            this.maxPhysicOffset = offset + size;
-                            // This maybe not take effect, when not every consume queue has extend file.
-                            if (isExtAddr(tagsCode)) {
-                                maxExtAddr = tagsCode;
-                            }
-                        }
+            for (int i = 0; i < logicFileSize; i += CQ_STORE_UNIT_SIZE) {
+                long offset = byteBuffer.getLong();
+                int size = byteBuffer.getInt();
+                long tagsCode = byteBuffer.getLong();
+
+                if (0 == i) {
+                    if (offset >= phyOffset) {
+                        shouldDeleteFile = true;
+                        break;
                     } else {
+                        int pos = i + CQ_STORE_UNIT_SIZE;
+                        mappedFile.setWrotePosition(pos);
+                        mappedFile.setCommittedPosition(pos);
+                        mappedFile.setFlushedPosition(pos);
+                        this.maxPhysicOffset = offset + size;
+                        // This maybe not take effect, when not every consume queue has extend file.
+                        if (isExtAddr(tagsCode)) {
+                            maxExtAddr = tagsCode;
+                        }
+                    }
+                } else {
 
-                        if (offset >= 0 && size > 0) {
+                    if (offset >= 0 && size > 0) {
 
-                            if (offset >= phyOffset) {
-                                return;
-                            }
-
-                            int pos = i + CQ_STORE_UNIT_SIZE;
-                            mappedFile.setWrotePosition(pos);
-                            mappedFile.setCommittedPosition(pos);
-                            mappedFile.setFlushedPosition(pos);
-                            this.maxPhysicOffset = offset + size;
-                            if (isExtAddr(tagsCode)) {
-                                maxExtAddr = tagsCode;
-                            }
-
-                            if (pos == logicFileSize) {
-                                return;
-                            }
-                        } else {
+                        if (offset >= phyOffset) {
                             return;
                         }
-                    }
-                }
 
-                if (shouldDeleteFile) {
-                    if (deleteFile) {
-                        this.mappedFileQueue.deleteLastMappedFile();
+                        int pos = i + CQ_STORE_UNIT_SIZE;
+                        mappedFile.setWrotePosition(pos);
+                        mappedFile.setCommittedPosition(pos);
+                        mappedFile.setFlushedPosition(pos);
+                        this.maxPhysicOffset = offset + size;
+                        if (isExtAddr(tagsCode)) {
+                            maxExtAddr = tagsCode;
+                        }
+
+                        if (pos == logicFileSize) {
+                            return;
+                        }
                     } else {
-                        this.mappedFileQueue.deleteExpiredFile(Collections.singletonList(this.mappedFileQueue.getLastMappedFile()));
+                        return;
                     }
                 }
+            }
 
-            } else {
-                break;
+            if (shouldDeleteFile) {
+                if (deleteFile) {
+                    this.mappedFileQueue.deleteLastMappedFile();
+                } else {
+                    this.mappedFileQueue.deleteExpiredFile(Collections.singletonList(this.mappedFileQueue.getLastMappedFile()));
+                }
             }
         }
 
@@ -492,24 +494,25 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         int logicFileSize = this.mappedFileSize;
 
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
-        if (mappedFile != null) {
+        if (null == mappedFile) {
+            return lastOffset;
+        }
 
-            int position = mappedFile.getWrotePosition() - CQ_STORE_UNIT_SIZE;
-            if (position < 0)
-                position = 0;
+        int position = mappedFile.getWrotePosition() - CQ_STORE_UNIT_SIZE;
+        if (position < 0)
+            position = 0;
 
-            ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-            byteBuffer.position(position);
-            for (int i = 0; i < logicFileSize; i += CQ_STORE_UNIT_SIZE) {
-                long offset = byteBuffer.getLong();
-                int size = byteBuffer.getInt();
-                byteBuffer.getLong();
+        ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
+        byteBuffer.position(position);
+        for (int i = 0; i < logicFileSize; i += CQ_STORE_UNIT_SIZE) {
+            long offset = byteBuffer.getLong();
+            int size = byteBuffer.getInt();
+            byteBuffer.getLong();
 
-                if (offset >= 0 && size > 0) {
-                    lastOffset = offset + size;
-                } else {
-                    break;
-                }
+            if (offset >= 0 && size > 0) {
+                lastOffset = offset + size;
+            } else {
+                break;
             }
         }
 
@@ -895,41 +898,43 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
 
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
-        if (mappedFile != null) {
-
-            if (mappedFile.isFirstCreateInQueue() && cqOffset != 0 && mappedFile.getWrotePosition() == 0) {
-                this.minLogicOffset = expectLogicOffset;
-                this.mappedFileQueue.setFlushedWhere(expectLogicOffset);
-                this.mappedFileQueue.setCommittedWhere(expectLogicOffset);
-                this.fillPreBlank(mappedFile, expectLogicOffset);
-                log.info("fill pre blank space " + mappedFile.getFileName() + " " + expectLogicOffset + " "
-                    + mappedFile.getWrotePosition());
-            }
-
-            if (cqOffset != 0) {
-                long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();
-
-                if (expectLogicOffset < currentLogicOffset) {
-                    log.warn("Build  consume queue repeatedly, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
-                        expectLogicOffset, currentLogicOffset, this.topic, this.queueId, expectLogicOffset - currentLogicOffset);
-                    return true;
-                }
-
-                if (expectLogicOffset != currentLogicOffset) {
-                    LOG_ERROR.warn(
-                        "[BUG]logic queue order maybe wrong, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
-                        expectLogicOffset,
-                        currentLogicOffset,
-                        this.topic,
-                        this.queueId,
-                        expectLogicOffset - currentLogicOffset
-                    );
-                }
-            }
-            this.maxPhysicOffset = offset + size;
-            return mappedFile.appendMessage(this.byteBufferIndex.array());
+        if (null == mappedFile) {
+            return false;
         }
-        return false;
+
+        if (mappedFile.isFirstCreateInQueue() && cqOffset != 0 && mappedFile.getWrotePosition() == 0) {
+            this.minLogicOffset = expectLogicOffset;
+            this.mappedFileQueue.setFlushedWhere(expectLogicOffset);
+            this.mappedFileQueue.setCommittedWhere(expectLogicOffset);
+            this.fillPreBlank(mappedFile, expectLogicOffset);
+            log.info("fill pre blank space " + mappedFile.getFileName() + " " + expectLogicOffset + " "
+                + mappedFile.getWrotePosition());
+        }
+
+        if (cqOffset != 0) {
+            long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();
+
+            if (expectLogicOffset < currentLogicOffset) {
+                log.warn("Build  consume queue repeatedly, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
+                    expectLogicOffset, currentLogicOffset, this.topic, this.queueId, expectLogicOffset - currentLogicOffset);
+                return true;
+            }
+
+            if (expectLogicOffset != currentLogicOffset) {
+                LOG_ERROR.warn(
+                    "[BUG]logic queue order maybe wrong, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
+                    expectLogicOffset,
+                    currentLogicOffset,
+                    this.topic,
+                    this.queueId,
+                    expectLogicOffset - currentLogicOffset
+                );
+            }
+        }
+
+        this.maxPhysicOffset = offset + size;
+
+        return mappedFile.appendMessage(this.byteBufferIndex.array());
     }
 
     private void fillPreBlank(final MappedFile mappedFile, final long untilWhere) {

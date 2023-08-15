@@ -488,39 +488,41 @@ public class ConsumeQueueStore {
         while (it.hasNext()) {
             Map.Entry<String, ConcurrentMap<Integer, ConsumeQueueInterface>> next = it.next();
             String topic = next.getKey();
-            if (!TopicValidator.isSystemTopic(topic)) {
-                ConcurrentMap<Integer, ConsumeQueueInterface> queueTable = next.getValue();
-                Iterator<Map.Entry<Integer, ConsumeQueueInterface>> itQT = queueTable.entrySet().iterator();
-                while (itQT.hasNext()) {
-                    Map.Entry<Integer, ConsumeQueueInterface> nextQT = itQT.next();
-                    long maxCLOffsetInConsumeQueue = nextQT.getValue().getLastOffset();
+            if (TopicValidator.isSystemTopic(topic)) {
+                continue;
+            }
 
-                    if (maxCLOffsetInConsumeQueue == -1) {
-                        log.warn("maybe ConsumeQueue was created just now. topic={} queueId={} maxPhysicOffset={} minLogicOffset={}.",
-                            nextQT.getValue().getTopic(),
-                            nextQT.getValue().getQueueId(),
-                            nextQT.getValue().getMaxPhysicOffset(),
-                            nextQT.getValue().getMinLogicOffset());
-                    } else if (maxCLOffsetInConsumeQueue < minCommitLogOffset) {
-                        log.info(
-                            "cleanExpiredConsumerQueue: {} {} consumer queue destroyed, minCommitLogOffset: {} maxCLOffsetInConsumeQueue: {}",
-                            topic,
-                            nextQT.getKey(),
-                            minCommitLogOffset,
-                            maxCLOffsetInConsumeQueue);
+            ConcurrentMap<Integer, ConsumeQueueInterface> queueTable = next.getValue();
+            Iterator<Map.Entry<Integer, ConsumeQueueInterface>> itQT = queueTable.entrySet().iterator();
+            while (itQT.hasNext()) {
+                Map.Entry<Integer, ConsumeQueueInterface> nextQT = itQT.next();
+                long maxCLOffsetInConsumeQueue = nextQT.getValue().getLastOffset();
 
-                        removeTopicQueueTable(nextQT.getValue().getTopic(),
-                            nextQT.getValue().getQueueId());
+                if (maxCLOffsetInConsumeQueue == -1) {
+                    log.warn("maybe ConsumeQueue was created just now. topic={} queueId={} maxPhysicOffset={} minLogicOffset={}.",
+                        nextQT.getValue().getTopic(),
+                        nextQT.getValue().getQueueId(),
+                        nextQT.getValue().getMaxPhysicOffset(),
+                        nextQT.getValue().getMinLogicOffset());
+                } else if (maxCLOffsetInConsumeQueue < minCommitLogOffset) {
+                    log.info(
+                        "cleanExpiredConsumerQueue: {} {} consumer queue destroyed, minCommitLogOffset: {} maxCLOffsetInConsumeQueue: {}",
+                        topic,
+                        nextQT.getKey(),
+                        minCommitLogOffset,
+                        maxCLOffsetInConsumeQueue);
 
-                        this.destroy(nextQT.getValue());
-                        itQT.remove();
-                    }
+                    removeTopicQueueTable(nextQT.getValue().getTopic(),
+                        nextQT.getValue().getQueueId());
+
+                    this.destroy(nextQT.getValue());
+                    itQT.remove();
                 }
+            }
 
-                if (queueTable.isEmpty()) {
-                    log.info("cleanExpiredConsumerQueue: {},topic destroyed", topic);
-                    it.remove();
-                }
+            if (queueTable.isEmpty()) {
+                log.info("cleanExpiredConsumerQueue: {},topic destroyed", topic);
+                it.remove();
             }
         }
     }
