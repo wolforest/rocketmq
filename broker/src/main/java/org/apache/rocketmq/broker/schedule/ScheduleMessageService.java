@@ -181,6 +181,19 @@ public class ScheduleMessageService extends ConfigManager {
         stop();
         ThreadUtils.shutdown(scheduledPersistService);
     }
+    
+    public boolean stop() {
+        if (!this.started.compareAndSet(true, false) || null == this.deliverExecutorService) {
+            return true;
+        }
+
+        stopDeliverExecutorService();
+        stopHandleExecutorService();
+        logDeliverPendingTable();
+
+        this.persist();
+        return true;
+    }
 
     private void stopDeliverExecutorService() {
         this.deliverExecutorService.shutdown();
@@ -204,20 +217,10 @@ public class ScheduleMessageService extends ConfigManager {
         }
     }
 
-    public boolean stop() {
-        if (!this.started.compareAndSet(true, false) || null == this.deliverExecutorService) {
-            return true;
-        }
-
-        stopDeliverExecutorService();
-        stopHandleExecutorService();
-
+    private void logDeliverPendingTable() {
         for (int i = 1; i <= this.deliverPendingTable.size(); i++) {
             log.warn("deliverPendingTable level: {}, size: {}", i, this.deliverPendingTable.get(i).size());
         }
-
-        this.persist();
-        return true;
     }
 
     public boolean isStarted() {
