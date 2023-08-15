@@ -131,6 +131,17 @@ public class ScheduleMessageService extends ConfigManager {
         return storeTimestamp + 1000;
     }
 
+    public void start() {
+        if (!started.compareAndSet(false, true)) {
+            return;
+        }
+
+        this.load();
+        this.initExecutorService();
+        this.startSchedule();
+        this.startPersistentService();
+    }
+
     private void initExecutorService() {
         this.deliverExecutorService = new ScheduledThreadPoolExecutor(this.maxDelayLevel, new ThreadFactoryImpl("ScheduleMessageTimerThread_"));
         if (this.enableAsyncDeliver) {
@@ -156,16 +167,7 @@ public class ScheduleMessageService extends ConfigManager {
         }
     }
 
-    public void start() {
-        if (!started.compareAndSet(false, true)) {
-            return;
-        }
-
-        this.load();
-        this.initExecutorService();
-        this.startSchedule();
-
-
+    private void startPersistentService() {
         scheduledPersistService.scheduleAtFixedRate(() -> {
             try {
                 ScheduleMessageService.this.persist();
