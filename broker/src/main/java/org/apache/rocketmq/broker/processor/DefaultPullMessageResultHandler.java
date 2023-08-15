@@ -110,6 +110,11 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         processor.tryCommitOffset(brokerAllowSuspend, requestHeader, getMessageResult.getNextBeginOffset(),
             clientAddress);
 
+
+        return formatResponseByCode(requestHeader, request, subscriptionGroupConfig, brokerAllowSuspend, channel, response, responseHeader, subscriptionData, messageFilter, getMessageResult);
+    }
+
+    private RemotingCommand formatResponseByCode(PullMessageRequestHeader requestHeader, RemotingCommand request, SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, Channel channel, RemotingCommand response,  PullMessageResponseHeader responseHeader, SubscriptionData subscriptionData, MessageFilter messageFilter, GetMessageResult getMessageResult) {
         switch (response.getCode()) {
             case ResponseCode.SUCCESS:
                 return handleSuccess(requestHeader, request, channel, response, getMessageResult);
