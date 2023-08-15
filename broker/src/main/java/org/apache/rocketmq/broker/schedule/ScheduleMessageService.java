@@ -138,14 +138,7 @@ public class ScheduleMessageService extends ConfigManager {
         }
     }
 
-    public void start() {
-        if (!started.compareAndSet(false, true)) {
-            return;
-        }
-
-        this.load();
-        this.initExecutorService();
-
+    private void startSchedule() {
         for (Map.Entry<Integer, Long> entry : this.delayLevelTable.entrySet()) {
             Integer level = entry.getKey();
             Long timeDelay = entry.getValue();
@@ -161,6 +154,17 @@ public class ScheduleMessageService extends ConfigManager {
                 this.deliverExecutorService.schedule(new DeliverDelayedMessageTimerTask(level, offset), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
             }
         }
+    }
+
+    public void start() {
+        if (!started.compareAndSet(false, true)) {
+            return;
+        }
+
+        this.load();
+        this.initExecutorService();
+        this.startSchedule();
+
 
         scheduledPersistService.scheduleAtFixedRate(() -> {
             try {
