@@ -213,7 +213,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     }
 
     private void appendAck(final AckMessageRequestHeader requestHeader, final BatchAck batchAck, final RemotingCommand response, final Channel channel, String brokerName) {
-        AckMsg ackMsg = new AckMsg();
+        BatchAckMsg ackMsg = new BatchAckMsg();
         int rqId = getRqid(requestHeader, batchAck);
 
         int ackCount = countAckMsg(requestHeader, response, channel, batchAck, brokerName, ackMsg);
@@ -304,7 +304,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         return -1;
     }
 
-    private int countBatchAckMsg(final BatchAck batchAck, String brokerName, AckMsg ackMsg) {
+    private int countBatchAckMsg(final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
         // batch ack
         String topic = ExtraInfoUtil.getRealTopic(batchAck.getTopic(), batchAck.getConsumerGroup(), ExtraInfoUtil.RETRY_TOPIC.equals(batchAck.getRetry()));
 
@@ -320,6 +320,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             return -1;
         }
 
+        ackMsg.setAckOffsetList(batchAckMsg.getAckOffsetList());
         initAckMsg(ackMsg, batchAck, topic, brokerName);
 
         return batchAckMsg.getAckOffsetList().size();
@@ -341,7 +342,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         return batchAckMsg;
     }
 
-    private void initAckMsg(AckMsg ackMsg, BatchAck batchAck, String topic, String brokerName) {
+    private void initAckMsg(BatchAckMsg ackMsg, BatchAck batchAck, String topic, String brokerName) {
         ackMsg.setConsumerGroup(batchAck.getConsumerGroup());
         ackMsg.setTopic(topic);
         ackMsg.setQueueId(batchAck.getQueueId());
@@ -351,7 +352,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         ackMsg.setBrokerName(brokerName);
     }
 
-    private int countAckMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, AckMsg ackMsg) {
+    private int countAckMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
         int ackCount = 0;
         if (batchAck == null) {
             ackCount = countSingleAckMsg(requestHeader, response, channel, ackMsg);
