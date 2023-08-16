@@ -191,18 +191,20 @@ public class ConsumerOffsetManager extends ConfigManager {
 
         for (String key : this.offsetTable.keySet()) {
             String[] arr = key.split(TOPIC_GROUP_SEPARATOR);
-            if (arr.length == 2) {
-                String topic = arr[0];
-                String group = arr[1];
-
-                Set<String> topics = retMap.get(group);
-                if (topics == null) {
-                    topics = new HashSet<>(8);
-                    retMap.put(group, topics);
-                }
-
-                topics.add(topic);
+            if (arr.length != 2) {
+                continue;
             }
+
+            String topic = arr[0];
+            String group = arr[1];
+
+            Set<String> topics = retMap.get(group);
+            if (topics == null) {
+                topics = new HashSet<>(8);
+                retMap.put(group, topics);
+            }
+
+            topics.add(topic);
         }
 
         return retMap;
