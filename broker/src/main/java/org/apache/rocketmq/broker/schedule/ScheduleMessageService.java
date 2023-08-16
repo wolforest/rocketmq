@@ -49,12 +49,7 @@ public class ScheduleMessageService extends ConfigManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
     private static final long FIRST_DELAY_TIME = 1000L;
-
-
     private static final long WAIT_FOR_SHUTDOWN = 5000L;
-
-
-
     private final ConcurrentMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
         new ConcurrentHashMap<>(32);
 
@@ -62,16 +57,11 @@ public class ScheduleMessageService extends ConfigManager {
         new ConcurrentHashMap<>(32);
     private final AtomicBoolean started = new AtomicBoolean(false);
 
-
-
     private ScheduledExecutorService deliverExecutorService;
     private int maxDelayLevel;
     private DataVersion dataVersion = new DataVersion();
     private boolean enableAsyncDeliver = false;
 
-    public ScheduledExecutorService getHandleExecutorService() {
-        return handleExecutorService;
-    }
 
     private ScheduledExecutorService handleExecutorService;
     private final ScheduledExecutorService scheduledPersistService;
@@ -384,32 +374,10 @@ public class ScheduleMessageService extends ConfigManager {
     }
 
 
-    public enum ProcessStatus {
-        /**
-         * In process, the processing result has not yet been returned.
-         */
-        RUNNING,
-
-        /**
-         * Put message success.
-         */
-        SUCCESS,
-
-        /**
-         * Put message exception. When autoResend is true, the message will be resend.
-         */
-        EXCEPTION,
-
-        /**
-         * Skip put message. When the message cannot be looked, the message will be skipped.
-         */
-        SKIP,
-    }
 
     public ConcurrentMap<Integer, Long> getOffsetTable() {
         return offsetTable;
     }
-
 
     public ConcurrentMap<Integer, Long> getDelayLevelTable() {
         return delayLevelTable;
@@ -429,5 +397,9 @@ public class ScheduleMessageService extends ConfigManager {
 
     public Map<Integer, LinkedBlockingQueue<PutResultProcess>> getDeliverPendingTable() {
         return deliverPendingTable;
+    }
+
+    public ScheduledExecutorService getHandleExecutorService() {
+        return handleExecutorService;
     }
 }

@@ -50,7 +50,7 @@ public class PutResultProcess {
     private CompletableFuture<PutMessageResult> future;
 
     private volatile AtomicInteger resendCount = new AtomicInteger(0);
-    private volatile ScheduleMessageService.ProcessStatus status = ScheduleMessageService.ProcessStatus.RUNNING;
+    private volatile ProcessStatus status = ProcessStatus.RUNNING;
     private final ScheduleMessageService scheduleMessageService;
 
     public PutResultProcess(ScheduleMessageService scheduleMessageService) {
@@ -160,7 +160,7 @@ public class PutResultProcess {
     }
 
     public void onSuccess(PutMessageResult result) {
-        this.status = ScheduleMessageService.ProcessStatus.SUCCESS;
+        this.status = ProcessStatus.SUCCESS;
         if (scheduleMessageService.getBrokerController().getMessageStore().getMessageStoreConfig().isEnableScheduleMessageStats() && !result.isRemotePut()) {
             scheduleMessageService.getBrokerController().getBrokerStatsManager().incQueueGetNums(MixAll.SCHEDULE_CONSUMER_GROUP, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, delayLevel - 1, result.getAppendMessageResult().getMsgNum());
             scheduleMessageService.getBrokerController().getBrokerStatsManager().incQueueGetSize(MixAll.SCHEDULE_CONSUMER_GROUP, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, delayLevel - 1, result.getAppendMessageResult().getWroteBytes());
@@ -193,13 +193,13 @@ public class PutResultProcess {
     public void onException() {
         log.warn("ScheduleMessageService onException, info: {}", this.toString());
         if (this.autoResend) {
-            this.status = ScheduleMessageService.ProcessStatus.EXCEPTION;
+            this.status = ProcessStatus.EXCEPTION;
         } else {
-            this.status = ScheduleMessageService.ProcessStatus.SKIP;
+            this.status = ProcessStatus.SKIP;
         }
     }
 
-    public ScheduleMessageService.ProcessStatus getStatus() {
+    public ProcessStatus getStatus() {
         return this.status;
     }
 
@@ -225,7 +225,7 @@ public class PutResultProcess {
             MessageExt msgExt = scheduleMessageService.getBrokerController().getMessageStore().lookMessageByOffset(this.physicOffset, this.physicSize);
             if (msgExt == null) {
                 log.warn("ScheduleMessageService resend not found message. info: {}", this.toString());
-                this.status = need2Skip() ? ScheduleMessageService.ProcessStatus.SKIP : ScheduleMessageService.ProcessStatus.EXCEPTION;
+                this.status = need2Skip() ? ProcessStatus.SKIP : ProcessStatus.EXCEPTION;
                 return;
             }
 
@@ -236,7 +236,7 @@ public class PutResultProcess {
                 log.info("Resend message success, info: {}", this.toString());
             }
         } catch (Exception e) {
-            this.status = ScheduleMessageService.ProcessStatus.EXCEPTION;
+            this.status = ProcessStatus.EXCEPTION;
             log.error("Resend message error, info: {}", this.toString(), e);
         }
     }
