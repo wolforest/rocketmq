@@ -457,7 +457,15 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         return consumerGroupInfo;
     }
 
-    private SubscriptionData findSubscriptionData(SubscriptionGroupConfig subscriptionGroupConfig, PullMessageRequestHeader requestHeader, RemotingCommand response, PullMessageResponseHeader responseHeader) {
+    private SubscriptionData buildSubscriptionData(SubscriptionGroupConfig subscriptionGroupConfig, PullMessageRequestHeader requestHeader, RemotingCommand response, PullMessageResponseHeader responseHeader) {
+        if (PullSysFlag.hasSubscriptionFlag(requestHeader.getSysFlag())) {
+            return getSubscriptionData(requestHeader, response);
+        } else {
+            return getSubscriptionData(subscriptionGroupConfig, requestHeader, response, responseHeader);
+        }
+    }
+
+    private SubscriptionData getSubscriptionData(SubscriptionGroupConfig subscriptionGroupConfig, PullMessageRequestHeader requestHeader, RemotingCommand response, PullMessageResponseHeader responseHeader) {
         ConsumerGroupInfo consumerGroupInfo = getConsumerGroupInfo(subscriptionGroupConfig, requestHeader, response, responseHeader) ;
         if (null == consumerGroupInfo) {
             return null;
@@ -482,6 +490,37 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         return subscriptionData;
     }
 
+    private SubscriptionData getSubscriptionData(PullMessageRequestHeader requestHeader, RemotingCommand response) {
+        try {
+            SubscriptionData subscriptionData = FilterAPI.build(
+                requestHeader.getTopic(), requestHeader.getSubscription(), requestHeader.getExpressionType()
+            );
+            ConsumerManager consumerManager = brokerController.getConsumerManager();
+            consumerManager.compensateSubscribeData(requestHeader.getConsumerGroup(), requestHeader.getTopic(), subscriptionData);
+
+            return subscriptionData;
+        } catch (Exception e) {
+            LOGGER.warn("Parse the consumer's subscription[{}] failed, group: {}", requestHeader.getSubscription(), requestHeader.getConsumerGroup());
+            buildResponse(response, ResponseCode.SUBSCRIPTION_PARSE_FAILED, "parse the consumer's subscription failed");
+            return null;
+        }
+    }
+
+    private ConsumerFilterData buildConsumerFilterData(PullMessageRequestHeader requestHeader, RemotingCommand response) {
+        if (PullSysFlag.hasSubscriptionFlag(requestHeader.getSysFlag())) {
+            return getConsumerFilterData(requestHeader);
+        } else {
+            return getConsumerFilterData(requestHeader, response);
+        }
+    }
+
+    private ConsumerFilterData getConsumerFilterData(PullMessageRequestHeader requestHeader) {
+        return ConsumerFilterManager.build(
+            requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getSubscription(),
+            requestHeader.getExpressionType(), requestHeader.getSubVersion()
+        );
+    }
+
     private ConsumerFilterData getConsumerFilterData(PullMessageRequestHeader requestHeader, RemotingCommand response) {
         ConsumerFilterData consumerFilterData = this.brokerController.getConsumerFilterManager().get(requestHeader.getTopic(),
             requestHeader.getConsumerGroup());
@@ -500,6 +539,8 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
         return consumerFilterData;
     }
+
+
 
     private RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend, boolean brokerAllowFlowCtrSuspend) throws RemotingCommandException {
         RemotingCommand response = RemotingCommand.createResponseCommand(PullMessageResponseHeader.class);
@@ -523,38 +564,16 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
         compensateBasicConsumerInfo(consumerManager, requestHeader);
 
-        SubscriptionData subscriptionData = null;
+        SubscriptionData subscriptionData = buildSubscriptionData(subscriptionGroupConfig, requestHeader, response, responseHeader);
+        if (null == subscriptionData) {
+            return response;
+        }
+
         ConsumerFilterData consumerFilterData = null;
-        if (PullSysFlag.hasSubscriptionFlag(requestHeader.getSysFlag())) {
-            try {
-                subscriptionData = FilterAPI.build(
-                    requestHeader.getTopic(), requestHeader.getSubscription(), requestHeader.getExpressionType()
-                );
-                consumerManager.compensateSubscribeData(requestHeader.getConsumerGroup(), requestHeader.getTopic(), subscriptionData);
-
-                if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
-                    consumerFilterData = ConsumerFilterManager.build(
-                        requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getSubscription(),
-                        requestHeader.getExpressionType(), requestHeader.getSubVersion()
-                    );
-                    assert consumerFilterData != null;
-                }
-            } catch (Exception e) {
-                LOGGER.warn("Parse the consumer's subscription[{}] failed, group: {}", requestHeader.getSubscription(), requestHeader.getConsumerGroup());
-                buildResponse(response, ResponseCode.SUBSCRIPTION_PARSE_FAILED, "parse the consumer's subscription failed");
+        if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
+            consumerFilterData = buildConsumerFilterData(requestHeader, response);
+            if (consumerFilterData == null) {
                 return response;
-            }
-        } else {
-            subscriptionData = findSubscriptionData(subscriptionGroupConfig, requestHeader, response, responseHeader);
-            if (null == subscriptionData) {
-                return response;
-            }
-
-            if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
-                consumerFilterData = getConsumerFilterData(requestHeader, response);
-                if (consumerFilterData == null) {
-                    return response;
-                }
             }
         }
 
