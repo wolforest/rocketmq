@@ -315,6 +315,17 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             return -1;
         }
 
+        BatchAckMsg batchAckMsg = initBatchAckMsg(batchAck, minOffset, maxOffset);
+        if (batchAckMsg.getAckOffsetList().isEmpty()) {
+            return -1;
+        }
+
+        initAckMsg(ackMsg, batchAck, topic, brokerName);
+
+        return batchAckMsg.getAckOffsetList().size();
+    }
+
+    private BatchAckMsg initBatchAckMsg(BatchAck batchAck, long minOffset, long maxOffset) {
         BatchAckMsg batchAckMsg = new BatchAckMsg();
         for (int i = 0; batchAck.getBitSet() != null && i < batchAck.getBitSet().length(); i++) {
             if (!batchAck.getBitSet().get(i)) {
@@ -326,13 +337,8 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             }
             batchAckMsg.getAckOffsetList().add(offset);
         }
-        if (batchAckMsg.getAckOffsetList().isEmpty()) {
-            return -1;
-        }
 
-        initAckMsg(ackMsg, batchAck, topic, brokerName);
-
-        return batchAckMsg.getAckOffsetList().size();
+        return batchAckMsg;
     }
 
     private void initAckMsg(AckMsg ackMsg, BatchAck batchAck, String topic, String brokerName) {
