@@ -122,8 +122,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.SUCCESS, null);
         response.setOpaque(request.getOpaque());
 
-        AckMessageRequestHeader requestHeader;
-        requestHeader = (AckMessageRequestHeader) request.decodeCommandCustomHeader(AckMessageRequestHeader.class);
+        AckMessageRequestHeader requestHeader = (AckMessageRequestHeader) request.decodeCommandCustomHeader(AckMessageRequestHeader.class);
 
         TopicConfig topicConfig = getTopicConfig(requestHeader, channel, response);
         if (null == topicConfig) {
@@ -281,7 +280,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
                 ExtraInfoUtil.getPopTime(extraInfo));
 
             if (nextOffset > -1) {
-                if (!offsetManager.hasOffsetReset( requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId())) {
+                if (!offsetManager.hasOffsetReset(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId())) {
                     offsetManager.commitOffset(channel.remoteAddress().toString(),
                         requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), nextOffset);
                 }
