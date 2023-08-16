@@ -18,15 +18,11 @@
 package org.apache.rocketmq.test.util;
 
 import java.util.concurrent.TimeUnit;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 
 public class TestUtils {
     public static void waitForMoment(long time) {
-        try {
-            Thread.sleep(time);
-        } catch (InterruptedException var3) {
-            var3.printStackTrace();
-        }
-
+        ThreadUtils.sleep(time, true);
     }
 
     public static void waitForSeconds(long time) {
