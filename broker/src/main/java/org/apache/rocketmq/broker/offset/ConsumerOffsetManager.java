@@ -292,13 +292,17 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            ConsumerOffsetManager obj = RemotingSerializable.fromJson(jsonString, ConsumerOffsetManager.class);
-            if (obj != null) {
-                this.setOffsetTable(obj.getOffsetTable());
-                this.dataVersion = obj.dataVersion;
-            }
+        if (jsonString == null) {
+            return;
         }
+
+        ConsumerOffsetManager obj = RemotingSerializable.fromJson(jsonString, ConsumerOffsetManager.class);
+        if (obj == null) {
+            return;
+        }
+
+        this.setOffsetTable(obj.getOffsetTable());
+        this.dataVersion = obj.dataVersion;
     }
 
     @Override
