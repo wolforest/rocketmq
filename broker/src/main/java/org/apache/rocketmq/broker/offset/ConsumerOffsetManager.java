@@ -414,14 +414,18 @@ public class ConsumerOffsetManager extends ConfigManager {
         while (it.hasNext()) {
             Entry<String, ConcurrentMap<Integer, Long>> next = it.next();
             String topicAtGroup = next.getKey();
-            if (topicAtGroup.contains(group)) {
-                String[] arrays = topicAtGroup.split(TOPIC_GROUP_SEPARATOR);
-                if (arrays.length == 2 && group.equals(arrays[1])) {
-                    it.remove();
-                    removeConsumerOffset(topicAtGroup);
-                    LOG.warn("clean group offset {}", topicAtGroup);
-                }
+            if (!topicAtGroup.contains(group)) {
+                continue;
             }
+
+            String[] arrays = topicAtGroup.split(TOPIC_GROUP_SEPARATOR);
+            if (arrays.length != 2 || !group.equals(arrays[1])) {
+                continue;
+            }
+
+            it.remove();
+            removeConsumerOffset(topicAtGroup);
+            LOG.warn("clean group offset {}", topicAtGroup);
         }
     }
 
