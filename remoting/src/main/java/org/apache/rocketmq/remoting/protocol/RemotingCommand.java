@@ -360,16 +360,18 @@ public class RemotingCommand {
     Field[] getClazzFields(Class<? extends CommandCustomHeader> classHeader) {
         Field[] field = CLASS_HASH_MAP.get(classHeader);
 
-        if (field == null) {
-            Set<Field> fieldList = new HashSet<>();
-            for (Class className = classHeader; className != Object.class; className = className.getSuperclass()) {
-                Field[] fields = className.getDeclaredFields();
-                fieldList.addAll(Arrays.asList(fields));
-            }
-            field = fieldList.toArray(new Field[0]);
-            synchronized (CLASS_HASH_MAP) {
-                CLASS_HASH_MAP.put(classHeader, field);
-            }
+        if (field != null) {
+            return field;
+        }
+
+        Set<Field> fieldList = new HashSet<>();
+        for (Class className = classHeader; className != Object.class; className = className.getSuperclass()) {
+            Field[] fields = className.getDeclaredFields();
+            fieldList.addAll(Arrays.asList(fields));
+        }
+        field = fieldList.toArray(new Field[0]);
+        synchronized (CLASS_HASH_MAP) {
+            CLASS_HASH_MAP.put(classHeader, field);
         }
         return field;
     }
