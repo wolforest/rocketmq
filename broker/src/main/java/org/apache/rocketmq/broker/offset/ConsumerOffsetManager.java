@@ -152,11 +152,13 @@ public class ConsumerOffsetManager extends ConfigManager {
         while (it.hasNext()) {
             Entry<String, ConcurrentMap<Integer, Long>> next = it.next();
             String topicAtGroup = next.getKey();
+
             String[] arrays = topicAtGroup.split(TOPIC_GROUP_SEPARATOR);
-            if (arrays.length == 2) {
-                if (group.equals(arrays[1])) {
-                    topics.add(arrays[0]);
-                }
+            if (arrays.length != 2) {
+                continue;
+            }
+            if (group.equals(arrays[1])) {
+                topics.add(arrays[0]);
             }
         }
 
