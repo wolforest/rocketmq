@@ -401,21 +401,23 @@ public class ReplicasManager {
     public void sendHeartbeatToController() {
         final List<String> controllerAddresses = this.getAvailableControllerAddresses();
         for (String controllerAddress : controllerAddresses) {
-            if (StringUtils.isNotEmpty(controllerAddress)) {
-                this.brokerOuterAPI.sendHeartbeatToController(
-                    controllerAddress,
-                    this.brokerConfig.getBrokerClusterName(),
-                    this.brokerAddress,
-                    this.brokerConfig.getBrokerName(),
-                    this.brokerControllerId,
-                    this.brokerConfig.getSendHeartbeatTimeoutMillis(),
-                    this.brokerConfig.isInBrokerContainer(), this.getLastEpoch(),
-                    this.brokerController.getMessageStore().getMaxPhyOffset(),
-                    this.brokerController.getMessageStore().getConfirmOffset(),
-                    this.brokerConfig.getControllerHeartBeatTimeoutMills(),
-                    this.brokerConfig.getBrokerElectionPriority()
-                );
+            if (StringUtils.isEmpty(controllerAddress)) {
+                continue;
             }
+
+            this.brokerOuterAPI.sendHeartbeatToController(
+                controllerAddress,
+                this.brokerConfig.getBrokerClusterName(),
+                this.brokerAddress,
+                this.brokerConfig.getBrokerName(),
+                this.brokerControllerId,
+                this.brokerConfig.getSendHeartbeatTimeoutMillis(),
+                this.brokerConfig.isInBrokerContainer(), this.getLastEpoch(),
+                this.brokerController.getMessageStore().getMaxPhyOffset(),
+                this.brokerController.getMessageStore().getConfirmOffset(),
+                this.brokerConfig.getControllerHeartBeatTimeoutMills(),
+                this.brokerConfig.getBrokerElectionPriority()
+            );
         }
     }
 
