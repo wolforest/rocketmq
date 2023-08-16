@@ -42,6 +42,7 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.EpochEntry;
@@ -182,11 +183,7 @@ public class ReplicasManager {
                 }
 
                 // Try to avoid registration concurrency conflicts in random sleep
-                try {
-                    Thread.sleep(random.nextInt(1000));
-                } catch (Exception ignore) {
-
-                }
+                ThreadUtils.sleep(random.nextInt(1000));
             }
             // register 5 times but still unsuccessful
             if (this.state != State.REGISTER_TO_CONTROLLER_DONE) {
