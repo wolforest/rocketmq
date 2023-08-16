@@ -699,11 +699,8 @@ public class ReplicasManager {
                 this.scheduledService.scheduleAtFixedRate(this::updateControllerMetadata, 1000 * 3, this.brokerConfig.getSyncControllerMetadataPeriod(), TimeUnit.MILLISECONDS);
                 return true;
             }
-            try {
-                TimeUnit.SECONDS.sleep(1);
-            } catch (InterruptedException ignore) {
 
-            }
+            ThreadUtils.sleep(1);
             tryTimes++;
         }
         LOGGER.error("Failed to init controller metadata, maybe the controllers in {} is not available", this.controllerAddresses);
