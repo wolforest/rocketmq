@@ -52,6 +52,7 @@ public class PutResultProcess {
     private volatile AtomicInteger resendCount = new AtomicInteger(0);
     private volatile ScheduleMessageService.ProcessStatus status = ScheduleMessageService.ProcessStatus.RUNNING;
     private final ScheduleMessageService scheduleMessageService;
+
     public PutResultProcess(ScheduleMessageService scheduleMessageService) {
         this.scheduleMessageService = scheduleMessageService;
     }

@@ -52,7 +52,7 @@ public class ScheduleMessageService extends ConfigManager {
 
 
     private static final long WAIT_FOR_SHUTDOWN = 5000L;
-    private static final long DELAY_FOR_A_SLEEP = 10L;
+
 
 
     private final ConcurrentMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
@@ -68,6 +68,11 @@ public class ScheduleMessageService extends ConfigManager {
     private int maxDelayLevel;
     private DataVersion dataVersion = new DataVersion();
     private boolean enableAsyncDeliver = false;
+
+    public ScheduledExecutorService getHandleExecutorService() {
+        return handleExecutorService;
+    }
+
     private ScheduledExecutorService handleExecutorService;
     private final ScheduledExecutorService scheduledPersistService;
 
@@ -149,7 +154,7 @@ public class ScheduleMessageService extends ConfigManager {
 
             if (timeDelay != null) {
                 if (this.enableAsyncDeliver) {
-                    this.handleExecutorService.schedule(new HandlePutResultTask(level), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
+                    this.handleExecutorService.schedule(new HandlePutResultTask(this, level), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
                 }
                 this.deliverExecutorService.schedule(new DeliverDelayedMessageTimerTask(this, level, offset), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
             }
@@ -378,53 +383,6 @@ public class ScheduleMessageService extends ConfigManager {
         return msgInner;
     }
 
-    public class HandlePutResultTask implements Runnable {
-        private final int delayLevel;
-
-        public HandlePutResultTask(int delayLevel) {
-            this.delayLevel = delayLevel;
-        }
-
-        @Override
-        public void run() {
-            LinkedBlockingQueue<PutResultProcess> pendingQueue =
-                ScheduleMessageService.this.deliverPendingTable.get(this.delayLevel);
-
-            PutResultProcess putResultProcess;
-            while ((putResultProcess = pendingQueue.peek()) != null) {
-                try {
-                    switch (putResultProcess.getStatus()) {
-                        case SUCCESS:
-                            ScheduleMessageService.this.updateOffset(this.delayLevel, putResultProcess.getNextOffset());
-                            pendingQueue.remove();
-                            break;
-                        case RUNNING:
-                            break;
-                        case EXCEPTION:
-                            if (!isStarted()) {
-                                log.warn("HandlePutResultTask shutdown, info={}", putResultProcess.toString());
-                                return;
-                            }
-                            log.warn("putResultProcess error, info={}", putResultProcess.toString());
-                            putResultProcess.doResend();
-                            break;
-                        case SKIP:
-                            log.warn("putResultProcess skip, info={}", putResultProcess.toString());
-                            pendingQueue.remove();
-                            break;
-                    }
-                } catch (Exception e) {
-                    log.error("HandlePutResultTask exception. info={}", putResultProcess.toString(), e);
-                    putResultProcess.doResend();
-                }
-            }
-
-            if (isStarted()) {
-                ScheduleMessageService.this.handleExecutorService
-                    .schedule(new HandlePutResultTask(this.delayLevel), DELAY_FOR_A_SLEEP, TimeUnit.MILLISECONDS);
-            }
-        }
-    }
 
     public enum ProcessStatus {
         /**
