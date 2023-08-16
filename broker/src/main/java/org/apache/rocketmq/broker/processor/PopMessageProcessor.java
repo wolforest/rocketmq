@@ -740,14 +740,15 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
     private Long resetPopOffset(String topic, String group, int queueId) {
         String lockKey = topic + PopAckConstants.SPLIT + group + PopAckConstants.SPLIT + queueId;
-        Long resetOffset =
-            this.brokerController.getConsumerOffsetManager().queryThenEraseResetOffset(topic, group, queueId);
-        if (resetOffset != null) {
-            this.brokerController.getConsumerOrderInfoManager().clearBlock(topic, group, queueId);
-            this.getPopBufferMergeService().clearOffsetQueue(lockKey);
-            this.brokerController.getConsumerOffsetManager()
-                .commitOffset("ResetPopOffset", group, topic, queueId, resetOffset);
+        Long resetOffset = this.brokerController.getConsumerOffsetManager().queryThenEraseResetOffset(topic, group, queueId);
+
+        if (resetOffset == null) {
+            return resetOffset;
         }
+
+        this.brokerController.getConsumerOrderInfoManager().clearBlock(topic, group, queueId);
+        this.getPopBufferMergeService().clearOffsetQueue(lockKey);
+        this.brokerController.getConsumerOffsetManager().commitOffset("ResetPopOffset", group, topic, queueId, resetOffset);
         return resetOffset;
     }
 
