@@ -153,19 +153,21 @@ public class RemotingCommand {
         cmd.setRemark(remark);
         setCmdVersion(cmd);
 
-        if (classHeader != null) {
-            try {
-                CommandCustomHeader objectHeader = classHeader.getDeclaredConstructor().newInstance();
-                cmd.customHeader = objectHeader;
-            } catch (InstantiationException e) {
-                return null;
-            } catch (IllegalAccessException e) {
-                return null;
-            } catch (InvocationTargetException e) {
-                return null;
-            } catch (NoSuchMethodException e) {
-                return null;
-            }
+        if (classHeader == null) {
+            return cmd;
+        }
+
+        try {
+            CommandCustomHeader objectHeader = classHeader.getDeclaredConstructor().newInstance();
+            cmd.customHeader = objectHeader;
+        } catch (InstantiationException e) {
+            return null;
+        } catch (IllegalAccessException e) {
+            return null;
+        } catch (InvocationTargetException e) {
+            return null;
+        } catch (NoSuchMethodException e) {
+            return null;
         }
 
         return cmd;
