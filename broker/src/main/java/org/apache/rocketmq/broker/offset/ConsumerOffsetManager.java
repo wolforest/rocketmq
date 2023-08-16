@@ -336,6 +336,21 @@ public class ConsumerOffsetManager extends ConfigManager {
         this.offsetTable = offsetTable;
     }
 
+    public Map<Integer, Long> queryMinOffsetInAllGroup(final String topic, final String filterGroups) {
+        removeConsumerOffsetByFilterGroups(filterGroups);
+        Map<Integer, Long> queueMinOffset = new HashMap<>();
+
+        for (Map.Entry<String, ConcurrentMap<Integer, Long>> offSetEntry : this.offsetTable.entrySet()) {
+            String topicGroup = offSetEntry.getKey();
+            String[] topicGroupArr = topicGroup.split(TOPIC_GROUP_SEPARATOR);
+            if (!topic.equals(topicGroupArr[0])) {
+                continue;
+            }
+
+            queryMinOffsetInAllGroup(offSetEntry, topic, queueMinOffset);
+        }
+        return queueMinOffset;
+    }
 
     private void removeConsumerOffsetByFilterGroups(final String filterGroups) {
         Set<String> topicGroups = this.offsetTable.keySet();
@@ -357,30 +372,20 @@ public class ConsumerOffsetManager extends ConfigManager {
         }
     }
 
-    public Map<Integer, Long> queryMinOffsetInAllGroup(final String topic, final String filterGroups) {
-
-        removeConsumerOffsetByFilterGroups(filterGroups);
-        Map<Integer, Long> queueMinOffset = new HashMap<>();
-
-        for (Map.Entry<String, ConcurrentMap<Integer, Long>> offSetEntry : this.offsetTable.entrySet()) {
-            String topicGroup = offSetEntry.getKey();
-            String[] topicGroupArr = topicGroup.split(TOPIC_GROUP_SEPARATOR);
-            if (topic.equals(topicGroupArr[0])) {
-                for (Entry<Integer, Long> entry : offSetEntry.getValue().entrySet()) {
-                    long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, entry.getKey());
-                    if (entry.getValue() >= minOffset) {
-                        Long offset = queueMinOffset.get(entry.getKey());
-                        if (offset == null) {
-                            queueMinOffset.put(entry.getKey(), Math.min(Long.MAX_VALUE, entry.getValue()));
-                        } else {
-                            queueMinOffset.put(entry.getKey(), Math.min(entry.getValue(), offset));
-                        }
-                    }
-                }
+    private void queryMinOffsetInAllGroup(Map.Entry<String, ConcurrentMap<Integer, Long>> offSetEntry, String topic, Map<Integer, Long> queueMinOffset) {
+        for (Entry<Integer, Long> entry : offSetEntry.getValue().entrySet()) {
+            long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, entry.getKey());
+            if (entry.getValue() < minOffset) {
+                continue;
             }
 
+            Long offset = queueMinOffset.get(entry.getKey());
+            if (offset == null) {
+                queueMinOffset.put(entry.getKey(), Math.min(Long.MAX_VALUE, entry.getValue()));
+            } else {
+                queueMinOffset.put(entry.getKey(), Math.min(entry.getValue(), offset));
+            }
         }
-        return queueMinOffset;
     }
 
     public Map<Integer, Long> queryOffset(final String group, final String topic) {
