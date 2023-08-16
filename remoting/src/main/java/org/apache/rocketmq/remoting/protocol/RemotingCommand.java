@@ -157,6 +157,10 @@ public class RemotingCommand {
             return cmd;
         }
 
+        return createResponseCommand(cmd, classHeader);
+    }
+
+    private static RemotingCommand createResponseCommand(RemotingCommand cmd, Class<? extends CommandCustomHeader> classHeader) {
         try {
             CommandCustomHeader objectHeader = classHeader.getDeclaredConstructor().newInstance();
             cmd.customHeader = objectHeader;
