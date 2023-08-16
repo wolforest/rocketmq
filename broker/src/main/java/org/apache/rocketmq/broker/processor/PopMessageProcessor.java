@@ -195,9 +195,80 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return popLongPollingService.notifyMessageArriving(topic, cid, queueId);
     }
 
+    private boolean allowAccess(PopMessageRequestHeader requestHeader, Channel channel, RemotingCommand response) {
+        if (requestHeader.isTimeoutTooMuch()) {
+            response.setCode(ResponseCode.POLLING_TIMEOUT);
+            response.setRemark(String.format("the broker[%s] pop message is timeout too much",
+                this.brokerController.getBrokerConfig().getBrokerIP1()));
+            return false;
+        }
+        if (!PermName.isReadable(this.brokerController.getBrokerConfig().getBrokerPermission())) {
+            response.setCode(ResponseCode.NO_PERMISSION);
+            response.setRemark(String.format("the broker[%s] pop message is forbidden",
+                this.brokerController.getBrokerConfig().getBrokerIP1()));
+            return false;
+        }
+        if (requestHeader.getMaxMsgNums() > 32) {
+            response.setCode(ResponseCode.SYSTEM_ERROR);
+            response.setRemark(String.format("the broker[%s] pop message's num is greater than 32",
+                this.brokerController.getBrokerConfig().getBrokerIP1()));
+            return false;
+        }
+
+        if (!brokerController.getMessageStore().getMessageStoreConfig().isTimerWheelEnable()) {
+            response.setCode(ResponseCode.SYSTEM_ERROR);
+            response.setRemark(String.format("the broker[%s] pop message is forbidden because timerWheelEnable is false",
+                this.brokerController.getBrokerConfig().getBrokerIP1()));
+            return false;
+        }
+
+        TopicConfig topicConfig =
+            this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+        if (null == topicConfig) {
+            POP_LOGGER.error("The topic {} not exist, consumer: {} ", requestHeader.getTopic(),
+                RemotingHelper.parseChannelRemoteAddr(channel));
+            response.setCode(ResponseCode.TOPIC_NOT_EXIST);
+            response.setRemark(String.format("topic[%s] not exist, apply first please! %s", requestHeader.getTopic(),
+                FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)));
+            return false;
+        }
+
+        if (!PermName.isReadable(topicConfig.getPerm())) {
+            response.setCode(ResponseCode.NO_PERMISSION);
+            response.setRemark("the topic[" + requestHeader.getTopic() + "] peeking message is forbidden");
+            return false;
+        }
+
+        if (requestHeader.getQueueId() >= topicConfig.getReadQueueNums()) {
+            String errorInfo = String.format("queueId[%d] is illegal, topic:[%s] topicConfig.readQueueNums:[%d] " +
+                    "consumer:[%s]",
+                requestHeader.getQueueId(), requestHeader.getTopic(), topicConfig.getReadQueueNums(),
+                channel.remoteAddress());
+            POP_LOGGER.warn(errorInfo);
+            response.setCode(ResponseCode.SYSTEM_ERROR);
+            response.setRemark(errorInfo);
+            return false;
+        }
+        SubscriptionGroupConfig subscriptionGroupConfig =
+            this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
+        if (null == subscriptionGroupConfig) {
+            response.setCode(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST);
+            response.setRemark(String.format("subscription group [%s] does not exist, %s",
+                requestHeader.getConsumerGroup(), FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST)));
+            return false;
+        }
+
+        if (!subscriptionGroupConfig.isConsumeEnable()) {
+            response.setCode(ResponseCode.NO_PERMISSION);
+            response.setRemark("subscription group no permission, " + requestHeader.getConsumerGroup());
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
-    public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request)
-        throws RemotingCommandException {
+    public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         request.addExtFieldIfNotExist(BORN_TIME, String.valueOf(System.currentTimeMillis()));
         if (Objects.equals(request.getExtFields().get(BORN_TIME), "0")) {
             request.addExtField(BORN_TIME, String.valueOf(System.currentTimeMillis()));
@@ -206,8 +277,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         RemotingCommand response = RemotingCommand.createResponseCommand(PopMessageResponseHeader.class);
         final PopMessageResponseHeader responseHeader = (PopMessageResponseHeader) response.readCustomHeader();
-        final PopMessageRequestHeader requestHeader =
-            (PopMessageRequestHeader) request.decodeCommandCustomHeader(PopMessageRequestHeader.class);
+        final PopMessageRequestHeader requestHeader = (PopMessageRequestHeader) request.decodeCommandCustomHeader(PopMessageRequestHeader.class);
         StringBuilder startOffsetInfo = new StringBuilder(64);
         StringBuilder msgOffsetInfo = new StringBuilder(64);
         StringBuilder orderCountInfo = null;
@@ -224,73 +294,11 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             POP_LOGGER.info("receive PopMessage request command, {}", request);
         }
 
-        if (requestHeader.isTimeoutTooMuch()) {
-            response.setCode(ResponseCode.POLLING_TIMEOUT);
-            response.setRemark(String.format("the broker[%s] pop message is timeout too much",
-                this.brokerController.getBrokerConfig().getBrokerIP1()));
-            return response;
-        }
-        if (!PermName.isReadable(this.brokerController.getBrokerConfig().getBrokerPermission())) {
-            response.setCode(ResponseCode.NO_PERMISSION);
-            response.setRemark(String.format("the broker[%s] pop message is forbidden",
-                this.brokerController.getBrokerConfig().getBrokerIP1()));
-            return response;
-        }
-        if (requestHeader.getMaxMsgNums() > 32) {
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark(String.format("the broker[%s] pop message's num is greater than 32",
-                this.brokerController.getBrokerConfig().getBrokerIP1()));
+        if (!allowAccess(requestHeader, channel, response)) {
             return response;
         }
 
-        if (!brokerController.getMessageStore().getMessageStoreConfig().isTimerWheelEnable()) {
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark(String.format("the broker[%s] pop message is forbidden because timerWheelEnable is false",
-                this.brokerController.getBrokerConfig().getBrokerIP1()));
-            return response;
-        }
-
-        TopicConfig topicConfig =
-            this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
-        if (null == topicConfig) {
-            POP_LOGGER.error("The topic {} not exist, consumer: {} ", requestHeader.getTopic(),
-                RemotingHelper.parseChannelRemoteAddr(channel));
-            response.setCode(ResponseCode.TOPIC_NOT_EXIST);
-            response.setRemark(String.format("topic[%s] not exist, apply first please! %s", requestHeader.getTopic(),
-                FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)));
-            return response;
-        }
-
-        if (!PermName.isReadable(topicConfig.getPerm())) {
-            response.setCode(ResponseCode.NO_PERMISSION);
-            response.setRemark("the topic[" + requestHeader.getTopic() + "] peeking message is forbidden");
-            return response;
-        }
-
-        if (requestHeader.getQueueId() >= topicConfig.getReadQueueNums()) {
-            String errorInfo = String.format("queueId[%d] is illegal, topic:[%s] topicConfig.readQueueNums:[%d] " +
-                    "consumer:[%s]",
-                requestHeader.getQueueId(), requestHeader.getTopic(), topicConfig.getReadQueueNums(),
-                channel.remoteAddress());
-            POP_LOGGER.warn(errorInfo);
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark(errorInfo);
-            return response;
-        }
-        SubscriptionGroupConfig subscriptionGroupConfig =
-            this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
-        if (null == subscriptionGroupConfig) {
-            response.setCode(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST);
-            response.setRemark(String.format("subscription group [%s] does not exist, %s",
-                requestHeader.getConsumerGroup(), FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST)));
-            return response;
-        }
-
-        if (!subscriptionGroupConfig.isConsumeEnable()) {
-            response.setCode(ResponseCode.NO_PERMISSION);
-            response.setRemark("subscription group no permission, " + requestHeader.getConsumerGroup());
-            return response;
-        }
+        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
 
         ExpressionMessageFilter messageFilter = null;
         if (requestHeader.getExp() != null && requestHeader.getExp().length() > 0) {
