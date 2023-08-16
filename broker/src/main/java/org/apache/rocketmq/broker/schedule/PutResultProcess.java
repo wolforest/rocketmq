@@ -29,8 +29,11 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.stats.BrokerStatsManager;
 
 import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_CONSUMER_GROUP;
 import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_IS_SYSTEM;
@@ -161,33 +164,38 @@ public class PutResultProcess {
 
     public void onSuccess(PutMessageResult result) {
         this.status = ProcessStatus.SUCCESS;
-        if (scheduleMessageService.getBrokerController().getMessageStore().getMessageStoreConfig().isEnableScheduleMessageStats() && !result.isRemotePut()) {
-            scheduleMessageService.getBrokerController().getBrokerStatsManager().incQueueGetNums(MixAll.SCHEDULE_CONSUMER_GROUP, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, delayLevel - 1, result.getAppendMessageResult().getMsgNum());
-            scheduleMessageService.getBrokerController().getBrokerStatsManager().incQueueGetSize(MixAll.SCHEDULE_CONSUMER_GROUP, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, delayLevel - 1, result.getAppendMessageResult().getWroteBytes());
-            scheduleMessageService.getBrokerController().getBrokerStatsManager().incGroupGetNums(MixAll.SCHEDULE_CONSUMER_GROUP, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, result.getAppendMessageResult().getMsgNum());
-            scheduleMessageService.getBrokerController().getBrokerStatsManager().incGroupGetSize(MixAll.SCHEDULE_CONSUMER_GROUP, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, result.getAppendMessageResult().getWroteBytes());
+        MessageStoreConfig messageStoreConfig = scheduleMessageService.getBrokerController().getMessageStore().getMessageStoreConfig();
+        BrokerStatsManager brokerStatsManager = scheduleMessageService.getBrokerController().getBrokerStatsManager();
 
-            Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
-                .put(LABEL_TOPIC, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC)
-                .put(LABEL_CONSUMER_GROUP, MixAll.SCHEDULE_CONSUMER_GROUP)
-                .put(LABEL_IS_SYSTEM, true)
-                .build();
-            BrokerMetricsManager.messagesOutTotal.add(result.getAppendMessageResult().getMsgNum(), attributes);
-            BrokerMetricsManager.throughputOutTotal.add(result.getAppendMessageResult().getWroteBytes(), attributes);
-
-            scheduleMessageService.getBrokerController().getBrokerStatsManager().incTopicPutNums(this.topic, result.getAppendMessageResult().getMsgNum(), 1);
-            scheduleMessageService.getBrokerController().getBrokerStatsManager().incTopicPutSize(this.topic, result.getAppendMessageResult().getWroteBytes());
-            scheduleMessageService.getBrokerController().getBrokerStatsManager().incBrokerPutNums(this.topic, result.getAppendMessageResult().getMsgNum());
-
-            attributes = BrokerMetricsManager.newAttributesBuilder()
-                .put(LABEL_TOPIC, topic)
-                .put(LABEL_MESSAGE_TYPE, TopicMessageType.DELAY.getMetricsValue())
-                .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(topic))
-                .build();
-            BrokerMetricsManager.messagesInTotal.add(result.getAppendMessageResult().getMsgNum(), attributes);
-            BrokerMetricsManager.throughputInTotal.add(result.getAppendMessageResult().getWroteBytes(), attributes);
-            BrokerMetricsManager.messageSize.record(result.getAppendMessageResult().getWroteBytes() / result.getAppendMessageResult().getMsgNum(), attributes);
+        if (!messageStoreConfig.isEnableScheduleMessageStats() || result.isRemotePut()) {
+            return;
         }
+
+        brokerStatsManager.incQueueGetNums(MixAll.SCHEDULE_CONSUMER_GROUP, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, delayLevel - 1, result.getAppendMessageResult().getMsgNum());
+        brokerStatsManager.incQueueGetSize(MixAll.SCHEDULE_CONSUMER_GROUP, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, delayLevel - 1, result.getAppendMessageResult().getWroteBytes());
+        brokerStatsManager.incGroupGetNums(MixAll.SCHEDULE_CONSUMER_GROUP, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, result.getAppendMessageResult().getMsgNum());
+        brokerStatsManager.incGroupGetSize(MixAll.SCHEDULE_CONSUMER_GROUP, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, result.getAppendMessageResult().getWroteBytes());
+
+        Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
+            .put(LABEL_TOPIC, TopicValidator.RMQ_SYS_SCHEDULE_TOPIC)
+            .put(LABEL_CONSUMER_GROUP, MixAll.SCHEDULE_CONSUMER_GROUP)
+            .put(LABEL_IS_SYSTEM, true)
+            .build();
+        BrokerMetricsManager.messagesOutTotal.add(result.getAppendMessageResult().getMsgNum(), attributes);
+        BrokerMetricsManager.throughputOutTotal.add(result.getAppendMessageResult().getWroteBytes(), attributes);
+
+        brokerStatsManager.incTopicPutNums(this.topic, result.getAppendMessageResult().getMsgNum(), 1);
+        brokerStatsManager.incTopicPutSize(this.topic, result.getAppendMessageResult().getWroteBytes());
+        brokerStatsManager.incBrokerPutNums(this.topic, result.getAppendMessageResult().getMsgNum());
+
+        attributes = BrokerMetricsManager.newAttributesBuilder()
+            .put(LABEL_TOPIC, topic)
+            .put(LABEL_MESSAGE_TYPE, TopicMessageType.DELAY.getMetricsValue())
+            .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(topic))
+            .build();
+        BrokerMetricsManager.messagesInTotal.add(result.getAppendMessageResult().getMsgNum(), attributes);
+        BrokerMetricsManager.throughputInTotal.add(result.getAppendMessageResult().getWroteBytes(), attributes);
+        BrokerMetricsManager.messageSize.record(result.getAppendMessageResult().getWroteBytes() / result.getAppendMessageResult().getMsgNum(), attributes);
     }
 
     public void onException() {
