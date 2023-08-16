@@ -114,17 +114,20 @@ public class ConsumerOffsetManager extends ConfigManager {
             Entry<String, ConcurrentMap<Integer, Long>> next = it.next();
             String topicAtGroup = next.getKey();
             String[] arrays = topicAtGroup.split(TOPIC_GROUP_SEPARATOR);
-            if (arrays.length == 2) {
-                String topic = arrays[0];
-                String group = arrays[1];
-
-                if (null == brokerController.getConsumerManager().findSubscriptionData(group, topic)
-                    && this.offsetBehindMuchThanData(topic, next.getValue())) {
-                    it.remove();
-                    removeConsumerOffset(topicAtGroup);
-                    LOG.warn("remove topic offset, {}", topicAtGroup);
-                }
+            if (arrays.length != 2) {
+                continue;
             }
+
+            String topic = arrays[0];
+            String group = arrays[1];
+            if (null != brokerController.getConsumerManager().findSubscriptionData(group, topic)
+                || !this.offsetBehindMuchThanData(topic, next.getValue())) {
+                continue;
+            }
+
+            it.remove();
+            removeConsumerOffset(topicAtGroup);
+            LOG.warn("remove topic offset, {}", topicAtGroup);
         }
     }
 
