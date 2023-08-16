@@ -336,22 +336,31 @@ public class ConsumerOffsetManager extends ConfigManager {
         this.offsetTable = offsetTable;
     }
 
-    public Map<Integer, Long> queryMinOffsetInAllGroup(final String topic, final String filterGroups) {
 
-        Map<Integer, Long> queueMinOffset = new HashMap<>();
+    private void removeConsumerOffsetByFilterGroups(final String filterGroups) {
         Set<String> topicGroups = this.offsetTable.keySet();
-        if (!UtilAll.isBlank(filterGroups)) {
-            for (String group : filterGroups.split(",")) {
-                Iterator<String> it = topicGroups.iterator();
-                while (it.hasNext()) {
-                    String topicAtGroup = it.next();
-                    if (group.equals(topicAtGroup.split(TOPIC_GROUP_SEPARATOR)[1])) {
-                        it.remove();
-                        removeConsumerOffset(topicAtGroup);
-                    }
+        if (UtilAll.isBlank(filterGroups)) {
+            return;
+        }
+
+        for (String group : filterGroups.split(",")) {
+            Iterator<String> it = topicGroups.iterator();
+            while (it.hasNext()) {
+                String topicAtGroup = it.next();
+                if (!group.equals(topicAtGroup.split(TOPIC_GROUP_SEPARATOR)[1])) {
+                    continue;
                 }
+
+                it.remove();
+                removeConsumerOffset(topicAtGroup);
             }
         }
+    }
+
+    public Map<Integer, Long> queryMinOffsetInAllGroup(final String topic, final String filterGroups) {
+
+        removeConsumerOffsetByFilterGroups(filterGroups);
+        Map<Integer, Long> queueMinOffset = new HashMap<>();
 
         for (Map.Entry<String, ConcurrentMap<Integer, Long>> offSetEntry : this.offsetTable.entrySet()) {
             String topicGroup = offSetEntry.getKey();
