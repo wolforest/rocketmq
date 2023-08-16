@@ -334,12 +334,14 @@ public class ReplicasManager {
 
     private void changeSyncStateSet(final Set<Long> newSyncStateSet, final int newSyncStateSetEpoch) {
         synchronized (this) {
-            if (newSyncStateSetEpoch > this.syncStateSetEpoch) {
-                LOGGER.info("SyncStateSet changed from {} to {}", this.syncStateSet, newSyncStateSet);
-                this.syncStateSetEpoch = newSyncStateSetEpoch;
-                this.syncStateSet = new HashSet<>(newSyncStateSet);
-                this.haService.setSyncStateSet(newSyncStateSet);
+            if (newSyncStateSetEpoch <= this.syncStateSetEpoch) {
+                return;
             }
+
+            LOGGER.info("SyncStateSet changed from {} to {}", this.syncStateSet, newSyncStateSet);
+            this.syncStateSetEpoch = newSyncStateSetEpoch;
+            this.syncStateSet = new HashSet<>(newSyncStateSet);
+            this.haService.setSyncStateSet(newSyncStateSet);
         }
     }
 
