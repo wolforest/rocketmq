@@ -661,27 +661,33 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private long getInitOffset(String topic, String group, int queueId, int initMode, boolean init) {
-        long offset;
         if (ConsumeInitMode.MIN == initMode) {
             return this.brokerController.getMessageStore().getMinOffsetInQueue(topic, queueId);
-        } else {
-            if (this.brokerController.getBrokerConfig().isInitPopOffsetByCheckMsgInMem() &&
-                this.brokerController.getMessageStore().getMinOffsetInQueue(topic, queueId) <= 0 &&
-                this.brokerController.getMessageStore().checkInMemByConsumeOffset(topic, queueId, 0, 1)) {
-                offset = 0;
-            } else {
-                // pop last one,then commit offset.
-                offset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId) - 1;
-                // max & no consumer offset
-                if (offset < 0) {
-                    offset = 0;
-                }
-            }
-            if (init) {
-                this.brokerController.getConsumerOffsetManager().commitOffset(
-                    "getPopOffset", group, topic, queueId, offset);
-            }
         }
+
+        long offset = getInitOffset(topic, queueId);
+
+        if (init) {
+            this.brokerController.getConsumerOffsetManager().commitOffset(
+                "getPopOffset", group, topic, queueId, offset);
+        }
+        return offset;
+    }
+
+    private long getInitOffset(String topic, int queueId) {
+        if (this.brokerController.getBrokerConfig().isInitPopOffsetByCheckMsgInMem() &&
+            this.brokerController.getMessageStore().getMinOffsetInQueue(topic, queueId) <= 0 &&
+            this.brokerController.getMessageStore().checkInMemByConsumeOffset(topic, queueId, 0, 1)) {
+            return  0;
+        }
+
+        // pop last one,then commit offset.
+        long offset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId) - 1;
+        // max & no consumer offset
+        if (offset < 0) {
+            offset = 0;
+        }
+
         return offset;
     }
 
