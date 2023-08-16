@@ -442,30 +442,40 @@ public class RemotingCommand {
     }
 
     public void makeCustomHeaderToNet() {
-        if (this.customHeader != null) {
-            Field[] fields = getClazzFields(customHeader.getClass());
-            if (null == this.extFields) {
-                this.extFields = new HashMap<>();
+        if (this.customHeader == null) {
+            return;
+        }
+
+        Field[] fields = getClazzFields(customHeader.getClass());
+        if (null == this.extFields) {
+            this.extFields = new HashMap<>();
+        }
+
+        for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
             }
 
-            for (Field field : fields) {
-                if (!Modifier.isStatic(field.getModifiers())) {
-                    String name = field.getName();
-                    if (!name.startsWith("this")) {
-                        Object value = null;
-                        try {
-                            field.setAccessible(true);
-                            value = field.get(this.customHeader);
-                        } catch (Exception e) {
-                            log.error("Failed to access field [{}]", name, e);
-                        }
+            addFieldToExtFields(field);
+        }
+    }
 
-                        if (value != null) {
-                            this.extFields.put(name, value.toString());
-                        }
-                    }
-                }
-            }
+    private void addFieldToExtFields(Field field) {
+        String name = field.getName();
+        if (name.startsWith("this")) {
+            return;
+        }
+
+        Object value = null;
+        try {
+            field.setAccessible(true);
+            value = field.get(this.customHeader);
+        } catch (Exception e) {
+            log.error("Failed to access field [{}]", name, e);
+        }
+
+        if (value != null) {
+            this.extFields.put(name, value.toString());
         }
     }
 
