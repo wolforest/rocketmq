@@ -330,7 +330,6 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             return -1;
         }
 
-        ackMsg = batchAckMsg;
         initAckMsg(ackMsg, batchAck, topic, brokerName);
 
         return batchAckMsg.getAckOffsetList().size();
@@ -380,7 +379,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         msgInner.setTopic(reviveTopic);
         msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.charset));
         msgInner.setQueueId(getRqid(requestHeader, batchAck));
-        if (ackMsg instanceof BatchAckMsg) {
+        if (null != batchAck) {
             msgInner.setTags(PopAckConstants.BATCH_ACK_TAG);
             msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopMessageProcessor.genBatchAckUniqueId((BatchAckMsg) ackMsg));
         } else {
