@@ -300,8 +300,6 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             return response;
         }
 
-        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
-
         ExpressionMessageFilter messageFilter = null;
         if (requestHeader.getExp() != null && requestHeader.getExp().length() > 0) {
             try {
@@ -380,6 +378,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             }
         }
         if (requestHeader.getQueueId() < 0) {
+            TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
             // read all queue
             for (int i = 0; i < topicConfig.getReadQueueNums(); i++) {
                 int queueId = (randomQ + i) % topicConfig.getReadQueueNums();
