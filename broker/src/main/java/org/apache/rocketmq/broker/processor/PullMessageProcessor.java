@@ -876,29 +876,34 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             try {
                 boolean brokerAllowFlowCtrSuspend = !(request.getExtFields() != null && request.getExtFields().containsKey(ColdDataPullRequestHoldService.NO_SUSPEND_KEY));
                 final RemotingCommand response = PullMessageProcessor.this.processRequest(channel, request, false, brokerAllowFlowCtrSuspend);
-
-                if (response != null) {
-                    response.setOpaque(request.getOpaque());
-                    response.markResponseType();
-                    try {
-                        NettyRemotingAbstract.writeResponse(channel, request, response, future -> {
-                            if (!future.isSuccess()) {
-                                LOGGER.error("processRequestWrapper response to {} failed", channel.remoteAddress(), future.cause());
-                                LOGGER.error(request.toString());
-                                LOGGER.error(response.toString());
-                            }
-                        });
-                    } catch (Throwable e) {
-                        LOGGER.error("processRequestWrapper process request over, but response failed", e);
-                        LOGGER.error(request.toString());
-                        LOGGER.error(response.toString());
-                    }
-                }
+                writeResponse(channel, request, response);
             } catch (RemotingCommandException e1) {
                 LOGGER.error("excuteRequestWhenWakeup run", e1);
             }
         };
         this.brokerController.getBrokerNettyServer().getPullMessageExecutor().submit(new RequestTask(run, channel, request));
+    }
+
+    public void writeResponse(final Channel channel, final RemotingCommand request, RemotingCommand response) {
+        if (response == null) {
+            return;
+        }
+
+        response.setOpaque(request.getOpaque());
+        response.markResponseType();
+        try {
+            NettyRemotingAbstract.writeResponse(channel, request, response, future -> {
+                if (!future.isSuccess()) {
+                    LOGGER.error("processRequestWrapper response to {} failed", channel.remoteAddress(), future.cause());
+                    LOGGER.error(request.toString());
+                    LOGGER.error(response.toString());
+                }
+            });
+        } catch (Throwable e) {
+            LOGGER.error("processRequestWrapper process request over, but response failed", e);
+            LOGGER.error(request.toString());
+            LOGGER.error(response.toString());
+        }
     }
 
     public void registerConsumeMessageHook(List<ConsumeMessageHook> consumeMessageHookList) {
