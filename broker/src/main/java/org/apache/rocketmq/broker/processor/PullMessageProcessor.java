@@ -134,7 +134,6 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             //below are physical info
             prepareRequestHeader(requestHeader, mappingItem);
 
-
             RpcRequest rpcRequest = new RpcRequest(RequestCode.PULL_MESSAGE, requestHeader, null);
             RpcResponse rpcResponse = this.brokerController.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.brokerController.getBrokerConfig().getForwardTimeout()).get();
             if (rpcResponse.getException() != null) {
@@ -162,120 +161,20 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             if (mappingContext.getMappingDetail() == null) {
                 return null;
             }
-            TopicQueueMappingDetail mappingDetail = mappingContext.getMappingDetail();
-            LogicQueueMappingItem leaderItem = mappingContext.getLeaderItem();
 
-            LogicQueueMappingItem currentItem = mappingContext.getCurrentItem();
+            PullRewriteContext offsetMap = calculateOffsetMap(requestHeader, responseHeader, mappingContext, code);
 
-            LogicQueueMappingItem earlistItem = TopicQueueMappingUtils.findLogicQueueMappingItem(mappingContext.getMappingItemList(), 0L, true);
-
-            assert currentItem.getLogicOffset() >= 0;
-
-            long requestOffset = requestHeader.getQueueOffset();
-            long nextBeginOffset = responseHeader.getNextBeginOffset();
-            long minOffset = responseHeader.getMinOffset();
-            long maxOffset = responseHeader.getMaxOffset();
-            int responseCode = code;
-
-            //consider the following situations
-            // 1. read from slave, currently not supported
-            // 2. the middle queue is truncated because of deleting commitlog
-            if (code != ResponseCode.SUCCESS) {
-                //note the currentItem maybe both the leader and  the earliest
-                boolean isRevised = false;
-                if (leaderItem.getGen() == currentItem.getGen()) {
-                    //read the leader
-                    if (requestOffset > maxOffset) {
-                        //actually, we need do nothing, but keep the code structure here
-                        if (code == ResponseCode.PULL_OFFSET_MOVED) {
-                            responseCode = ResponseCode.PULL_OFFSET_MOVED;
-                            nextBeginOffset = maxOffset;
-                        } else {
-                            //maybe current broker is the slave
-                            responseCode = code;
-                        }
-                    } else if (requestOffset < minOffset) {
-                        nextBeginOffset = minOffset;
-                        responseCode = ResponseCode.PULL_RETRY_IMMEDIATELY;
-                    } else {
-                        responseCode = code;
-                    }
-                }
-                //note the currentItem maybe both the leader and  the earliest
-                if (earlistItem.getGen() == currentItem.getGen()) {
-                    //read the earliest one
-                    if (requestOffset < minOffset) {
-                        if (code == ResponseCode.PULL_OFFSET_MOVED) {
-                            responseCode = ResponseCode.PULL_OFFSET_MOVED;
-                            nextBeginOffset = minOffset;
-                        } else {
-                            //maybe read from slave, but we still set it to moved
-                            responseCode = ResponseCode.PULL_OFFSET_MOVED;
-                            nextBeginOffset = minOffset;
-                        }
-                    } else if (requestOffset >= maxOffset) {
-                        //just move to another item
-                        LogicQueueMappingItem nextItem = TopicQueueMappingUtils.findNext(mappingContext.getMappingItemList(), currentItem, true);
-                        if (nextItem != null) {
-                            isRevised = true;
-                            currentItem = nextItem;
-                            nextBeginOffset = currentItem.getStartOffset();
-                            minOffset = currentItem.getStartOffset();
-                            maxOffset = minOffset;
-                            responseCode = ResponseCode.PULL_RETRY_IMMEDIATELY;
-                        } else {
-                            //maybe the next one's logic offset is -1
-                            responseCode = ResponseCode.PULL_NOT_FOUND;
-                        }
-                    } else {
-                        //let it go
-                        responseCode = code;
-                    }
-                }
-
-                //read from the middle item, ignore the PULL_OFFSET_MOVED
-                if (!isRevised
-                    && leaderItem.getGen() != currentItem.getGen()
-                    && earlistItem.getGen() != currentItem.getGen()) {
-                    if (requestOffset < minOffset) {
-                        nextBeginOffset = minOffset;
-                        responseCode = ResponseCode.PULL_RETRY_IMMEDIATELY;
-                    } else if (requestOffset >= maxOffset) {
-                        //just move to another item
-                        LogicQueueMappingItem nextItem = TopicQueueMappingUtils.findNext(mappingContext.getMappingItemList(), currentItem, true);
-                        if (nextItem != null) {
-                            currentItem = nextItem;
-                            nextBeginOffset = currentItem.getStartOffset();
-                            minOffset = currentItem.getStartOffset();
-                            maxOffset = minOffset;
-                            responseCode = ResponseCode.PULL_RETRY_IMMEDIATELY;
-                        } else {
-                            //maybe the next one's logic offset is -1
-                            responseCode = ResponseCode.PULL_NOT_FOUND;
-                        }
-                    } else {
-                        responseCode = code;
-                    }
-                }
-            }
-
-            //handle nextBeginOffset
-            //the next begin offset should no more than the end offset
-            if (currentItem.checkIfEndOffsetDecided()
-                && nextBeginOffset >= currentItem.getEndOffset()) {
-                nextBeginOffset = currentItem.getEndOffset();
-            }
-            responseHeader.setNextBeginOffset(currentItem.computeStaticQueueOffsetStrictly(nextBeginOffset));
+            responseHeader.setNextBeginOffset(offsetMap.getCurrentItem().computeStaticQueueOffsetStrictly(offsetMap.getNextBeginOffset()));
             //handle min offset
-            responseHeader.setMinOffset(currentItem.computeStaticQueueOffsetStrictly(Math.max(currentItem.getStartOffset(), minOffset)));
+            responseHeader.setMinOffset(offsetMap.getCurrentItem().computeStaticQueueOffsetStrictly(Math.max(offsetMap.getCurrentItem().getStartOffset(), offsetMap.getMinOffset())));
             //handle max offset
-            responseHeader.setMaxOffset(Math.max(currentItem.computeStaticQueueOffsetStrictly(maxOffset),
-                TopicQueueMappingDetail.computeMaxOffsetFromMapping(mappingDetail, mappingContext.getGlobalId())));
+            responseHeader.setMaxOffset(Math.max(offsetMap.getCurrentItem().computeStaticQueueOffsetStrictly(offsetMap.getMaxOffset()),
+                TopicQueueMappingDetail.computeMaxOffsetFromMapping(mappingContext.getMappingDetail(), mappingContext.getGlobalId())));
             //set the offsetDelta
-            responseHeader.setOffsetDelta(currentItem.computeOffsetDelta());
+            responseHeader.setOffsetDelta(offsetMap.getCurrentItem().computeOffsetDelta());
 
             if (code != ResponseCode.SUCCESS) {
-                return RemotingCommand.createResponseCommandWithHeader(responseCode, responseHeader);
+                return RemotingCommand.createResponseCommandWithHeader(offsetMap.getResponseCode(), responseHeader);
             } else {
                 return null;
             }
@@ -284,6 +183,135 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             return buildErrorResponse(ResponseCode.SYSTEM_ERROR, t.toString());
         }
     }
+
+    private PullRewriteContext initOffsetMap(PullMessageRequestHeader requestHeader, PullMessageResponseHeader responseHeader, int code, LogicQueueMappingItem currentItem) {
+        PullRewriteContext offsetMap = new PullRewriteContext();
+        offsetMap.setRequestOffset(requestHeader.getQueueOffset());
+        offsetMap.setNextBeginOffset(responseHeader.getNextBeginOffset());
+        offsetMap.setMinOffset(responseHeader.getMinOffset());
+        offsetMap.setMaxOffset(responseHeader.getMaxOffset());
+        offsetMap.setResponseCode(code);
+        offsetMap.setCurrentItem(currentItem);
+
+        return offsetMap;
+    }
+
+    private void calculateLeaderOffset(PullRewriteContext offsetMap, TopicQueueMappingContext mappingContext, final int code) {
+        if (mappingContext.getLeaderItem().getGen() != offsetMap.getCurrentItem().getGen()) {
+            return;
+        }
+
+        //read the leader
+        if (offsetMap.getRequestOffset() > offsetMap.getMaxOffset()) {
+            //actually, we need do nothing, but keep the code structure here
+            if (code == ResponseCode.PULL_OFFSET_MOVED) {
+                offsetMap.setResponseCode(ResponseCode.PULL_OFFSET_MOVED);
+                offsetMap.setNextBeginOffset(offsetMap.getMaxOffset());
+            } else {
+                //maybe current broker is the slave
+                offsetMap.setResponseCode(code);
+            }
+        } else if (offsetMap.getRequestOffset() < offsetMap.getMinOffset()) {
+            offsetMap.setNextBeginOffset(offsetMap.getMinOffset());
+            offsetMap.setResponseCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
+        } else {
+            offsetMap.setResponseCode(code);
+        }
+    }
+
+    private boolean calculateEarliestOffset(PullRewriteContext offsetMap, LogicQueueMappingItem earlistItem, TopicQueueMappingContext mappingContext, final int code) {
+        if (earlistItem.getGen() != offsetMap.getCurrentItem().getGen()) {
+            return false;
+        }
+
+        boolean isRevised = false;
+        //note the currentItem maybe both the leader and  the earliest
+        //read the earliest one
+        if (offsetMap.getRequestOffset() < offsetMap.getMinOffset()) {
+            if (code == ResponseCode.PULL_OFFSET_MOVED) {
+                offsetMap.setResponseCode(ResponseCode.PULL_OFFSET_MOVED);
+                offsetMap.setNextBeginOffset(offsetMap.getMinOffset());
+            } else {
+                //maybe read from slave, but we still set it to moved
+                offsetMap.setResponseCode(ResponseCode.PULL_OFFSET_MOVED);
+                offsetMap.setNextBeginOffset(offsetMap.getMinOffset());
+            }
+        } else if (offsetMap.getRequestOffset() >= offsetMap.getMaxOffset()) {
+            //just move to another item
+            LogicQueueMappingItem nextItem = TopicQueueMappingUtils.findNext(mappingContext.getMappingItemList(), offsetMap.getCurrentItem(), true);
+            if (nextItem != null) {
+                isRevised = true;
+                offsetMap.setCurrentItem(nextItem);
+                offsetMap.setNextBeginOffset(offsetMap.getCurrentItem().getStartOffset());
+                offsetMap.setMinOffset(offsetMap.getCurrentItem().getStartOffset());
+                offsetMap.setMaxOffset(offsetMap.getMinOffset());
+                offsetMap.setResponseCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
+            } else {
+                //maybe the next one's logic offset is -1
+                offsetMap.setResponseCode(ResponseCode.PULL_NOT_FOUND);
+            }
+        } else {
+            //let it go
+            offsetMap.setResponseCode(code);
+        }
+
+        return isRevised;
+    }
+
+    private void calculateMiddleOffset(PullRewriteContext offsetMap, LogicQueueMappingItem earlistItem, TopicQueueMappingContext mappingContext, final int code, boolean isRevised) {
+        if (isRevised || mappingContext.getLeaderItem().getGen() == offsetMap.getCurrentItem().getGen()
+            || earlistItem.getGen() == offsetMap.getCurrentItem().getGen()) {
+            return;
+        }
+
+        //read from the middle item, ignore the PULL_OFFSET_MOVED
+        if (offsetMap.getRequestOffset() < offsetMap.getMinOffset()) {
+            offsetMap.setNextBeginOffset(offsetMap.getMinOffset());
+            offsetMap.setResponseCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
+        } else if (offsetMap.getRequestOffset() >= offsetMap.getMaxOffset()) {
+            //just move to another item
+            LogicQueueMappingItem nextItem = TopicQueueMappingUtils.findNext(mappingContext.getMappingItemList(), offsetMap.getCurrentItem(), true);
+            if (nextItem != null) {
+                offsetMap.setCurrentItem(nextItem);
+                offsetMap.setNextBeginOffset(offsetMap.getCurrentItem().getStartOffset());
+                offsetMap.setMinOffset(offsetMap.getCurrentItem().getStartOffset());
+                offsetMap.setMaxOffset(offsetMap.getMinOffset());
+                offsetMap.setResponseCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
+            } else {
+                //maybe the next one's logic offset is -1
+                offsetMap.setResponseCode(ResponseCode.PULL_NOT_FOUND);
+            }
+        } else {
+            offsetMap.setResponseCode(code);
+        }
+    }
+
+    private PullRewriteContext calculateOffsetMap(PullMessageRequestHeader requestHeader, PullMessageResponseHeader responseHeader, TopicQueueMappingContext mappingContext, final int code) {
+        LogicQueueMappingItem earlistItem = TopicQueueMappingUtils.findLogicQueueMappingItem(mappingContext.getMappingItemList(), 0L, true);
+
+        PullRewriteContext offsetMap = initOffsetMap(requestHeader, responseHeader, code, mappingContext.getCurrentItem());
+
+        assert mappingContext.getCurrentItem().getLogicOffset() >= 0;
+
+        //consider the following situations
+        // 1. read from slave, currently not supported
+        // 2. the middle queue is truncated because of deleting commitlog
+        if (code != ResponseCode.SUCCESS) {
+            //note the currentItem maybe both the leader and  the earliest
+            calculateLeaderOffset(offsetMap, mappingContext, code);
+            boolean isRevised = calculateEarliestOffset(offsetMap, earlistItem, mappingContext, code);
+            calculateMiddleOffset(offsetMap, earlistItem, mappingContext, code, isRevised);
+        }
+
+        //handle nextBeginOffset
+        //the next begin offset should no more than the end offset
+        if (offsetMap.getCurrentItem().checkIfEndOffsetDecided() && offsetMap.getNextBeginOffset() >= offsetMap.getCurrentItem().getEndOffset()) {
+            offsetMap.setNextBeginOffset(offsetMap.getCurrentItem().getEndOffset());
+        }
+
+        return offsetMap;
+    }
+
 
     @Override
     public RemotingCommand processRequest(final ChannelHandlerContext ctx,
