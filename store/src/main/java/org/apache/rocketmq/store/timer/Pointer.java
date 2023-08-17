@@ -11,6 +11,8 @@ public class Pointer {
     public volatile long lastCommitQueueOffset;
     public long lastEnqueueButExpiredTime;
     public long lastEnqueueButExpiredStoreTime;
+    // True if current store is master or current brokerId is equal to the minimum brokerId of the replica group in slaveActingMaster mode.
+    public volatile boolean shouldRunningDequeue;
 
     public Pointer() {
 
