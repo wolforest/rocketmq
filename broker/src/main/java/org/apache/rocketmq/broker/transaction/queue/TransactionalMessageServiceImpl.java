@@ -40,6 +40,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
@@ -297,10 +298,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
                                     || pullResult.getPullStatus() == PullStatus.OFFSET_ILLEGAL
                                     || pullResult.getPullStatus() == PullStatus.NO_MATCHED_MSG) {
 
-                                try {
-                                    Thread.sleep(SLEEP_WHILE_NO_OP);
-                                } catch (Throwable ignored) {
-                                }
+                                ThreadUtils.sleep(SLEEP_WHILE_NO_OP);
 
                             } else {
                                 log.info("The miss message offset:{}, pullOffsetOfOp:{}, miniOffset:{} get more opMsg.", i, nextOpOffset, halfOffset);
