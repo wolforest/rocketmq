@@ -948,21 +948,6 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         this.brokerController.getBroadcastOffsetManager().updateOffset(topic, group, queueId, offset, clientId, proxyPullBroadcast);
     }
 
-    private String getClientId(boolean proxyPullBroadcast, PullMessageRequestHeader requestHeader, Channel channel, ConsumerGroupInfo consumerGroupInfo) {
-        String clientId;
-        if (proxyPullBroadcast) {
-            clientId = requestHeader.getProxyFrowardClientId();
-        } else {
-            ClientChannelInfo clientChannelInfo = consumerGroupInfo.findChannel(channel);
-            if (clientChannelInfo == null) {
-                return null;
-            }
-            clientId = clientChannelInfo.getClientId();
-        }
-
-        return clientId;
-    }
-
     /**
      * When pull request is not broadcast or not return -1
      */
@@ -981,17 +966,26 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             return -1L;
         }
 
+        String clientId = getClientId(proxyPullBroadcast, requestHeader, channel, consumerGroupInfo);
+        if (clientId == null) {
+            return -1L;
+        }
+
+        return this.brokerController.getBroadcastOffsetManager().queryInitOffset(topic, group, queueId, clientId, requestHeader.getQueueOffset(), proxyPullBroadcast);
+    }
+
+    private String getClientId(boolean proxyPullBroadcast, PullMessageRequestHeader requestHeader, Channel channel, ConsumerGroupInfo consumerGroupInfo) {
         String clientId;
         if (proxyPullBroadcast) {
             clientId = requestHeader.getProxyFrowardClientId();
         } else {
             ClientChannelInfo clientChannelInfo = consumerGroupInfo.findChannel(channel);
             if (clientChannelInfo == null) {
-                return -1;
+                return null;
             }
             clientId = clientChannelInfo.getClientId();
         }
 
-        return this.brokerController.getBroadcastOffsetManager().queryInitOffset(topic, group, queueId, clientId, requestHeader.getQueueOffset(), proxyPullBroadcast);
+        return clientId;
     }
 }
