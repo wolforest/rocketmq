@@ -33,4 +33,9 @@ public class Pointer {
     public Pointer() {
 
     }
+
+    public void syncLastReadTimeMs(Long lastReadTimeMs) {
+        currReadTimeMs = lastReadTimeMs;// timerCheckpoint.getLastReadTimeMs();
+        commitReadTimeMs = currReadTimeMs;
+    }
 }
