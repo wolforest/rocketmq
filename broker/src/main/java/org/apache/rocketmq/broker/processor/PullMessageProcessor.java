@@ -893,11 +893,13 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         response.markResponseType();
         try {
             NettyRemotingAbstract.writeResponse(channel, request, response, future -> {
-                if (!future.isSuccess()) {
-                    LOGGER.error("processRequestWrapper response to {} failed", channel.remoteAddress(), future.cause());
-                    LOGGER.error(request.toString());
-                    LOGGER.error(response.toString());
+                if (future.isSuccess()) {
+                    return;
                 }
+
+                LOGGER.error("processRequestWrapper response to {} failed", channel.remoteAddress(), future.cause());
+                LOGGER.error(request.toString());
+                LOGGER.error(response.toString());
             });
         } catch (Throwable e) {
             LOGGER.error("processRequestWrapper process request over, but response failed", e);
