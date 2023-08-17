@@ -75,9 +75,7 @@ public class BrokerScheduleService {
         initPoolExecutors();
     }
 
-    public void init() {
-        initializeBrokerScheduledTasks();
-
+    public void refreshMetadata() {
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -88,6 +86,10 @@ public class BrokerScheduleService {
                 }
             }
         }, 10, 5, TimeUnit.SECONDS);
+    }
+
+    public void init() {
+        initializeBrokerScheduledTasks();
 
         if (this.brokerConfig.getNamesrvAddr() != null) {
             updateNamesrvAddr();

@@ -164,6 +164,8 @@ public class BrokerController {
         if (brokerConfig.isSkipPreOnline()) {
             registerBroker();
         }
+
+        this.brokerScheduleService.refreshMetadata();
     }
 
     public BrokerIdentity getBrokerIdentity() {
