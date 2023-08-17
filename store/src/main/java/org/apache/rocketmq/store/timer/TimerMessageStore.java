@@ -17,13 +17,12 @@
 package org.apache.rocketmq.store.timer;
 
 import com.conversantmedia.util.concurrent.DisruptorBlockingQueue;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -41,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
@@ -68,7 +68,10 @@ import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.service.AbstractStateService;
 import org.apache.rocketmq.store.timer.service.TimerDequeueGetService;
+import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
 import org.apache.rocketmq.store.timer.service.TimerEnqueueGetService;
+import org.apache.rocketmq.store.timer.service.TimerEnqueuePutService;
+import org.apache.rocketmq.store.timer.service.TimerFlushService;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 public class TimerMessageStore {
@@ -76,6 +79,7 @@ public class TimerMessageStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     public static final int INITIAL = 0, RUNNING = 1, HAULT = 2, SHUTDOWN = 3;
+    protected final Pointer pointer = new Pointer();
     private volatile int state = INITIAL;
 
     public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
@@ -99,8 +103,8 @@ public class TimerMessageStore {
     public static final int MAGIC_DELETE = 1 << 2;
     public boolean debug = false;
 
-    protected static final String ENQUEUE_PUT = "enqueue_put";
-    protected static final String DEQUEUE_PUT = "dequeue_put";
+    public static final String ENQUEUE_PUT = "enqueue_put";
+    public static final String DEQUEUE_PUT = "dequeue_put";
     protected final PerfCounter.Ticks perfCounterTicks = new PerfCounter.Ticks(LOGGER);
 
     protected final BlockingQueue<TimerRequest> enqueuePutQueue;
@@ -124,18 +128,6 @@ public class TimerMessageStore {
     private TimerDequeueGetMessageService[] dequeueGetMessageServices;
     private TimerFlushService timerFlushService;
 
-    protected volatile long currReadTimeMs;
-    protected volatile long currWriteTimeMs;
-    protected volatile long preReadTimeMs;
-    protected volatile long commitReadTimeMs;
-    protected volatile long currQueueOffset; //only one queue that is 0
-    protected volatile long commitQueueOffset;
-    protected volatile long lastCommitReadTimeMs;
-    protected volatile long lastCommitQueueOffset;
-
-    private long lastEnqueueButExpiredTime;
-    private long lastEnqueueButExpiredStoreTime;
-
     private final int commitLogFileSize;
     private final int timerLogFileSize;
     private final int timerRollWindowSlots;
@@ -150,14 +142,13 @@ public class TimerMessageStore {
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
     //the dequeue is an asynchronous process, use this flag to track if the status has changed
     private boolean dequeueStatusChangeFlag = false;
-    // True if current store is master or current brokerId is equal to the minimum brokerId of the replica group in slaveActingMaster mode.
-    protected volatile boolean shouldRunningDequeue;
+
     private final BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
 
     public TimerMessageStore(final MessageStore messageStore, final MessageStoreConfig storeConfig,
-        TimerCheckpoint timerCheckpoint, TimerMetrics timerMetrics,
-        final BrokerStatsManager brokerStatsManager) throws IOException {
+                             TimerCheckpoint timerCheckpoint, TimerMetrics timerMetrics,
+                             final BrokerStatsManager brokerStatsManager) throws IOException {
 
         this.messageStore = messageStore;
         this.storeConfig = storeConfig;
@@ -168,7 +159,7 @@ public class TimerMessageStore {
         // TimerWheel contains the fixed number of slots regardless of precision.
         this.slotsTotal = TIMER_WHEEL_TTL_DAY * DAY_SECS;
         this.timerWheel = new TimerWheel(
-            getTimerWheelPath(storeConfig.getStorePathRootDir()), this.slotsTotal, precisionMs);
+                getTimerWheelPath(storeConfig.getStorePathRootDir()), this.slotsTotal, precisionMs);
         this.timerLog = new TimerLog(getTimerLogPath(storeConfig.getStorePathRootDir()), timerLogFileSize);
         this.timerMetrics = timerMetrics;
         this.timerCheckpoint = timerCheckpoint;
@@ -176,16 +167,16 @@ public class TimerMessageStore {
 
         if (messageStore instanceof DefaultMessageStore) {
             scheduler = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactoryImpl("TimerScheduledThread",
-                    ((DefaultMessageStore) messageStore).getBrokerIdentity()));
+                    new ThreadFactoryImpl("TimerScheduledThread",
+                            ((DefaultMessageStore) messageStore).getBrokerIdentity()));
         } else {
             scheduler = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactoryImpl("TimerScheduledThread"));
+                    new ThreadFactoryImpl("TimerScheduledThread"));
         }
 
         // timerRollWindow contains the fixed number of slots regardless of precision.
         if (storeConfig.getTimerRollWindowSlot() > slotsTotal - TIMER_BLANK_SLOTS
-            || storeConfig.getTimerRollWindowSlot() < 2) {
+                || storeConfig.getTimerRollWindowSlot() < 2) {
             this.timerRollWindowSlots = slotsTotal - TIMER_BLANK_SLOTS;
         } else {
             this.timerRollWindowSlots = storeConfig.getTimerRollWindowSlot();
@@ -212,10 +203,10 @@ public class TimerMessageStore {
 
     public void initService() {
         enqueueGetService = new TimerEnqueueGetService(this);
-        enqueuePutService = new TimerEnqueuePutService();
-        dequeueWarmService = new TimerDequeueWarmService();
+        enqueuePutService = new TimerEnqueuePutService(this);
+        dequeueWarmService = new TimerDequeueWarmService(this);
         dequeueGetService = new TimerDequeueGetService(this);
-        timerFlushService = new TimerFlushService();
+        timerFlushService = new TimerFlushService(this);
 
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
         dequeueGetMessageServices = new TimerDequeueGetMessageService[getThreadNum];
@@ -283,23 +274,23 @@ public class TimerMessageStore {
         //revise queue offset
         long queueOffset = reviseQueueOffset(processOffset);
         if (-1 == queueOffset) {
-            currQueueOffset = timerCheckpoint.getLastTimerQueueOffset();
+            pointer.currQueueOffset = timerCheckpoint.getLastTimerQueueOffset();
         } else {
-            currQueueOffset = queueOffset + 1;
+            pointer.currQueueOffset = queueOffset + 1;
         }
-        currQueueOffset = Math.min(currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
+        pointer.currQueueOffset = Math.min(pointer.currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
 
         //check timer wheel
-        currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
+        pointer.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
         long nextReadTimeMs = formatTimeMs(
-            System.currentTimeMillis()) - (long) slotsTotal * precisionMs + (long) TIMER_BLANK_SLOTS * precisionMs;
-        if (currReadTimeMs < nextReadTimeMs) {
-            currReadTimeMs = nextReadTimeMs;
+                System.currentTimeMillis()) - (long) slotsTotal * precisionMs + (long) TIMER_BLANK_SLOTS * precisionMs;
+        if (pointer.currReadTimeMs < nextReadTimeMs) {
+            pointer.currReadTimeMs = nextReadTimeMs;
         }
         //the timer wheel may contain physical offset bigger than timerLog
         //This will only happen when the timerLog is damaged
         //hard to test
-        long minFirst = timerWheel.checkPhyPos(currReadTimeMs, processOffset);
+        long minFirst = timerWheel.checkPhyPos(pointer.currReadTimeMs, processOffset);
         if (debug) {
             minFirst = 0;
         }
@@ -308,10 +299,10 @@ public class TimerMessageStore {
             recoverAndRevise(minFirst, false);
         }
         LOGGER.info("Timer recover ok currReadTimerMs:{} currQueueOffset:{} checkQueueOffset:{} processOffset:{}",
-            currReadTimeMs, currQueueOffset, timerCheckpoint.getLastTimerQueueOffset(), processOffset);
+                pointer.currReadTimeMs, pointer.currQueueOffset, timerCheckpoint.getLastTimerQueueOffset(), processOffset);
 
-        commitReadTimeMs = currReadTimeMs;
-        commitQueueOffset = currQueueOffset;
+        pointer.commitReadTimeMs = pointer.currReadTimeMs;
+        pointer.commitQueueOffset = pointer.currQueueOffset;
 
         prepareTimerCheckPoint();
     }
@@ -343,7 +334,7 @@ public class TimerMessageStore {
             while (maxCount-- > 0) {
                 if (tmpOffset < 0) {
                     LOGGER.warn("reviseQueueOffset check cq offset fail, msg in cq is not found.{}, {}",
-                        offsetPy, sizePy);
+                            offsetPy, sizePy);
                     break;
                 }
                 SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(tmpOffset);
@@ -357,7 +348,7 @@ public class TimerMessageStore {
                     int sizePyTemp = bufferCQ.getByteBuffer().getInt();
                     if (offsetPyTemp == offsetPy && sizePyTemp == sizePy) {
                         LOGGER.info("reviseQueueOffset check cq offset ok. {}, {}, {}",
-                            tmpOffset, offsetPyTemp, sizePyTemp);
+                                tmpOffset, offsetPyTemp, sizePyTemp);
                         cqOffset = tmpOffset;
                         break;
                     }
@@ -463,7 +454,7 @@ public class TimerMessageStore {
                     long minPy = messageStore.getMinPhyOffset();
                     int checkOffset = timerLog.getOffsetForLastUnit();
                     timerLog.getMappedFileQueue()
-                        .deleteExpiredFileByOffsetForTimerLog(minPy, checkOffset, TimerLog.UNIT_SIZE);
+                            .deleteExpiredFileByOffsetForTimerLog(minPy, checkOffset, TimerLog.UNIT_SIZE);
                 } catch (Exception e) {
                     LOGGER.error("Error in cleaning timerLog", e);
                 }
@@ -484,7 +475,7 @@ public class TimerMessageStore {
                             lastTimeOfCheckMetrics = curr;
                             checkAndReviseMetrics();
                             LOGGER.info("[CheckAndReviseMetrics]Timer do check timer metrics cost {} ms",
-                                System.currentTimeMillis() - curr);
+                                    System.currentTimeMillis() - curr);
                         }
                     }
                 } catch (Exception e) {
@@ -494,11 +485,11 @@ public class TimerMessageStore {
         }, 45, 45, TimeUnit.MINUTES);
 
         state = RUNNING;
-        LOGGER.info("Timer start ok currReadTimerMs:[{}] queueOffset:[{}]", new Timestamp(currReadTimeMs), currQueueOffset);
+        LOGGER.info("Timer start ok currReadTimerMs:[{}] queueOffset:[{}]", new Timestamp(pointer.currReadTimeMs), pointer.currQueueOffset);
     }
 
     public void start(boolean shouldRunningDequeue) {
-        this.shouldRunningDequeue = shouldRunningDequeue;
+        this.pointer.shouldRunningDequeue = shouldRunningDequeue;
         this.start();
     }
 
@@ -534,15 +525,15 @@ public class TimerMessageStore {
         this.bufferLocal.remove();
     }
 
-    protected void maybeMoveWriteTime() {
-        if (currWriteTimeMs < formatTimeMs(System.currentTimeMillis())) {
-            currWriteTimeMs = formatTimeMs(System.currentTimeMillis());
+    public void maybeMoveWriteTime() {
+        if (pointer.currWriteTimeMs < formatTimeMs(System.currentTimeMillis())) {
+            pointer.currWriteTimeMs = formatTimeMs(System.currentTimeMillis());
         }
     }
 
     private void moveReadTime() {
-        currReadTimeMs = currReadTimeMs + precisionMs;
-        commitReadTimeMs = currReadTimeMs;
+        pointer.currReadTimeMs = pointer.currReadTimeMs + precisionMs;
+        pointer.commitReadTimeMs = pointer.currReadTimeMs;
     }
 
     private boolean isRunning() {
@@ -556,12 +547,12 @@ public class TimerMessageStore {
                 LOGGER.info("Broker role change from {} to {}", lastBrokerRole, currRole);
                 //if change to master, do something
                 if (BrokerRole.SLAVE != currRole) {
-                    currQueueOffset = Math.min(currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
-                    commitQueueOffset = currQueueOffset;
+                    pointer.currQueueOffset = Math.min(pointer.currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
+                    pointer.commitQueueOffset = pointer.currQueueOffset;
                     prepareTimerCheckPoint();
                     timerCheckpoint.flush();
-                    currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
-                    commitReadTimeMs = currReadTimeMs;
+                    pointer.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
+                    pointer.commitReadTimeMs = pointer.currReadTimeMs;
                 }
                 //if change to slave, just let it go
                 lastBrokerRole = currRole;
@@ -571,7 +562,7 @@ public class TimerMessageStore {
 
     private boolean isRunningEnqueue() {
         checkBrokerRole();
-        if (!shouldRunningDequeue && !isMaster() && currQueueOffset >= timerCheckpoint.getMasterTimerQueueOffset()) {
+        if (!pointer.shouldRunningDequeue && !isMaster() && pointer.currQueueOffset >= timerCheckpoint.getMasterTimerQueueOffset()) {
             return false;
         }
 
@@ -579,7 +570,7 @@ public class TimerMessageStore {
     }
 
     private boolean isRunningDequeue() {
-        if (!this.shouldRunningDequeue) {
+        if (!this.pointer.shouldRunningDequeue) {
             syncLastReadTimeMs();
             return false;
         }
@@ -587,12 +578,12 @@ public class TimerMessageStore {
     }
 
     public void syncLastReadTimeMs() {
-        currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
-        commitReadTimeMs = currReadTimeMs;
+        pointer.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
+        pointer.commitReadTimeMs = pointer.currReadTimeMs;
     }
 
     public void setShouldRunningDequeue(final boolean shouldRunningDequeue) {
-        this.shouldRunningDequeue = shouldRunningDequeue;
+        this.pointer.shouldRunningDequeue = shouldRunningDequeue;
     }
 
     public void addMetric(MessageExt msg, int value) {
@@ -632,12 +623,12 @@ public class TimerMessageStore {
         if (null == cq) {
             return false;
         }
-        if (currQueueOffset < cq.getMinOffsetInQueue()) {
+        if (pointer.currQueueOffset < cq.getMinOffsetInQueue()) {
             LOGGER.warn("Timer currQueueOffset:{} is smaller than minOffsetInQueue:{}",
-                currQueueOffset, cq.getMinOffsetInQueue());
-            currQueueOffset = cq.getMinOffsetInQueue();
+                    pointer.currQueueOffset, cq.getMinOffsetInQueue());
+            pointer.currQueueOffset = cq.getMinOffsetInQueue();
         }
-        long offset = currQueueOffset;
+        long offset = pointer.currQueueOffset;
         SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(offset);
         if (null == bufferCQ) {
             return false;
@@ -654,8 +645,8 @@ public class TimerMessageStore {
                     if (null == msgExt) {
                         perfCounterTicks.getCounter("enqueue_get_miss");
                     } else {
-                        lastEnqueueButExpiredTime = System.currentTimeMillis();
-                        lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
+                        pointer.lastEnqueueButExpiredTime = System.currentTimeMillis();
+                        pointer.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
                         long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
                         // use CQ offset, not offset in Message
                         msgExt.setQueueOffset(offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE));
@@ -682,9 +673,9 @@ public class TimerMessageStore {
                 if (!isRunningEnqueue()) {
                     return false;
                 }
-                currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
+                pointer.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
             }
-            currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
+            pointer.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
             return i > 0;
         } catch (Exception e) {
             LOGGER.error("Unknown exception in enqueuing", e);
@@ -697,7 +688,7 @@ public class TimerMessageStore {
     public boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
         //copy the value first, avoid concurrent problem
-        long tmpWriteTimeMs = currWriteTimeMs;
+        long tmpWriteTimeMs = pointer.currWriteTimeMs;
         boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) timerRollWindowSlots * precisionMs;
         int magic = MAGIC_DEFAULT;
         if (needRoll) {
@@ -731,7 +722,7 @@ public class TimerMessageStore {
             // If it's a delete message, then slot's total num -1
             // TODO: check if the delete msg is in the same slot with "the msg to be deleted".
             timerWheel.putSlot(delayedTime, slot.firstPos == -1 ? ret : slot.firstPos, ret,
-                isDelete ? slot.num - 1 : slot.num + 1, slot.magic);
+                    isDelete ? slot.num - 1 : slot.num + 1, slot.magic);
             addMetric(messageExt, isDelete ? -1 : 1);
         }
         return -1 != ret;
@@ -745,18 +736,18 @@ public class TimerMessageStore {
         if (!storeConfig.isTimerWarmEnable()) {
             return -1;
         }
-        if (preReadTimeMs <= currReadTimeMs) {
-            preReadTimeMs = currReadTimeMs + precisionMs;
+        if (pointer.preReadTimeMs <= pointer.currReadTimeMs) {
+            pointer.preReadTimeMs = pointer.currReadTimeMs + precisionMs;
         }
-        if (preReadTimeMs >= currWriteTimeMs) {
+        if (pointer.preReadTimeMs >= pointer.currWriteTimeMs) {
             return -1;
         }
-        if (preReadTimeMs >= currReadTimeMs + 3L * precisionMs) {
+        if (pointer.preReadTimeMs >= pointer.currReadTimeMs + 3L * precisionMs) {
             return -1;
         }
-        Slot slot = timerWheel.getSlot(preReadTimeMs);
+        Slot slot = timerWheel.getSlot(pointer.preReadTimeMs);
         if (-1 == slot.timeMs) {
-            preReadTimeMs = preReadTimeMs + precisionMs;
+            pointer.preReadTimeMs = pointer.preReadTimeMs + precisionMs;
             return 0;
         }
         long currOffsetPy = slot.lastPos;
@@ -815,7 +806,7 @@ public class TimerMessageStore {
                 }
             }
         } finally {
-            preReadTimeMs = preReadTimeMs + precisionMs;
+            pointer.preReadTimeMs = pointer.preReadTimeMs + precisionMs;
         }
         return 1;
     }
@@ -845,8 +836,8 @@ public class TimerMessageStore {
         int checkNum = 0;
         while (true) {
             if (dequeuePutQueue.size() > 0
-                || !checkStateForGetMessages(AbstractStateService.WAITING)
-                || !checkStateForPutMessages(AbstractStateService.WAITING)) {
+                    || !checkStateForGetMessages(AbstractStateService.WAITING)
+                    || !checkStateForPutMessages(AbstractStateService.WAITING)) {
                 //let it go
             } else {
                 checkNum++;
@@ -870,11 +861,11 @@ public class TimerMessageStore {
         if (!isRunningDequeue()) {
             return -1;
         }
-        if (currReadTimeMs >= currWriteTimeMs) {
+        if (pointer.currReadTimeMs >= pointer.currWriteTimeMs) {
             return -1;
         }
 
-        Slot slot = timerWheel.getSlot(currReadTimeMs);
+        Slot slot = timerWheel.getSlot(pointer.currReadTimeMs);
         if (-1 == slot.timeMs) {
             moveReadTime();
             return 0;
@@ -927,7 +918,7 @@ public class TimerMessageStore {
                 }
             }
             if (deleteMsgStack.size() == 0 && normalMsgStack.size() == 0) {
-                LOGGER.warn("dequeue time:{} but read nothing from timerLog", currReadTimeMs);
+                LOGGER.warn("dequeue time:{} but read nothing from timerLog", pointer.currReadTimeMs);
             }
             for (SelectMappedBufferResult sbr : sbrs) {
                 if (null != sbr) {
@@ -946,7 +937,7 @@ public class TimerMessageStore {
                 dequeueGetQueue.put(deleteList);
             }
             //do we need to use loop with tryAcquire
-            checkDequeueLatch(deleteLatch, currReadTimeMs);
+            checkDequeueLatch(deleteLatch, pointer.currReadTimeMs);
 
             CountDownLatch normalLatch = new CountDownLatch(normalMsgStack.size());
             //read the normal msg
@@ -956,7 +947,7 @@ public class TimerMessageStore {
                 }
                 dequeueGetQueue.put(normalList);
             }
-            checkDequeueLatch(normalLatch, currReadTimeMs);
+            checkDequeueLatch(normalLatch, pointer.currReadTimeMs);
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (dequeueStatusChangeFlag) {
                 return -1;
@@ -1067,7 +1058,7 @@ public class TimerMessageStore {
                         if (brokerStatsManager != null) {
                             this.brokerStatsManager.incTopicPutNums(message.getTopic(), 1, 1);
                             this.brokerStatsManager.incTopicPutSize(message.getTopic(),
-                                putMessageResult.getAppendMessageResult().getWroteBytes());
+                                    putMessageResult.getAppendMessageResult().getWroteBytes());
                             this.brokerStatsManager.incBrokerPutNums(message.getTopic(), 1);
                         }
                         return PUT_OK;
@@ -1100,7 +1091,7 @@ public class TimerMessageStore {
         MessageAccessor.setProperties(msgInner, msgExt.getProperties());
         TopicFilterType topicFilterType = MessageExt.parseTopicFilterType(msgInner.getSysFlag());
         long tagsCodeValue =
-            MessageExtBrokerInner.tagsString2tagsCode(topicFilterType, msgInner.getTags());
+                MessageExtBrokerInner.tagsString2tagsCode(topicFilterType, msgInner.getTags());
         msgInner.setTagsCode(tagsCodeValue);
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgExt.getProperties()));
 
@@ -1124,7 +1115,7 @@ public class TimerMessageStore {
         return msgInner;
     }
 
-    protected String getRealTopic(MessageExt msgExt) {
+    public String getRealTopic(MessageExt msgExt) {
         if (msgExt == null) {
             return null;
         }
@@ -1150,8 +1141,8 @@ public class TimerMessageStore {
                 int hash = hashTopicForMetrics(entry.getKey());
                 if (smallHashs.containsKey(hash)) {
                     LOGGER.warn("[CheckAndReviseMetrics]Metric hash collision between small-small code:{} small topic:{}{} small topic:{}{}", hash,
-                        entry.getKey(), entry.getValue(),
-                        smallHashs.get(hash), smallOnes.get(smallHashs.get(hash)));
+                            entry.getKey(), entry.getValue(),
+                            smallHashs.get(hash), smallOnes.get(smallHashs.get(hash)));
                     smallHashCollisions.add(hash);
                 }
                 smallHashs.put(hash, entry.getKey());
@@ -1167,8 +1158,8 @@ public class TimerMessageStore {
                     Map.Entry<String, TimerMetrics.Metric> smallEntry = smallIt.next();
                     if (hashTopicForMetrics(smallEntry.getKey()) == hashTopicForMetrics(bjgEntry.getKey())) {
                         LOGGER.warn("[CheckAndReviseMetrics]Metric hash collision between small-big code:{} small topic:{}{} big topic:{}{}", hashTopicForMetrics(smallEntry.getKey()),
-                            smallEntry.getKey(), smallEntry.getValue(),
-                            bjgEntry.getKey(), bjgEntry.getValue());
+                                smallEntry.getKey(), smallEntry.getValue(),
+                                bjgEntry.getKey(), bjgEntry.getValue());
                         smallIt.remove();
                     }
                 }
@@ -1183,7 +1174,7 @@ public class TimerMessageStore {
         }
 
         //travel the timer log
-        long readTimeMs = currReadTimeMs;
+        long readTimeMs = pointer.currReadTimeMs;
         long currOffsetPy = timerWheel.checkPhyPos(readTimeMs, 0);
         LinkedList<SelectMappedBufferResult> sbrs = new LinkedList<>();
         boolean hasError = false;
@@ -1267,97 +1258,20 @@ public class TimerMessageStore {
         return brokerIdentifier;
     }
 
-    public class TimerEnqueuePutService extends ServiceThread {
+    public BlockingQueue<TimerRequest> getEnqueuePutQueue() {
+        return enqueuePutQueue;
+    }
 
-        @Override
-        public String getServiceName() {
-            return getServiceThreadName() + this.getClass().getSimpleName();
-        }
+    public BlockingQueue<List<TimerRequest>> getDequeueGetQueue() {
+        return dequeueGetQueue;
+    }
 
-        /**
-         * collect the requests
-         */
-        protected List<TimerRequest> fetchTimerRequests() throws InterruptedException {
-            List<TimerRequest> trs = null;
-            TimerRequest firstReq = enqueuePutQueue.poll(10, TimeUnit.MILLISECONDS);
-            if (null != firstReq) {
-                trs = new ArrayList<>(16);
-                trs.add(firstReq);
-                while (true) {
-                    TimerRequest tmpReq = enqueuePutQueue.poll(3, TimeUnit.MILLISECONDS);
-                    if (null == tmpReq) {
-                        break;
-                    }
-                    trs.add(tmpReq);
-                    if (trs.size() > 10) {
-                        break;
-                    }
-                }
-            }
-            return trs;
-        }
+    public BlockingQueue<TimerRequest> getDequeuePutQueue() {
+        return dequeuePutQueue;
+    }
 
-        protected void putMessageToTimerWheel(TimerRequest req) {
-            try {
-                perfCounterTicks.startTick(ENQUEUE_PUT);
-                DefaultStoreMetricsManager.incTimerEnqueueCount(getRealTopic(req.getMsg()));
-                if (shouldRunningDequeue && req.getDelayTime() < currWriteTimeMs) {
-                    dequeuePutQueue.put(req);
-                } else {
-                    boolean doEnqueueRes = doEnqueue(
-                        req.getOffsetPy(), req.getSizePy(), req.getDelayTime(), req.getMsg());
-                    req.idempotentRelease(doEnqueueRes || storeConfig.isTimerSkipUnknownError());
-                }
-                perfCounterTicks.endTick(ENQUEUE_PUT);
-            } catch (Throwable t) {
-                LOGGER.error("Unknown error", t);
-                if (storeConfig.isTimerSkipUnknownError()) {
-                    req.idempotentRelease(true);
-                } else {
-                    holdMomentForUnknownError();
-                }
-            }
-        }
-
-        protected void fetchAndPutTimerRequest() throws Exception {
-            long tmpCommitQueueOffset = currQueueOffset;
-            List<TimerRequest> trs = this.fetchTimerRequests();
-            if (CollectionUtils.isEmpty(trs)) {
-                commitQueueOffset = tmpCommitQueueOffset;
-                maybeMoveWriteTime();
-                return;
-            }
-
-            while (!isStopped()) {
-                CountDownLatch latch = new CountDownLatch(trs.size());
-                for (TimerRequest req : trs) {
-                    req.setLatch(latch);
-                    this.putMessageToTimerWheel(req);
-                }
-                checkDequeueLatch(latch, -1);
-                boolean allSuccess = trs.stream().allMatch(TimerRequest::isSucc);
-                if (allSuccess) {
-                    break;
-                } else {
-                    holdMomentForUnknownError();
-                }
-            }
-            commitQueueOffset = trs.get(trs.size() - 1).getMsg().getQueueOffset();
-            maybeMoveWriteTime();
-        }
-
-        @Override
-        public void run() {
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service start");
-            while (!this.isStopped() || enqueuePutQueue.size() != 0) {
-                try {
-                    fetchAndPutTimerRequest();
-                } catch (Throwable e) {
-                    TimerMessageStore.LOGGER.error("Unknown error", e);
-                }
-            }
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service end");
-        }
+    public PerfCounter.Ticks getPerfCounterTicks() {
+        return perfCounterTicks;
     }
 
 
@@ -1506,32 +1420,6 @@ public class TimerMessageStore {
         }
     }
 
-    public class TimerDequeueWarmService extends ServiceThread {
-
-        @Override
-        public String getServiceName() {
-            String brokerIdentifier = "";
-            if (TimerMessageStore.this.messageStore instanceof DefaultMessageStore && ((DefaultMessageStore) TimerMessageStore.this.messageStore).getBrokerConfig().isInBrokerContainer()) {
-                brokerIdentifier = ((DefaultMessageStore) TimerMessageStore.this.messageStore).getBrokerConfig().getIdentifier();
-            }
-            return brokerIdentifier + this.getClass().getSimpleName();
-        }
-
-        @Override
-        public void run() {
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service start");
-            while (!this.isStopped()) {
-                try {
-                    //if (!storeConfig.isTimerWarmEnable() || -1 == TimerMessageStore.this.warmDequeue()) {
-                    waitForRunning(50);
-                    //}
-                } catch (Throwable e) {
-                    TimerMessageStore.LOGGER.error("Error occurred in " + getServiceName(), e);
-                }
-            }
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service end");
-        }
-    }
 
     public boolean needRoll(int magic) {
         return (magic & MAGIC_ROLL) != 0;
@@ -1541,55 +1429,8 @@ public class TimerMessageStore {
         return (magic & MAGIC_DELETE) != 0;
     }
 
-    public class TimerFlushService extends ServiceThread {
-        private final SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm:ss");
-
-        @Override public String getServiceName() {
-            String brokerIdentifier = "";
-            if (TimerMessageStore.this.messageStore instanceof DefaultMessageStore && ((DefaultMessageStore) TimerMessageStore.this.messageStore).getBrokerConfig().isInBrokerContainer()) {
-                brokerIdentifier = ((DefaultMessageStore) TimerMessageStore.this.messageStore).getBrokerConfig().getIdentifier();
-            }
-            return brokerIdentifier + this.getClass().getSimpleName();
-        }
-
-        private String format(long time) {
-            return sdf.format(new Date(time));
-        }
-
-        @Override
-        public void run() {
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service start");
-            long start = System.currentTimeMillis();
-            while (!this.isStopped()) {
-                try {
-                    prepareTimerCheckPoint();
-                    timerLog.getMappedFileQueue().flush(0);
-                    timerWheel.flush();
-                    timerCheckpoint.flush();
-                    if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
-                        start = System.currentTimeMillis();
-                        long tmpQueueOffset = currQueueOffset;
-                        ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TIMER_TOPIC, 0);
-                        long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
-                        TimerMessageStore.LOGGER.info("[{}]Timer progress-check commitRead:[{}] currRead:[{}] currWrite:[{}] readBehind:{} currReadOffset:{} offsetBehind:{} behindMaster:{} " +
-                                "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
-                            storeConfig.getBrokerRole(),
-                            format(commitReadTimeMs), format(currReadTimeMs), format(currWriteTimeMs), getDequeueBehind(),
-                            tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerCheckpoint.getMasterTimerQueueOffset() - tmpQueueOffset,
-                            enqueuePutQueue.size(), dequeueGetQueue.size(), dequeuePutQueue.size(), getAllCongestNum(), format(lastEnqueueButExpiredStoreTime));
-                    }
-                    timerMetrics.persist();
-                    waitForRunning(storeConfig.getTimerFlushIntervalMs());
-                } catch (Throwable e) {
-                    TimerMessageStore.LOGGER.error("Error occurred in " + getServiceName(), e);
-                }
-            }
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service end");
-        }
-    }
-
     public long getAllCongestNum() {
-        return timerWheel.getAllNum(currReadTimeMs);
+        return timerWheel.getAllNum(pointer.currReadTimeMs);
     }
 
     public long getCongestNum(long deliverTimeMs) {
@@ -1611,15 +1452,15 @@ public class TimerMessageStore {
     }
 
     public long getEnqueueBehindMessages() {
-        long tmpQueueOffset = currQueueOffset;
+        long tmpQueueOffset = pointer.currQueueOffset;
         ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TIMER_TOPIC, 0);
         long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
         return maxOffsetInQueue - tmpQueueOffset;
     }
 
     public long getEnqueueBehindMillis() {
-        if (System.currentTimeMillis() - lastEnqueueButExpiredTime < 2000) {
-            return (System.currentTimeMillis() - lastEnqueueButExpiredStoreTime) / 1000;
+        if (System.currentTimeMillis() - pointer.lastEnqueueButExpiredTime < 2000) {
+            return (System.currentTimeMillis() - pointer.lastEnqueueButExpiredStoreTime) / 1000;
         }
         return 0;
     }
@@ -1629,11 +1470,11 @@ public class TimerMessageStore {
     }
 
     public long getDequeueBehindMessages() {
-        return timerWheel.getAllNum(currReadTimeMs);
+        return timerWheel.getAllNum(pointer.currReadTimeMs);
     }
 
     public long getDequeueBehindMillis() {
-        return System.currentTimeMillis() - currReadTimeMs;
+        return System.currentTimeMillis() - pointer.currReadTimeMs;
     }
 
     public long getDequeueBehind() {
@@ -1650,16 +1491,16 @@ public class TimerMessageStore {
 
     public void prepareTimerCheckPoint() {
         timerCheckpoint.setLastTimerLogFlushPos(timerLog.getMappedFileQueue().getFlushedWhere());
-        timerCheckpoint.setLastReadTimeMs(commitReadTimeMs);
-        if (shouldRunningDequeue) {
-            timerCheckpoint.setMasterTimerQueueOffset(commitQueueOffset);
-            if (commitReadTimeMs != lastCommitReadTimeMs || commitQueueOffset != lastCommitQueueOffset) {
+        timerCheckpoint.setLastReadTimeMs(pointer.commitReadTimeMs);
+        if (pointer.shouldRunningDequeue) {
+            timerCheckpoint.setMasterTimerQueueOffset(pointer.commitQueueOffset);
+            if (pointer.commitReadTimeMs != pointer.lastCommitReadTimeMs || pointer.commitQueueOffset != pointer.lastCommitQueueOffset) {
                 timerCheckpoint.updateDateVersion(messageStore.getStateMachineVersion());
-                lastCommitReadTimeMs = commitReadTimeMs;
-                lastCommitQueueOffset = commitQueueOffset;
+                pointer.lastCommitReadTimeMs = pointer.commitReadTimeMs;
+                pointer.lastCommitQueueOffset = pointer.commitQueueOffset;
             }
         }
-        timerCheckpoint.setLastTimerQueueOffset(Math.min(commitQueueOffset, timerCheckpoint.getMasterTimerQueueOffset()));
+        timerCheckpoint.setLastTimerQueueOffset(Math.min(pointer.commitQueueOffset, timerCheckpoint.getMasterTimerQueueOffset()));
     }
 
     public void registerEscapeBridgeHook(Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook) {
@@ -1671,19 +1512,19 @@ public class TimerMessageStore {
     }
 
     public long getCurrReadTimeMs() {
-        return this.currReadTimeMs;
+        return this.pointer.currReadTimeMs;
     }
 
     public long getQueueOffset() {
-        return currQueueOffset;
+        return pointer.currQueueOffset;
     }
 
     public long getCommitQueueOffset() {
-        return this.commitQueueOffset;
+        return this.pointer.commitQueueOffset;
     }
 
     public long getCommitReadTimeMs() {
-        return this.commitReadTimeMs;
+        return this.pointer.commitReadTimeMs;
     }
 
     public MessageStore getMessageStore() {
@@ -1727,7 +1568,7 @@ public class TimerMessageStore {
     }
 
     public void setDequeueWarmService(
-        TimerDequeueWarmService dequeueWarmService) {
+            TimerDequeueWarmService dequeueWarmService) {
         this.dequeueWarmService = dequeueWarmService;
     }
 
@@ -1744,7 +1585,7 @@ public class TimerMessageStore {
     }
 
     public void setDequeuePutMessageServices(
-        TimerDequeuePutMessageService[] dequeuePutMessageServices) {
+            TimerDequeuePutMessageService[] dequeuePutMessageServices) {
         this.dequeuePutMessageServices = dequeuePutMessageServices;
     }
 
@@ -1753,7 +1594,7 @@ public class TimerMessageStore {
     }
 
     public void setDequeueGetMessageServices(
-        TimerDequeueGetMessageService[] dequeueGetMessageServices) {
+            TimerDequeueGetMessageService[] dequeueGetMessageServices) {
         this.dequeueGetMessageServices = dequeueGetMessageServices;
     }
 
@@ -1772,4 +1613,9 @@ public class TimerMessageStore {
     public TimerCheckpoint getTimerCheckpoint() {
         return timerCheckpoint;
     }
+
+    public Pointer getPointer() {
+        return pointer;
+    }
+
 }
