@@ -788,68 +788,85 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
     protected void executeConsumeMessageHookBefore(RemotingCommand request, PullMessageRequestHeader requestHeader,
         GetMessageResult getMessageResult, boolean brokerAllowSuspend, int responseCode) {
-        if (this.hasConsumeMessageHook()) {
-            String owner = request.getExtFields().get(BrokerStatsManager.COMMERCIAL_OWNER);
-            String authType = request.getExtFields().get(BrokerStatsManager.ACCOUNT_AUTH_TYPE);
-            String ownerParent = request.getExtFields().get(BrokerStatsManager.ACCOUNT_OWNER_PARENT);
-            String ownerSelf = request.getExtFields().get(BrokerStatsManager.ACCOUNT_OWNER_SELF);
-
-            ConsumeMessageContext context = new ConsumeMessageContext();
-            context.setConsumerGroup(requestHeader.getConsumerGroup());
-            context.setTopic(requestHeader.getTopic());
-            context.setQueueId(requestHeader.getQueueId());
-            context.setAccountAuthType(authType);
-            context.setAccountOwnerParent(ownerParent);
-            context.setAccountOwnerSelf(ownerSelf);
-            context.setNamespace(NamespaceUtil.getNamespaceFromResource(requestHeader.getTopic()));
-
-            switch (responseCode) {
-                case ResponseCode.SUCCESS:
-                    int commercialBaseCount = brokerController.getBrokerConfig().getCommercialBaseCount();
-                    int incValue = getMessageResult.getMsgCount4Commercial() * commercialBaseCount;
-
-                    context.setCommercialRcvStats(BrokerStatsManager.StatsType.RCV_SUCCESS);
-                    context.setCommercialRcvTimes(incValue);
-                    context.setCommercialRcvSize(getMessageResult.getBufferTotalSize());
-                    context.setCommercialOwner(owner);
-
-                    context.setRcvStat(BrokerStatsManager.StatsType.RCV_SUCCESS);
-                    context.setRcvMsgNum(getMessageResult.getMessageCount());
-                    context.setRcvMsgSize(getMessageResult.getBufferTotalSize());
-                    context.setCommercialRcvMsgNum(getMessageResult.getMsgCount4Commercial());
-
-                    break;
-                case ResponseCode.PULL_NOT_FOUND:
-                    if (!brokerAllowSuspend) {
-
-                        context.setCommercialRcvStats(BrokerStatsManager.StatsType.RCV_EPOLLS);
-                        context.setCommercialRcvTimes(1);
-                        context.setCommercialOwner(owner);
-
-                        context.setRcvStat(BrokerStatsManager.StatsType.RCV_EPOLLS);
-                        context.setRcvMsgNum(0);
-                        context.setRcvMsgSize(0);
-                        context.setCommercialRcvMsgNum(0);
-                    }
-                    break;
-                case ResponseCode.PULL_RETRY_IMMEDIATELY:
-                case ResponseCode.PULL_OFFSET_MOVED:
-                    context.setCommercialRcvStats(BrokerStatsManager.StatsType.RCV_EPOLLS);
-                    context.setCommercialRcvTimes(1);
-                    context.setCommercialOwner(owner);
-
-                    context.setRcvStat(BrokerStatsManager.StatsType.RCV_EPOLLS);
-                    context.setRcvMsgNum(0);
-                    context.setRcvMsgSize(0);
-                    context.setCommercialRcvMsgNum(0);
-                    break;
-                default:
-                    assert false;
-                    break;
-            }
-
-            consumeMessageBefore(context);
+        if (!this.hasConsumeMessageHook()) {
+            return;
         }
+
+        String owner = request.getExtFields().get(BrokerStatsManager.COMMERCIAL_OWNER);
+        ConsumeMessageContext context = initConsumeMessageContext(request, requestHeader);
+
+        setHookResponseContext(brokerAllowSuspend, responseCode, context, getMessageResult, owner);
+        consumeMessageBefore(context);
+    }
+
+    private ConsumeMessageContext initConsumeMessageContext(RemotingCommand request, PullMessageRequestHeader requestHeader) {
+        ConsumeMessageContext context = new ConsumeMessageContext();
+        context.setConsumerGroup(requestHeader.getConsumerGroup());
+        context.setTopic(requestHeader.getTopic());
+        context.setQueueId(requestHeader.getQueueId());
+        context.setAccountAuthType(request.getExtFields().get(BrokerStatsManager.ACCOUNT_AUTH_TYPE));
+        context.setAccountOwnerParent(request.getExtFields().get(BrokerStatsManager.ACCOUNT_OWNER_PARENT));
+        context.setAccountOwnerSelf(request.getExtFields().get(BrokerStatsManager.ACCOUNT_OWNER_SELF));
+        context.setNamespace(NamespaceUtil.getNamespaceFromResource(requestHeader.getTopic()));
+
+        return context;
+    }
+
+    private void setHookResponseContext(boolean brokerAllowSuspend, int responseCode, ConsumeMessageContext context, GetMessageResult getMessageResult, String owner) {
+        switch (responseCode) {
+            case ResponseCode.SUCCESS:
+                setSuccessContext(context, getMessageResult, owner);
+                break;
+            case ResponseCode.PULL_NOT_FOUND:
+                if (!brokerAllowSuspend) {
+                    setNotFoundContext(context, owner);
+                }
+                break;
+            case ResponseCode.PULL_RETRY_IMMEDIATELY:
+            case ResponseCode.PULL_OFFSET_MOVED:
+                setOffsetMovedContext(context, owner);
+                break;
+            default:
+                assert false;
+                break;
+        }
+    }
+
+    private void setSuccessContext(ConsumeMessageContext context, GetMessageResult getMessageResult, String owner) {
+        int commercialBaseCount = brokerController.getBrokerConfig().getCommercialBaseCount();
+        int incValue = getMessageResult.getMsgCount4Commercial() * commercialBaseCount;
+
+        context.setCommercialRcvStats(BrokerStatsManager.StatsType.RCV_SUCCESS);
+        context.setCommercialRcvTimes(incValue);
+        context.setCommercialRcvSize(getMessageResult.getBufferTotalSize());
+        context.setCommercialOwner(owner);
+
+        context.setRcvStat(BrokerStatsManager.StatsType.RCV_SUCCESS);
+        context.setRcvMsgNum(getMessageResult.getMessageCount());
+        context.setRcvMsgSize(getMessageResult.getBufferTotalSize());
+        context.setCommercialRcvMsgNum(getMessageResult.getMsgCount4Commercial());
+    }
+
+    private void setNotFoundContext(ConsumeMessageContext context, String owner) {
+        context.setCommercialRcvStats(BrokerStatsManager.StatsType.RCV_EPOLLS);
+        context.setCommercialRcvTimes(1);
+        context.setCommercialOwner(owner);
+
+        context.setRcvStat(BrokerStatsManager.StatsType.RCV_EPOLLS);
+        context.setRcvMsgNum(0);
+        context.setRcvMsgSize(0);
+        context.setCommercialRcvMsgNum(0);
+    }
+
+    private void setOffsetMovedContext(ConsumeMessageContext context, String owner) {
+        context.setCommercialRcvStats(BrokerStatsManager.StatsType.RCV_EPOLLS);
+        context.setCommercialRcvTimes(1);
+        context.setCommercialOwner(owner);
+
+        context.setRcvStat(BrokerStatsManager.StatsType.RCV_EPOLLS);
+        context.setRcvMsgNum(0);
+        context.setRcvMsgSize(0);
+        context.setCommercialRcvMsgNum(0);
     }
 
     private void consumeMessageBefore(ConsumeMessageContext context) {
