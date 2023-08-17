@@ -87,51 +87,54 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         this.pullMessageResultHandler = new DefaultPullMessageResultHandler(brokerController);
     }
 
+    private void prepareRequestHeader(PullMessageRequestHeader requestHeader, LogicQueueMappingItem mappingItem) {
+        Integer phyQueueId = mappingItem.getQueueId();
+        Long phyQueueOffset = mappingItem.computePhysicalQueueOffset(requestHeader.getQueueOffset());
+        requestHeader.setQueueId(phyQueueId);
+        requestHeader.setQueueOffset(phyQueueOffset);
+        if (mappingItem.checkIfEndOffsetDecided()
+            && requestHeader.getMaxMsgNums() != null) {
+            requestHeader.setMaxMsgNums((int) Math.min(mappingItem.getEndOffset() - mappingItem.getStartOffset(), requestHeader.getMaxMsgNums()));
+        }
+
+        int sysFlag = requestHeader.getSysFlag();
+        requestHeader.setLo(false);
+        requestHeader.setBname(mappingItem.getBname());
+        sysFlag = PullSysFlag.clearSuspendFlag(sysFlag);
+        sysFlag = PullSysFlag.clearCommitOffsetFlag(sysFlag);
+        requestHeader.setSysFlag(sysFlag);
+
+    }
+
     private RemotingCommand rewriteRequestForStaticTopic(PullMessageRequestHeader requestHeader,
         TopicQueueMappingContext mappingContext) {
         try {
             if (mappingContext.getMappingDetail() == null) {
                 return null;
             }
-            TopicQueueMappingDetail mappingDetail = mappingContext.getMappingDetail();
-            String topic = mappingContext.getTopic();
-            Integer globalId = mappingContext.getGlobalId();
             // if the leader? consider the order consumer, which will lock the mq
             if (!mappingContext.isLeader()) {
-                return buildErrorResponse(ResponseCode.NOT_LEADER_FOR_QUEUE, String.format("%s-%d cannot find mapping item in request process of current broker %s", topic, globalId, mappingDetail.getBname()));
+                return buildErrorResponse(ResponseCode.NOT_LEADER_FOR_QUEUE, String.format("%s-%d cannot find mapping item in request process of current broker %s", mappingContext.getTopic(), mappingContext.getGlobalId(), mappingContext.getMappingDetail().getBname()));
             }
 
-            Long globalOffset = requestHeader.getQueueOffset();
-            LogicQueueMappingItem mappingItem = TopicQueueMappingUtils.findLogicQueueMappingItem(mappingContext.getMappingItemList(), globalOffset, true);
+            LogicQueueMappingItem mappingItem = TopicQueueMappingUtils.findLogicQueueMappingItem(mappingContext.getMappingItemList(), requestHeader.getQueueOffset(), true);
             mappingContext.setCurrentItem(mappingItem);
 
-            if (globalOffset < mappingItem.getLogicOffset()) {
+            if (requestHeader.getQueueOffset() < mappingItem.getLogicOffset()) {
                 //handleOffsetMoved
                 //If the physical queue is reused, we should handle the PULL_OFFSET_MOVED independently
                 //Otherwise, we could just transfer it to the physical process
             }
-            //below are physical info
-            String bname = mappingItem.getBname();
-            Integer phyQueueId = mappingItem.getQueueId();
-            Long phyQueueOffset = mappingItem.computePhysicalQueueOffset(globalOffset);
-            requestHeader.setQueueId(phyQueueId);
-            requestHeader.setQueueOffset(phyQueueOffset);
-            if (mappingItem.checkIfEndOffsetDecided()
-                && requestHeader.getMaxMsgNums() != null) {
-                requestHeader.setMaxMsgNums((int) Math.min(mappingItem.getEndOffset() - mappingItem.getStartOffset(), requestHeader.getMaxMsgNums()));
-            }
 
-            if (mappingDetail.getBname().equals(bname)) {
+            if (mappingContext.getMappingDetail().getBname().equals(mappingItem.getBname())) {
                 //just let it go, do the local pull process
                 return null;
             }
 
-            int sysFlag = requestHeader.getSysFlag();
-            requestHeader.setLo(false);
-            requestHeader.setBname(bname);
-            sysFlag = PullSysFlag.clearSuspendFlag(sysFlag);
-            sysFlag = PullSysFlag.clearCommitOffsetFlag(sysFlag);
-            requestHeader.setSysFlag(sysFlag);
+            //below are physical info
+            prepareRequestHeader(requestHeader, mappingItem);
+
+
             RpcRequest rpcRequest = new RpcRequest(RequestCode.PULL_MESSAGE, requestHeader, null);
             RpcResponse rpcResponse = this.brokerController.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.brokerController.getBrokerConfig().getForwardTimeout()).get();
             if (rpcResponse.getException() != null) {
