@@ -848,11 +848,15 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                     break;
             }
 
-            for (ConsumeMessageHook hook : this.consumeMessageHookList) {
-                try {
-                    hook.consumeMessageBefore(context);
-                } catch (Throwable ignored) {
-                }
+            consumeMessageBefore(context);
+        }
+    }
+
+    private void consumeMessageBefore(ConsumeMessageContext context) {
+        for (ConsumeMessageHook hook : this.consumeMessageHookList) {
+            try {
+                hook.consumeMessageBefore(context);
+            } catch (Throwable ignored) {
             }
         }
     }
