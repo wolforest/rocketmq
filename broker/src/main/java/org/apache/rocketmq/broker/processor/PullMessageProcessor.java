@@ -932,24 +932,35 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             RequestSource.PROXY_FOR_BROADCAST.getValue(), requestHeader.getRequestSource());
         ConsumerGroupInfo consumerGroupInfo = this.brokerController.getConsumerManager().getConsumerGroupInfo(group);
 
-        if (isBroadcast(proxyPullBroadcast, consumerGroupInfo)) {
-            long offset = requestHeader.getQueueOffset();
-            if (ResponseCode.PULL_OFFSET_MOVED == response.getCode()) {
-                offset = nextBeginOffset;
-            }
-            String clientId;
-            if (proxyPullBroadcast) {
-                clientId = requestHeader.getProxyFrowardClientId();
-            } else {
-                ClientChannelInfo clientChannelInfo = consumerGroupInfo.findChannel(channel);
-                if (clientChannelInfo == null) {
-                    return;
-                }
-                clientId = clientChannelInfo.getClientId();
-            }
-            this.brokerController.getBroadcastOffsetManager()
-                .updateOffset(topic, group, queueId, offset, clientId, proxyPullBroadcast);
+        if (!isBroadcast(proxyPullBroadcast, consumerGroupInfo)) {
+            return;
         }
+
+        long offset = requestHeader.getQueueOffset();
+        if (ResponseCode.PULL_OFFSET_MOVED == response.getCode()) {
+            offset = nextBeginOffset;
+        }
+        String clientId = getClientId(proxyPullBroadcast, requestHeader, channel, consumerGroupInfo);
+        if (clientId == null) {
+            return;
+        }
+
+        this.brokerController.getBroadcastOffsetManager().updateOffset(topic, group, queueId, offset, clientId, proxyPullBroadcast);
+    }
+
+    private String getClientId(boolean proxyPullBroadcast, PullMessageRequestHeader requestHeader, Channel channel, ConsumerGroupInfo consumerGroupInfo) {
+        String clientId;
+        if (proxyPullBroadcast) {
+            clientId = requestHeader.getProxyFrowardClientId();
+        } else {
+            ClientChannelInfo clientChannelInfo = consumerGroupInfo.findChannel(channel);
+            if (clientChannelInfo == null) {
+                return null;
+            }
+            clientId = clientChannelInfo.getClientId();
+        }
+
+        return clientId;
     }
 
     /**
