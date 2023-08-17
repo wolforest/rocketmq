@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.concurrent.Executors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.bootstrap.BrokerNettyServer;
+import org.apache.rocketmq.broker.service.BrokerNettyServer;
 import org.apache.rocketmq.broker.processor.PullMessageProcessor;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;

@@ -18,8 +18,8 @@
 package org.apache.rocketmq.broker.controller;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.bootstrap.BrokerClusterService;
-import org.apache.rocketmq.broker.bootstrap.BrokerMessageService;
+import org.apache.rocketmq.broker.service.BrokerClusterService;
+import org.apache.rocketmq.broker.service.BrokerMessageService;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.broker.slave.SlaveSynchronize;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;

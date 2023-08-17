@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.LongAdder;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.bootstrap.BrokerServiceManager;
+import org.apache.rocketmq.broker.service.BrokerServiceManager;
 import org.apache.rocketmq.broker.client.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.client.ConsumerManager;
 import org.apache.rocketmq.broker.offset.ConsumerOffsetManager;

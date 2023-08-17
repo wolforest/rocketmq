@@ -42,6 +42,7 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.EpochEntry;
@@ -182,11 +183,7 @@ public class ReplicasManager {
                 }
 
                 // Try to avoid registration concurrency conflicts in random sleep
-                try {
-                    Thread.sleep(random.nextInt(1000));
-                } catch (Exception ignore) {
-
-                }
+                ThreadUtils.sleep(random.nextInt(1000));
             }
             // register 5 times but still unsuccessful
             if (this.state != State.REGISTER_TO_CONTROLLER_DONE) {
@@ -337,12 +334,14 @@ public class ReplicasManager {
 
     private void changeSyncStateSet(final Set<Long> newSyncStateSet, final int newSyncStateSetEpoch) {
         synchronized (this) {
-            if (newSyncStateSetEpoch > this.syncStateSetEpoch) {
-                LOGGER.info("SyncStateSet changed from {} to {}", this.syncStateSet, newSyncStateSet);
-                this.syncStateSetEpoch = newSyncStateSetEpoch;
-                this.syncStateSet = new HashSet<>(newSyncStateSet);
-                this.haService.setSyncStateSet(newSyncStateSet);
+            if (newSyncStateSetEpoch <= this.syncStateSetEpoch) {
+                return;
             }
+
+            LOGGER.info("SyncStateSet changed from {} to {}", this.syncStateSet, newSyncStateSet);
+            this.syncStateSetEpoch = newSyncStateSetEpoch;
+            this.syncStateSet = new HashSet<>(newSyncStateSet);
+            this.haService.setSyncStateSet(newSyncStateSet);
         }
     }
 
@@ -402,21 +401,23 @@ public class ReplicasManager {
     public void sendHeartbeatToController() {
         final List<String> controllerAddresses = this.getAvailableControllerAddresses();
         for (String controllerAddress : controllerAddresses) {
-            if (StringUtils.isNotEmpty(controllerAddress)) {
-                this.brokerOuterAPI.sendHeartbeatToController(
-                    controllerAddress,
-                    this.brokerConfig.getBrokerClusterName(),
-                    this.brokerAddress,
-                    this.brokerConfig.getBrokerName(),
-                    this.brokerControllerId,
-                    this.brokerConfig.getSendHeartbeatTimeoutMillis(),
-                    this.brokerConfig.isInBrokerContainer(), this.getLastEpoch(),
-                    this.brokerController.getMessageStore().getMaxPhyOffset(),
-                    this.brokerController.getMessageStore().getConfirmOffset(),
-                    this.brokerConfig.getControllerHeartBeatTimeoutMills(),
-                    this.brokerConfig.getBrokerElectionPriority()
-                );
+            if (StringUtils.isEmpty(controllerAddress)) {
+                continue;
             }
+
+            this.brokerOuterAPI.sendHeartbeatToController(
+                controllerAddress,
+                this.brokerConfig.getBrokerClusterName(),
+                this.brokerAddress,
+                this.brokerConfig.getBrokerName(),
+                this.brokerControllerId,
+                this.brokerConfig.getSendHeartbeatTimeoutMillis(),
+                this.brokerConfig.isInBrokerContainer(), this.getLastEpoch(),
+                this.brokerController.getMessageStore().getMaxPhyOffset(),
+                this.brokerController.getMessageStore().getConfirmOffset(),
+                this.brokerConfig.getControllerHeartBeatTimeoutMills(),
+                this.brokerConfig.getBrokerElectionPriority()
+            );
         }
     }
 
@@ -698,11 +699,8 @@ public class ReplicasManager {
                 this.scheduledService.scheduleAtFixedRate(this::updateControllerMetadata, 1000 * 3, this.brokerConfig.getSyncControllerMetadataPeriod(), TimeUnit.MILLISECONDS);
                 return true;
             }
-            try {
-                TimeUnit.SECONDS.sleep(1);
-            } catch (InterruptedException ignore) {
 
-            }
+            ThreadUtils.sleep(1);
             tryTimes++;
         }
         LOGGER.error("Failed to init controller metadata, maybe the controllers in {} is not available", this.controllerAddresses);
