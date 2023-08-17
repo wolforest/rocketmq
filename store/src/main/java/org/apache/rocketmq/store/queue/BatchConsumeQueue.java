@@ -209,58 +209,60 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
     @Override
     public void recover() {
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
-        if (!mappedFiles.isEmpty()) {
-            int index = mappedFiles.size() - 3;
-            if (index < 0)
-                index = 0;
+        if (mappedFiles.isEmpty()) {
+            return;
+        }
 
-            int mappedFileSizeLogics = this.mappedFileSize;
-            MappedFile mappedFile = mappedFiles.get(index);
-            ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-            long processOffset = mappedFile.getFileFromOffset();
-            long mappedFileOffset = 0;
-            while (true) {
-                for (int i = 0; i < mappedFileSizeLogics; i += CQ_STORE_UNIT_SIZE) {
-                    byteBuffer.position(i);
-                    long offset = byteBuffer.getLong();
-                    int size = byteBuffer.getInt();
-                    byteBuffer.getLong();//tagscode
-                    byteBuffer.getLong();//timestamp
-                    long msgBaseOffset = byteBuffer.getLong();
-                    short batchSize = byteBuffer.getShort();
-                    if (offset >= 0 && size > 0 && msgBaseOffset >= 0 && batchSize > 0) {
-                        mappedFileOffset = i + CQ_STORE_UNIT_SIZE;
-                        this.maxMsgPhyOffsetInCommitLog = offset;
-                    } else {
-                        log.info("Recover current batch consume queue file over, file:{} offset:{} size:{} msgBaseOffset:{} batchSize:{} mappedFileOffset:{}",
-                            mappedFile.getFileName(), offset, size, msgBaseOffset, batchSize, mappedFileOffset);
-                        break;
-                    }
-                }
+        int index = mappedFiles.size() - 3;
+        if (index < 0)
+            index = 0;
 
-                if (mappedFileOffset == mappedFileSizeLogics) {
-                    index++;
-                    if (index >= mappedFiles.size()) {
-                        log.info("Recover last batch consume queue file over, last mapped file:{} ", mappedFile.getFileName());
-                        break;
-                    } else {
-                        mappedFile = mappedFiles.get(index);
-                        byteBuffer = mappedFile.sliceByteBuffer();
-                        processOffset = mappedFile.getFileFromOffset();
-                        mappedFileOffset = 0;
-                        log.info("Recover next batch consume queue file: " + mappedFile.getFileName());
-                    }
+        int mappedFileSizeLogics = this.mappedFileSize;
+        MappedFile mappedFile = mappedFiles.get(index);
+        ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
+        long processOffset = mappedFile.getFileFromOffset();
+        long mappedFileOffset = 0;
+        while (true) {
+            for (int i = 0; i < mappedFileSizeLogics; i += CQ_STORE_UNIT_SIZE) {
+                byteBuffer.position(i);
+                long offset = byteBuffer.getLong();
+                int size = byteBuffer.getInt();
+                byteBuffer.getLong();//tagscode
+                byteBuffer.getLong();//timestamp
+                long msgBaseOffset = byteBuffer.getLong();
+                short batchSize = byteBuffer.getShort();
+                if (offset >= 0 && size > 0 && msgBaseOffset >= 0 && batchSize > 0) {
+                    mappedFileOffset = i + CQ_STORE_UNIT_SIZE;
+                    this.maxMsgPhyOffsetInCommitLog = offset;
                 } else {
-                    log.info("Recover current batch consume queue file over:{} processOffset:{}", mappedFile.getFileName(), processOffset + mappedFileOffset);
+                    log.info("Recover current batch consume queue file over, file:{} offset:{} size:{} msgBaseOffset:{} batchSize:{} mappedFileOffset:{}",
+                        mappedFile.getFileName(), offset, size, msgBaseOffset, batchSize, mappedFileOffset);
                     break;
                 }
             }
-            processOffset += mappedFileOffset;
-            this.mappedFileQueue.setFlushedWhere(processOffset);
-            this.mappedFileQueue.setCommittedWhere(processOffset);
-            this.mappedFileQueue.truncateDirtyFiles(processOffset);
-            reviseMaxAndMinOffsetInQueue();
+
+            if (mappedFileOffset == mappedFileSizeLogics) {
+                index++;
+                if (index >= mappedFiles.size()) {
+                    log.info("Recover last batch consume queue file over, last mapped file:{} ", mappedFile.getFileName());
+                    break;
+                } else {
+                    mappedFile = mappedFiles.get(index);
+                    byteBuffer = mappedFile.sliceByteBuffer();
+                    processOffset = mappedFile.getFileFromOffset();
+                    mappedFileOffset = 0;
+                    log.info("Recover next batch consume queue file: " + mappedFile.getFileName());
+                }
+            } else {
+                log.info("Recover current batch consume queue file over:{} processOffset:{}", mappedFile.getFileName(), processOffset + mappedFileOffset);
+                break;
+            }
         }
+        processOffset += mappedFileOffset;
+        this.mappedFileQueue.setFlushedWhere(processOffset);
+        this.mappedFileQueue.setCommittedWhere(processOffset);
+        this.mappedFileQueue.truncateDirtyFiles(processOffset);
+        reviseMaxAndMinOffsetInQueue();
     }
 
     void reviseMinOffsetInQueue() {
@@ -363,57 +365,57 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
         boolean stop = false;
         while (!stop) {
             MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
-            if (mappedFile != null) {
-                ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
+            if (null == mappedFile) {
+                break;
+            }
 
-                mappedFile.setWrotePosition(0);
-                mappedFile.setCommittedPosition(0);
-                mappedFile.setFlushedPosition(0);
+            ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
 
-                for (int i = 0; i < logicFileSize; i += CQ_STORE_UNIT_SIZE) {
-                    byteBuffer.position(i);
-                    long offset = byteBuffer.getLong();
-                    int size = byteBuffer.getInt();
-                    byteBuffer.getLong();//tagscode
-                    byteBuffer.getLong();//timestamp
-                    long msgBaseOffset = byteBuffer.getLong();
-                    short batchSize = byteBuffer.getShort();
+            mappedFile.setWrotePosition(0);
+            mappedFile.setCommittedPosition(0);
+            mappedFile.setFlushedPosition(0);
 
-                    if (0 == i) {
-                        if (offset >= phyOffset) {
-                            this.mappedFileQueue.deleteLastMappedFile();
-                            break;
-                        } else {
-                            int pos = i + CQ_STORE_UNIT_SIZE;
-                            mappedFile.setWrotePosition(pos);
-                            mappedFile.setCommittedPosition(pos);
-                            mappedFile.setFlushedPosition(pos);
-                            this.maxMsgPhyOffsetInCommitLog = offset;
-                        }
+            for (int i = 0; i < logicFileSize; i += CQ_STORE_UNIT_SIZE) {
+                byteBuffer.position(i);
+                long offset = byteBuffer.getLong();
+                int size = byteBuffer.getInt();
+                byteBuffer.getLong();//tagscode
+                byteBuffer.getLong();//timestamp
+                long msgBaseOffset = byteBuffer.getLong();
+                short batchSize = byteBuffer.getShort();
+
+                if (0 == i) {
+                    if (offset >= phyOffset) {
+                        this.mappedFileQueue.deleteLastMappedFile();
+                        break;
                     } else {
-                        if (offset >= 0 && size > 0 && msgBaseOffset >= 0 && batchSize > 0) {
-                            if (offset >= phyOffset) {
-                                stop = true;
-                                break;
-                            }
-
-                            int pos = i + CQ_STORE_UNIT_SIZE;
-                            mappedFile.setWrotePosition(pos);
-                            mappedFile.setCommittedPosition(pos);
-                            mappedFile.setFlushedPosition(pos);
-                            this.maxMsgPhyOffsetInCommitLog = offset;
-                            if (pos == logicFileSize) {
-                                stop = true;
-                                break;
-                            }
-                        } else {
+                        int pos = i + CQ_STORE_UNIT_SIZE;
+                        mappedFile.setWrotePosition(pos);
+                        mappedFile.setCommittedPosition(pos);
+                        mappedFile.setFlushedPosition(pos);
+                        this.maxMsgPhyOffsetInCommitLog = offset;
+                    }
+                } else {
+                    if (offset >= 0 && size > 0 && msgBaseOffset >= 0 && batchSize > 0) {
+                        if (offset >= phyOffset) {
                             stop = true;
                             break;
                         }
+
+                        int pos = i + CQ_STORE_UNIT_SIZE;
+                        mappedFile.setWrotePosition(pos);
+                        mappedFile.setCommittedPosition(pos);
+                        mappedFile.setFlushedPosition(pos);
+                        this.maxMsgPhyOffsetInCommitLog = offset;
+                        if (pos == logicFileSize) {
+                            stop = true;
+                            break;
+                        }
+                    } else {
+                        stop = true;
+                        break;
                     }
                 }
-            } else {
-                break;
             }
         }
         reviseMaxAndMinOffsetInQueue();

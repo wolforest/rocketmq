@@ -20,6 +20,8 @@ package org.apache.rocketmq.store;
 import java.io.File;
 import java.util.Random;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.store.queue.ConsumeQueueExt;
+import org.apache.rocketmq.store.queue.CqExtUnit;
 import org.junit.After;
 import org.junit.Test;
 
@@ -31,7 +33,7 @@ public class ConsumeQueueExtTest {
     private static final int QUEUE_ID = 0;
     private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unit_test_store";
     private static final int BIT_MAP_LENGTH = 64;
-    private static final int UNIT_SIZE_WITH_BIT_MAP = ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE + BIT_MAP_LENGTH / Byte.SIZE;
+    private static final int UNIT_SIZE_WITH_BIT_MAP = CqExtUnit.MIN_EXT_UNIT_SIZE + BIT_MAP_LENGTH / Byte.SIZE;
     private static final int CQ_EXT_FILE_SIZE = 10 * UNIT_SIZE_WITH_BIT_MAP;
     private static final int UNIT_COUNT = 20;
 
@@ -50,8 +52,8 @@ public class ConsumeQueueExtTest {
         return bytes;
     }
 
-    protected ConsumeQueueExt.CqExtUnit genUnit(boolean hasBitMap) {
-        ConsumeQueueExt.CqExtUnit cqExtUnit = new ConsumeQueueExt.CqExtUnit();
+    protected CqExtUnit genUnit(boolean hasBitMap) {
+        CqExtUnit cqExtUnit = new CqExtUnit();
 
         cqExtUnit.setTagsCode(Math.abs((new Random(System.currentTimeMillis())).nextInt()));
         cqExtUnit.setMsgStoreTime(System.currentTimeMillis());
@@ -65,14 +67,14 @@ public class ConsumeQueueExtTest {
     protected void putSth(ConsumeQueueExt consumeQueueExt, boolean getAfterPut,
         boolean unitSameSize, int unitCount) {
         for (int i = 0; i < unitCount; i++) {
-            ConsumeQueueExt.CqExtUnit putUnit =
+            CqExtUnit putUnit =
                 unitSameSize ? genUnit(true) : genUnit(i % 2 == 0);
 
             long addr = consumeQueueExt.put(putUnit);
             assertThat(addr).isLessThan(0);
 
             if (getAfterPut) {
-                ConsumeQueueExt.CqExtUnit getUnit = consumeQueueExt.get(addr);
+                CqExtUnit getUnit = consumeQueueExt.get(addr);
 
                 assertThat(getUnit).isNotNull();
                 assertThat(putUnit).isEqualTo(getUnit);
@@ -109,7 +111,7 @@ public class ConsumeQueueExtTest {
             // from start.
             long addr = consumeQueueExt.decorate(0);
 
-            ConsumeQueueExt.CqExtUnit unit = new ConsumeQueueExt.CqExtUnit();
+            CqExtUnit unit = new CqExtUnit();
             while (true) {
                 boolean ret = consumeQueueExt.get(addr, unit);
 
@@ -117,7 +119,7 @@ public class ConsumeQueueExtTest {
                     break;
                 }
 
-                assertThat(unit.getSize()).isGreaterThanOrEqualTo(ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE);
+                assertThat(unit.getSize()).isGreaterThanOrEqualTo(CqExtUnit.MIN_EXT_UNIT_SIZE);
 
                 addr += unit.getSize();
             }
@@ -134,7 +136,7 @@ public class ConsumeQueueExtTest {
         putSth(consumeQueueExt, false, true, UNIT_COUNT);
 
         try {
-            ConsumeQueueExt.CqExtUnit unit = consumeQueueExt.get(0);
+            CqExtUnit unit = consumeQueueExt.get(0);
 
             assertThat(unit).isNull();
 

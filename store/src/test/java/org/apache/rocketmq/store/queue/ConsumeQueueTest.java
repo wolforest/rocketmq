@@ -26,7 +26,6 @@ import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.store.ConsumeQueueExt;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.MessageFilter;
@@ -48,7 +47,7 @@ public class ConsumeQueueTest extends QueueTestBase {
     private static final String STORE_PATH = "." + File.separator + "unit_test_store";
     private static final int COMMIT_LOG_FILE_SIZE = 1024 * 8;
     private static final int CQ_FILE_SIZE = 10 * 20;
-    private static final int CQ_EXT_FILE_SIZE = 10 * (ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE + 64);
+    private static final int CQ_EXT_FILE_SIZE = 10 * (CqExtUnit.MIN_EXT_UNIT_SIZE + 64);
 
     public MessageStoreConfig buildStoreConfig(int commitLogFileSize, int cqFileSize,
         boolean enableCqExt, int cqExtFileSize) {
@@ -172,7 +171,7 @@ public class ConsumeQueueTest extends QueueTestBase {
                 Assert.assertEquals(queueOffset, cqUnit.getValidTagsCodeAsLong().longValue());
                 Assert.assertEquals(1, cqUnit.getBatchNum());
                 Assert.assertNotNull(cqUnit.getCqExtUnit());
-                ConsumeQueueExt.CqExtUnit cqExtUnit =  cqUnit.getCqExtUnit();
+                CqExtUnit cqExtUnit =  cqUnit.getCqExtUnit();
                 Assert.assertEquals(queueOffset, cqExtUnit.getTagsCode());
                 Assert.assertArrayEquals(new byte[10], cqExtUnit.getFilterBitMap());
                 queueOffset++;
@@ -190,7 +189,7 @@ public class ConsumeQueueTest extends QueueTestBase {
             ConsumeQueueInterface consumeQueue = master.findConsumeQueue(TOPIC, QUEUE_ID);
             MessageFilter filter = new MessageFilter() {
                 @Override
-                public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+                public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
                     return tagsCode == "TagA".hashCode();
                 }
 
@@ -239,7 +238,7 @@ public class ConsumeQueueTest extends QueueTestBase {
             ConsumeQueueInterface cq = messageStore.findConsumeQueue(TOPIC, QUEUE_ID);
             MessageFilter filter = new MessageFilter() {
                 @Override
-                public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+                public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
                     return tagsCode == "TagA".hashCode();
                 }
 
@@ -286,7 +285,7 @@ public class ConsumeQueueTest extends QueueTestBase {
             ConsumeQueueInterface cq = messageStore.findConsumeQueue(TOPIC, QUEUE_ID);
             MessageFilter filter = new MessageFilter() {
                 @Override
-                public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+                public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
                     return tagsCode == "TagA".hashCode();
                 }
 

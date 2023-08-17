@@ -153,19 +153,25 @@ public class RemotingCommand {
         cmd.setRemark(remark);
         setCmdVersion(cmd);
 
-        if (classHeader != null) {
-            try {
-                CommandCustomHeader objectHeader = classHeader.getDeclaredConstructor().newInstance();
-                cmd.customHeader = objectHeader;
-            } catch (InstantiationException e) {
-                return null;
-            } catch (IllegalAccessException e) {
-                return null;
-            } catch (InvocationTargetException e) {
-                return null;
-            } catch (NoSuchMethodException e) {
-                return null;
-            }
+        if (classHeader == null) {
+            return cmd;
+        }
+
+        return createResponseCommand(cmd, classHeader);
+    }
+
+    private static RemotingCommand createResponseCommand(RemotingCommand cmd, Class<? extends CommandCustomHeader> classHeader) {
+        try {
+            CommandCustomHeader objectHeader = classHeader.getDeclaredConstructor().newInstance();
+            cmd.customHeader = objectHeader;
+        } catch (InstantiationException e) {
+            return null;
+        } catch (IllegalAccessException e) {
+            return null;
+        } catch (InvocationTargetException e) {
+            return null;
+        } catch (NoSuchMethodException e) {
+            return null;
         }
 
         return cmd;
@@ -265,6 +271,28 @@ public class RemotingCommand {
 
     public CommandCustomHeader decodeCommandCustomHeader(Class<? extends CommandCustomHeader> classHeader,
         boolean useFastEncode) throws RemotingCommandException {
+        CommandCustomHeader objectHeader = initCommandCustomHeader(classHeader);
+        if (objectHeader == null) {
+            return null;
+        }
+
+        if (this.extFields == null) {
+            return objectHeader;
+        }
+
+        if (objectHeader instanceof FastCodesHeader && useFastEncode) {
+            ((FastCodesHeader) objectHeader).decode(this.extFields);
+            objectHeader.checkFields();
+            return objectHeader;
+        }
+
+        decodeCommandCustomHeader(classHeader, objectHeader);
+        objectHeader.checkFields();
+
+        return objectHeader;
+    }
+
+    private CommandCustomHeader initCommandCustomHeader(Class<? extends CommandCustomHeader> classHeader) {
         CommandCustomHeader objectHeader;
         try {
             objectHeader = classHeader.getDeclaredConstructor().newInstance();
@@ -278,76 +306,78 @@ public class RemotingCommand {
             return null;
         }
 
-        if (this.extFields != null) {
-            if (objectHeader instanceof FastCodesHeader && useFastEncode) {
-                ((FastCodesHeader) objectHeader).decode(this.extFields);
-                objectHeader.checkFields();
-                return objectHeader;
-            }
-
-            Field[] fields = getClazzFields(classHeader);
-            for (Field field : fields) {
-                if (!Modifier.isStatic(field.getModifiers())) {
-                    String fieldName = field.getName();
-                    if (!fieldName.startsWith("this")) {
-                        try {
-                            String value = this.extFields.get(fieldName);
-                            if (null == value) {
-                                if (!isFieldNullable(field)) {
-                                    throw new RemotingCommandException("the custom field <" + fieldName + "> is null");
-                                }
-                                continue;
-                            }
-
-                            field.setAccessible(true);
-                            String type = getCanonicalName(field.getType());
-                            Object valueParsed;
-
-                            if (type.equals(STRING_CANONICAL_NAME)) {
-                                valueParsed = value;
-                            } else if (type.equals(INTEGER_CANONICAL_NAME_1) || type.equals(INTEGER_CANONICAL_NAME_2)) {
-                                valueParsed = Integer.parseInt(value);
-                            } else if (type.equals(LONG_CANONICAL_NAME_1) || type.equals(LONG_CANONICAL_NAME_2)) {
-                                valueParsed = Long.parseLong(value);
-                            } else if (type.equals(BOOLEAN_CANONICAL_NAME_1) || type.equals(BOOLEAN_CANONICAL_NAME_2)) {
-                                valueParsed = Boolean.parseBoolean(value);
-                            } else if (type.equals(DOUBLE_CANONICAL_NAME_1) || type.equals(DOUBLE_CANONICAL_NAME_2)) {
-                                valueParsed = Double.parseDouble(value);
-                            } else if (type.equals(BOUNDARY_TYPE_CANONICAL_NAME)) {
-                                valueParsed = BoundaryType.getType(value);
-                            } else {
-                                throw new RemotingCommandException("the custom field <" + fieldName + "> type is not supported");
-                            }
-
-                            field.set(objectHeader, valueParsed);
-
-                        } catch (Throwable e) {
-                            log.error("Failed field [{}] decoding", fieldName, e);
-                        }
-                    }
-                }
-            }
-
-            objectHeader.checkFields();
-        }
-
         return objectHeader;
+    }
+
+    private void decodeCommandCustomHeaderField(Field field, String fieldName, CommandCustomHeader objectHeader) {
+        try {
+            String value = this.extFields.get(fieldName);
+            if (null == value) {
+                if (!isFieldNullable(field)) {
+                    throw new RemotingCommandException("the custom field <" + fieldName + "> is null");
+                }
+                return;
+            }
+
+            field.setAccessible(true);
+            String type = getCanonicalName(field.getType());
+            Object valueParsed;
+
+            if (type.equals(STRING_CANONICAL_NAME)) {
+                valueParsed = value;
+            } else if (type.equals(INTEGER_CANONICAL_NAME_1) || type.equals(INTEGER_CANONICAL_NAME_2)) {
+                valueParsed = Integer.parseInt(value);
+            } else if (type.equals(LONG_CANONICAL_NAME_1) || type.equals(LONG_CANONICAL_NAME_2)) {
+                valueParsed = Long.parseLong(value);
+            } else if (type.equals(BOOLEAN_CANONICAL_NAME_1) || type.equals(BOOLEAN_CANONICAL_NAME_2)) {
+                valueParsed = Boolean.parseBoolean(value);
+            } else if (type.equals(DOUBLE_CANONICAL_NAME_1) || type.equals(DOUBLE_CANONICAL_NAME_2)) {
+                valueParsed = Double.parseDouble(value);
+            } else if (type.equals(BOUNDARY_TYPE_CANONICAL_NAME)) {
+                valueParsed = BoundaryType.getType(value);
+            } else {
+                throw new RemotingCommandException("the custom field <" + fieldName + "> type is not supported");
+            }
+
+            field.set(objectHeader, valueParsed);
+
+        } catch (Throwable e) {
+            log.error("Failed field [{}] decoding", fieldName, e);
+        }
+    }
+
+    private void decodeCommandCustomHeader(Class<? extends CommandCustomHeader> classHeader, CommandCustomHeader objectHeader) {
+        Field[] fields = getClazzFields(classHeader);
+        for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+
+            String fieldName = field.getName();
+            if (fieldName.startsWith("this")) {
+                continue;
+            }
+
+            decodeCommandCustomHeaderField(field, fieldName, objectHeader);
+        }
     }
 
     //make it able to test
     Field[] getClazzFields(Class<? extends CommandCustomHeader> classHeader) {
         Field[] field = CLASS_HASH_MAP.get(classHeader);
 
-        if (field == null) {
-            Set<Field> fieldList = new HashSet<>();
-            for (Class className = classHeader; className != Object.class; className = className.getSuperclass()) {
-                Field[] fields = className.getDeclaredFields();
-                fieldList.addAll(Arrays.asList(fields));
-            }
-            field = fieldList.toArray(new Field[0]);
-            synchronized (CLASS_HASH_MAP) {
-                CLASS_HASH_MAP.put(classHeader, field);
-            }
+        if (field != null) {
+            return field;
+        }
+
+        Set<Field> fieldList = new HashSet<>();
+        for (Class className = classHeader; className != Object.class; className = className.getSuperclass()) {
+            Field[] fields = className.getDeclaredFields();
+            fieldList.addAll(Arrays.asList(fields));
+        }
+        field = fieldList.toArray(new Field[0]);
+        synchronized (CLASS_HASH_MAP) {
+            CLASS_HASH_MAP.put(classHeader, field);
         }
         return field;
     }
@@ -418,30 +448,40 @@ public class RemotingCommand {
     }
 
     public void makeCustomHeaderToNet() {
-        if (this.customHeader != null) {
-            Field[] fields = getClazzFields(customHeader.getClass());
-            if (null == this.extFields) {
-                this.extFields = new HashMap<>();
+        if (this.customHeader == null) {
+            return;
+        }
+
+        Field[] fields = getClazzFields(customHeader.getClass());
+        if (null == this.extFields) {
+            this.extFields = new HashMap<>();
+        }
+
+        for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
             }
 
-            for (Field field : fields) {
-                if (!Modifier.isStatic(field.getModifiers())) {
-                    String name = field.getName();
-                    if (!name.startsWith("this")) {
-                        Object value = null;
-                        try {
-                            field.setAccessible(true);
-                            value = field.get(this.customHeader);
-                        } catch (Exception e) {
-                            log.error("Failed to access field [{}]", name, e);
-                        }
+            addFieldToExtFields(field);
+        }
+    }
 
-                        if (value != null) {
-                            this.extFields.put(name, value.toString());
-                        }
-                    }
-                }
-            }
+    private void addFieldToExtFields(Field field) {
+        String name = field.getName();
+        if (name.startsWith("this")) {
+            return;
+        }
+
+        Object value = null;
+        try {
+            field.setAccessible(true);
+            value = field.get(this.customHeader);
+        } catch (Exception e) {
+            log.error("Failed to access field [{}]", name, e);
+        }
+
+        if (value != null) {
+            this.extFields.put(name, value.toString());
         }
     }
 

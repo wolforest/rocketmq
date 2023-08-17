@@ -14,11 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store;
+package org.apache.rocketmq.store.commitlog;
 
 import java.nio.ByteBuffer;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.store.AppendMessageResult;
+import org.apache.rocketmq.store.PutMessageContext;
 
 /**
  * Write messages callback interface

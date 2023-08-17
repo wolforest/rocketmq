@@ -20,7 +20,7 @@ import com.google.common.hash.Hashing;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.sdk.metrics.InstrumentSelector;
-import io.opentelemetry.sdk.metrics.View;
+import io.opentelemetry.sdk.metrics.ViewBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -64,6 +64,7 @@ import org.apache.rocketmq.common.utils.ServiceProvider;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
+import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.FlushDiskType;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
@@ -911,7 +912,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     @Override
-    public List<Pair<InstrumentSelector, View>> getMetricsView() {
+    public List<Pair<InstrumentSelector, ViewBuilder>> getMetricsView() {
         return DefaultStoreMetricsManager.getMetricsView();
     }
 
@@ -991,7 +992,7 @@ public class DefaultMessageStore implements MessageStore {
         this.correctLogicOffsetService = new CorrectLogicOffsetService(this);
         this.storeStatsService = new StoreStatsService(getBrokerIdentity());
         this.indexService = new IndexService(this);
-        this.transientStorePool = new TransientStorePool(this);
+        this.transientStorePool = new TransientStorePool(messageStoreConfig.getTransientStorePoolSize(), messageStoreConfig.getMappedFileSizeCommitLog());
     }
 
     private void doRecheckReputOffsetFromCq() throws InterruptedException {
@@ -1410,7 +1411,10 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     public int remainTransientStoreBufferNumbs() {
-        return this.transientStorePool.availableBufferNums();
+        if (this.isTransientStorePoolEnable()) {
+            return this.transientStorePool.availableBufferNums();
+        }
+        return Integer.MAX_VALUE;
     }
 
     @Override

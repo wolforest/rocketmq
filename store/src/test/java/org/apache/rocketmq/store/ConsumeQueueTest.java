@@ -35,7 +35,9 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
+import org.apache.rocketmq.store.queue.CqExtUnit;
 import org.apache.rocketmq.store.queue.CqUnit;
 import org.apache.rocketmq.store.queue.ReferredIterator;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
@@ -59,7 +61,7 @@ public class ConsumeQueueTest {
     private static final String STORE_PATH = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unit_test_store";
     private static final int COMMIT_LOG_FILE_SIZE = 1024 * 8;
     private static final int CQ_FILE_SIZE = 10 * 20;
-    private static final int CQ_EXT_FILE_SIZE = 10 * (ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE + 64);
+    private static final int CQ_EXT_FILE_SIZE = 10 * (CqExtUnit.MIN_EXT_UNIT_SIZE + 64);
 
     private static SocketAddress bornHost;
 
@@ -439,7 +441,7 @@ public class ConsumeQueueTest {
                     assertThat(size).isGreaterThan(0);
                     assertThat(tagsCode).isGreaterThan(0);
 
-                    ConsumeQueueExt.CqExtUnit cqExtUnit = cqUnit.getCqExtUnit();
+                    CqExtUnit cqExtUnit = cqUnit.getCqExtUnit();
                     assertThat(cqExtUnit).isNotNull();
                     assertThat(tagsCode).isEqualTo(cqExtUnit.getTagsCode());
                     assertThat(cqExtUnit.getSize()).isGreaterThan((short) 0);

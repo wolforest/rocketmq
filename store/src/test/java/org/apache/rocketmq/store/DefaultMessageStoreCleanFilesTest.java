@@ -24,6 +24,7 @@ import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.config.FlushDiskType;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.index.IndexFile;
@@ -49,7 +50,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.apache.rocketmq.common.message.MessageDecoder.CHARSET_UTF8;
-import static org.apache.rocketmq.store.ConsumeQueue.CQ_STORE_UNIT_SIZE;
+import static org.apache.rocketmq.store.queue.ConsumeQueue.CQ_STORE_UNIT_SIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;

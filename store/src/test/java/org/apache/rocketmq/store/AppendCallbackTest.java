@@ -32,6 +32,9 @@ import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
+import org.apache.rocketmq.store.commitlog.AppendMessageCallback;
+import org.apache.rocketmq.store.commitlog.CommitLog;
+import org.apache.rocketmq.store.commitlog.DefaultAppendMessageCallback;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -58,7 +61,7 @@ public class AppendCallbackTest {
         //too much reference
         DefaultMessageStore messageStore = new DefaultMessageStore(messageStoreConfig, null, null, new BrokerConfig(), new ConcurrentHashMap<>());
         CommitLog commitLog = new CommitLog(messageStore);
-        callback = commitLog.new DefaultAppendMessageCallback();
+        callback = new DefaultAppendMessageCallback(messageStore, commitLog);
     }
 
     @After

@@ -17,8 +17,6 @@
 
 package org.apache.rocketmq.store.queue;
 
-import org.apache.rocketmq.store.ConsumeQueueExt;
-
 import java.nio.ByteBuffer;
 
 public class CqUnit {
@@ -32,7 +30,7 @@ public class CqUnit {
      * the tagsCode is smaller than 0, it is an invalid tagsCode, which means failed to get cqExtUnit by address
      */
     private long tagsCode;
-    private ConsumeQueueExt.CqExtUnit cqExtUnit;
+    private CqExtUnit cqExtUnit;
     private final ByteBuffer nativeBuffer;
     private final int compactedOffset;
 
@@ -74,11 +72,11 @@ public class CqUnit {
         return !ConsumeQueueExt.isExtAddr(tagsCode);
     }
 
-    public ConsumeQueueExt.CqExtUnit getCqExtUnit() {
+    public CqExtUnit getCqExtUnit() {
         return cqExtUnit;
     }
 
-    public void setCqExtUnit(ConsumeQueueExt.CqExtUnit cqExtUnit) {
+    public void setCqExtUnit(CqExtUnit cqExtUnit) {
         this.cqExtUnit = cqExtUnit;
     }
 

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.bootstrap;
+package org.apache.rocketmq.broker.service;
 
 import com.google.common.collect.Lists;
 import java.util.AbstractMap;

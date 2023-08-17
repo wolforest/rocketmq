@@ -16,6 +16,8 @@
  */
 package org.apache.rocketmq.store;
 
+import org.apache.rocketmq.store.queue.CqExtUnit;
+
 import java.nio.ByteBuffer;
 import java.util.Map;
 
@@ -28,7 +30,7 @@ public interface MessageFilter {
      * @param cqExtUnit extend unit of consume queue
      */
     boolean isMatchedByConsumeQueue(final Long tagsCode,
-        final ConsumeQueueExt.CqExtUnit cqExtUnit);
+        final CqExtUnit cqExtUnit);
 
     /**
      * match by message content which are stored in commit log.

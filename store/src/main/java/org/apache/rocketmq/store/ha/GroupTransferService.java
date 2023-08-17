@@ -25,8 +25,8 @@ import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.CommitLog;
 import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.commitlog.GroupCommitRequest;
 import org.apache.rocketmq.store.PutMessageSpinLock;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.ha.autoswitch.AutoSwitchHAConnection;
@@ -43,15 +43,15 @@ public class GroupTransferService extends ServiceThread {
     private final PutMessageSpinLock lock = new PutMessageSpinLock();
     private final DefaultMessageStore defaultMessageStore;
     private final HAService haService;
-    private volatile List<CommitLog.GroupCommitRequest> requestsWrite = new LinkedList<>();
-    private volatile List<CommitLog.GroupCommitRequest> requestsRead = new LinkedList<>();
+    private volatile List<GroupCommitRequest> requestsWrite = new LinkedList<>();
+    private volatile List<GroupCommitRequest> requestsRead = new LinkedList<>();
 
     public GroupTransferService(final HAService haService, final DefaultMessageStore defaultMessageStore) {
         this.haService = haService;
         this.defaultMessageStore = defaultMessageStore;
     }
 
-    public void putRequest(final CommitLog.GroupCommitRequest request) {
+    public void putRequest(final GroupCommitRequest request) {
         lock.lock();
         try {
             this.requestsWrite.add(request);
@@ -68,7 +68,7 @@ public class GroupTransferService extends ServiceThread {
     private void swapRequests() {
         lock.lock();
         try {
-            List<CommitLog.GroupCommitRequest> tmp = this.requestsWrite;
+            List<GroupCommitRequest> tmp = this.requestsWrite;
             this.requestsWrite = this.requestsRead;
             this.requestsRead = tmp;
         } finally {
@@ -78,7 +78,7 @@ public class GroupTransferService extends ServiceThread {
 
     private void doWaitTransfer() {
         if (!this.requestsRead.isEmpty()) {
-            for (CommitLog.GroupCommitRequest req : this.requestsRead) {
+            for (GroupCommitRequest req : this.requestsRead) {
                 boolean transferOK = false;
 
                 long deadLine = req.getDeadLine();

@@ -14,23 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.rocketmq.broker.schedule;
 
-package org.apache.rocketmq.store;
+public enum ProcessStatus {
+    /**
+     * In process, the processing result has not yet been returned.
+     */
+    RUNNING,
 
-import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.common.message.MessageExt;
+    /**
+     * Put message success.
+     */
+    SUCCESS,
 
-public interface FlushManager {
+    /**
+     * Put message exception. When autoResend is true, the message will be resend.
+     */
+    EXCEPTION,
 
-    void start();
-
-    void shutdown();
-
-    void wakeUpFlush();
-
-    void wakeUpCommit();
-
-    void handleDiskFlush(AppendMessageResult result, PutMessageResult putMessageResult, MessageExt messageExt);
-
-    CompletableFuture<PutMessageStatus> handleDiskFlush(AppendMessageResult result, MessageExt messageExt);
+    /**
+     * Skip put message. When the message cannot be looked, the message will be skipped.
+     */
+    SKIP,
 }

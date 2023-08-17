@@ -27,8 +27,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.SystemClock;
-import org.apache.rocketmq.store.CommitLog;
+import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.commitlog.GroupCommitRequest;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.junit.After;
@@ -176,7 +177,7 @@ public class HAServerTest {
 
     @Test
     public void putRequest_SingleAck() throws IOException, ExecutionException, InterruptedException, TimeoutException {
-        CommitLog.GroupCommitRequest request = new CommitLog.GroupCommitRequest(124, 4000, 1);
+        GroupCommitRequest request = new GroupCommitRequest(124, 4000, 1);
         this.haService.putRequest(request);
 
         assertThat(request.future().get()).isEqualTo(PutMessageStatus.FLUSH_SLAVE_TIMEOUT);
@@ -186,17 +187,17 @@ public class HAServerTest {
         doReturn(124L).when(messageStore).getMasterFlushedOffset();
         setUpOneHAClient(messageStore);
 
-        request = new CommitLog.GroupCommitRequest(124, 4000, 1);
+        request = new GroupCommitRequest(124, 4000, 1);
         this.haService.putRequest(request);
         assertThat(request.future().get()).isEqualTo(PutMessageStatus.PUT_OK);
     }
 
     @Test
     public void putRequest_MultipleAckAndRequests() throws IOException, ExecutionException, InterruptedException {
-        CommitLog.GroupCommitRequest oneAck = new CommitLog.GroupCommitRequest(124, 4000, 2);
+        GroupCommitRequest oneAck = new GroupCommitRequest(124, 4000, 2);
         this.haService.putRequest(oneAck);
 
-        CommitLog.GroupCommitRequest twoAck = new CommitLog.GroupCommitRequest(124, 4000, 3);
+        GroupCommitRequest twoAck = new GroupCommitRequest(124, 4000, 3);
         this.haService.putRequest(twoAck);
 
         DefaultMessageStore messageStore = mockMessageStore();
@@ -212,7 +213,7 @@ public class HAServerTest {
         doReturn(128L).when(messageStore).getMasterFlushedOffset();
         setUpOneHAClient(messageStore);
 
-        twoAck = new CommitLog.GroupCommitRequest(124, 4000, 3);
+        twoAck = new GroupCommitRequest(124, 4000, 3);
         this.haService.putRequest(twoAck);
         assertThat(twoAck.future().get()).isEqualTo(PutMessageStatus.PUT_OK);
     }

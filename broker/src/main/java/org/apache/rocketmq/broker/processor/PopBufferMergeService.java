@@ -35,6 +35,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.DataConverter;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.PutMessageResult;
@@ -119,10 +120,7 @@ public class PopBufferMergeService extends ServiceThread {
         }
 
         this.serving = false;
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-        }
+        ThreadUtils.sleep(2000);
         if (!isShouldRunning()) {
             return;
         }

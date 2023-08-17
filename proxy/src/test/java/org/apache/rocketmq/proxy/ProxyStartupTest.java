@@ -32,7 +32,7 @@ import java.util.Iterator;
 import java.util.UUID;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerStartup;
-import org.apache.rocketmq.broker.bootstrap.BrokerServiceManager;
+import org.apache.rocketmq.broker.service.BrokerServiceManager;
 import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.proxy.config.Configuration;

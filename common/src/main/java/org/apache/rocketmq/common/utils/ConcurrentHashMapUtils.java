@@ -48,7 +48,7 @@ public abstract class ConcurrentHashMapUtils {
 
         V v = map.get(key);
         if (null != v) {
-           return v;
+            return v;
         }
 
         // this bug fix methods maybe cause `func.apply` multiple calls.

@@ -17,7 +17,8 @@
 
 package org.apache.rocketmq.store;
 
-import org.apache.rocketmq.store.CommitLog.GroupCommitRequest;
+import org.apache.rocketmq.store.commitlog.FlushDiskWatcher;
+import org.apache.rocketmq.store.commitlog.GroupCommitRequest;
 import org.junit.Assert;
 import org.junit.Test;
 

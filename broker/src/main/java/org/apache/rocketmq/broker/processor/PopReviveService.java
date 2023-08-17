@@ -47,6 +47,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.DataConverter;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.AppendMessageStatus;
@@ -338,10 +339,7 @@ public class PopReviveService extends ServiceThread {
                 }
                 noMsgCount++;
                 // Fixme: why sleep is useful here?
-                try {
-                    Thread.sleep(100);
-                } catch (Throwable ignore) {
-                }
+                ThreadUtils.sleep(100);
                 if (noMsgCount * 100L > 4 * PopAckConstants.SECOND) {
                     break;
                 } else {

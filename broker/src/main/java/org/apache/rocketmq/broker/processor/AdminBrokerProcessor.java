@@ -59,6 +59,7 @@ import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.UnlockCallback;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.attribute.AttributeParser;
+import org.apache.rocketmq.common.attribute.TopicMessageType;
 import org.apache.rocketmq.common.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.constant.FIleReadaheadMode;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -174,7 +175,6 @@ import org.apache.rocketmq.remoting.rpc.RpcClientUtils;
 import org.apache.rocketmq.remoting.rpc.RpcException;
 import org.apache.rocketmq.remoting.rpc.RpcRequest;
 import org.apache.rocketmq.remoting.rpc.RpcResponse;
-import org.apache.rocketmq.store.ConsumeQueueExt;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.MessageFilter;
 import org.apache.rocketmq.store.MessageStore;
@@ -183,6 +183,7 @@ import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
+import org.apache.rocketmq.store.queue.CqExtUnit;
 import org.apache.rocketmq.store.queue.CqUnit;
 import org.apache.rocketmq.store.queue.ReferredIterator;
 import org.apache.rocketmq.store.timer.TimerCheckpoint;
@@ -438,6 +439,13 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         topicConfig.setOrder(requestHeader.getOrder());
         String attributesModification = requestHeader.getAttributes();
         topicConfig.setAttributes(AttributeParser.parseToMap(attributesModification));
+
+        if (topicConfig.getTopicMessageType() == TopicMessageType.MIXED
+            && !brokerController.getBrokerConfig().isEnableMixedMessageType()) {
+            response.setCode(ResponseCode.SYSTEM_ERROR);
+            response.setRemark("MIXED message type is not supported.");
+            return response;
+        }
 
         try {
             this.brokerController.getTopicConfigManager().updateTopicConfig(topicConfig);
@@ -2547,7 +2555,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 }
 
                 if (cqUnit.getCqExtUnit() != null) {
-                    ConsumeQueueExt.CqExtUnit cqExtUnit = cqUnit.getCqExtUnit();
+                    CqExtUnit cqExtUnit = cqUnit.getCqExtUnit();
                     one.setExtendDataJson(JSON.toJSONString(cqExtUnit));
                     if (cqExtUnit.getFilterBitMap() != null) {
                         one.setBitMap(BitsArray.create(cqExtUnit.getFilterBitMap()).toString());

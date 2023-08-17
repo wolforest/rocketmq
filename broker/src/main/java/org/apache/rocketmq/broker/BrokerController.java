@@ -19,13 +19,13 @@ package org.apache.rocketmq.broker;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import org.apache.rocketmq.acl.AccessValidator;
-import org.apache.rocketmq.broker.bootstrap.BrokerClusterService;
-import org.apache.rocketmq.broker.bootstrap.BrokerMessageService;
-import org.apache.rocketmq.broker.bootstrap.BrokerMetadataService;
-import org.apache.rocketmq.broker.bootstrap.BrokerNettyServer;
-import org.apache.rocketmq.broker.bootstrap.BrokerScheduleService;
-import org.apache.rocketmq.broker.bootstrap.BrokerServiceManager;
-import org.apache.rocketmq.broker.bootstrap.BrokerServiceRegistry;
+import org.apache.rocketmq.broker.service.BrokerClusterService;
+import org.apache.rocketmq.broker.service.BrokerMessageService;
+import org.apache.rocketmq.broker.service.BrokerMetadataService;
+import org.apache.rocketmq.broker.service.BrokerNettyServer;
+import org.apache.rocketmq.broker.service.BrokerScheduleService;
+import org.apache.rocketmq.broker.service.BrokerServiceManager;
+import org.apache.rocketmq.broker.service.BrokerServiceRegistry;
 import org.apache.rocketmq.broker.client.ConsumerManager;
 import org.apache.rocketmq.broker.client.ProducerManager;
 import org.apache.rocketmq.broker.client.net.Broker2Client;
@@ -164,6 +164,8 @@ public class BrokerController {
         if (brokerConfig.isSkipPreOnline()) {
             registerBroker();
         }
+
+        this.brokerScheduleService.refreshMetadata();
     }
 
     public BrokerIdentity getBrokerIdentity() {

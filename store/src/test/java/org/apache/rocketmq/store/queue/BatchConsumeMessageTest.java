@@ -39,7 +39,6 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
-import org.apache.rocketmq.store.ConsumeQueueExt;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.GetMessageStatus;
@@ -506,7 +505,7 @@ public class BatchConsumeMessageTest extends QueueTestBase {
         ConsumeQueueInterface consumeQueue = messageStore.findConsumeQueue(topic, 0);
         MessageFilter filter = new MessageFilter() {
             @Override
-            public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+            public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
                 return tagsCode == "TagA".hashCode();
             }
 
@@ -532,7 +531,7 @@ public class BatchConsumeMessageTest extends QueueTestBase {
         ConsumeQueueInterface cq = messageStore.findConsumeQueue(topic, 0);
         MessageFilter filter = new MessageFilter() {
             @Override
-            public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+            public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
                 return tagsCode == "TagA".hashCode();
             }
 
@@ -562,7 +561,7 @@ public class BatchConsumeMessageTest extends QueueTestBase {
         ConsumeQueueInterface cq = messageStore.findConsumeQueue(topic, 0);
         MessageFilter filter = new MessageFilter() {
             @Override
-            public boolean isMatchedByConsumeQueue(Long tagsCode, ConsumeQueueExt.CqExtUnit cqExtUnit) {
+            public boolean isMatchedByConsumeQueue(Long tagsCode, CqExtUnit cqExtUnit) {
                 return tagsCode == "TagA".hashCode();
             }
 

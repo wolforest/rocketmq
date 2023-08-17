@@ -17,7 +17,7 @@
 package org.apache.rocketmq.store.queue;
 
 import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.store.CommitLog;
+import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;

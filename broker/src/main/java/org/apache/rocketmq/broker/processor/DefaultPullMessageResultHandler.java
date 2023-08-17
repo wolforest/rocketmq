@@ -110,110 +110,22 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         processor.tryCommitOffset(brokerAllowSuspend, requestHeader, getMessageResult.getNextBeginOffset(),
             clientAddress);
 
+
+        return formatResponseByCode(requestHeader, request, subscriptionGroupConfig, brokerAllowSuspend, channel, response, responseHeader, subscriptionData, messageFilter, getMessageResult);
+    }
+
+    private RemotingCommand formatResponseByCode(PullMessageRequestHeader requestHeader, RemotingCommand request, SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, Channel channel, RemotingCommand response,  PullMessageResponseHeader responseHeader, SubscriptionData subscriptionData, MessageFilter messageFilter, GetMessageResult getMessageResult) {
         switch (response.getCode()) {
             case ResponseCode.SUCCESS:
-                this.brokerController.getBrokerStatsManager().incGroupGetNums(requestHeader.getConsumerGroup(), requestHeader.getTopic(),
-                    getMessageResult.getMessageCount());
-
-                this.brokerController.getBrokerStatsManager().incGroupGetSize(requestHeader.getConsumerGroup(), requestHeader.getTopic(),
-                    getMessageResult.getBufferTotalSize());
-
-                this.brokerController.getBrokerStatsManager().incBrokerGetNums(requestHeader.getTopic(), getMessageResult.getMessageCount());
-
-                if (!BrokerMetricsManager.isRetryOrDlqTopic(requestHeader.getTopic())) {
-                    Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
-                        .put(LABEL_TOPIC, requestHeader.getTopic())
-                        .put(LABEL_CONSUMER_GROUP, requestHeader.getConsumerGroup())
-                        .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(requestHeader.getTopic()) || MixAll.isSysConsumerGroup(requestHeader.getConsumerGroup()))
-                        .build();
-                    BrokerMetricsManager.messagesOutTotal.add(getMessageResult.getMessageCount(), attributes);
-                    BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);
-                }
-
-                if (!channelIsWritable(channel, requestHeader)) {
-                    getMessageResult.release();
-                    //ignore pull request
-                    return null;
-                }
-
-                if (this.brokerController.getBrokerConfig().isTransferMsgByHeap()) {
-
-                    final long beginTimeMills = this.brokerController.getMessageStore().now();
-                    final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
-                    this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
-                        requestHeader.getTopic(), requestHeader.getQueueId(),
-                        (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
-                    response.setBody(r);
-                    return response;
-                } else {
-                    try {
-                        FileRegion fileRegion =
-                            new ManyMessageTransfer(response.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
-                        RemotingCommand finalResponse = response;
-                        channel.writeAndFlush(fileRegion)
-                            .addListener((ChannelFutureListener) future -> {
-                                getMessageResult.release();
-                                Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
-                                    .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
-                                    .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
-                                    .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
-                                    .build();
-                                RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
-                                if (!future.isSuccess()) {
-                                    log.error("Fail to transfer messages from page cache to {}", channel.remoteAddress(), future.cause());
-                                }
-                            });
-                    } catch (Throwable e) {
-                        log.error("Error occurred when transferring messages from page cache", e);
-                        getMessageResult.release();
-                    }
-                    return null;
-                }
+                return handleSuccess(requestHeader, request, channel, response, getMessageResult);
             case ResponseCode.PULL_NOT_FOUND:
-                final boolean hasSuspendFlag = PullSysFlag.hasSuspendFlag(requestHeader.getSysFlag());
-                final long suspendTimeoutMillisLong = hasSuspendFlag ? requestHeader.getSuspendTimeoutMillis() : 0;
-
-                if (brokerAllowSuspend && hasSuspendFlag) {
-                    long pollingTimeMills = suspendTimeoutMillisLong;
-                    if (!this.brokerController.getBrokerConfig().isLongPollingEnable()) {
-                        pollingTimeMills = this.brokerController.getBrokerConfig().getShortPollingTimeMills();
-                    }
-
-                    String topic = requestHeader.getTopic();
-                    long offset = requestHeader.getQueueOffset();
-                    int queueId = requestHeader.getQueueId();
-                    PullRequest pullRequest = new PullRequest(request, channel, pollingTimeMills,
-                        this.brokerController.getMessageStore().now(), offset, subscriptionData, messageFilter);
-                    this.brokerController.getBrokerNettyServer().getPullRequestHoldService().suspendPullRequest(topic, queueId, pullRequest);
+                if (!handlePullNotFound(requestHeader, brokerAllowSuspend, request, channel, subscriptionData, messageFilter)) {
                     return null;
                 }
             case ResponseCode.PULL_RETRY_IMMEDIATELY:
                 break;
             case ResponseCode.PULL_OFFSET_MOVED:
-                if (this.brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE
-                    || this.brokerController.getMessageStoreConfig().isOffsetCheckInSlave()) {
-                    MessageQueue mq = new MessageQueue();
-                    mq.setTopic(requestHeader.getTopic());
-                    mq.setQueueId(requestHeader.getQueueId());
-                    mq.setBrokerName(this.brokerController.getBrokerConfig().getBrokerName());
-
-                    OffsetMovedEvent event = new OffsetMovedEvent();
-                    event.setConsumerGroup(requestHeader.getConsumerGroup());
-                    event.setMessageQueue(mq);
-                    event.setOffsetRequest(requestHeader.getQueueOffset());
-                    event.setOffsetNew(getMessageResult.getNextBeginOffset());
-                    log.warn(
-                        "PULL_OFFSET_MOVED:correction offset. topic={}, groupId={}, requestOffset={}, newOffset={}, suggestBrokerId={}",
-                        requestHeader.getTopic(), requestHeader.getConsumerGroup(), event.getOffsetRequest(), event.getOffsetNew(),
-                        responseHeader.getSuggestWhichBrokerId());
-                } else {
-                    responseHeader.setSuggestWhichBrokerId(subscriptionGroupConfig.getBrokerId());
-                    response.setCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
-                    log.warn("PULL_OFFSET_MOVED:none correction. topic={}, groupId={}, requestOffset={}, suggestBrokerId={}",
-                        requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueOffset(),
-                        responseHeader.getSuggestWhichBrokerId());
-                }
-
+                handlePullOffsetMoved(requestHeader, responseHeader, response, subscriptionGroupConfig, getMessageResult);
                 break;
             default:
                 log.warn("[BUG] impossible result code of get message: {}", response.getCode());
@@ -223,15 +135,132 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         return response;
     }
 
-    private boolean channelIsWritable(Channel channel, PullMessageRequestHeader requestHeader) {
-        if (this.brokerController.getBrokerConfig().isEnableNetWorkFlowControl()) {
-            if (!channel.isWritable()) {
-                log.warn("channel {} not writable ,cid {}", channel.remoteAddress(), requestHeader.getConsumerGroup());
-                return false;
-            }
+    private RemotingCommand handleSuccess(PullMessageRequestHeader requestHeader, RemotingCommand request, Channel channel, RemotingCommand response, GetMessageResult getMessageResult) {
+        this.brokerController.getBrokerStatsManager().incGroupGetNums(requestHeader.getConsumerGroup(), requestHeader.getTopic(),
+            getMessageResult.getMessageCount());
 
+        this.brokerController.getBrokerStatsManager().incGroupGetSize(requestHeader.getConsumerGroup(), requestHeader.getTopic(),
+            getMessageResult.getBufferTotalSize());
+
+        this.brokerController.getBrokerStatsManager().incBrokerGetNums(requestHeader.getTopic(), getMessageResult.getMessageCount());
+
+        if (!BrokerMetricsManager.isRetryOrDlqTopic(requestHeader.getTopic())) {
+            Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
+                .put(LABEL_TOPIC, requestHeader.getTopic())
+                .put(LABEL_CONSUMER_GROUP, requestHeader.getConsumerGroup())
+                .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(requestHeader.getTopic()) || MixAll.isSysConsumerGroup(requestHeader.getConsumerGroup()))
+                .build();
+            BrokerMetricsManager.messagesOutTotal.add(getMessageResult.getMessageCount(), attributes);
+            BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);
         }
-        return true;
+
+        if (!channelIsWritable(channel, requestHeader)) {
+            getMessageResult.release();
+            //ignore pull request
+            return null;
+        }
+
+        if (this.brokerController.getBrokerConfig().isTransferMsgByHeap()) {
+            return handleTransferMsgByHeap(requestHeader, response, getMessageResult);
+        } else {
+            return handleSuccessMsg(request, channel, response, getMessageResult);
+        }
+    }
+
+    private RemotingCommand handleSuccessMsg(RemotingCommand request, Channel channel, RemotingCommand response, GetMessageResult getMessageResult) {
+        try {
+            FileRegion fileRegion =
+                new ManyMessageTransfer(response.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
+            RemotingCommand finalResponse = response;
+            channel.writeAndFlush(fileRegion)
+                .addListener((ChannelFutureListener) future -> {
+                    getMessageResult.release();
+                    Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
+                        .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
+                        .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
+                        .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
+                        .build();
+                    RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
+                    if (!future.isSuccess()) {
+                        log.error("Fail to transfer messages from page cache to {}", channel.remoteAddress(), future.cause());
+                    }
+                });
+        } catch (Throwable e) {
+            log.error("Error occurred when transferring messages from page cache", e);
+            getMessageResult.release();
+        }
+        return null;
+    }
+
+    private RemotingCommand handleTransferMsgByHeap(PullMessageRequestHeader requestHeader, RemotingCommand response, GetMessageResult getMessageResult) {
+        final long beginTimeMills = this.brokerController.getMessageStore().now();
+        final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
+        this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
+            requestHeader.getTopic(), requestHeader.getQueueId(),
+            (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
+        response.setBody(r);
+        return response;
+    }
+
+    private boolean handlePullNotFound(PullMessageRequestHeader requestHeader, boolean brokerAllowSuspend, RemotingCommand request, Channel channel, SubscriptionData subscriptionData, MessageFilter messageFilter) {
+        final boolean hasSuspendFlag = PullSysFlag.hasSuspendFlag(requestHeader.getSysFlag());
+        final long suspendTimeoutMillisLong = hasSuspendFlag ? requestHeader.getSuspendTimeoutMillis() : 0;
+
+        if (!brokerAllowSuspend || !hasSuspendFlag) {
+            return true;
+        }
+
+        long pollingTimeMills = suspendTimeoutMillisLong;
+        if (!this.brokerController.getBrokerConfig().isLongPollingEnable()) {
+            pollingTimeMills = this.brokerController.getBrokerConfig().getShortPollingTimeMills();
+        }
+
+        String topic = requestHeader.getTopic();
+        long offset = requestHeader.getQueueOffset();
+        int queueId = requestHeader.getQueueId();
+        PullRequest pullRequest = new PullRequest(request, channel, pollingTimeMills,
+            this.brokerController.getMessageStore().now(), offset, subscriptionData, messageFilter);
+        this.brokerController.getBrokerNettyServer().getPullRequestHoldService().suspendPullRequest(topic, queueId, pullRequest);
+        return false;
+    }
+
+    private void handlePullOffsetMoved(PullMessageRequestHeader requestHeader, PullMessageResponseHeader responseHeader, RemotingCommand response, SubscriptionGroupConfig subscriptionGroupConfig, GetMessageResult getMessageResult) {
+        if (this.brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE
+            || this.brokerController.getMessageStoreConfig().isOffsetCheckInSlave()) {
+            MessageQueue mq = new MessageQueue();
+            mq.setTopic(requestHeader.getTopic());
+            mq.setQueueId(requestHeader.getQueueId());
+            mq.setBrokerName(this.brokerController.getBrokerConfig().getBrokerName());
+
+            OffsetMovedEvent event = new OffsetMovedEvent();
+            event.setConsumerGroup(requestHeader.getConsumerGroup());
+            event.setMessageQueue(mq);
+            event.setOffsetRequest(requestHeader.getQueueOffset());
+            event.setOffsetNew(getMessageResult.getNextBeginOffset());
+            log.warn(
+                "PULL_OFFSET_MOVED:correction offset. topic={}, groupId={}, requestOffset={}, newOffset={}, suggestBrokerId={}",
+                requestHeader.getTopic(), requestHeader.getConsumerGroup(), event.getOffsetRequest(), event.getOffsetNew(),
+                responseHeader.getSuggestWhichBrokerId());
+        } else {
+            responseHeader.setSuggestWhichBrokerId(subscriptionGroupConfig.getBrokerId());
+            response.setCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
+            log.warn("PULL_OFFSET_MOVED:none correction. topic={}, groupId={}, requestOffset={}, suggestBrokerId={}",
+                requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueOffset(),
+                responseHeader.getSuggestWhichBrokerId());
+        }
+    }
+
+    private boolean channelIsWritable(Channel channel, PullMessageRequestHeader requestHeader) {
+        if (!this.brokerController.getBrokerConfig().isEnableNetWorkFlowControl()) {
+            return true;
+        }
+
+        if (channel.isWritable()) {
+            return true;
+        }
+
+        log.warn("channel {} not writable ,cid {}", channel.remoteAddress(), requestHeader.getConsumerGroup());
+        return false;
     }
 
     protected byte[] readGetMessageResult(final GetMessageResult getMessageResult, final String group,
