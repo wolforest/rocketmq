@@ -103,11 +103,9 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         sysFlag = PullSysFlag.clearSuspendFlag(sysFlag);
         sysFlag = PullSysFlag.clearCommitOffsetFlag(sysFlag);
         requestHeader.setSysFlag(sysFlag);
-
     }
 
-    private RemotingCommand rewriteRequestForStaticTopic(PullMessageRequestHeader requestHeader,
-        TopicQueueMappingContext mappingContext) {
+    private RemotingCommand rewriteRequestForStaticTopic(PullMessageRequestHeader requestHeader, TopicQueueMappingContext mappingContext) {
         try {
             if (mappingContext.getMappingDetail() == null) {
                 return null;
@@ -141,12 +139,11 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             }
 
             PullMessageResponseHeader responseHeader = (PullMessageResponseHeader) rpcResponse.getHeader();
-            {
-                RemotingCommand rewriteResult = rewriteResponseForStaticTopic(requestHeader, responseHeader, mappingContext, rpcResponse.getCode());
-                if (rewriteResult != null) {
-                    return rewriteResult;
-                }
+            RemotingCommand rewriteResult = rewriteResponseForStaticTopic(requestHeader, responseHeader, mappingContext, rpcResponse.getCode());
+            if (rewriteResult != null) {
+                return rewriteResult;
             }
+
             return RpcClientUtils.createCommandForRpcResponse(rpcResponse);
         } catch (Throwable t) {
             LOGGER.warn("", t);
@@ -154,9 +151,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         }
     }
 
-    protected RemotingCommand rewriteResponseForStaticTopic(PullMessageRequestHeader requestHeader,
-        PullMessageResponseHeader responseHeader,
-        TopicQueueMappingContext mappingContext, final int code) {
+    protected RemotingCommand rewriteResponseForStaticTopic(PullMessageRequestHeader requestHeader, PullMessageResponseHeader responseHeader, TopicQueueMappingContext mappingContext, final int code) {
         try {
             if (mappingContext.getMappingDetail() == null) {
                 return null;
