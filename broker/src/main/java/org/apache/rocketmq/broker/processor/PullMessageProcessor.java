@@ -695,14 +695,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
     protected void composeResponseHeader(PullMessageRequestHeader requestHeader, GetMessageResult getMessageResult,
         int topicSysFlag, SubscriptionGroupConfig subscriptionGroupConfig, RemotingCommand response,
         String clientAddress) {
-        final PullMessageResponseHeader responseHeader = (PullMessageResponseHeader) response.readCustomHeader();
-        response.setRemark(getMessageResult.getStatus().name());
-        responseHeader.setNextBeginOffset(getMessageResult.getNextBeginOffset());
-        responseHeader.setMinOffset(getMessageResult.getMinOffset());
-        // this does not need to be modified since it's not an accurate value under logical queue.
-        responseHeader.setMaxOffset(getMessageResult.getMaxOffset());
-        responseHeader.setTopicSysFlag(topicSysFlag);
-        responseHeader.setGroupSysFlag(subscriptionGroupConfig.getGroupSysFlag());
+        final PullMessageResponseHeader responseHeader = initPullMessageResponseHeader(getMessageResult, topicSysFlag, subscriptionGroupConfig, response);
 
         switch (getMessageResult.getStatus()) {
             case FOUND:
@@ -714,19 +707,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                 break;
             case NO_MATCHED_LOGIC_QUEUE:
             case NO_MESSAGE_IN_QUEUE:
-                if (0 != requestHeader.getQueueOffset()) {
-                    response.setCode(ResponseCode.PULL_OFFSET_MOVED);
-                    // XXX: warn and notify me
-                    LOGGER.info("the broker stores no queue data, fix the request offset {} to {}, Topic: {} QueueId: {} Consumer Group: {}",
-                        requestHeader.getQueueOffset(),
-                        getMessageResult.getNextBeginOffset(),
-                        requestHeader.getTopic(),
-                        requestHeader.getQueueId(),
-                        requestHeader.getConsumerGroup()
-                    );
-                } else {
-                    response.setCode(ResponseCode.PULL_NOT_FOUND);
-                }
+                response.setCode(getNoMessageInQueueCode(getMessageResult, requestHeader));
                 break;
             case OFFSET_FOUND_NULL:
             case OFFSET_OVERFLOW_ONE:
@@ -754,6 +735,41 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                 break;
         }
 
+        setSuggestWhichBrokerId(requestHeader, getMessageResult, responseHeader, response, subscriptionGroupConfig);
+    }
+
+    private int getNoMessageInQueueCode(GetMessageResult getMessageResult, PullMessageRequestHeader requestHeader) {
+        if (0 == requestHeader.getQueueOffset()) {
+            return ResponseCode.PULL_NOT_FOUND;
+        }
+
+        // XXX: warn and notify me
+        LOGGER.info("the broker stores no queue data, fix the request offset {} to {}, Topic: {} QueueId: {} Consumer Group: {}",
+            requestHeader.getQueueOffset(),
+            getMessageResult.getNextBeginOffset(),
+            requestHeader.getTopic(),
+            requestHeader.getQueueId(),
+            requestHeader.getConsumerGroup()
+        );
+        return ResponseCode.PULL_OFFSET_MOVED;
+    }
+
+    private PullMessageResponseHeader initPullMessageResponseHeader(GetMessageResult getMessageResult,
+        int topicSysFlag, SubscriptionGroupConfig subscriptionGroupConfig, RemotingCommand response) {
+
+        final PullMessageResponseHeader responseHeader = (PullMessageResponseHeader) response.readCustomHeader();
+        response.setRemark(getMessageResult.getStatus().name());
+        responseHeader.setNextBeginOffset(getMessageResult.getNextBeginOffset());
+        responseHeader.setMinOffset(getMessageResult.getMinOffset());
+        // this does not need to be modified since it's not an accurate value under logical queue.
+        responseHeader.setMaxOffset(getMessageResult.getMaxOffset());
+        responseHeader.setTopicSysFlag(topicSysFlag);
+        responseHeader.setGroupSysFlag(subscriptionGroupConfig.getGroupSysFlag());
+
+        return responseHeader;
+    }
+
+    private void setSuggestWhichBrokerId(PullMessageRequestHeader requestHeader, GetMessageResult getMessageResult, PullMessageResponseHeader responseHeader, RemotingCommand response, SubscriptionGroupConfig subscriptionGroupConfig) {
         if (this.brokerController.getBrokerConfig().isSlaveReadEnable() && !this.brokerController.getBrokerConfig().isInBrokerContainer()) {
             // consume too slow ,redirect to another machine
             if (getMessageResult.isSuggestPullingFromSlave()) {
@@ -783,7 +799,6 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                 }
             }
         }
-
     }
 
     protected void executeConsumeMessageHookBefore(RemotingCommand request, PullMessageRequestHeader requestHeader,
@@ -905,7 +920,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         this.brokerController.getBrokerNettyServer().getPullMessageExecutor().submit(new RequestTask(run, channel, request));
     }
 
-    public void writeResponse(final Channel channel, final RemotingCommand request, RemotingCommand response) {
+    private void writeResponse(final Channel channel, final RemotingCommand request, RemotingCommand response) {
         if (response == null) {
             return;
         }
