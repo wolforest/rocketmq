@@ -30,6 +30,7 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.index.IndexFile;
 import org.apache.rocketmq.store.index.IndexService;
 import org.apache.rocketmq.store.logfile.MappedFile;
+import org.apache.rocketmq.store.logfile.MappedFileQueue;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.service.CleanCommitLogService;
 import org.apache.rocketmq.store.service.CleanConsumeQueueService;

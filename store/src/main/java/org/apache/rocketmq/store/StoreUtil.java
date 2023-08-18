@@ -21,6 +21,7 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.logfile.MappedFile;
+import org.apache.rocketmq.store.logfile.MappedFileQueue;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;

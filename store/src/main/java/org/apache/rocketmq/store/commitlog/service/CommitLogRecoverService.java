@@ -22,7 +22,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
-import org.apache.rocketmq.store.MappedFileQueue;
+import org.apache.rocketmq.store.logfile.MappedFileQueue;
 import org.apache.rocketmq.store.logfile.MappedFile;
 
 import java.nio.ByteBuffer;

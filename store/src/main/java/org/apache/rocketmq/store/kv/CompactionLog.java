@@ -31,7 +31,7 @@ import org.apache.rocketmq.store.CompactionAppendMsgCallback;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.GetMessageStatus;
-import org.apache.rocketmq.store.MappedFileQueue;
+import org.apache.rocketmq.store.logfile.MappedFileQueue;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageLock;
