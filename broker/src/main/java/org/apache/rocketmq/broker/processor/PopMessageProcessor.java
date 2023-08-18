@@ -324,6 +324,9 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private void compensateSubscribeData(PopMessageRequestHeader requestHeader) {
+        if (requestHeader.getExp() == null || requestHeader.getExp().length() <= 0) {
+            return;
+        }
         try {
             SubscriptionData subscriptionData = FilterAPI.build(requestHeader.getTopic(), "*", ExpressionType.TAG);
             brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
@@ -361,9 +364,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             if (messageFilter == null) {
                 return response;
             }
-        } else {
-            compensateSubscribeData(requestHeader);
         }
+        compensateSubscribeData(requestHeader);
 
         int randomQ = random.nextInt(100);
         int reviveQid;
