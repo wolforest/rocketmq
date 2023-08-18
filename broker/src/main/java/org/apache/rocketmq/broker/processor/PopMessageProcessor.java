@@ -33,7 +33,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.filter.ConsumerFilterData;
@@ -849,38 +848,6 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         this.brokerController.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId,
             this.brokerController.getMessageStore().now() - storeTimestamp);
         return byteBuffer.array();
-    }
-
-    static class TimedLock {
-        private final AtomicBoolean lock;
-        private volatile long lockTime;
-
-        public TimedLock() {
-            this.lock = new AtomicBoolean(true);
-            this.lockTime = System.currentTimeMillis();
-        }
-
-        public boolean tryLock() {
-            boolean ret = lock.compareAndSet(true, false);
-            if (ret) {
-                this.lockTime = System.currentTimeMillis();
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        public void unLock() {
-            lock.set(true);
-        }
-
-        public boolean isLock() {
-            return !lock.get();
-        }
-
-        public long getLockTime() {
-            return lockTime;
-        }
     }
 
     public class QueueLockManager extends ServiceThread {
