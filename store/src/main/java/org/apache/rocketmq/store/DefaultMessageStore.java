@@ -99,6 +99,7 @@ import org.apache.rocketmq.store.service.PutMessageService;
 import org.apache.rocketmq.store.service.QueryMessageService;
 import org.apache.rocketmq.store.service.ReputMessageService;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.stats.StoreStatsService;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.util.PerfCounter;
 
