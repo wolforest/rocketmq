@@ -119,9 +119,9 @@ public class TopicConfigManager extends ConfigManager {
         addSystemTopic(TopicValidator.RMQ_SYS_TRANS_OP_HALF_TOPIC, 1, 1);
     }
 
-    private int getPerm(boolean on) {
+    private int getPerm(boolean readAndWrite) {
         int perm = PermName.PERM_INHERIT;
-        if (on) {
+        if (readAndWrite) {
             perm |= PermName.PERM_READ | PermName.PERM_WRITE;
         }
         return perm;
