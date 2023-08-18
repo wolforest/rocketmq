@@ -56,7 +56,7 @@ public class PopBufferMergeService extends ServiceThread {
     private int scanTimes = 0;
     private final BrokerController brokerController;
     private final PopMessageProcessor popMessageProcessor;
-    private final PopMessageProcessor.QueueLockManager queueLockManager;
+    private final QueueLockManager queueLockManager;
     private final long interval = 5;
     private final long minute5 = 5 * 60 * 1000;
     private final int countOfMinute1 = (int) (60 * 1000 / interval);

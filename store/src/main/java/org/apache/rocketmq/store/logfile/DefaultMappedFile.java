@@ -36,7 +36,7 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
+
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -846,7 +846,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
 
     public Iterator<SelectMappedBufferResult> iterator(int startPos) {
-        return new Itr(startPos);
+        return new DefaultMappedFileIterator(this, startPos);
     }
 
     public static Unsafe getUnsafe() {
@@ -882,52 +882,6 @@ public class DefaultMappedFile extends AbstractMappedFile {
             log.info("invoke isLoaded0 of file {} error:", file.getAbsolutePath(), e);
         }
         return true;
-    }
-
-    private class Itr implements Iterator<SelectMappedBufferResult> {
-        private int start;
-        private int current;
-        private ByteBuffer buf;
-
-        public Itr(int pos) {
-            this.start = pos;
-            this.current = pos;
-            this.buf = mappedByteBuffer.slice();
-            this.buf.position(start);
-        }
-
-        @Override
-        public boolean hasNext() {
-            return current < getReadPosition();
-        }
-
-        @Override
-        public SelectMappedBufferResult next() {
-            int readPosition = getReadPosition();
-            if (current < readPosition && current >= 0) {
-                if (hold()) {
-                    ByteBuffer byteBuffer = buf.slice();
-                    byteBuffer.position(current);
-                    int size = byteBuffer.getInt(current);
-                    ByteBuffer bufferResult = byteBuffer.slice();
-                    bufferResult.limit(size);
-                    current += size;
-                    return new SelectMappedBufferResult(fileFromOffset + current, bufferResult, size,
-                        DefaultMappedFile.this);
-                }
-            }
-            return null;
-        }
-
-        @Override
-        public void forEachRemaining(Consumer<? super SelectMappedBufferResult> action) {
-            Iterator.super.forEachRemaining(action);
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
     }
 
 }

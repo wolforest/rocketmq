@@ -41,14 +41,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -64,10 +61,11 @@ import org.apache.rocketmq.store.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
-import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.service.AbstractStateService;
+import org.apache.rocketmq.store.timer.service.TimerDequeueGetMessageService;
 import org.apache.rocketmq.store.timer.service.TimerDequeueGetService;
+import org.apache.rocketmq.store.timer.service.TimerDequeuePutMessageService;
 import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
 import org.apache.rocketmq.store.timer.service.TimerEnqueueGetService;
 import org.apache.rocketmq.store.timer.service.TimerEnqueuePutService;
@@ -141,7 +139,7 @@ public class TimerMessageStore {
 
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
     //the dequeue is an asynchronous process, use this flag to track if the status has changed
-    private boolean dequeueStatusChangeFlag = false;
+    public boolean dequeueStatusChangeFlag = false;
 
     private final BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
@@ -211,13 +209,13 @@ public class TimerMessageStore {
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
         dequeueGetMessageServices = new TimerDequeueGetMessageService[getThreadNum];
         for (int i = 0; i < dequeueGetMessageServices.length; i++) {
-            dequeueGetMessageServices[i] = new TimerDequeueGetMessageService();
+            dequeueGetMessageServices[i] = new TimerDequeueGetMessageService(this);
         }
 
         int putThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
         dequeuePutMessageServices = new TimerDequeuePutMessageService[putThreadNum];
         for (int i = 0; i < dequeuePutMessageServices.length; i++) {
-            dequeuePutMessageServices[i] = new TimerDequeuePutMessageService();
+            dequeuePutMessageServices[i] = new TimerDequeuePutMessageService(this);
         }
     }
 
@@ -536,7 +534,7 @@ public class TimerMessageStore {
         pointer.commitReadTimeMs = pointer.currReadTimeMs;
     }
 
-    private boolean isRunning() {
+    public boolean isRunning() {
         return RUNNING == state;
     }
 
@@ -998,7 +996,7 @@ public class TimerMessageStore {
         return lists;
     }
 
-    private MessageExt getMessageByCommitOffset(long offsetPy, int sizePy) {
+    public MessageExt getMessageByCommitOffset(long offsetPy, int sizePy) {
         for (int i = 0; i < 3; i++) {
             MessageExt msgExt = null;
             bufferLocal.get().position(0);
@@ -1273,153 +1271,6 @@ public class TimerMessageStore {
     public PerfCounter.Ticks getPerfCounterTicks() {
         return perfCounterTicks;
     }
-
-
-    public class TimerDequeuePutMessageService extends AbstractStateService {
-
-        @Override
-        public String getServiceName() {
-            return getServiceThreadName() + this.getClass().getSimpleName();
-        }
-
-        @Override
-        public void run() {
-            setState(AbstractStateService.START);
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service start");
-            while (!this.isStopped() || dequeuePutQueue.size() != 0) {
-                try {
-                    setState(AbstractStateService.WAITING);
-                    TimerRequest tr = dequeuePutQueue.poll(10, TimeUnit.MILLISECONDS);
-                    if (null == tr) {
-                        continue;
-                    }
-                    setState(AbstractStateService.RUNNING);
-                    boolean doRes = false;
-                    boolean tmpDequeueChangeFlag = false;
-                    try {
-                        while (!isStopped() && !doRes) {
-                            if (!isRunningDequeue()) {
-                                dequeueStatusChangeFlag = true;
-                                tmpDequeueChangeFlag = true;
-                                break;
-                            }
-                            try {
-                                perfCounterTicks.startTick(DEQUEUE_PUT);
-                                DefaultStoreMetricsManager.incTimerDequeueCount(getRealTopic(tr.getMsg()));
-                                addMetric(tr.getMsg(), -1);
-                                MessageExtBrokerInner msg = convert(tr.getMsg(), tr.getEnqueueTime(), needRoll(tr.getMagic()));
-                                doRes = PUT_NEED_RETRY != doPut(msg, needRoll(tr.getMagic()));
-                                while (!doRes && !isStopped()) {
-                                    if (!isRunningDequeue()) {
-                                        dequeueStatusChangeFlag = true;
-                                        tmpDequeueChangeFlag = true;
-                                        break;
-                                    }
-                                    doRes = PUT_NEED_RETRY != doPut(msg, needRoll(tr.getMagic()));
-                                    Thread.sleep(500L * precisionMs / 1000);
-                                }
-                                perfCounterTicks.endTick(DEQUEUE_PUT);
-                            } catch (Throwable t) {
-                                LOGGER.info("Unknown error", t);
-                                if (storeConfig.isTimerSkipUnknownError()) {
-                                    doRes = true;
-                                } else {
-                                    holdMomentForUnknownError();
-                                }
-                            }
-                        }
-                    } finally {
-                        tr.idempotentRelease(!tmpDequeueChangeFlag);
-                    }
-
-                } catch (Throwable e) {
-                    TimerMessageStore.LOGGER.error("Error occurred in " + getServiceName(), e);
-                }
-            }
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service end");
-            setState(AbstractStateService.END);
-        }
-    }
-
-    public class TimerDequeueGetMessageService extends AbstractStateService {
-
-        @Override
-        public String getServiceName() {
-            return getServiceThreadName() + this.getClass().getSimpleName();
-        }
-
-        @Override
-        public void run() {
-            setState(AbstractStateService.START);
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service start");
-            while (!this.isStopped()) {
-                try {
-                    setState(AbstractStateService.WAITING);
-                    List<TimerRequest> trs = dequeueGetQueue.poll(100L * precisionMs / 1000, TimeUnit.MILLISECONDS);
-                    if (null == trs || trs.size() == 0) {
-                        continue;
-                    }
-                    setState(AbstractStateService.RUNNING);
-                    for (int i = 0; i < trs.size(); ) {
-                        TimerRequest tr = trs.get(i);
-                        boolean doRes = false;
-                        try {
-                            long start = System.currentTimeMillis();
-                            MessageExt msgExt = getMessageByCommitOffset(tr.getOffsetPy(), tr.getSizePy());
-                            if (null != msgExt) {
-                                if (needDelete(tr.getMagic()) && !needRoll(tr.getMagic())) {
-                                    if (msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY) != null && tr.getDeleteList() != null) {
-                                        tr.getDeleteList().add(msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY));
-                                    }
-                                    tr.idempotentRelease();
-                                    doRes = true;
-                                } else {
-                                    String uniqueKey = MessageClientIDSetter.getUniqID(msgExt);
-                                    if (null == uniqueKey) {
-                                        LOGGER.warn("No uniqueKey for msg:{}", msgExt);
-                                    }
-                                    if (null != uniqueKey && tr.getDeleteList() != null && tr.getDeleteList().size() > 0 && tr.getDeleteList().contains(uniqueKey)) {
-                                        doRes = true;
-                                        tr.idempotentRelease();
-                                        perfCounterTicks.getCounter("dequeue_delete").flow(1);
-                                    } else {
-                                        tr.setMsg(msgExt);
-                                        while (!isStopped() && !doRes) {
-                                            doRes = dequeuePutQueue.offer(tr, 3, TimeUnit.SECONDS);
-                                        }
-                                    }
-                                }
-                                perfCounterTicks.getCounter("dequeue_get_msg").flow(System.currentTimeMillis() - start);
-                            } else {
-                                //the tr will never be processed afterwards, so idempotentRelease it
-                                tr.idempotentRelease();
-                                doRes = true;
-                                perfCounterTicks.getCounter("dequeue_get_msg_miss").flow(System.currentTimeMillis() - start);
-                            }
-                        } catch (Throwable e) {
-                            LOGGER.error("Unknown exception", e);
-                            if (storeConfig.isTimerSkipUnknownError()) {
-                                tr.idempotentRelease();
-                                doRes = true;
-                            } else {
-                                holdMomentForUnknownError();
-                            }
-                        } finally {
-                            if (doRes) {
-                                i++;
-                            }
-                        }
-                    }
-                    trs.clear();
-                } catch (Throwable e) {
-                    TimerMessageStore.LOGGER.error("Error occurred in " + getServiceName(), e);
-                }
-            }
-            TimerMessageStore.LOGGER.info(this.getServiceName() + " service end");
-            setState(AbstractStateService.END);
-        }
-    }
-
 
     public boolean needRoll(int magic) {
         return (magic & MAGIC_ROLL) != 0;
