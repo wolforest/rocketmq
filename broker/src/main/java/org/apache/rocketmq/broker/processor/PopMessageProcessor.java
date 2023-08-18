@@ -404,6 +404,92 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return getMessageFuture;
     }
 
+    private boolean handlePollingAction(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse, long restNum) {
+        if (!getMessageResult.getMessageBufferList().isEmpty()) {
+            finalResponse.setCode(ResponseCode.SUCCESS);
+            getMessageResult.setStatus(GetMessageStatus.FOUND);
+            if (restNum > 0) {
+                // all queue pop can not notify specified queue pop, and vice versa
+                popLongPollingService.notifyMessageArriving(requestHeader.getTopic(), requestHeader.getConsumerGroup(),
+                    requestHeader.getQueueId());
+            }
+        } else {
+            PollingResult pollingResult = popLongPollingService.polling(ctx, request, new PollingHeader(requestHeader));
+            if (PollingResult.POLLING_SUC == pollingResult) {
+                return false;
+            } else if (PollingResult.POLLING_FULL == pollingResult) {
+                finalResponse.setCode(ResponseCode.POLLING_FULL);
+            } else {
+                finalResponse.setCode(ResponseCode.POLLING_TIMEOUT);
+            }
+            getMessageResult.setStatus(GetMessageStatus.NO_MESSAGE_IN_QUEUE);
+        }
+
+        return true;
+    }
+
+    private void initResponseHeader(PopMessageResponseHeader responseHeader, PopMessageRequestHeader requestHeader, StringBuilder startOffsetInfo, StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, long restNum) {
+        responseHeader.setInvisibleTime(requestHeader.getInvisibleTime());
+        responseHeader.setPopTime(popTime);
+        responseHeader.setReviveQid(reviveQid);
+        responseHeader.setRestNum(restNum);
+        responseHeader.setStartOffsetInfo(startOffsetInfo.toString());
+        responseHeader.setMsgOffsetInfo(msgOffsetInfo.toString());
+        if (requestHeader.isOrder() && finalOrderCountInfo != null) {
+            responseHeader.setOrderCountInfo(finalOrderCountInfo.toString());
+        }
+    }
+
+    private boolean handleSuccessResponse(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse) {
+        if (this.brokerController.getBrokerConfig().isTransferMsgByHeap()) {
+            final long beginTimeMills = this.brokerController.getMessageStore().now();
+            final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(),
+                requestHeader.getTopic(), requestHeader.getQueueId());
+            this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
+                requestHeader.getTopic(), requestHeader.getQueueId(),
+                (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
+            finalResponse.setBody(r);
+            return true;
+        }
+
+        final GetMessageResult tmpGetMessageResult = getMessageResult;
+        try {
+            FileRegion fileRegion = new ManyMessageTransfer(finalResponse.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
+            ctx.channel().writeAndFlush(fileRegion).addListener((ChannelFutureListener) future -> {
+
+                tmpGetMessageResult.release();
+                Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
+                    .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
+                    .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
+                    .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
+                    .build();
+
+                RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
+                if (!future.isSuccess()) {
+                    POP_LOGGER.error("Fail to transfer messages from page cache to {}", ctx.channel().remoteAddress(), future.cause());
+                }
+            });
+        } catch (Throwable e) {
+            POP_LOGGER.error("Error occurred when transferring messages from page cache", e);
+            getMessageResult.release();
+        }
+
+        return false;
+    }
+
+    private RemotingCommand handleFutureResponse(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse) {
+        switch (finalResponse.getCode()) {
+            case ResponseCode.SUCCESS:
+                if (!handleSuccessResponse(ctx, request, requestHeader, getMessageResult, finalResponse)) {
+                    return null;
+                }
+                break;
+            default:
+                return finalResponse;
+        }
+        return finalResponse;
+    }
+
     private void bindGetMessageFutureCallback(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, CompletableFuture<Long> getMessageFuture, RemotingCommand response, RemotingCommand request) {
 
@@ -411,79 +497,14 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         final RemotingCommand finalResponse = response;
 
         getMessageFuture.thenApply(restNum -> {
-            if (!getMessageResult.getMessageBufferList().isEmpty()) {
-                finalResponse.setCode(ResponseCode.SUCCESS);
-                getMessageResult.setStatus(GetMessageStatus.FOUND);
-                if (restNum > 0) {
-                    // all queue pop can not notify specified queue pop, and vice versa
-                    popLongPollingService.notifyMessageArriving(requestHeader.getTopic(), requestHeader.getConsumerGroup(),
-                        requestHeader.getQueueId());
-                }
-            } else {
-                PollingResult pollingResult = popLongPollingService.polling(ctx, request, new PollingHeader(requestHeader));
-                if (PollingResult.POLLING_SUC == pollingResult) {
-                    return null;
-                } else if (PollingResult.POLLING_FULL == pollingResult) {
-                    finalResponse.setCode(ResponseCode.POLLING_FULL);
-                } else {
-                    finalResponse.setCode(ResponseCode.POLLING_TIMEOUT);
-                }
-                getMessageResult.setStatus(GetMessageStatus.NO_MESSAGE_IN_QUEUE);
+            if (!handlePollingAction(ctx, request, requestHeader, getMessageResult, finalResponse, restNum)) {
+                return null;
             }
-            responseHeader.setInvisibleTime(requestHeader.getInvisibleTime());
-            responseHeader.setPopTime(popTime);
-            responseHeader.setReviveQid(reviveQid);
-            responseHeader.setRestNum(restNum);
-            responseHeader.setStartOffsetInfo(startOffsetInfo.toString());
-            responseHeader.setMsgOffsetInfo(msgOffsetInfo.toString());
-            if (requestHeader.isOrder() && finalOrderCountInfo != null) {
-                responseHeader.setOrderCountInfo(finalOrderCountInfo.toString());
-            }
+            initResponseHeader(responseHeader, requestHeader, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo, reviveQid, popTime, restNum);
             finalResponse.setRemark(getMessageResult.getStatus().name());
-            switch (finalResponse.getCode()) {
-                case ResponseCode.SUCCESS:
-                    if (this.brokerController.getBrokerConfig().isTransferMsgByHeap()) {
-                        final long beginTimeMills = this.brokerController.getMessageStore().now();
-                        final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(),
-                            requestHeader.getTopic(), requestHeader.getQueueId());
-                        this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
-                            requestHeader.getTopic(), requestHeader.getQueueId(),
-                            (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
-                        finalResponse.setBody(r);
-                    } else {
-                        final GetMessageResult tmpGetMessageResult = getMessageResult;
-                        try {
-                            FileRegion fileRegion =
-                                new ManyMessageTransfer(finalResponse.encodeHeader(getMessageResult.getBufferTotalSize()),
-                                    getMessageResult);
-                            ctx.channel().writeAndFlush(fileRegion)
-                                .addListener((ChannelFutureListener) future -> {
-                                    tmpGetMessageResult.release();
-                                    Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
-                                        .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
-                                        .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
-                                        .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
-                                        .build();
-                                    RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
-                                    if (!future.isSuccess()) {
-                                        POP_LOGGER.error("Fail to transfer messages from page cache to {}",
-                                            ctx.channel().remoteAddress(), future.cause());
-                                    }
-                                });
-                        } catch (Throwable e) {
-                            POP_LOGGER.error("Error occurred when transferring messages from page cache", e);
-                            getMessageResult.release();
-                        }
 
-                        return null;
-                    }
-                    break;
-                default:
-                    return finalResponse;
-            }
-            return finalResponse;
+            return handleFutureResponse(ctx, request, requestHeader, getMessageResult, finalResponse);
         }).thenAccept(result -> NettyRemotingAbstract.writeResponse(ctx.channel(), request, result));
-
     }
 
     private StringBuilder initOrderCountInfo(PopMessageRequestHeader requestHeader) {
