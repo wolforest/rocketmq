@@ -109,7 +109,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
     /**
      * static topic handler
-     * @link docs/cn/statictopic/RocketMQ_Static_Topic_Logic_Queue_设计.md
+     * @link docs/cn/statictopic/RocketMQ_Static_Topic_Logic_Queue_design.md
      * @param requestHeader requestHeader
      * @param mappingContext mappingContext
      * @return Response
@@ -162,7 +162,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
     /**
      * static topic handler
-     * @link docs/cn/statictopic/RocketMQ_Static_Topic_Logic_Queue_设计.md
+     * @link docs/cn/statictopic/RocketMQ_Static_Topic_Logic_Queue_design.md
      * @param requestHeader requestHeader
      * @param responseHeader responseHeader
      * @param mappingContext mappingContext

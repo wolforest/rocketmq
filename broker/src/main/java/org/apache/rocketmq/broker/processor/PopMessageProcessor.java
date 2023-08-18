@@ -287,6 +287,42 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
     }
 
+    private ExpressionMessageFilter initExpressionMessageFilter(PopMessageRequestHeader requestHeader, RemotingCommand response) {
+        try {
+            SubscriptionData subscriptionData = FilterAPI.build(requestHeader.getTopic(), requestHeader.getExp(), requestHeader.getExpType());
+            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
+                requestHeader.getTopic(), subscriptionData);
+
+            String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup());
+            SubscriptionData retrySubscriptionData = FilterAPI.build(retryTopic, SubscriptionData.SUB_ALL, requestHeader.getExpType());
+            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
+                retryTopic, retrySubscriptionData);
+
+            ConsumerFilterData consumerFilterData = null;
+            if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
+                consumerFilterData = ConsumerFilterManager.build(
+                    requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getExp(),
+                    requestHeader.getExpType(), System.currentTimeMillis()
+                );
+                if (consumerFilterData == null) {
+                    POP_LOGGER.warn("Parse the consumer's subscription[{}] failed, group: {}",
+                        requestHeader.getExp(), requestHeader.getConsumerGroup());
+                    response.setCode(ResponseCode.SUBSCRIPTION_PARSE_FAILED);
+                    response.setRemark("parse the consumer's subscription failed");
+                    return null;
+                }
+            }
+            return new ExpressionMessageFilter(subscriptionData, consumerFilterData,
+                brokerController.getConsumerFilterManager());
+        } catch (Exception e) {
+            POP_LOGGER.warn("Parse the consumer's subscription[{}] error, group: {}", requestHeader.getExp(),
+                requestHeader.getConsumerGroup());
+            response.setCode(ResponseCode.SUBSCRIPTION_PARSE_FAILED);
+            response.setRemark("parse the consumer's subscription failed");
+            return null;
+        }
+    }
+
     @Override
     public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         RemotingCommand response = RemotingCommand.createResponseCommand(PopMessageResponseHeader.class);
@@ -306,37 +342,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         ExpressionMessageFilter messageFilter = null;
         if (requestHeader.getExp() != null && requestHeader.getExp().length() > 0) {
-            try {
-                SubscriptionData subscriptionData = FilterAPI.build(requestHeader.getTopic(), requestHeader.getExp(), requestHeader.getExpType());
-                brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
-                    requestHeader.getTopic(), subscriptionData);
-
-                String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup());
-                SubscriptionData retrySubscriptionData = FilterAPI.build(retryTopic, SubscriptionData.SUB_ALL, requestHeader.getExpType());
-                brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
-                    retryTopic, retrySubscriptionData);
-
-                ConsumerFilterData consumerFilterData = null;
-                if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
-                    consumerFilterData = ConsumerFilterManager.build(
-                        requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getExp(),
-                        requestHeader.getExpType(), System.currentTimeMillis()
-                    );
-                    if (consumerFilterData == null) {
-                        POP_LOGGER.warn("Parse the consumer's subscription[{}] failed, group: {}",
-                            requestHeader.getExp(), requestHeader.getConsumerGroup());
-                        response.setCode(ResponseCode.SUBSCRIPTION_PARSE_FAILED);
-                        response.setRemark("parse the consumer's subscription failed");
-                        return response;
-                    }
-                }
-                messageFilter = new ExpressionMessageFilter(subscriptionData, consumerFilterData,
-                    brokerController.getConsumerFilterManager());
-            } catch (Exception e) {
-                POP_LOGGER.warn("Parse the consumer's subscription[{}] error, group: {}", requestHeader.getExp(),
-                    requestHeader.getConsumerGroup());
-                response.setCode(ResponseCode.SUBSCRIPTION_PARSE_FAILED);
-                response.setRemark("parse the consumer's subscription failed");
+            messageFilter = initExpressionMessageFilter(requestHeader, response);
+            if (messageFilter == null) {
                 return response;
             }
         } else {
