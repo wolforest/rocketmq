@@ -24,13 +24,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.FileRegion;
 import io.opentelemetry.api.common.Attributes;
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -47,7 +44,6 @@ import org.apache.rocketmq.broker.pagecache.ManyMessageTransfer;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.PopAckConstants;
-import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -97,8 +93,8 @@ import static org.apache.rocketmq.remoting.metrics.RemotingMetricsConstant.LABEL
  * @link https://github.com/apache/rocketmq/wiki/%5BRIP-19%5D-Server-side-rebalance,--lightweight-consumer-client-support
  */
 public class PopMessageProcessor implements NettyRequestProcessor {
-    private static final Logger POP_LOGGER =
-        LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
+    private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
+
     private final BrokerController brokerController;
     private final Random random = new Random(System.currentTimeMillis());
     String reviveTopic;
@@ -113,7 +109,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         this.brokerController = brokerController;
         this.reviveTopic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
         this.popLongPollingService = new PopLongPollingService(brokerController, this);
-        this.queueLockManager = new QueueLockManager();
+        this.queueLockManager = new QueueLockManager(this);
         this.popBufferMergeService = new PopBufferMergeService(this.brokerController, this);
         this.ckMessageNumber = new AtomicLong();
     }
@@ -850,92 +846,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return byteBuffer.array();
     }
 
-    public class QueueLockManager extends ServiceThread {
-        private final ConcurrentHashMap<String, TimedLock> expiredLocalCache = new ConcurrentHashMap<>(100000);
-
-        public String buildLockKey(String topic, String consumerGroup, int queueId) {
-            return topic + PopAckConstants.SPLIT + consumerGroup + PopAckConstants.SPLIT + queueId;
-        }
-
-        public boolean tryLock(String topic, String consumerGroup, int queueId) {
-            return tryLock(buildLockKey(topic, consumerGroup, queueId));
-        }
-
-        public boolean tryLock(String key) {
-            TimedLock timedLock = expiredLocalCache.get(key);
-
-            if (timedLock == null) {
-                TimedLock old = expiredLocalCache.putIfAbsent(key, new TimedLock());
-                if (old != null) {
-                    return false;
-                } else {
-                    timedLock = expiredLocalCache.get(key);
-                }
-            }
-
-            if (timedLock == null) {
-                return false;
-            }
-
-            return timedLock.tryLock();
-        }
-
-        /**
-         * is not thread safe, may cause duplicate lock
-         *
-         * @param usedExpireMillis the expired time in millisecond
-         * @return total numbers of TimedLock
-         */
-        public int cleanUnusedLock(final long usedExpireMillis) {
-            Iterator<Entry<String, TimedLock>> iterator = expiredLocalCache.entrySet().iterator();
-
-            int total = 0;
-            while (iterator.hasNext()) {
-                Entry<String, TimedLock> entry = iterator.next();
-
-                if (System.currentTimeMillis() - entry.getValue().getLockTime() > usedExpireMillis) {
-                    iterator.remove();
-                    POP_LOGGER.info("Remove unused queue lock: {}, {}, {}", entry.getKey(),
-                        entry.getValue().getLockTime(),
-                        entry.getValue().isLock());
-                }
-
-                total++;
-            }
-
-            return total;
-        }
-
-        public void unLock(String topic, String consumerGroup, int queueId) {
-            unLock(buildLockKey(topic, consumerGroup, queueId));
-        }
-
-        public void unLock(String key) {
-            TimedLock timedLock = expiredLocalCache.get(key);
-            if (timedLock != null) {
-                timedLock.unLock();
-            }
-        }
-
-        @Override
-        public String getServiceName() {
-            if (PopMessageProcessor.this.brokerController.getBrokerConfig().isInBrokerContainer()) {
-                return PopMessageProcessor.this.brokerController.getBrokerIdentity().getIdentifier() + QueueLockManager.class.getSimpleName();
-            }
-            return QueueLockManager.class.getSimpleName();
-        }
-
-        @Override
-        public void run() {
-            while (!isStopped()) {
-                try {
-                    this.waitForRunning(60000);
-                    int count = cleanUnusedLock(60000);
-                    POP_LOGGER.info("QueueLockSize={}", count);
-                } catch (Exception e) {
-                    PopMessageProcessor.POP_LOGGER.error("QueueLockManager run error", e);
-                }
-            }
-        }
+    public BrokerController getBrokerController() {
+        return brokerController;
     }
+
 }
