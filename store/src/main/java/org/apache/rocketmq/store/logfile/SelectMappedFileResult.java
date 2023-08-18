@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.store;
+package org.apache.rocketmq.store.logfile;
 
 import org.apache.rocketmq.store.logfile.MappedFile;
 

@@ -61,7 +61,7 @@ import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageSpinLock;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
-import org.apache.rocketmq.store.SelectMappedFileResult;
+import org.apache.rocketmq.store.logfile.SelectMappedFileResult;
 import org.apache.rocketmq.store.stats.StoreStatsService;
 import org.apache.rocketmq.store.Swappable;
 import org.apache.rocketmq.store.TopicQueueLock;
