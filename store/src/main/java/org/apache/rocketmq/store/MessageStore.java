@@ -39,6 +39,7 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.ha.HAService;
 import org.apache.rocketmq.store.hook.PutMessageHook;
 import org.apache.rocketmq.store.hook.SendMessageBackHook;
+import org.apache.rocketmq.store.logfile.AllocateMappedFileService;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.queue.ConsumeQueueStore;

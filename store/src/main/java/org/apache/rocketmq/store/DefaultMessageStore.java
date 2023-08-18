@@ -79,6 +79,7 @@ import org.apache.rocketmq.store.index.IndexService;
 import org.apache.rocketmq.store.kv.CommitLogDispatcherCompaction;
 import org.apache.rocketmq.store.kv.CompactionService;
 import org.apache.rocketmq.store.kv.CompactionStore;
+import org.apache.rocketmq.store.logfile.AllocateMappedFileService;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;

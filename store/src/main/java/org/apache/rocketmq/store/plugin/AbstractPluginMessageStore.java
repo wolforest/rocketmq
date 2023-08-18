@@ -34,7 +34,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
-import org.apache.rocketmq.store.AllocateMappedFileService;
+import org.apache.rocketmq.store.logfile.AllocateMappedFileService;
 import org.apache.rocketmq.store.AppendMessageResult;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.CommitLogDispatcher;

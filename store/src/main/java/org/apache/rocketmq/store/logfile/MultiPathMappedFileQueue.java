@@ -24,7 +24,6 @@ import java.util.function.Supplier;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.store.AllocateMappedFileService;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 import java.io.File;
