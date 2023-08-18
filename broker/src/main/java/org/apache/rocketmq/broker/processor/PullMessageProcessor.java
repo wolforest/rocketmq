@@ -444,26 +444,22 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             return true;
         }
 
-        boolean isMsgLogicCold = defaultMessageStore.getCommitLog()
-                .getColdDataCheckService().isMsgInColdArea(requestHeader.getConsumerGroup(),
-                        requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getQueueOffset());
+        boolean isMsgLogicCold = defaultMessageStore.getCommitLog().getColdDataCheckService().isMsgInColdArea(
+            requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getQueueOffset());
         if (!isMsgLogicCold) {
             return true;
         }
 
         ConsumeType consumeType = this.brokerController.getConsumerManager().getConsumerGroupInfo(requestHeader.getConsumerGroup()).getConsumeType();
         if (consumeType == ConsumeType.CONSUME_PASSIVELY) {
-            response.setCode(ResponseCode.SYSTEM_BUSY);
-            response.setRemark("This consumer group is reading cold data. It has been flow control");
+            buildResponse(response, ResponseCode.SYSTEM_BUSY, "This consumer group is reading cold data. It has been flow control");
             return false;
         } else if (consumeType == ConsumeType.CONSUME_ACTIVELY) {
             if (brokerAllowFlowCtrSuspend) {  // second arrived, which will not be held
-                PullRequest pullRequest = new PullRequest(request, channel, 1000,
-                        this.brokerController.getMessageStore().now(), requestHeader.getQueueOffset(), subscriptionData, messageFilter);
+                PullRequest pullRequest = new PullRequest(request, channel, 1000, this.brokerController.getMessageStore().now(), requestHeader.getQueueOffset(), subscriptionData, messageFilter);
                 this.brokerController.getColdDataPullRequestHoldService().suspendColdDataReadRequest(pullRequest);
 
-                response.setCode(ResponseCode.SYSTEM_ERROR);
-                response.setRemark("second arrived, It has been flow control");
+                buildResponse(response, ResponseCode.SYSTEM_ERROR, "second arrived, It has been flow control");
                 return false;
             }
             requestHeader.setMaxMsgNums(1);
@@ -473,16 +469,14 @@ public class PullMessageProcessor implements NettyRequestProcessor {
     }
 
     private ConsumerGroupInfo getConsumerGroupInfo(SubscriptionGroupConfig subscriptionGroupConfig, PullMessageRequestHeader requestHeader, RemotingCommand response, PullMessageResponseHeader responseHeader) {
-        ConsumerGroupInfo consumerGroupInfo =
-                this.brokerController.getConsumerManager().getConsumerGroupInfo(requestHeader.getConsumerGroup());
+        ConsumerGroupInfo consumerGroupInfo = this.brokerController.getConsumerManager().getConsumerGroupInfo(requestHeader.getConsumerGroup());
         if (null == consumerGroupInfo) {
             LOGGER.warn("the consumer's group info not exist, group: {}", requestHeader.getConsumerGroup());
             buildResponse(response, ResponseCode.SUBSCRIPTION_NOT_EXIST, "the consumer's group info not exist" + FAQUrl.suggestTodo(FAQUrl.SAME_GROUP_DIFFERENT_TOPIC));
             return null;
         }
 
-        if (!subscriptionGroupConfig.isConsumeBroadcastEnable()
-                && consumerGroupInfo.getMessageModel() == MessageModel.BROADCASTING) {
+        if (!subscriptionGroupConfig.isConsumeBroadcastEnable() && consumerGroupInfo.getMessageModel() == MessageModel.BROADCASTING) {
             responseHeader.setForbiddenType(ForbiddenType.BROADCASTING_DISABLE_FORBIDDEN);
             buildResponse(response, ResponseCode.NO_PERMISSION, "the consumer group[" + requestHeader.getConsumerGroup() + "] can not consume by broadcast way");
             return null;
@@ -644,27 +638,28 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         SubscriptionData finalSubscriptionData = subscriptionData;
         RemotingCommand finalResponse = response;
         brokerController.getMessageStore().getMessageAsync(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getQueueOffset(), requestHeader.getMaxMsgNums(), messageFilter)
-                .thenApply(result -> {
-                    if (null == result) {
-                        finalResponse.setCode(ResponseCode.SYSTEM_ERROR);
-                        finalResponse.setRemark("store getMessage return null");
-                        return finalResponse;
-                    }
-                    brokerController.getColdDataCgCtrService().coldAcc(requestHeader.getConsumerGroup(), result.getColdDataSum());
-                    return pullMessageResultHandler.handle(
-                            result,
-                            request,
-                            requestHeader,
-                            channel,
-                            finalSubscriptionData,
-                            subscriptionGroupConfig,
-                            brokerAllowSuspend,
-                            messageFilter,
-                            finalResponse,
-                            mappingContext
-                    );
-                })
-                .thenAccept(result -> NettyRemotingAbstract.writeResponse(channel, request, result));
+        .thenApply(result -> {
+            if (null == result) {
+                finalResponse.setCode(ResponseCode.SYSTEM_ERROR);
+                finalResponse.setRemark("store getMessage return null");
+                return finalResponse;
+            }
+
+            brokerController.getColdDataCgCtrService().coldAcc(requestHeader.getConsumerGroup(), result.getColdDataSum());
+            return pullMessageResultHandler.handle(
+                    result,
+                    request,
+                    requestHeader,
+                    channel,
+                    finalSubscriptionData,
+                    subscriptionGroupConfig,
+                    brokerAllowSuspend,
+                    messageFilter,
+                    finalResponse,
+                    mappingContext
+            );
+        })
+        .thenAccept(result -> NettyRemotingAbstract.writeResponse(channel, request, result));
 
         return null;
     }

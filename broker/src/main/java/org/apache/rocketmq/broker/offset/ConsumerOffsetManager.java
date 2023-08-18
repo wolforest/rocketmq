@@ -148,9 +148,7 @@ public class ConsumerOffsetManager extends ConfigManager {
     public Set<String> whichTopicByConsumer(final String group) {
         Set<String> topics = new HashSet<>();
 
-        Iterator<Entry<String, ConcurrentMap<Integer, Long>>> it = this.offsetTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, ConcurrentMap<Integer, Long>> next = it.next();
+        for (Entry<String, ConcurrentMap<Integer, Long>> next : this.offsetTable.entrySet()) {
             String topicAtGroup = next.getKey();
 
             String[] arrays = topicAtGroup.split(TOPIC_GROUP_SEPARATOR);
@@ -168,9 +166,7 @@ public class ConsumerOffsetManager extends ConfigManager {
     public Set<String> whichGroupByTopic(final String topic) {
         Set<String> groups = new HashSet<>();
 
-        Iterator<Entry<String, ConcurrentMap<Integer, Long>>> it = this.offsetTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, ConcurrentMap<Integer, Long>> next = it.next();
+        for (Entry<String, ConcurrentMap<Integer, Long>> next : this.offsetTable.entrySet()) {
             String topicAtGroup = next.getKey();
 
             String[] arrays = topicAtGroup.split(TOPIC_GROUP_SEPARATOR);
@@ -360,18 +356,21 @@ public class ConsumerOffsetManager extends ConfigManager {
 
         for (String group : filterGroups.split(",")) {
             Iterator<String> it = topicGroups.iterator();
-            while (it.hasNext()) {
-                String topicAtGroup = it.next();
-                if (!group.equals(topicAtGroup.split(TOPIC_GROUP_SEPARATOR)[1])) {
-                    continue;
-                }
-
-                it.remove();
-                removeConsumerOffset(topicAtGroup);
-            }
+            removeConsumerOffsetByFilterGroups(group, it);
         }
     }
 
+    private void removeConsumerOffsetByFilterGroups(String group, Iterator<String> it) {
+        while (it.hasNext()) {
+            String topicAtGroup = it.next();
+            if (!group.equals(topicAtGroup.split(TOPIC_GROUP_SEPARATOR)[1])) {
+                continue;
+            }
+
+            it.remove();
+            removeConsumerOffset(topicAtGroup);
+        }
+    }
     private void queryMinOffsetInAllGroup(Map.Entry<String, ConcurrentMap<Integer, Long>> offSetEntry, String topic, Map<Integer, Long> queueMinOffset) {
         for (Entry<Integer, Long> entry : offSetEntry.getValue().entrySet()) {
             long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, entry.getKey());
