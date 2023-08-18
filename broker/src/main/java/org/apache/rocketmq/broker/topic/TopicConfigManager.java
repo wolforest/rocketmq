@@ -61,9 +61,7 @@ public class TopicConfigManager extends ConfigManager {
     private DataVersion dataVersion = new DataVersion();
     protected transient BrokerController brokerController;
 
-    public TopicConfigManager() {
-
-    }
+    public TopicConfigManager() {}
 
     public TopicConfigManager(BrokerController brokerController) {
         this(brokerController, true);
