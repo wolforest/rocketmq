@@ -107,6 +107,13 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         requestHeader.setSysFlag(sysFlag);
     }
 
+    /**
+     * static topic handler
+     * @link docs/cn/statictopic/RocketMQ_Static_Topic_Logic_Queue_设计.md
+     * @param requestHeader requestHeader
+     * @param mappingContext mappingContext
+     * @return Response
+     */
     private RemotingCommand rewriteRequestForStaticTopic(PullMessageRequestHeader requestHeader, TopicQueueMappingContext mappingContext) {
         try {
             if (mappingContext.getMappingDetail() == null) {
@@ -153,6 +160,15 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         }
     }
 
+    /**
+     * static topic handler
+     * @link docs/cn/statictopic/RocketMQ_Static_Topic_Logic_Queue_设计.md
+     * @param requestHeader requestHeader
+     * @param responseHeader responseHeader
+     * @param mappingContext mappingContext
+     * @param code int
+     * @return Response
+     */
     protected RemotingCommand rewriteResponseForStaticTopic(PullMessageRequestHeader requestHeader, PullMessageResponseHeader responseHeader, TopicQueueMappingContext mappingContext, final int code) {
         try {
             if (mappingContext.getMappingDetail() == null) {
