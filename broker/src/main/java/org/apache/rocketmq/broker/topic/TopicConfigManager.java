@@ -75,134 +75,81 @@ public class TopicConfigManager extends ConfigManager {
     }
 
     protected void init() {
-        {
-            String topic = TopicValidator.RMQ_SYS_SELF_TEST_TOPIC;
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            topicConfig.setReadQueueNums(1);
-            topicConfig.setWriteQueueNums(1);
-            putTopicConfig(topicConfig);
-        }
-        {
-            if (this.brokerController.getBrokerConfig().isAutoCreateTopicEnable()) {
-                String topic = TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC;
-                TopicConfig topicConfig = new TopicConfig(topic);
-                TopicValidator.addSystemTopic(topic);
-                topicConfig.setReadQueueNums(this.brokerController.getBrokerConfig()
-                    .getDefaultTopicQueueNums());
-                topicConfig.setWriteQueueNums(this.brokerController.getBrokerConfig()
-                    .getDefaultTopicQueueNums());
-                int perm = PermName.PERM_INHERIT | PermName.PERM_READ | PermName.PERM_WRITE;
-                topicConfig.setPerm(perm);
-                putTopicConfig(topicConfig);
-            }
-        }
-        {
-            String topic = TopicValidator.RMQ_SYS_BENCHMARK_TOPIC;
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            topicConfig.setReadQueueNums(1024);
-            topicConfig.setWriteQueueNums(1024);
-            putTopicConfig(topicConfig);
-        }
-        {
-            String topic = this.brokerController.getBrokerConfig().getBrokerClusterName();
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            int perm = PermName.PERM_INHERIT;
-            if (this.brokerController.getBrokerConfig().isClusterTopicEnable()) {
-                perm |= PermName.PERM_READ | PermName.PERM_WRITE;
-            }
-            topicConfig.setPerm(perm);
-            putTopicConfig(topicConfig);
-        }
-        {
+        addSystemTopic(TopicValidator.RMQ_SYS_SELF_TEST_TOPIC, 1, 1);
 
-            String topic = this.brokerController.getBrokerConfig().getBrokerName();
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            int perm = PermName.PERM_INHERIT;
-            if (this.brokerController.getBrokerConfig().isBrokerTopicEnable()) {
-                perm |= PermName.PERM_READ | PermName.PERM_WRITE;
-            }
-            topicConfig.setReadQueueNums(1);
-            topicConfig.setWriteQueueNums(1);
-            topicConfig.setPerm(perm);
-            putTopicConfig(topicConfig);
-        }
-        {
-            String topic = TopicValidator.RMQ_SYS_OFFSET_MOVED_EVENT;
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            topicConfig.setReadQueueNums(1);
-            topicConfig.setWriteQueueNums(1);
-            putTopicConfig(topicConfig);
-        }
-        {
-            String topic = TopicValidator.RMQ_SYS_SCHEDULE_TOPIC;
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            topicConfig.setReadQueueNums(SCHEDULE_TOPIC_QUEUE_NUM);
-            topicConfig.setWriteQueueNums(SCHEDULE_TOPIC_QUEUE_NUM);
-            putTopicConfig(topicConfig);
-        }
-        {
-            if (this.brokerController.getBrokerConfig().isTraceTopicEnable()) {
-                String topic = this.brokerController.getBrokerConfig().getMsgTraceTopicName();
-                TopicConfig topicConfig = new TopicConfig(topic);
-                TopicValidator.addSystemTopic(topic);
-                topicConfig.setReadQueueNums(1);
-                topicConfig.setWriteQueueNums(1);
-                putTopicConfig(topicConfig);
-            }
-        }
-        {
-            String topic = this.brokerController.getBrokerConfig().getBrokerClusterName() + "_" + MixAll.REPLY_TOPIC_POSTFIX;
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            topicConfig.setReadQueueNums(1);
-            topicConfig.setWriteQueueNums(1);
-            putTopicConfig(topicConfig);
-        }
-        {
-            // PopAckConstants.REVIVE_TOPIC
-            String topic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            topicConfig.setReadQueueNums(this.brokerController.getBrokerConfig().getReviveQueueNum());
-            topicConfig.setWriteQueueNums(this.brokerController.getBrokerConfig().getReviveQueueNum());
-            putTopicConfig(topicConfig);
-        }
-        {
-            // sync broker member group topic
-            String topic = TopicValidator.SYNC_BROKER_MEMBER_GROUP_PREFIX + this.brokerController.getBrokerConfig().getBrokerName();
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            topicConfig.setReadQueueNums(1);
-            topicConfig.setWriteQueueNums(1);
-            topicConfig.setPerm(PermName.PERM_INHERIT);
-            putTopicConfig(topicConfig);
-        }
-        {
-            // TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC
-            String topic = TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC;
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            topicConfig.setReadQueueNums(1);
-            topicConfig.setWriteQueueNums(1);
-            putTopicConfig(topicConfig);
+        if (this.brokerController.getBrokerConfig().isAutoCreateTopicEnable()) {
+            addSystemTopic(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC,
+                this.brokerController.getBrokerConfig().getDefaultTopicQueueNums(),
+                this.brokerController.getBrokerConfig().getDefaultTopicQueueNums(),
+                PermName.PERM_INHERIT | PermName.PERM_READ | PermName.PERM_WRITE);
         }
 
-        {
-            // TopicValidator.RMQ_SYS_TRANS_OP_HALF_TOPIC
-            String topic = TopicValidator.RMQ_SYS_TRANS_OP_HALF_TOPIC;
-            TopicConfig topicConfig = new TopicConfig(topic);
-            TopicValidator.addSystemTopic(topic);
-            topicConfig.setReadQueueNums(1);
-            topicConfig.setWriteQueueNums(1);
-            putTopicConfig(topicConfig);
+        addSystemTopic(TopicValidator.RMQ_SYS_BENCHMARK_TOPIC, 1024, 1024);
+
+        addSystemTopic(this.brokerController.getBrokerConfig().getBrokerClusterName(), null, null,
+            getPerm(this.brokerController.getBrokerConfig().isClusterTopicEnable()));
+
+        addSystemTopic(this.brokerController.getBrokerConfig().getBrokerName(), 1, 1,
+            getPerm(this.brokerController.getBrokerConfig().isBrokerTopicEnable()));
+
+        addSystemTopic(TopicValidator.RMQ_SYS_OFFSET_MOVED_EVENT, 1, 1);
+
+        addSystemTopic(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, SCHEDULE_TOPIC_QUEUE_NUM, SCHEDULE_TOPIC_QUEUE_NUM);
+
+        if (this.brokerController.getBrokerConfig().isTraceTopicEnable()) {
+            addSystemTopic(this.brokerController.getBrokerConfig().getMsgTraceTopicName(), 1, 1);
         }
+
+        addSystemTopic(this.brokerController.getBrokerConfig().getBrokerClusterName() + "_" + MixAll.REPLY_TOPIC_POSTFIX,
+            1, 1);
+
+        // PopAckConstants.REVIVE_TOPIC
+        addSystemTopic(PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName()),
+            this.brokerController.getBrokerConfig().getReviveQueueNum(),
+            this.brokerController.getBrokerConfig().getReviveQueueNum());
+
+        // sync broker member group topic
+        addSystemTopic(TopicValidator.SYNC_BROKER_MEMBER_GROUP_PREFIX + this.brokerController.getBrokerConfig().getBrokerName(),
+            1, 1, PermName.PERM_INHERIT);
+
+        // TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC
+        addSystemTopic(TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC, 1,1);
+
+        // TopicValidator.RMQ_SYS_TRANS_OP_HALF_TOPIC
+        addSystemTopic(TopicValidator.RMQ_SYS_TRANS_OP_HALF_TOPIC, 1, 1);
     }
+
+    private int getPerm(boolean on) {
+        int perm = PermName.PERM_INHERIT;
+        if (on) {
+            perm |= PermName.PERM_READ | PermName.PERM_WRITE;
+        }
+        return perm;
+    }
+
+    private void addSystemTopic(String topic, Integer readQueueNums, Integer writeQueueNums) {
+        addSystemTopic(topic, readQueueNums, writeQueueNums, null);
+    }
+
+    private void addSystemTopic(String topic, Integer readQueueNums, Integer writeQueueNums, Integer perm) {
+        TopicConfig topicConfig = new TopicConfig(topic);
+        TopicValidator.addSystemTopic(topic);
+
+        if (readQueueNums != null) {
+            topicConfig.setReadQueueNums(readQueueNums);
+        }
+
+        if (writeQueueNums != null) {
+            topicConfig.setWriteQueueNums(writeQueueNums);
+        }
+
+        if (perm != null) {
+            topicConfig.setPerm(perm);
+        }
+
+        putTopicConfig(topicConfig);
+    }
+
 
     protected TopicConfig putTopicConfig(TopicConfig topicConfig) {
         return this.topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
