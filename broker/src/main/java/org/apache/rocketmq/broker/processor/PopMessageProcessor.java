@@ -323,6 +323,21 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
     }
 
+    private void compensateSubscribeData(PopMessageRequestHeader requestHeader) {
+        try {
+            SubscriptionData subscriptionData = FilterAPI.build(requestHeader.getTopic(), "*", ExpressionType.TAG);
+            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
+                requestHeader.getTopic(), subscriptionData);
+
+            String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup());
+            SubscriptionData retrySubscriptionData = FilterAPI.build(retryTopic, "*", ExpressionType.TAG);
+            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
+                retryTopic, retrySubscriptionData);
+        } catch (Exception e) {
+            POP_LOGGER.warn("Build default subscription error, group: {}", requestHeader.getConsumerGroup());
+        }
+    }
+
     @Override
     public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         RemotingCommand response = RemotingCommand.createResponseCommand(PopMessageResponseHeader.class);
@@ -347,18 +362,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
                 return response;
             }
         } else {
-            try {
-                SubscriptionData subscriptionData = FilterAPI.build(requestHeader.getTopic(), "*", ExpressionType.TAG);
-                brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
-                    requestHeader.getTopic(), subscriptionData);
-
-                String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup());
-                SubscriptionData retrySubscriptionData = FilterAPI.build(retryTopic, "*", ExpressionType.TAG);
-                brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
-                    retryTopic, retrySubscriptionData);
-            } catch (Exception e) {
-                POP_LOGGER.warn("Build default subscription error, group: {}", requestHeader.getConsumerGroup());
-            }
+            compensateSubscribeData(requestHeader);
         }
 
         int randomQ = random.nextInt(100);
