@@ -341,6 +341,17 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
     }
 
+    private int getReviveQid(PopMessageRequestHeader requestHeader) {
+        int reviveQid;
+        if (requestHeader.isOrder()) {
+            reviveQid = KeyBuilder.POP_ORDER_REVIVE_QUEUE;
+        } else {
+            reviveQid = (int) Math.abs(ckMessageNumber.getAndIncrement() % this.brokerController.getBrokerConfig().getReviveQueueNum());
+        }
+
+        return reviveQid;
+    }
+
     @Override
     public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         RemotingCommand response = RemotingCommand.createResponseCommand(PopMessageResponseHeader.class);
@@ -368,12 +379,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         compensateSubscribeData(requestHeader);
 
         int randomQ = random.nextInt(100);
-        int reviveQid;
-        if (requestHeader.isOrder()) {
-            reviveQid = KeyBuilder.POP_ORDER_REVIVE_QUEUE;
-        } else {
-            reviveQid = (int) Math.abs(ckMessageNumber.getAndIncrement() % this.brokerController.getBrokerConfig().getReviveQueueNum());
-        }
+        int reviveQid = getReviveQid(requestHeader);
 
         int commercialSizePerMsg = this.brokerController.getBrokerConfig().getCommercialSizePerMsg();
         GetMessageResult getMessageResult = new GetMessageResult(commercialSizePerMsg);
