@@ -321,7 +321,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         }
 
         ackMsg.setAckOffsetList(batchAckMsg.getAckOffsetList());
-        initAckMsg(ackMsg, batchAck, topic, brokerName);
+        initBatchAckMsg(ackMsg, batchAck, topic, brokerName);
 
         return batchAckMsg.getAckOffsetList().size();
     }
@@ -342,7 +342,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         return batchAckMsg;
     }
 
-    private void initAckMsg(BatchAckMsg ackMsg, BatchAck batchAck, String topic, String brokerName) {
+    private void initBatchAckMsg(BatchAckMsg ackMsg, BatchAck batchAck, String topic, String brokerName) {
         ackMsg.setConsumerGroup(batchAck.getConsumerGroup());
         ackMsg.setTopic(topic);
         ackMsg.setQueueId(batchAck.getQueueId());
