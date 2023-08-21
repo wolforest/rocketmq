@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store;
+package org.apache.rocketmq.store.logfile;
 
 import java.nio.ByteBuffer;
 import org.apache.rocketmq.store.logfile.MappedFile;

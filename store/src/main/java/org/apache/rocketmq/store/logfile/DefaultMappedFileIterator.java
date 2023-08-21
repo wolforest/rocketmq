@@ -16,8 +16,6 @@
  */
 package org.apache.rocketmq.store.logfile;
 
-import org.apache.rocketmq.store.SelectMappedBufferResult;
-
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.function.Consumer;

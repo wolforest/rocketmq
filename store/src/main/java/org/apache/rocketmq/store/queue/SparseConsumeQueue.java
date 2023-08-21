@@ -19,7 +19,7 @@ package org.apache.rocketmq.store.queue;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.SelectMappedBufferResult;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.logfile.MappedFile;
 
 import java.io.IOException;

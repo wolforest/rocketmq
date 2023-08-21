@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.timer;
 
-import org.apache.rocketmq.store.SelectMappedBufferResult;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.junit.After;
 import org.junit.Test;
 

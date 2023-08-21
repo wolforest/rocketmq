@@ -17,7 +17,7 @@
 package org.apache.rocketmq.tieredstore.common;
 
 import java.util.concurrent.atomic.LongAdder;
-import org.apache.rocketmq.store.SelectMappedBufferResult;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 
 public class SelectMappedBufferResultWrapper {
 

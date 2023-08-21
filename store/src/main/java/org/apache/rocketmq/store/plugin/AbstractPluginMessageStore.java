@@ -45,7 +45,7 @@ import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.QueryMessageResult;
 import org.apache.rocketmq.store.RunningFlags;
-import org.apache.rocketmq.store.SelectMappedBufferResult;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.StoreCheckpoint;
 import org.apache.rocketmq.store.stats.StoreStatsService;
 import org.apache.rocketmq.store.TransientStorePool;
