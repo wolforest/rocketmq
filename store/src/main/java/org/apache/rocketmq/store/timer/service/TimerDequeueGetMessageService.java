@@ -51,6 +51,7 @@ public class TimerDequeueGetMessageService extends AbstractStateService {
     public TimerDequeueGetMessageService(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
         dequeuePutQueue = timerMessageStore.getDequeuePutQueue();
+        dequeueGetQueue = timerMessageStore.getDequeueGetQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
         pointer = timerMessageStore.getPointer();
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
