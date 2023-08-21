@@ -88,8 +88,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         PullMessageProcessor processor = brokerController.getBrokerNettyServer().getPullMessageProcessor();
         final String clientAddress = RemotingHelper.parseChannelRemoteAddr(channel);
         TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
-        processor.composeResponseHeader(requestHeader, getMessageResult, topicConfig.getTopicSysFlag(),
-            subscriptionGroupConfig, response, clientAddress);
+        processor.composeResponseHeader(requestHeader, getMessageResult, topicConfig.getTopicSysFlag(), subscriptionGroupConfig, response, clientAddress);
         try {
             processor.executeConsumeMessageHookBefore(request, requestHeader, getMessageResult, brokerAllowSuspend, response.getCode());
         } catch (AbortProcessException e) {
@@ -107,9 +106,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
 
         processor.updateBroadcastPulledOffset(requestHeader.getTopic(), requestHeader.getConsumerGroup(),
             requestHeader.getQueueId(), requestHeader, channel, response, getMessageResult.getNextBeginOffset());
-        processor.tryCommitOffset(brokerAllowSuspend, requestHeader, getMessageResult.getNextBeginOffset(),
-            clientAddress);
-
+        processor.tryCommitOffset(brokerAllowSuspend, requestHeader, getMessageResult.getNextBeginOffset(), clientAddress);
 
         return formatResponseByCode(requestHeader, request, subscriptionGroupConfig, brokerAllowSuspend, channel, response, responseHeader, subscriptionData, messageFilter, getMessageResult);
     }
@@ -169,17 +166,15 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
 
     private RemotingCommand handleSuccessMsg(RemotingCommand request, Channel channel, RemotingCommand response, GetMessageResult getMessageResult) {
         try {
-            FileRegion fileRegion =
-                new ManyMessageTransfer(response.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
-            RemotingCommand finalResponse = response;
-            channel.writeAndFlush(fileRegion)
-                .addListener((ChannelFutureListener) future -> {
+            FileRegion fileRegion = new ManyMessageTransfer(response.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
+            channel.writeAndFlush(fileRegion).addListener((ChannelFutureListener) future -> {
                     getMessageResult.release();
                     Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
                         .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
-                        .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
+                        .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(response.getCode()))
                         .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
                         .build();
+
                     RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
                     if (!future.isSuccess()) {
                         log.error("Fail to transfer messages from page cache to {}", channel.remoteAddress(), future.cause());
@@ -196,8 +191,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         final long beginTimeMills = this.brokerController.getMessageStore().now();
         final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
         this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
-            requestHeader.getTopic(), requestHeader.getQueueId(),
-            (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
+            requestHeader.getTopic(), requestHeader.getQueueId(), (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
         response.setBody(r);
         return response;
     }
@@ -218,8 +212,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         String topic = requestHeader.getTopic();
         long offset = requestHeader.getQueueOffset();
         int queueId = requestHeader.getQueueId();
-        PullRequest pullRequest = new PullRequest(request, channel, pollingTimeMills,
-            this.brokerController.getMessageStore().now(), offset, subscriptionData, messageFilter);
+        PullRequest pullRequest = new PullRequest(request, channel, pollingTimeMills, this.brokerController.getMessageStore().now(), offset, subscriptionData, messageFilter);
         this.brokerController.getBrokerNettyServer().getPullRequestHoldService().suspendPullRequest(topic, queueId, pullRequest);
         return false;
     }
@@ -239,14 +232,12 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
             event.setOffsetNew(getMessageResult.getNextBeginOffset());
             log.warn(
                 "PULL_OFFSET_MOVED:correction offset. topic={}, groupId={}, requestOffset={}, newOffset={}, suggestBrokerId={}",
-                requestHeader.getTopic(), requestHeader.getConsumerGroup(), event.getOffsetRequest(), event.getOffsetNew(),
-                responseHeader.getSuggestWhichBrokerId());
+                requestHeader.getTopic(), requestHeader.getConsumerGroup(), event.getOffsetRequest(), event.getOffsetNew(), responseHeader.getSuggestWhichBrokerId());
         } else {
             responseHeader.setSuggestWhichBrokerId(subscriptionGroupConfig.getBrokerId());
             response.setCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
             log.warn("PULL_OFFSET_MOVED:none correction. topic={}, groupId={}, requestOffset={}, suggestBrokerId={}",
-                requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueOffset(),
-                responseHeader.getSuggestWhichBrokerId());
+                requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueOffset(), responseHeader.getSuggestWhichBrokerId());
         }
     }
 
