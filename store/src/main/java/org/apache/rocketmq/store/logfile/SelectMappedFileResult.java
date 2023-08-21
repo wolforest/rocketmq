@@ -17,8 +17,6 @@
 
 package org.apache.rocketmq.store.logfile;
 
-import org.apache.rocketmq.store.logfile.MappedFile;
-
 public class SelectMappedFileResult {
 
     protected int size;
