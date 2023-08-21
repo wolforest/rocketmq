@@ -65,7 +65,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
     public static final int MSG_BASE_OFFSET_INDEX = 28;
     public static final int MSG_BATCH_SIZE_INDEX = 36;
     public static final int MSG_COMPACT_OFFSET_INDEX = 38;
-    private static final int MSG_COMPACT_OFFSET_LENGTH = 4;
+    public static final int MSG_COMPACT_OFFSET_LENGTH = 4;
     public static final int INVALID_POS = -1;
     protected final MappedFileQueue mappedFileQueue;
     protected MessageStore messageStore;
@@ -908,72 +908,6 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
             }
         }
         return -1;
-    }
-
-    static class BatchConsumeQueueIterator implements ReferredIterator<CqUnit> {
-        private SelectMappedBufferResult sbr;
-        private int relativePos = 0;
-
-        public BatchConsumeQueueIterator(SelectMappedBufferResult sbr) {
-            this.sbr = sbr;
-            if (sbr != null && sbr.getByteBuffer() != null) {
-                relativePos = sbr.getByteBuffer().position();
-            }
-        }
-
-        @Override
-        public boolean hasNext() {
-            if (sbr == null || sbr.getByteBuffer() == null) {
-                return false;
-            }
-
-            return sbr.getByteBuffer().hasRemaining();
-        }
-
-        @Override
-        public CqUnit next() {
-            if (!hasNext()) {
-                return null;
-            }
-            ByteBuffer tmpBuffer = sbr.getByteBuffer().slice();
-            tmpBuffer.position(MSG_COMPACT_OFFSET_INDEX);
-            ByteBuffer compactOffsetStoreBuffer = tmpBuffer.slice();
-            compactOffsetStoreBuffer.limit(MSG_COMPACT_OFFSET_LENGTH);
-
-            int relativePos = sbr.getByteBuffer().position();
-            long offsetPy = sbr.getByteBuffer().getLong();
-            int sizePy = sbr.getByteBuffer().getInt();
-            long tagsCode = sbr.getByteBuffer().getLong(); //tagscode
-            sbr.getByteBuffer().getLong();//timestamp
-            long msgBaseOffset = sbr.getByteBuffer().getLong();
-            short batchSize = sbr.getByteBuffer().getShort();
-            int compactedOffset = sbr.getByteBuffer().getInt();
-            sbr.getByteBuffer().position(relativePos + CQ_STORE_UNIT_SIZE);
-
-            return new CqUnit(msgBaseOffset, offsetPy, sizePy, tagsCode, batchSize, compactedOffset, compactOffsetStoreBuffer);
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("remove");
-        }
-
-        @Override
-        public void release() {
-            if (sbr != null) {
-                sbr.release();
-                sbr = null;
-            }
-        }
-
-        @Override
-        public CqUnit nextAndRelease() {
-            try {
-                return next();
-            } finally {
-                release();
-            }
-        }
     }
 
     @Override
