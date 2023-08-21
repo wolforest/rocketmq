@@ -246,7 +246,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         ackMsg.setBrokerName(ExtraInfoUtil.getBrokerName(extraInfo));
     }
 
-    protected void ackOrderly(String topic, String consumeGroup, int qId, long ackOffset, long popTime, long invisibleTime, Channel channel, RemotingCommand response) {
+    private void ackOrderly(String topic, String consumeGroup, int qId, long ackOffset, long popTime, long invisibleTime, Channel channel, RemotingCommand response) {
         String lockKey = topic + PopAckConstants.SPLIT + consumeGroup + PopAckConstants.SPLIT + qId;
         long oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(consumeGroup, topic, qId);
         if (ackOffset < oldOffset) {
