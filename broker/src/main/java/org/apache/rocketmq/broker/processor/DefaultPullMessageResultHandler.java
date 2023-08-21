@@ -168,18 +168,19 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         try {
             FileRegion fileRegion = new ManyMessageTransfer(response.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
             channel.writeAndFlush(fileRegion).addListener((ChannelFutureListener) future -> {
-                    getMessageResult.release();
-                    Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
-                        .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
-                        .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(response.getCode()))
-                        .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
-                        .build();
+                getMessageResult.release();
+                Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
+                    .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
+                    .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(response.getCode()))
+                    .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
+                    .build();
 
-                    RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
-                    if (!future.isSuccess()) {
-                        log.error("Fail to transfer messages from page cache to {}", channel.remoteAddress(), future.cause());
-                    }
-                });
+                RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
+                if (!future.isSuccess()) {
+                    log.error("Fail to transfer messages from page cache to {}", channel.remoteAddress(), future.cause());
+                }
+            });
+            return response;
         } catch (Throwable e) {
             log.error("Error occurred when transferring messages from page cache", e);
             getMessageResult.release();
