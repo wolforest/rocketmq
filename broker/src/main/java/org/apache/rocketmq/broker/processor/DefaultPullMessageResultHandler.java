@@ -180,7 +180,6 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
                     log.error("Fail to transfer messages from page cache to {}", channel.remoteAddress(), future.cause());
                 }
             });
-            return response;
         } catch (Throwable e) {
             log.error("Error occurred when transferring messages from page cache", e);
             getMessageResult.release();
