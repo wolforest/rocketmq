@@ -127,7 +127,6 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         if (mappedFiles.isEmpty()) {
             return;
         }
-
         int index = mappedFiles.size() - 3;
         if (index < 0) {
             index = 0;
@@ -147,7 +146,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
 
                 if (offset >= 0 && size > 0) {
                     mappedFileOffset = i + CQ_STORE_UNIT_SIZE;
-                    this.maxPhysicOffset = offset + size;
+                    this.setMaxPhysicOffset(offset + size);
                     if (isExtAddr(tagsCode)) {
                         maxExtAddr = tagsCode;
                     }
@@ -265,7 +264,6 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                             break;
                     }
                 }
-
                 // Handle case 2
                 byteBuffer.position(floor);
                 phyOffset = byteBuffer.getLong();
@@ -409,10 +407,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     }
 
     public void truncateDirtyLogicFiles(long phyOffset, boolean deleteFile) {
-
         int logicFileSize = this.mappedFileSize;
 
-        this.maxPhysicOffset = phyOffset;
+        this.setMaxPhysicOffset(phyOffset);
         long maxExtAddr = 1;
         boolean shouldDeleteFile = false;
         while (true) {
@@ -441,7 +438,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                         mappedFile.setWrotePosition(pos);
                         mappedFile.setCommittedPosition(pos);
                         mappedFile.setFlushedPosition(pos);
-                        this.maxPhysicOffset = offset + size;
+                        this.setMaxPhysicOffset(offset + size);
                         // This maybe not take effect, when not every consume queue has extend file.
                         if (isExtAddr(tagsCode)) {
                             maxExtAddr = tagsCode;
@@ -459,7 +456,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                         mappedFile.setWrotePosition(pos);
                         mappedFile.setCommittedPosition(pos);
                         mappedFile.setFlushedPosition(pos);
-                        this.maxPhysicOffset = offset + size;
+                        this.setMaxPhysicOffset(offset + size);
                         if (isExtAddr(tagsCode)) {
                             maxExtAddr = tagsCode;
                         }
@@ -884,7 +881,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode,
         final long cqOffset) {
 
-        if (offset + size <= this.maxPhysicOffset) {
+        if (offset + size <= this.getMaxPhysicOffset()) {
             log.warn("Maybe try to build consume queue repeatedly maxPhysicOffset={} phyOffset={}", maxPhysicOffset, offset);
             return true;
         }
@@ -932,8 +929,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             }
         }
 
-        this.maxPhysicOffset = offset + size;
-
+        this.setMaxPhysicOffset(offset + size);
         return mappedFile.appendMessage(this.byteBufferIndex.array());
     }
 
@@ -1068,7 +1064,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
 
     @Override
     public void destroy() {
-        this.maxPhysicOffset = -1;
+        this.setMaxPhysicOffset(-1);
         this.minLogicOffset = 0;
         this.mappedFileQueue.destroy();
         if (isExtReadEnable()) {

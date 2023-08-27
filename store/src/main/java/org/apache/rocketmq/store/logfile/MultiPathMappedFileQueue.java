@@ -16,7 +16,6 @@
  */
 package org.apache.rocketmq.store.logfile;
 
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -112,8 +111,7 @@ public class MultiPathMappedFileQueue extends MappedFileQueue {
             mf.destroy(1000 * 3);
         }
         this.mappedFiles.clear();
-        this.flushedWhere = 0;
-
+        this.setFlushedWhere(0);
 
         Set<String> storePathSet = getPaths();
         storePathSet.addAll(getReadonlyPaths());
