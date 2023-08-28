@@ -284,23 +284,26 @@ public class SubscriptionGroupManager extends ConfigManager {
 
     @Override
     public String configFilePath() {
-        return BrokerPathConfigHelper.getSubscriptionGroupPath(this.brokerController.getMessageStoreConfig()
-            .getStorePathRootDir());
+        return BrokerPathConfigHelper.getSubscriptionGroupPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
     }
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            SubscriptionGroupManager obj = RemotingSerializable.fromJson(jsonString, SubscriptionGroupManager.class);
-            if (obj != null) {
-                this.subscriptionGroupTable.putAll(obj.subscriptionGroupTable);
-                if (obj.forbiddenTable != null) {
-                    this.forbiddenTable.putAll(obj.forbiddenTable);
-                }
-                this.dataVersion.assignNewOne(obj.dataVersion);
-                this.printLoadDataWhenFirstBoot(obj);
-            }
+        if (jsonString == null) {
+            return;
         }
+
+        SubscriptionGroupManager obj = RemotingSerializable.fromJson(jsonString, SubscriptionGroupManager.class);
+        if (obj == null) {
+            return;
+        }
+
+        this.subscriptionGroupTable.putAll(obj.subscriptionGroupTable);
+        if (obj.forbiddenTable != null) {
+            this.forbiddenTable.putAll(obj.forbiddenTable);
+        }
+        this.dataVersion.assignNewOne(obj.dataVersion);
+        this.printLoadDataWhenFirstBoot(obj);
     }
 
     @Override
