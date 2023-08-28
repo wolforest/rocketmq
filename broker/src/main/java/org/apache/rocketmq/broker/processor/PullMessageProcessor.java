@@ -635,14 +635,12 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
     private RemotingCommand handleAsyncResult(RemotingCommand request, PullMessageRequestHeader requestHeader, Channel channel, SubscriptionData subscriptionData,
                                               SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext) {
-        SubscriptionData finalSubscriptionData = subscriptionData;
-        RemotingCommand finalResponse = response;
         brokerController.getMessageStore().getMessageAsync(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getQueueOffset(), requestHeader.getMaxMsgNums(), messageFilter)
         .thenApply(result -> {
             if (null == result) {
-                finalResponse.setCode(ResponseCode.SYSTEM_ERROR);
-                finalResponse.setRemark("store getMessage return null");
-                return finalResponse;
+                response.setCode(ResponseCode.SYSTEM_ERROR);
+                response.setRemark("store getMessage return null");
+                return response;
             }
 
             brokerController.getColdDataCgCtrService().coldAcc(requestHeader.getConsumerGroup(), result.getColdDataSum());
@@ -651,11 +649,11 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                     request,
                     requestHeader,
                     channel,
-                    finalSubscriptionData,
+                subscriptionData,
                     subscriptionGroupConfig,
                     brokerAllowSuspend,
                     messageFilter,
-                    finalResponse,
+                response,
                     mappingContext
             );
         })
