@@ -44,6 +44,15 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     private DataVersion dataVersion = new DataVersion();
 
+    /**
+     * consume metadata
+     * format : {
+     *     "topic@group" : offset_value,
+     *              ... ...
+     *     "topic@group" : offset_value,
+     * }
+     * periodically stored by scheduled task
+     */
     protected ConcurrentMap<String/* topic@group */, ConcurrentMap<Integer, Long>> offsetTable =
         new ConcurrentHashMap<>(512);
 
