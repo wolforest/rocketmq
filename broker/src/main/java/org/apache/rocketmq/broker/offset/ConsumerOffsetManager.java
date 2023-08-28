@@ -47,6 +47,11 @@ public class ConsumerOffsetManager extends ConfigManager {
     protected ConcurrentMap<String/* topic@group */, ConcurrentMap<Integer, Long>> offsetTable =
         new ConcurrentHashMap<>(512);
 
+    /**
+     * admin related feature
+     * reset the consumer offset to adjust consumer progress
+     * @link https://rocketmq.apache.org/docs/featureBehavior/09consumerprogress/#reset-consumer-offset
+     */
     private final ConcurrentMap<String, ConcurrentMap<Integer, Long>> resetOffsetTable =
         new ConcurrentHashMap<>(512);
 
