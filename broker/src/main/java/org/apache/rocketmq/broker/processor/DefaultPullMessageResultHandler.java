@@ -75,26 +75,16 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
     }
 
     @Override
-    public RemotingCommand handle(final GetMessageResult getMessageResult,
-        final RemotingCommand request,
-        final PullMessageRequestHeader requestHeader,
-        final Channel channel,
-        final SubscriptionData subscriptionData,
-        final SubscriptionGroupConfig subscriptionGroupConfig,
-        final boolean brokerAllowSuspend,
-        final MessageFilter messageFilter,
-        RemotingCommand response,
-        TopicQueueMappingContext mappingContext) {
+    public RemotingCommand handle(final GetMessageResult getMessageResult, final RemotingCommand request, final PullMessageRequestHeader requestHeader, final Channel channel, final SubscriptionData subscriptionData, final SubscriptionGroupConfig subscriptionGroupConfig, final boolean brokerAllowSuspend, final MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext) {
         PullMessageProcessor processor = brokerController.getBrokerNettyServer().getPullMessageProcessor();
         final String clientAddress = RemotingHelper.parseChannelRemoteAddr(channel);
         TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
         processor.composeResponseHeader(requestHeader, getMessageResult, topicConfig.getTopicSysFlag(), subscriptionGroupConfig, response, clientAddress);
+
         try {
             processor.executeConsumeMessageHookBefore(request, requestHeader, getMessageResult, brokerAllowSuspend, response.getCode());
         } catch (AbortProcessException e) {
-            response.setCode(e.getResponseCode());
-            response.setRemark(e.getErrorMessage());
-            return response;
+            return response.setCodeAndRemark(e.getResponseCode(), e.getErrorMessage());
         }
 
         //rewrite the response for the static topic
@@ -104,8 +94,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
             response = rewriteResult;
         }
 
-        processor.updateBroadcastPulledOffset(requestHeader.getTopic(), requestHeader.getConsumerGroup(),
-            requestHeader.getQueueId(), requestHeader, channel, response, getMessageResult.getNextBeginOffset());
+        processor.updateBroadcastPulledOffset(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId(), requestHeader, channel, response, getMessageResult.getNextBeginOffset());
         processor.tryCommitOffset(brokerAllowSuspend, requestHeader, getMessageResult.getNextBeginOffset(), clientAddress);
 
         return formatResponseByCode(requestHeader, request, subscriptionGroupConfig, brokerAllowSuspend, channel, response, responseHeader, subscriptionData, messageFilter, getMessageResult);

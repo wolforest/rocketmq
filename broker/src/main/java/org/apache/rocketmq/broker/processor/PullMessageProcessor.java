@@ -494,8 +494,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         }
 
         if (subscriptionData.getSubVersion() < requestHeader.getSubVersion()) {
-            LOGGER.warn("The broker's subscription is not latest, group: {} {}", requestHeader.getConsumerGroup(),
-                    subscriptionData.getSubString());
+            LOGGER.warn("The broker's subscription is not latest, group: {} {}", requestHeader.getConsumerGroup(), subscriptionData.getSubString());
             response.setCodeAndRemark(ResponseCode.SUBSCRIPTION_NOT_LATEST, "the consumer's subscription not latest");
             return null;
         }
