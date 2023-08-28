@@ -339,16 +339,16 @@ public class SubscriptionGroupManager extends ConfigManager {
     public void deleteSubscriptionGroupConfig(final String groupName) {
         SubscriptionGroupConfig old = removeSubscriptionGroupConfig(groupName);
         this.forbiddenTable.remove(groupName);
-        if (old != null) {
-            log.info("delete subscription group OK, subscription group:{}", old);
-            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-            dataVersion.nextVersion(stateMachineVersion);
-            this.persist();
-        } else {
+        if (old == null) {
             log.warn("delete subscription group failed, subscription groupName: {} not exist", groupName);
+            return;
         }
-    }
 
+        log.info("delete subscription group OK, subscription group:{}", old);
+        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        dataVersion.nextVersion(stateMachineVersion);
+        this.persist();
+    }
 
     public void setSubscriptionGroupTable(ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable) {
         this.subscriptionGroupTable = subscriptionGroupTable;
@@ -370,13 +370,13 @@ public class SubscriptionGroupManager extends ConfigManager {
         SubscriptionGroupConfig subscriptionGroupConfig = this.subscriptionGroupTable.get(groupName);
         if (subscriptionGroupConfig == null) {
             return new HashMap<>();
-        } else {
-            Map<String, String> attributes = subscriptionGroupConfig.getAttributes();
-            if (attributes == null) {
-                return new HashMap<>();
-            } else {
-                return attributes;
-            }
         }
+
+        Map<String, String> attributes = subscriptionGroupConfig.getAttributes();
+        if (attributes == null) {
+            return new HashMap<>();
+        }
+
+        return attributes;
     }
 }
