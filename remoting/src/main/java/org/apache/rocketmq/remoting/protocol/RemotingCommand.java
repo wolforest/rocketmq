@@ -251,7 +251,7 @@ public class RemotingCommand {
         return (type.getCode() << 24) | (source & 0x00FFFFFF);
     }
 
-    public RemotingCommand setAndReturn(int code, String remark) {
+    public RemotingCommand setCodeAndRemark(int code, String remark) {
         setCode(code);
         setRemark(remark);
         return this;
