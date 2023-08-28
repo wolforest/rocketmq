@@ -644,18 +644,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             }
 
             brokerController.getColdDataCgCtrService().coldAcc(requestHeader.getConsumerGroup(), result.getColdDataSum());
-            return pullMessageResultHandler.handle(
-                    result,
-                    request,
-                    requestHeader,
-                    channel,
-                subscriptionData,
-                    subscriptionGroupConfig,
-                    brokerAllowSuspend,
-                    messageFilter,
-                response,
-                    mappingContext
-            );
+            return pullMessageResultHandler.handle(result, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext );
         })
         .thenAccept(result -> NettyRemotingAbstract.writeResponse(channel, request, result));
 
