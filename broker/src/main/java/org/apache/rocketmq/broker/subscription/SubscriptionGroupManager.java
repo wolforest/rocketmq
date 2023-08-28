@@ -241,11 +241,13 @@ public class SubscriptionGroupManager extends ConfigManager {
 
     public void disableConsume(final String groupName) {
         SubscriptionGroupConfig old = getSubscriptionGroupConfig(groupName);
-        if (old != null) {
-            old.setConsumeEnable(false);
-            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-            dataVersion.nextVersion(stateMachineVersion);
+        if (old == null) {
+            return;
         }
+
+        old.setConsumeEnable(false);
+        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        dataVersion.nextVersion(stateMachineVersion);
     }
 
     public SubscriptionGroupConfig findSubscriptionGroupConfig(final String group) {
