@@ -339,47 +339,41 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
     private boolean allowAccess(RemotingCommand response, PullMessageResponseHeader responseHeader, Channel channel, RemotingCommand request, PullMessageRequestHeader requestHeader) {
         if (!PermName.isReadable(this.brokerController.getBrokerConfig().getBrokerPermission())) {
-            response.setCode(ResponseCode.NO_PERMISSION);
             responseHeader.setForbiddenType(ForbiddenType.BROKER_FORBIDDEN);
-            response.setRemark(String.format("the broker[%s] pulling message is forbidden",
+            response.setCodeAndRemark(ResponseCode.NO_PERMISSION, String.format("the broker[%s] pulling message is forbidden",
                     this.brokerController.getBrokerConfig().getBrokerIP1()));
             return false;
         }
 
         if (request.getCode() == RequestCode.LITE_PULL_MESSAGE && !this.brokerController.getBrokerConfig().isLitePullMessageEnable()) {
-            response.setCode(ResponseCode.NO_PERMISSION);
             responseHeader.setForbiddenType(ForbiddenType.BROKER_FORBIDDEN);
-            response.setRemark(
+            response.setCodeAndRemark(ResponseCode.NO_PERMISSION,
                     "the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1() + "] for lite pull consumer is forbidden");
             return false;
         }
 
         SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
         if (null == subscriptionGroupConfig) {
-            response.setCode(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST);
-            response.setRemark(String.format("subscription group [%s] does not exist, %s", requestHeader.getConsumerGroup(), FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST)));
+            response.setCodeAndRemark(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST, String.format("subscription group [%s] does not exist, %s", requestHeader.getConsumerGroup(), FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST)));
             return false;
         }
 
         if (!subscriptionGroupConfig.isConsumeEnable()) {
-            response.setCode(ResponseCode.NO_PERMISSION);
             responseHeader.setForbiddenType(ForbiddenType.GROUP_FORBIDDEN);
-            response.setRemark("subscription group no permission, " + requestHeader.getConsumerGroup());
+            response.setCodeAndRemark(ResponseCode.NO_PERMISSION, "subscription group no permission, " + requestHeader.getConsumerGroup());
             return false;
         }
 
         TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
         if (null == topicConfig) {
             LOGGER.error("the topic {} not exist, consumer: {}", requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(channel));
-            response.setCode(ResponseCode.TOPIC_NOT_EXIST);
-            response.setRemark(String.format("topic[%s] not exist, apply first please! %s", requestHeader.getTopic(), FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)));
+            response.setCodeAndRemark(ResponseCode.TOPIC_NOT_EXIST, String.format("topic[%s] not exist, apply first please! %s", requestHeader.getTopic(), FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)));
             return false;
         }
 
         if (!PermName.isReadable(topicConfig.getPerm())) {
-            response.setCode(ResponseCode.NO_PERMISSION);
             responseHeader.setForbiddenType(ForbiddenType.TOPIC_FORBIDDEN);
-            response.setRemark("the topic[" + requestHeader.getTopic() + "] pulling message is forbidden");
+            response.setCodeAndRemark(ResponseCode.NO_PERMISSION, "the topic[" + requestHeader.getTopic() + "] pulling message is forbidden");
             return false;
         }
 
@@ -387,8 +381,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             String errorInfo = String.format("queueId[%d] is illegal, topic:[%s] topicConfig.readQueueNums:[%d] consumer:[%s]",
                     requestHeader.getQueueId(), requestHeader.getTopic(), topicConfig.getReadQueueNums(), channel.remoteAddress());
             LOGGER.warn(errorInfo);
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark(errorInfo);
+            response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, errorInfo);
             return false;
         }
 
