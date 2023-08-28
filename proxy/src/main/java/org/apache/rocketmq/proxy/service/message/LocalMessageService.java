@@ -404,7 +404,7 @@ public class LocalMessageService implements MessageService {
         command.setBody(requestBody.encode());
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
-            RemotingCommand response = brokerController.getAckMessageProcessor()
+            RemotingCommand response = brokerController.getBrokerNettyServer().getAckMessageProcessor()
                 .processRequest(channelHandlerContext, command);
             future.complete(response);
         } catch (Exception e) {
