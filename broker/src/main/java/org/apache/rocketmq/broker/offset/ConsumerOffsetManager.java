@@ -55,6 +55,10 @@ public class ConsumerOffsetManager extends ConfigManager {
     private final ConcurrentMap<String, ConcurrentMap<Integer, Long>> resetOffsetTable =
         new ConcurrentHashMap<>(512);
 
+    /**
+     * monitor related feature
+     * to show consumer stats (consumer lag, ...)
+     */
     private final ConcurrentMap<String/* topic@group */, ConcurrentMap<Integer, Long>> pullOffsetTable =
         new ConcurrentHashMap<>(512);
 
