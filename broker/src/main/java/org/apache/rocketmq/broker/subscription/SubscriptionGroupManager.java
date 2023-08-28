@@ -250,22 +250,27 @@ public class SubscriptionGroupManager extends ConfigManager {
 
     public SubscriptionGroupConfig findSubscriptionGroupConfig(final String group) {
         SubscriptionGroupConfig subscriptionGroupConfig = getSubscriptionGroupConfig(group);
-        if (null == subscriptionGroupConfig) {
-            if (brokerController.getBrokerConfig().isAutoCreateSubscriptionGroup() || MixAll.isSysConsumerGroup(group)) {
-                if (group.length() > Validators.CHARACTER_MAX_LENGTH || TopicValidator.isTopicOrGroupIllegal(group)) {
-                    return null;
-                }
-                subscriptionGroupConfig = new SubscriptionGroupConfig();
-                subscriptionGroupConfig.setGroupName(group);
-                SubscriptionGroupConfig preConfig = putSubscriptionGroupConfigIfAbsent(subscriptionGroupConfig);
-                if (null == preConfig) {
-                    log.info("auto create a subscription group, {}", subscriptionGroupConfig.toString());
-                }
-                long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-                dataVersion.nextVersion(stateMachineVersion);
-                this.persist();
-            }
+        if (null != subscriptionGroupConfig) {
+            return subscriptionGroupConfig;
         }
+
+        if (!brokerController.getBrokerConfig().isAutoCreateSubscriptionGroup() && MixAll.isSysConsumerGroup(group)) {
+            return null;
+        }
+
+        if (group.length() > Validators.CHARACTER_MAX_LENGTH || TopicValidator.isTopicOrGroupIllegal(group)) {
+            return null;
+        }
+
+        subscriptionGroupConfig = new SubscriptionGroupConfig();
+        subscriptionGroupConfig.setGroupName(group);
+        SubscriptionGroupConfig preConfig = putSubscriptionGroupConfigIfAbsent(subscriptionGroupConfig);
+        if (null == preConfig) {
+            log.info("auto create a subscription group, {}", subscriptionGroupConfig.toString());
+        }
+        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        dataVersion.nextVersion(stateMachineVersion);
+        this.persist();
 
         return subscriptionGroupConfig;
     }
