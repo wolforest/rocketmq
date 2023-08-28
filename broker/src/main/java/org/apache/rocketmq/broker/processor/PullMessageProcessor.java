@@ -334,11 +334,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
     @Override
     public boolean rejectRequest() {
-        if (!this.brokerController.getBrokerConfig().isSlaveReadEnable()
-                && this.brokerController.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
-            return true;
-        }
-        return false;
+        return !this.brokerController.getBrokerConfig().isSlaveReadEnable() && this.brokerController.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE;
     }
 
     private boolean allowAccess(RemotingCommand response, PullMessageResponseHeader responseHeader, Channel channel, RemotingCommand request, PullMessageRequestHeader requestHeader) {
