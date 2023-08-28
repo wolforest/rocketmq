@@ -409,13 +409,6 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         }
     }
 
-    private RemotingCommand buildResponse(RemotingCommand response, int code, String remark) {
-        response.setCode(code);
-        response.setRemark(remark);
-
-        return response;
-    }
-
     private MessageFilter initMessageFilter(SubscriptionData subscriptionData, ConsumerFilterData consumerFilterData) {
         MessageFilter messageFilter;
         if (this.brokerController.getBrokerConfig().isFilterSupportRetry()) {
@@ -448,14 +441,14 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
         ConsumeType consumeType = this.brokerController.getConsumerManager().getConsumerGroupInfo(requestHeader.getConsumerGroup()).getConsumeType();
         if (consumeType == ConsumeType.CONSUME_PASSIVELY) {
-            buildResponse(response, ResponseCode.SYSTEM_BUSY, "This consumer group is reading cold data. It has been flow control");
+            response.setCodeAndRemark(ResponseCode.SYSTEM_BUSY, "This consumer group is reading cold data. It has been flow control");
             return false;
         } else if (consumeType == ConsumeType.CONSUME_ACTIVELY) {
             if (brokerAllowFlowCtrSuspend) {  // second arrived, which will not be held
                 PullRequest pullRequest = new PullRequest(request, channel, 1000, this.brokerController.getMessageStore().now(), requestHeader.getQueueOffset(), subscriptionData, messageFilter);
                 this.brokerController.getColdDataPullRequestHoldService().suspendColdDataReadRequest(pullRequest);
 
-                buildResponse(response, ResponseCode.SYSTEM_ERROR, "second arrived, It has been flow control");
+                response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "second arrived, It has been flow control");
                 return false;
             }
             requestHeader.setMaxMsgNums(1);
@@ -468,13 +461,13 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         ConsumerGroupInfo consumerGroupInfo = this.brokerController.getConsumerManager().getConsumerGroupInfo(requestHeader.getConsumerGroup());
         if (null == consumerGroupInfo) {
             LOGGER.warn("the consumer's group info not exist, group: {}", requestHeader.getConsumerGroup());
-            buildResponse(response, ResponseCode.SUBSCRIPTION_NOT_EXIST, "the consumer's group info not exist" + FAQUrl.suggestTodo(FAQUrl.SAME_GROUP_DIFFERENT_TOPIC));
+            response.setCodeAndRemark(ResponseCode.SUBSCRIPTION_NOT_EXIST, "the consumer's group info not exist" + FAQUrl.suggestTodo(FAQUrl.SAME_GROUP_DIFFERENT_TOPIC));
             return null;
         }
 
         if (!subscriptionGroupConfig.isConsumeBroadcastEnable() && consumerGroupInfo.getMessageModel() == MessageModel.BROADCASTING) {
             responseHeader.setForbiddenType(ForbiddenType.BROADCASTING_DISABLE_FORBIDDEN);
-            buildResponse(response, ResponseCode.NO_PERMISSION, "the consumer group[" + requestHeader.getConsumerGroup() + "] can not consume by broadcast way");
+            response.setCodeAndRemark(ResponseCode.NO_PERMISSION, "the consumer group[" + requestHeader.getConsumerGroup() + "] can not consume by broadcast way");
             return null;
         }
 
@@ -534,7 +527,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             return subscriptionData;
         } catch (Exception e) {
             LOGGER.warn("Parse the consumer's subscription[{}] failed, group: {}", requestHeader.getSubscription(), requestHeader.getConsumerGroup());
-            buildResponse(response, ResponseCode.SUBSCRIPTION_PARSE_FAILED, "parse the consumer's subscription failed");
+            response.setCodeAndRemark(ResponseCode.SUBSCRIPTION_PARSE_FAILED, "parse the consumer's subscription failed");
             return null;
         }
     }
@@ -607,7 +600,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         }
 
         if (!ExpressionType.isTagType(subscriptionData.getExpressionType()) && !this.brokerController.getBrokerConfig().isEnablePropertyFilter()) {
-            return buildResponse(response, ResponseCode.SYSTEM_ERROR, "The broker does not support consumer to filter message by " + subscriptionData.getExpressionType());
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "The broker does not support consumer to filter message by " + subscriptionData.getExpressionType());
         }
 
         MessageFilter messageFilter = initMessageFilter(subscriptionData, consumerFilterData);
