@@ -32,13 +32,15 @@ public class GetMessageContext {
     private long maxOffsetPy;
     private long maxPullSize;
     private long maxPhyOffsetPulling;
-
-
     private int maxFilterMessageSize;
+
+
+    private long nextPhyFileStartOffset;
 
     private DefaultMessageStore messageStore;
     private ConsumeQueueInterface consumeQueue;
     private GetMessageResult getResult;
+
 
     private final String group;
     private final String topic;
@@ -72,6 +74,13 @@ public class GetMessageContext {
         this.messageFilter = messageFilter;
 
         init();
+    }
+
+    public GetMessageResult toGetResult() {
+        getResult.setNextBeginOffset(nextBeginOffset);
+        getResult.setMaxOffset(consumeQueue.getMaxOffsetInQueue());
+        getResult.setMinOffset(consumeQueue.getMinOffsetInQueue());
+        return getResult;
     }
 
     private void init() {
@@ -114,6 +123,14 @@ public class GetMessageContext {
         this.maxFilterMessageSize = maxFilterMessageSize;
     }
 
+    public long getNextPhyFileStartOffset() {
+        return nextPhyFileStartOffset;
+    }
+
+    public void setNextPhyFileStartOffset(long nextPhyFileStartOffset) {
+        this.nextPhyFileStartOffset = nextPhyFileStartOffset;
+    }
+
     public long getNextBeginOffset() {
         return nextBeginOffset;
     }
@@ -144,6 +161,10 @@ public class GetMessageContext {
 
     public GetMessageResult getGetResult() {
         return getResult;
+    }
+
+    public String getGroup() {
+        return group;
     }
 
     public String getTopic() {

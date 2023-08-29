@@ -156,6 +156,82 @@ public class GetMessageService {
             + context.getConsumeQueue().getMaxOffsetInQueue() + ", but access logic queue failed. Correct nextBeginOffset to " + context.getNextBeginOffset());
     }
 
+
+    private void handleBufferQueue(GetMessageContext context, ReferredIterator<CqUnit> bufferConsumeQueue) {
+        try {
+            context.setNextPhyFileStartOffset(Long.MIN_VALUE);
+            while (bufferConsumeQueue.hasNext() && context.getNextBeginOffset() < context.getConsumeQueue().getMaxOffsetInQueue()) {
+                CqUnit cqUnit = bufferConsumeQueue.next();
+                boolean isInMem = estimateInMemByCommitOffset(cqUnit.getPos(), context.getMaxOffsetPy());
+
+                if ((cqUnit.getQueueOffset() - context.getOffset()) * context.getConsumeQueue().getUnitSize() > context.getMaxFilterMessageSize()) {
+                    break;
+                }
+
+                if (isTheBatchFull(cqUnit.getSize(), cqUnit.getBatchNum(), context.getMaxMsgNums(), context.getMaxPullSize(), context.getGetResult().getBufferTotalSize(), context.getGetResult().getMessageCount(), isInMem)) {
+                    break;
+                }
+
+                if (context.getGetResult().getBufferTotalSize() >= context.getMaxPullSize()) {
+                    break;
+                }
+
+                handleBufferQueueItem(context, cqUnit);
+            }
+        } finally {
+            bufferConsumeQueue.release();
+        }
+    }
+
+    private void handleBufferQueueItem(GetMessageContext context, CqUnit cqUnit) {
+        context.setMaxPhyOffsetPulling(cqUnit.getPos());
+        //Be careful, here should before the isTheBatchFull
+        context.setNextBeginOffset(cqUnit.getQueueOffset() + cqUnit.getBatchNum());
+
+        if (context.getNextPhyFileStartOffset() != Long.MIN_VALUE) {
+            if (cqUnit.getPos() < context.getNextPhyFileStartOffset()) {
+                return;
+            }
+        }
+
+        if (context.getMessageFilter() != null
+            && !context.getMessageFilter().isMatchedByConsumeQueue(cqUnit.getValidTagsCodeAsLong(), cqUnit.getCqExtUnit())) {
+            if (context.getGetResult().getBufferTotalSize() == 0) {
+                context.getGetResult().setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);
+            }
+
+            return;
+        }
+
+        SelectMappedBufferResult selectResult = messageStore.getCommitLog().getMessage(cqUnit.getPos(), cqUnit.getSize());
+        if (null == selectResult) {
+            if (context.getGetResult().getBufferTotalSize() == 0) {
+                context.getGetResult().setStatus(GetMessageStatus.MESSAGE_WAS_REMOVING);
+            }
+
+            context.setNextPhyFileStartOffset(messageStore.getCommitLog().rollNextFile(cqUnit.getPos()));
+            return;
+        }
+
+        if (messageStore.getMessageStoreConfig().isColdDataFlowControlEnable() && !MixAll.isSysConsumerGroupForNoColdReadLimit(context.getGroup()) && !selectResult.isInCache()) {
+            context.getGetResult().setColdDataSum(context.getGetResult().getColdDataSum() + cqUnit.getSize());
+        }
+
+        if (context.getMessageFilter() != null
+            && !context.getMessageFilter().isMatchedByCommitLog(selectResult.getByteBuffer().slice(), null)) {
+            if (context.getGetResult().getBufferTotalSize() == 0) {
+                context.getGetResult().setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);
+            }
+            // release...
+            selectResult.release();
+            return;
+        }
+        messageStore.getStoreStatsService().getGetMessageTransferredMsgCount().add(cqUnit.getBatchNum());
+        context.getGetResult().addMessage(selectResult, cqUnit.getQueueOffset(), cqUnit.getBatchNum());
+        context.getGetResult().setStatus(GetMessageStatus.FOUND);
+        context.setNextPhyFileStartOffset(Long.MIN_VALUE);
+    }
+
     public GetMessageResult getMessageFromQueue(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
         GetMessageResult getResult = new GetMessageResult();
         getResult.setStatus(GetMessageStatus.NO_MESSAGE_IN_QUEUE);
@@ -176,89 +252,13 @@ public class GetMessageService {
                 break;
             }
 
-            try {
-                long nextPhyFileStartOffset = Long.MIN_VALUE;
-                while (bufferConsumeQueue.hasNext()
-                    && context.getNextBeginOffset() < consumeQueue.getMaxOffsetInQueue()) {
-                    CqUnit cqUnit = bufferConsumeQueue.next();
-                    long offsetPy = cqUnit.getPos();
-                    int sizePy = cqUnit.getSize();
-
-                    boolean isInMem = estimateInMemByCommitOffset(offsetPy, context.getMaxOffsetPy());
-
-                    if ((cqUnit.getQueueOffset() - offset) * consumeQueue.getUnitSize() > context.getMaxFilterMessageSize()) {
-                        break;
-                    }
-
-                    if (isTheBatchFull(sizePy, cqUnit.getBatchNum(), maxMsgNums, context.getMaxPullSize(), getResult.getBufferTotalSize(), getResult.getMessageCount(), isInMem)) {
-                        break;
-                    }
-
-                    if (getResult.getBufferTotalSize() >= context.getMaxPullSize()) {
-                        break;
-                    }
-
-                    context.setMaxPhyOffsetPulling(offsetPy);
-
-                    //Be careful, here should before the isTheBatchFull
-                    context.setNextBeginOffset(cqUnit.getQueueOffset() + cqUnit.getBatchNum());
-
-                    if (nextPhyFileStartOffset != Long.MIN_VALUE) {
-                        if (offsetPy < nextPhyFileStartOffset) {
-                            continue;
-                        }
-                    }
-
-                    if (messageFilter != null
-                        && !messageFilter.isMatchedByConsumeQueue(cqUnit.getValidTagsCodeAsLong(), cqUnit.getCqExtUnit())) {
-                        if (getResult.getBufferTotalSize() == 0) {
-                            getResult.setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);
-                        }
-
-                        continue;
-                    }
-
-                    SelectMappedBufferResult selectResult = messageStore.getCommitLog().getMessage(offsetPy, sizePy);
-                    if (null == selectResult) {
-                        if (getResult.getBufferTotalSize() == 0) {
-                            getResult.setStatus(GetMessageStatus.MESSAGE_WAS_REMOVING);
-                        }
-
-                        nextPhyFileStartOffset = messageStore.getCommitLog().rollNextFile(offsetPy);
-                        continue;
-                    }
-
-                    if (messageStore.getMessageStoreConfig().isColdDataFlowControlEnable() && !MixAll.isSysConsumerGroupForNoColdReadLimit(group) && !selectResult.isInCache()) {
-                        getResult.setColdDataSum(getResult.getColdDataSum() + sizePy);
-                    }
-
-                    if (messageFilter != null
-                        && !messageFilter.isMatchedByCommitLog(selectResult.getByteBuffer().slice(), null)) {
-                        if (getResult.getBufferTotalSize() == 0) {
-                            getResult.setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);
-                        }
-                        // release...
-                        selectResult.release();
-                        continue;
-                    }
-                    messageStore.getStoreStatsService().getGetMessageTransferredMsgCount().add(cqUnit.getBatchNum());
-                    getResult.addMessage(selectResult, cqUnit.getQueueOffset(), cqUnit.getBatchNum());
-                    getResult.setStatus(GetMessageStatus.FOUND);
-                    nextPhyFileStartOffset = Long.MIN_VALUE;
-                }
-            } finally {
-                bufferConsumeQueue.release();
-            }
+            handleBufferQueue(context, bufferConsumeQueue);
         }
 
         recordDiskFallBehindSize(group, topic, queueId, context.getMaxOffsetPy(), context.getMaxPhyOffsetPulling());
         setSuggestPullingFromSlave(getResult, context.getMaxOffsetPy(), context.getMaxPhyOffsetPulling());
 
-        getResult.setNextBeginOffset(context.getNextBeginOffset());
-        getResult.setMaxOffset(consumeQueue.getMaxOffsetInQueue());
-        getResult.setMinOffset(consumeQueue.getMinOffsetInQueue());
-
-        return getResult;
+        return context.toGetResult();
     }
 
     private void recordDiskFallBehindSize(final String group, final String topic, final int queueId, long maxOffsetPy, long maxPhyOffsetPulling) {
