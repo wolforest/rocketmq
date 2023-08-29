@@ -48,6 +48,53 @@ public class PutMessageService {
         this.messageStore = messageStore;
     }
 
+
+
+    public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
+        CompletableFuture<PutMessageResult> hookResult = executeBeforePutMessage(msg);
+        if (hookResult != null) {
+            return hookResult;
+        }
+
+        CompletableFuture<PutMessageResult> validateResult = validateMessage(msg);
+        if (validateResult != null) {
+            return validateResult;
+        }
+
+
+        return asyncPutAndAddCallback(msg);
+    }
+
+    public CompletableFuture<PutMessageResult> asyncPutMessages(MessageExtBatch messageExtBatch) {
+        for (PutMessageHook putMessageHook : putMessageHookList) {
+            PutMessageResult handleResult = putMessageHook.executeBeforePutMessage(messageExtBatch);
+            if (handleResult != null) {
+                return CompletableFuture.completedFuture(handleResult);
+            }
+        }
+
+        return asyncPutAndAddCallback(messageExtBatch);
+    }
+
+    private CompletableFuture<PutMessageResult> asyncPutAndAddCallback(MessageExtBatch messageExtBatch) {
+        long beginTime = messageStore.getSystemClock().now();
+        CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessages(messageExtBatch);
+
+        putResultFuture.thenAccept(result -> {
+            long eclipseTime = messageStore.getSystemClock().now() - beginTime;
+            if (eclipseTime > 500) {
+                LOGGER.warn("not in lock eclipse time(ms)={}, bodyLength={}", eclipseTime, messageExtBatch.getBody().length);
+            }
+            messageStore.getStoreStatsService().setPutMessageEntireTimeMax(eclipseTime);
+
+            if (null == result || !result.isOk()) {
+                messageStore.getStoreStatsService().getPutMessageFailedTimes().add(1);
+            }
+        });
+
+        return putResultFuture;
+    }
+
     private CompletableFuture<PutMessageResult> executeBeforePutMessage(MessageExtBrokerInner msg) {
         for (PutMessageHook putMessageHook : putMessageHookList) {
             PutMessageResult handleResult = putMessageHook.executeBeforePutMessage(msg);
@@ -77,52 +124,7 @@ public class PutMessageService {
         return null;
     }
 
-    public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
-        CompletableFuture<PutMessageResult> hookResult = executeBeforePutMessage(msg);
-        if (hookResult != null) {
-            return hookResult;
-        }
-
-        CompletableFuture<PutMessageResult> validateResult = validateMessage(msg);
-        if (validateResult != null) {
-            return validateResult;
-        }
-
-
-        return addPutCallback(msg);
-    }
-
-    public CompletableFuture<PutMessageResult> asyncPutMessages(MessageExtBatch messageExtBatch) {
-        for (PutMessageHook putMessageHook : putMessageHookList) {
-            PutMessageResult handleResult = putMessageHook.executeBeforePutMessage(messageExtBatch);
-            if (handleResult != null) {
-                return CompletableFuture.completedFuture(handleResult);
-            }
-        }
-
-        return addPutCallback(messageExtBatch);
-    }
-
-    private CompletableFuture<PutMessageResult> addPutCallback(MessageExtBatch messageExtBatch) {
-        long beginTime = messageStore.getSystemClock().now();
-        CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessages(messageExtBatch);
-
-        putResultFuture.thenAccept(result -> {
-            long eclipseTime = messageStore.getSystemClock().now() - beginTime;
-            if (eclipseTime > 500) {
-                LOGGER.warn("not in lock eclipse time(ms)={}, bodyLength={}", eclipseTime, messageExtBatch.getBody().length);
-            }
-            messageStore.getStoreStatsService().setPutMessageEntireTimeMax(eclipseTime);
-
-            if (null == result || !result.isOk()) {
-                messageStore.getStoreStatsService().getPutMessageFailedTimes().add(1);
-            }
-        });
-
-        return putResultFuture;
-    }
-
-    private CompletableFuture<PutMessageResult> addPutCallback(MessageExtBrokerInner msg) {
+    private CompletableFuture<PutMessageResult> asyncPutAndAddCallback(MessageExtBrokerInner msg) {
         long beginTime = messageStore.getSystemClock().now();
         CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessage(msg);
         putResultFuture.thenAccept(result -> {
