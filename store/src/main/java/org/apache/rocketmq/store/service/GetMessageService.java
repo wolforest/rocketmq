@@ -123,13 +123,7 @@ public class GetMessageService {
         return getResult;
     }
 
-    public GetMessageResult getMessageFromQueue(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
-        GetMessageStatus status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
-        long nextBeginOffset = offset;
-        GetMessageResult getResult = new GetMessageResult();
-        final long maxOffsetPy = messageStore.getCommitLog().getMaxOffset();
-
-        ConsumeQueueInterface consumeQueue = messageStore.findConsumeQueue(topic, queueId);
+    private GetMessageResult handleOffsetException(GetMessageResult getResult, final long offset, ConsumeQueueInterface consumeQueue) {
         if (consumeQueue == null) {
             return handleQueueNotFound(getResult, offset);
         }
@@ -148,6 +142,21 @@ public class GetMessageService {
 
         if (offset > consumeQueue.getMaxOffsetInQueue()) {
             return handleOffsetOverflowBadly(getResult, offset, consumeQueue);
+        }
+
+        return null;
+    }
+
+    public GetMessageResult getMessageFromQueue(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
+        GetMessageStatus status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
+        long nextBeginOffset = offset;
+        GetMessageResult getResult = new GetMessageResult();
+        final long maxOffsetPy = messageStore.getCommitLog().getMaxOffset();
+
+        ConsumeQueueInterface consumeQueue = messageStore.findConsumeQueue(topic, queueId);
+        GetMessageResult offsetResult = handleOffsetException(getResult, offset, consumeQueue);
+        if (null != offsetResult) {
+            return offsetResult;
         }
 
         final int maxFilterMessageSize = Math.max(16000, maxMsgNums * consumeQueue.getUnitSize());
