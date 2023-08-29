@@ -59,12 +59,7 @@ public class PutMessageService {
         return null;
     }
 
-    public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
-        CompletableFuture<PutMessageResult> hookResult = executeBeforePutMessage(msg);
-        if (hookResult != null) {
-            return hookResult;
-        }
-
+    private CompletableFuture<PutMessageResult> validateMessage(MessageExtBrokerInner msg) {
         if (msg.getProperties().containsKey(MessageConst.PROPERTY_INNER_NUM)
             && !MessageSysFlag.check(msg.getSysFlag(), MessageSysFlag.INNER_BATCH_FLAG)) {
             LOGGER.warn("[BUG]The message had property {} but is not an inner batch", MessageConst.PROPERTY_INNER_NUM);
@@ -78,6 +73,21 @@ public class PutMessageService {
                 return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, null));
             }
         }
+
+        return null;
+    }
+
+    public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
+        CompletableFuture<PutMessageResult> hookResult = executeBeforePutMessage(msg);
+        if (hookResult != null) {
+            return hookResult;
+        }
+
+        CompletableFuture<PutMessageResult> validateResult = validateMessage(msg);
+        if (validateResult != null) {
+            return validateResult;
+        }
+
 
         return addPutCallback(msg);
     }
