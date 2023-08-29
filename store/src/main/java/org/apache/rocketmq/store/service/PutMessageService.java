@@ -48,8 +48,6 @@ public class PutMessageService {
         this.messageStore = messageStore;
     }
 
-
-
     public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
         CompletableFuture<PutMessageResult> hookResult = executeBeforePutMessage(msg);
         if (hookResult != null) {
@@ -66,11 +64,9 @@ public class PutMessageService {
     }
 
     public CompletableFuture<PutMessageResult> asyncPutMessages(MessageExtBatch messageExtBatch) {
-        for (PutMessageHook putMessageHook : putMessageHookList) {
-            PutMessageResult handleResult = putMessageHook.executeBeforePutMessage(messageExtBatch);
-            if (handleResult != null) {
-                return CompletableFuture.completedFuture(handleResult);
-            }
+        CompletableFuture<PutMessageResult> hookResult = executeBeforePutMessage(messageExtBatch);
+        if (hookResult != null) {
+            return hookResult;
         }
 
         return asyncPutAndAddCallback(messageExtBatch);
