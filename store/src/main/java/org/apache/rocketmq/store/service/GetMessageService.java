@@ -58,15 +58,23 @@ public class GetMessageService {
         return CompletableFuture.completedFuture(getMessage(group, topic, queueId, offset, maxMsgNums, messageFilter));
     }
 
-    public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset,
-        final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
+    private boolean allowAccess() {
         if (messageStore.isShutdown()) {
             LOGGER.warn("message store has shutdown, so getMessage is forbidden");
-            return null;
+            return false;
         }
 
         if (!messageStore.getRunningFlags().isReadable()) {
             LOGGER.warn("message store is not readable, so getMessage is forbidden " + messageStore.getRunningFlags().getFlagBits());
+            return false;
+        }
+
+        return true;
+    }
+
+    public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset,
+        final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
+        if (!allowAccess()) {
             return null;
         }
 
@@ -75,7 +83,7 @@ public class GetMessageService {
         //check request topic flag
         if (Objects.equals(policy, CleanupPolicy.COMPACTION) && messageStore.getMessageStoreConfig().isEnableCompaction()) {
             return messageStore.getCompactionStore().getMessage(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize);
-        } // else skip
+        }
 
         long beginTime = messageStore.getSystemClock().now();
 
