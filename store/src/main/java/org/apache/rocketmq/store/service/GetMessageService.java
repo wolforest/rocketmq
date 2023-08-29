@@ -72,17 +72,25 @@ public class GetMessageService {
         return true;
     }
 
-    public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset,
-        final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
-        if (!allowAccess()) {
-            return null;
-        }
-
+    private GetMessageResult getMessageFromCompactionStore(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize) {
         Optional<TopicConfig> topicConfig = messageStore.getTopicConfig(topic);
         CleanupPolicy policy = CleanupPolicyUtils.getDeletePolicy(topicConfig);
         //check request topic flag
         if (Objects.equals(policy, CleanupPolicy.COMPACTION) && messageStore.getMessageStoreConfig().isEnableCompaction()) {
             return messageStore.getCompactionStore().getMessage(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize);
+        }
+
+        return null;
+    }
+
+    public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
+        if (!allowAccess()) {
+            return null;
+        }
+
+        GetMessageResult compactionResult = getMessageFromCompactionStore(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize);
+        if (compactionResult != null) {
+            return compactionResult;
         }
 
         long beginTime = messageStore.getSystemClock().now();
