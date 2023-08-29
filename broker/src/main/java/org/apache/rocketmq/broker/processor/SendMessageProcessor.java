@@ -244,12 +244,9 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         }
 
         final SendMessageResponseHeader responseHeader = (SendMessageResponseHeader) response.readCustomHeader();
-
-        final byte[] body = request.getBody();
-
-        int queueIdInt = requestHeader.getQueueId();
         TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
 
+        int queueIdInt = requestHeader.getQueueId();
         if (queueIdInt < 0) {
             queueIdInt = randomQueueId(topicConfig.getWriteQueueNums());
         }
@@ -257,14 +254,13 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
         msgInner.setTopic(requestHeader.getTopic());
         msgInner.setQueueId(queueIdInt);
+        msgInner.setBody(request.getBody());
+        msgInner.setFlag(requestHeader.getFlag());
 
         Map<String, String> oriProps = MessageDecoder.string2messageProperties(requestHeader.getProperties());
         if (!handleRetryAndDLQ(requestHeader, response, request, msgInner, topicConfig, oriProps)) {
             return response;
         }
-
-        msgInner.setBody(body);
-        msgInner.setFlag(requestHeader.getFlag());
 
         String uniqKey = oriProps.get(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
         if (uniqKey == null || uniqKey.length() <= 0) {
@@ -277,9 +273,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         CleanupPolicy cleanupPolicy = CleanupPolicyUtils.getDeletePolicy(Optional.of(topicConfig));
         if (Objects.equals(cleanupPolicy, CleanupPolicy.COMPACTION)) {
             if (StringUtils.isBlank(msgInner.getKeys())) {
-                response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-                response.setRemark("Required message key is missing");
-                return response;
+                return response.setCodeAndRemark(ResponseCode.MESSAGE_ILLEGAL, "Required message key is missing");
             }
         }
 
@@ -301,8 +295,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             if (this.brokerController.getBrokerConfig().isRejectTransactionMessage()) {
                 response.setCode(ResponseCode.NO_PERMISSION);
                 response.setRemark(
-                    "the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1()
-                        + "] sending transaction message is forbidden");
+                    "the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1() + "] sending transaction message is forbidden");
                 return response;
             }
             sendTransactionPrepareMessage = true;
@@ -349,9 +342,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         SendMessageContext sendMessageContext, ChannelHandlerContext ctx, int queueIdInt, long beginTimeMillis,
         TopicQueueMappingContext mappingContext, TopicMessageType messageType) {
         if (putMessageResult == null) {
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark("store putMessage return null");
-            return response;
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "store putMessage return null");
         }
         boolean sendOK = false;
 
@@ -642,34 +633,25 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             physicRatio = Math.min(physicRatio, UtilAll.getDiskPartitionSpaceUsedPercent(storePathPhysic));
         }
 
-        String storePathLogis =
-            StorePathConfigHelper.getStorePathConsumeQueue(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
+        String storePathLogis = StorePathConfigHelper.getStorePathConsumeQueue(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
         double logisRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathLogis);
 
-        String storePathIndex =
-            StorePathConfigHelper.getStorePathIndex(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
+        String storePathIndex = StorePathConfigHelper.getStorePathIndex(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
         double indexRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathIndex);
 
         return String.format("CL: %5.2f CQ: %5.2f INDEX: %5.2f", physicRatio, logisRatio, indexRatio);
     }
 
-    private RemotingCommand preSend(ChannelHandlerContext ctx, RemotingCommand request,
-        SendMessageRequestHeader requestHeader) {
+    private RemotingCommand preSend(ChannelHandlerContext ctx, RemotingCommand request, SendMessageRequestHeader requestHeader) {
         final RemotingCommand response = RemotingCommand.createResponseCommand(SendMessageResponseHeader.class);
-
         response.setOpaque(request.getOpaque());
-
         response.addExtField(MessageConst.PROPERTY_MSG_REGION, this.brokerController.getBrokerConfig().getRegionId());
         response.addExtField(MessageConst.PROPERTY_TRACE_SWITCH, String.valueOf(this.brokerController.getBrokerConfig().isTraceOn()));
-
         LOGGER.debug("Receive SendMessage request command {}", request);
 
         final long startTimestamp = this.brokerController.getBrokerConfig().getStartAcceptSendRequestTimeStamp();
-
         if (this.brokerController.getMessageStore().now() < startTimestamp) {
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark(String.format("broker unable to service, until %s", UtilAll.timeMillisToHumanString2(startTimestamp)));
-            return response;
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, String.format("broker unable to service, until %s", UtilAll.timeMillisToHumanString2(startTimestamp)));
         }
 
         response.setCode(-1);
