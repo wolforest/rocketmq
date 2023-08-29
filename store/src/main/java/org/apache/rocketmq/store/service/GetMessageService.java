@@ -259,20 +259,24 @@ public class GetMessageService {
             }
         }
 
-        final boolean diskFallRecorded = messageStore.getMessageStoreConfig().isDiskFallRecorded();
-        if (diskFallRecorded) {
-            long fallBehind = maxOffsetPy - maxPhyOffsetPulling;
-            messageStore.getBrokerStatsManager().recordDiskFallBehindSize(group, topic, queueId, fallBehind);
-        }
-
-
-
+        recordDiskFallBehindSize(group, topic, queueId, maxOffsetPy, maxPhyOffsetPulling);
         setSuggestPullingFromSlave(getResult, maxOffsetPy, maxPhyOffsetPulling);
+
         getResult.setNextBeginOffset(nextBeginOffset);
         getResult.setMaxOffset(consumeQueue.getMaxOffsetInQueue());
         getResult.setMinOffset(consumeQueue.getMinOffsetInQueue());
 
         return getResult;
+    }
+
+    private void recordDiskFallBehindSize(final String group, final String topic, final int queueId, long maxOffsetPy, long maxPhyOffsetPulling) {
+        final boolean diskFallRecorded = messageStore.getMessageStoreConfig().isDiskFallRecorded();
+        if (!diskFallRecorded) {
+            return;
+        }
+
+        long fallBehind = maxOffsetPy - maxPhyOffsetPulling;
+        messageStore.getBrokerStatsManager().recordDiskFallBehindSize(group, topic, queueId, fallBehind);
     }
 
     private void setSuggestPullingFromSlave(GetMessageResult getResult, long maxOffsetPy, long maxPhyOffsetPulling) {
