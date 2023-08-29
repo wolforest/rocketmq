@@ -79,42 +79,15 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         super(brokerController);
     }
 
+
+
     @Override
-    public RemotingCommand processRequest(ChannelHandlerContext ctx,
-        RemotingCommand request) throws RemotingCommandException {
-        SendMessageContext sendMessageContext;
+    public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         switch (request.getCode()) {
             case RequestCode.CONSUMER_SEND_MSG_BACK:
                 return this.consumerSendMsgBack(ctx, request);
             default:
-                SendMessageRequestHeader requestHeader = parseRequestHeader(request);
-                if (requestHeader == null) {
-                    return null;
-                }
-                TopicQueueMappingContext mappingContext = this.brokerController.getTopicQueueMappingManager().buildTopicQueueMappingContext(requestHeader, true);
-                RemotingCommand rewriteResult = this.brokerController.getTopicQueueMappingManager().rewriteRequestForStaticTopic(requestHeader, mappingContext);
-                if (rewriteResult != null) {
-                    return rewriteResult;
-                }
-                sendMessageContext = buildMsgContext(ctx, requestHeader, request);
-                try {
-                    this.executeSendMessageHookBefore(sendMessageContext);
-                } catch (AbortProcessException e) {
-                    final RemotingCommand errorResponse = RemotingCommand.createResponseCommand(e.getResponseCode(), e.getErrorMessage());
-                    errorResponse.setOpaque(request.getOpaque());
-                    return errorResponse;
-                }
-
-                RemotingCommand response;
-                if (requestHeader.isBatch()) {
-                    response = this.sendBatchMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
-                        (ctx1, response1) -> executeSendMessageHookAfter(response1, ctx1));
-                } else {
-                    response = this.sendMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
-                        (ctx12, response12) -> executeSendMessageHookAfter(response12, ctx12));
-                }
-
-                return response;
+                return processSendRequest(ctx, request);
         }
     }
 
@@ -129,6 +102,38 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         }
 
         return false;
+    }
+
+    private RemotingCommand processSendRequest(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
+        SendMessageContext sendMessageContext;
+        SendMessageRequestHeader requestHeader = parseRequestHeader(request);
+        if (requestHeader == null) {
+            return null;
+        }
+        TopicQueueMappingContext mappingContext = this.brokerController.getTopicQueueMappingManager().buildTopicQueueMappingContext(requestHeader, true);
+        RemotingCommand rewriteResult = this.brokerController.getTopicQueueMappingManager().rewriteRequestForStaticTopic(requestHeader, mappingContext);
+        if (rewriteResult != null) {
+            return rewriteResult;
+        }
+        sendMessageContext = buildMsgContext(ctx, requestHeader, request);
+        try {
+            this.executeSendMessageHookBefore(sendMessageContext);
+        } catch (AbortProcessException e) {
+            final RemotingCommand errorResponse = RemotingCommand.createResponseCommand(e.getResponseCode(), e.getErrorMessage());
+            errorResponse.setOpaque(request.getOpaque());
+            return errorResponse;
+        }
+
+        RemotingCommand response;
+        if (requestHeader.isBatch()) {
+            response = this.sendBatchMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
+                (ctx1, response1) -> executeSendMessageHookAfter(response1, ctx1));
+        } else {
+            response = this.sendMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
+                (ctx12, response12) -> executeSendMessageHookAfter(response12, ctx12));
+        }
+
+        return response;
     }
 
     /**
