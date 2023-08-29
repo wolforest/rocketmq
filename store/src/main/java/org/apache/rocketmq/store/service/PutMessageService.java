@@ -48,12 +48,21 @@ public class PutMessageService {
         this.messageStore = messageStore;
     }
 
-    public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
+    private CompletableFuture<PutMessageResult> executeBeforePutMessage(MessageExtBrokerInner msg) {
         for (PutMessageHook putMessageHook : putMessageHookList) {
             PutMessageResult handleResult = putMessageHook.executeBeforePutMessage(msg);
             if (handleResult != null) {
                 return CompletableFuture.completedFuture(handleResult);
             }
+        }
+
+        return null;
+    }
+
+    public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
+        CompletableFuture<PutMessageResult> hookResult = executeBeforePutMessage(msg);
+        if (hookResult != null) {
+            return hookResult;
         }
 
         if (msg.getProperties().containsKey(MessageConst.PROPERTY_INNER_NUM)
