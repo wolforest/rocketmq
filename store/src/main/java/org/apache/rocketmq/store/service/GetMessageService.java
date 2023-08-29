@@ -83,25 +83,12 @@ public class GetMessageService {
         return null;
     }
 
-    public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
-        if (!allowAccess()) {
-            return null;
-        }
-
-        GetMessageResult compactionResult = getMessageFromCompactionStore(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize);
-        if (compactionResult != null) {
-            return compactionResult;
-        }
-
-        long beginTime = messageStore.getSystemClock().now();
-
+    public GetMessageResult getMessageFromQueue(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
         GetMessageStatus status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
         long nextBeginOffset = offset;
         long minOffset = 0;
         long maxOffset = 0;
-
         GetMessageResult getResult = new GetMessageResult();
-
         final long maxOffsetPy = messageStore.getCommitLog().getMaxOffset();
 
         ConsumeQueueInterface consumeQueue = messageStore.findConsumeQueue(topic, queueId);
@@ -237,6 +224,32 @@ public class GetMessageService {
             nextBeginOffset = nextOffsetCorrection(offset, 0);
         }
 
+        getResult.setStatus(status);
+        getResult.setNextBeginOffset(nextBeginOffset);
+        getResult.setMaxOffset(maxOffset);
+        getResult.setMinOffset(minOffset);
+
+        return getResult;
+    }
+
+    public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
+        if (!allowAccess()) {
+            return null;
+        }
+
+        GetMessageResult compactionResult = getMessageFromCompactionStore(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize);
+        if (compactionResult != null) {
+            return compactionResult;
+        }
+
+        long beginTime = messageStore.getSystemClock().now();
+        GetMessageResult getResult = getMessageFromQueue(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize, messageFilter);
+
+        setMonitorMatrix(getResult.getStatus(), beginTime);
+        return getResult;
+    }
+
+    private void setMonitorMatrix(GetMessageStatus status, long beginTime) {
         if (GetMessageStatus.FOUND == status) {
             messageStore.getStoreStatsService().getGetMessageTimesTotalFound().add(1);
         } else {
@@ -244,24 +257,12 @@ public class GetMessageService {
         }
         long elapsedTime = messageStore.getSystemClock().now() - beginTime;
         messageStore.getStoreStatsService().setGetMessageEntireTimeMax(elapsedTime);
-
-        // lazy init no data found.
-        if (getResult == null) {
-            getResult = new GetMessageResult(0);
-        }
-
-        getResult.setStatus(status);
-        getResult.setNextBeginOffset(nextBeginOffset);
-        getResult.setMaxOffset(maxOffset);
-        getResult.setMinOffset(minOffset);
-        return getResult;
     }
 
     public CompletableFuture<GetMessageResult> getMessageAsync(String group, String topic,
         int queueId, long offset, int maxMsgNums, int maxTotalMsgSize, MessageFilter messageFilter) {
         return CompletableFuture.completedFuture(getMessage(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize, messageFilter));
     }
-
 
     private long nextOffsetCorrection(long oldOffset, long newOffset) {
         long nextOffset = oldOffset;
