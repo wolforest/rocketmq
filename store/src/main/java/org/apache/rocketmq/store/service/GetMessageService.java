@@ -40,7 +40,7 @@ import org.apache.rocketmq.store.queue.ReferredIterator;
 public class GetMessageService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     // Max pull msg size
-    private final static int MAX_PULL_MSG_SIZE = 128 * 1024 * 1024;
+    public final static int MAX_PULL_MSG_SIZE = 128 * 1024 * 1024;
 
     private final DefaultMessageStore messageStore;
 
@@ -147,14 +147,13 @@ public class GetMessageService {
         return null;
     }
 
-    private Long getMaxPullSize(final String topic, final int queueId, final int maxTotalMsgSize) {
-        long maxPullSize = Math.max(maxTotalMsgSize, 100);
-        if (maxPullSize > MAX_PULL_MSG_SIZE) {
-            LOGGER.warn("The max pull size is too large maxPullSize={} topic={} queueId={}", maxPullSize, topic, queueId);
-            maxPullSize = MAX_PULL_MSG_SIZE;
-        }
+    private void handleNoBufferQueue(GetMessageContext context) {
+        context.getGetResult().setStatus(GetMessageStatus.OFFSET_FOUND_NULL);
 
-        return maxPullSize;
+        long tmpOffset = nextOffsetCorrection(context.getNextBeginOffset(), messageStore.getConsumeQueueStore().rollNextFile(context.getConsumeQueue(), context.getNextBeginOffset()));
+        context.setNextBeginOffset(tmpOffset);
+        LOGGER.warn("consumer request topic: " + context.getTopic() + "offset: " + context.getOffset() + " minOffset: " + context.getConsumeQueue().getMinOffsetInQueue() + " maxOffset: "
+            + context.getConsumeQueue().getMaxOffsetInQueue() + ", but access logic queue failed. Correct nextBeginOffset to " + context.getNextBeginOffset());
     }
 
     public GetMessageResult getMessageFromQueue(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
@@ -167,55 +166,42 @@ public class GetMessageService {
             return offsetResult;
         }
 
-        long nextBeginOffset = offset;
-        final long maxOffsetPy = messageStore.getCommitLog().getMaxOffset();
-        final int maxFilterMessageSize = Math.max(16000, maxMsgNums * consumeQueue.getUnitSize());
+        GetMessageContext context = new GetMessageContext(messageStore, consumeQueue, getResult, group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize, messageFilter);
 
-        long maxPullSize = getMaxPullSize(topic, queueId, maxTotalMsgSize);
-        getResult.setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);
-        long maxPhyOffsetPulling = 0;
         int cqFileNum = 0;
-
-        while (getResult.getBufferTotalSize() <= 0
-            && nextBeginOffset < consumeQueue.getMaxOffsetInQueue()
-            && cqFileNum++ < messageStore.getMessageStoreConfig().getTravelCqFileNumWhenGetMessage()) {
-            ReferredIterator<CqUnit> bufferConsumeQueue = consumeQueue.iterateFrom(nextBeginOffset);
-
+        while (getResult.getBufferTotalSize() <= 0 && context.getNextBeginOffset() < consumeQueue.getMaxOffsetInQueue() && cqFileNum++ < messageStore.getMessageStoreConfig().getTravelCqFileNumWhenGetMessage()) {
+            ReferredIterator<CqUnit> bufferConsumeQueue = consumeQueue.iterateFrom(context.getNextBeginOffset());
             if (bufferConsumeQueue == null) {
-                getResult.setStatus(GetMessageStatus.OFFSET_FOUND_NULL);
-
-                nextBeginOffset = nextOffsetCorrection(nextBeginOffset, messageStore.getConsumeQueueStore().rollNextFile(consumeQueue, nextBeginOffset));
-                LOGGER.warn("consumer request topic: " + topic + "offset: " + offset + " minOffset: " + consumeQueue.getMinOffsetInQueue() + " maxOffset: "
-                    + consumeQueue.getMaxOffsetInQueue() + ", but access logic queue failed. Correct nextBeginOffset to " + nextBeginOffset);
+                handleNoBufferQueue(context);
                 break;
             }
 
             try {
                 long nextPhyFileStartOffset = Long.MIN_VALUE;
                 while (bufferConsumeQueue.hasNext()
-                    && nextBeginOffset < consumeQueue.getMaxOffsetInQueue()) {
+                    && context.getNextBeginOffset() < consumeQueue.getMaxOffsetInQueue()) {
                     CqUnit cqUnit = bufferConsumeQueue.next();
                     long offsetPy = cqUnit.getPos();
                     int sizePy = cqUnit.getSize();
 
-                    boolean isInMem = estimateInMemByCommitOffset(offsetPy, maxOffsetPy);
+                    boolean isInMem = estimateInMemByCommitOffset(offsetPy, context.getMaxOffsetPy());
 
-                    if ((cqUnit.getQueueOffset() - offset) * consumeQueue.getUnitSize() > maxFilterMessageSize) {
+                    if ((cqUnit.getQueueOffset() - offset) * consumeQueue.getUnitSize() > context.getMaxFilterMessageSize()) {
                         break;
                     }
 
-                    if (isTheBatchFull(sizePy, cqUnit.getBatchNum(), maxMsgNums, maxPullSize, getResult.getBufferTotalSize(), getResult.getMessageCount(), isInMem)) {
+                    if (isTheBatchFull(sizePy, cqUnit.getBatchNum(), maxMsgNums, context.getMaxPullSize(), getResult.getBufferTotalSize(), getResult.getMessageCount(), isInMem)) {
                         break;
                     }
 
-                    if (getResult.getBufferTotalSize() >= maxPullSize) {
+                    if (getResult.getBufferTotalSize() >= context.getMaxPullSize()) {
                         break;
                     }
 
-                    maxPhyOffsetPulling = offsetPy;
+                    context.setMaxPhyOffsetPulling(offsetPy);
 
                     //Be careful, here should before the isTheBatchFull
-                    nextBeginOffset = cqUnit.getQueueOffset() + cqUnit.getBatchNum();
+                    context.setNextBeginOffset(cqUnit.getQueueOffset() + cqUnit.getBatchNum());
 
                     if (nextPhyFileStartOffset != Long.MIN_VALUE) {
                         if (offsetPy < nextPhyFileStartOffset) {
@@ -265,10 +251,10 @@ public class GetMessageService {
             }
         }
 
-        recordDiskFallBehindSize(group, topic, queueId, maxOffsetPy, maxPhyOffsetPulling);
-        setSuggestPullingFromSlave(getResult, maxOffsetPy, maxPhyOffsetPulling);
+        recordDiskFallBehindSize(group, topic, queueId, context.getMaxOffsetPy(), context.getMaxPhyOffsetPulling());
+        setSuggestPullingFromSlave(getResult, context.getMaxOffsetPy(), context.getMaxPhyOffsetPulling());
 
-        getResult.setNextBeginOffset(nextBeginOffset);
+        getResult.setNextBeginOffset(context.getNextBeginOffset());
         getResult.setMaxOffset(consumeQueue.getMaxOffsetInQueue());
         getResult.setMinOffset(consumeQueue.getMinOffsetInQueue());
 
