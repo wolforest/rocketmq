@@ -1090,15 +1090,18 @@ public class CommitLog implements Swappable {
     public SelectMappedBufferResult getMessage(final long offset, final int size) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
-        if (mappedFile != null) {
-            int pos = (int) (offset % mappedFileSize);
-            SelectMappedBufferResult selectMappedBufferResult = mappedFile.selectMappedBuffer(pos, size);
-            if (null != selectMappedBufferResult) {
-                selectMappedBufferResult.setInCache(coldDataCheckService.isDataInPageCache(offset));
-                return selectMappedBufferResult;
-            }
+        if (mappedFile == null) {
+            return null;
         }
-        return null;
+
+        int pos = (int) (offset % mappedFileSize);
+        SelectMappedBufferResult selectMappedBufferResult = mappedFile.selectMappedBuffer(pos, size);
+        if (null == selectMappedBufferResult) {
+            return null;
+        }
+
+        selectMappedBufferResult.setInCache(coldDataCheckService.isDataInPageCache(offset));
+        return selectMappedBufferResult;
     }
 
     public long rollNextFile(final long offset) {
