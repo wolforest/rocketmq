@@ -91,6 +91,14 @@ public class GetMessageService {
         return getResult;
     }
 
+    private GetMessageResult handleNoMessageInQueue(GetMessageResult getResult, final long offset) {
+        getResult.setStatus(GetMessageStatus.NO_MESSAGE_IN_QUEUE);
+        getResult.setNextBeginOffset(nextOffsetCorrection(offset, 0));
+        getResult.setMaxOffset(0);
+        getResult.setMinOffset(0);
+        return getResult;
+    }
+
     public GetMessageResult getMessageFromQueue(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
         GetMessageStatus status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
         long nextBeginOffset = offset;
@@ -103,9 +111,10 @@ public class GetMessageService {
         }
 
         if (consumeQueue.getMaxOffsetInQueue() == 0) {
-            status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
-            nextBeginOffset = nextOffsetCorrection(offset, 0);
-        } else if (offset < consumeQueue.getMinOffsetInQueue()) {
+            return handleNoMessage(getResult, offset);
+        }
+
+        if (offset < consumeQueue.getMinOffsetInQueue()) {
             status = GetMessageStatus.OFFSET_TOO_SMALL;
             nextBeginOffset = nextOffsetCorrection(offset, consumeQueue.getMinOffsetInQueue());
         } else if (offset == consumeQueue.getMaxOffsetInQueue()) {
