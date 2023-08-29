@@ -76,25 +76,6 @@ public class PutMessageService {
         return asyncPutAndAddCallback(messageExtBatch);
     }
 
-    private CompletableFuture<PutMessageResult> asyncPutAndAddCallback(MessageExtBatch messageExtBatch) {
-        long beginTime = messageStore.getSystemClock().now();
-        CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessages(messageExtBatch);
-
-        putResultFuture.thenAccept(result -> {
-            long eclipseTime = messageStore.getSystemClock().now() - beginTime;
-            if (eclipseTime > 500) {
-                LOGGER.warn("not in lock eclipse time(ms)={}, bodyLength={}", eclipseTime, messageExtBatch.getBody().length);
-            }
-            messageStore.getStoreStatsService().setPutMessageEntireTimeMax(eclipseTime);
-
-            if (null == result || !result.isOk()) {
-                messageStore.getStoreStatsService().getPutMessageFailedTimes().add(1);
-            }
-        });
-
-        return putResultFuture;
-    }
-
     private CompletableFuture<PutMessageResult> executeBeforePutMessage(MessageExtBrokerInner msg) {
         for (PutMessageHook putMessageHook : putMessageHookList) {
             PutMessageResult handleResult = putMessageHook.executeBeforePutMessage(msg);
@@ -128,19 +109,46 @@ public class PutMessageService {
         long beginTime = messageStore.getSystemClock().now();
         CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessage(msg);
         putResultFuture.thenAccept(result -> {
-            long elapsedTime = messageStore.getSystemClock().now() - beginTime;
-            if (elapsedTime > 500) {
-                LOGGER.warn("DefaultMessageStore#putMessage: CommitLog#putMessage cost {}ms, topic={}, bodyLength={}",
-                    elapsedTime, msg.getTopic(), msg.getBody().length);
-            }
-            messageStore.getStoreStatsService().setPutMessageEntireTimeMax(elapsedTime);
-
-            if (null == result || !result.isOk()) {
-                messageStore.getStoreStatsService().getPutMessageFailedTimes().add(1);
-            }
+            recodeRequestTime(beginTime, msg);
+            countFailedTimes(result);
         });
 
         return putResultFuture;
+    }
+
+    private CompletableFuture<PutMessageResult> asyncPutAndAddCallback(MessageExtBatch messageExtBatch) {
+        long beginTime = messageStore.getSystemClock().now();
+        CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessages(messageExtBatch);
+
+        putResultFuture.thenAccept(result -> {
+            recodeRequestTime(beginTime, messageExtBatch);
+            countFailedTimes(result);
+        });
+
+        return putResultFuture;
+    }
+
+    private void recodeRequestTime(long beginTime, MessageExtBrokerInner msg) {
+        long elapsedTime = messageStore.getSystemClock().now() - beginTime;
+        if (elapsedTime > 500) {
+            LOGGER.warn("DefaultMessageStore#putMessage: CommitLog#putMessage cost {}ms, topic={}, bodyLength={}",
+                elapsedTime, msg.getTopic(), msg.getBody().length);
+        }
+        messageStore.getStoreStatsService().setPutMessageEntireTimeMax(elapsedTime);
+    }
+
+    private void recodeRequestTime(long beginTime, MessageExtBatch messageExtBatch) {
+        long eclipseTime = messageStore.getSystemClock().now() - beginTime;
+        if (eclipseTime > 500) {
+            LOGGER.warn("not in lock eclipse time(ms)={}, bodyLength={}", eclipseTime, messageExtBatch.getBody().length);
+        }
+        messageStore.getStoreStatsService().setPutMessageEntireTimeMax(eclipseTime);
+    }
+
+    private void countFailedTimes(PutMessageResult result) {
+        if (null == result || !result.isOk()) {
+            messageStore.getStoreStatsService().getPutMessageFailedTimes().add(1);
+        }
     }
 
     public PutMessageResult putMessage(MessageExtBrokerInner msg) {
