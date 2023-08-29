@@ -147,6 +147,16 @@ public class GetMessageService {
         return null;
     }
 
+    private Long getMaxPullSize(final String topic, final int queueId, final int maxTotalMsgSize) {
+        long maxPullSize = Math.max(maxTotalMsgSize, 100);
+        if (maxPullSize > MAX_PULL_MSG_SIZE) {
+            LOGGER.warn("The max pull size is too large maxPullSize={} topic={} queueId={}", maxPullSize, topic, queueId);
+            maxPullSize = MAX_PULL_MSG_SIZE;
+        }
+
+        return maxPullSize;
+    }
+
     public GetMessageResult getMessageFromQueue(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
         GetMessageResult getResult = new GetMessageResult();
         getResult.setStatus(GetMessageStatus.NO_MESSAGE_IN_QUEUE);
@@ -161,11 +171,7 @@ public class GetMessageService {
         final long maxOffsetPy = messageStore.getCommitLog().getMaxOffset();
         final int maxFilterMessageSize = Math.max(16000, maxMsgNums * consumeQueue.getUnitSize());
 
-        long maxPullSize = Math.max(maxTotalMsgSize, 100);
-        if (maxPullSize > MAX_PULL_MSG_SIZE) {
-            LOGGER.warn("The max pull size is too large maxPullSize={} topic={} queueId={}", maxPullSize, topic, queueId);
-            maxPullSize = MAX_PULL_MSG_SIZE;
-        }
+        long maxPullSize = getMaxPullSize(topic, queueId, maxTotalMsgSize);
         getResult.setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);
         long maxPhyOffsetPulling = 0;
         int cqFileNum = 0;
