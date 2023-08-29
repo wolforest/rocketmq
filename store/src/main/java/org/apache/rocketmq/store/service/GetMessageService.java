@@ -99,6 +99,22 @@ public class GetMessageService {
         return getResult;
     }
 
+    private GetMessageResult handleOffsetTooSmall(GetMessageResult getResult, final long offset, ConsumeQueueInterface consumeQueue) {
+        getResult.setStatus(GetMessageStatus.OFFSET_TOO_SMALL);
+        getResult.setNextBeginOffset(nextOffsetCorrection(offset, consumeQueue.getMinOffsetInQueue()));
+        getResult.setMaxOffset(0);
+        getResult.setMinOffset(0);
+        return getResult;
+    }
+
+    private GetMessageResult handleOffsetOverflowOne(GetMessageResult getResult, final long offset) {
+        getResult.setStatus(GetMessageStatus.OFFSET_OVERFLOW_ONE);
+        getResult.setNextBeginOffset(nextOffsetCorrection(offset, offset));
+        getResult.setMaxOffset(0);
+        getResult.setMinOffset(0);
+        return getResult;
+    }
+
     public GetMessageResult getMessageFromQueue(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
         GetMessageStatus status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
         long nextBeginOffset = offset;
@@ -111,16 +127,18 @@ public class GetMessageService {
         }
 
         if (consumeQueue.getMaxOffsetInQueue() == 0) {
-            return handleNoMessage(getResult, offset);
+            return handleNoMessageInQueue(getResult, offset);
         }
 
         if (offset < consumeQueue.getMinOffsetInQueue()) {
-            status = GetMessageStatus.OFFSET_TOO_SMALL;
-            nextBeginOffset = nextOffsetCorrection(offset, consumeQueue.getMinOffsetInQueue());
-        } else if (offset == consumeQueue.getMaxOffsetInQueue()) {
-            status = GetMessageStatus.OFFSET_OVERFLOW_ONE;
-            nextBeginOffset = nextOffsetCorrection(offset, offset);
-        } else if (offset > consumeQueue.getMaxOffsetInQueue()) {
+            return handleOffsetTooSmall(getResult, offset, consumeQueue);
+        }
+
+        if (offset == consumeQueue.getMaxOffsetInQueue()) {
+            return handleOffsetOverflowOne(getResult, offset);
+        }
+
+        if (offset > consumeQueue.getMaxOffsetInQueue()) {
             status = GetMessageStatus.OFFSET_OVERFLOW_BADLY;
             nextBeginOffset = nextOffsetCorrection(offset, consumeQueue.getMaxOffsetInQueue());
         } else {
