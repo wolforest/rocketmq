@@ -157,9 +157,7 @@ public class PutMessageService {
 
     private PutMessageResult waitForPutResult(CompletableFuture<PutMessageResult> putMessageResultFuture) {
         try {
-            int putMessageTimeout =
-                Math.max(messageStore.getMessageStoreConfig().getSyncFlushTimeout(),
-                    messageStore.getMessageStoreConfig().getSlaveTimeout()) + 5000;
+            int putMessageTimeout = Math.max(messageStore.getMessageStoreConfig().getSyncFlushTimeout(), messageStore.getMessageStoreConfig().getSlaveTimeout()) + 5000;
             return putMessageResultFuture.get(putMessageTimeout, TimeUnit.MILLISECONDS);
         } catch (ExecutionException | InterruptedException e) {
             return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null);
