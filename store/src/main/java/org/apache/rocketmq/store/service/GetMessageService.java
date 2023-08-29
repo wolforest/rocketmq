@@ -58,6 +58,28 @@ public class GetMessageService {
         return CompletableFuture.completedFuture(getMessage(group, topic, queueId, offset, maxMsgNums, messageFilter));
     }
 
+    public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
+        if (!allowAccess()) {
+            return null;
+        }
+
+        GetMessageResult compactionResult = getMessageFromCompactionStore(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize);
+        if (compactionResult != null) {
+            return compactionResult;
+        }
+
+        long beginTime = messageStore.getSystemClock().now();
+        GetMessageResult getResult = getMessageFromQueue(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize, messageFilter);
+
+        setMonitorMatrix(getResult.getStatus(), beginTime);
+        return getResult;
+    }
+
+    public CompletableFuture<GetMessageResult> getMessageAsync(String group, String topic,
+        int queueId, long offset, int maxMsgNums, int maxTotalMsgSize, MessageFilter messageFilter) {
+        return CompletableFuture.completedFuture(getMessage(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize, messageFilter));
+    }
+
     private boolean allowAccess() {
         if (messageStore.isShutdown()) {
             LOGGER.warn("message store has shutdown, so getMessage is forbidden");
@@ -155,7 +177,6 @@ public class GetMessageService {
         LOGGER.warn("consumer request topic: " + context.getTopic() + "offset: " + context.getOffset() + " minOffset: " + context.getConsumeQueue().getMinOffsetInQueue() + " maxOffset: "
             + context.getConsumeQueue().getMaxOffsetInQueue() + ", but access logic queue failed. Correct nextBeginOffset to " + context.getNextBeginOffset());
     }
-
 
     private void handleBufferQueue(GetMessageContext context, ReferredIterator<CqUnit> bufferConsumeQueue) {
         try {
@@ -287,28 +308,6 @@ public class GetMessageService {
         messageStore.getStoreStatsService().setGetMessageEntireTimeMax(elapsedTime);
     }
 
-    public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset, final int maxMsgNums, final int maxTotalMsgSize, final MessageFilter messageFilter) {
-        if (!allowAccess()) {
-            return null;
-        }
-
-        GetMessageResult compactionResult = getMessageFromCompactionStore(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize);
-        if (compactionResult != null) {
-            return compactionResult;
-        }
-
-        long beginTime = messageStore.getSystemClock().now();
-        GetMessageResult getResult = getMessageFromQueue(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize, messageFilter);
-
-        setMonitorMatrix(getResult.getStatus(), beginTime);
-        return getResult;
-    }
-
-    public CompletableFuture<GetMessageResult> getMessageAsync(String group, String topic,
-        int queueId, long offset, int maxMsgNums, int maxTotalMsgSize, MessageFilter messageFilter) {
-        return CompletableFuture.completedFuture(getMessage(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize, messageFilter));
-    }
-
     private long nextOffsetCorrection(long oldOffset, long newOffset) {
         long nextOffset = oldOffset;
         if (messageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE ||
@@ -352,6 +351,5 @@ public class GetMessageService {
             return messageTotal > messageStore.getMessageStoreConfig().getMaxTransferCountOnMessageInDisk() - 1;
         }
     }
-
 
 }
