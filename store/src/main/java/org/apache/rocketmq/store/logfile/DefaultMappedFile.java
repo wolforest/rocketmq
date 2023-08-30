@@ -185,11 +185,13 @@ public class DefaultMappedFile extends AbstractMappedFile {
     public boolean renameTo(String fileName) {
         File newFile = new File(fileName);
         boolean rename = file.renameTo(newFile);
-        if (rename) {
-            this.fileName = fileName;
-            this.file = newFile;
+        if (!rename) {
+            return false;
         }
-        return rename;
+
+        this.fileName = fileName;
+        this.file = newFile;
+        return true;
     }
 
     @Override
