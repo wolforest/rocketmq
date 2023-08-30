@@ -105,8 +105,8 @@ public class PutMessageService {
         long beginTime = messageStore.getSystemClock().now();
         CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessage(msg);
         putResultFuture.thenAccept(result -> {
-            recodeRequestTime(beginTime, msg);
-            countFailedTimes(result);
+            PutMessageService.this.recodeRequestTime(beginTime, msg);
+            PutMessageService.this.countFailedTimes(result);
         });
 
         return putResultFuture;
@@ -117,8 +117,8 @@ public class PutMessageService {
         CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessages(messageExtBatch);
 
         putResultFuture.thenAccept(result -> {
-            recodeRequestTime(beginTime, messageExtBatch);
-            countFailedTimes(result);
+            PutMessageService.this.recodeRequestTime(beginTime, messageExtBatch);
+            PutMessageService.this.countFailedTimes(result);
         });
 
         return putResultFuture;

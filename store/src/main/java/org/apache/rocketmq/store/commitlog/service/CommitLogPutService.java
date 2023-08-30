@@ -41,7 +41,6 @@ import org.apache.rocketmq.store.commitlog.GroupCommitRequest;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.ha.HAService;
 import org.apache.rocketmq.store.logfile.MappedFile;
-import org.apache.rocketmq.store.stats.StoreStatsService;
 import org.apache.rocketmq.store.util.LibC;
 
 public class CommitLogPutService {
@@ -55,157 +54,33 @@ public class CommitLogPutService {
         this.defaultMessageStore = (DefaultMessageStore) commitLog.getMessageStore();
     }
 
-
     public CompletableFuture<PutMessageResult> asyncPutMessage(final MessageExtBrokerInner msg) {
         initPutMessage(msg);
+        CommitLogPutContext context = initContext(msg);
+        updateMaxMessageSize(context.getPutMessageThreadLocal());
 
-        // Back to Results
-        AppendMessageResult result = null;
-        StoreStatsService storeStatsService = this.defaultMessageStore.getStoreStatsService();
-
-        MessageExtEncoder.PutMessageThreadLocal putMessageThreadLocal = commitLog.getPutMessageThreadLocal().get();
-        updateMaxMessageSize(putMessageThreadLocal);
-        String topicQueueKey = generateKey(putMessageThreadLocal.getKeyBuilder(), msg);
-        long elapsedTimeInLock = 0;
-
-        MappedFile unlockMappedFile = null;
-        MappedFile mappedFile = commitLog.getMappedFileQueue().getLastMappedFile();
-        long currOffset = getCurrOffset(mappedFile);
-
-        int needAckNums = this.defaultMessageStore.getMessageStoreConfig().getInSyncReplicas();
-        boolean needHandleHA = needHandleHA(msg);
-
-        if (needHandleHA && this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-            if (this.defaultMessageStore.getHaService().inSyncReplicasNums(currOffset) < this.defaultMessageStore.getMessageStoreConfig().getMinInSyncReplicas()) {
-                return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.IN_SYNC_REPLICAS_NOT_ENOUGH, null));
-            }
-            if (this.defaultMessageStore.getMessageStoreConfig().isAllAckInSyncStateSet()) {
-                // -1 means all ack in SyncStateSet
-                needAckNums = MixAll.ALL_ACK_IN_SYNC_STATE_SET;
-            }
-        } else if (needHandleHA && this.defaultMessageStore.getBrokerConfig().isEnableSlaveActingMaster()) {
-            int inSyncReplicas = Math.min(this.defaultMessageStore.getAliveReplicaNumInGroup(),
-                this.defaultMessageStore.getHaService().inSyncReplicasNums(currOffset));
-            needAckNums = calcNeedAckNums(inSyncReplicas);
-            if (needAckNums > inSyncReplicas) {
-                // Tell the producer, don't have enough slaves to handle the send request
-                return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.IN_SYNC_REPLICAS_NOT_ENOUGH, null));
-            }
+        CompletableFuture<PutMessageResult> haResult = haCheck(context);
+        if (haResult != null) {
+            return haResult;
         }
 
-        commitLog.getTopicQueueLock().lock(topicQueueKey);
-        try {
-
-            boolean needAssignOffset = true;
-            if (defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()
-                && defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE) {
-                needAssignOffset = false;
-            }
-            if (needAssignOffset) {
-                defaultMessageStore.assignOffset(msg);
-            }
-
-            PutMessageResult encodeResult = putMessageThreadLocal.getEncoder().encode(msg);
-            if (encodeResult != null) {
-                return CompletableFuture.completedFuture(encodeResult);
-            }
-            msg.setEncodedBuff(putMessageThreadLocal.getEncoder().getEncoderBuffer());
-            PutMessageContext putMessageContext = new PutMessageContext(topicQueueKey);
-
-            commitLog.getPutMessageLock().lock(); //spin or ReentrantLock ,depending on store config
-            try {
-                long beginLockTimestamp = this.defaultMessageStore.getSystemClock().now();
-                commitLog.setBeginTimeInLock(beginLockTimestamp);
-
-                // Here settings are stored timestamp, in order to ensure an orderly
-                // global
-                if (!defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
-                    msg.setStoreTimestamp(beginLockTimestamp);
-                }
-
-                if (null == mappedFile || mappedFile.isFull()) {
-                    mappedFile = commitLog.getMappedFileQueue().getLastMappedFile(0); // Mark: NewFile may be cause noise
-                    if (isCloseReadAhead()) {
-                        commitLog.setFileReadMode(mappedFile, LibC.MADV_RANDOM);
-                    }
-                }
-                if (null == mappedFile) {
-                    log.error("create mapped file1 error, topic: " + msg.getTopic() + " clientAddr: " + msg.getBornHostString());
-                    commitLog.setBeginTimeInLock(0);
-                    return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.CREATE_MAPPED_FILE_FAILED, null));
-                }
-
-                result = mappedFile.appendMessage(msg, commitLog.getAppendMessageCallback(), putMessageContext);
-                switch (result.getStatus()) {
-                    case PUT_OK:
-                        onCommitLogAppend(msg, result, mappedFile);
-                        break;
-                    case END_OF_FILE:
-                        onCommitLogAppend(msg, result, mappedFile);
-                        unlockMappedFile = mappedFile;
-                        // Create a new file, re-write the message
-                        mappedFile = commitLog.getMappedFileQueue().getLastMappedFile(0);
-                        if (null == mappedFile) {
-                            // XXX: warn and notify me
-                            log.error("create mapped file2 error, topic: " + msg.getTopic() + " clientAddr: " + msg.getBornHostString());
-                            commitLog.setBeginTimeInLock(0);
-                            return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.CREATE_MAPPED_FILE_FAILED, result));
-                        }
-                        if (isCloseReadAhead()) {
-                            commitLog.setFileReadMode(mappedFile, LibC.MADV_RANDOM);
-                        }
-                        result = mappedFile.appendMessage(msg, commitLog.getAppendMessageCallback(), putMessageContext);
-                        if (AppendMessageStatus.PUT_OK.equals(result.getStatus())) {
-                            onCommitLogAppend(msg, result, mappedFile);
-                        }
-                        break;
-                    case MESSAGE_SIZE_EXCEEDED:
-                    case PROPERTIES_SIZE_EXCEEDED:
-                        commitLog.setBeginTimeInLock(0);
-                        return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, result));
-                    case UNKNOWN_ERROR:
-                        commitLog.setBeginTimeInLock(0);
-                        return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, result));
-                    default:
-                        commitLog.setBeginTimeInLock(0);
-                        return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, result));
-                }
-
-                elapsedTimeInLock = this.defaultMessageStore.getSystemClock().now() - beginLockTimestamp;
-                commitLog.setBeginTimeInLock(0);
-            } finally {
-                commitLog.getPutMessageLock().unlock();
-            }
-            // Increase queue offset when messages are successfully written
-            if (AppendMessageStatus.PUT_OK.equals(result.getStatus())) {
-                this.defaultMessageStore.increaseOffset(msg, commitLog.getMessageNum(msg));
-            }
-        } finally {
-            commitLog.getTopicQueueLock().unlock(topicQueueKey);
+        CompletableFuture<PutMessageResult> errorResult = asyncPutMessage(context, msg);
+        if (errorResult != null) {
+            return errorResult;
         }
 
-        if (elapsedTimeInLock > 500) {
-            log.warn("[NOTIFYME]putMessage in lock cost time(ms)={}, bodyLength={} AppendMessageResult={}", elapsedTimeInLock, msg.getBody().length, result);
-        }
-
-        if (null != unlockMappedFile && this.defaultMessageStore.getMessageStoreConfig().isWarmMapedFileEnable()) {
-            this.defaultMessageStore.unlockMappedFile(unlockMappedFile);
-        }
-
-        PutMessageResult putMessageResult = new PutMessageResult(PutMessageStatus.PUT_OK, result);
+        PutMessageResult putMessageResult = new PutMessageResult(PutMessageStatus.PUT_OK, context.getResult());
 
         // Statistics
-        storeStatsService.getSinglePutMessageTopicTimesTotal(msg.getTopic()).add(result.getMsgNum());
-        storeStatsService.getSinglePutMessageTopicSizeTotal(msg.getTopic()).add(result.getWroteBytes());
+        this.defaultMessageStore.getStoreStatsService().getSinglePutMessageTopicTimesTotal(msg.getTopic()).add(context.getResult().getMsgNum());
+        this.defaultMessageStore.getStoreStatsService().getSinglePutMessageTopicSizeTotal(msg.getTopic()).add(context.getResult().getWroteBytes());
 
-        return handleDiskFlushAndHA(putMessageResult, msg, needAckNums, needHandleHA);
+        return handleDiskFlushAndHA(putMessageResult, msg, context.getNeedAckNums(), context.isNeedHandleHA());
     }
 
     public CompletableFuture<PutMessageResult> asyncPutMessages(final MessageExtBatch messageExtBatch) {
         messageExtBatch.setStoreTimestamp(System.currentTimeMillis());
         AppendMessageResult result;
-
-        StoreStatsService storeStatsService = this.defaultMessageStore.getStoreStatsService();
 
         final int tranType = MessageSysFlag.getTransactionValue(messageExtBatch.getSysFlag());
 
@@ -354,10 +229,180 @@ public class CommitLogPutService {
         PutMessageResult putMessageResult = new PutMessageResult(PutMessageStatus.PUT_OK, result);
 
         // Statistics
-        storeStatsService.getSinglePutMessageTopicTimesTotal(messageExtBatch.getTopic()).add(result.getMsgNum());
-        storeStatsService.getSinglePutMessageTopicSizeTotal(messageExtBatch.getTopic()).add(result.getWroteBytes());
+        this.defaultMessageStore.getStoreStatsService().getSinglePutMessageTopicTimesTotal(messageExtBatch.getTopic()).add(result.getMsgNum());
+        this.defaultMessageStore.getStoreStatsService().getSinglePutMessageTopicSizeTotal(messageExtBatch.getTopic()).add(result.getWroteBytes());
 
         return handleDiskFlushAndHA(putMessageResult, messageExtBatch, needAckNums, needHandleHA);
+    }
+
+    private CommitLogPutContext initContext(final MessageExtBrokerInner msg) {
+        CommitLogPutContext context = new CommitLogPutContext();
+        context.setMsg(msg);
+        context.setPutMessageThreadLocal(commitLog.getPutMessageThreadLocal().get());
+        context.setTopicQueueKey(generateKey(context.getPutMessageThreadLocal().getKeyBuilder(), msg));
+        context.setMappedFile(commitLog.getMappedFileQueue().getLastMappedFile());
+        context.setCurrOffset(getCurrOffset(context.getMappedFile()));
+        context.setNeedAckNums(this.defaultMessageStore.getMessageStoreConfig().getInSyncReplicas());
+        context.setNeedHandleHA(needHandleHA(msg));
+
+        return context;
+    }
+
+    private CompletableFuture<PutMessageResult> haCheck(CommitLogPutContext context) {
+        if (context.isNeedHandleHA() && this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
+            if (this.defaultMessageStore.getHaService().inSyncReplicasNums(context.getCurrOffset()) < this.defaultMessageStore.getMessageStoreConfig().getMinInSyncReplicas()) {
+                return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.IN_SYNC_REPLICAS_NOT_ENOUGH, null));
+            }
+            if (this.defaultMessageStore.getMessageStoreConfig().isAllAckInSyncStateSet()) {
+                // -1 means all ack in SyncStateSet
+                context.setNeedAckNums(MixAll.ALL_ACK_IN_SYNC_STATE_SET);
+            }
+        } else if (context.isNeedHandleHA() && this.defaultMessageStore.getBrokerConfig().isEnableSlaveActingMaster()) {
+            int inSyncReplicas = Math.min(this.defaultMessageStore.getAliveReplicaNumInGroup(),
+                this.defaultMessageStore.getHaService().inSyncReplicasNums(context.getCurrOffset()));
+            context.setNeedAckNums(calcNeedAckNums(inSyncReplicas));
+            if (context.getNeedAckNums() > inSyncReplicas) {
+                // Tell the producer, don't have enough slaves to handle the send request
+                return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.IN_SYNC_REPLICAS_NOT_ENOUGH, null));
+            }
+        }
+
+        return null;
+    }
+
+    private boolean getNeedAssignOffset() {
+        boolean needAssignOffset = true;
+        if (defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()
+            && defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE) {
+            needAssignOffset = false;
+        }
+
+        return needAssignOffset;
+    }
+
+    private CompletableFuture<PutMessageResult> parseResultStatus(CommitLogPutContext context, final MessageExtBrokerInner msg, PutMessageContext putMessageContext) {
+        switch (context.getResult().getStatus()) {
+            case PUT_OK:
+                onCommitLogAppend(msg, context.getResult(), context.getMappedFile());
+                break;
+            case END_OF_FILE:
+                onCommitLogAppend(msg, context.getResult(), context.getMappedFile());
+                context.setUnlockMappedFile(context.getMappedFile());
+                // Create a new file, re-write the message
+                context.setMappedFile(commitLog.getMappedFileQueue().getLastMappedFile(0));
+                if (null == context.getMappedFile()) {
+                    // XXX: warn and notify me
+                    log.error("create mapped file2 error, topic: " + msg.getTopic() + " clientAddr: " + msg.getBornHostString());
+                    commitLog.setBeginTimeInLock(0);
+                    return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.CREATE_MAPPED_FILE_FAILED, context.getResult()));
+                }
+                if (isCloseReadAhead()) {
+                    commitLog.setFileReadMode(context.getMappedFile(), LibC.MADV_RANDOM);
+                }
+                context.setResult(context.getMappedFile().appendMessage(msg, commitLog.getAppendMessageCallback(), putMessageContext));
+                if (AppendMessageStatus.PUT_OK.equals(context.getResult().getStatus())) {
+                    onCommitLogAppend(msg, context.getResult(), context.getMappedFile());
+                }
+                break;
+            case MESSAGE_SIZE_EXCEEDED:
+            case PROPERTIES_SIZE_EXCEEDED:
+                commitLog.setBeginTimeInLock(0);
+                return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, context.getResult()));
+            case UNKNOWN_ERROR:
+            default:
+                commitLog.setBeginTimeInLock(0);
+                return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, context.getResult()));
+        }
+
+        return null;
+    }
+
+    private void resetMappedFile(CommitLogPutContext context) {
+        if (null != context.getMappedFile() && !context.getMappedFile().isFull()) {
+            return;
+        }
+
+        // Mark: NewFile may cause noise
+        context.setMappedFile(commitLog.getMappedFileQueue().getLastMappedFile(0));
+        if (isCloseReadAhead()) {
+            commitLog.setFileReadMode(context.getMappedFile(), LibC.MADV_RANDOM);
+        }
+    }
+
+    private CompletableFuture<PutMessageResult> appendMessage(CommitLogPutContext context, final MessageExtBrokerInner msg) {
+        PutMessageContext putMessageContext = new PutMessageContext(context.getTopicQueueKey());
+        commitLog.getPutMessageLock().lock(); //spin or ReentrantLock ,depending on store config
+        try {
+            long beginLockTimestamp = this.defaultMessageStore.getSystemClock().now();
+            commitLog.setBeginTimeInLock(beginLockTimestamp);
+
+            // Here settings are stored timestamp, in order to ensure an orderly
+            // global
+            if (!defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
+                msg.setStoreTimestamp(beginLockTimestamp);
+            }
+
+            resetMappedFile(context);
+
+            if (null == context.getMappedFile()) {
+                log.error("create mapped file1 error, topic: " + msg.getTopic() + " clientAddr: " + msg.getBornHostString());
+                commitLog.setBeginTimeInLock(0);
+                return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.CREATE_MAPPED_FILE_FAILED, null));
+            }
+
+            AppendMessageResult result = context.getMappedFile().appendMessage(msg, commitLog.getAppendMessageCallback(), putMessageContext);
+            context.setResult(result);
+
+            CompletableFuture<PutMessageResult> statusResult = parseResultStatus(context, msg, putMessageContext);
+            if (statusResult != null) {
+                return statusResult;
+            }
+
+            context.setElapsedTimeInLock(this.defaultMessageStore.getSystemClock().now() - beginLockTimestamp);
+            commitLog.setBeginTimeInLock(0);
+        } finally {
+            commitLog.getPutMessageLock().unlock();
+        }
+
+        return null;
+    }
+
+    private CompletableFuture<PutMessageResult> asyncPutMessage(CommitLogPutContext context, final MessageExtBrokerInner msg) {
+        commitLog.getTopicQueueLock().lock(context.getTopicQueueKey());
+        try {
+            boolean needAssignOffset = getNeedAssignOffset();
+            if (needAssignOffset) {
+                defaultMessageStore.assignOffset(msg);
+            }
+
+            PutMessageResult encodeResult = context.getPutMessageThreadLocal().getEncoder().encode(msg);
+            if (encodeResult != null) {
+                return CompletableFuture.completedFuture(encodeResult);
+            }
+            msg.setEncodedBuff(context.getPutMessageThreadLocal().getEncoder().getEncoderBuffer());
+
+            CompletableFuture<PutMessageResult> appendResult = appendMessage(context, msg);
+            if (appendResult != null) {
+                return appendResult;
+            }
+
+            // Increase queue offset when messages are successfully written
+            if (AppendMessageStatus.PUT_OK.equals(context.getResult().getStatus())) {
+                this.defaultMessageStore.increaseOffset(msg, commitLog.getMessageNum(msg));
+            }
+        } finally {
+            commitLog.getTopicQueueLock().unlock(context.getTopicQueueKey());
+        }
+
+        if (context.getElapsedTimeInLock() > 500) {
+            log.warn("[NOTIFYME]putMessage in lock cost time(ms)={}, bodyLength={} AppendMessageResult={}", context.getElapsedTimeInLock(), msg.getBody().length, context.getResult());
+        }
+
+        if (null != context.getUnlockMappedFile() && this.defaultMessageStore.getMessageStoreConfig().isWarmMapedFileEnable()) {
+            this.defaultMessageStore.unlockMappedFile(context.getUnlockMappedFile());
+        }
+
+        return null;
     }
 
     private void initPutMessage(final MessageExtBrokerInner msg) {
@@ -480,11 +525,11 @@ public class CommitLogPutService {
     }
 
 
-    protected void onCommitLogAppend(MessageExtBrokerInner msg, AppendMessageResult result, MappedFile commitLogFile) {
+    private void onCommitLogAppend(MessageExtBrokerInner msg, AppendMessageResult result, MappedFile commitLogFile) {
         this.defaultMessageStore.onCommitLogAppend(msg, result, commitLogFile);
     }
 
-    public String generateKey(StringBuilder keyBuilder, MessageExt messageExt) {
+    private String generateKey(StringBuilder keyBuilder, MessageExt messageExt) {
         keyBuilder.setLength(0);
         keyBuilder.append(messageExt.getTopic());
         keyBuilder.append('-');
@@ -492,7 +537,7 @@ public class CommitLogPutService {
         return keyBuilder.toString();
     }
 
-    public void updateMaxMessageSize(MessageExtEncoder.PutMessageThreadLocal putMessageThreadLocal) {
+    private void updateMaxMessageSize(MessageExtEncoder.PutMessageThreadLocal putMessageThreadLocal) {
         // dynamically adjust maxMessageSize, but not support DLedger mode temporarily
         int newMaxMessageSize = this.defaultMessageStore.getMessageStoreConfig().getMaxMessageSize();
         if (newMaxMessageSize >= 10 &&

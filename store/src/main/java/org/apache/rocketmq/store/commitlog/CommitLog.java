@@ -84,7 +84,7 @@ public class CommitLog implements Swappable {
     private final CommitLogRecoverService commitLogRecoverService;
 
     private final AppendMessageCallback appendMessageCallback;
-    private final ThreadLocal<PutMessageThreadLocal> putMessageThreadLocal;
+    private ThreadLocal<PutMessageThreadLocal> putMessageThreadLocal;
 
     protected volatile long confirmOffset = -1L;
     private volatile long beginTimeInLock = 0;
@@ -103,21 +103,15 @@ public class CommitLog implements Swappable {
         this.flushManager = new DefaultFlushManager(messageStore, this);
         this.coldDataCheckService = new ColdDataCheckService(messageStore);
         this.commitLogRecoverService = new CommitLogRecoverService(messageStore, this);
-
         this.appendMessageCallback = new DefaultAppendMessageCallback(messageStore, this);
-        putMessageThreadLocal = new ThreadLocal<PutMessageThreadLocal>() {
-            @Override
-            protected PutMessageThreadLocal initialValue() {
-                return new PutMessageThreadLocal(defaultMessageStore.getMessageStoreConfig().getMaxMessageSize());
-            }
-        };
+
+        initPutMessageThreadLocal();
 
         this.putMessageLock = messageStore.getMessageStoreConfig().isUseReentrantLockWhenPutMessage() ? new PutMessageReentrantLock() : new PutMessageSpinLock();
         this.flushDiskWatcher = new FlushDiskWatcher();
         this.topicQueueLock = new TopicQueueLock();
         this.commitLogSize = messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
     }
-
 
     public void setFullStorePaths(Set<String> fullStorePaths) {
         this.fullStorePaths = fullStorePaths;
@@ -645,6 +639,15 @@ public class CommitLog implements Swappable {
                 messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
                 messageStore.getAllocateMappedFileService());
         }
+    }
+
+    private void initPutMessageThreadLocal() {
+        putMessageThreadLocal = new ThreadLocal<PutMessageThreadLocal>() {
+            @Override
+            protected PutMessageThreadLocal initialValue() {
+                return new PutMessageThreadLocal(defaultMessageStore.getMessageStoreConfig().getMaxMessageSize());
+            }
+        };
     }
 
     /**
