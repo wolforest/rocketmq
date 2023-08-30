@@ -1047,20 +1047,24 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             return false;
         }
         byte[] body = msg.getBody();
-        if (body != null) {
-            if (body.length >= this.defaultMQProducer.getCompressMsgBodyOverHowmuch()) {
-                try {
-                    byte[] data = compressor.compress(body, compressLevel);
-                    if (data != null) {
-                        msg.setBody(data);
-                        return true;
-                    }
-                } catch (IOException e) {
-                    log.error("tryToCompressMessage exception", e);
-                    if (log.isDebugEnabled()) {
-                        log.debug(msg.toString());
-                    }
-                }
+        if (body == null) {
+            return false;
+        }
+
+        if (body.length < this.defaultMQProducer.getCompressMsgBodyOverHowmuch()) {
+            return false;
+        }
+
+        try {
+            byte[] data = compressor.compress(body, compressLevel);
+            if (data != null) {
+                msg.setBody(data);
+                return true;
+            }
+        } catch (IOException e) {
+            log.error("tryToCompressMessage exception", e);
+            if (log.isDebugEnabled()) {
+                log.debug(msg.toString());
             }
         }
 
