@@ -83,7 +83,7 @@ public class CommitLog implements Swappable {
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     // End of file empty MAGIC CODE cbd43194
     public final static int BLANK_MAGIC_CODE = -875286124;
-    protected final MappedFileQueue mappedFileQueue;
+    protected MappedFileQueue mappedFileQueue;
     protected final DefaultMessageStore defaultMessageStore;
 
     private final FlushManager flushManager;
@@ -107,20 +107,11 @@ public class CommitLog implements Swappable {
 
     protected int commitLogSize;
 
+
     public CommitLog(final DefaultMessageStore messageStore) {
-        String storePath = messageStore.getMessageStoreConfig().getStorePathCommitLog();
-        if (storePath.contains(MixAll.MULTI_PATH_SPLITTER)) {
-            this.mappedFileQueue = new MultiPathMappedFileQueue(messageStore.getMessageStoreConfig(),
-                messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
-                messageStore.getAllocateMappedFileService(), this::getFullStorePaths);
-        } else {
-            this.mappedFileQueue = new MappedFileQueue(storePath,
-                messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
-                messageStore.getAllocateMappedFileService());
-        }
+        initMappedFileQueue(messageStore);
 
         this.defaultMessageStore = messageStore;
-
         this.flushManager = new DefaultFlushManager(messageStore, this);
         this.coldDataCheckService = new ColdDataCheckService(messageStore);
         this.commitLogRecoverService = new CommitLogRecoverService(messageStore, this);
@@ -132,14 +123,13 @@ public class CommitLog implements Swappable {
                 return new PutMessageThreadLocal(defaultMessageStore.getMessageStoreConfig().getMaxMessageSize());
             }
         };
+
         this.putMessageLock = messageStore.getMessageStoreConfig().isUseReentrantLockWhenPutMessage() ? new PutMessageReentrantLock() : new PutMessageSpinLock();
-
         this.flushDiskWatcher = new FlushDiskWatcher();
-
         this.topicQueueLock = new TopicQueueLock();
-
         this.commitLogSize = messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
     }
+
 
     public void setFullStorePaths(Set<String> fullStorePaths) {
         this.fullStorePaths = fullStorePaths;
@@ -1035,6 +1025,19 @@ public class CommitLog implements Swappable {
             }
             return putMessageResult;
         });
+    }
+
+    private void initMappedFileQueue(final DefaultMessageStore messageStore) {
+        String storePath = messageStore.getMessageStoreConfig().getStorePathCommitLog();
+        if (storePath.contains(MixAll.MULTI_PATH_SPLITTER)) {
+            this.mappedFileQueue = new MultiPathMappedFileQueue(messageStore.getMessageStoreConfig(),
+                messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
+                messageStore.getAllocateMappedFileService(), this::getFullStorePaths);
+        } else {
+            this.mappedFileQueue = new MappedFileQueue(storePath,
+                messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
+                messageStore.getAllocateMappedFileService());
+        }
     }
 
     private CompletableFuture<PutMessageStatus> handleDiskFlush(AppendMessageResult result, MessageExt messageExt) {
