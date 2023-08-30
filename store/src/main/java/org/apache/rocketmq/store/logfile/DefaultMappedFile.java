@@ -553,31 +553,29 @@ public class DefaultMappedFile extends AbstractMappedFile {
     @Override
     public boolean destroy(final long intervalForcibly) {
         this.shutdown(intervalForcibly);
-
-        if (this.isCleanupOver()) {
-            try {
-                long lastModified = getLastModifiedTimestamp();
-                this.fileChannel.close();
-                log.info("close file channel " + this.fileName + " OK");
-
-                long beginTime = System.currentTimeMillis();
-                boolean result = this.file.delete();
-                log.info("delete file[REF:" + this.getRefCount() + "] " + this.fileName
-                    + (result ? " OK, " : " Failed, ") + "W:" + this.getWrotePosition() + " M:"
-                    + this.getFlushedPosition() + ", "
-                    + UtilAll.computeElapsedTimeMilliseconds(beginTime)
-                    + "," + (System.currentTimeMillis() - lastModified));
-            } catch (Exception e) {
-                log.warn("close file channel " + this.fileName + " Failed. ", e);
-            }
-
-            return true;
-        } else {
+        if (!this.isCleanupOver()) {
             log.warn("destroy mapped file[REF:" + this.getRefCount() + "] " + this.fileName
                 + " Failed. cleanupOver: " + this.cleanupOver);
+            return false;
         }
 
-        return false;
+        try {
+            long lastModified = getLastModifiedTimestamp();
+            this.fileChannel.close();
+            log.info("close file channel " + this.fileName + " OK");
+
+            long beginTime = System.currentTimeMillis();
+            boolean result = this.file.delete();
+            log.info("delete file[REF:" + this.getRefCount() + "] " + this.fileName
+                + (result ? " OK, " : " Failed, ") + "W:" + this.getWrotePosition() + " M:"
+                + this.getFlushedPosition() + ", "
+                + UtilAll.computeElapsedTimeMilliseconds(beginTime)
+                + "," + (System.currentTimeMillis() - lastModified));
+        } catch (Exception e) {
+            log.warn("close file channel " + this.fileName + " Failed. ", e);
+        }
+
+        return true;
     }
 
     @Override
