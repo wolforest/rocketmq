@@ -1090,13 +1090,15 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     }
 
     public void executeSendMessageHookBefore(final SendMessageContext context) {
-        if (!this.sendMessageHookList.isEmpty()) {
-            for (SendMessageHook hook : this.sendMessageHookList) {
-                try {
-                    hook.sendMessageBefore(context);
-                } catch (Throwable e) {
-                    log.warn("failed to executeSendMessageHookBefore", e);
-                }
+        if (this.sendMessageHookList.isEmpty()) {
+            return;
+        }
+
+        for (SendMessageHook hook : this.sendMessageHookList) {
+            try {
+                hook.sendMessageBefore(context);
+            } catch (Throwable e) {
+                log.warn("failed to executeSendMessageHookBefore", e);
             }
         }
     }
