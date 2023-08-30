@@ -1671,15 +1671,16 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     private Message waitResponse(Message msg, long timeout, RequestResponseFuture requestResponseFuture,
         long cost) throws InterruptedException, RequestTimeoutException, MQClientException {
         Message responseMessage = requestResponseFuture.waitResponseMessage(timeout - cost);
-        if (responseMessage == null) {
-            if (requestResponseFuture.isSendRequestOk()) {
-                throw new RequestTimeoutException(ClientErrorCode.REQUEST_TIMEOUT_EXCEPTION,
-                    "send request message to <" + msg.getTopic() + "> OK, but wait reply message timeout, " + timeout + " ms.");
-            } else {
-                throw new MQClientException("send request message to <" + msg.getTopic() + "> fail", requestResponseFuture.getCause());
-            }
+        if (responseMessage != null) {
+            return responseMessage;
         }
-        return responseMessage;
+
+        if (requestResponseFuture.isSendRequestOk()) {
+            throw new RequestTimeoutException(ClientErrorCode.REQUEST_TIMEOUT_EXCEPTION,
+                "send request message to <" + msg.getTopic() + "> OK, but wait reply message timeout, " + timeout + " ms.");
+        } else {
+            throw new MQClientException("send request message to <" + msg.getTopic() + "> fail", requestResponseFuture.getCause());
+        }
     }
 
     public void request(final Message msg, final MessageQueue mq, final RequestCallback requestCallback, long timeout)
