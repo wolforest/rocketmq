@@ -672,15 +672,15 @@ public class CommitLog implements Swappable {
 
     public long getMinOffset() {
         MappedFile mappedFile = this.mappedFileQueue.getFirstMappedFile();
-        if (mappedFile != null) {
-            if (mappedFile.isAvailable()) {
-                return mappedFile.getFileFromOffset();
-            } else {
-                return this.rollNextFile(mappedFile.getFileFromOffset());
-            }
+        if (mappedFile == null) {
+            return -1;
         }
 
-        return -1;
+        if (mappedFile.isAvailable()) {
+            return mappedFile.getFileFromOffset();
+        }
+
+        return this.rollNextFile(mappedFile.getFileFromOffset());
     }
 
     public SelectMappedBufferResult getMessage(final long offset, final int size) {
