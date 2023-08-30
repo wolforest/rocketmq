@@ -203,28 +203,25 @@ public class DefaultMappedFile extends AbstractMappedFile {
         }
 
         int readPosition = getReadPosition();
-        if ((pos + size) <= readPosition) {
-
-            if (this.hold()) {
-                try {
-                    int readNum = fileChannel.read(byteBuffer, pos);
-                    return size == readNum;
-                } catch (Throwable t) {
-                    log.warn("Get data failed pos:{} size:{} fileFromOffset:{}", pos, size, this.fileFromOffset);
-                    return false;
-                } finally {
-                    this.release();
-                }
-            } else {
-                log.debug("matched, but hold failed, request pos: " + pos + ", fileFromOffset: "
-                    + this.fileFromOffset);
-            }
-        } else {
-            log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size
-                + ", fileFromOffset: " + this.fileFromOffset);
+        if ((pos + size) > readPosition) {
+            log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size + ", fileFromOffset: " + this.fileFromOffset);
+            return false;
         }
 
-        return false;
+        if (!this.hold()) {
+            log.debug("matched, but hold failed, request pos: " + pos + ", fileFromOffset: " + this.fileFromOffset);
+            return false;
+        }
+
+        try {
+            int readNum = fileChannel.read(byteBuffer, pos);
+            return size == readNum;
+        } catch (Throwable t) {
+            log.warn("Get data failed pos:{} size:{} fileFromOffset:{}", pos, size, this.fileFromOffset);
+            return false;
+        } finally {
+            this.release();
+        }
     }
 
     @Override
