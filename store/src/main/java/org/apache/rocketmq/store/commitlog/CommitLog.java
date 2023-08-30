@@ -237,23 +237,24 @@ public class CommitLog implements Swappable {
     public SelectMappedBufferResult getData(final long offset, final boolean returnFirstOnNotFound) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, returnFirstOnNotFound);
-        if (mappedFile != null) {
-            int pos = (int) (offset % mappedFileSize);
-            SelectMappedBufferResult result = mappedFile.selectMappedBuffer(pos);
-            return result;
+        if (mappedFile == null) {
+            return null;
         }
 
-        return null;
+        int pos = (int) (offset % mappedFileSize);
+        SelectMappedBufferResult result = mappedFile.selectMappedBuffer(pos);
+        return result;
     }
 
     public boolean getData(final long offset, final int size, final ByteBuffer byteBuffer) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
-        if (mappedFile != null) {
-            int pos = (int) (offset % mappedFileSize);
-            return mappedFile.getData(pos, size, byteBuffer);
+        if (mappedFile == null) {
+            return false;
         }
-        return false;
+
+        int pos = (int) (offset % mappedFileSize);
+        return mappedFile.getData(pos, size, byteBuffer);
     }
 
     public List<SelectMappedBufferResult> getBulkData(final long offset, final int size) {
