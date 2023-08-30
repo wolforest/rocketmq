@@ -242,16 +242,17 @@ public class DefaultMappedFile extends AbstractMappedFile {
         assert cb != null;
 
         int currentPos = WROTE_POSITION_UPDATER.get(this);
-        if (currentPos < this.fileSize) {
-            ByteBuffer byteBuffer = appendMessageBuffer().slice();
-            byteBuffer.position(currentPos);
-            AppendMessageResult result = cb.doAppend(byteBuffer, this.fileFromOffset, this.fileSize - currentPos, byteBufferMsg);
-            WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
-            this.storeTimestamp = result.getStoreTimestamp();
-            return result;
+        if (currentPos >= this.fileSize) {
+            log.error("MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}", currentPos, this.fileSize);
+            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
         }
-        log.error("MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}", currentPos, this.fileSize);
-        return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
+
+        ByteBuffer byteBuffer = appendMessageBuffer().slice();
+        byteBuffer.position(currentPos);
+        AppendMessageResult result = cb.doAppend(byteBuffer, this.fileFromOffset, this.fileSize - currentPos, byteBufferMsg);
+        WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
+        this.storeTimestamp = result.getStoreTimestamp();
+        return result;
     }
 
     @Override
