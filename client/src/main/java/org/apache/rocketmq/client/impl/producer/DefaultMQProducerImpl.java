@@ -1135,19 +1135,20 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
     }
 
-    public void doExecuteEndTransactionHook(Message msg, String msgId, String brokerAddr, LocalTransactionState state,
-        boolean fromTransactionCheck) {
-        if (hasEndTransactionHook()) {
-            EndTransactionContext context = new EndTransactionContext();
-            context.setProducerGroup(defaultMQProducer.getProducerGroup());
-            context.setBrokerAddr(brokerAddr);
-            context.setMessage(msg);
-            context.setMsgId(msgId);
-            context.setTransactionId(msg.getTransactionId());
-            context.setTransactionState(state);
-            context.setFromTransactionCheck(fromTransactionCheck);
-            executeEndTransactionHook(context);
+    public void doExecuteEndTransactionHook(Message msg, String msgId, String brokerAddr, LocalTransactionState state, boolean fromTransactionCheck) {
+        if (!hasEndTransactionHook()) {
+            return;
         }
+
+        EndTransactionContext context = new EndTransactionContext();
+        context.setProducerGroup(defaultMQProducer.getProducerGroup());
+        context.setBrokerAddr(brokerAddr);
+        context.setMessage(msg);
+        context.setMsgId(msgId);
+        context.setTransactionId(msg.getTransactionId());
+        context.setTransactionState(state);
+        context.setFromTransactionCheck(fromTransactionCheck);
+        executeEndTransactionHook(context);
     }
 
     /**
