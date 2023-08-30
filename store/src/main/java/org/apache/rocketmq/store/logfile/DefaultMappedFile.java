@@ -647,27 +647,28 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
     @Override
     public boolean swapMap() {
-        if (getRefCount() == 1 && this.mappedByteBufferWaitToClean == null) {
-
-            if (!hold()) {
-                log.warn("in swapMap, hold failed, fileName: " + this.fileName);
-                return false;
-            }
-            try {
-                this.mappedByteBufferWaitToClean = this.mappedByteBuffer;
-                this.mappedByteBuffer = this.fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileSize);
-                this.mappedByteBufferAccessCountSinceLastSwap = 0L;
-                this.swapMapTime = System.currentTimeMillis();
-                log.info("swap file " + this.fileName + " success.");
-                return true;
-            } catch (Exception e) {
-                log.error("swapMap file " + this.fileName + " Failed. ", e);
-            } finally {
-                this.release();
-            }
-        } else {
+        if (getRefCount() != 1 || this.mappedByteBufferWaitToClean != null) {
             log.info("Will not swap file: " + this.fileName + ", ref=" + getRefCount());
+            return false;
         }
+
+        if (!hold()) {
+            log.warn("in swapMap, hold failed, fileName: " + this.fileName);
+            return false;
+        }
+        try {
+            this.mappedByteBufferWaitToClean = this.mappedByteBuffer;
+            this.mappedByteBuffer = this.fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileSize);
+            this.mappedByteBufferAccessCountSinceLastSwap = 0L;
+            this.swapMapTime = System.currentTimeMillis();
+            log.info("swap file " + this.fileName + " success.");
+            return true;
+        } catch (Exception e) {
+            log.error("swapMap file " + this.fileName + " Failed. ", e);
+        } finally {
+            this.release();
+        }
+
         return false;
     }
 
