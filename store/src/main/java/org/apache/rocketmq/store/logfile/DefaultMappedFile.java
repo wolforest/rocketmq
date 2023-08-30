@@ -272,28 +272,28 @@ public class DefaultMappedFile extends AbstractMappedFile {
         assert cb != null;
 
         int currentPos = WROTE_POSITION_UPDATER.get(this);
-
-        if (currentPos < this.fileSize) {
-            ByteBuffer byteBuffer = appendMessageBuffer().slice();
-            byteBuffer.position(currentPos);
-            AppendMessageResult result;
-            if (messageExt instanceof MessageExtBatch && !((MessageExtBatch) messageExt).isInnerBatch()) {
-                // traditional batch message
-                result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
-                    (MessageExtBatch) messageExt, putMessageContext);
-            } else if (messageExt instanceof MessageExtBrokerInner) {
-                // traditional single message or newly introduced inner-batch message
-                result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
-                    (MessageExtBrokerInner) messageExt, putMessageContext);
-            } else {
-                return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
-            }
-            WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
-            this.storeTimestamp = result.getStoreTimestamp();
-            return result;
+        if (currentPos >= this.fileSize) {
+            log.error("MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}", currentPos, this.fileSize);
+            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
         }
-        log.error("MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}", currentPos, this.fileSize);
-        return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
+
+        ByteBuffer byteBuffer = appendMessageBuffer().slice();
+        byteBuffer.position(currentPos);
+        AppendMessageResult result;
+        if (messageExt instanceof MessageExtBatch && !((MessageExtBatch) messageExt).isInnerBatch()) {
+            // traditional batch message
+            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
+                (MessageExtBatch) messageExt, putMessageContext);
+        } else if (messageExt instanceof MessageExtBrokerInner) {
+            // traditional single message or newly introduced inner-batch message
+            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
+                (MessageExtBrokerInner) messageExt, putMessageContext);
+        } else {
+            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
+        }
+        WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
+        this.storeTimestamp = result.getStoreTimestamp();
+        return result;
     }
 
     protected ByteBuffer appendMessageBuffer() {
