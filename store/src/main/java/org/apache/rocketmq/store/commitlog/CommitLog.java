@@ -291,11 +291,13 @@ public class CommitLog implements Swappable {
     public SelectMappedFileResult getFile(final long offset) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
-        if (mappedFile != null) {
-            int size = (int) (mappedFile.getReadPosition() - offset % mappedFileSize);
-            if (size > 0) {
-                return new SelectMappedFileResult(size, mappedFile);
-            }
+        if (mappedFile == null) {
+            return null;
+        }
+
+        int size = (int) (mappedFile.getReadPosition() - offset % mappedFileSize);
+        if (size > 0) {
+            return new SelectMappedFileResult(size, mappedFile);
         }
         return null;
     }
