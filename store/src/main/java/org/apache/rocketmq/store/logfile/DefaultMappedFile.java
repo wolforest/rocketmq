@@ -512,19 +512,20 @@ public class DefaultMappedFile extends AbstractMappedFile {
     @Override
     public SelectMappedBufferResult selectMappedBuffer(int pos) {
         int readPosition = getReadPosition();
-        if (pos < readPosition && pos >= 0) {
-            if (this.hold()) {
-                this.mappedByteBufferAccessCountSinceLastSwap++;
-                ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
-                byteBuffer.position(pos);
-                int size = readPosition - pos;
-                ByteBuffer byteBufferNew = byteBuffer.slice();
-                byteBufferNew.limit(size);
-                return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
-            }
+        if (pos >= readPosition || pos < 0) {
+            return null;
+        }
+        if (!this.hold()) {
+            return null;
         }
 
-        return null;
+        this.mappedByteBufferAccessCountSinceLastSwap++;
+        ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
+        byteBuffer.position(pos);
+        int size = readPosition - pos;
+        ByteBuffer byteBufferNew = byteBuffer.slice();
+        byteBufferNew.limit(size);
+        return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
     }
 
     @Override
