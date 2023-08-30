@@ -570,24 +570,31 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         return ThreadLocalRandom.current().nextInt(99999999) % writeQueueNums;
     }
 
+    public void executeSendMessageHookAfter(final RemotingCommand response, final SendMessageContext context, SendMessageHook hook) {
+        if (response == null) {
+            return;
+        }
+
+        try {
+            final SendMessageResponseHeader responseHeader = (SendMessageResponseHeader) response.readCustomHeader();
+            context.setMsgId(responseHeader.getMsgId());
+            context.setQueueId(responseHeader.getQueueId());
+            context.setQueueOffset(responseHeader.getQueueOffset());
+            context.setCode(response.getCode());
+            context.setErrorMsg(response.getRemark());
+            hook.sendMessageAfter(context);
+        } catch (Throwable e) {
+            //ignore
+        }
+    }
+
     public void executeSendMessageHookAfter(final RemotingCommand response, final SendMessageContext context) {
-        if (hasSendMessageHook()) {
-            for (SendMessageHook hook : this.sendMessageHookList) {
-                try {
-                    if (response != null) {
-                        final SendMessageResponseHeader responseHeader =
-                            (SendMessageResponseHeader) response.readCustomHeader();
-                        context.setMsgId(responseHeader.getMsgId());
-                        context.setQueueId(responseHeader.getQueueId());
-                        context.setQueueOffset(responseHeader.getQueueOffset());
-                        context.setCode(response.getCode());
-                        context.setErrorMsg(response.getRemark());
-                    }
-                    hook.sendMessageAfter(context);
-                } catch (Throwable e) {
-                    //ignore
-                }
-            }
+        if (!hasSendMessageHook()) {
+            return;
+        }
+
+        for (SendMessageHook hook : this.sendMessageHookList) {
+            executeSendMessageHookAfter(response, context, hook);
         }
     }
 
