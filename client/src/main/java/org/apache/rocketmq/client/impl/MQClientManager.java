@@ -69,15 +69,17 @@ public class MQClientManager {
     public ProduceAccumulator getOrCreateProduceAccumulator(final ClientConfig clientConfig) {
         String clientId = clientConfig.buildMQClientId();
         ProduceAccumulator accumulator = this.accumulatorTable.get(clientId);
-        if (null == accumulator) {
-            accumulator = new ProduceAccumulator(clientId);
-            ProduceAccumulator prev = this.accumulatorTable.putIfAbsent(clientId, accumulator);
-            if (prev != null) {
-                accumulator = prev;
-                log.warn("Returned Previous ProduceAccumulator for clientId:[{}]", clientId);
-            } else {
-                log.info("Created new ProduceAccumulator for clientId:[{}]", clientId);
-            }
+        if (null != accumulator) {
+            return accumulator;
+        }
+
+        accumulator = new ProduceAccumulator(clientId);
+        ProduceAccumulator prev = this.accumulatorTable.putIfAbsent(clientId, accumulator);
+        if (prev != null) {
+            accumulator = prev;
+            log.warn("Returned Previous ProduceAccumulator for clientId:[{}]", clientId);
+        } else {
+            log.info("Created new ProduceAccumulator for clientId:[{}]", clientId);
         }
 
         return accumulator;
