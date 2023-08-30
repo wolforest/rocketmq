@@ -50,17 +50,18 @@ public class MQClientManager {
     public MQClientInstance getOrCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook) {
         String clientId = clientConfig.buildMQClientId();
         MQClientInstance instance = this.factoryTable.get(clientId);
-        if (null == instance) {
-            instance =
-                new MQClientInstance(clientConfig.cloneClientConfig(),
-                    this.factoryIndexGenerator.getAndIncrement(), clientId, rpcHook);
-            MQClientInstance prev = this.factoryTable.putIfAbsent(clientId, instance);
-            if (prev != null) {
-                instance = prev;
-                log.warn("Returned Previous MQClientInstance for clientId:[{}]", clientId);
-            } else {
-                log.info("Created new MQClientInstance for clientId:[{}]", clientId);
-            }
+        if (null != instance) {
+            return instance;
+        }
+
+        instance = new MQClientInstance(clientConfig.cloneClientConfig(),
+                this.factoryIndexGenerator.getAndIncrement(), clientId, rpcHook);
+        MQClientInstance prev = this.factoryTable.putIfAbsent(clientId, instance);
+        if (prev != null) {
+            instance = prev;
+            log.warn("Returned Previous MQClientInstance for clientId:[{}]", clientId);
+        } else {
+            log.info("Created new MQClientInstance for clientId:[{}]", clientId);
         }
 
         return instance;
