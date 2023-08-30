@@ -424,17 +424,19 @@ public class DefaultMappedFile extends AbstractMappedFile {
         int writePos = WROTE_POSITION_UPDATER.get(this);
         int lastCommittedPosition = COMMITTED_POSITION_UPDATER.get(this);
 
-        if (writePos - lastCommittedPosition > 0) {
-            try {
-                ByteBuffer byteBuffer = writeBuffer.slice();
-                byteBuffer.position(lastCommittedPosition);
-                byteBuffer.limit(writePos);
-                this.fileChannel.position(lastCommittedPosition);
-                this.fileChannel.write(byteBuffer);
-                COMMITTED_POSITION_UPDATER.set(this, writePos);
-            } catch (Throwable e) {
-                log.error("Error occurred when commit data to FileChannel.", e);
-            }
+        if (writePos - lastCommittedPosition <= 0) {
+           return;
+        }
+
+        try {
+            ByteBuffer byteBuffer = writeBuffer.slice();
+            byteBuffer.position(lastCommittedPosition);
+            byteBuffer.limit(writePos);
+            this.fileChannel.position(lastCommittedPosition);
+            this.fileChannel.write(byteBuffer);
+            COMMITTED_POSITION_UPDATER.set(this, writePos);
+        } catch (Throwable e) {
+            log.error("Error occurred when commit data to FileChannel.", e);
         }
     }
 
