@@ -302,22 +302,26 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.shutdown(true);
     }
 
+    private void shutdownWhileRunning(final boolean shutdownFactory) {
+        this.mQClientFactory.unregisterProducer(this.defaultMQProducer.getProducerGroup());
+        this.defaultAsyncSenderExecutor.shutdown();
+        if (shutdownFactory) {
+            this.mQClientFactory.shutdown();
+        }
+        if (this.mqFaultStrategy.isStartDetectorEnable()) {
+            this.mqFaultStrategy.shutdown();
+        }
+        RequestFutureHolder.getInstance().shutdown(this);
+        log.info("the producer [{}] shutdown OK", this.defaultMQProducer.getProducerGroup());
+        this.serviceState = ServiceState.SHUTDOWN_ALREADY;
+    }
+
     public void shutdown(final boolean shutdownFactory) {
         switch (this.serviceState) {
             case CREATE_JUST:
                 break;
             case RUNNING:
-                this.mQClientFactory.unregisterProducer(this.defaultMQProducer.getProducerGroup());
-                this.defaultAsyncSenderExecutor.shutdown();
-                if (shutdownFactory) {
-                    this.mQClientFactory.shutdown();
-                }
-                if (this.mqFaultStrategy.isStartDetectorEnable()) {
-                    this.mqFaultStrategy.shutdown();
-                }
-                RequestFutureHolder.getInstance().shutdown(this);
-                log.info("the producer [{}] shutdown OK", this.defaultMQProducer.getProducerGroup());
-                this.serviceState = ServiceState.SHUTDOWN_ALREADY;
+                shutdownWhileRunning(shutdownFactory);
                 break;
             case SHUTDOWN_ALREADY:
                 break;
