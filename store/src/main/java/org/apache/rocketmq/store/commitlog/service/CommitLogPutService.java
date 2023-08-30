@@ -270,7 +270,7 @@ public class CommitLogPutService {
         return null;
     }
 
-    private boolean getNeedAssignOffset() {
+    private boolean isNeedAssignOffset() {
         boolean needAssignOffset = true;
         if (defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()
             && defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE) {
@@ -370,8 +370,7 @@ public class CommitLogPutService {
     private CompletableFuture<PutMessageResult> asyncPutMessage(CommitLogPutContext context, final MessageExtBrokerInner msg) {
         commitLog.getTopicQueueLock().lock(context.getTopicQueueKey());
         try {
-            boolean needAssignOffset = getNeedAssignOffset();
-            if (needAssignOffset) {
+            if (isNeedAssignOffset()) {
                 defaultMessageStore.assignOffset(msg);
             }
 
