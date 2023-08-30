@@ -49,7 +49,8 @@ public class HandlePutResultTask implements Runnable {
                         pendingQueue.remove();
                         break;
                     case RUNNING:
-                        break;
+                        scheduleNextTask();
+                        return;
                     case EXCEPTION:
                         if (!scheduleMessageService.isStarted()) {
                             log.warn("HandlePutResultTask shutdown, info={}", putResultProcess.toString());
@@ -69,6 +70,10 @@ public class HandlePutResultTask implements Runnable {
             }
         }
 
+        scheduleNextTask();
+    }
+
+    private void scheduleNextTask() {
         if (scheduleMessageService.isStarted()) {
             scheduleMessageService.getHandleExecutorService()
                 .schedule(new HandlePutResultTask(this.scheduleMessageService, this.delayLevel), DELAY_FOR_A_SLEEP, TimeUnit.MILLISECONDS);
