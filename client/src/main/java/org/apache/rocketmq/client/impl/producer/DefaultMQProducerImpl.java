@@ -1730,14 +1730,16 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         MessageAccessor.putProperty(msg, MessageConst.PROPERTY_MESSAGE_TTL, String.valueOf(timeout));
 
         boolean hasRouteData = this.getMqClientFactory().getTopicRouteTable().containsKey(msg.getTopic());
-        if (!hasRouteData) {
-            long beginTimestamp = System.currentTimeMillis();
-            this.tryToFindTopicPublishInfo(msg.getTopic());
-            this.getMqClientFactory().sendHeartbeatToAllBrokerWithLock();
-            long cost = System.currentTimeMillis() - beginTimestamp;
-            if (cost > 500) {
-                log.warn("prepare send request for <{}> cost {} ms", msg.getTopic(), cost);
-            }
+        if (hasRouteData) {
+            return;
+        }
+
+        long beginTimestamp = System.currentTimeMillis();
+        this.tryToFindTopicPublishInfo(msg.getTopic());
+        this.getMqClientFactory().sendHeartbeatToAllBrokerWithLock();
+        long cost = System.currentTimeMillis() - beginTimestamp;
+        if (cost > 500) {
+            log.warn("prepare send request for <{}> cost {} ms", msg.getTopic(), cost);
         }
     }
 
