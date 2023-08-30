@@ -207,15 +207,16 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         TransactionMQProducer producer = (TransactionMQProducer) this.defaultMQProducer;
         if (producer.getExecutorService() != null) {
             this.checkExecutor = producer.getExecutorService();
-        } else {
-            this.checkRequestQueue = new LinkedBlockingQueue<>(producer.getCheckRequestHoldMax());
-            this.checkExecutor = new ThreadPoolExecutor(
-                producer.getCheckThreadPoolMinSize(),
-                producer.getCheckThreadPoolMaxSize(),
-                1000 * 60,
-                TimeUnit.MILLISECONDS,
-                this.checkRequestQueue);
+            return;
         }
+
+        this.checkRequestQueue = new LinkedBlockingQueue<>(producer.getCheckRequestHoldMax());
+        this.checkExecutor = new ThreadPoolExecutor(
+            producer.getCheckThreadPoolMinSize(),
+            producer.getCheckThreadPoolMaxSize(),
+            1000 * 60,
+            TimeUnit.MILLISECONDS,
+            this.checkRequestQueue);
     }
 
     public void destroyTransactionEnv() {
