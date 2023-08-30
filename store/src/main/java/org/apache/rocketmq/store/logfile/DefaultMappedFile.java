@@ -341,20 +341,19 @@ public class DefaultMappedFile extends AbstractMappedFile {
     @Override
     public boolean appendMessage(final byte[] data, final int offset, final int length) {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
-
-        if ((currentPos + length) <= this.fileSize) {
-            try {
-                ByteBuffer buf = this.mappedByteBuffer.slice();
-                buf.position(currentPos);
-                buf.put(data, offset, length);
-            } catch (Throwable e) {
-                log.error("Error occurred when append message to mappedFile.", e);
-            }
-            WROTE_POSITION_UPDATER.addAndGet(this, length);
-            return true;
+        if ((currentPos + length) > this.fileSize) {
+            return false;
         }
 
-        return false;
+        try {
+            ByteBuffer buf = this.mappedByteBuffer.slice();
+            buf.position(currentPos);
+            buf.put(data, offset, length);
+        } catch (Throwable e) {
+            log.error("Error occurred when append message to mappedFile.", e);
+        }
+        WROTE_POSITION_UPDATER.addAndGet(this, length);
+        return true;
     }
 
     /**
