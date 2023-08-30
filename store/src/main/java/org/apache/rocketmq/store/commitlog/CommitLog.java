@@ -642,7 +642,7 @@ public class CommitLog implements Swappable {
         }
     }
 
-    public CompletableFuture<PutMessageResult> asyncPutMessage(final MessageExtBrokerInner msg) {
+    private void initPutMessage(final MessageExtBrokerInner msg) {
         // Set the storage time
         if (!defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
             msg.setStoreTimestamp(System.currentTimeMillis());
@@ -650,28 +650,30 @@ public class CommitLog implements Swappable {
 
         // Set the message body CRC (consider the most appropriate setting on the client)
         msg.setBodyCRC(UtilAll.crc32(msg.getBody()));
-        // Back to Results
-        AppendMessageResult result = null;
 
-        StoreStatsService storeStatsService = this.defaultMessageStore.getStoreStatsService();
-
-        String topic = msg.getTopic();
         msg.setVersion(MessageVersion.MESSAGE_VERSION_V1);
-        boolean autoMessageVersionOnTopicLen =
-            this.defaultMessageStore.getMessageStoreConfig().isAutoMessageVersionOnTopicLen();
-        if (autoMessageVersionOnTopicLen && topic.length() > Byte.MAX_VALUE) {
+        boolean autoMessageVersionOnTopicLen = this.defaultMessageStore.getMessageStoreConfig().isAutoMessageVersionOnTopicLen();
+        if (autoMessageVersionOnTopicLen && msg.getTopic().length() > Byte.MAX_VALUE) {
             msg.setVersion(MessageVersion.MESSAGE_VERSION_V2);
-        }
-
-        InetSocketAddress bornSocketAddress = (InetSocketAddress) msg.getBornHost();
-        if (bornSocketAddress.getAddress() instanceof Inet6Address) {
-            msg.setBornHostV6Flag();
         }
 
         InetSocketAddress storeSocketAddress = (InetSocketAddress) msg.getStoreHost();
         if (storeSocketAddress.getAddress() instanceof Inet6Address) {
             msg.setStoreHostAddressV6Flag();
         }
+
+        InetSocketAddress bornSocketAddress = (InetSocketAddress) msg.getBornHost();
+        if (bornSocketAddress.getAddress() instanceof Inet6Address) {
+            msg.setBornHostV6Flag();
+        }
+    }
+
+    public CompletableFuture<PutMessageResult> asyncPutMessage(final MessageExtBrokerInner msg) {
+        initPutMessage(msg);
+
+        // Back to Results
+        AppendMessageResult result = null;
+        StoreStatsService storeStatsService = this.defaultMessageStore.getStoreStatsService();
 
         PutMessageThreadLocal putMessageThreadLocal = this.putMessageThreadLocal.get();
         updateMaxMessageSize(putMessageThreadLocal);
@@ -811,7 +813,7 @@ public class CommitLog implements Swappable {
 
         // Statistics
         storeStatsService.getSinglePutMessageTopicTimesTotal(msg.getTopic()).add(result.getMsgNum());
-        storeStatsService.getSinglePutMessageTopicSizeTotal(topic).add(result.getWroteBytes());
+        storeStatsService.getSinglePutMessageTopicSizeTotal(msg.getTopic()).add(result.getWroteBytes());
 
         return handleDiskFlushAndHA(putMessageResult, msg, needAckNums, needHandleHA);
     }
