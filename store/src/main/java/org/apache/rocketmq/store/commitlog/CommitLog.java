@@ -1016,6 +1016,10 @@ public class CommitLog implements Swappable {
             replicaResultFuture = handleHA(putMessageResult.getAppendMessageResult(), putMessageResult, needAckNums);
         }
 
+        return handleDiskFlushAndHACallback(flushResultFuture, replicaResultFuture, putMessageResult);
+    }
+
+    private CompletableFuture<PutMessageResult> handleDiskFlushAndHACallback(CompletableFuture<PutMessageStatus> flushResultFuture, CompletableFuture<PutMessageStatus> replicaResultFuture, PutMessageResult putMessageResult) {
         return flushResultFuture.thenCombine(replicaResultFuture, (flushStatus, replicaStatus) -> {
             if (flushStatus != PutMessageStatus.PUT_OK) {
                 putMessageResult.setPutMessageStatus(flushStatus);
