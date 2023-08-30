@@ -1076,10 +1076,12 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     }
 
     public void executeCheckForbiddenHook(final CheckForbiddenContext context) throws MQClientException {
-        if (hasCheckForbiddenHook()) {
-            for (CheckForbiddenHook hook : checkForbiddenHookList) {
-                hook.checkForbidden(context);
-            }
+        if (!hasCheckForbiddenHook()) {
+            return;
+        }
+
+        for (CheckForbiddenHook hook : checkForbiddenHookList) {
+            hook.checkForbidden(context);
         }
     }
 
