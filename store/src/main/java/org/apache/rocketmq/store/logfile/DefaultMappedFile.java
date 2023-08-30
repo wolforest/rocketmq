@@ -282,12 +282,10 @@ public class DefaultMappedFile extends AbstractMappedFile {
         AppendMessageResult result;
         if (messageExt instanceof MessageExtBatch && !((MessageExtBatch) messageExt).isInnerBatch()) {
             // traditional batch message
-            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
-                (MessageExtBatch) messageExt, putMessageContext);
+            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, (MessageExtBatch) messageExt, putMessageContext);
         } else if (messageExt instanceof MessageExtBrokerInner) {
             // traditional single message or newly introduced inner-batch message
-            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
-                (MessageExtBrokerInner) messageExt, putMessageContext);
+            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, (MessageExtBrokerInner) messageExt, putMessageContext);
         } else {
             return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
         }
