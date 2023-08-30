@@ -1709,14 +1709,16 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     private void requestFail(final String correlationId) {
         RequestResponseFuture responseFuture = RequestFutureHolder.getInstance().getRequestFutureTable().remove(correlationId);
-        if (responseFuture != null) {
-            responseFuture.setSendRequestOk(false);
-            responseFuture.putResponseMessage(null);
-            try {
-                responseFuture.executeRequestCallback();
-            } catch (Exception e) {
-                log.warn("execute requestCallback in requestFail, and callback throw", e);
-            }
+        if (responseFuture == null) {
+            return;
+        }
+
+        responseFuture.setSendRequestOk(false);
+        responseFuture.putResponseMessage(null);
+        try {
+            responseFuture.executeRequestCallback();
+        } catch (Exception e) {
+            log.warn("execute requestCallback in requestFail, and callback throw", e);
         }
     }
 
