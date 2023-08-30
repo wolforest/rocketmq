@@ -270,19 +270,21 @@ public class CommitLog implements Swappable {
 
         while (remainSize > 0) {
             MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(startOffset, startOffset == 0);
-            if (mappedFile != null) {
-                int pos = (int) (startOffset % mappedFileSize);
-                int readableSize = mappedFile.getReadPosition() - pos;
-                int readSize = Math.min(remainSize, readableSize);
-
-                SelectMappedBufferResult bufferResult = mappedFile.selectMappedBuffer(pos, readSize);
-                if (bufferResult == null) {
-                    break;
-                }
-                bufferResultList.add(bufferResult);
-                remainSize -= readSize;
-                startOffset += readSize;
+            if (mappedFile == null) {
+                continue;
             }
+
+            int pos = (int) (startOffset % mappedFileSize);
+            int readableSize = mappedFile.getReadPosition() - pos;
+            int readSize = Math.min(remainSize, readableSize);
+
+            SelectMappedBufferResult bufferResult = mappedFile.selectMappedBuffer(pos, readSize);
+            if (bufferResult == null) {
+                break;
+            }
+            bufferResultList.add(bufferResult);
+            remainSize -= readSize;
+            startOffset += readSize;
         }
 
         return bufferResultList;
