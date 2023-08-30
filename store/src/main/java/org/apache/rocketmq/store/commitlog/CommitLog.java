@@ -651,21 +651,23 @@ public class CommitLog implements Swappable {
      * According to receive certain message or offset storage time if an error occurs, it returns -1
      */
     public long pickupStoreTimestamp(final long offset, final int size) {
-        if (offset >= this.getMinOffset() && offset + size <= this.getMaxOffset()) {
-            SelectMappedBufferResult result = this.getMessage(offset, size);
-            if (null != result) {
-                try {
-                    int sysFlag = result.getByteBuffer().getInt(MessageDecoder.SYSFLAG_POSITION);
-                    int bornhostLength = (sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 8 : 20;
-                    int msgStoreTimePos = 4 + 4 + 4 + 4 + 4 + 8 + 8 + 4 + 8 + bornhostLength;
-                    return result.getByteBuffer().getLong(msgStoreTimePos);
-                } finally {
-                    result.release();
-                }
-            }
+        if (offset < this.getMinOffset() || offset + size > this.getMaxOffset()) {
+            return -1;
         }
 
-        return -1;
+        SelectMappedBufferResult result = this.getMessage(offset, size);
+        if (result == null) {
+            return -1;
+        }
+
+        try {
+            int sysFlag = result.getByteBuffer().getInt(MessageDecoder.SYSFLAG_POSITION);
+            int bornhostLength = (sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 8 : 20;
+            int msgStoreTimePos = 4 + 4 + 4 + 4 + 4 + 8 + 8 + 4 + 8 + bornhostLength;
+            return result.getByteBuffer().getLong(msgStoreTimePos);
+        } finally {
+            result.release();
+        }
     }
 
     public long getMinOffset() {
