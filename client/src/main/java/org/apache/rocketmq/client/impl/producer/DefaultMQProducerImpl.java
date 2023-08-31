@@ -158,7 +158,11 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             log.info("semaphoreAsyncSendSize can not be smaller than 1M.");
         }
 
-        ServiceDetector serviceDetector = new ServiceDetector() {
+        initMQFaultStrategy();
+    }
+
+    private ServiceDetector initServiceDetector() {
+        return new ServiceDetector() {
             @Override
             public boolean detect(String endpoint, long timeoutMillis) {
                 Optional<String> candidateTopic = pickTopic();
@@ -168,13 +172,17 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 try {
                     MessageQueue mq = new MessageQueue(candidateTopic.get(), null, 0);
                     mQClientFactory.getMQClientAPIImpl()
-                            .getMaxOffset(endpoint, mq, timeoutMillis);
+                        .getMaxOffset(endpoint, mq, timeoutMillis);
                     return true;
                 } catch (Exception e) {
                     return false;
                 }
             }
         };
+    }
+
+    private void initMQFaultStrategy() {
+        ServiceDetector serviceDetector = initServiceDetector();
 
         this.mqFaultStrategy = new MQFaultStrategy(defaultMQProducer.cloneClientConfig(), new Resolver() {
             @Override
@@ -183,6 +191,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             }
         }, serviceDetector);
     }
+
     private Optional<String> pickTopic() {
         if (topicPublishInfoTable.isEmpty()) {
             return Optional.absent();
