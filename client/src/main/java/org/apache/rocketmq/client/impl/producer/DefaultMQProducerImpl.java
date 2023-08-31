@@ -814,36 +814,40 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             if (sendResult != null) {
                 return sendResult;
             }
-            String info = String.format("Send [%d] times, still failed, cost [%d]ms, Topic: %s, BrokersSent: %s",
-                times,
-                System.currentTimeMillis() - beginTimestampFirst,
-                msg.getTopic(),
-                Arrays.toString(brokersSent));
-
-            info += FAQUrl.suggestTodo(FAQUrl.SEND_MSG_FAILED);
-
-            MQClientException mqClientException = new MQClientException(info, exception);
-            if (callTimeout) {
-                throw new RemotingTooMuchRequestException("sendDefaultImpl call timeout");
-            }
-
-            if (exception instanceof MQBrokerException) {
-                mqClientException.setResponseCode(((MQBrokerException) exception).getResponseCode());
-            } else if (exception instanceof RemotingConnectException) {
-                mqClientException.setResponseCode(ClientErrorCode.CONNECT_BROKER_EXCEPTION);
-            } else if (exception instanceof RemotingTimeoutException) {
-                mqClientException.setResponseCode(ClientErrorCode.ACCESS_BROKER_TIMEOUT);
-            } else if (exception instanceof MQClientException) {
-                mqClientException.setResponseCode(ClientErrorCode.BROKER_NOT_EXIST_EXCEPTION);
-            }
-
-            throw mqClientException;
+            throwSendException(msg, callTimeout, times, beginTimestampFirst, brokersSent, exception);
         }
 
         validateNameServerSetting();
 
         throw new MQClientException("No route info of this topic: " + msg.getTopic() + FAQUrl.suggestTodo(FAQUrl.NO_TOPIC_ROUTE_INFO),
             null).setResponseCode(ClientErrorCode.NOT_FOUND_TOPIC_EXCEPTION);
+    }
+
+    private void throwSendException(Message msg, boolean callTimeout, int times, long beginTimestampFirst, String[] brokersSent, Exception exception) throws RemotingTooMuchRequestException, MQClientException {
+        String info = String.format("Send [%d] times, still failed, cost [%d]ms, Topic: %s, BrokersSent: %s",
+            times,
+            System.currentTimeMillis() - beginTimestampFirst,
+            msg.getTopic(),
+            Arrays.toString(brokersSent));
+
+        info += FAQUrl.suggestTodo(FAQUrl.SEND_MSG_FAILED);
+
+        MQClientException mqClientException = new MQClientException(info, exception);
+        if (callTimeout) {
+            throw new RemotingTooMuchRequestException("sendDefaultImpl call timeout");
+        }
+
+        if (exception instanceof MQBrokerException) {
+            mqClientException.setResponseCode(((MQBrokerException) exception).getResponseCode());
+        } else if (exception instanceof RemotingConnectException) {
+            mqClientException.setResponseCode(ClientErrorCode.CONNECT_BROKER_EXCEPTION);
+        } else if (exception instanceof RemotingTimeoutException) {
+            mqClientException.setResponseCode(ClientErrorCode.ACCESS_BROKER_TIMEOUT);
+        } else if (exception instanceof MQClientException) {
+            mqClientException.setResponseCode(ClientErrorCode.BROKER_NOT_EXIST_EXCEPTION);
+        }
+
+        throw mqClientException;
     }
 
     private TopicPublishInfo tryToFindTopicPublishInfo(final String topic) {
