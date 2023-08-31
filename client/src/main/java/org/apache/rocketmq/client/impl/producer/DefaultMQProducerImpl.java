@@ -110,7 +110,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     private final ArrayList<EndTransactionHook> endTransactionHookList = new ArrayList<>();
     private final RPCHook rpcHook;
     private final BlockingQueue<Runnable> asyncSenderThreadPoolQueue;
-    private final ExecutorService defaultAsyncSenderExecutor;
+    private ExecutorService defaultAsyncSenderExecutor;
     protected BlockingQueue<Runnable> checkRequestQueue;
     protected ExecutorService checkExecutor;
     private ServiceState serviceState = ServiceState.CREATE_JUST;
@@ -135,8 +135,14 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     public DefaultMQProducerImpl(final DefaultMQProducer defaultMQProducer, RPCHook rpcHook) {
         this.defaultMQProducer = defaultMQProducer;
         this.rpcHook = rpcHook;
-
         this.asyncSenderThreadPoolQueue = new LinkedBlockingQueue<>(50000);
+
+        initDefaultAsyncSenderExecutor();
+        initSemaphore();
+        initMQFaultStrategy();
+    }
+
+    private void initDefaultAsyncSenderExecutor() {
         this.defaultAsyncSenderExecutor = new ThreadPoolExecutor(
             Runtime.getRuntime().availableProcessors(),
             Runtime.getRuntime().availableProcessors(),
@@ -144,9 +150,6 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             TimeUnit.MILLISECONDS,
             this.asyncSenderThreadPoolQueue,
             new ThreadFactoryImpl("AsyncSenderExecutor_"));
-
-        initSemaphore();
-        initMQFaultStrategy();
     }
 
     private void initSemaphore() {
