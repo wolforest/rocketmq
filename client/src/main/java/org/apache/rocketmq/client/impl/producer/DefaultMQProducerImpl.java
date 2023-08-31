@@ -144,6 +144,12 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             TimeUnit.MILLISECONDS,
             this.asyncSenderThreadPoolQueue,
             new ThreadFactoryImpl("AsyncSenderExecutor_"));
+
+        initSemaphore();
+        initMQFaultStrategy();
+    }
+
+    private void initSemaphore() {
         if (defaultMQProducer.getBackPressureForAsyncSendNum() > 10) {
             semaphoreAsyncSendNum = new Semaphore(Math.max(defaultMQProducer.getBackPressureForAsyncSendNum(), 10), true);
         } else {
@@ -157,8 +163,6 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             semaphoreAsyncSendSize = new Semaphore(1024 * 1024, true);
             log.info("semaphoreAsyncSendSize can not be smaller than 1M.");
         }
-
-        initMQFaultStrategy();
     }
 
     private ServiceDetector initServiceDetector() {
