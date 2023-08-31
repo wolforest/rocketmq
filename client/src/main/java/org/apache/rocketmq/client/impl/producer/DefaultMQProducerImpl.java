@@ -1521,6 +1521,10 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             log.warn("local transaction execute " + localTransactionState + ", but end broker transaction failed", e);
         }
 
+        return createTransactionSendResult(sendResult, localTransactionState);
+    }
+
+    private TransactionSendResult createTransactionSendResult(SendResult sendResult, LocalTransactionState localTransactionState) {
         TransactionSendResult transactionSendResult = new TransactionSendResult();
         transactionSendResult.setSendStatus(sendResult.getSendStatus());
         transactionSendResult.setMessageQueue(sendResult.getMessageQueue());
