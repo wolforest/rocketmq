@@ -902,124 +902,125 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             brokerAddr = this.mQClientFactory.findBrokerAddressInPublish(brokerName);
         }
 
-        SendMessageContext context = null;
-        if (brokerAddr != null) {
-            brokerAddr = MixAll.brokerVIPChannel(this.defaultMQProducer.isSendMessageWithVIPChannel(), brokerAddr);
-
-            byte[] prevBody = msg.getBody();
-            try {
-                //for MessageBatch,ID has been set in the generating process
-                if (!(msg instanceof MessageBatch)) {
-                    MessageClientIDSetter.setUniqID(msg);
-                }
-
-                boolean topicWithNamespace = false;
-                if (null != this.mQClientFactory.getClientConfig().getNamespace()) {
-                    msg.setInstanceId(this.mQClientFactory.getClientConfig().getNamespace());
-                    topicWithNamespace = true;
-                }
-
-                int sysFlag = 0;
-                boolean msgBodyCompressed = false;
-                if (this.tryToCompressMessage(msg)) {
-                    sysFlag |= MessageSysFlag.COMPRESSED_FLAG;
-                    sysFlag |= compressType.getCompressionFlag();
-                    msgBodyCompressed = true;
-                }
-
-                final String tranMsg = msg.getProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED);
-                if (Boolean.parseBoolean(tranMsg)) {
-                    sysFlag |= MessageSysFlag.TRANSACTION_PREPARED_TYPE;
-                }
-
-                checkForbiddenHookForSend(msg, mq, communicationMode, brokerAddr);
-                if (this.hasSendMessageHook()) {
-                    context = initSendMessageContext(msg, mq, communicationMode, brokerAddr);
-                    this.executeSendMessageHookBefore(context);
-                }
-
-                SendMessageRequestHeader requestHeader = initSendMessageRequestHeader(msg, mq, brokerName, sysFlag);
-                SendResult sendResult = null;
-
-                switch (communicationMode) {
-                    case ASYNC:
-                        Message tmpMessage = msg;
-                        boolean messageCloned = false;
-                        if (msgBodyCompressed) {
-                            //If msg body was compressed, msgbody should be reset using prevBody.
-                            //Clone new message using commpressed message body and recover origin massage.
-                            //Fix bug:https://github.com/apache/rocketmq-externals/issues/66
-                            tmpMessage = MessageAccessor.cloneMessage(msg);
-                            messageCloned = true;
-                            msg.setBody(prevBody);
-                        }
-
-                        if (topicWithNamespace) {
-                            if (!messageCloned) {
-                                tmpMessage = MessageAccessor.cloneMessage(msg);
-                                messageCloned = true;
-                            }
-                            msg.setTopic(NamespaceUtil.withoutNamespace(msg.getTopic(), this.defaultMQProducer.getNamespace()));
-                        }
-
-                        long costTimeAsync = System.currentTimeMillis() - beginStartTime;
-                        if (timeout < costTimeAsync) {
-                            throw new RemotingTooMuchRequestException("sendKernelImpl call timeout");
-                        }
-                        sendResult = this.mQClientFactory.getMQClientAPIImpl().sendMessage(
-                            brokerAddr,
-                            brokerName,
-                            tmpMessage,
-                            requestHeader,
-                            timeout - costTimeAsync,
-                            communicationMode,
-                            sendCallback,
-                            topicPublishInfo,
-                            this.mQClientFactory,
-                            this.defaultMQProducer.getRetryTimesWhenSendAsyncFailed(),
-                            context,
-                            this);
-                        break;
-                    case ONEWAY:
-                    case SYNC:
-                        long costTimeSync = System.currentTimeMillis() - beginStartTime;
-                        if (timeout < costTimeSync) {
-                            throw new RemotingTooMuchRequestException("sendKernelImpl call timeout");
-                        }
-                        sendResult = this.mQClientFactory.getMQClientAPIImpl().sendMessage(
-                            brokerAddr,
-                            brokerName,
-                            msg,
-                            requestHeader,
-                            timeout - costTimeSync,
-                            communicationMode,
-                            context,
-                            this);
-                        break;
-                    default:
-                        assert false;
-                        break;
-                }
-
-                if (this.hasSendMessageHook()) {
-                    context.setSendResult(sendResult);
-                    this.executeSendMessageHookAfter(context);
-                }
-
-                return sendResult;
-            } catch (RemotingException | InterruptedException | MQBrokerException e) {
-                if (this.hasSendMessageHook()) {
-                    context.setException(e);
-                    this.executeSendMessageHookAfter(context);
-                }
-                throw e;
-            } finally {
-                msg.setBody(prevBody);
-                msg.setTopic(NamespaceUtil.withoutNamespace(msg.getTopic(), this.defaultMQProducer.getNamespace()));
-            }
+        if (brokerAddr == null) {
+            throw new MQClientException("The broker[" + brokerName + "] not exist", null);
         }
 
-        throw new MQClientException("The broker[" + brokerName + "] not exist", null);
+        SendMessageContext context = null;
+        brokerAddr = MixAll.brokerVIPChannel(this.defaultMQProducer.isSendMessageWithVIPChannel(), brokerAddr);
+        byte[] prevBody = msg.getBody();
+
+        try {
+            //for MessageBatch,ID has been set in the generating process
+            if (!(msg instanceof MessageBatch)) {
+                MessageClientIDSetter.setUniqID(msg);
+            }
+
+            boolean topicWithNamespace = false;
+            if (null != this.mQClientFactory.getClientConfig().getNamespace()) {
+                msg.setInstanceId(this.mQClientFactory.getClientConfig().getNamespace());
+                topicWithNamespace = true;
+            }
+
+            int sysFlag = 0;
+            boolean msgBodyCompressed = false;
+            if (this.tryToCompressMessage(msg)) {
+                sysFlag |= MessageSysFlag.COMPRESSED_FLAG;
+                sysFlag |= compressType.getCompressionFlag();
+                msgBodyCompressed = true;
+            }
+
+            final String tranMsg = msg.getProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED);
+            if (Boolean.parseBoolean(tranMsg)) {
+                sysFlag |= MessageSysFlag.TRANSACTION_PREPARED_TYPE;
+            }
+
+            checkForbiddenHookForSend(msg, mq, communicationMode, brokerAddr);
+            if (this.hasSendMessageHook()) {
+                context = initSendMessageContext(msg, mq, communicationMode, brokerAddr);
+                this.executeSendMessageHookBefore(context);
+            }
+
+            SendMessageRequestHeader requestHeader = initSendMessageRequestHeader(msg, mq, brokerName, sysFlag);
+            SendResult sendResult = null;
+
+            switch (communicationMode) {
+                case ASYNC:
+                    Message tmpMessage = msg;
+                    boolean messageCloned = false;
+                    if (msgBodyCompressed) {
+                        //If msg body was compressed, msgbody should be reset using prevBody.
+                        //Clone new message using commpressed message body and recover origin massage.
+                        //Fix bug:https://github.com/apache/rocketmq-externals/issues/66
+                        tmpMessage = MessageAccessor.cloneMessage(msg);
+                        messageCloned = true;
+                        msg.setBody(prevBody);
+                    }
+
+                    if (topicWithNamespace) {
+                        if (!messageCloned) {
+                            tmpMessage = MessageAccessor.cloneMessage(msg);
+                            messageCloned = true;
+                        }
+                        msg.setTopic(NamespaceUtil.withoutNamespace(msg.getTopic(), this.defaultMQProducer.getNamespace()));
+                    }
+
+                    long costTimeAsync = System.currentTimeMillis() - beginStartTime;
+                    if (timeout < costTimeAsync) {
+                        throw new RemotingTooMuchRequestException("sendKernelImpl call timeout");
+                    }
+                    sendResult = this.mQClientFactory.getMQClientAPIImpl().sendMessage(
+                        brokerAddr,
+                        brokerName,
+                        tmpMessage,
+                        requestHeader,
+                        timeout - costTimeAsync,
+                        communicationMode,
+                        sendCallback,
+                        topicPublishInfo,
+                        this.mQClientFactory,
+                        this.defaultMQProducer.getRetryTimesWhenSendAsyncFailed(),
+                        context,
+                        this);
+                    break;
+                case ONEWAY:
+                case SYNC:
+                    long costTimeSync = System.currentTimeMillis() - beginStartTime;
+                    if (timeout < costTimeSync) {
+                        throw new RemotingTooMuchRequestException("sendKernelImpl call timeout");
+                    }
+                    sendResult = this.mQClientFactory.getMQClientAPIImpl().sendMessage(
+                        brokerAddr,
+                        brokerName,
+                        msg,
+                        requestHeader,
+                        timeout - costTimeSync,
+                        communicationMode,
+                        context,
+                        this);
+                    break;
+                default:
+                    assert false;
+                    break;
+            }
+
+            if (this.hasSendMessageHook()) {
+                context.setSendResult(sendResult);
+                this.executeSendMessageHookAfter(context);
+            }
+
+            return sendResult;
+        } catch (RemotingException | InterruptedException | MQBrokerException e) {
+            if (this.hasSendMessageHook()) {
+                context.setException(e);
+                this.executeSendMessageHookAfter(context);
+            }
+            throw e;
+        } finally {
+            msg.setBody(prevBody);
+            msg.setTopic(NamespaceUtil.withoutNamespace(msg.getTopic(), this.defaultMQProducer.getNamespace()));
+        }
+
     }
 
     private void checkForbiddenHookForSend(Message msg, MessageQueue mq, CommunicationMode communicationMode, String brokerAddr) throws MQClientException {
