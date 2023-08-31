@@ -1161,7 +1161,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
     }
 
-    public void executeSendMessageHookBefore(final SendMessageContext context, SendMessageHook hook) {
+    private void executeSendMessageHookBefore(final SendMessageContext context, SendMessageHook hook) {
         try {
             hook.sendMessageBefore(context);
         } catch (Throwable e) {
@@ -1175,11 +1175,15 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
 
         for (SendMessageHook hook : this.sendMessageHookList) {
-            try {
-                hook.sendMessageAfter(context);
-            } catch (Throwable e) {
-                log.warn("failed to executeSendMessageHookAfter", e);
-            }
+            executeSendMessageHookAfter(context, hook);
+        }
+    }
+
+    private void executeSendMessageHookAfter(final SendMessageContext context, SendMessageHook hook) {
+        try {
+            hook.sendMessageAfter(context);
+        } catch (Throwable e) {
+            log.warn("failed to executeSendMessageHookAfter", e);
         }
     }
 
