@@ -716,7 +716,6 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         final long invokeID = random.nextLong();
         long beginTimestampFirst = System.currentTimeMillis();
         long beginTimestampPrev = beginTimestampFirst;
-        long endTimestamp = beginTimestampFirst;
         boolean callTimeout = false;
         MessageQueue mq = null;
         Exception exception = null;
@@ -750,8 +749,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 }
 
                 sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
-                endTimestamp = System.currentTimeMillis();
-                this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
+                this.updateFaultItem(mq.getBrokerName(), System.currentTimeMillis() - beginTimestampPrev, false, true);
                 switch (communicationMode) {
                     case ASYNC:
                         return null;
