@@ -282,7 +282,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         if (!enableMsgTrace) {
             return;
         }
-        
+
         try {
             AsyncTraceDispatcher dispatcher = new AsyncTraceDispatcher(producerGroup, TraceDispatcher.Type.PRODUCE, customizedTraceTopic, rpcHook);
             dispatcher.setHostProducer(this.defaultMQProducerImpl);
@@ -317,12 +317,19 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         if (this.produceAccumulator != null) {
             this.produceAccumulator.start();
         }
-        if (null != traceDispatcher) {
-            try {
-                traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());
-            } catch (MQClientException e) {
-                logger.warn("trace dispatcher start failed ", e);
-            }
+
+        startTraceDispatch();
+    }
+
+    private void startTraceDispatch() {
+        if (null == traceDispatcher) {
+            return;
+        }
+
+        try {
+            traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());
+        } catch (MQClientException e) {
+            logger.warn("trace dispatcher start failed ", e);
         }
     }
 
