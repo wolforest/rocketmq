@@ -72,6 +72,28 @@ public class PutMessageService {
         return asyncPutAndAddCallback(messageExtBatch);
     }
 
+    public PutMessageResult putMessage(MessageExtBrokerInner msg) {
+        return waitForPutResult(asyncPutMessage(msg));
+    }
+
+    public PutMessageResult putMessages(MessageExtBatch messageExtBatch) {
+        return waitForPutResult(asyncPutMessages(messageExtBatch));
+    }
+
+    private PutMessageResult waitForPutResult(CompletableFuture<PutMessageResult> putMessageResultFuture) {
+        try {
+            int putMessageTimeout = Math.max(messageStore.getMessageStoreConfig().getSyncFlushTimeout(), messageStore.getMessageStoreConfig().getSlaveTimeout()) + 5000;
+            return putMessageResultFuture.get(putMessageTimeout, TimeUnit.MILLISECONDS);
+        } catch (ExecutionException | InterruptedException e) {
+            return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null);
+        } catch (TimeoutException e) {
+            LOGGER.error("usually it will never timeout, putMessageTimeout is much bigger than slaveTimeout and "
+                + "flushTimeout so the result can be got anyway, but in some situations timeout will happen like full gc "
+                + "process hangs or other unexpected situations.");
+            return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null);
+        }
+    }
+
     private CompletableFuture<PutMessageResult> executeBeforePutMessage(MessageExtBrokerInner msg) {
         for (PutMessageHook putMessageHook : putMessageHookList) {
             PutMessageResult handleResult = putMessageHook.executeBeforePutMessage(msg);
@@ -144,28 +166,6 @@ public class PutMessageService {
     private void countFailedTimes(PutMessageResult result) {
         if (null == result || !result.isOk()) {
             messageStore.getStoreStatsService().getPutMessageFailedTimes().add(1);
-        }
-    }
-
-    public PutMessageResult putMessage(MessageExtBrokerInner msg) {
-        return waitForPutResult(asyncPutMessage(msg));
-    }
-
-    public PutMessageResult putMessages(MessageExtBatch messageExtBatch) {
-        return waitForPutResult(asyncPutMessages(messageExtBatch));
-    }
-
-    private PutMessageResult waitForPutResult(CompletableFuture<PutMessageResult> putMessageResultFuture) {
-        try {
-            int putMessageTimeout = Math.max(messageStore.getMessageStoreConfig().getSyncFlushTimeout(), messageStore.getMessageStoreConfig().getSlaveTimeout()) + 5000;
-            return putMessageResultFuture.get(putMessageTimeout, TimeUnit.MILLISECONDS);
-        } catch (ExecutionException | InterruptedException e) {
-            return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null);
-        } catch (TimeoutException e) {
-            LOGGER.error("usually it will never timeout, putMessageTimeout is much bigger than slaveTimeout and "
-                + "flushTimeout so the result can be got anyway, but in some situations timeout will happen like full gc "
-                + "process hangs or other unexpected situations.");
-            return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null);
         }
     }
 
