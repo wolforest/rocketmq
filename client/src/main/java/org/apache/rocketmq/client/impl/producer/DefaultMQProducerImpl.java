@@ -255,38 +255,11 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.start(true);
     }
 
+
     public void start(final boolean startFactory) throws MQClientException {
         switch (this.serviceState) {
             case CREATE_JUST:
-                this.serviceState = ServiceState.START_FAILED;
-
-                this.checkConfig();
-
-                if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
-                    this.defaultMQProducer.changeInstanceNameToPID();
-                }
-
-                this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQProducer, rpcHook);
-
-                boolean registerOK = mQClientFactory.registerProducer(this.defaultMQProducer.getProducerGroup(), this);
-                if (!registerOK) {
-                    this.serviceState = ServiceState.CREATE_JUST;
-                    throw new MQClientException("The producer group[" + this.defaultMQProducer.getProducerGroup()
-                        + "] has been created before, specify another name please." + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
-                        null);
-                }
-
-                if (startFactory) {
-                    mQClientFactory.start();
-                }
-
-                if (this.mqFaultStrategy.isStartDetectorEnable()) {
-                    this.mqFaultStrategy.startDetector();
-                }
-
-                log.info("the producer [{}] start OK. sendMessageWithVIPChannel={}", this.defaultMQProducer.getProducerGroup(),
-                    this.defaultMQProducer.isSendMessageWithVIPChannel());
-                this.serviceState = ServiceState.RUNNING;
+                startService(startFactory);
                 break;
             case RUNNING:
             case START_FAILED:
@@ -300,9 +273,39 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
 
         this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();
-
         RequestFutureHolder.getInstance().startScheduledTask(this);
+    }
 
+    private void startService(final boolean startFactory) throws MQClientException {
+        this.serviceState = ServiceState.START_FAILED;
+
+        this.checkConfig();
+
+        if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
+            this.defaultMQProducer.changeInstanceNameToPID();
+        }
+
+        this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQProducer, rpcHook);
+
+        boolean registerOK = mQClientFactory.registerProducer(this.defaultMQProducer.getProducerGroup(), this);
+        if (!registerOK) {
+            this.serviceState = ServiceState.CREATE_JUST;
+            throw new MQClientException("The producer group[" + this.defaultMQProducer.getProducerGroup()
+                + "] has been created before, specify another name please." + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
+                null);
+        }
+
+        if (startFactory) {
+            mQClientFactory.start();
+        }
+
+        if (this.mqFaultStrategy.isStartDetectorEnable()) {
+            this.mqFaultStrategy.startDetector();
+        }
+
+        log.info("the producer [{}] start OK. sendMessageWithVIPChannel={}", this.defaultMQProducer.getProducerGroup(),
+            this.defaultMQProducer.isSendMessageWithVIPChannel());
+        this.serviceState = ServiceState.RUNNING;
     }
 
     private void checkConfig() throws MQClientException {
