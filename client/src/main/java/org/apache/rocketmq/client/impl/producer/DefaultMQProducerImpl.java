@@ -938,35 +938,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     this.executeSendMessageHookBefore(context);
                 }
 
-                SendMessageRequestHeader requestHeader = new SendMessageRequestHeader();
-                requestHeader.setProducerGroup(this.defaultMQProducer.getProducerGroup());
-                requestHeader.setTopic(msg.getTopic());
-                requestHeader.setDefaultTopic(this.defaultMQProducer.getCreateTopicKey());
-                requestHeader.setDefaultTopicQueueNums(this.defaultMQProducer.getDefaultTopicQueueNums());
-                requestHeader.setQueueId(mq.getQueueId());
-                requestHeader.setSysFlag(sysFlag);
-                requestHeader.setBornTimestamp(System.currentTimeMillis());
-                requestHeader.setFlag(msg.getFlag());
-                requestHeader.setProperties(MessageDecoder.messageProperties2String(msg.getProperties()));
-                requestHeader.setReconsumeTimes(0);
-                requestHeader.setUnitMode(this.isUnitMode());
-                requestHeader.setBatch(msg instanceof MessageBatch);
-                requestHeader.setBname(brokerName);
-                if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-                    String reconsumeTimes = MessageAccessor.getReconsumeTime(msg);
-                    if (reconsumeTimes != null) {
-                        requestHeader.setReconsumeTimes(Integer.valueOf(reconsumeTimes));
-                        MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_RECONSUME_TIME);
-                    }
-
-                    String maxReconsumeTimes = MessageAccessor.getMaxReconsumeTimes(msg);
-                    if (maxReconsumeTimes != null) {
-                        requestHeader.setMaxReconsumeTimes(Integer.valueOf(maxReconsumeTimes));
-                        MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_MAX_RECONSUME_TIMES);
-                    }
-                }
-
+                SendMessageRequestHeader requestHeader = initSendMessageRequestHeader(msg, mq, brokerName, sysFlag);
                 SendResult sendResult = null;
+
                 switch (communicationMode) {
                     case ASYNC:
                         Message tmpMessage = msg;
@@ -1084,6 +1058,40 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
 
         return context;
+    }
+
+    private SendMessageRequestHeader initSendMessageRequestHeader(Message msg, MessageQueue mq, String brokerName, int sysFlag) {
+        SendMessageRequestHeader requestHeader = new SendMessageRequestHeader();
+        requestHeader.setProducerGroup(this.defaultMQProducer.getProducerGroup());
+        requestHeader.setTopic(msg.getTopic());
+        requestHeader.setDefaultTopic(this.defaultMQProducer.getCreateTopicKey());
+        requestHeader.setDefaultTopicQueueNums(this.defaultMQProducer.getDefaultTopicQueueNums());
+        requestHeader.setQueueId(mq.getQueueId());
+        requestHeader.setSysFlag(sysFlag);
+        requestHeader.setBornTimestamp(System.currentTimeMillis());
+        requestHeader.setFlag(msg.getFlag());
+        requestHeader.setProperties(MessageDecoder.messageProperties2String(msg.getProperties()));
+        requestHeader.setReconsumeTimes(0);
+        requestHeader.setUnitMode(this.isUnitMode());
+        requestHeader.setBatch(msg instanceof MessageBatch);
+        requestHeader.setBname(brokerName);
+
+        if (!requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            return requestHeader;
+        }
+
+        String reconsumeTimes = MessageAccessor.getReconsumeTime(msg);
+        if (reconsumeTimes != null) {
+            requestHeader.setReconsumeTimes(Integer.valueOf(reconsumeTimes));
+            MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_RECONSUME_TIME);
+        }
+
+        String maxReconsumeTimes = MessageAccessor.getMaxReconsumeTimes(msg);
+        if (maxReconsumeTimes != null) {
+            requestHeader.setMaxReconsumeTimes(Integer.valueOf(maxReconsumeTimes));
+            MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_MAX_RECONSUME_TIMES);
+        }
+        return requestHeader;
     }
 
     public MQClientInstance getMqClientFactory() {
