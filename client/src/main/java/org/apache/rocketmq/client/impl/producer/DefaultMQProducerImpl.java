@@ -704,126 +704,136 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         this.makeSureStateOK();
         Validators.checkMessage(msg, this.defaultMQProducer);
+
+        TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
+        if (topicPublishInfo == null || !topicPublishInfo.ok()) {
+            validateNameServerSetting();
+
+            throw new MQClientException("No route info of this topic: " + msg.getTopic() + FAQUrl.suggestTodo(FAQUrl.NO_TOPIC_ROUTE_INFO),
+                null).setResponseCode(ClientErrorCode.NOT_FOUND_TOPIC_EXCEPTION);
+        }
+
         final long invokeID = random.nextLong();
         long beginTimestampFirst = System.currentTimeMillis();
         long beginTimestampPrev = beginTimestampFirst;
         long endTimestamp = beginTimestampFirst;
-        TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
-        if (topicPublishInfo != null && topicPublishInfo.ok()) {
-            boolean callTimeout = false;
-            MessageQueue mq = null;
-            Exception exception = null;
-            SendResult sendResult = null;
-            int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed() : 1;
-            int times = 0;
-            String[] brokersSent = new String[timesTotal];
-            boolean resetIndex = false;
-            for (; times < timesTotal; times++) {
-                String lastBrokerName = null == mq ? null : mq.getBrokerName();
+        boolean callTimeout = false;
+        MessageQueue mq = null;
+        Exception exception = null;
+        SendResult sendResult = null;
+        int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed() : 1;
+        int times = 0;
+        String[] brokersSent = new String[timesTotal];
+        boolean resetIndex = false;
+        for (; times < timesTotal; times++) {
+            String lastBrokerName = null == mq ? null : mq.getBrokerName();
+            if (times > 0) {
+                resetIndex = true;
+            }
+            MessageQueue mqSelected = this.selectOneMessageQueue(topicPublishInfo, lastBrokerName, resetIndex);
+            if (mqSelected == null) {
+                break;
+            }
+
+            mq = mqSelected;
+            brokersSent[times] = mq.getBrokerName();
+            try {
+                beginTimestampPrev = System.currentTimeMillis();
                 if (times > 0) {
-                    resetIndex = true;
+                    //Reset topic with namespace during resend.
+                    msg.setTopic(this.defaultMQProducer.withNamespace(msg.getTopic()));
                 }
-                MessageQueue mqSelected = this.selectOneMessageQueue(topicPublishInfo, lastBrokerName, resetIndex);
-                if (mqSelected != null) {
-                    mq = mqSelected;
-                    brokersSent[times] = mq.getBrokerName();
-                    try {
-                        beginTimestampPrev = System.currentTimeMillis();
-                        if (times > 0) {
-                            //Reset topic with namespace during resend.
-                            msg.setTopic(this.defaultMQProducer.withNamespace(msg.getTopic()));
-                        }
-                        long costTime = beginTimestampPrev - beginTimestampFirst;
-                        if (timeout < costTime) {
-                            callTimeout = true;
-                            break;
-                        }
-
-                        sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
-                        endTimestamp = System.currentTimeMillis();
-                        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
-                        switch (communicationMode) {
-                            case ASYNC:
-                                return null;
-                            case ONEWAY:
-                                return null;
-                            case SYNC:
-                                if (sendResult.getSendStatus() != SendStatus.SEND_OK) {
-                                    if (this.defaultMQProducer.isRetryAnotherBrokerWhenNotStoreOK()) {
-                                        continue;
-                                    }
-                                }
-
-                                return sendResult;
-                            default:
-                                break;
-                        }
-                    } catch (MQClientException e) {
-                        endTimestamp = System.currentTimeMillis();
-                        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
-                        log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
-                        log.warn(msg.toString());
-                        exception = e;
-                        continue;
-                    } catch (RemotingException e) {
-                        endTimestamp = System.currentTimeMillis();
-                        if (this.mqFaultStrategy.isStartDetectorEnable()) {
-                            // Set this broker unreachable when detecting schedule task is running for RemotingException.
-                            this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
-                        } else {
-                            // Otherwise, isolate this broker.
-                            this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, true);
-                        }
-                        log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
-                        if (log.isDebugEnabled()) {
-                            log.debug(msg.toString());
-                        }
-                        exception = e;
-                        continue;
-                    } catch (MQBrokerException e) {
-                        endTimestamp = System.currentTimeMillis();
-                        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
-                        log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
-                        if (log.isDebugEnabled()) {
-                            log.debug(msg.toString());
-                        }
-                        exception = e;
-                        if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) {
-                            continue;
-                        } else {
-                            if (sendResult != null) {
-                                return sendResult;
-                            }
-
-                            throw e;
-                        }
-                    } catch (InterruptedException e) {
-                        endTimestamp = System.currentTimeMillis();
-                        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
-                        log.warn("sendKernelImpl exception, throw exception, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
-                        if (log.isDebugEnabled()) {
-                            log.debug(msg.toString());
-                        }
-                        throw e;
-                    }
-                } else {
+                long costTime = beginTimestampPrev - beginTimestampFirst;
+                if (timeout < costTime) {
+                    callTimeout = true;
                     break;
                 }
+
+                sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
+                endTimestamp = System.currentTimeMillis();
+                this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
+                switch (communicationMode) {
+                    case ASYNC:
+                        return null;
+                    case ONEWAY:
+                        return null;
+                    case SYNC:
+                        if (sendResult.getSendStatus() != SendStatus.SEND_OK) {
+                            if (this.defaultMQProducer.isRetryAnotherBrokerWhenNotStoreOK()) {
+                                continue;
+                            }
+                        }
+
+                        return sendResult;
+                    default:
+                        break;
+                }
+            } catch (MQClientException e) {
+                handleSendMQClientException(msg, mq, invokeID, beginTimestampPrev, e);
+                exception = e;
+                continue;
+            } catch (RemotingException e) {
+                endTimestamp = System.currentTimeMillis();
+                if (this.mqFaultStrategy.isStartDetectorEnable()) {
+                    // Set this broker unreachable when detecting schedule task is running for RemotingException.
+                    this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
+                } else {
+                    // Otherwise, isolate this broker.
+                    this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, true);
+                }
+                log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
+                if (log.isDebugEnabled()) {
+                    log.debug(msg.toString());
+                }
+                exception = e;
+                continue;
+            } catch (MQBrokerException e) {
+                endTimestamp = System.currentTimeMillis();
+                this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
+                log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
+                if (log.isDebugEnabled()) {
+                    log.debug(msg.toString());
+                }
+                exception = e;
+                if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) {
+                    continue;
+                } else {
+                    if (sendResult != null) {
+                        return sendResult;
+                    }
+
+                    throw e;
+                }
+            } catch (InterruptedException e) {
+                return throwSendInterruptedException(msg, mq,invokeID, beginTimestampPrev, e);
             }
 
-            if (sendResult != null) {
-                return sendResult;
-            }
-            throwSendException(msg, callTimeout, times, beginTimestampFirst, brokersSent, exception);
         }
 
-        validateNameServerSetting();
-
-        throw new MQClientException("No route info of this topic: " + msg.getTopic() + FAQUrl.suggestTodo(FAQUrl.NO_TOPIC_ROUTE_INFO),
-            null).setResponseCode(ClientErrorCode.NOT_FOUND_TOPIC_EXCEPTION);
+        if (sendResult != null) {
+            return sendResult;
+        }
+        return throwSendException(msg, callTimeout, times, beginTimestampFirst, brokersSent, exception);
     }
 
-    private void throwSendException(Message msg, boolean callTimeout, int times, long beginTimestampFirst, String[] brokersSent, Exception exception) throws RemotingTooMuchRequestException, MQClientException {
+    private void handleSendMQClientException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, InterruptedException e) {
+        long endTimestamp = System.currentTimeMillis();
+        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
+        log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
+        log.warn(msg.toString());
+    }
+
+    private SendResult throwSendInterruptedException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, InterruptedException e) throws InterruptedException {
+        long endTimestamp = System.currentTimeMillis();
+        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
+        log.warn("sendKernelImpl exception, throw exception, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
+        if (log.isDebugEnabled()) {
+            log.debug(msg.toString());
+        }
+        throw e;
+    }
+
+    private SendResult throwSendException(Message msg, boolean callTimeout, int times, long beginTimestampFirst, String[] brokersSent, Exception exception) throws RemotingTooMuchRequestException, MQClientException {
         String info = String.format("Send [%d] times, still failed, cost [%d]ms, Topic: %s, BrokersSent: %s",
             times,
             System.currentTimeMillis() - beginTimestampFirst,
