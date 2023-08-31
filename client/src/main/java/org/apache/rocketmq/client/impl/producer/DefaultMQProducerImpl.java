@@ -1478,27 +1478,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         switch (sendResult.getSendStatus()) {
             case SEND_OK: {
                 try {
-                    if (sendResult.getTransactionId() != null) {
-                        msg.putUserProperty("__transactionId__", sendResult.getTransactionId());
-                    }
-                    String transactionId = msg.getProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
-                    if (null != transactionId && !"".equals(transactionId)) {
-                        msg.setTransactionId(transactionId);
-                    }
-                    if (null != localTransactionExecuter) {
-                        localTransactionState = localTransactionExecuter.executeLocalTransactionBranch(msg, arg);
-                    } else {
-                        log.debug("Used new transaction API");
-                        localTransactionState = transactionListener.executeLocalTransaction(msg, arg);
-                    }
-                    if (null == localTransactionState) {
-                        localTransactionState = LocalTransactionState.UNKNOW;
-                    }
-
-                    if (localTransactionState != LocalTransactionState.COMMIT_MESSAGE) {
-                        log.info("executeLocalTransactionBranch return: {} messageTopic: {} transactionId: {} tag: {} key: {}",
-                            localTransactionState, msg.getTopic(), msg.getTransactionId(), msg.getTags(), msg.getKeys());
-                    }
+                    localTransactionState = handleTransactionSendOk(msg, localTransactionExecuter, transactionListener, arg, sendResult);
                 } catch (Throwable e) {
                     log.error("executeLocalTransactionBranch exception, messageTopic: {} transactionId: {} tag: {} key: {}",
                         msg.getTopic(), msg.getTransactionId(), msg.getTags(), msg.getKeys(), e);
@@ -1522,6 +1502,33 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
 
         return createTransactionSendResult(sendResult, localTransactionState);
+    }
+
+    private LocalTransactionState handleTransactionSendOk(Message msg, LocalTransactionExecuter localTransactionExecuter, TransactionListener transactionListener,Object arg, SendResult sendResult) {
+        LocalTransactionState localTransactionState = LocalTransactionState.UNKNOW;
+        if (sendResult.getTransactionId() != null) {
+            msg.putUserProperty("__transactionId__", sendResult.getTransactionId());
+        }
+        String transactionId = msg.getProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
+        if (null != transactionId && !"".equals(transactionId)) {
+            msg.setTransactionId(transactionId);
+        }
+        if (null != localTransactionExecuter) {
+            localTransactionState = localTransactionExecuter.executeLocalTransactionBranch(msg, arg);
+        } else {
+            log.debug("Used new transaction API");
+            localTransactionState = transactionListener.executeLocalTransaction(msg, arg);
+        }
+        if (null == localTransactionState) {
+            localTransactionState = LocalTransactionState.UNKNOW;
+        }
+
+        if (localTransactionState != LocalTransactionState.COMMIT_MESSAGE) {
+            log.info("executeLocalTransactionBranch return: {} messageTopic: {} transactionId: {} tag: {} key: {}",
+                localTransactionState, msg.getTopic(), msg.getTransactionId(), msg.getTags(), msg.getKeys());
+        }
+
+        return localTransactionState;
     }
 
     private TransactionSendResult createTransactionSendResult(SendResult sendResult, LocalTransactionState localTransactionState) {
