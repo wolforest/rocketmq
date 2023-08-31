@@ -1197,11 +1197,15 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
 
         for (EndTransactionHook hook : this.endTransactionHookList) {
-            try {
-                hook.endTransaction(context);
-            } catch (Throwable e) {
-                log.warn("failed to executeEndTransactionHook", e);
-            }
+            executeEndTransactionHook(context, hook);
+        }
+    }
+
+    private void executeEndTransactionHook(final EndTransactionContext context, EndTransactionHook hook) {
+        try {
+            hook.endTransaction(context);
+        } catch (Throwable e) {
+            log.warn("failed to executeEndTransactionHook", e);
         }
     }
 
