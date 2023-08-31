@@ -255,7 +255,6 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.start(true);
     }
 
-
     public void start(final boolean startFactory) throws MQClientException {
         switch (this.serviceState) {
             case CREATE_JUST:
