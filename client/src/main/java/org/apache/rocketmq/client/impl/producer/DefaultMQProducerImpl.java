@@ -1357,33 +1357,33 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         Validators.checkMessage(msg, this.defaultMQProducer);
 
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
-        if (topicPublishInfo != null && topicPublishInfo.ok()) {
-            MessageQueue mq = null;
-            try {
-                List<MessageQueue> messageQueueList =
-                    mQClientFactory.getMQAdminImpl().parsePublishMessageQueues(topicPublishInfo.getMessageQueueList());
-                Message userMessage = MessageAccessor.cloneMessage(msg);
-                String userTopic = NamespaceUtil.withoutNamespace(userMessage.getTopic(), mQClientFactory.getClientConfig().getNamespace());
-                userMessage.setTopic(userTopic);
-
-                mq = mQClientFactory.getClientConfig().queueWithNamespace(selector.select(messageQueueList, userMessage, arg));
-            } catch (Throwable e) {
-                throw new MQClientException("select message queue threw exception.", e);
-            }
-
-            long costTime = System.currentTimeMillis() - beginStartTime;
-            if (timeout < costTime) {
-                throw new RemotingTooMuchRequestException("sendSelectImpl call timeout");
-            }
-            if (mq != null) {
-                return this.sendKernelImpl(msg, mq, communicationMode, sendCallback, null, timeout - costTime);
-            } else {
-                throw new MQClientException("select message queue return null.", null);
-            }
+        if (topicPublishInfo == null || !topicPublishInfo.ok()) {
+            validateNameServerSetting();
+            throw new MQClientException("No route info for this topic, " + msg.getTopic(), null);
         }
 
-        validateNameServerSetting();
-        throw new MQClientException("No route info for this topic, " + msg.getTopic(), null);
+        MessageQueue mq = null;
+        try {
+            List<MessageQueue> messageQueueList =
+                mQClientFactory.getMQAdminImpl().parsePublishMessageQueues(topicPublishInfo.getMessageQueueList());
+            Message userMessage = MessageAccessor.cloneMessage(msg);
+            String userTopic = NamespaceUtil.withoutNamespace(userMessage.getTopic(), mQClientFactory.getClientConfig().getNamespace());
+            userMessage.setTopic(userTopic);
+
+            mq = mQClientFactory.getClientConfig().queueWithNamespace(selector.select(messageQueueList, userMessage, arg));
+        } catch (Throwable e) {
+            throw new MQClientException("select message queue threw exception.", e);
+        }
+
+        long costTime = System.currentTimeMillis() - beginStartTime;
+        if (timeout < costTime) {
+            throw new RemotingTooMuchRequestException("sendSelectImpl call timeout");
+        }
+        if (mq != null) {
+            return this.sendKernelImpl(msg, mq, communicationMode, sendCallback, null, timeout - costTime);
+        } else {
+            throw new MQClientException("select message queue return null.", null);
+        }
     }
 
     /**
