@@ -932,36 +932,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     sysFlag |= MessageSysFlag.TRANSACTION_PREPARED_TYPE;
                 }
 
-                if (hasCheckForbiddenHook()) {
-                    CheckForbiddenContext checkForbiddenContext = new CheckForbiddenContext();
-                    checkForbiddenContext.setNameSrvAddr(this.defaultMQProducer.getNamesrvAddr());
-                    checkForbiddenContext.setGroup(this.defaultMQProducer.getProducerGroup());
-                    checkForbiddenContext.setCommunicationMode(communicationMode);
-                    checkForbiddenContext.setBrokerAddr(brokerAddr);
-                    checkForbiddenContext.setMessage(msg);
-                    checkForbiddenContext.setMq(mq);
-                    checkForbiddenContext.setUnitMode(this.isUnitMode());
-                    this.executeCheckForbiddenHook(checkForbiddenContext);
-                }
-
+                checkForbiddenHookForSend(msg, mq, communicationMode, brokerAddr);
                 if (this.hasSendMessageHook()) {
-                    context = new SendMessageContext();
-                    context.setProducer(this);
-                    context.setProducerGroup(this.defaultMQProducer.getProducerGroup());
-                    context.setCommunicationMode(communicationMode);
-                    context.setBornHost(this.defaultMQProducer.getClientIP());
-                    context.setBrokerAddr(brokerAddr);
-                    context.setMessage(msg);
-                    context.setMq(mq);
-                    context.setNamespace(this.defaultMQProducer.getNamespace());
-                    String isTrans = msg.getProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED);
-                    if (isTrans != null && isTrans.equals("true")) {
-                        context.setMsgType(MessageType.Trans_Msg_Half);
-                    }
-
-                    if (msg.getProperty("__STARTDELIVERTIME") != null || msg.getProperty(MessageConst.PROPERTY_DELAY_TIME_LEVEL) != null) {
-                        context.setMsgType(MessageType.Delay_Msg);
-                    }
+                    context = initSendMessageContext(msg, mq, communicationMode, brokerAddr);
                     this.executeSendMessageHookBefore(context);
                 }
 
@@ -1073,6 +1046,44 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
 
         throw new MQClientException("The broker[" + brokerName + "] not exist", null);
+    }
+
+    private void checkForbiddenHookForSend(Message msg, MessageQueue mq, CommunicationMode communicationMode, String brokerAddr) throws MQClientException {
+        if (!hasCheckForbiddenHook()) {
+            return;
+        }
+
+        CheckForbiddenContext checkForbiddenContext = new CheckForbiddenContext();
+        checkForbiddenContext.setNameSrvAddr(this.defaultMQProducer.getNamesrvAddr());
+        checkForbiddenContext.setGroup(this.defaultMQProducer.getProducerGroup());
+        checkForbiddenContext.setCommunicationMode(communicationMode);
+        checkForbiddenContext.setBrokerAddr(brokerAddr);
+        checkForbiddenContext.setMessage(msg);
+        checkForbiddenContext.setMq(mq);
+        checkForbiddenContext.setUnitMode(this.isUnitMode());
+        this.executeCheckForbiddenHook(checkForbiddenContext);
+    }
+
+    private SendMessageContext initSendMessageContext(Message msg, MessageQueue mq, CommunicationMode communicationMode, String brokerAddr) {
+        SendMessageContext context = new SendMessageContext();
+        context.setProducer(this);
+        context.setProducerGroup(this.defaultMQProducer.getProducerGroup());
+        context.setCommunicationMode(communicationMode);
+        context.setBornHost(this.defaultMQProducer.getClientIP());
+        context.setBrokerAddr(brokerAddr);
+        context.setMessage(msg);
+        context.setMq(mq);
+        context.setNamespace(this.defaultMQProducer.getNamespace());
+        String isTrans = msg.getProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED);
+        if (isTrans != null && isTrans.equals("true")) {
+            context.setMsgType(MessageType.Trans_Msg_Half);
+        }
+
+        if (msg.getProperty("__STARTDELIVERTIME") != null || msg.getProperty(MessageConst.PROPERTY_DELAY_TIME_LEVEL) != null) {
+            context.setMsgType(MessageType.Delay_Msg);
+        }
+
+        return context;
     }
 
     public MQClientInstance getMqClientFactory() {
