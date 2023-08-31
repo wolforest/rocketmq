@@ -769,40 +769,18 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         break;
                 }
             } catch (MQClientException e) {
-                handleSendMQClientException(msg, mq, invokeID, beginTimestampPrev, e);
                 exception = e;
+                handleSendMQClientException(msg, mq, invokeID, beginTimestampPrev, e);
                 continue;
             } catch (RemotingException e) {
-                endTimestamp = System.currentTimeMillis();
-                if (this.mqFaultStrategy.isStartDetectorEnable()) {
-                    // Set this broker unreachable when detecting schedule task is running for RemotingException.
-                    this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
-                } else {
-                    // Otherwise, isolate this broker.
-                    this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, true);
-                }
-                log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
-                if (log.isDebugEnabled()) {
-                    log.debug(msg.toString());
-                }
+                handleSendRemotingException(msg, mq, invokeID, beginTimestampPrev, e);
                 exception = e;
                 continue;
             } catch (MQBrokerException e) {
-                endTimestamp = System.currentTimeMillis();
-                this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
-                log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
-                if (log.isDebugEnabled()) {
-                    log.debug(msg.toString());
-                }
                 exception = e;
-                if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) {
-                    continue;
-                } else {
-                    if (sendResult != null) {
-                        return sendResult;
-                    }
-
-                    throw e;
+                SendResult tmpResult = handleSendMQBrokerException(msg, mq, invokeID, beginTimestampPrev, e, sendResult);
+                if (tmpResult != null) {
+                    return tmpResult;
                 }
             } catch (InterruptedException e) {
                 return throwSendInterruptedException(msg, mq,invokeID, beginTimestampPrev, e);
@@ -816,11 +794,45 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         return throwSendException(msg, callTimeout, times, beginTimestampFirst, brokersSent, exception);
     }
 
-    private void handleSendMQClientException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, InterruptedException e) {
+    private void handleSendMQClientException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, MQClientException e) {
         long endTimestamp = System.currentTimeMillis();
         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
         log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
         log.warn(msg.toString());
+    }
+
+    private void handleSendRemotingException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, RemotingException e) {
+        long endTimestamp = System.currentTimeMillis();
+        if (this.mqFaultStrategy.isStartDetectorEnable()) {
+            // Set this broker unreachable when detecting schedule task is running for RemotingException.
+            this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
+        } else {
+            // Otherwise, isolate this broker.
+            this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, true);
+        }
+        log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
+        if (log.isDebugEnabled()) {
+            log.debug(msg.toString());
+        }
+    }
+
+    private SendResult handleSendMQBrokerException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, MQBrokerException e, SendResult sendResult) throws MQBrokerException {
+        long endTimestamp = System.currentTimeMillis();
+        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
+        log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
+        if (log.isDebugEnabled()) {
+            log.debug(msg.toString());
+        }
+
+        if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) {
+            return null;
+        } else {
+            if (sendResult != null) {
+                return sendResult;
+            }
+
+            throw e;
+        }
     }
 
     private SendResult throwSendInterruptedException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, InterruptedException e) throws InterruptedException {
