@@ -516,15 +516,23 @@ public class MQClientInstance {
     public void adjustThreadPool() {
         for (Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
             MQConsumerInner impl = entry.getValue();
-            if (impl != null) {
-                try {
-                    if (impl instanceof DefaultMQPushConsumerImpl) {
-                        DefaultMQPushConsumerImpl dmq = (DefaultMQPushConsumerImpl) impl;
-                        dmq.adjustThreadPool();
-                    }
-                } catch (Exception ignored) {
-                }
+            adjustThreadPool(impl);
+        }
+    }
+
+    private void adjustThreadPool(MQConsumerInner impl) {
+        if (impl == null) {
+            return;
+        }
+
+        try {
+            if (!(impl instanceof DefaultMQPushConsumerImpl)) {
+                return;
             }
+
+            DefaultMQPushConsumerImpl dmq = (DefaultMQPushConsumerImpl) impl;
+            dmq.adjustThreadPool();
+        } catch (Exception ignored) {
         }
     }
 
