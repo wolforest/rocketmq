@@ -935,14 +935,11 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         this.checkConfig();
         this.copySubscription();
 
-        if (this.defaultMQPushConsumer.getMessageModel() == MessageModel.CLUSTERING) {
-            this.defaultMQPushConsumer.changeInstanceNameToPID();
-        }
-
-
+        initInstanceName();
         initMQClientFactory();
         initRebalanceImpl();
         initPullAPIWrapper();
+
         loadOffsetStore();
         startMessageService();
         checkRegisterStatus();
@@ -950,6 +947,14 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         mQClientFactory.start();
         log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
         this.serviceState = ServiceState.RUNNING;
+    }
+
+    private void initInstanceName() {
+        if (this.defaultMQPushConsumer.getMessageModel() != MessageModel.CLUSTERING) {
+            return;
+        }
+
+        this.defaultMQPushConsumer.changeInstanceNameToPID();
     }
 
     private void initMQClientFactory() {
