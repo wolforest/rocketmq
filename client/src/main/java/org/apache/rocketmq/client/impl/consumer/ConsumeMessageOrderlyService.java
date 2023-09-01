@@ -492,7 +492,6 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 }
 
                 final ConsumeOrderlyContext context = new ConsumeOrderlyContext(this.messageQueue);
-                ConsumeMessageContext consumeMessageContext = initConsumeMessageContext(msgs);
                 ConsumeOrderlyStatus status = null;
                 boolean hasException = false;
 
@@ -508,6 +507,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                     this.processQueue.getConsumeLock().unlock();
                 }
 
+                ConsumeMessageContext consumeMessageContext = initConsumeMessageContext(msgs);
                 status = runAfterConsume(consumeMessageContext, status, msgs, hasException);
                 continueConsume = ConsumeMessageOrderlyService.this.processConsumeResult(msgs, status, context, this);
             }
