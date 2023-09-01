@@ -1316,15 +1316,22 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     public void resetOffsetByTimeStamp(long timeStamp) throws MQClientException {
         for (String topic : rebalanceImpl.getSubscriptionInner().keySet()) {
             Set<MessageQueue> mqs = rebalanceImpl.getTopicSubscribeInfoTable().get(topic);
-            if (CollectionUtils.isNotEmpty(mqs)) {
-                Map<MessageQueue, Long> offsetTable = new HashMap<>(mqs.size(), 1);
-                for (MessageQueue mq : mqs) {
-                    long offset = searchOffset(mq, timeStamp);
-                    offsetTable.put(mq, offset);
-                }
-                this.mQClientFactory.resetOffset(topic, groupName(), offsetTable);
-            }
+
+            resetOffsetByTimeStamp(timeStamp, topic, mqs);
         }
+    }
+
+    private void resetOffsetByTimeStamp(long timeStamp, String topic, Set<MessageQueue> mqs) throws MQClientException {
+        if (!CollectionUtils.isNotEmpty(mqs)) {
+            return;
+        }
+
+        Map<MessageQueue, Long> offsetTable = new HashMap<>(mqs.size(), 1);
+        for (MessageQueue mq : mqs) {
+            long offset = searchOffset(mq, timeStamp);
+            offsetTable.put(mq, offset);
+        }
+        this.mQClientFactory.resetOffset(topic, groupName(), offsetTable);
     }
 
     public long searchOffset(MessageQueue mq, long timestamp) throws MQClientException {
