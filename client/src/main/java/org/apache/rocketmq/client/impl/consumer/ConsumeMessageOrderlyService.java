@@ -144,8 +144,8 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
     @Override
     public ConsumeMessageDirectlyResult consumeMessageDirectly(MessageExt msg, String brokerName) {
         log.info("consumeMessageDirectly receive new message: {}", msg);
-        ConsumeMessageDirectlyResult result = new ConsumeMessageDirectlyResult();
-        result.setOrder(true);
+
+        ConsumeMessageDirectlyResult result = initConsumeMessageDirectlyResult();
 
         List<MessageExt> msgs = new ArrayList<>();
         msgs.add(msg);
@@ -156,6 +156,13 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         consumeMessageDirectly(result, msgs, mq, context);
 
         log.info("consumeMessageDirectly Result: {}", result);
+        return result;
+    }
+
+    private ConsumeMessageDirectlyResult initConsumeMessageDirectlyResult() {
+        ConsumeMessageDirectlyResult result = new ConsumeMessageDirectlyResult();
+        result.setOrder(true);
+
         return result;
     }
 
