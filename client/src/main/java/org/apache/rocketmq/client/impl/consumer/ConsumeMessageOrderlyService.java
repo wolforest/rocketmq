@@ -480,33 +480,10 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
         }
 
-
-        private ConsumeMessageContext initConsumeMessageContext(List<MessageExt> msgs) {
-            ConsumeMessageContext consumeMessageContext = null;
-            if (!ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
-                return null;
-            }
-
-            consumeMessageContext = new ConsumeMessageContext();
-            consumeMessageContext .setConsumerGroup(ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumerGroup());
-            consumeMessageContext.setNamespace(defaultMQPushConsumer.getNamespace());
-            consumeMessageContext.setMq(messageQueue);
-            consumeMessageContext.setMsgList(msgs);
-            consumeMessageContext.setSuccess(false);
-            // init consume context type
-            consumeMessageContext.setProps(new HashMap<>());
-            ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.executeHookBefore(consumeMessageContext);
-
-            return consumeMessageContext;
-        }
-
         private void runWithLock() {
             final long beginTime = System.currentTimeMillis();
             for (boolean continueConsume = true; continueConsume; ) {
-                if (isDropped()) break;
-                if (isLocked()) break;
-                if (isLockExpired()) break;
-                if (isTimeout(beginTime)) break;
+                if (!isRunnable(beginTime)) break;
 
                 List<MessageExt> msgs = takeMessages();
                 if (msgs.isEmpty()) {
@@ -515,10 +492,10 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 }
 
                 final ConsumeOrderlyContext context = new ConsumeOrderlyContext(this.messageQueue);
-                ConsumeOrderlyStatus status = null;
                 ConsumeMessageContext consumeMessageContext = initConsumeMessageContext(msgs);
-
+                ConsumeOrderlyStatus status = null;
                 boolean hasException = false;
+
                 try {
                     this.processQueue.getConsumeLock().lock();
                     if (isDropped()) break;
@@ -535,6 +512,15 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 continueConsume = ConsumeMessageOrderlyService.this.processConsumeResult(msgs, status, context, this);
             }
 
+        }
+
+        private boolean isRunnable(long beginTime) {
+            if (isDropped()) return false;
+            if (isLocked()) return false;
+            if (isLockExpired()) return false;
+            if (isTimeout(beginTime)) return false;
+
+            return true;
         }
 
         private boolean isDropped() {
@@ -574,6 +560,25 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
 
             return false;
+        }
+
+        private ConsumeMessageContext initConsumeMessageContext(List<MessageExt> msgs) {
+            ConsumeMessageContext consumeMessageContext = null;
+            if (!ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
+                return null;
+            }
+
+            consumeMessageContext = new ConsumeMessageContext();
+            consumeMessageContext .setConsumerGroup(ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumerGroup());
+            consumeMessageContext.setNamespace(defaultMQPushConsumer.getNamespace());
+            consumeMessageContext.setMq(messageQueue);
+            consumeMessageContext.setMsgList(msgs);
+            consumeMessageContext.setSuccess(false);
+            // init consume context type
+            consumeMessageContext.setProps(new HashMap<>());
+            ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.executeHookBefore(consumeMessageContext);
+
+            return consumeMessageContext;
         }
 
         private List<MessageExt> takeMessages() {
