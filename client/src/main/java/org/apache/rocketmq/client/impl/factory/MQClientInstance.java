@@ -581,39 +581,48 @@ public class MQClientInstance {
         }
         long times = this.sendHeartbeatTimesTotal.getAndIncrement();
         for (Entry<String, HashMap<Long, String>> brokerClusterInfo : this.brokerAddrTable.entrySet()) {
-            String brokerName = brokerClusterInfo.getKey();
-            HashMap<Long, String> oneTable = brokerClusterInfo.getValue();
-            if (oneTable == null) {
-                continue;
-            }
-            for (Entry<Long, String> singleBrokerInstance : oneTable.entrySet()) {
-                Long id = singleBrokerInstance.getKey();
-                String addr = singleBrokerInstance.getValue();
-                if (addr == null) {
-                    continue;
-                }
-                if (consumerEmpty && MixAll.MASTER_ID != id) {
-                    continue;
-                }
+            sendHeartbeatToAllBroker(brokerClusterInfo, heartbeatData, consumerEmpty, times);
+        }
+    }
 
-                try {
-                    int version = this.mQClientAPIImpl.sendHeartbeat(addr, heartbeatData, clientConfig.getMqClientApiTimeout());
-                    if (!this.brokerVersionTable.containsKey(brokerName)) {
-                        this.brokerVersionTable.put(brokerName, new HashMap<>(4));
-                    }
-                    this.brokerVersionTable.get(brokerName).put(addr, version);
-                    if (times % 20 == 0) {
-                        log.info("send heart beat to broker[{} {} {}] success", brokerName, id, addr);
-                        log.info(heartbeatData.toString());
-                    }
-                } catch (Exception e) {
-                    if (this.isBrokerInNameServer(addr)) {
-                        log.warn("send heart beat to broker[{} {} {}] failed", brokerName, id, addr, e);
-                    } else {
-                        log.warn("send heart beat to broker[{} {} {}] exception, because the broker not up, forget it", brokerName,
-                            id, addr, e);
-                    }
-                }
+    private void sendHeartbeatToAllBroker(Entry<String, HashMap<Long, String>> brokerClusterInfo, HeartbeatData heartbeatData, boolean consumerEmpty, long times) {
+        String brokerName = brokerClusterInfo.getKey();
+        HashMap<Long, String> oneTable = brokerClusterInfo.getValue();
+        if (oneTable == null) {
+            return;
+        }
+
+        for (Entry<Long, String> singleBrokerInstance : oneTable.entrySet()) {
+            sendHeartbeatToAllBroker(singleBrokerInstance, brokerName, heartbeatData, consumerEmpty, times);
+        }
+    }
+
+    private void sendHeartbeatToAllBroker(Entry<Long, String> singleBrokerInstance, String brokerName, HeartbeatData heartbeatData, boolean consumerEmpty, long times) {
+        Long id = singleBrokerInstance.getKey();
+        String addr = singleBrokerInstance.getValue();
+        if (addr == null) {
+            return;
+        }
+        if (consumerEmpty && MixAll.MASTER_ID != id) {
+            return;
+        }
+
+        try {
+            int version = this.mQClientAPIImpl.sendHeartbeat(addr, heartbeatData, clientConfig.getMqClientApiTimeout());
+            if (!this.brokerVersionTable.containsKey(brokerName)) {
+                this.brokerVersionTable.put(brokerName, new HashMap<>(4));
+            }
+            this.brokerVersionTable.get(brokerName).put(addr, version);
+            if (times % 20 == 0) {
+                log.info("send heart beat to broker[{} {} {}] success", brokerName, id, addr);
+                log.info(heartbeatData.toString());
+            }
+        } catch (Exception e) {
+            if (this.isBrokerInNameServer(addr)) {
+                log.warn("send heart beat to broker[{} {} {}] failed", brokerName, id, addr, e);
+            } else {
+                log.warn("send heart beat to broker[{} {} {}] exception, because the broker not up, forget it", brokerName,
+                    id, addr, e);
             }
         }
     }
