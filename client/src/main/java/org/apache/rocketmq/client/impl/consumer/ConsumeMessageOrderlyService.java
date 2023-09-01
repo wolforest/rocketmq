@@ -504,19 +504,24 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             return false;
         }
 
+        private boolean isLockExpired() {
+            if (MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
+                && this.processQueue.isLockExpired()) {
+                log.warn("the message queue lock expired, so consume later, {}", this.messageQueue);
+                ConsumeMessageOrderlyService.this.tryLockLaterAndReconsume(this.messageQueue, this.processQueue, 10);
+                return true;
+            }
+            return false;
+        }
+
         private void runWithLock() {
             final long beginTime = System.currentTimeMillis();
             for (boolean continueConsume = true; continueConsume; ) {
                 if (isDropped()) break;
                 if (isLocked()) break;
+                if (isLockExpired()) break;
 
 
-                if (MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
-                    && this.processQueue.isLockExpired()) {
-                    log.warn("the message queue lock expired, so consume later, {}", this.messageQueue);
-                    ConsumeMessageOrderlyService.this.tryLockLaterAndReconsume(this.messageQueue, this.processQueue, 10);
-                    break;
-                }
 
                 long interval = System.currentTimeMillis() - beginTime;
                 if (interval > MAX_TIME_CONSUME_CONTINUOUSLY) {
