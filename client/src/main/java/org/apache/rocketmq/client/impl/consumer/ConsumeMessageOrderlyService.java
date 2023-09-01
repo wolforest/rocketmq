@@ -580,12 +580,8 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                     status = ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
                 }
 
-                if (ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
-                    consumeMessageContext.setStatus(status.toString());
-                    consumeMessageContext.setSuccess(ConsumeOrderlyStatus.SUCCESS == status || ConsumeOrderlyStatus.COMMIT == status);
-                    consumeMessageContext.setAccessChannel(defaultMQPushConsumer.getAccessChannel());
-                    ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.executeHookAfter(consumeMessageContext);
-                }
+
+                executeHookAfter(consumeMessageContext, status);
 
                 ConsumeMessageOrderlyService.this.getConsumerStatsManager()
                     .incConsumeRT(ConsumeMessageOrderlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
@@ -593,6 +589,17 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 continueConsume = ConsumeMessageOrderlyService.this.processConsumeResult(msgs, status, context, this);
             }
 
+        }
+
+        private void executeHookAfter(ConsumeMessageContext consumeMessageContext, ConsumeOrderlyStatus status) {
+            if (!ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
+                return;
+            }
+
+            consumeMessageContext.setStatus(status.toString());
+            consumeMessageContext.setSuccess(ConsumeOrderlyStatus.SUCCESS == status || ConsumeOrderlyStatus.COMMIT == status);
+            consumeMessageContext.setAccessChannel(defaultMQPushConsumer.getAccessChannel());
+            ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.executeHookAfter(consumeMessageContext);
         }
 
         private boolean isDropped() {
