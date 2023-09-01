@@ -946,16 +946,11 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());
         this.rebalanceImpl.setmQClientFactory(this.mQClientFactory);
 
-        if (this.pullAPIWrapper == null) {
-            this.pullAPIWrapper = new PullAPIWrapper(
-                mQClientFactory,
-                this.defaultMQPushConsumer.getConsumerGroup(), isUnitMode());
-        }
-        this.pullAPIWrapper.registerFilterMessageHook(filterMessageHookList);
 
 
 
 
+        initPullAPIWrapper();
         loadOffsetStore();
         startMessageService();
         checkRegisterStatus();
@@ -965,7 +960,14 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         this.serviceState = ServiceState.RUNNING;
     }
 
-
+    private void initPullAPIWrapper() {
+        if (this.pullAPIWrapper == null) {
+            this.pullAPIWrapper = new PullAPIWrapper(
+                mQClientFactory,
+                this.defaultMQPushConsumer.getConsumerGroup(), isUnitMode());
+        }
+        this.pullAPIWrapper.registerFilterMessageHook(filterMessageHookList);
+    }
 
     private void loadOffsetStore() throws MQClientException {
         if (this.defaultMQPushConsumer.getOffsetStore() != null) {
