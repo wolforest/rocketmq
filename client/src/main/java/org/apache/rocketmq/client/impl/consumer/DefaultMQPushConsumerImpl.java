@@ -1420,7 +1420,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         ConsumerRunningInfo info = new ConsumerRunningInfo();
 
         Properties prop = MixAll.object2Properties(this.defaultMQPushConsumer);
-
         prop.put(ConsumerRunningInfo.PROP_CONSUME_ORDERLY, String.valueOf(this.consumeOrderly));
         prop.put(ConsumerRunningInfo.PROP_THREADPOOL_CORE_SIZE, String.valueOf(this.consumeMessageService.getCorePoolSize()));
         prop.put(ConsumerRunningInfo.PROP_CONSUMER_START_TIMESTAMP, String.valueOf(this.consumerStartTimestamp));
@@ -1499,9 +1498,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     private long computeAccumulationTotal() {
         long msgAccTotal = 0;
         ConcurrentMap<MessageQueue, ProcessQueue> processQueueTable = this.rebalanceImpl.getProcessQueueTable();
-        Iterator<Entry<MessageQueue, ProcessQueue>> it = processQueueTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<MessageQueue, ProcessQueue> next = it.next();
+        for (Entry<MessageQueue, ProcessQueue> next : processQueueTable.entrySet()) {
             ProcessQueue value = next.getValue();
             msgAccTotal += value.getMsgAccCnt();
         }
@@ -1524,11 +1521,13 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     public void tryResetPopRetryTopic(final List<MessageExt> msgs, String consumerGroup) {
         String popRetryPrefix = MixAll.RETRY_GROUP_TOPIC_PREFIX + consumerGroup + "_";
         for (MessageExt msg : msgs) {
-            if (msg.getTopic().startsWith(popRetryPrefix)) {
-                String normalTopic = KeyBuilder.parseNormalTopic(msg.getTopic(), consumerGroup);
-                if (normalTopic != null && !normalTopic.isEmpty()) {
-                    msg.setTopic(normalTopic);
-                }
+            if (!msg.getTopic().startsWith(popRetryPrefix)) {
+                continue;
+            }
+
+            String normalTopic = KeyBuilder.parseNormalTopic(msg.getTopic(), consumerGroup);
+            if (normalTopic != null && !normalTopic.isEmpty()) {
+                msg.setTopic(normalTopic);
             }
         }
     }
