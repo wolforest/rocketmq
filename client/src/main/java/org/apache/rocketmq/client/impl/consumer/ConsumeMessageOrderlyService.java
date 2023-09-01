@@ -333,12 +333,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 context.setCommitOffset(consumeRequest.getProcessQueue().commit());
                 break;
             case ROLLBACK:
-                consumeRequest.getProcessQueue().rollback();
-                this.submitConsumeRequestLater(
-                    consumeRequest.getProcessQueue(),
-                    consumeRequest.getMessageQueue(),
-                    context.getSuspendCurrentQueueTimeMillis());
-                context.setContinuable(false);
+                rollbackManuallyCommitResult(context, consumeRequest);
                 break;
             case SUSPEND_CURRENT_QUEUE_A_MOMENT:
                 suspendManuallyCommitResult(msgs, context, consumeRequest);
@@ -346,6 +341,15 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             default:
                 break;
         }
+    }
+
+    private void rollbackManuallyCommitResult(final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
+        consumeRequest.getProcessQueue().rollback();
+        this.submitConsumeRequestLater(
+            consumeRequest.getProcessQueue(),
+            consumeRequest.getMessageQueue(),
+            context.getSuspendCurrentQueueTimeMillis());
+        context.setContinuable(false);
     }
 
     private void suspendManuallyCommitResult(final List<MessageExt> msgs, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
