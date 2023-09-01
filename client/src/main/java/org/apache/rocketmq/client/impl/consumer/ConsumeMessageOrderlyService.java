@@ -518,7 +518,6 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 ConsumeOrderlyStatus status = null;
                 ConsumeMessageContext consumeMessageContext = initConsumeMessageContext(msgs);
 
-                long beginTimestamp = System.currentTimeMillis();
                 boolean hasException = false;
                 try {
                     this.processQueue.getConsumeLock().lock();
@@ -532,17 +531,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                     this.processQueue.getConsumeLock().unlock();
                 }
 
-                logErrorStatus(status, msgs);
-
-                long consumeRT = System.currentTimeMillis() - beginTimestamp;
-                ConsumeReturnType returnType = getConsumeReturnType(consumeRT, hasException, status);
-                if (null == status) {
-                    status = ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
-                }
-
-                executeHookAfter(consumeMessageContext, status, returnType);
-                ConsumeMessageOrderlyService.this.getConsumerStatsManager().incConsumeRT(ConsumeMessageOrderlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
-
+                status = runAfterConsume(consumeMessageContext, status, msgs, hasException);
                 continueConsume = ConsumeMessageOrderlyService.this.processConsumeResult(msgs, status, context, this);
             }
 
@@ -601,6 +590,22 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 ConsumeMessageOrderlyService.this.consumerGroup,
                 msgs,
                 messageQueue), e);
+        }
+
+        private ConsumeOrderlyStatus runAfterConsume(ConsumeMessageContext consumeMessageContext, ConsumeOrderlyStatus status, List<MessageExt> msgs, boolean hasException) {
+            long beginTimestamp = System.currentTimeMillis();
+            logErrorStatus(status, msgs);
+
+            long consumeRT = System.currentTimeMillis() - beginTimestamp;
+            ConsumeReturnType returnType = getConsumeReturnType(consumeRT, hasException, status);
+            if (null == status) {
+                status = ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
+            }
+
+            executeHookAfter(consumeMessageContext, status, returnType);
+            ConsumeMessageOrderlyService.this.getConsumerStatsManager().incConsumeRT(ConsumeMessageOrderlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
+
+            return status;
         }
 
         private void logErrorStatus(ConsumeOrderlyStatus status, List<MessageExt> msgs) {
