@@ -939,8 +939,8 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             this.defaultMQPushConsumer.changeInstanceNameToPID();
         }
 
-        this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
 
+        initMQClientFactory();
         initRebalanceImpl();
         initPullAPIWrapper();
         loadOffsetStore();
@@ -950,6 +950,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         mQClientFactory.start();
         log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
         this.serviceState = ServiceState.RUNNING;
+    }
+
+    private void initMQClientFactory() {
+        this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
     }
 
     private void initRebalanceImpl() {
