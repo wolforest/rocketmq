@@ -141,26 +141,16 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         return this.consumeExecutor.getCorePoolSize();
     }
 
-    @Override
-    public ConsumeMessageDirectlyResult consumeMessageDirectly(MessageExt msg, String brokerName) {
-        ConsumeMessageDirectlyResult result = new ConsumeMessageDirectlyResult();
-        result.setOrder(true);
-
-        List<MessageExt> msgs = new ArrayList<>();
-        msgs.add(msg);
+    private MessageQueue initMessageQueue(MessageExt msg, String brokerName) {
         MessageQueue mq = new MessageQueue();
         mq.setBrokerName(brokerName);
         mq.setTopic(msg.getTopic());
         mq.setQueueId(msg.getQueueId());
 
-        ConsumeOrderlyContext context = new ConsumeOrderlyContext(mq);
+        return mq;
+    }
 
-        this.defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, this.consumerGroup);
-
-        final long beginTime = System.currentTimeMillis();
-
-        log.info("consumeMessageDirectly receive new message: {}", msg);
-
+    private void parseConsumeMessageDirectlyResult(ConsumeMessageDirectlyResult result, List<MessageExt> msgs, MessageQueue mq, ConsumeOrderlyContext context) {
         try {
             ConsumeOrderlyStatus status = this.messageListener.consumeMessage(msgs, context);
             if (status != null) {
@@ -193,7 +183,23 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 msgs,
                 mq), e);
         }
+    }
 
+    @Override
+    public ConsumeMessageDirectlyResult consumeMessageDirectly(MessageExt msg, String brokerName) {
+        log.info("consumeMessageDirectly receive new message: {}", msg);
+        ConsumeMessageDirectlyResult result = new ConsumeMessageDirectlyResult();
+        result.setOrder(true);
+
+        List<MessageExt> msgs = new ArrayList<>();
+        msgs.add(msg);
+        MessageQueue mq = initMessageQueue(msg, brokerName);
+
+        ConsumeOrderlyContext context = new ConsumeOrderlyContext(mq);
+        this.defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, this.consumerGroup);
+        final long beginTime = System.currentTimeMillis();
+
+        parseConsumeMessageDirectlyResult(result, msgs, mq, context);
         result.setAutoCommit(context.isAutoCommit());
         result.setSpentTimeMills(System.currentTimeMillis() - beginTime);
 
