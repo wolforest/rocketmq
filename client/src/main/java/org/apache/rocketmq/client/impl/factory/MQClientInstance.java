@@ -469,20 +469,21 @@ public class MQClientInstance {
     }
 
     public void sendHeartbeatToAllBrokerWithLockV2(boolean isRebalance) {
-        if (this.lockHeartbeat.tryLock()) {
-            try {
-                if (clientConfig.isUseHeartbeatV2()) {
-                    this.sendHeartbeatToAllBrokerV2(isRebalance);
-                } else {
-                    this.sendHeartbeatToAllBroker();
-                }
-            } catch (final Exception e) {
-                log.error("sendHeartbeatToAllBrokerWithLockV2 exception", e);
-            } finally {
-                this.lockHeartbeat.unlock();
-            }
-        } else {
+        if (!this.lockHeartbeat.tryLock()) {
             log.warn("sendHeartbeatToAllBrokerWithLockV2 lock heartBeat, but failed.");
+            return;
+        }
+
+        try {
+            if (clientConfig.isUseHeartbeatV2()) {
+                this.sendHeartbeatToAllBrokerV2(isRebalance);
+            } else {
+                this.sendHeartbeatToAllBroker();
+            }
+        } catch (final Exception e) {
+            log.error("sendHeartbeatToAllBrokerWithLockV2 exception", e);
+        } finally {
+            this.lockHeartbeat.unlock();
         }
     }
 

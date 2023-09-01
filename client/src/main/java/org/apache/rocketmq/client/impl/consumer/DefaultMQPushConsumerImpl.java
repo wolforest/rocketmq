@@ -900,7 +900,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         this.serviceState = ServiceState.SHUTDOWN_ALREADY;
     }
 
-
     public synchronized void start() throws MQClientException {
         startByServiceState();
 
