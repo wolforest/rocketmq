@@ -274,7 +274,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
         }, timeMillis, TimeUnit.MILLISECONDS);
     }
-    
+
     public boolean processConsumeResult(final List<MessageExt> msgs, final ConsumeOrderlyStatus status, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
         context.setContinuable(true);
         context.setCommitOffset(-1L);
@@ -302,21 +302,26 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
                 break;
             case SUSPEND_CURRENT_QUEUE_A_MOMENT:
-                this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
-                if (checkReconsumeTimes(msgs)) {
-                    consumeRequest.getProcessQueue().makeMessageToConsumeAgain(msgs);
-                    this.submitConsumeRequestLater(
-                        consumeRequest.getProcessQueue(),
-                        consumeRequest.getMessageQueue(),
-                        context.getSuspendCurrentQueueTimeMillis());
-                    context.setContinuable(false);
-                } else {
-                    context.setCommitOffset(consumeRequest.getProcessQueue().commit());
-                }
+                suspendAutoCommitResult(msgs, context, consumeRequest);
                 break;
             default:
                 break;
         }
+    }
+
+    private void suspendAutoCommitResult(final List<MessageExt> msgs, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
+        this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
+        if (!checkReconsumeTimes(msgs)) {
+            context.setCommitOffset(consumeRequest.getProcessQueue().commit());
+            return;
+        }
+
+        consumeRequest.getProcessQueue().makeMessageToConsumeAgain(msgs);
+        this.submitConsumeRequestLater(
+            consumeRequest.getProcessQueue(),
+            consumeRequest.getMessageQueue(),
+            context.getSuspendCurrentQueueTimeMillis());
+        context.setContinuable(false);
     }
 
     private void processManuallyCommitResult(final List<MessageExt> msgs, final ConsumeOrderlyStatus status, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
