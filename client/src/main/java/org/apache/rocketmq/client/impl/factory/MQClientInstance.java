@@ -540,16 +540,27 @@ public class MQClientInstance {
         return updateTopicRouteInfoFromNameServer(topic, false, null);
     }
 
+    private boolean isBrokerAddrExistInTopicRouteTable(final String addr, List<BrokerData> bds) {
+        for (BrokerData bd : bds) {
+            if (bd.getBrokerAddrs() == null) {
+                continue;
+            }
+
+            if (bd.getBrokerAddrs().containsValue(addr)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private boolean isBrokerAddrExistInTopicRouteTable(final String addr) {
         for (Entry<String, TopicRouteData> entry : this.topicRouteTable.entrySet()) {
             TopicRouteData topicRouteData = entry.getValue();
             List<BrokerData> bds = topicRouteData.getBrokerDatas();
-            for (BrokerData bd : bds) {
-                if (bd.getBrokerAddrs() != null) {
-                    boolean exist = bd.getBrokerAddrs().containsValue(addr);
-                    if (exist)
-                        return true;
-                }
+
+            if (isBrokerAddrExistInTopicRouteTable(addr, bds)) {
+                return true;
             }
         }
 
