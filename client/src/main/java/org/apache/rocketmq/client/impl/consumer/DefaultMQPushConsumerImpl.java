@@ -1220,11 +1220,13 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             return;
         }
         Map<String, SubscriptionData> subTable = this.getSubscriptionInner();
-        if (subTable != null) {
-            for (final Map.Entry<String, SubscriptionData> entry : subTable.entrySet()) {
-                final String topic = entry.getKey();
-                this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
-            }
+        if (subTable == null) {
+            return;
+        }
+
+        for (final Map.Entry<String, SubscriptionData> entry : subTable.entrySet()) {
+            final String topic = entry.getKey();
+            this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
         }
     }
 
@@ -1414,8 +1416,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     public boolean isUnitMode() {
         return this.defaultMQPushConsumer.isUnitMode();
     }
-
-
 
     @Override
     public ConsumerRunningInfo consumerRunningInfo() {
