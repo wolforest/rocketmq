@@ -281,8 +281,8 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         final ConsumeOrderlyContext context,
         final ConsumeRequest consumeRequest
     ) {
-        boolean continueConsume = true;
-        long commitOffset = -1L;
+        context.setContinuable(true);
+        context.setCommitOffset(-1L);
         if (context.isAutoCommit()) {
             switch (status) {
                 case COMMIT:
@@ -290,7 +290,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                     log.warn("the message queue consume result is illegal, we think you want to ack these message {}",
                         consumeRequest.getMessageQueue());
                 case SUCCESS:
-                    commitOffset = consumeRequest.getProcessQueue().commit();
+                    context.setCommitOffset(consumeRequest.getProcessQueue().commit());
                     this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
                     break;
                 case SUSPEND_CURRENT_QUEUE_A_MOMENT:
@@ -301,9 +301,9 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                             consumeRequest.getProcessQueue(),
                             consumeRequest.getMessageQueue(),
                             context.getSuspendCurrentQueueTimeMillis());
-                        continueConsume = false;
+                        context.setContinuable(false);
                     } else {
-                        commitOffset = consumeRequest.getProcessQueue().commit();
+                        context.setCommitOffset(consumeRequest.getProcessQueue().commit());
                     }
                     break;
                 default:
@@ -315,7 +315,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                     this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
                     break;
                 case COMMIT:
-                    commitOffset = consumeRequest.getProcessQueue().commit();
+                    context.setCommitOffset(consumeRequest.getProcessQueue().commit());
                     break;
                 case ROLLBACK:
                     consumeRequest.getProcessQueue().rollback();
@@ -323,7 +323,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                         consumeRequest.getProcessQueue(),
                         consumeRequest.getMessageQueue(),
                         context.getSuspendCurrentQueueTimeMillis());
-                    continueConsume = false;
+                    context.setContinuable(false);
                     break;
                 case SUSPEND_CURRENT_QUEUE_A_MOMENT:
                     this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
@@ -333,7 +333,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                             consumeRequest.getProcessQueue(),
                             consumeRequest.getMessageQueue(),
                             context.getSuspendCurrentQueueTimeMillis());
-                        continueConsume = false;
+                        context.setContinuable(false);
                     }
                     break;
                 default:
@@ -341,11 +341,11 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
         }
 
-        if (commitOffset >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
-            this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), commitOffset, false);
+        if (context.getCommitOffset() >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
+            this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), context.getCommitOffset(), false);
         }
 
-        return continueConsume;
+        return context.isContinuable();
     }
 
     public ConsumerStatsManager getConsumerStatsManager() {
