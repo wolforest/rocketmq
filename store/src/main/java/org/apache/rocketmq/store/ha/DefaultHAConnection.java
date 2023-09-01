@@ -223,8 +223,12 @@ public class DefaultHAConnection implements HAConnection {
                         readSizeZeroTimes = 0;
                         this.lastReadTimestamp = DefaultHAConnection.this.haService.getDefaultMessageStore().getSystemClock().now();
                         if ((this.byteBufferRead.position() - this.processPosition) >= DefaultHAClient.REPORT_HEADER_SIZE) {
+                            // Adjust the read position to the nearest multiple of REPORT_HEADER size by computing
+                            // the remainder of the current position divided by the size of the REPORT_HEADER
                             int pos = this.byteBufferRead.position() - (this.byteBufferRead.position() % DefaultHAClient.REPORT_HEADER_SIZE);
                             long readOffset = this.byteBufferRead.getLong(pos - 8);
+                            // and after the reading is finished, set the current processing position to the adjusted position,
+                            // ensuring that the next read starts from the correct position.
                             this.processPosition = pos;
 
                             DefaultHAConnection.this.slaveAckOffset = readOffset;
@@ -285,8 +289,12 @@ public class DefaultHAConnection implements HAConnection {
                     }
 
                     if (-1 == this.nextTransferFromWhere) {
+                        // If it's a new slave and commit log files haven't been manually copied from the master server
+                        // syncing from the initial offset of the last commitLog file
                         if (0 == DefaultHAConnection.this.slaveRequestOffset) {
                             long masterOffset = DefaultHAConnection.this.haService.getDefaultMessageStore().getCommitLog().getMaxOffset();
+                            // Adjust the masterOffset to be a multiple of the size of the message log file,
+                            // ensuring that it points to the beginning of a complete and newest commit log file.
                             masterOffset =
                                 masterOffset
                                     - (masterOffset % DefaultHAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig()

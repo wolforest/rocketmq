@@ -77,72 +77,74 @@ public class GroupTransferService extends ServiceThread {
     }
 
     private void doWaitTransfer() {
-        if (!this.requestsRead.isEmpty()) {
-            for (GroupCommitRequest req : this.requestsRead) {
-                boolean transferOK = false;
+        if (this.requestsRead.isEmpty()) {
+            return;
+        }
 
-                long deadLine = req.getDeadLine();
-                final boolean allAckInSyncStateSet = req.getAckNums() == MixAll.ALL_ACK_IN_SYNC_STATE_SET;
+        for (GroupCommitRequest req : this.requestsRead) {
+            boolean transferOK = false;
 
-                for (int i = 0; !transferOK && deadLine - System.nanoTime() > 0; i++) {
-                    if (i > 0) {
-                        this.notifyTransferObject.waitForRunning(1);
+            long deadLine = req.getDeadLine();
+            final boolean allAckInSyncStateSet = req.getAckNums() == MixAll.ALL_ACK_IN_SYNC_STATE_SET;
+
+            for (int i = 0; !transferOK && deadLine - System.nanoTime() > 0; i++) {
+                if (i > 0) {
+                    this.notifyTransferObject.waitForRunning(1);
+                }
+
+                if (!allAckInSyncStateSet && req.getAckNums() <= 1) {
+                    transferOK = haService.getPush2SlaveMaxOffset().get() >= req.getNextOffset();
+                    continue;
+                }
+
+                if (allAckInSyncStateSet && this.haService instanceof AutoSwitchHAService) {
+                    // In this mode, we must wait for all replicas that in SyncStateSet.
+                    final AutoSwitchHAService autoSwitchHAService = (AutoSwitchHAService) this.haService;
+                    final Set<Long> syncStateSet = autoSwitchHAService.getSyncStateSet();
+                    if (syncStateSet.size() <= 1) {
+                        // Only master
+                        transferOK = true;
+                        break;
                     }
 
-                    if (!allAckInSyncStateSet && req.getAckNums() <= 1) {
-                        transferOK = haService.getPush2SlaveMaxOffset().get() >= req.getNextOffset();
-                        continue;
-                    }
-
-                    if (allAckInSyncStateSet && this.haService instanceof AutoSwitchHAService) {
-                        // In this mode, we must wait for all replicas that in SyncStateSet.
-                        final AutoSwitchHAService autoSwitchHAService = (AutoSwitchHAService) this.haService;
-                        final Set<Long> syncStateSet = autoSwitchHAService.getSyncStateSet();
-                        if (syncStateSet.size() <= 1) {
-                            // Only master
+                    // Include master
+                    int ackNums = 1;
+                    for (HAConnection conn : haService.getConnectionList()) {
+                        final AutoSwitchHAConnection autoSwitchHAConnection = (AutoSwitchHAConnection) conn;
+                        if (syncStateSet.contains(autoSwitchHAConnection.getSlaveId()) && autoSwitchHAConnection.getSlaveAckOffset() >= req.getNextOffset()) {
+                            ackNums++;
+                        }
+                        if (ackNums >= syncStateSet.size()) {
                             transferOK = true;
                             break;
                         }
-
-                        // Include master
-                        int ackNums = 1;
-                        for (HAConnection conn : haService.getConnectionList()) {
-                            final AutoSwitchHAConnection autoSwitchHAConnection = (AutoSwitchHAConnection) conn;
-                            if (syncStateSet.contains(autoSwitchHAConnection.getSlaveId()) && autoSwitchHAConnection.getSlaveAckOffset() >= req.getNextOffset()) {
-                                ackNums++;
-                            }
-                            if (ackNums >= syncStateSet.size()) {
-                                transferOK = true;
-                                break;
-                            }
+                    }
+                } else {
+                    // Include master
+                    int ackNums = 1;
+                    for (HAConnection conn : haService.getConnectionList()) {
+                        // TODO: We must ensure every HAConnection represents a different slave
+                        // Solution: Consider assign a unique and fixed IP:ADDR for each different slave
+                        if (conn.getSlaveAckOffset() >= req.getNextOffset()) {
+                            ackNums++;
                         }
-                    } else {
-                        // Include master
-                        int ackNums = 1;
-                        for (HAConnection conn : haService.getConnectionList()) {
-                            // TODO: We must ensure every HAConnection represents a different slave
-                            // Solution: Consider assign a unique and fixed IP:ADDR for each different slave
-                            if (conn.getSlaveAckOffset() >= req.getNextOffset()) {
-                                ackNums++;
-                            }
-                            if (ackNums >= req.getAckNums()) {
-                                transferOK = true;
-                                break;
-                            }
+                        if (ackNums >= req.getAckNums()) {
+                            transferOK = true;
+                            break;
                         }
                     }
                 }
-
-                if (!transferOK) {
-                    log.warn("transfer message to slave timeout, offset : {}, request acks: {}",
-                        req.getNextOffset(), req.getAckNums());
-                }
-
-                req.wakeupCustomer(transferOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_SLAVE_TIMEOUT);
             }
 
-            this.requestsRead = new LinkedList<>();
+            if (!transferOK) {
+                log.warn("transfer message to slave timeout, offset : {}, request acks: {}",
+                    req.getNextOffset(), req.getAckNums());
+            }
+
+            req.wakeupCustomer(transferOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_SLAVE_TIMEOUT);
         }
+
+        this.requestsRead = new LinkedList<>();
     }
 
     @Override
