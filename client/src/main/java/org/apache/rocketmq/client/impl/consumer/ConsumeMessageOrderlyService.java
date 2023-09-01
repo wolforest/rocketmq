@@ -361,19 +361,25 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
 
     private boolean checkReconsumeTimes(List<MessageExt> msgs) {
         boolean suspend = false;
-        if (msgs != null && !msgs.isEmpty()) {
-            for (MessageExt msg : msgs) {
-                if (msg.getReconsumeTimes() >= getMaxReconsumeTimes()) {
-                    MessageAccessor.setReconsumeTime(msg, String.valueOf(msg.getReconsumeTimes()));
-                    if (!sendMessageBack(msg)) {
-                        suspend = true;
-                        msg.setReconsumeTimes(msg.getReconsumeTimes() + 1);
-                    }
-                } else {
-                    suspend = true;
-                    msg.setReconsumeTimes(msg.getReconsumeTimes() + 1);
-                }
+        if (msgs == null || msgs.isEmpty()) {
+            return false;
+        }
+
+        for (MessageExt msg : msgs) {
+            if (msg.getReconsumeTimes() < getMaxReconsumeTimes()) {
+                suspend = true;
+                msg.setReconsumeTimes(msg.getReconsumeTimes() + 1);
+                continue;
             }
+
+            MessageAccessor.setReconsumeTime(msg, String.valueOf(msg.getReconsumeTimes()));
+            if (sendMessageBack(msg)) {
+                continue;
+            }
+
+            suspend = true;
+            msg.setReconsumeTimes(msg.getReconsumeTimes() + 1);
+
         }
         return suspend;
     }
