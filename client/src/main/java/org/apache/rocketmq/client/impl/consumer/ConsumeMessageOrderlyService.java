@@ -489,17 +489,27 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             return false;
         }
 
+        private boolean xxx() {
+
+            return false;
+        }
+
+        private boolean isLocked() {
+            if (MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
+                && !this.processQueue.isLocked()) {
+                log.warn("the message queue not locked, so consume later, {}", this.messageQueue);
+                ConsumeMessageOrderlyService.this.tryLockLaterAndReconsume(this.messageQueue, this.processQueue, 10);
+                return true;
+            }
+            return false;
+        }
+
         private void runWithLock() {
             final long beginTime = System.currentTimeMillis();
             for (boolean continueConsume = true; continueConsume; ) {
                 if (isDropped()) break;
+                if (isLocked()) break;
 
-                if (MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
-                    && !this.processQueue.isLocked()) {
-                    log.warn("the message queue not locked, so consume later, {}", this.messageQueue);
-                    ConsumeMessageOrderlyService.this.tryLockLaterAndReconsume(this.messageQueue, this.processQueue, 10);
-                    break;
-                }
 
                 if (MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
                     && this.processQueue.isLockExpired()) {
