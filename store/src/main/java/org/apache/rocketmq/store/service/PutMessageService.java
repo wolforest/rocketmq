@@ -49,6 +49,52 @@ public class PutMessageService {
     }
 
     public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
+        CompletableFuture<PutMessageResult> hookResult = executeBeforePutMessage(msg);
+        if (hookResult != null) {
+            return hookResult;
+        }
+
+        CompletableFuture<PutMessageResult> validateResult = validateMessage(msg);
+        if (validateResult != null) {
+            return validateResult;
+        }
+
+
+        return asyncPutAndAddCallback(msg);
+    }
+
+    public CompletableFuture<PutMessageResult> asyncPutMessages(MessageExtBatch messageExtBatch) {
+        CompletableFuture<PutMessageResult> hookResult = executeBeforePutMessage(messageExtBatch);
+        if (hookResult != null) {
+            return hookResult;
+        }
+
+        return asyncPutAndAddCallback(messageExtBatch);
+    }
+
+    public PutMessageResult putMessage(MessageExtBrokerInner msg) {
+        return waitForPutResult(asyncPutMessage(msg));
+    }
+
+    public PutMessageResult putMessages(MessageExtBatch messageExtBatch) {
+        return waitForPutResult(asyncPutMessages(messageExtBatch));
+    }
+
+    private PutMessageResult waitForPutResult(CompletableFuture<PutMessageResult> putMessageResultFuture) {
+        try {
+            int putMessageTimeout = Math.max(messageStore.getMessageStoreConfig().getSyncFlushTimeout(), messageStore.getMessageStoreConfig().getSlaveTimeout()) + 5000;
+            return putMessageResultFuture.get(putMessageTimeout, TimeUnit.MILLISECONDS);
+        } catch (ExecutionException | InterruptedException e) {
+            return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null);
+        } catch (TimeoutException e) {
+            LOGGER.error("usually it will never timeout, putMessageTimeout is much bigger than slaveTimeout and "
+                + "flushTimeout so the result can be got anyway, but in some situations timeout will happen like full gc "
+                + "process hangs or other unexpected situations.");
+            return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null);
+        }
+    }
+
+    private CompletableFuture<PutMessageResult> executeBeforePutMessage(MessageExtBrokerInner msg) {
         for (PutMessageHook putMessageHook : putMessageHookList) {
             PutMessageResult handleResult = putMessageHook.executeBeforePutMessage(msg);
             if (handleResult != null) {
@@ -56,6 +102,10 @@ public class PutMessageService {
             }
         }
 
+        return null;
+    }
+
+    private CompletableFuture<PutMessageResult> validateMessage(MessageExtBrokerInner msg) {
         if (msg.getProperties().containsKey(MessageConst.PROPERTY_INNER_NUM)
             && !MessageSysFlag.check(msg.getSysFlag(), MessageSysFlag.INNER_BATCH_FLAG)) {
             LOGGER.warn("[BUG]The message had property {} but is not an inner batch", MessageConst.PROPERTY_INNER_NUM);
@@ -70,79 +120,52 @@ public class PutMessageService {
             }
         }
 
-        return addPutCallback(msg);
+        return null;
     }
 
-    public CompletableFuture<PutMessageResult> asyncPutMessages(MessageExtBatch messageExtBatch) {
-        for (PutMessageHook putMessageHook : putMessageHookList) {
-            PutMessageResult handleResult = putMessageHook.executeBeforePutMessage(messageExtBatch);
-            if (handleResult != null) {
-                return CompletableFuture.completedFuture(handleResult);
-            }
-        }
+    private CompletableFuture<PutMessageResult> asyncPutAndAddCallback(MessageExtBrokerInner msg) {
+        long beginTime = messageStore.getSystemClock().now();
+        CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessage(msg);
+        putResultFuture.thenAccept(result -> {
+            PutMessageService.this.recodeRequestTime(beginTime, msg);
+            PutMessageService.this.countFailedTimes(result);
+        });
 
-        return addPutCallback(messageExtBatch);
+        return putResultFuture;
     }
 
-    private CompletableFuture<PutMessageResult> addPutCallback(MessageExtBatch messageExtBatch) {
+    private CompletableFuture<PutMessageResult> asyncPutAndAddCallback(MessageExtBatch messageExtBatch) {
         long beginTime = messageStore.getSystemClock().now();
         CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessages(messageExtBatch);
 
         putResultFuture.thenAccept(result -> {
-            long eclipseTime = messageStore.getSystemClock().now() - beginTime;
-            if (eclipseTime > 500) {
-                LOGGER.warn("not in lock eclipse time(ms)={}, bodyLength={}", eclipseTime, messageExtBatch.getBody().length);
-            }
-            messageStore.getStoreStatsService().setPutMessageEntireTimeMax(eclipseTime);
-
-            if (null == result || !result.isOk()) {
-                messageStore.getStoreStatsService().getPutMessageFailedTimes().add(1);
-            }
+            PutMessageService.this.recodeRequestTime(beginTime, messageExtBatch);
+            PutMessageService.this.countFailedTimes(result);
         });
 
         return putResultFuture;
     }
 
-    private CompletableFuture<PutMessageResult> addPutCallback(MessageExtBrokerInner msg) {
-        long beginTime = messageStore.getSystemClock().now();
-        CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessage(msg);
-        putResultFuture.thenAccept(result -> {
-            long elapsedTime = messageStore.getSystemClock().now() - beginTime;
-            if (elapsedTime > 500) {
-                LOGGER.warn("DefaultMessageStore#putMessage: CommitLog#putMessage cost {}ms, topic={}, bodyLength={}",
-                    elapsedTime, msg.getTopic(), msg.getBody().length);
-            }
-            messageStore.getStoreStatsService().setPutMessageEntireTimeMax(elapsedTime);
-
-            if (null == result || !result.isOk()) {
-                messageStore.getStoreStatsService().getPutMessageFailedTimes().add(1);
-            }
-        });
-
-        return putResultFuture;
+    private void recodeRequestTime(long beginTime, MessageExtBrokerInner msg) {
+        long elapsedTime = messageStore.getSystemClock().now() - beginTime;
+        if (elapsedTime > 500) {
+            LOGGER.warn("DefaultMessageStore#putMessage: CommitLog#putMessage cost {}ms, topic={}, bodyLength={}",
+                elapsedTime, msg.getTopic(), msg.getBody().length);
+        }
+        messageStore.getStoreStatsService().setPutMessageEntireTimeMax(elapsedTime);
     }
 
-    public PutMessageResult putMessage(MessageExtBrokerInner msg) {
-        return waitForPutResult(asyncPutMessage(msg));
+    private void recodeRequestTime(long beginTime, MessageExtBatch messageExtBatch) {
+        long eclipseTime = messageStore.getSystemClock().now() - beginTime;
+        if (eclipseTime > 500) {
+            LOGGER.warn("not in lock eclipse time(ms)={}, bodyLength={}", eclipseTime, messageExtBatch.getBody().length);
+        }
+        messageStore.getStoreStatsService().setPutMessageEntireTimeMax(eclipseTime);
     }
 
-    public PutMessageResult putMessages(MessageExtBatch messageExtBatch) {
-        return waitForPutResult(asyncPutMessages(messageExtBatch));
-    }
-
-    private PutMessageResult waitForPutResult(CompletableFuture<PutMessageResult> putMessageResultFuture) {
-        try {
-            int putMessageTimeout =
-                Math.max(messageStore.getMessageStoreConfig().getSyncFlushTimeout(),
-                    messageStore.getMessageStoreConfig().getSlaveTimeout()) + 5000;
-            return putMessageResultFuture.get(putMessageTimeout, TimeUnit.MILLISECONDS);
-        } catch (ExecutionException | InterruptedException e) {
-            return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null);
-        } catch (TimeoutException e) {
-            LOGGER.error("usually it will never timeout, putMessageTimeout is much bigger than slaveTimeout and "
-                + "flushTimeout so the result can be got anyway, but in some situations timeout will happen like full gc "
-                + "process hangs or other unexpected situations.");
-            return new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null);
+    private void countFailedTimes(PutMessageResult result) {
+        if (null == result || !result.isOk()) {
+            messageStore.getStoreStatsService().getPutMessageFailedTimes().add(1);
         }
     }
 

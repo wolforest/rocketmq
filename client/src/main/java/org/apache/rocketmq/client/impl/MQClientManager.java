@@ -50,17 +50,18 @@ public class MQClientManager {
     public MQClientInstance getOrCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook) {
         String clientId = clientConfig.buildMQClientId();
         MQClientInstance instance = this.factoryTable.get(clientId);
-        if (null == instance) {
-            instance =
-                new MQClientInstance(clientConfig.cloneClientConfig(),
-                    this.factoryIndexGenerator.getAndIncrement(), clientId, rpcHook);
-            MQClientInstance prev = this.factoryTable.putIfAbsent(clientId, instance);
-            if (prev != null) {
-                instance = prev;
-                log.warn("Returned Previous MQClientInstance for clientId:[{}]", clientId);
-            } else {
-                log.info("Created new MQClientInstance for clientId:[{}]", clientId);
-            }
+        if (null != instance) {
+            return instance;
+        }
+
+        instance = new MQClientInstance(clientConfig.cloneClientConfig(),
+                this.factoryIndexGenerator.getAndIncrement(), clientId, rpcHook);
+        MQClientInstance prev = this.factoryTable.putIfAbsent(clientId, instance);
+        if (prev != null) {
+            instance = prev;
+            log.warn("Returned Previous MQClientInstance for clientId:[{}]", clientId);
+        } else {
+            log.info("Created new MQClientInstance for clientId:[{}]", clientId);
         }
 
         return instance;
@@ -68,15 +69,17 @@ public class MQClientManager {
     public ProduceAccumulator getOrCreateProduceAccumulator(final ClientConfig clientConfig) {
         String clientId = clientConfig.buildMQClientId();
         ProduceAccumulator accumulator = this.accumulatorTable.get(clientId);
-        if (null == accumulator) {
-            accumulator = new ProduceAccumulator(clientId);
-            ProduceAccumulator prev = this.accumulatorTable.putIfAbsent(clientId, accumulator);
-            if (prev != null) {
-                accumulator = prev;
-                log.warn("Returned Previous ProduceAccumulator for clientId:[{}]", clientId);
-            } else {
-                log.info("Created new ProduceAccumulator for clientId:[{}]", clientId);
-            }
+        if (null != accumulator) {
+            return accumulator;
+        }
+
+        accumulator = new ProduceAccumulator(clientId);
+        ProduceAccumulator prev = this.accumulatorTable.putIfAbsent(clientId, accumulator);
+        if (prev != null) {
+            accumulator = prev;
+            log.warn("Returned Previous ProduceAccumulator for clientId:[{}]", clientId);
+        } else {
+            log.info("Created new ProduceAccumulator for clientId:[{}]", clientId);
         }
 
         return accumulator;

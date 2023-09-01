@@ -44,12 +44,30 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     private DataVersion dataVersion = new DataVersion();
 
+    /**
+     * consume metadata
+     * format : {
+     *     "topic@group" : offset_value,
+     *              ... ...
+     *     "topic@group" : offset_value,
+     * }
+     * periodically stored by scheduled task
+     */
     protected ConcurrentMap<String/* topic@group */, ConcurrentMap<Integer, Long>> offsetTable =
         new ConcurrentHashMap<>(512);
 
+    /**
+     * admin related feature
+     * reset the consumer offset to adjust consumer progress
+     * @link https://rocketmq.apache.org/docs/featureBehavior/09consumerprogress/#reset-consumer-offset
+     */
     private final ConcurrentMap<String, ConcurrentMap<Integer, Long>> resetOffsetTable =
         new ConcurrentHashMap<>(512);
 
+    /**
+     * monitor related feature
+     * to show consumer stats (consumer lag, ...)
+     */
     private final ConcurrentMap<String/* topic@group */, ConcurrentMap<Integer, Long>> pullOffsetTable =
         new ConcurrentHashMap<>(512);
 

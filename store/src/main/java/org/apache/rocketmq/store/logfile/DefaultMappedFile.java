@@ -185,11 +185,13 @@ public class DefaultMappedFile extends AbstractMappedFile {
     public boolean renameTo(String fileName) {
         File newFile = new File(fileName);
         boolean rename = file.renameTo(newFile);
-        if (rename) {
-            this.fileName = fileName;
-            this.file = newFile;
+        if (!rename) {
+            return false;
         }
-        return rename;
+
+        this.fileName = fileName;
+        this.file = newFile;
+        return true;
     }
 
     @Override
@@ -203,28 +205,25 @@ public class DefaultMappedFile extends AbstractMappedFile {
         }
 
         int readPosition = getReadPosition();
-        if ((pos + size) <= readPosition) {
-
-            if (this.hold()) {
-                try {
-                    int readNum = fileChannel.read(byteBuffer, pos);
-                    return size == readNum;
-                } catch (Throwable t) {
-                    log.warn("Get data failed pos:{} size:{} fileFromOffset:{}", pos, size, this.fileFromOffset);
-                    return false;
-                } finally {
-                    this.release();
-                }
-            } else {
-                log.debug("matched, but hold failed, request pos: " + pos + ", fileFromOffset: "
-                    + this.fileFromOffset);
-            }
-        } else {
-            log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size
-                + ", fileFromOffset: " + this.fileFromOffset);
+        if ((pos + size) > readPosition) {
+            log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size + ", fileFromOffset: " + this.fileFromOffset);
+            return false;
         }
 
-        return false;
+        if (!this.hold()) {
+            log.debug("matched, but hold failed, request pos: " + pos + ", fileFromOffset: " + this.fileFromOffset);
+            return false;
+        }
+
+        try {
+            int readNum = fileChannel.read(byteBuffer, pos);
+            return size == readNum;
+        } catch (Throwable t) {
+            log.warn("Get data failed pos:{} size:{} fileFromOffset:{}", pos, size, this.fileFromOffset);
+            return false;
+        } finally {
+            this.release();
+        }
     }
 
     @Override
@@ -242,16 +241,17 @@ public class DefaultMappedFile extends AbstractMappedFile {
         assert cb != null;
 
         int currentPos = WROTE_POSITION_UPDATER.get(this);
-        if (currentPos < this.fileSize) {
-            ByteBuffer byteBuffer = appendMessageBuffer().slice();
-            byteBuffer.position(currentPos);
-            AppendMessageResult result = cb.doAppend(byteBuffer, this.fileFromOffset, this.fileSize - currentPos, byteBufferMsg);
-            WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
-            this.storeTimestamp = result.getStoreTimestamp();
-            return result;
+        if (currentPos >= this.fileSize) {
+            log.error("MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}", currentPos, this.fileSize);
+            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
         }
-        log.error("MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}", currentPos, this.fileSize);
-        return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
+
+        ByteBuffer byteBuffer = appendMessageBuffer().slice();
+        byteBuffer.position(currentPos);
+        AppendMessageResult result = cb.doAppend(byteBuffer, this.fileFromOffset, this.fileSize - currentPos, byteBufferMsg);
+        WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
+        this.storeTimestamp = result.getStoreTimestamp();
+        return result;
     }
 
     @Override
@@ -272,28 +272,26 @@ public class DefaultMappedFile extends AbstractMappedFile {
         assert cb != null;
 
         int currentPos = WROTE_POSITION_UPDATER.get(this);
-
-        if (currentPos < this.fileSize) {
-            ByteBuffer byteBuffer = appendMessageBuffer().slice();
-            byteBuffer.position(currentPos);
-            AppendMessageResult result;
-            if (messageExt instanceof MessageExtBatch && !((MessageExtBatch) messageExt).isInnerBatch()) {
-                // traditional batch message
-                result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
-                    (MessageExtBatch) messageExt, putMessageContext);
-            } else if (messageExt instanceof MessageExtBrokerInner) {
-                // traditional single message or newly introduced inner-batch message
-                result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
-                    (MessageExtBrokerInner) messageExt, putMessageContext);
-            } else {
-                return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
-            }
-            WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
-            this.storeTimestamp = result.getStoreTimestamp();
-            return result;
+        if (currentPos >= this.fileSize) {
+            log.error("MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}", currentPos, this.fileSize);
+            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
         }
-        log.error("MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}", currentPos, this.fileSize);
-        return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
+
+        ByteBuffer byteBuffer = appendMessageBuffer().slice();
+        byteBuffer.position(currentPos);
+        AppendMessageResult result;
+        if (messageExt instanceof MessageExtBatch && !((MessageExtBatch) messageExt).isInnerBatch()) {
+            // traditional batch message
+            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, (MessageExtBatch) messageExt, putMessageContext);
+        } else if (messageExt instanceof MessageExtBrokerInner) {
+            // traditional single message or newly introduced inner-batch message
+            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, (MessageExtBrokerInner) messageExt, putMessageContext);
+        } else {
+            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
+        }
+        WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
+        this.storeTimestamp = result.getStoreTimestamp();
+        return result;
     }
 
     protected ByteBuffer appendMessageBuffer() {
@@ -341,20 +339,19 @@ public class DefaultMappedFile extends AbstractMappedFile {
     @Override
     public boolean appendMessage(final byte[] data, final int offset, final int length) {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
-
-        if ((currentPos + length) <= this.fileSize) {
-            try {
-                ByteBuffer buf = this.mappedByteBuffer.slice();
-                buf.position(currentPos);
-                buf.put(data, offset, length);
-            } catch (Throwable e) {
-                log.error("Error occurred when append message to mappedFile.", e);
-            }
-            WROTE_POSITION_UPDATER.addAndGet(this, length);
-            return true;
+        if ((currentPos + length) > this.fileSize) {
+            return false;
         }
 
-        return false;
+        try {
+            ByteBuffer buf = this.mappedByteBuffer.slice();
+            buf.position(currentPos);
+            buf.put(data, offset, length);
+        } catch (Throwable e) {
+            log.error("Error occurred when append message to mappedFile.", e);
+        }
+        WROTE_POSITION_UPDATER.addAndGet(this, length);
+        return true;
     }
 
     /**
@@ -425,17 +422,19 @@ public class DefaultMappedFile extends AbstractMappedFile {
         int writePos = WROTE_POSITION_UPDATER.get(this);
         int lastCommittedPosition = COMMITTED_POSITION_UPDATER.get(this);
 
-        if (writePos - lastCommittedPosition > 0) {
-            try {
-                ByteBuffer byteBuffer = writeBuffer.slice();
-                byteBuffer.position(lastCommittedPosition);
-                byteBuffer.limit(writePos);
-                this.fileChannel.position(lastCommittedPosition);
-                this.fileChannel.write(byteBuffer);
-                COMMITTED_POSITION_UPDATER.set(this, writePos);
-            } catch (Throwable e) {
-                log.error("Error occurred when commit data to FileChannel.", e);
-            }
+        if (writePos - lastCommittedPosition <= 0) {
+           return;
+        }
+
+        try {
+            ByteBuffer byteBuffer = writeBuffer.slice();
+            byteBuffer.position(lastCommittedPosition);
+            byteBuffer.limit(writePos);
+            this.fileChannel.position(lastCommittedPosition);
+            this.fileChannel.write(byteBuffer);
+            COMMITTED_POSITION_UPDATER.set(this, writePos);
+        } catch (Throwable e) {
+            log.error("Error occurred when commit data to FileChannel.", e);
         }
     }
 
@@ -487,43 +486,43 @@ public class DefaultMappedFile extends AbstractMappedFile {
     @Override
     public SelectMappedBufferResult selectMappedBuffer(int pos, int size) {
         int readPosition = getReadPosition();
-        if ((pos + size) <= readPosition) {
-            if (this.hold()) {
-                this.mappedByteBufferAccessCountSinceLastSwap++;
-
-                ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
-                byteBuffer.position(pos);
-                ByteBuffer byteBufferNew = byteBuffer.slice();
-                byteBufferNew.limit(size);
-                return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
-            } else {
-                log.warn("matched, but hold failed, request pos: " + pos + ", fileFromOffset: "
-                    + this.fileFromOffset);
-            }
-        } else {
+        if ((pos + size) > readPosition) {
             log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size
                 + ", fileFromOffset: " + this.fileFromOffset);
+            return null;
         }
 
-        return null;
+        if (!this.hold()) {
+            log.warn("matched, but hold failed, request pos: " + pos + ", fileFromOffset: " + this.fileFromOffset);
+            return null;
+        }
+
+        this.mappedByteBufferAccessCountSinceLastSwap++;
+
+        ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
+        byteBuffer.position(pos);
+        ByteBuffer byteBufferNew = byteBuffer.slice();
+        byteBufferNew.limit(size);
+        return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
     }
 
     @Override
     public SelectMappedBufferResult selectMappedBuffer(int pos) {
         int readPosition = getReadPosition();
-        if (pos < readPosition && pos >= 0) {
-            if (this.hold()) {
-                this.mappedByteBufferAccessCountSinceLastSwap++;
-                ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
-                byteBuffer.position(pos);
-                int size = readPosition - pos;
-                ByteBuffer byteBufferNew = byteBuffer.slice();
-                byteBufferNew.limit(size);
-                return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
-            }
+        if (pos >= readPosition || pos < 0) {
+            return null;
+        }
+        if (!this.hold()) {
+            return null;
         }
 
-        return null;
+        this.mappedByteBufferAccessCountSinceLastSwap++;
+        ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
+        byteBuffer.position(pos);
+        int size = readPosition - pos;
+        ByteBuffer byteBufferNew = byteBuffer.slice();
+        byteBufferNew.limit(size);
+        return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
     }
 
     @Override
@@ -552,31 +551,29 @@ public class DefaultMappedFile extends AbstractMappedFile {
     @Override
     public boolean destroy(final long intervalForcibly) {
         this.shutdown(intervalForcibly);
-
-        if (this.isCleanupOver()) {
-            try {
-                long lastModified = getLastModifiedTimestamp();
-                this.fileChannel.close();
-                log.info("close file channel " + this.fileName + " OK");
-
-                long beginTime = System.currentTimeMillis();
-                boolean result = this.file.delete();
-                log.info("delete file[REF:" + this.getRefCount() + "] " + this.fileName
-                    + (result ? " OK, " : " Failed, ") + "W:" + this.getWrotePosition() + " M:"
-                    + this.getFlushedPosition() + ", "
-                    + UtilAll.computeElapsedTimeMilliseconds(beginTime)
-                    + "," + (System.currentTimeMillis() - lastModified));
-            } catch (Exception e) {
-                log.warn("close file channel " + this.fileName + " Failed. ", e);
-            }
-
-            return true;
-        } else {
+        if (!this.isCleanupOver()) {
             log.warn("destroy mapped file[REF:" + this.getRefCount() + "] " + this.fileName
                 + " Failed. cleanupOver: " + this.cleanupOver);
+            return false;
         }
 
-        return false;
+        try {
+            long lastModified = getLastModifiedTimestamp();
+            this.fileChannel.close();
+            log.info("close file channel " + this.fileName + " OK");
+
+            long beginTime = System.currentTimeMillis();
+            boolean result = this.file.delete();
+            log.info("delete file[REF:" + this.getRefCount() + "] " + this.fileName
+                + (result ? " OK, " : " Failed, ") + "W:" + this.getWrotePosition() + " M:"
+                + this.getFlushedPosition() + ", "
+                + UtilAll.computeElapsedTimeMilliseconds(beginTime)
+                + "," + (System.currentTimeMillis() - lastModified));
+        } catch (Exception e) {
+            log.warn("close file channel " + this.fileName + " Failed. ", e);
+        }
+
+        return true;
     }
 
     @Override
@@ -646,27 +643,28 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
     @Override
     public boolean swapMap() {
-        if (getRefCount() == 1 && this.mappedByteBufferWaitToClean == null) {
-
-            if (!hold()) {
-                log.warn("in swapMap, hold failed, fileName: " + this.fileName);
-                return false;
-            }
-            try {
-                this.mappedByteBufferWaitToClean = this.mappedByteBuffer;
-                this.mappedByteBuffer = this.fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileSize);
-                this.mappedByteBufferAccessCountSinceLastSwap = 0L;
-                this.swapMapTime = System.currentTimeMillis();
-                log.info("swap file " + this.fileName + " success.");
-                return true;
-            } catch (Exception e) {
-                log.error("swapMap file " + this.fileName + " Failed. ", e);
-            } finally {
-                this.release();
-            }
-        } else {
+        if (getRefCount() != 1 || this.mappedByteBufferWaitToClean != null) {
             log.info("Will not swap file: " + this.fileName + ", ref=" + getRefCount());
+            return false;
         }
+
+        if (!hold()) {
+            log.warn("in swapMap, hold failed, fileName: " + this.fileName);
+            return false;
+        }
+        try {
+            this.mappedByteBufferWaitToClean = this.mappedByteBuffer;
+            this.mappedByteBuffer = this.fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileSize);
+            this.mappedByteBufferAccessCountSinceLastSwap = 0L;
+            this.swapMapTime = System.currentTimeMillis();
+            log.info("swap file " + this.fileName + " success.");
+            return true;
+        } catch (Exception e) {
+            log.error("swapMap file " + this.fileName + " Failed. ", e);
+        } finally {
+            this.release();
+        }
+
         return false;
     }
 
@@ -768,32 +766,34 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
     @Override
     public void renameToDelete() {
+        if (fileName.endsWith(".delete")) {
+            return;
+        }
+
         //use Files.move
-        if (!fileName.endsWith(".delete")) {
-            String newFileName = this.fileName + ".delete";
-            try {
-                Path newFilePath = Paths.get(newFileName);
-                // https://bugs.openjdk.org/browse/JDK-4724038
-                // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
-                // Windows can't move the file when mmapped.
-                if (NetworkUtil.isWindowsPlatform() && mappedByteBuffer != null) {
-                    long position = this.fileChannel.position();
-                    UtilAll.cleanBuffer(this.mappedByteBuffer);
-                    this.fileChannel.close();
-                    Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
-                    try (RandomAccessFile file = new RandomAccessFile(newFileName, "rw")) {
-                        this.fileChannel = file.getChannel();
-                        this.fileChannel.position(position);
-                        this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
-                    }
-                } else {
-                    Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
+        String newFileName = this.fileName + ".delete";
+        try {
+            Path newFilePath = Paths.get(newFileName);
+            // https://bugs.openjdk.org/browse/JDK-4724038
+            // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
+            // Windows can't move the file when mmapped.
+            if (NetworkUtil.isWindowsPlatform() && mappedByteBuffer != null) {
+                long position = this.fileChannel.position();
+                UtilAll.cleanBuffer(this.mappedByteBuffer);
+                this.fileChannel.close();
+                Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
+                try (RandomAccessFile file = new RandomAccessFile(newFileName, "rw")) {
+                    this.fileChannel = file.getChannel();
+                    this.fileChannel.position(position);
+                    this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
                 }
-                this.fileName = newFileName;
-                this.file = new File(newFileName);
-            } catch (IOException e) {
-                log.error("move file {} failed", fileName, e);
+            } else {
+                Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
             }
+            this.fileName = newFileName;
+            this.file = new File(newFileName);
+        } catch (IOException e) {
+            log.error("move file {} failed", fileName, e);
         }
     }
 

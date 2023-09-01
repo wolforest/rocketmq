@@ -25,7 +25,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import com.google.common.base.Optional;
+import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.latency.MQFaultStrategy;
+import org.apache.rocketmq.client.latency.Resolver;
+import org.apache.rocketmq.client.latency.ServiceDetector;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIFactory;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -39,6 +45,7 @@ import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.config.ProxyConfig;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
+import org.apache.rocketmq.remoting.protocol.header.GetMaxOffsetRequestHeader;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -47,6 +54,7 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.PROXY_LOGGER_NAME);
 
     private final MQClientAPIFactory mqClientAPIFactory;
+    private MQFaultStrategy mqFaultStrategy;
 
     protected final LoadingCache<String /* topicName */, MessageQueueView> topicCache;
     protected final ScheduledExecutorService scheduledExecutorService;
@@ -68,10 +76,13 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
         );
         this.mqClientAPIFactory = mqClientAPIFactory;
 
-        this.topicCache = Caffeine.newBuilder().maximumSize(config.getTopicRouteServiceCacheMaxNum()).
-            refreshAfterWrite(config.getTopicRouteServiceCacheExpiredInSeconds(), TimeUnit.SECONDS).
-            executor(cacheRefreshExecutor).build(new CacheLoader<String, MessageQueueView>() {
-                @Override public @Nullable MessageQueueView load(String topic) throws Exception {
+        this.topicCache = Caffeine.newBuilder().maximumSize(config.getTopicRouteServiceCacheMaxNum())
+            .expireAfterAccess(config.getTopicRouteServiceCacheExpiredSeconds(), TimeUnit.SECONDS)
+            .refreshAfterWrite(config.getTopicRouteServiceCacheRefreshSeconds(), TimeUnit.SECONDS)
+            .executor(cacheRefreshExecutor)
+            .build(new CacheLoader<String, MessageQueueView>() {
+                @Override
+                public @Nullable MessageQueueView load(String topic) throws Exception {
                     try {
                         TopicRouteData topicRouteData = mqClientAPIFactory.getClient().getTopicRouteInfoFromNameServer(topic, Duration.ofSeconds(3).toMillis());
                         return buildMessageQueueView(topic, topicRouteData);
@@ -83,7 +94,8 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
                     }
                 }
 
-                @Override public @Nullable MessageQueueView reload(@NonNull String key,
+                @Override
+                public @Nullable MessageQueueView reload(@NonNull String key,
                     @NonNull MessageQueueView oldValue) throws Exception {
                     try {
                         return load(key);
@@ -93,13 +105,81 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
                     }
                 }
             });
-
+        ServiceDetector serviceDetector = new ServiceDetector() {
+            @Override
+            public boolean detect(String endpoint, long timeoutMillis) {
+                Optional<String> candidateTopic = pickTopic();
+                if (!candidateTopic.isPresent()) {
+                    return false;
+                }
+                try {
+                    GetMaxOffsetRequestHeader requestHeader = new GetMaxOffsetRequestHeader();
+                    requestHeader.setTopic(candidateTopic.get());
+                    requestHeader.setQueueId(0);
+                    Long maxOffset = mqClientAPIFactory.getClient().getMaxOffset(endpoint, requestHeader, timeoutMillis).get();
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        };
+        mqFaultStrategy = new MQFaultStrategy(extractClientConfigFromProxyConfig(config), new Resolver() {
+            @Override
+            public String resolve(String name) {
+                try {
+                    String brokerAddr = getBrokerAddr(null, name);
+                    return brokerAddr;
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        }, serviceDetector);
         this.init();
+    }
+
+    // pickup one topic in the topic cache
+    private Optional<String> pickTopic() {
+        if (topicCache.asMap().isEmpty()) {
+            return Optional.absent();
+        }
+        return Optional.of(topicCache.asMap().keySet().iterator().next());
     }
 
     protected void init() {
         this.appendShutdown(this.scheduledExecutorService::shutdown);
         this.appendStartAndShutdown(this.mqClientAPIFactory);
+    }
+
+    @Override
+    public void shutdown() throws Exception {
+        if (this.mqFaultStrategy.isStartDetectorEnable()) {
+            mqFaultStrategy.shutdown();
+        }
+    }
+
+    @Override
+    public void start() throws Exception {
+        if (this.mqFaultStrategy.isStartDetectorEnable()) {
+            this.mqFaultStrategy.startDetector();
+        }
+    }
+
+    public ClientConfig extractClientConfigFromProxyConfig(ProxyConfig proxyConfig) {
+        ClientConfig tempClientConfig = new ClientConfig();
+        tempClientConfig.setSendLatencyEnable(proxyConfig.getSendLatencyEnable());
+        tempClientConfig.setStartDetectorEnable(proxyConfig.getStartDetectorEnable());
+        tempClientConfig.setDetectTimeout(proxyConfig.getDetectTimeout());
+        tempClientConfig.setDetectInterval(proxyConfig.getDetectInterval());
+        return tempClientConfig;
+    }
+
+    public void updateFaultItem(final String brokerName, final long currentLatency, boolean isolation,
+                                boolean reachable) {
+        this.mqFaultStrategy.updateFaultItem(brokerName, currentLatency, isolation, reachable);
+    }
+
+    public MQFaultStrategy getMqFaultStrategy() {
+        return this.mqFaultStrategy;
     }
 
     public MessageQueueView getAllMessageQueueView(ProxyContext ctx, String topicName) throws Exception {
@@ -132,7 +212,7 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
 
     protected MessageQueueView buildMessageQueueView(String topic, TopicRouteData topicRouteData) {
         if (isTopicRouteValid(topicRouteData)) {
-            MessageQueueView tmp = new MessageQueueView(topic, topicRouteData);
+            MessageQueueView tmp = new MessageQueueView(topic, topicRouteData, TopicRouteService.this.getMqFaultStrategy());
             log.debug("load topic route from namesrv. topic: {}, queue: {}", topic, tmp);
             return tmp;
         }

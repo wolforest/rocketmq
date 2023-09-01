@@ -155,14 +155,17 @@ public class ProxyConfig implements ConfigFile {
     private int consumerProcessorThreadPoolQueueCapacity = 10000;
 
     private boolean useEndpointPortFromRequest = false;
-    private int topicRouteServiceCacheExpiredInSeconds = 20;
+
+    private int topicRouteServiceCacheExpiredSeconds = 300;
+    private int topicRouteServiceCacheRefreshSeconds = 20;
     private int topicRouteServiceCacheMaxNum = 20000;
     private int topicRouteServiceThreadPoolNums = PROCESSOR_NUMBER;
     private int topicRouteServiceThreadPoolQueueCapacity = 5000;
-
-    private int topicConfigCacheExpiredInSeconds = 20;
+    private int topicConfigCacheExpiredSeconds = 300;
+    private int topicConfigCacheRefreshSeconds = 20;
     private int topicConfigCacheMaxNum = 20000;
-    private int subscriptionGroupConfigCacheExpiredInSeconds = 20;
+    private int subscriptionGroupConfigCacheExpiredSeconds = 300;
+    private int subscriptionGroupConfigCacheRefreshSeconds = 20;
     private int subscriptionGroupConfigCacheMaxNum = 20000;
     private int metadataThreadPoolNums = 3;
     private int metadataThreadPoolQueueCapacity = 100000;
@@ -229,6 +232,12 @@ public class ProxyConfig implements ConfigFile {
     private String remotingAccessAddr = "";
     private int remotingListenPort = 8080;
 
+    // related to proxy's send strategy in cluster mode.
+    private boolean sendLatencyEnable = false;
+    private boolean startDetectorEnable = false;
+    private int detectTimeout = 200;
+    private int detectInterval = 2 * 1000;
+
     private int remotingHeartbeatThreadPoolNums = 2 * PROCESSOR_NUMBER;
     private int remotingTopicRouteThreadPoolNums = 2 * PROCESSOR_NUMBER;
     private int remotingSendMessageThreadPoolNums = 4 * PROCESSOR_NUMBER;
@@ -249,6 +258,8 @@ public class ProxyConfig implements ConfigFile {
     private long remotingWaitTimeMillsInUpdateOffsetQueue = 3 * 1000;
     private long remotingWaitTimeMillsInTopicRouteQueue = 3 * 1000;
     private long remotingWaitTimeMillsInDefaultQueue = 3 * 1000;
+
+    private boolean enableBatchAck = false;
 
     @Override
     public void initData() {
@@ -792,12 +803,20 @@ public class ProxyConfig implements ConfigFile {
         this.consumerProcessorThreadPoolQueueCapacity = consumerProcessorThreadPoolQueueCapacity;
     }
 
-    public int getTopicRouteServiceCacheExpiredInSeconds() {
-        return topicRouteServiceCacheExpiredInSeconds;
+    public int getTopicRouteServiceCacheExpiredSeconds() {
+        return topicRouteServiceCacheExpiredSeconds;
     }
 
-    public void setTopicRouteServiceCacheExpiredInSeconds(int topicRouteServiceCacheExpiredInSeconds) {
-        this.topicRouteServiceCacheExpiredInSeconds = topicRouteServiceCacheExpiredInSeconds;
+    public void setTopicRouteServiceCacheExpiredSeconds(int topicRouteServiceCacheExpiredSeconds) {
+        this.topicRouteServiceCacheExpiredSeconds = topicRouteServiceCacheExpiredSeconds;
+    }
+
+    public int getTopicRouteServiceCacheRefreshSeconds() {
+        return topicRouteServiceCacheRefreshSeconds;
+    }
+
+    public void setTopicRouteServiceCacheRefreshSeconds(int topicRouteServiceCacheRefreshSeconds) {
+        this.topicRouteServiceCacheRefreshSeconds = topicRouteServiceCacheRefreshSeconds;
     }
 
     public int getTopicRouteServiceCacheMaxNum() {
@@ -824,12 +843,20 @@ public class ProxyConfig implements ConfigFile {
         this.topicRouteServiceThreadPoolQueueCapacity = topicRouteServiceThreadPoolQueueCapacity;
     }
 
-    public int getTopicConfigCacheExpiredInSeconds() {
-        return topicConfigCacheExpiredInSeconds;
+    public int getTopicConfigCacheRefreshSeconds() {
+        return topicConfigCacheRefreshSeconds;
     }
 
-    public void setTopicConfigCacheExpiredInSeconds(int topicConfigCacheExpiredInSeconds) {
-        this.topicConfigCacheExpiredInSeconds = topicConfigCacheExpiredInSeconds;
+    public void setTopicConfigCacheRefreshSeconds(int topicConfigCacheRefreshSeconds) {
+        this.topicConfigCacheRefreshSeconds = topicConfigCacheRefreshSeconds;
+    }
+
+    public int getTopicConfigCacheExpiredSeconds() {
+        return topicConfigCacheExpiredSeconds;
+    }
+
+    public void setTopicConfigCacheExpiredSeconds(int topicConfigCacheExpiredSeconds) {
+        this.topicConfigCacheExpiredSeconds = topicConfigCacheExpiredSeconds;
     }
 
     public int getTopicConfigCacheMaxNum() {
@@ -840,12 +867,20 @@ public class ProxyConfig implements ConfigFile {
         this.topicConfigCacheMaxNum = topicConfigCacheMaxNum;
     }
 
-    public int getSubscriptionGroupConfigCacheExpiredInSeconds() {
-        return subscriptionGroupConfigCacheExpiredInSeconds;
+    public int getSubscriptionGroupConfigCacheRefreshSeconds() {
+        return subscriptionGroupConfigCacheRefreshSeconds;
     }
 
-    public void setSubscriptionGroupConfigCacheExpiredInSeconds(int subscriptionGroupConfigCacheExpiredInSeconds) {
-        this.subscriptionGroupConfigCacheExpiredInSeconds = subscriptionGroupConfigCacheExpiredInSeconds;
+    public void setSubscriptionGroupConfigCacheRefreshSeconds(int subscriptionGroupConfigCacheRefreshSeconds) {
+        this.subscriptionGroupConfigCacheRefreshSeconds = subscriptionGroupConfigCacheRefreshSeconds;
+    }
+
+    public int getSubscriptionGroupConfigCacheExpiredSeconds() {
+        return subscriptionGroupConfigCacheExpiredSeconds;
+    }
+
+    public void setSubscriptionGroupConfigCacheExpiredSeconds(int subscriptionGroupConfigCacheExpiredSeconds) {
+        this.subscriptionGroupConfigCacheExpiredSeconds = subscriptionGroupConfigCacheExpiredSeconds;
     }
 
     public int getSubscriptionGroupConfigCacheMaxNum() {
@@ -1378,5 +1413,53 @@ public class ProxyConfig implements ConfigFile {
 
     public void setRemotingWaitTimeMillsInDefaultQueue(long remotingWaitTimeMillsInDefaultQueue) {
         this.remotingWaitTimeMillsInDefaultQueue = remotingWaitTimeMillsInDefaultQueue;
+    }
+
+    public boolean isSendLatencyEnable() {
+        return sendLatencyEnable;
+    }
+
+    public boolean isStartDetectorEnable() {
+        return startDetectorEnable;
+    }
+
+    public void setStartDetectorEnable(boolean startDetectorEnable) {
+        this.startDetectorEnable = startDetectorEnable;
+    }
+
+    public void setSendLatencyEnable(boolean sendLatencyEnable) {
+        this.sendLatencyEnable = sendLatencyEnable;
+    }
+
+    public boolean getStartDetectorEnable() {
+        return this.startDetectorEnable;
+    }
+
+    public boolean getSendLatencyEnable() {
+        return this.sendLatencyEnable;
+    }
+
+    public int getDetectTimeout() {
+        return detectTimeout;
+    }
+
+    public void setDetectTimeout(int detectTimeout) {
+        this.detectTimeout = detectTimeout;
+    }
+
+    public int getDetectInterval() {
+        return detectInterval;
+    }
+
+    public void setDetectInterval(int detectInterval) {
+        this.detectInterval = detectInterval;
+    }
+
+    public boolean isEnableBatchAck() {
+        return enableBatchAck;
+    }
+
+    public void setEnableBatchAck(boolean enableBatchAck) {
+        this.enableBatchAck = enableBatchAck;
     }
 }

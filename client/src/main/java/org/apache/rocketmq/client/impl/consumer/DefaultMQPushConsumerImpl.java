@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -882,13 +881,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             case CREATE_JUST:
                 break;
             case RUNNING:
-                this.consumeMessageService.shutdown(awaitTerminateMillis);
-                this.persistConsumerOffset();
-                this.mQClientFactory.unregisterConsumer(this.defaultMQPushConsumer.getConsumerGroup());
-                this.mQClientFactory.shutdown();
-                log.info("the consumer [{}] shutdown OK", this.defaultMQPushConsumer.getConsumerGroup());
-                this.rebalanceImpl.destroy();
-                this.serviceState = ServiceState.SHUTDOWN_ALREADY;
+                shutdownWhileRunning(awaitTerminateMillis);
                 break;
             case SHUTDOWN_ALREADY:
                 break;
@@ -897,83 +890,30 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
     }
 
+    private void shutdownWhileRunning(long awaitTerminateMillis) {
+        this.consumeMessageService.shutdown(awaitTerminateMillis);
+        this.persistConsumerOffset();
+        this.mQClientFactory.unregisterConsumer(this.defaultMQPushConsumer.getConsumerGroup());
+        this.mQClientFactory.shutdown();
+        log.info("the consumer [{}] shutdown OK", this.defaultMQPushConsumer.getConsumerGroup());
+        this.rebalanceImpl.destroy();
+        this.serviceState = ServiceState.SHUTDOWN_ALREADY;
+    }
+
+
     public synchronized void start() throws MQClientException {
+        startByServiceState();
+
+        this.updateTopicSubscribeInfoWhenSubscriptionChanged();
+        this.mQClientFactory.checkClientInBroker();
+        this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();
+        this.mQClientFactory.rebalanceImmediately();
+    }
+
+    private void startByServiceState() throws MQClientException {
         switch (this.serviceState) {
             case CREATE_JUST:
-                log.info("the consumer [{}] start beginning. messageModel={}, isUnitMode={}", this.defaultMQPushConsumer.getConsumerGroup(),
-                    this.defaultMQPushConsumer.getMessageModel(), this.defaultMQPushConsumer.isUnitMode());
-                this.serviceState = ServiceState.START_FAILED;
-
-                this.checkConfig();
-
-                this.copySubscription();
-
-                if (this.defaultMQPushConsumer.getMessageModel() == MessageModel.CLUSTERING) {
-                    this.defaultMQPushConsumer.changeInstanceNameToPID();
-                }
-
-                this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
-
-                this.rebalanceImpl.setConsumerGroup(this.defaultMQPushConsumer.getConsumerGroup());
-                this.rebalanceImpl.setMessageModel(this.defaultMQPushConsumer.getMessageModel());
-                this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());
-                this.rebalanceImpl.setmQClientFactory(this.mQClientFactory);
-
-                if (this.pullAPIWrapper == null) {
-                    this.pullAPIWrapper = new PullAPIWrapper(
-                        mQClientFactory,
-                        this.defaultMQPushConsumer.getConsumerGroup(), isUnitMode());
-                }
-                this.pullAPIWrapper.registerFilterMessageHook(filterMessageHookList);
-
-                if (this.defaultMQPushConsumer.getOffsetStore() != null) {
-                    this.offsetStore = this.defaultMQPushConsumer.getOffsetStore();
-                } else {
-                    switch (this.defaultMQPushConsumer.getMessageModel()) {
-                        case BROADCASTING:
-                            this.offsetStore = new LocalFileOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
-                            break;
-                        case CLUSTERING:
-                            this.offsetStore = new RemoteBrokerOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
-                            break;
-                        default:
-                            break;
-                    }
-                    this.defaultMQPushConsumer.setOffsetStore(this.offsetStore);
-                }
-                this.offsetStore.load();
-
-                if (this.getMessageListenerInner() instanceof MessageListenerOrderly) {
-                    this.consumeOrderly = true;
-                    this.consumeMessageService =
-                        new ConsumeMessageOrderlyService(this, (MessageListenerOrderly) this.getMessageListenerInner());
-                    //POPTODO reuse Executor ?
-                    this.consumeMessagePopService = new ConsumeMessagePopOrderlyService(this, (MessageListenerOrderly) this.getMessageListenerInner());
-                } else if (this.getMessageListenerInner() instanceof MessageListenerConcurrently) {
-                    this.consumeOrderly = false;
-                    this.consumeMessageService =
-                        new ConsumeMessageConcurrentlyService(this, (MessageListenerConcurrently) this.getMessageListenerInner());
-                    //POPTODO reuse Executor ?
-                    this.consumeMessagePopService =
-                        new ConsumeMessagePopConcurrentlyService(this, (MessageListenerConcurrently) this.getMessageListenerInner());
-                }
-
-                this.consumeMessageService.start();
-                // POPTODO
-                this.consumeMessagePopService.start();
-
-                boolean registerOK = mQClientFactory.registerConsumer(this.defaultMQPushConsumer.getConsumerGroup(), this);
-                if (!registerOK) {
-                    this.serviceState = ServiceState.CREATE_JUST;
-                    this.consumeMessageService.shutdown(defaultMQPushConsumer.getAwaitTerminationMillisWhenShutdown());
-                    throw new MQClientException("The consumer group[" + this.defaultMQPushConsumer.getConsumerGroup()
-                        + "] has been created before, specify another name please." + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
-                        null);
-                }
-
-                mQClientFactory.start();
-                log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
-                this.serviceState = ServiceState.RUNNING;
+                startAfterCreation();
                 break;
             case RUNNING:
             case START_FAILED:
@@ -985,11 +925,109 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             default:
                 break;
         }
+    }
 
-        this.updateTopicSubscribeInfoWhenSubscriptionChanged();
-        this.mQClientFactory.checkClientInBroker();
-        this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();
-        this.mQClientFactory.rebalanceImmediately();
+    private void startAfterCreation() throws MQClientException {
+        log.info("the consumer [{}] start beginning. messageModel={}, isUnitMode={}", this.defaultMQPushConsumer.getConsumerGroup(),
+            this.defaultMQPushConsumer.getMessageModel(), this.defaultMQPushConsumer.isUnitMode());
+        this.serviceState = ServiceState.START_FAILED;
+
+        this.checkConfig();
+        this.copySubscription();
+
+        initInstanceName();
+        initMQClientFactory();
+        initRebalanceImpl();
+        initPullAPIWrapper();
+
+        loadOffsetStore();
+        startMessageService();
+        checkRegisterStatus();
+
+        mQClientFactory.start();
+        log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
+        this.serviceState = ServiceState.RUNNING;
+    }
+
+    private void initInstanceName() {
+        if (this.defaultMQPushConsumer.getMessageModel() != MessageModel.CLUSTERING) {
+            return;
+        }
+
+        this.defaultMQPushConsumer.changeInstanceNameToPID();
+    }
+
+    private void initMQClientFactory() {
+        this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
+    }
+
+    private void initRebalanceImpl() {
+        this.rebalanceImpl.setConsumerGroup(this.defaultMQPushConsumer.getConsumerGroup());
+        this.rebalanceImpl.setMessageModel(this.defaultMQPushConsumer.getMessageModel());
+        this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());
+        this.rebalanceImpl.setmQClientFactory(this.mQClientFactory);
+    }
+
+    private void initPullAPIWrapper() {
+        if (this.pullAPIWrapper == null) {
+            this.pullAPIWrapper = new PullAPIWrapper(
+                mQClientFactory,
+                this.defaultMQPushConsumer.getConsumerGroup(), isUnitMode());
+        }
+        this.pullAPIWrapper.registerFilterMessageHook(filterMessageHookList);
+    }
+
+    private void loadOffsetStore() throws MQClientException {
+        if (this.defaultMQPushConsumer.getOffsetStore() != null) {
+            this.offsetStore = this.defaultMQPushConsumer.getOffsetStore();
+        } else {
+            switch (this.defaultMQPushConsumer.getMessageModel()) {
+                case BROADCASTING:
+                    this.offsetStore = new LocalFileOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
+                    break;
+                case CLUSTERING:
+                    this.offsetStore = new RemoteBrokerOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
+                    break;
+                default:
+                    break;
+            }
+            this.defaultMQPushConsumer.setOffsetStore(this.offsetStore);
+        }
+        this.offsetStore.load();
+    }
+
+    private void startMessageService() {
+        if (this.getMessageListenerInner() instanceof MessageListenerOrderly) {
+            this.consumeOrderly = true;
+            this.consumeMessageService =
+                new ConsumeMessageOrderlyService(this, (MessageListenerOrderly) this.getMessageListenerInner());
+            //POPTODO reuse Executor ?
+            this.consumeMessagePopService = new ConsumeMessagePopOrderlyService(this, (MessageListenerOrderly) this.getMessageListenerInner());
+        } else if (this.getMessageListenerInner() instanceof MessageListenerConcurrently) {
+            this.consumeOrderly = false;
+            this.consumeMessageService =
+                new ConsumeMessageConcurrentlyService(this, (MessageListenerConcurrently) this.getMessageListenerInner());
+            //POPTODO reuse Executor ?
+            this.consumeMessagePopService =
+                new ConsumeMessagePopConcurrentlyService(this, (MessageListenerConcurrently) this.getMessageListenerInner());
+        }
+
+        this.consumeMessageService.start();
+        // POPTODO
+        this.consumeMessagePopService.start();
+    }
+
+    private void checkRegisterStatus() throws MQClientException {
+        boolean registerOK = mQClientFactory.registerConsumer(this.defaultMQPushConsumer.getConsumerGroup(), this);
+        if (registerOK) {
+            return;
+        }
+
+        this.serviceState = ServiceState.CREATE_JUST;
+        this.consumeMessageService.shutdown(defaultMQPushConsumer.getAwaitTerminationMillisWhenShutdown());
+        throw new MQClientException("The consumer group[" + this.defaultMQPushConsumer.getConsumerGroup()
+            + "] has been created before, specify another name please." + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
+            null);
     }
 
     private void checkConfig() throws MQClientException {
@@ -1181,33 +1219,47 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
     private void copySubscription() throws MQClientException {
         try {
-            Map<String, String> sub = this.defaultMQPushConsumer.getSubscription();
-            if (sub != null) {
-                for (final Map.Entry<String, String> entry : sub.entrySet()) {
-                    final String topic = entry.getKey();
-                    final String subString = entry.getValue();
-                    SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(topic, subString);
-                    this.rebalanceImpl.getSubscriptionInner().put(topic, subscriptionData);
-                }
-            }
-
-            if (null == this.messageListenerInner) {
-                this.messageListenerInner = this.defaultMQPushConsumer.getMessageListener();
-            }
-
-            switch (this.defaultMQPushConsumer.getMessageModel()) {
-                case BROADCASTING:
-                    break;
-                case CLUSTERING:
-                    final String retryTopic = MixAll.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup());
-                    SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(retryTopic, SubscriptionData.SUB_ALL);
-                    this.rebalanceImpl.getSubscriptionInner().put(retryTopic, subscriptionData);
-                    break;
-                default:
-                    break;
-            }
+            copyTopicSubscription();
+            resetMessageListenerInner();
+            copyRetryTopicSubscription();
         } catch (Exception e) {
             throw new MQClientException("subscription exception", e);
+        }
+    }
+
+    private void copyTopicSubscription() throws Exception {
+        Map<String, String> sub = this.defaultMQPushConsumer.getSubscription();
+        if (sub == null) {
+            return;
+        }
+
+        for (final Map.Entry<String, String> entry : sub.entrySet()) {
+            final String topic = entry.getKey();
+            final String subString = entry.getValue();
+            SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(topic, subString);
+            this.rebalanceImpl.getSubscriptionInner().put(topic, subscriptionData);
+        }
+    }
+
+    private void resetMessageListenerInner() {
+        if (null != this.messageListenerInner) {
+            return;
+        }
+
+        this.messageListenerInner = this.defaultMQPushConsumer.getMessageListener();
+    }
+
+    private void copyRetryTopicSubscription() throws Exception {
+        switch (this.defaultMQPushConsumer.getMessageModel()) {
+            case BROADCASTING:
+                break;
+            case CLUSTERING:
+                final String retryTopic = MixAll.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup());
+                SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(retryTopic, SubscriptionData.SUB_ALL);
+                this.rebalanceImpl.getSubscriptionInner().put(retryTopic, subscriptionData);
+                break;
+            default:
+                break;
         }
     }
 
@@ -1220,11 +1272,13 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             return;
         }
         Map<String, SubscriptionData> subTable = this.getSubscriptionInner();
-        if (subTable != null) {
-            for (final Map.Entry<String, SubscriptionData> entry : subTable.entrySet()) {
-                final String topic = entry.getKey();
-                this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
-            }
+        if (subTable == null) {
+            return;
+        }
+
+        for (final Map.Entry<String, SubscriptionData> entry : subTable.entrySet()) {
+            final String topic = entry.getKey();
+            this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
         }
     }
 
@@ -1316,15 +1370,22 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     public void resetOffsetByTimeStamp(long timeStamp) throws MQClientException {
         for (String topic : rebalanceImpl.getSubscriptionInner().keySet()) {
             Set<MessageQueue> mqs = rebalanceImpl.getTopicSubscribeInfoTable().get(topic);
-            if (CollectionUtils.isNotEmpty(mqs)) {
-                Map<MessageQueue, Long> offsetTable = new HashMap<>(mqs.size(), 1);
-                for (MessageQueue mq : mqs) {
-                    long offset = searchOffset(mq, timeStamp);
-                    offsetTable.put(mq, offset);
-                }
-                this.mQClientFactory.resetOffset(topic, groupName(), offsetTable);
-            }
+
+            resetOffsetByTimeStamp(timeStamp, topic, mqs);
         }
+    }
+
+    private void resetOffsetByTimeStamp(long timeStamp, String topic, Set<MessageQueue> mqs) throws MQClientException {
+        if (!CollectionUtils.isNotEmpty(mqs)) {
+            return;
+        }
+
+        Map<MessageQueue, Long> offsetTable = new HashMap<>(mqs.size(), 1);
+        for (MessageQueue mq : mqs) {
+            long offset = searchOffset(mq, timeStamp);
+            offsetTable.put(mq, offset);
+        }
+        this.mQClientFactory.resetOffset(topic, groupName(), offsetTable);
     }
 
     public long searchOffset(MessageQueue mq, long timestamp) throws MQClientException {
@@ -1380,20 +1441,24 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     @Override
     public void updateTopicSubscribeInfo(String topic, Set<MessageQueue> info) {
         Map<String, SubscriptionData> subTable = this.getSubscriptionInner();
-        if (subTable != null) {
-            if (subTable.containsKey(topic)) {
-                this.rebalanceImpl.topicSubscribeInfoTable.put(topic, info);
-            }
+        if (subTable == null) {
+            return;
+        }
+
+        if (subTable.containsKey(topic)) {
+            this.rebalanceImpl.topicSubscribeInfoTable.put(topic, info);
         }
     }
 
     @Override
     public boolean isSubscribeTopicNeedUpdate(String topic) {
         Map<String, SubscriptionData> subTable = this.getSubscriptionInner();
-        if (subTable != null) {
-            if (subTable.containsKey(topic)) {
-                return !this.rebalanceImpl.topicSubscribeInfoTable.containsKey(topic);
-            }
+        if (subTable == null) {
+            return false;
+        }
+
+        if (subTable.containsKey(topic)) {
+            return !this.rebalanceImpl.topicSubscribeInfoTable.containsKey(topic);
         }
 
         return false;
@@ -1406,22 +1471,33 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
     @Override
     public ConsumerRunningInfo consumerRunningInfo() {
+        ConsumerRunningInfo info = initConsumerRunningInfo();
+
+        Set<SubscriptionData> subSet = this.subscriptions();
+        info.getSubscriptionSet().addAll(subSet);
+
+        parseProcessQueueTable(info);
+        parsePopProcessQueueTable(info);
+        parseConsumeStatus(info, subSet);
+
+        return info;
+    }
+
+    public ConsumerRunningInfo initConsumerRunningInfo() {
         ConsumerRunningInfo info = new ConsumerRunningInfo();
 
         Properties prop = MixAll.object2Properties(this.defaultMQPushConsumer);
-
         prop.put(ConsumerRunningInfo.PROP_CONSUME_ORDERLY, String.valueOf(this.consumeOrderly));
         prop.put(ConsumerRunningInfo.PROP_THREADPOOL_CORE_SIZE, String.valueOf(this.consumeMessageService.getCorePoolSize()));
         prop.put(ConsumerRunningInfo.PROP_CONSUMER_START_TIMESTAMP, String.valueOf(this.consumerStartTimestamp));
 
         info.setProperties(prop);
 
-        Set<SubscriptionData> subSet = this.subscriptions();
-        info.getSubscriptionSet().addAll(subSet);
+        return info;
+    }
 
-        Iterator<Entry<MessageQueue, ProcessQueue>> it = this.rebalanceImpl.getProcessQueueTable().entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<MessageQueue, ProcessQueue> next = it.next();
+    private void parseProcessQueueTable(ConsumerRunningInfo info) {
+        for (Entry<MessageQueue, ProcessQueue> next : this.rebalanceImpl.getProcessQueueTable().entrySet()) {
             MessageQueue mq = next.getKey();
             ProcessQueue pq = next.getValue();
 
@@ -1430,10 +1506,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             pq.fillProcessQueueInfo(pqinfo);
             info.getMqTable().put(mq, pqinfo);
         }
+    }
 
-        Iterator<Entry<MessageQueue, PopProcessQueue>> popIt = this.rebalanceImpl.getPopProcessQueueTable().entrySet().iterator();
-        while (popIt.hasNext()) {
-            Entry<MessageQueue, PopProcessQueue> next = popIt.next();
+    private void parsePopProcessQueueTable(ConsumerRunningInfo info) {
+        for (Entry<MessageQueue, PopProcessQueue> next : this.rebalanceImpl.getPopProcessQueueTable().entrySet()) {
             MessageQueue mq = next.getKey();
             PopProcessQueue pq = next.getValue();
 
@@ -1441,13 +1517,13 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             pq.fillPopProcessQueueInfo(pqinfo);
             info.getMqPopTable().put(mq, pqinfo);
         }
+    }
 
+    private void parseConsumeStatus(ConsumerRunningInfo info, Set<SubscriptionData> subSet) {
         for (SubscriptionData sd : subSet) {
             ConsumeStatus consumeStatus = this.mQClientFactory.getConsumerStatsManager().consumeStatus(this.groupName(), sd.getTopic());
             info.getStatusTable().put(sd.getTopic(), consumeStatus);
         }
-
-        return info;
     }
 
     public MQClientInstance getmQClientFactory() {
@@ -1488,9 +1564,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     private long computeAccumulationTotal() {
         long msgAccTotal = 0;
         ConcurrentMap<MessageQueue, ProcessQueue> processQueueTable = this.rebalanceImpl.getProcessQueueTable();
-        Iterator<Entry<MessageQueue, ProcessQueue>> it = processQueueTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<MessageQueue, ProcessQueue> next = it.next();
+        for (Entry<MessageQueue, ProcessQueue> next : processQueueTable.entrySet()) {
             ProcessQueue value = next.getValue();
             msgAccTotal += value.getMsgAccCnt();
         }
@@ -1513,11 +1587,13 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     public void tryResetPopRetryTopic(final List<MessageExt> msgs, String consumerGroup) {
         String popRetryPrefix = MixAll.RETRY_GROUP_TOPIC_PREFIX + consumerGroup + "_";
         for (MessageExt msg : msgs) {
-            if (msg.getTopic().startsWith(popRetryPrefix)) {
-                String normalTopic = KeyBuilder.parseNormalTopic(msg.getTopic(), consumerGroup);
-                if (normalTopic != null && !normalTopic.isEmpty()) {
-                    msg.setTopic(normalTopic);
-                }
+            if (!msg.getTopic().startsWith(popRetryPrefix)) {
+                continue;
+            }
+
+            String normalTopic = KeyBuilder.parseNormalTopic(msg.getTopic(), consumerGroup);
+            if (normalTopic != null && !normalTopic.isEmpty()) {
+                msg.setTopic(normalTopic);
             }
         }
     }
