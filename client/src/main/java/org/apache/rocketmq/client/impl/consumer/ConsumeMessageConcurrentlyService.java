@@ -239,22 +239,11 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }
     }
 
-    private int processConsumeSuccess(final ConsumeRequest consumeRequest, int ackIndex) {
-        if (ackIndex >= consumeRequest.getMsgs().size()) {
-            ackIndex = consumeRequest.getMsgs().size() - 1;
+    public void processBroadCastingConsume(final ConsumeRequest consumeRequest, int ackIndex) {
+        for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {
+            MessageExt msg = consumeRequest.getMsgs().get(i);
+            log.warn("BROADCASTING, the message consume failed, drop it, {}", msg.toString());
         }
-        int ok = ackIndex + 1;
-        int failed = consumeRequest.getMsgs().size() - ok;
-        this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), ok);
-        this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), failed);
-
-        return ackIndex;
-    }
-
-    private int processConsumeLater(final ConsumeRequest consumeRequest) {
-        this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(),
-            consumeRequest.getMsgs().size());
-        return -1;
     }
 
     public void processConsumeResult( final ConsumeConcurrentlyStatus status, final ConsumeConcurrentlyContext context, final ConsumeRequest consumeRequest) {
@@ -276,10 +265,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
 
         switch (this.defaultMQPushConsumer.getMessageModel()) {
             case BROADCASTING:
-                for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {
-                    MessageExt msg = consumeRequest.getMsgs().get(i);
-                    log.warn("BROADCASTING, the message consume failed, drop it, {}", msg.toString());
-                }
+                processBroadCastingConsume(consumeRequest, ackIndex);
                 break;
             case CLUSTERING:
                 List<MessageExt> msgBackFailed = new ArrayList<>(consumeRequest.getMsgs().size());
@@ -313,6 +299,24 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         if (offset >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
             this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), offset, true);
         }
+    }
+
+    private int processConsumeSuccess(final ConsumeRequest consumeRequest, int ackIndex) {
+        if (ackIndex >= consumeRequest.getMsgs().size()) {
+            ackIndex = consumeRequest.getMsgs().size() - 1;
+        }
+        int ok = ackIndex + 1;
+        int failed = consumeRequest.getMsgs().size() - ok;
+        this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), ok);
+        this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), failed);
+
+        return ackIndex;
+    }
+
+    private int processConsumeLater(final ConsumeRequest consumeRequest) {
+        this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(),
+            consumeRequest.getMsgs().size());
+        return -1;
     }
 
     public ConsumerStatsManager getConsumerStatsManager() {
