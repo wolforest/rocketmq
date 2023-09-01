@@ -480,54 +480,13 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
         }
 
-        private boolean isDropped() {
-            if (this.processQueue.isDropped()) {
-                log.warn("the message queue not be able to consume, because it's dropped. {}", this.messageQueue);
-                return true;
-            }
-
-            return false;
-        }
-
-        private boolean xxx() {
-
-            return false;
-        }
-
-        private boolean isLocked() {
-            if (MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
-                && !this.processQueue.isLocked()) {
-                log.warn("the message queue not locked, so consume later, {}", this.messageQueue);
-                ConsumeMessageOrderlyService.this.tryLockLaterAndReconsume(this.messageQueue, this.processQueue, 10);
-                return true;
-            }
-            return false;
-        }
-
-        private boolean isLockExpired() {
-            if (MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
-                && this.processQueue.isLockExpired()) {
-                log.warn("the message queue lock expired, so consume later, {}", this.messageQueue);
-                ConsumeMessageOrderlyService.this.tryLockLaterAndReconsume(this.messageQueue, this.processQueue, 10);
-                return true;
-            }
-            return false;
-        }
-
         private void runWithLock() {
             final long beginTime = System.currentTimeMillis();
             for (boolean continueConsume = true; continueConsume; ) {
                 if (isDropped()) break;
                 if (isLocked()) break;
                 if (isLockExpired()) break;
-
-
-
-                long interval = System.currentTimeMillis() - beginTime;
-                if (interval > MAX_TIME_CONSUME_CONTINUOUSLY) {
-                    ConsumeMessageOrderlyService.this.submitConsumeRequestLater(processQueue, messageQueue, 10);
-                    break;
-                }
+                if (isTimeout(beginTime)) break;
 
                 final int consumeBatchSize = ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();
                 List<MessageExt> msgs = this.processQueue.takeMessages(consumeBatchSize);
@@ -624,6 +583,45 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 continueConsume = ConsumeMessageOrderlyService.this.processConsumeResult(msgs, status, context, this);
             }
 
+        }
+
+        private boolean isDropped() {
+            if (this.processQueue.isDropped()) {
+                log.warn("the message queue not be able to consume, because it's dropped. {}", this.messageQueue);
+                return true;
+            }
+
+            return false;
+        }
+
+        private boolean isLocked() {
+            if (MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
+                && !this.processQueue.isLocked()) {
+                log.warn("the message queue not locked, so consume later, {}", this.messageQueue);
+                ConsumeMessageOrderlyService.this.tryLockLaterAndReconsume(this.messageQueue, this.processQueue, 10);
+                return true;
+            }
+            return false;
+        }
+
+        private boolean isLockExpired() {
+            if (MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())
+                && this.processQueue.isLockExpired()) {
+                log.warn("the message queue lock expired, so consume later, {}", this.messageQueue);
+                ConsumeMessageOrderlyService.this.tryLockLaterAndReconsume(this.messageQueue, this.processQueue, 10);
+                return true;
+            }
+            return false;
+        }
+
+        private boolean isTimeout(long beginTime) {
+            long interval = System.currentTimeMillis() - beginTime;
+            if (interval > MAX_TIME_CONSUME_CONTINUOUSLY) {
+                ConsumeMessageOrderlyService.this.submitConsumeRequestLater(processQueue, messageQueue, 10);
+                return true;
+            }
+
+            return false;
         }
 
     }
