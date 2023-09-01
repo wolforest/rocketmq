@@ -26,6 +26,11 @@ public class ConsumeOrderlyContext {
     private boolean autoCommit = true;
     private long suspendCurrentQueueTimeMillis = -1;
 
+    // attributes for ConsumeMessageOrderlyService.processConsumeResult
+    private boolean continueConsume;
+    private long commitOffset;
+    // attributes for ConsumeMessageOrderlyService.processConsumeResult
+
     public ConsumeOrderlyContext(MessageQueue messageQueue) {
         this.messageQueue = messageQueue;
     }
@@ -49,4 +54,21 @@ public class ConsumeOrderlyContext {
     public void setSuspendCurrentQueueTimeMillis(long suspendCurrentQueueTimeMillis) {
         this.suspendCurrentQueueTimeMillis = suspendCurrentQueueTimeMillis;
     }
+
+    public boolean isContinueConsume() {
+        return continueConsume;
+    }
+
+    public void setContinueConsume(boolean continueConsume) {
+        this.continueConsume = continueConsume;
+    }
+
+    public long getCommitOffset() {
+        return commitOffset;
+    }
+
+    public void setCommitOffset(long commitOffset) {
+        this.commitOffset = commitOffset;
+    }
+
 }
