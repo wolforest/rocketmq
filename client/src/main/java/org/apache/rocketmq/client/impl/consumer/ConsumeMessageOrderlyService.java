@@ -275,40 +275,39 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         }, timeMillis, TimeUnit.MILLISECONDS);
     }
 
-    public boolean processConsumeResult(
-        final List<MessageExt> msgs,
-        final ConsumeOrderlyStatus status,
-        final ConsumeOrderlyContext context,
-        final ConsumeRequest consumeRequest
-    ) {
+    public void processAutoCommitResult(final List<MessageExt> msgs, final ConsumeOrderlyStatus status, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
+        switch (status) {
+            case COMMIT:
+            case ROLLBACK:
+                log.warn("the message queue consume result is illegal, we think you want to ack these message {}",
+                    consumeRequest.getMessageQueue());
+            case SUCCESS:
+                context.setCommitOffset(consumeRequest.getProcessQueue().commit());
+                this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
+                break;
+            case SUSPEND_CURRENT_QUEUE_A_MOMENT:
+                this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
+                if (checkReconsumeTimes(msgs)) {
+                    consumeRequest.getProcessQueue().makeMessageToConsumeAgain(msgs);
+                    this.submitConsumeRequestLater(
+                        consumeRequest.getProcessQueue(),
+                        consumeRequest.getMessageQueue(),
+                        context.getSuspendCurrentQueueTimeMillis());
+                    context.setContinuable(false);
+                } else {
+                    context.setCommitOffset(consumeRequest.getProcessQueue().commit());
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    public boolean processConsumeResult(final List<MessageExt> msgs, final ConsumeOrderlyStatus status, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
         context.setContinuable(true);
         context.setCommitOffset(-1L);
         if (context.isAutoCommit()) {
-            switch (status) {
-                case COMMIT:
-                case ROLLBACK:
-                    log.warn("the message queue consume result is illegal, we think you want to ack these message {}",
-                        consumeRequest.getMessageQueue());
-                case SUCCESS:
-                    context.setCommitOffset(consumeRequest.getProcessQueue().commit());
-                    this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
-                    break;
-                case SUSPEND_CURRENT_QUEUE_A_MOMENT:
-                    this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
-                    if (checkReconsumeTimes(msgs)) {
-                        consumeRequest.getProcessQueue().makeMessageToConsumeAgain(msgs);
-                        this.submitConsumeRequestLater(
-                            consumeRequest.getProcessQueue(),
-                            consumeRequest.getMessageQueue(),
-                            context.getSuspendCurrentQueueTimeMillis());
-                        context.setContinuable(false);
-                    } else {
-                        context.setCommitOffset(consumeRequest.getProcessQueue().commit());
-                    }
-                    break;
-                default:
-                    break;
-            }
+            processAutoCommitResult(msgs, status, context, consumeRequest);
         } else {
             switch (status) {
                 case SUCCESS:
