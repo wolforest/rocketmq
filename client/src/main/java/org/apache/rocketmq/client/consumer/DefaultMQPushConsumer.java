@@ -415,15 +415,21 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         this.namespace = namespace;
         this.allocateMessageQueueStrategy = allocateMessageQueueStrategy;
         defaultMQPushConsumerImpl = new DefaultMQPushConsumerImpl(this, rpcHook);
-        if (enableMsgTrace) {
-            try {
-                AsyncTraceDispatcher dispatcher = new AsyncTraceDispatcher(consumerGroup, TraceDispatcher.Type.CONSUME, customizedTraceTopic, rpcHook);
-                dispatcher.setHostConsumer(this.defaultMQPushConsumerImpl);
-                traceDispatcher = dispatcher;
-                this.defaultMQPushConsumerImpl.registerConsumeMessageHook(new ConsumeMessageTraceHookImpl(traceDispatcher));
-            } catch (Throwable e) {
-                log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
-            }
+        initMsgTrace(enableMsgTrace, customizedTraceTopic, rpcHook);
+    }
+
+    private void initMsgTrace(boolean enableMsgTrace, final String customizedTraceTopic, RPCHook rpcHook) {
+        if (!enableMsgTrace) {
+            return;
+        }
+
+        try {
+            AsyncTraceDispatcher dispatcher = new AsyncTraceDispatcher(consumerGroup, TraceDispatcher.Type.CONSUME, customizedTraceTopic, rpcHook);
+            dispatcher.setHostConsumer(this.defaultMQPushConsumerImpl);
+            traceDispatcher = dispatcher;
+            this.defaultMQPushConsumerImpl.registerConsumeMessageHook(new ConsumeMessageTraceHookImpl(traceDispatcher));
+        } catch (Throwable e) {
+            log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
         }
     }
 
