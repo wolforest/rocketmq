@@ -246,6 +246,31 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }
     }
 
+    public void processClusteringConsume(final ConsumeConcurrentlyContext context, final ConsumeRequest consumeRequest, int ackIndex) {
+        List<MessageExt> msgBackFailed = new ArrayList<>(consumeRequest.getMsgs().size());
+        for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {
+            MessageExt msg = consumeRequest.getMsgs().get(i);
+            // Maybe message is expired and cleaned, just ignore it.
+            if (!consumeRequest.getProcessQueue().containsMessage(msg)) {
+                log.info("Message is not found in its process queue; skip send-back-procedure, topic={}, "
+                        + "brokerName={}, queueId={}, queueOffset={}", msg.getTopic(), msg.getBrokerName(),
+                    msg.getQueueId(), msg.getQueueOffset());
+                continue;
+            }
+            boolean result = this.sendMessageBack(msg, context);
+            if (!result) {
+                msg.setReconsumeTimes(msg.getReconsumeTimes() + 1);
+                msgBackFailed.add(msg);
+            }
+        }
+
+        if (!msgBackFailed.isEmpty()) {
+            consumeRequest.getMsgs().removeAll(msgBackFailed);
+
+            this.submitConsumeRequestLater(msgBackFailed, consumeRequest.getProcessQueue(), consumeRequest.getMessageQueue());
+        }
+    }
+
     public void processConsumeResult( final ConsumeConcurrentlyStatus status, final ConsumeConcurrentlyContext context, final ConsumeRequest consumeRequest) {
         int ackIndex = context.getAckIndex();
 
@@ -268,33 +293,16 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 processBroadCastingConsume(consumeRequest, ackIndex);
                 break;
             case CLUSTERING:
-                List<MessageExt> msgBackFailed = new ArrayList<>(consumeRequest.getMsgs().size());
-                for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {
-                    MessageExt msg = consumeRequest.getMsgs().get(i);
-                    // Maybe message is expired and cleaned, just ignore it.
-                    if (!consumeRequest.getProcessQueue().containsMessage(msg)) {
-                        log.info("Message is not found in its process queue; skip send-back-procedure, topic={}, "
-                                + "brokerName={}, queueId={}, queueOffset={}", msg.getTopic(), msg.getBrokerName(),
-                            msg.getQueueId(), msg.getQueueOffset());
-                        continue;
-                    }
-                    boolean result = this.sendMessageBack(msg, context);
-                    if (!result) {
-                        msg.setReconsumeTimes(msg.getReconsumeTimes() + 1);
-                        msgBackFailed.add(msg);
-                    }
-                }
-
-                if (!msgBackFailed.isEmpty()) {
-                    consumeRequest.getMsgs().removeAll(msgBackFailed);
-
-                    this.submitConsumeRequestLater(msgBackFailed, consumeRequest.getProcessQueue(), consumeRequest.getMessageQueue());
-                }
+                processClusteringConsume(context, consumeRequest, ackIndex);
                 break;
             default:
                 break;
         }
 
+        updateOffsetAfterProcessConsume(consumeRequest);
+    }
+
+    private void updateOffsetAfterProcessConsume(ConsumeRequest consumeRequest) {
         long offset = consumeRequest.getProcessQueue().removeMessage(consumeRequest.getMsgs());
         if (offset >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
             this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), offset, true);
