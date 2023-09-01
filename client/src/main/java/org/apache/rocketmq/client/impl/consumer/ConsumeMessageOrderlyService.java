@@ -150,17 +150,12 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         List<MessageExt> msgs = new ArrayList<>();
         msgs.add(msg);
         MessageQueue mq = initMessageQueue(msg, brokerName);
-
         ConsumeOrderlyContext context = new ConsumeOrderlyContext(mq);
-        this.defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, this.consumerGroup);
-        final long beginTime = System.currentTimeMillis();
 
-        parseConsumeMessageDirectlyResult(result, msgs, mq, context);
-        result.setAutoCommit(context.isAutoCommit());
-        result.setSpentTimeMills(System.currentTimeMillis() - beginTime);
+        this.defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, this.consumerGroup);
+        consumeMessageDirectly(result, msgs, mq, context);
 
         log.info("consumeMessageDirectly Result: {}", result);
-
         return result;
     }
 
@@ -173,7 +168,9 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         return mq;
     }
 
-    private void parseConsumeMessageDirectlyResult(ConsumeMessageDirectlyResult result, List<MessageExt> msgs, MessageQueue mq, ConsumeOrderlyContext context) {
+    private void consumeMessageDirectly(ConsumeMessageDirectlyResult result, List<MessageExt> msgs, MessageQueue mq, ConsumeOrderlyContext context) {
+        final long beginTime = System.currentTimeMillis();
+
         try {
             ConsumeOrderlyStatus status = this.messageListener.consumeMessage(msgs, context);
             if (status != null) {
@@ -191,6 +188,9 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 msgs,
                 mq), e);
         }
+
+        result.setAutoCommit(context.isAutoCommit());
+        result.setSpentTimeMills(System.currentTimeMillis() - beginTime);
     }
 
     private void statusToConsumeMessageDirectlyResult(ConsumeMessageDirectlyResult result, ConsumeOrderlyStatus status) {
