@@ -529,7 +529,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                     this.processQueue.getConsumeLock().unlock();
                 }
 
-                ConsumeMessageContext consumeMessageContext = initConsumeMessageContext(msgs);
+                ConsumeMessageContext consumeMessageContext = executeHookBefore(msgs);
                 status = runAfterConsume(consumeMessageContext, status, msgs, hasException);
                 continueConsume = ConsumeMessageOrderlyService.this.processConsumeResult(msgs, status, context, this);
             }
@@ -584,14 +584,14 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             return false;
         }
 
-        private ConsumeMessageContext initConsumeMessageContext(List<MessageExt> msgs) {
+        private ConsumeMessageContext executeHookBefore(List<MessageExt> msgs) {
             ConsumeMessageContext consumeMessageContext = null;
             if (!ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
                 return null;
             }
 
             consumeMessageContext = new ConsumeMessageContext();
-            consumeMessageContext .setConsumerGroup(ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumerGroup());
+            consumeMessageContext.setConsumerGroup(ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumerGroup());
             consumeMessageContext.setNamespace(defaultMQPushConsumer.getNamespace());
             consumeMessageContext.setMq(messageQueue);
             consumeMessageContext.setMsgList(msgs);
