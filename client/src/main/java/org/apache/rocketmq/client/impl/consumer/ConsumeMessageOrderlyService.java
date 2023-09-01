@@ -526,7 +526,6 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 ConsumeMessageContext consumeMessageContext = initConsumeMessageContext(msgs);
 
                 long beginTimestamp = System.currentTimeMillis();
-                ConsumeReturnType returnType = ConsumeReturnType.SUCCESS;
                 boolean hasException = false;
                 try {
                     this.processQueue.getConsumeLock().lock();
@@ -558,19 +557,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 }
 
                 long consumeRT = System.currentTimeMillis() - beginTimestamp;
-                if (null == status) {
-                    if (hasException) {
-                        returnType = ConsumeReturnType.EXCEPTION;
-                    } else {
-                        returnType = ConsumeReturnType.RETURNNULL;
-                    }
-                } else if (consumeRT >= defaultMQPushConsumer.getConsumeTimeout() * 60 * 1000) {
-                    returnType = ConsumeReturnType.TIME_OUT;
-                } else if (ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT == status) {
-                    returnType = ConsumeReturnType.FAILED;
-                } else if (ConsumeOrderlyStatus.SUCCESS == status) {
-                    returnType = ConsumeReturnType.SUCCESS;
-                }
+                ConsumeReturnType returnType = getConsumeReturnType(consumeRT, hasException, status);
 
                 if (ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
                     consumeMessageContext.getProps().put(MixAll.CONSUME_CONTEXT_TYPE, returnType.name());
@@ -580,15 +567,31 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                     status = ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
                 }
 
-
                 executeHookAfter(consumeMessageContext, status);
-
-                ConsumeMessageOrderlyService.this.getConsumerStatsManager()
-                    .incConsumeRT(ConsumeMessageOrderlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
+                ConsumeMessageOrderlyService.this.getConsumerStatsManager().incConsumeRT(ConsumeMessageOrderlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
 
                 continueConsume = ConsumeMessageOrderlyService.this.processConsumeResult(msgs, status, context, this);
             }
 
+        }
+
+        private ConsumeReturnType getConsumeReturnType(long consumeRT, boolean hasException, ConsumeOrderlyStatus status) {
+            ConsumeReturnType returnType = ConsumeReturnType.SUCCESS;
+            if (null == status) {
+                if (hasException) {
+                    returnType = ConsumeReturnType.EXCEPTION;
+                } else {
+                    returnType = ConsumeReturnType.RETURNNULL;
+                }
+            } else if (consumeRT >= defaultMQPushConsumer.getConsumeTimeout() * 60 * 1000) {
+                returnType = ConsumeReturnType.TIME_OUT;
+            } else if (ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT == status) {
+                returnType = ConsumeReturnType.FAILED;
+            } else if (ConsumeOrderlyStatus.SUCCESS == status) {
+                returnType = ConsumeReturnType.SUCCESS;
+            }
+
+            return returnType;
         }
 
         private void executeHookAfter(ConsumeMessageContext consumeMessageContext, ConsumeOrderlyStatus status) {
