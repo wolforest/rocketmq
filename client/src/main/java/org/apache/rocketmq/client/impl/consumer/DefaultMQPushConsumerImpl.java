@@ -881,19 +881,23 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             case CREATE_JUST:
                 break;
             case RUNNING:
-                this.consumeMessageService.shutdown(awaitTerminateMillis);
-                this.persistConsumerOffset();
-                this.mQClientFactory.unregisterConsumer(this.defaultMQPushConsumer.getConsumerGroup());
-                this.mQClientFactory.shutdown();
-                log.info("the consumer [{}] shutdown OK", this.defaultMQPushConsumer.getConsumerGroup());
-                this.rebalanceImpl.destroy();
-                this.serviceState = ServiceState.SHUTDOWN_ALREADY;
+                shutdownWhileRunning(awaitTerminateMillis);
                 break;
             case SHUTDOWN_ALREADY:
                 break;
             default:
                 break;
         }
+    }
+
+    private void shutdownWhileRunning(long awaitTerminateMillis) {
+        this.consumeMessageService.shutdown(awaitTerminateMillis);
+        this.persistConsumerOffset();
+        this.mQClientFactory.unregisterConsumer(this.defaultMQPushConsumer.getConsumerGroup());
+        this.mQClientFactory.shutdown();
+        log.info("the consumer [{}] shutdown OK", this.defaultMQPushConsumer.getConsumerGroup());
+        this.rebalanceImpl.destroy();
+        this.serviceState = ServiceState.SHUTDOWN_ALREADY;
     }
 
     public synchronized void start() throws MQClientException {
