@@ -56,7 +56,7 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
     private final DefaultMQPushConsumer defaultMQPushConsumer;
     private final MessageListenerConcurrently messageListener;
     private final BlockingQueue<Runnable> consumeRequestQueue;
-    private final ThreadPoolExecutor consumeExecutor;
+    private ThreadPoolExecutor consumeExecutor;
     private final String consumerGroup;
 
     private final ScheduledExecutorService scheduledExecutorService;
@@ -70,6 +70,11 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
         this.consumerGroup = this.defaultMQPushConsumer.getConsumerGroup();
         this.consumeRequestQueue = new LinkedBlockingQueue<>();
 
+        initConsumeExecutor();
+        this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("ConsumeMessageScheduledThread_"));
+    }
+
+    private void initConsumeExecutor() {
         this.consumeExecutor = new ThreadPoolExecutor(
             this.defaultMQPushConsumer.getConsumeThreadMin(),
             this.defaultMQPushConsumer.getConsumeThreadMax(),
@@ -77,8 +82,6 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
             TimeUnit.MILLISECONDS,
             this.consumeRequestQueue,
             new ThreadFactoryImpl("ConsumeMessageThread_"));
-
-        this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("ConsumeMessageScheduledThread_"));
     }
 
     public void start() {
