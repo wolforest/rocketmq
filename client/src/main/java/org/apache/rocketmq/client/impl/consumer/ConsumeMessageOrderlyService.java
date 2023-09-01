@@ -480,6 +480,14 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
         }
 
+        private List<MessageExt> takeMessages() {
+            final int consumeBatchSize = ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();
+            List<MessageExt> msgs = this.processQueue.takeMessages(consumeBatchSize);
+            defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, defaultMQPushConsumer.getConsumerGroup());
+
+            return msgs;
+        }
+
         private void runWithLock() {
             final long beginTime = System.currentTimeMillis();
             for (boolean continueConsume = true; continueConsume; ) {
@@ -488,10 +496,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 if (isLockExpired()) break;
                 if (isTimeout(beginTime)) break;
 
-                final int consumeBatchSize = ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();
-                List<MessageExt> msgs = this.processQueue.takeMessages(consumeBatchSize);
-                defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, defaultMQPushConsumer.getConsumerGroup());
-
+                List<MessageExt> msgs = takeMessages();
                 if (msgs.isEmpty()) {
                     continueConsume = false;
                     continue;
