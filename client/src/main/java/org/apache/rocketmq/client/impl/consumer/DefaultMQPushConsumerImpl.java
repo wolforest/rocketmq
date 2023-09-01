@@ -1399,10 +1399,12 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     @Override
     public boolean isSubscribeTopicNeedUpdate(String topic) {
         Map<String, SubscriptionData> subTable = this.getSubscriptionInner();
-        if (subTable != null) {
-            if (subTable.containsKey(topic)) {
-                return !this.rebalanceImpl.topicSubscribeInfoTable.containsKey(topic);
-            }
+        if (subTable == null) {
+            return false;
+        }
+
+        if (subTable.containsKey(topic)) {
+            return !this.rebalanceImpl.topicSubscribeInfoTable.containsKey(topic);
         }
 
         return false;
