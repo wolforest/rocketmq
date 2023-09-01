@@ -341,19 +341,25 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 context.setContinuable(false);
                 break;
             case SUSPEND_CURRENT_QUEUE_A_MOMENT:
-                this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
-                if (checkReconsumeTimes(msgs)) {
-                    consumeRequest.getProcessQueue().makeMessageToConsumeAgain(msgs);
-                    this.submitConsumeRequestLater(
-                        consumeRequest.getProcessQueue(),
-                        consumeRequest.getMessageQueue(),
-                        context.getSuspendCurrentQueueTimeMillis());
-                    context.setContinuable(false);
-                }
+                suspendManuallyCommitResult(msgs, context, consumeRequest);
                 break;
             default:
                 break;
         }
+    }
+
+    private void suspendManuallyCommitResult(final List<MessageExt> msgs, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
+        this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
+        if (!checkReconsumeTimes(msgs)) {
+            return;
+        }
+
+        consumeRequest.getProcessQueue().makeMessageToConsumeAgain(msgs);
+        this.submitConsumeRequestLater(
+            consumeRequest.getProcessQueue(),
+            consumeRequest.getMessageQueue(),
+            context.getSuspendCurrentQueueTimeMillis());
+        context.setContinuable(false);
     }
 
     public ConsumerStatsManager getConsumerStatsManager() {
