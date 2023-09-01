@@ -741,12 +741,18 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     public void start() throws MQClientException {
         setConsumerGroup(NamespaceUtil.wrapNamespace(this.getNamespace(), this.consumerGroup));
         this.defaultMQPushConsumerImpl.start();
-        if (null != traceDispatcher) {
-            try {
-                traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());
-            } catch (MQClientException e) {
-                log.warn("trace dispatcher start failed ", e);
-            }
+        startTraceDispatcher();
+    }
+
+    private void startTraceDispatcher() {
+        if (null == traceDispatcher) {
+            return;
+        }
+
+        try {
+            traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());
+        } catch (MQClientException e) {
+            log.warn("trace dispatcher start failed ", e);
         }
     }
 
