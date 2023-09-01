@@ -1415,8 +1415,23 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         return this.defaultMQPushConsumer.isUnitMode();
     }
 
+
+
     @Override
     public ConsumerRunningInfo consumerRunningInfo() {
+        ConsumerRunningInfo info = initConsumerRunningInfo();
+
+        Set<SubscriptionData> subSet = this.subscriptions();
+        info.getSubscriptionSet().addAll(subSet);
+
+        parseProcessQueueTable(info);
+        parsePopProcessQueueTable(info);
+        parseConsumeStatus(info, subSet);
+
+        return info;
+    }
+
+    public ConsumerRunningInfo initConsumerRunningInfo() {
         ConsumerRunningInfo info = new ConsumerRunningInfo();
 
         Properties prop = MixAll.object2Properties(this.defaultMQPushConsumer);
@@ -1426,12 +1441,11 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
         info.setProperties(prop);
 
-        Set<SubscriptionData> subSet = this.subscriptions();
-        info.getSubscriptionSet().addAll(subSet);
+        return info;
+    }
 
-        Iterator<Entry<MessageQueue, ProcessQueue>> it = this.rebalanceImpl.getProcessQueueTable().entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<MessageQueue, ProcessQueue> next = it.next();
+    private void parseProcessQueueTable(ConsumerRunningInfo info) {
+        for (Entry<MessageQueue, ProcessQueue> next : this.rebalanceImpl.getProcessQueueTable().entrySet()) {
             MessageQueue mq = next.getKey();
             ProcessQueue pq = next.getValue();
 
@@ -1440,10 +1454,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             pq.fillProcessQueueInfo(pqinfo);
             info.getMqTable().put(mq, pqinfo);
         }
+    }
 
-        Iterator<Entry<MessageQueue, PopProcessQueue>> popIt = this.rebalanceImpl.getPopProcessQueueTable().entrySet().iterator();
-        while (popIt.hasNext()) {
-            Entry<MessageQueue, PopProcessQueue> next = popIt.next();
+    private void parsePopProcessQueueTable(ConsumerRunningInfo info) {
+        for (Entry<MessageQueue, PopProcessQueue> next : this.rebalanceImpl.getPopProcessQueueTable().entrySet()) {
             MessageQueue mq = next.getKey();
             PopProcessQueue pq = next.getValue();
 
@@ -1451,13 +1465,13 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             pq.fillPopProcessQueueInfo(pqinfo);
             info.getMqPopTable().put(mq, pqinfo);
         }
+    }
 
+    private void parseConsumeStatus(ConsumerRunningInfo info, Set<SubscriptionData> subSet) {
         for (SubscriptionData sd : subSet) {
             ConsumeStatus consumeStatus = this.mQClientFactory.getConsumerStatsManager().consumeStatus(this.groupName(), sd.getTopic());
             info.getStatusTable().put(sd.getTopic(), consumeStatus);
         }
-
-        return info;
     }
 
     public MQClientInstance getmQClientFactory() {
