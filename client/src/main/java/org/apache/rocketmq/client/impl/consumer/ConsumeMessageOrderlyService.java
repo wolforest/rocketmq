@@ -480,13 +480,6 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
         }
 
-        private List<MessageExt> takeMessages() {
-            final int consumeBatchSize = ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();
-            List<MessageExt> msgs = this.processQueue.takeMessages(consumeBatchSize);
-            defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, defaultMQPushConsumer.getConsumerGroup());
-
-            return msgs;
-        }
 
         private ConsumeMessageContext initConsumeMessageContext(List<MessageExt> msgs) {
             ConsumeMessageContext consumeMessageContext = null;
@@ -547,27 +540,15 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                     this.processQueue.getConsumeLock().unlock();
                 }
 
-                if (null == status
-                    || ConsumeOrderlyStatus.ROLLBACK == status
-                    || ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT == status) {
-                    log.warn("consumeMessage Orderly return not OK, Group: {} Msgs: {} MQ: {}",
-                        ConsumeMessageOrderlyService.this.consumerGroup,
-                        msgs,
-                        messageQueue);
-                }
+                logErrorStatus(status, msgs);
 
                 long consumeRT = System.currentTimeMillis() - beginTimestamp;
                 ConsumeReturnType returnType = getConsumeReturnType(consumeRT, hasException, status);
-
-                if (ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
-                    consumeMessageContext.getProps().put(MixAll.CONSUME_CONTEXT_TYPE, returnType.name());
-                }
-
                 if (null == status) {
                     status = ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
                 }
 
-                executeHookAfter(consumeMessageContext, status);
+                executeHookAfter(consumeMessageContext, status, returnType);
                 ConsumeMessageOrderlyService.this.getConsumerStatsManager().incConsumeRT(ConsumeMessageOrderlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
 
                 continueConsume = ConsumeMessageOrderlyService.this.processConsumeResult(msgs, status, context, this);
@@ -575,35 +556,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
 
         }
 
-        private ConsumeReturnType getConsumeReturnType(long consumeRT, boolean hasException, ConsumeOrderlyStatus status) {
-            ConsumeReturnType returnType = ConsumeReturnType.SUCCESS;
-            if (null == status) {
-                if (hasException) {
-                    returnType = ConsumeReturnType.EXCEPTION;
-                } else {
-                    returnType = ConsumeReturnType.RETURNNULL;
-                }
-            } else if (consumeRT >= defaultMQPushConsumer.getConsumeTimeout() * 60 * 1000) {
-                returnType = ConsumeReturnType.TIME_OUT;
-            } else if (ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT == status) {
-                returnType = ConsumeReturnType.FAILED;
-            } else if (ConsumeOrderlyStatus.SUCCESS == status) {
-                returnType = ConsumeReturnType.SUCCESS;
-            }
 
-            return returnType;
-        }
-
-        private void executeHookAfter(ConsumeMessageContext consumeMessageContext, ConsumeOrderlyStatus status) {
-            if (!ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
-                return;
-            }
-
-            consumeMessageContext.setStatus(status.toString());
-            consumeMessageContext.setSuccess(ConsumeOrderlyStatus.SUCCESS == status || ConsumeOrderlyStatus.COMMIT == status);
-            consumeMessageContext.setAccessChannel(defaultMQPushConsumer.getAccessChannel());
-            ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.executeHookAfter(consumeMessageContext);
-        }
 
         private boolean isDropped() {
             if (this.processQueue.isDropped()) {
@@ -643,6 +596,58 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
 
             return false;
         }
+
+        private List<MessageExt> takeMessages() {
+            final int consumeBatchSize = ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();
+            List<MessageExt> msgs = this.processQueue.takeMessages(consumeBatchSize);
+            defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, defaultMQPushConsumer.getConsumerGroup());
+
+            return msgs;
+        }
+
+        private void logErrorStatus(ConsumeOrderlyStatus status, List<MessageExt> msgs) {
+            if (null == status
+                || ConsumeOrderlyStatus.ROLLBACK == status
+                || ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT == status) {
+                log.warn("consumeMessage Orderly return not OK, Group: {} Msgs: {} MQ: {}",
+                    ConsumeMessageOrderlyService.this.consumerGroup,
+                    msgs,
+                    messageQueue);
+            }
+        }
+
+        private ConsumeReturnType getConsumeReturnType(long consumeRT, boolean hasException, ConsumeOrderlyStatus status) {
+            ConsumeReturnType returnType = ConsumeReturnType.SUCCESS;
+            if (null == status) {
+                if (hasException) {
+                    returnType = ConsumeReturnType.EXCEPTION;
+                } else {
+                    returnType = ConsumeReturnType.RETURNNULL;
+                }
+            } else if (consumeRT >= defaultMQPushConsumer.getConsumeTimeout() * 60 * 1000) {
+                returnType = ConsumeReturnType.TIME_OUT;
+            } else if (ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT == status) {
+                returnType = ConsumeReturnType.FAILED;
+            } else if (ConsumeOrderlyStatus.SUCCESS == status) {
+                returnType = ConsumeReturnType.SUCCESS;
+            }
+
+            return returnType;
+        }
+
+        private void executeHookAfter(ConsumeMessageContext consumeMessageContext, ConsumeOrderlyStatus status, ConsumeReturnType returnType) {
+            if (!ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
+                return;
+            }
+
+            consumeMessageContext.getProps().put(MixAll.CONSUME_CONTEXT_TYPE, returnType.name());
+
+            consumeMessageContext.setStatus(status.toString());
+            consumeMessageContext.setSuccess(ConsumeOrderlyStatus.SUCCESS == status || ConsumeOrderlyStatus.COMMIT == status);
+            consumeMessageContext.setAccessChannel(defaultMQPushConsumer.getAccessChannel());
+            ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.executeHookAfter(consumeMessageContext);
+        }
+
 
     }
 
