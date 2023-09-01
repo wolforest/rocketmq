@@ -274,8 +274,24 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
         }, timeMillis, TimeUnit.MILLISECONDS);
     }
+    
+    public boolean processConsumeResult(final List<MessageExt> msgs, final ConsumeOrderlyStatus status, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
+        context.setContinuable(true);
+        context.setCommitOffset(-1L);
+        if (context.isAutoCommit()) {
+            processAutoCommitResult(msgs, status, context, consumeRequest);
+        } else {
+            processManuallyCommitResult(msgs, status, context, consumeRequest);
+        }
 
-    public void processAutoCommitResult(final List<MessageExt> msgs, final ConsumeOrderlyStatus status, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
+        if (context.getCommitOffset() >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
+            this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), context.getCommitOffset(), false);
+        }
+
+        return context.isContinuable();
+    }
+
+    private void processAutoCommitResult(final List<MessageExt> msgs, final ConsumeOrderlyStatus status, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
         switch (status) {
             case COMMIT:
             case ROLLBACK:
@@ -303,48 +319,36 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         }
     }
 
-    public boolean processConsumeResult(final List<MessageExt> msgs, final ConsumeOrderlyStatus status, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
-        context.setContinuable(true);
-        context.setCommitOffset(-1L);
-        if (context.isAutoCommit()) {
-            processAutoCommitResult(msgs, status, context, consumeRequest);
-        } else {
-            switch (status) {
-                case SUCCESS:
-                    this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
-                    break;
-                case COMMIT:
-                    context.setCommitOffset(consumeRequest.getProcessQueue().commit());
-                    break;
-                case ROLLBACK:
-                    consumeRequest.getProcessQueue().rollback();
+    private void processManuallyCommitResult(final List<MessageExt> msgs, final ConsumeOrderlyStatus status, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
+        switch (status) {
+            case SUCCESS:
+                this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
+                break;
+            case COMMIT:
+                context.setCommitOffset(consumeRequest.getProcessQueue().commit());
+                break;
+            case ROLLBACK:
+                consumeRequest.getProcessQueue().rollback();
+                this.submitConsumeRequestLater(
+                    consumeRequest.getProcessQueue(),
+                    consumeRequest.getMessageQueue(),
+                    context.getSuspendCurrentQueueTimeMillis());
+                context.setContinuable(false);
+                break;
+            case SUSPEND_CURRENT_QUEUE_A_MOMENT:
+                this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
+                if (checkReconsumeTimes(msgs)) {
+                    consumeRequest.getProcessQueue().makeMessageToConsumeAgain(msgs);
                     this.submitConsumeRequestLater(
                         consumeRequest.getProcessQueue(),
                         consumeRequest.getMessageQueue(),
                         context.getSuspendCurrentQueueTimeMillis());
                     context.setContinuable(false);
-                    break;
-                case SUSPEND_CURRENT_QUEUE_A_MOMENT:
-                    this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), msgs.size());
-                    if (checkReconsumeTimes(msgs)) {
-                        consumeRequest.getProcessQueue().makeMessageToConsumeAgain(msgs);
-                        this.submitConsumeRequestLater(
-                            consumeRequest.getProcessQueue(),
-                            consumeRequest.getMessageQueue(),
-                            context.getSuspendCurrentQueueTimeMillis());
-                        context.setContinuable(false);
-                    }
-                    break;
-                default:
-                    break;
-            }
+                }
+                break;
+            default:
+                break;
         }
-
-        if (context.getCommitOffset() >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
-            this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), context.getCommitOffset(), false);
-        }
-
-        return context.isContinuable();
     }
 
     public ConsumerStatsManager getConsumerStatsManager() {
