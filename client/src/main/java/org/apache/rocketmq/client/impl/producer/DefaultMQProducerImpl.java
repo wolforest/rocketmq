@@ -258,7 +258,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     public void start(final boolean startFactory) throws MQClientException {
         switch (this.serviceState) {
             case CREATE_JUST:
-                startService(startFactory);
+                startAfterCreation(startFactory);
                 break;
             case RUNNING:
             case START_FAILED:
@@ -275,7 +275,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         RequestFutureHolder.getInstance().startScheduledTask(this);
     }
 
-    private void startService(final boolean startFactory) throws MQClientException {
+    private void startAfterCreation(final boolean startFactory) throws MQClientException {
         this.serviceState = ServiceState.START_FAILED;
 
         this.checkConfig();
