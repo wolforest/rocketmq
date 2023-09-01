@@ -970,6 +970,16 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
         this.offsetStore.load();
 
+
+        startMessageService();
+        checkRegisterStatus();
+
+        mQClientFactory.start();
+        log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
+        this.serviceState = ServiceState.RUNNING;
+    }
+
+    private void startMessageService() {
         if (this.getMessageListenerInner() instanceof MessageListenerOrderly) {
             this.consumeOrderly = true;
             this.consumeMessageService =
@@ -988,12 +998,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         this.consumeMessageService.start();
         // POPTODO
         this.consumeMessagePopService.start();
-
-        checkRegisterStatus();
-
-        mQClientFactory.start();
-        log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
-        this.serviceState = ServiceState.RUNNING;
     }
 
     private void checkRegisterStatus() throws MQClientException {
