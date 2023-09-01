@@ -522,19 +522,11 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 boolean hasException = false;
                 try {
                     this.processQueue.getConsumeLock().lock();
-                    if (this.processQueue.isDropped()) {
-                        log.warn("consumeMessage, the message queue not be able to consume, because it's dropped. {}",
-                            this.messageQueue);
-                        break;
-                    }
+                    if (isDropped()) break;
 
                     status = messageListener.consumeMessage(Collections.unmodifiableList(msgs), context);
                 } catch (Throwable e) {
-                    log.warn(String.format("consumeMessage exception: %s Group: %s Msgs: %s MQ: %s",
-                        UtilAll.exceptionSimpleDesc(e),
-                        ConsumeMessageOrderlyService.this.consumerGroup,
-                        msgs,
-                        messageQueue), e);
+                    logConsumeException(e, msgs);
                     hasException = true;
                 } finally {
                     this.processQueue.getConsumeLock().unlock();
@@ -555,8 +547,6 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
 
         }
-
-
 
         private boolean isDropped() {
             if (this.processQueue.isDropped()) {
@@ -603,6 +593,14 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, defaultMQPushConsumer.getConsumerGroup());
 
             return msgs;
+        }
+
+        private void logConsumeException(Throwable e, List<MessageExt> msgs) {
+            log.warn(String.format("consumeMessage exception: %s Group: %s Msgs: %s MQ: %s",
+                UtilAll.exceptionSimpleDesc(e),
+                ConsumeMessageOrderlyService.this.consumerGroup,
+                msgs,
+                messageQueue), e);
         }
 
         private void logErrorStatus(ConsumeOrderlyStatus status, List<MessageExt> msgs) {
