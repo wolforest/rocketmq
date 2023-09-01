@@ -146,9 +146,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         log.info("consumeMessageDirectly receive new message: {}", msg);
 
         ConsumeMessageDirectlyResult result = initConsumeMessageDirectlyResult();
-
-        List<MessageExt> msgs = new ArrayList<>();
-        msgs.add(msg);
+        List<MessageExt> msgs = initMsgs(msg);
         MessageQueue mq = initMessageQueue(msg, brokerName);
         ConsumeOrderlyContext context = new ConsumeOrderlyContext(mq);
 
@@ -164,6 +162,13 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         result.setOrder(true);
 
         return result;
+    }
+
+    private List<MessageExt> initMsgs(MessageExt msg) {
+        List<MessageExt> msgs = new ArrayList<>();
+        msgs.add(msg);
+
+        return msgs;
     }
 
     private MessageQueue initMessageQueue(MessageExt msg, String brokerName) {
