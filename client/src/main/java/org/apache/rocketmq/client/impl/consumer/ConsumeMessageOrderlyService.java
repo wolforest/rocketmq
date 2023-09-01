@@ -255,6 +255,17 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         final MessageQueue messageQueue,
         final long suspendTimeMillis
     ) {
+        long timeMillis = getSuspendTimeMillis(suspendTimeMillis);
+
+        this.scheduledExecutorService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                ConsumeMessageOrderlyService.this.submitConsumeRequest(null, processQueue, messageQueue, true);
+            }
+        }, timeMillis, TimeUnit.MILLISECONDS);
+    }
+
+    private long getSuspendTimeMillis(final long suspendTimeMillis) {
         long timeMillis = suspendTimeMillis;
         if (timeMillis == -1) {
             timeMillis = this.defaultMQPushConsumer.getSuspendCurrentQueueTimeMillis();
@@ -266,13 +277,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             timeMillis = 30000;
         }
 
-        this.scheduledExecutorService.schedule(new Runnable() {
-
-            @Override
-            public void run() {
-                ConsumeMessageOrderlyService.this.submitConsumeRequest(null, processQueue, messageQueue, true);
-            }
-        }, timeMillis, TimeUnit.MILLISECONDS);
+        return timeMillis;
     }
 
     public boolean processConsumeResult(final List<MessageExt> msgs, final ConsumeOrderlyStatus status, final ConsumeOrderlyContext context, final ConsumeRequest consumeRequest) {
