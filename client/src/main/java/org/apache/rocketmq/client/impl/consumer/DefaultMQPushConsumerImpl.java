@@ -941,15 +941,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
         this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
 
-        this.rebalanceImpl.setConsumerGroup(this.defaultMQPushConsumer.getConsumerGroup());
-        this.rebalanceImpl.setMessageModel(this.defaultMQPushConsumer.getMessageModel());
-        this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());
-        this.rebalanceImpl.setmQClientFactory(this.mQClientFactory);
-
-
-
-
-
+        initRebalanceImpl();
         initPullAPIWrapper();
         loadOffsetStore();
         startMessageService();
@@ -958,6 +950,13 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         mQClientFactory.start();
         log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
         this.serviceState = ServiceState.RUNNING;
+    }
+
+    private void initRebalanceImpl() {
+        this.rebalanceImpl.setConsumerGroup(this.defaultMQPushConsumer.getConsumerGroup());
+        this.rebalanceImpl.setMessageModel(this.defaultMQPushConsumer.getMessageModel());
+        this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());
+        this.rebalanceImpl.setmQClientFactory(this.mQClientFactory);
     }
 
     private void initPullAPIWrapper() {
