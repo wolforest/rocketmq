@@ -90,18 +90,20 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
     }
 
     public void start() {
-        if (MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())) {
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        ConsumeMessageOrderlyService.this.lockMQPeriodically();
-                    } catch (Throwable e) {
-                        log.error("scheduleAtFixedRate lockMQPeriodically exception", e);
-                    }
-                }
-            }, 1000 * 1, ProcessQueue.REBALANCE_LOCK_INTERVAL, TimeUnit.MILLISECONDS);
+        if (!MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())) {
+            return;
         }
+
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ConsumeMessageOrderlyService.this.lockMQPeriodically();
+                } catch (Throwable e) {
+                    log.error("scheduleAtFixedRate lockMQPeriodically exception", e);
+                }
+            }
+        }, 1000 * 1, ProcessQueue.REBALANCE_LOCK_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
     public void shutdown(long awaitTerminateMillis) {
