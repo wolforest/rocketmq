@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -1181,33 +1180,47 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
     private void copySubscription() throws MQClientException {
         try {
-            Map<String, String> sub = this.defaultMQPushConsumer.getSubscription();
-            if (sub != null) {
-                for (final Map.Entry<String, String> entry : sub.entrySet()) {
-                    final String topic = entry.getKey();
-                    final String subString = entry.getValue();
-                    SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(topic, subString);
-                    this.rebalanceImpl.getSubscriptionInner().put(topic, subscriptionData);
-                }
-            }
-
-            if (null == this.messageListenerInner) {
-                this.messageListenerInner = this.defaultMQPushConsumer.getMessageListener();
-            }
-
-            switch (this.defaultMQPushConsumer.getMessageModel()) {
-                case BROADCASTING:
-                    break;
-                case CLUSTERING:
-                    final String retryTopic = MixAll.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup());
-                    SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(retryTopic, SubscriptionData.SUB_ALL);
-                    this.rebalanceImpl.getSubscriptionInner().put(retryTopic, subscriptionData);
-                    break;
-                default:
-                    break;
-            }
+            copyTopicSubscription();
+            resetMessageListenerInner();
+            copyRetryTopicSubscription();
         } catch (Exception e) {
             throw new MQClientException("subscription exception", e);
+        }
+    }
+
+    private void copyTopicSubscription() throws Exception {
+        Map<String, String> sub = this.defaultMQPushConsumer.getSubscription();
+        if (sub == null) {
+            return;
+        }
+
+        for (final Map.Entry<String, String> entry : sub.entrySet()) {
+            final String topic = entry.getKey();
+            final String subString = entry.getValue();
+            SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(topic, subString);
+            this.rebalanceImpl.getSubscriptionInner().put(topic, subscriptionData);
+        }
+    }
+
+    private void resetMessageListenerInner() {
+        if (null != this.messageListenerInner) {
+            return;
+        }
+
+        this.messageListenerInner = this.defaultMQPushConsumer.getMessageListener();
+    }
+
+    private void copyRetryTopicSubscription() throws Exception {
+        switch (this.defaultMQPushConsumer.getMessageModel()) {
+            case BROADCASTING:
+                break;
+            case CLUSTERING:
+                final String retryTopic = MixAll.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup());
+                SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(retryTopic, SubscriptionData.SUB_ALL);
+                this.rebalanceImpl.getSubscriptionInner().put(retryTopic, subscriptionData);
+                break;
+            default:
+                break;
         }
     }
 
