@@ -488,20 +488,21 @@ public class MQClientInstance {
     }
 
     public void sendHeartbeatToAllBrokerWithLock() {
-        if (this.lockHeartbeat.tryLock()) {
-            try {
-                if (clientConfig.isUseHeartbeatV2()) {
-                    this.sendHeartbeatToAllBrokerV2(false);
-                } else {
-                    this.sendHeartbeatToAllBroker();
-                }
-            } catch (final Exception e) {
-                log.error("sendHeartbeatToAllBroker exception", e);
-            } finally {
-                this.lockHeartbeat.unlock();
-            }
-        } else {
+        if (!this.lockHeartbeat.tryLock()) {
             log.warn("lock heartBeat, but failed. [{}]", this.clientId);
+            return;
+        }
+
+        try {
+            if (clientConfig.isUseHeartbeatV2()) {
+                this.sendHeartbeatToAllBrokerV2(false);
+            } else {
+                this.sendHeartbeatToAllBroker();
+            }
+        } catch (final Exception e) {
+            log.error("sendHeartbeatToAllBroker exception", e);
+        } finally {
+            this.lockHeartbeat.unlock();
         }
     }
 
