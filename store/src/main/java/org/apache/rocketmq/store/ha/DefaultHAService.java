@@ -97,10 +97,8 @@ public class DefaultHAService implements HAService {
     @Override
     public boolean isSlaveOK(final long masterPutWhere) {
         boolean result = this.connectionCount.get() > 0;
-        result =
-            result
-                && masterPutWhere - this.push2SlaveMaxOffset.get() < this.defaultMessageStore
-                .getMessageStoreConfig().getHaMaxGapNotInSync();
+        int haMaxGapNotInSync = this.defaultMessageStore.getMessageStoreConfig().getHaMaxGapNotInSync();
+        result = result && masterPutWhere - this.push2SlaveMaxOffset.get() < haMaxGapNotInSync;
         return result;
     }
 
@@ -180,6 +178,11 @@ public class DefaultHAService implements HAService {
         return push2SlaveMaxOffset;
     }
 
+    /**
+     * Calculate how many slaves are currently in sync with the master
+     * @param masterPutWhere long
+     * @return int
+     */
     @Override
     public int inSyncReplicasNums(final long masterPutWhere) {
         int inSyncNums = 1;
@@ -191,6 +194,12 @@ public class DefaultHAService implements HAService {
         return inSyncNums;
     }
 
+    /**
+     * Check whether the specified slave is in sync with the master.
+     * @param masterPutWhere long
+     * @param conn {@link HAConnection}
+     * @return boolean
+     */
     protected boolean isInSyncSlave(final long masterPutWhere, HAConnection conn) {
         if (masterPutWhere - conn.getSlaveAckOffset() < this.defaultMessageStore.getMessageStoreConfig()
             .getHaMaxGapNotInSync()) {
@@ -339,31 +348,34 @@ public class DefaultHAService implements HAService {
                 try {
                     this.selector.select(1000);
                     Set<SelectionKey> selected = this.selector.selectedKeys();
-
-                    if (selected != null) {
-                        for (SelectionKey k : selected) {
-                            if (k.isAcceptable()) {
-                                SocketChannel sc = ((ServerSocketChannel) k.channel()).accept();
-
-                                if (sc != null) {
-                                    DefaultHAService.log.info("HAService receive new connection, "
-                                        + sc.socket().getRemoteSocketAddress());
-                                    try {
-                                        HAConnection conn = createConnection(sc);
-                                        conn.start();
-                                        DefaultHAService.this.addConnection(conn);
-                                    } catch (Exception e) {
-                                        log.error("new HAConnection exception", e);
-                                        sc.close();
-                                    }
-                                }
-                            } else {
-                                log.warn("Unexpected ops in select " + k.readyOps());
-                            }
-                        }
-
-                        selected.clear();
+                    if (null == selected) {
+                        continue;
                     }
+
+                    for (SelectionKey k : selected) {
+                        if (k.isAcceptable()) {
+                            SocketChannel sc = ((ServerSocketChannel) k.channel()).accept();
+
+                            if (null == sc) {
+                                continue;
+                            }
+
+                            DefaultHAService.log.info("HAService receive new connection, "
+                                + sc.socket().getRemoteSocketAddress());
+                            try {
+                                HAConnection conn = createConnection(sc);
+                                conn.start();
+                                DefaultHAService.this.addConnection(conn);
+                            } catch (Exception e) {
+                                log.error("new HAConnection exception", e);
+                                sc.close();
+                            }
+                        } else {
+                            log.warn("Unexpected ops in select " + k.readyOps());
+                        }
+                    }
+
+                    selected.clear();
                 } catch (Exception e) {
                     log.error(this.getServiceName() + " service has exception.", e);
                 }
