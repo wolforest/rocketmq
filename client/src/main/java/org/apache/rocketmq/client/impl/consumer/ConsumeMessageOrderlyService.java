@@ -141,50 +141,6 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         return this.consumeExecutor.getCorePoolSize();
     }
 
-    private MessageQueue initMessageQueue(MessageExt msg, String brokerName) {
-        MessageQueue mq = new MessageQueue();
-        mq.setBrokerName(brokerName);
-        mq.setTopic(msg.getTopic());
-        mq.setQueueId(msg.getQueueId());
-
-        return mq;
-    }
-
-    private void parseConsumeMessageDirectlyResult(ConsumeMessageDirectlyResult result, List<MessageExt> msgs, MessageQueue mq, ConsumeOrderlyContext context) {
-        try {
-            ConsumeOrderlyStatus status = this.messageListener.consumeMessage(msgs, context);
-            if (status != null) {
-                switch (status) {
-                    case COMMIT:
-                        result.setConsumeResult(CMResult.CR_COMMIT);
-                        break;
-                    case ROLLBACK:
-                        result.setConsumeResult(CMResult.CR_ROLLBACK);
-                        break;
-                    case SUCCESS:
-                        result.setConsumeResult(CMResult.CR_SUCCESS);
-                        break;
-                    case SUSPEND_CURRENT_QUEUE_A_MOMENT:
-                        result.setConsumeResult(CMResult.CR_LATER);
-                        break;
-                    default:
-                        break;
-                }
-            } else {
-                result.setConsumeResult(CMResult.CR_RETURN_NULL);
-            }
-        } catch (Throwable e) {
-            result.setConsumeResult(CMResult.CR_THROW_EXCEPTION);
-            result.setRemark(UtilAll.exceptionSimpleDesc(e));
-
-            log.warn(String.format("consumeMessageDirectly exception: %s Group: %s Msgs: %s MQ: %s",
-                UtilAll.exceptionSimpleDesc(e),
-                ConsumeMessageOrderlyService.this.consumerGroup,
-                msgs,
-                mq), e);
-        }
-    }
-
     @Override
     public ConsumeMessageDirectlyResult consumeMessageDirectly(MessageExt msg, String brokerName) {
         log.info("consumeMessageDirectly receive new message: {}", msg);
@@ -206,6 +162,54 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         log.info("consumeMessageDirectly Result: {}", result);
 
         return result;
+    }
+
+    private MessageQueue initMessageQueue(MessageExt msg, String brokerName) {
+        MessageQueue mq = new MessageQueue();
+        mq.setBrokerName(brokerName);
+        mq.setTopic(msg.getTopic());
+        mq.setQueueId(msg.getQueueId());
+
+        return mq;
+    }
+
+    private void parseConsumeMessageDirectlyResult(ConsumeMessageDirectlyResult result, List<MessageExt> msgs, MessageQueue mq, ConsumeOrderlyContext context) {
+        try {
+            ConsumeOrderlyStatus status = this.messageListener.consumeMessage(msgs, context);
+            if (status != null) {
+                statusToConsumeMessageDirectlyResult(result, status);
+            } else {
+                result.setConsumeResult(CMResult.CR_RETURN_NULL);
+            }
+        } catch (Throwable e) {
+            result.setConsumeResult(CMResult.CR_THROW_EXCEPTION);
+            result.setRemark(UtilAll.exceptionSimpleDesc(e));
+
+            log.warn(String.format("consumeMessageDirectly exception: %s Group: %s Msgs: %s MQ: %s",
+                UtilAll.exceptionSimpleDesc(e),
+                ConsumeMessageOrderlyService.this.consumerGroup,
+                msgs,
+                mq), e);
+        }
+    }
+
+    private void statusToConsumeMessageDirectlyResult(ConsumeMessageDirectlyResult result, ConsumeOrderlyStatus status) {
+        switch (status) {
+            case COMMIT:
+                result.setConsumeResult(CMResult.CR_COMMIT);
+                break;
+            case ROLLBACK:
+                result.setConsumeResult(CMResult.CR_ROLLBACK);
+                break;
+            case SUCCESS:
+                result.setConsumeResult(CMResult.CR_SUCCESS);
+                break;
+            case SUSPEND_CURRENT_QUEUE_A_MOMENT:
+                result.setConsumeResult(CMResult.CR_LATER);
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
