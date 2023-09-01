@@ -239,6 +239,61 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }
     }
 
+
+
+
+    public void processConsumeResult( final ConsumeConcurrentlyStatus status, final ConsumeConcurrentlyContext context, final ConsumeRequest consumeRequest) {
+        int ackIndex = context.getAckIndex();
+
+        if (consumeRequest.getMsgs().isEmpty())
+            return;
+
+        switch (status) {
+            case CONSUME_SUCCESS:
+                ackIndex = processConsumeSuccess(consumeRequest, ackIndex);
+                break;
+            case RECONSUME_LATER:
+                ackIndex = processConsumeLater(consumeRequest);
+                break;
+            default:
+                break;
+        }
+
+        processConsumeResultByMode(context, consumeRequest, ackIndex);
+        updateOffsetAfterProcessConsume(consumeRequest);
+    }
+
+    private int processConsumeSuccess(final ConsumeRequest consumeRequest, int ackIndex) {
+        if (ackIndex >= consumeRequest.getMsgs().size()) {
+            ackIndex = consumeRequest.getMsgs().size() - 1;
+        }
+        int ok = ackIndex + 1;
+        int failed = consumeRequest.getMsgs().size() - ok;
+        this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), ok);
+        this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), failed);
+
+        return ackIndex;
+    }
+
+    private int processConsumeLater(final ConsumeRequest consumeRequest) {
+        this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(),
+            consumeRequest.getMsgs().size());
+        return -1;
+    }
+
+    private void processConsumeResultByMode(final ConsumeConcurrentlyContext context, final ConsumeRequest consumeRequest, int ackIndex) {
+        switch (this.defaultMQPushConsumer.getMessageModel()) {
+            case BROADCASTING:
+                processBroadCastingConsume(consumeRequest, ackIndex);
+                break;
+            case CLUSTERING:
+                processClusteringConsume(context, consumeRequest, ackIndex);
+                break;
+            default:
+                break;
+        }
+    }
+
     public void processBroadCastingConsume(final ConsumeRequest consumeRequest, int ackIndex) {
         for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {
             MessageExt msg = consumeRequest.getMsgs().get(i);
@@ -271,60 +326,11 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }
     }
 
-    public void processConsumeResult( final ConsumeConcurrentlyStatus status, final ConsumeConcurrentlyContext context, final ConsumeRequest consumeRequest) {
-        int ackIndex = context.getAckIndex();
-
-        if (consumeRequest.getMsgs().isEmpty())
-            return;
-
-        switch (status) {
-            case CONSUME_SUCCESS:
-                ackIndex = processConsumeSuccess(consumeRequest, ackIndex);
-                break;
-            case RECONSUME_LATER:
-                ackIndex = processConsumeLater(consumeRequest);
-                break;
-            default:
-                break;
-        }
-
-        switch (this.defaultMQPushConsumer.getMessageModel()) {
-            case BROADCASTING:
-                processBroadCastingConsume(consumeRequest, ackIndex);
-                break;
-            case CLUSTERING:
-                processClusteringConsume(context, consumeRequest, ackIndex);
-                break;
-            default:
-                break;
-        }
-
-        updateOffsetAfterProcessConsume(consumeRequest);
-    }
-
     private void updateOffsetAfterProcessConsume(ConsumeRequest consumeRequest) {
         long offset = consumeRequest.getProcessQueue().removeMessage(consumeRequest.getMsgs());
         if (offset >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
             this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), offset, true);
         }
-    }
-
-    private int processConsumeSuccess(final ConsumeRequest consumeRequest, int ackIndex) {
-        if (ackIndex >= consumeRequest.getMsgs().size()) {
-            ackIndex = consumeRequest.getMsgs().size() - 1;
-        }
-        int ok = ackIndex + 1;
-        int failed = consumeRequest.getMsgs().size() - ok;
-        this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), ok);
-        this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), failed);
-
-        return ackIndex;
-    }
-
-    private int processConsumeLater(final ConsumeRequest consumeRequest) {
-        this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(),
-            consumeRequest.getMsgs().size());
-        return -1;
     }
 
     public ConsumerStatsManager getConsumerStatsManager() {
