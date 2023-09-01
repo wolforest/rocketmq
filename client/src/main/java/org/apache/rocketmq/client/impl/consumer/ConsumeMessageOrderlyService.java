@@ -488,6 +488,25 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             return msgs;
         }
 
+        private ConsumeMessageContext initConsumeMessageContext(List<MessageExt> msgs) {
+            ConsumeMessageContext consumeMessageContext = null;
+            if (!ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
+                return null;
+            }
+
+            consumeMessageContext = new ConsumeMessageContext();
+            consumeMessageContext .setConsumerGroup(ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumerGroup());
+            consumeMessageContext.setNamespace(defaultMQPushConsumer.getNamespace());
+            consumeMessageContext.setMq(messageQueue);
+            consumeMessageContext.setMsgList(msgs);
+            consumeMessageContext.setSuccess(false);
+            // init consume context type
+            consumeMessageContext.setProps(new HashMap<>());
+            ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.executeHookBefore(consumeMessageContext);
+
+            return consumeMessageContext;
+        }
+
         private void runWithLock() {
             final long beginTime = System.currentTimeMillis();
             for (boolean continueConsume = true; continueConsume; ) {
@@ -504,20 +523,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
 
                 final ConsumeOrderlyContext context = new ConsumeOrderlyContext(this.messageQueue);
                 ConsumeOrderlyStatus status = null;
-
-                ConsumeMessageContext consumeMessageContext = null;
-                if (ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
-                    consumeMessageContext = new ConsumeMessageContext();
-                    consumeMessageContext
-                        .setConsumerGroup(ConsumeMessageOrderlyService.this.defaultMQPushConsumer.getConsumerGroup());
-                    consumeMessageContext.setNamespace(defaultMQPushConsumer.getNamespace());
-                    consumeMessageContext.setMq(messageQueue);
-                    consumeMessageContext.setMsgList(msgs);
-                    consumeMessageContext.setSuccess(false);
-                    // init the consume context type
-                    consumeMessageContext.setProps(new HashMap<>());
-                    ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.executeHookBefore(consumeMessageContext);
-                }
+                ConsumeMessageContext consumeMessageContext = initConsumeMessageContext(msgs);
 
                 long beginTimestamp = System.currentTimeMillis();
                 ConsumeReturnType returnType = ConsumeReturnType.SUCCESS;
@@ -576,8 +582,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
 
                 if (ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.hasHook()) {
                     consumeMessageContext.setStatus(status.toString());
-                    consumeMessageContext
-                        .setSuccess(ConsumeOrderlyStatus.SUCCESS == status || ConsumeOrderlyStatus.COMMIT == status);
+                    consumeMessageContext.setSuccess(ConsumeOrderlyStatus.SUCCESS == status || ConsumeOrderlyStatus.COMMIT == status);
                     consumeMessageContext.setAccessChannel(defaultMQPushConsumer.getAccessChannel());
                     ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.executeHookAfter(consumeMessageContext);
                 }
