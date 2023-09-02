@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
+import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
 import org.apache.rocketmq.client.consumer.listener.ConsumeReturnType;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.hook.ConsumeMessageContext;
@@ -132,39 +133,19 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
 
     @Override
     public ConsumeMessageDirectlyResult consumeMessageDirectly(MessageExt msg, String brokerName) {
-        ConsumeMessageDirectlyResult result = new ConsumeMessageDirectlyResult();
-        result.setOrder(false);
-        result.setAutoCommit(true);
-
-        msg.setBrokerName(brokerName);
-        List<MessageExt> msgs = new ArrayList<>();
-        msgs.add(msg);
-        MessageQueue mq = new MessageQueue();
-        mq.setBrokerName(brokerName);
-        mq.setTopic(msg.getTopic());
-        mq.setQueueId(msg.getQueueId());
+        ConsumeMessageDirectlyResult result = initConsumeMessageDirectlyResult();
+        List<MessageExt> msgs = initMsgs(msg, brokerName);
+        MessageQueue mq = initMessageQueue(msg, brokerName);
 
         ConsumeConcurrentlyContext context = new ConsumeConcurrentlyContext(mq);
-
         this.defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, this.consumerGroup);
-
         final long beginTime = System.currentTimeMillis();
-
         log.info("consumeMessageDirectly receive new message: {}", msg);
 
         try {
             ConsumeConcurrentlyStatus status = this.messageListener.consumeMessage(msgs, context);
             if (status != null) {
-                switch (status) {
-                    case CONSUME_SUCCESS:
-                        result.setConsumeResult(CMResult.CR_SUCCESS);
-                        break;
-                    case RECONSUME_LATER:
-                        result.setConsumeResult(CMResult.CR_LATER);
-                        break;
-                    default:
-                        break;
-                }
+                statusToConsumeMessageDirectlyResult(result, status);
             } else {
                 result.setConsumeResult(CMResult.CR_RETURN_NULL);
             }
@@ -180,10 +161,48 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }
 
         result.setSpentTimeMills(System.currentTimeMillis() - beginTime);
-
         log.info("consumeMessageDirectly Result: {}", result);
 
         return result;
+    }
+
+    private ConsumeMessageDirectlyResult initConsumeMessageDirectlyResult() {
+        ConsumeMessageDirectlyResult result = new ConsumeMessageDirectlyResult();
+        result.setOrder(false);
+        result.setAutoCommit(true);
+
+        return result;
+    }
+
+    private List<MessageExt> initMsgs(MessageExt msg, String brokerName) {
+        msg.setBrokerName(brokerName);
+
+        List<MessageExt> msgs = new ArrayList<>();
+        msgs.add(msg);
+
+        return msgs;
+    }
+
+    private MessageQueue initMessageQueue(MessageExt msg, String brokerName) {
+        MessageQueue mq = new MessageQueue();
+        mq.setBrokerName(brokerName);
+        mq.setTopic(msg.getTopic());
+        mq.setQueueId(msg.getQueueId());
+
+        return mq;
+    }
+
+    private void statusToConsumeMessageDirectlyResult(ConsumeMessageDirectlyResult result, ConsumeConcurrentlyStatus status) {
+        switch (status) {
+            case CONSUME_SUCCESS:
+                result.setConsumeResult(CMResult.CR_SUCCESS);
+                break;
+            case RECONSUME_LATER:
+                result.setConsumeResult(CMResult.CR_LATER);
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
