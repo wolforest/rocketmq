@@ -481,11 +481,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             boolean hasException = false;
 
             try {
-                if (msgs != null && !msgs.isEmpty()) {
-                    for (MessageExt msg : msgs) {
-                        MessageAccessor.setConsumeStartTimeStamp(msg, String.valueOf(System.currentTimeMillis()));
-                    }
-                }
+                initMsgs(msgs);
                 status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);
             } catch (Throwable e) {
                 logConsumeException(e, msgs);
@@ -504,6 +500,16 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 ConsumeMessageConcurrentlyService.this.processConsumeResult(status, context, this);
             } else {
                 log.warn("processQueue is dropped without process consume result. messageQueue={}, msgs={}", messageQueue, msgs);
+            }
+        }
+
+        private void initMsgs(List<MessageExt> msgs) {
+            if (msgs == null || msgs.isEmpty()) {
+                return;
+            }
+
+            for (MessageExt msg : msgs) {
+                MessageAccessor.setConsumeStartTimeStamp(msg, String.valueOf(System.currentTimeMillis()));
             }
         }
 
