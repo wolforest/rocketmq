@@ -207,25 +207,34 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
 
     private void submitMoreBatchRequest(final List<MessageExt> msgs, final ProcessQueue processQueue, final MessageQueue messageQueue, int consumeBatchSize) {
         for (int total = 0; total < msgs.size(); ) {
-            List<MessageExt> msgThis = new ArrayList<>(consumeBatchSize);
-            for (int i = 0; i < consumeBatchSize; i++, total++) {
-                if (total < msgs.size()) {
-                    msgThis.add(msgs.get(total));
-                } else {
-                    break;
-                }
+            List<MessageExt> msgThis = initMessageList(msgs, total, consumeBatchSize);
+            submitConsumeRequestLater(msgs, processQueue, messageQueue, msgThis, total);
+        }
+    }
+
+    private List<MessageExt> initMessageList(final List<MessageExt> msgs, int total, int consumeBatchSize) {
+        List<MessageExt> msgThis = new ArrayList<>(consumeBatchSize);
+        for (int i = 0; i < consumeBatchSize; i++, total++) {
+            if (total < msgs.size()) {
+                msgThis.add(msgs.get(total));
+            } else {
+                break;
+            }
+        }
+
+        return msgThis;
+    }
+
+    private void submitConsumeRequestLater(final List<MessageExt> msgs, final ProcessQueue processQueue, final MessageQueue messageQueue, List<MessageExt> msgThis, int total) {
+        ConsumeRequest consumeRequest = new ConsumeRequest(msgThis, processQueue, messageQueue);
+        try {
+            this.consumeExecutor.submit(consumeRequest);
+        } catch (RejectedExecutionException e) {
+            for (; total < msgs.size(); total++) {
+                msgThis.add(msgs.get(total));
             }
 
-            ConsumeRequest consumeRequest = new ConsumeRequest(msgThis, processQueue, messageQueue);
-            try {
-                this.consumeExecutor.submit(consumeRequest);
-            } catch (RejectedExecutionException e) {
-                for (; total < msgs.size(); total++) {
-                    msgThis.add(msgs.get(total));
-                }
-
-                this.submitConsumeRequestLater(consumeRequest);
-            }
+            this.submitConsumeRequestLater(consumeRequest);
         }
     }
 
