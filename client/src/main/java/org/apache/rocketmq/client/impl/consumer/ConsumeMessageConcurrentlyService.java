@@ -426,9 +426,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             return processQueue;
         }
 
-        private void executeHookBefore() {
+        private ConsumeMessageContext executeHookBefore() {
             if (!ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.hasHook()) {
-                return;
+                return null;
             }
 
             ConsumeMessageContext consumeMessageContext = new ConsumeMessageContext();
@@ -439,6 +439,8 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             consumeMessageContext.setMsgList(msgs);
             consumeMessageContext.setSuccess(false);
             ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.executeHookBefore(consumeMessageContext);
+
+            return consumeMessageContext;
         }
 
         private ConsumeReturnType getConsumeReturnType(long consumeRT, boolean hasException, ConsumeConcurrentlyStatus status) {
@@ -473,7 +475,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, defaultMQPushConsumer.getConsumerGroup());
 
             ConsumeMessageContext consumeMessageContext = null;
-            executeHookBefore();
+            consumeMessageContext = executeHookBefore();
 
             long beginTimestamp = System.currentTimeMillis();
             boolean hasException = false;
@@ -495,20 +497,11 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             }
             long consumeRT = System.currentTimeMillis() - beginTimestamp;
             ConsumeReturnType returnType = getConsumeReturnType(consumeRT, hasException, status);
+            status = logErrorStatus(status, msgs);
 
             if (ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.hasHook()) {
                 consumeMessageContext.getProps().put(MixAll.CONSUME_CONTEXT_TYPE, returnType.name());
-            }
 
-            if (null == status) {
-                log.warn("consumeMessage return null, Group: {} Msgs: {} MQ: {}",
-                    ConsumeMessageConcurrentlyService.this.consumerGroup,
-                    msgs,
-                    messageQueue);
-                status = ConsumeConcurrentlyStatus.RECONSUME_LATER;
-            }
-
-            if (ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.hasHook()) {
                 consumeMessageContext.setStatus(status.toString());
                 consumeMessageContext.setSuccess(ConsumeConcurrentlyStatus.CONSUME_SUCCESS == status);
                 consumeMessageContext.setAccessChannel(defaultMQPushConsumer.getAccessChannel());
@@ -523,6 +516,18 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             } else {
                 log.warn("processQueue is dropped without process consume result. messageQueue={}, msgs={}", messageQueue, msgs);
             }
+        }
+
+        private ConsumeConcurrentlyStatus logErrorStatus(ConsumeConcurrentlyStatus status, List<MessageExt> msgs) {
+            if (null != status) {
+                return status;
+            }
+
+            log.warn("consumeMessage return null, Group: {} Msgs: {} MQ: {}",
+                ConsumeMessageConcurrentlyService.this.consumerGroup,
+                msgs,
+                messageQueue);
+            return ConsumeConcurrentlyStatus.RECONSUME_LATER;
         }
 
         public MessageQueue getMessageQueue() {
