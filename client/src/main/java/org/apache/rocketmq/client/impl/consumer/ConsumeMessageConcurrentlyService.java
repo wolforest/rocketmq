@@ -187,40 +187,44 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
     }
 
     @Override
-    public void submitConsumeRequest(
-        final List<MessageExt> msgs,
-        final ProcessQueue processQueue,
-        final MessageQueue messageQueue,
-        final boolean dispatchToConsume) {
+    public void submitConsumeRequest(final List<MessageExt> msgs, final ProcessQueue processQueue, final MessageQueue messageQueue, final boolean dispatchToConsume) {
         final int consumeBatchSize = this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();
         if (msgs.size() <= consumeBatchSize) {
-            ConsumeRequest consumeRequest = new ConsumeRequest(msgs, processQueue, messageQueue);
+            submitLessBatchRequest(msgs, processQueue, messageQueue);
+        } else {
+            submitMoreBatchRequest(msgs, processQueue, messageQueue, consumeBatchSize);
+        }
+    }
+
+    private void submitLessBatchRequest(final List<MessageExt> msgs, final ProcessQueue processQueue, final MessageQueue messageQueue) {
+        ConsumeRequest consumeRequest = new ConsumeRequest(msgs, processQueue, messageQueue);
+        try {
+            this.consumeExecutor.submit(consumeRequest);
+        } catch (RejectedExecutionException e) {
+            this.submitConsumeRequestLater(consumeRequest);
+        }
+    }
+
+    private void submitMoreBatchRequest(final List<MessageExt> msgs, final ProcessQueue processQueue, final MessageQueue messageQueue, int consumeBatchSize) {
+        for (int total = 0; total < msgs.size(); ) {
+            List<MessageExt> msgThis = new ArrayList<>(consumeBatchSize);
+            for (int i = 0; i < consumeBatchSize; i++, total++) {
+                if (total < msgs.size()) {
+                    msgThis.add(msgs.get(total));
+                } else {
+                    break;
+                }
+            }
+
+            ConsumeRequest consumeRequest = new ConsumeRequest(msgThis, processQueue, messageQueue);
             try {
                 this.consumeExecutor.submit(consumeRequest);
             } catch (RejectedExecutionException e) {
+                for (; total < msgs.size(); total++) {
+                    msgThis.add(msgs.get(total));
+                }
+
                 this.submitConsumeRequestLater(consumeRequest);
-            }
-        } else {
-            for (int total = 0; total < msgs.size(); ) {
-                List<MessageExt> msgThis = new ArrayList<>(consumeBatchSize);
-                for (int i = 0; i < consumeBatchSize; i++, total++) {
-                    if (total < msgs.size()) {
-                        msgThis.add(msgs.get(total));
-                    } else {
-                        break;
-                    }
-                }
-
-                ConsumeRequest consumeRequest = new ConsumeRequest(msgThis, processQueue, messageQueue);
-                try {
-                    this.consumeExecutor.submit(consumeRequest);
-                } catch (RejectedExecutionException e) {
-                    for (; total < msgs.size(); total++) {
-                        msgThis.add(msgs.get(total));
-                    }
-
-                    this.submitConsumeRequestLater(consumeRequest);
-                }
             }
         }
     }
