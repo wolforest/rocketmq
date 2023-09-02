@@ -488,11 +488,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 }
                 status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);
             } catch (Throwable e) {
-                log.warn(String.format("consumeMessage exception: %s Group: %s Msgs: %s MQ: %s",
-                    UtilAll.exceptionSimpleDesc(e),
-                    ConsumeMessageConcurrentlyService.this.consumerGroup,
-                    msgs,
-                    messageQueue), e);
+                logConsumeException(e, msgs);
                 hasException = true;
             }
             long consumeRT = System.currentTimeMillis() - beginTimestamp;
@@ -509,6 +505,14 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             } else {
                 log.warn("processQueue is dropped without process consume result. messageQueue={}, msgs={}", messageQueue, msgs);
             }
+        }
+
+        private void logConsumeException(Throwable e, List<MessageExt> msgs) {
+            log.warn(String.format("consumeMessage exception: %s Group: %s Msgs: %s MQ: %s",
+                UtilAll.exceptionSimpleDesc(e),
+                ConsumeMessageConcurrentlyService.this.consumerGroup,
+                msgs,
+                messageQueue), e);
         }
 
         private void executeHookAfter(ConsumeMessageContext consumeMessageContext, ConsumeReturnType returnType, ConsumeConcurrentlyStatus status) {
