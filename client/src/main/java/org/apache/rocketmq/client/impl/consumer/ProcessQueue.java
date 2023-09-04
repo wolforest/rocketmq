@@ -94,6 +94,25 @@ public class ProcessQueue {
         return msg;
     }
 
+    private void removeExpiredMsg(MessageExt msg) {
+        try {
+            this.treeMapLock.writeLock().lockInterruptibly();
+            try {
+                if (!msgTreeMap.isEmpty() && msg.getQueueOffset() == msgTreeMap.firstKey()) {
+                    try {
+                        removeMessage(Collections.singletonList(msg));
+                    } catch (Exception e) {
+                        log.error("send expired msg exception", e);
+                    }
+                }
+            } finally {
+                this.treeMapLock.writeLock().unlock();
+            }
+        } catch (InterruptedException e) {
+            log.error("getExpiredMsg exception", e);
+        }
+    }
+
     /**
      * @param pushConsumer
      */
@@ -110,25 +129,9 @@ public class ProcessQueue {
             }
 
             try {
-
                 pushConsumer.sendMessageBack(msg, 3);
                 log.info("send expire msg back. topic={}, msgId={}, storeHost={}, queueId={}, queueOffset={}", msg.getTopic(), msg.getMsgId(), msg.getStoreHost(), msg.getQueueId(), msg.getQueueOffset());
-                try {
-                    this.treeMapLock.writeLock().lockInterruptibly();
-                    try {
-                        if (!msgTreeMap.isEmpty() && msg.getQueueOffset() == msgTreeMap.firstKey()) {
-                            try {
-                                removeMessage(Collections.singletonList(msg));
-                            } catch (Exception e) {
-                                log.error("send expired msg exception", e);
-                            }
-                        }
-                    } finally {
-                        this.treeMapLock.writeLock().unlock();
-                    }
-                } catch (InterruptedException e) {
-                    log.error("getExpiredMsg exception", e);
-                }
+                removeExpiredMsg(msg);
             } catch (Exception e) {
                 log.error("send expired msg exception", e);
             }
