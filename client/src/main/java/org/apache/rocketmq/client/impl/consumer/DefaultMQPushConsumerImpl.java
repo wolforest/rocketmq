@@ -973,6 +973,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         this.serviceState = ServiceState.RUNNING;
     }
 
+    /**
+     * init instanceName
+     * instanceName = PID + # + nanoTime
+     */
     private void initInstanceName() {
         if (this.defaultMQPushConsumer.getMessageModel() != MessageModel.CLUSTERING) {
             return;
