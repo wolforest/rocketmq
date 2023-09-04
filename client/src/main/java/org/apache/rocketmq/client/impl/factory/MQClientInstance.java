@@ -268,7 +268,6 @@ public class MQClientInstance {
     }
 
     public void start() throws MQClientException {
-
         synchronized (this) {
             switch (this.serviceState) {
                 case CREATE_JUST:
@@ -351,23 +350,29 @@ public class MQClientInstance {
         return clientId;
     }
 
+    private void getConsumerTopicRouterInfo(Set<String> topicList) {
+        for (Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
+            MQConsumerInner impl = entry.getValue();
+            if (impl == null) {
+                continue;
+            }
+
+            Set<SubscriptionData> subList = impl.subscriptions();
+            if (subList == null) {
+                continue;
+            }
+
+            for (SubscriptionData subData : subList) {
+                topicList.add(subData.getTopic());
+            }
+        }
+    }
+
     public void updateTopicRouteInfoFromNameServer() {
         Set<String> topicList = new HashSet<>();
 
         // Consumer
-        {
-            for (Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
-                MQConsumerInner impl = entry.getValue();
-                if (impl != null) {
-                    Set<SubscriptionData> subList = impl.subscriptions();
-                    if (subList != null) {
-                        for (SubscriptionData subData : subList) {
-                            topicList.add(subData.getTopic());
-                        }
-                    }
-                }
-            }
-        }
+        getConsumerTopicRouterInfo(topicList);
 
         // Producer
         {
