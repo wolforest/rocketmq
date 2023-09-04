@@ -191,14 +191,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 result.setConsumeResult(CMResult.CR_RETURN_NULL);
             }
         } catch (Throwable e) {
-            result.setConsumeResult(CMResult.CR_THROW_EXCEPTION);
-            result.setRemark(UtilAll.exceptionSimpleDesc(e));
-
-            log.warn(String.format("consumeMessageDirectly exception: %s Group: %s Msgs: %s MQ: %s",
-                UtilAll.exceptionSimpleDesc(e),
-                ConsumeMessageOrderlyService.this.consumerGroup,
-                msgs,
-                mq), e);
+            handleConsumeMessageDirectlyException(result, msgs, mq, e);
         }
 
         result.setAutoCommit(context.isAutoCommit());
@@ -222,6 +215,17 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             default:
                 break;
         }
+    }
+
+    private void handleConsumeMessageDirectlyException(ConsumeMessageDirectlyResult result, List<MessageExt> msgs, MessageQueue mq, Throwable e) {
+        result.setConsumeResult(CMResult.CR_THROW_EXCEPTION);
+        result.setRemark(UtilAll.exceptionSimpleDesc(e));
+
+        log.warn(String.format("consumeMessageDirectly exception: %s Group: %s Msgs: %s MQ: %s",
+            UtilAll.exceptionSimpleDesc(e),
+            ConsumeMessageOrderlyService.this.consumerGroup,
+            msgs,
+            mq), e);
     }
 
     @Override
