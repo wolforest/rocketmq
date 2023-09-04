@@ -63,16 +63,17 @@ public class PullMessageService extends ServiceThread {
     }
 
     public void executePopPullRequestLater(final PopRequest popRequest, final long timeDelay) {
-        if (!isStopped()) {
-            this.scheduledExecutorService.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    PullMessageService.this.executePopPullRequestImmediately(popRequest);
-                }
-            }, timeDelay, TimeUnit.MILLISECONDS);
-        } else {
+        if (isStopped()) {
             logger.warn("PullMessageServiceScheduledThread has shutdown");
+            return;
         }
+
+        this.scheduledExecutorService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                PullMessageService.this.executePopPullRequestImmediately(popRequest);
+            }
+        }, timeDelay, TimeUnit.MILLISECONDS);
     }
 
     public void executePopPullRequestImmediately(final PopRequest popRequest) {
