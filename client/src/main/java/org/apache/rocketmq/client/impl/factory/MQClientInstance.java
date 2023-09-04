@@ -145,6 +145,25 @@ public class MQClientInstance {
         this(clientConfig, instanceIndex, clientId, null);
     }
 
+    public MQClientInstance(ClientConfig clientConfig, int instanceIndex, String clientId, RPCHook rpcHook) {
+        initConfig(clientConfig);
+
+        ClientRemotingProcessor clientRemotingProcessor = new ClientRemotingProcessor(this);
+        this.mQClientAPIImpl = new MQClientAPIImpl(this.nettyClientConfig, clientRemotingProcessor, rpcHook, clientConfig);
+
+        updateNameServerAddressList();
+
+        this.clientId = clientId;
+        this.mQAdminImpl = new MQAdminImpl(this);
+        this.pullMessageService = new PullMessageService(this);
+        this.rebalanceService = new RebalanceService(this);
+
+        this.defaultMQProducer = new DefaultMQProducer(MixAll.CLIENT_INNER_PRODUCER_GROUP);
+        this.defaultMQProducer.resetClientConfig(clientConfig);
+        this.consumerStatsManager = new ConsumerStatsManager(this.scheduledExecutorService);
+
+        logInitInfo(instanceIndex);
+    }
 
     private void initConfig(ClientConfig clientConfig) {
         this.clientConfig = clientConfig;
@@ -155,33 +174,15 @@ public class MQClientInstance {
     }
 
     private void updateNameServerAddressList() {
-        if (this.clientConfig.getNamesrvAddr() != null) {
-            this.mQClientAPIImpl.updateNameServerAddressList(this.clientConfig.getNamesrvAddr());
-            log.info("user specified name server address: {}", this.clientConfig.getNamesrvAddr());
+        if (this.clientConfig.getNamesrvAddr() == null) {
+            return;
         }
+
+        this.mQClientAPIImpl.updateNameServerAddressList(this.clientConfig.getNamesrvAddr());
+        log.info("user specified name server address: {}", this.clientConfig.getNamesrvAddr());
     }
 
-    public MQClientInstance(ClientConfig clientConfig, int instanceIndex, String clientId, RPCHook rpcHook) {
-        initConfig(clientConfig);
-
-        ClientRemotingProcessor clientRemotingProcessor = new ClientRemotingProcessor(this);
-        this.mQClientAPIImpl = new MQClientAPIImpl(this.nettyClientConfig, clientRemotingProcessor, rpcHook, clientConfig);
-
-        updateNameServerAddressList();
-
-        this.clientId = clientId;
-
-        this.mQAdminImpl = new MQAdminImpl(this);
-
-        this.pullMessageService = new PullMessageService(this);
-
-        this.rebalanceService = new RebalanceService(this);
-
-        this.defaultMQProducer = new DefaultMQProducer(MixAll.CLIENT_INNER_PRODUCER_GROUP);
-        this.defaultMQProducer.resetClientConfig(clientConfig);
-
-        this.consumerStatsManager = new ConsumerStatsManager(this.scheduledExecutorService);
-
+    private void logInitInfo(int instanceIndex) {
         log.info("Created a new client Instance, InstanceIndex:{}, ClientID:{}, ClientConfig:{}, ClientVersion:{}, SerializerType:{}",
             instanceIndex,
             this.clientId,
