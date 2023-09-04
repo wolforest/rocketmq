@@ -173,11 +173,13 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     }
 
     public void removeOffset(MessageQueue mq) {
-        if (mq != null) {
-            this.offsetTable.remove(mq);
-            log.info("remove unnecessary messageQueue offset. group={}, mq={}, offsetTableSize={}", this.groupName, mq,
-                offsetTable.size());
+        if (mq == null) {
+            return;
         }
+
+        this.offsetTable.remove(mq);
+        log.info("remove unnecessary messageQueue offset. group={}, mq={}, offsetTableSize={}", this.groupName, mq,
+            offsetTable.size());
     }
 
     @Override
