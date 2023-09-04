@@ -459,6 +459,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             }
         }
 
+        pullKernelImpl(pullRequest, subscriptionData, commitOffsetEnable, commitOffsetValue, pullCallback);
+    }
+
+    private void pullKernelImpl(PullRequest pullRequest, SubscriptionData subscriptionData, boolean commitOffsetEnable, long commitOffsetValue, PullCallback pullCallback) {
         String subExpression = null;
         boolean classFilter = false;
         SubscriptionData sd = this.rebalanceImpl.getSubscriptionInner().get(pullRequest.getMessageQueue().getTopic());
