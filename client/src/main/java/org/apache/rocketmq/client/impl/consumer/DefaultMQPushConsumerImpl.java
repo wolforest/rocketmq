@@ -616,46 +616,48 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     }
 
     private PopResult processPopResult(final PopResult popResult, final SubscriptionData subscriptionData) {
-        if (PopStatus.FOUND == popResult.getPopStatus()) {
-            List<MessageExt> msgFoundList = popResult.getMsgFoundList();
-            List<MessageExt> msgListFilterAgain = msgFoundList;
-            if (!subscriptionData.getTagsSet().isEmpty() && !subscriptionData.isClassFilterMode()
-                && popResult.getMsgFoundList().size() > 0) {
-                msgListFilterAgain = new ArrayList<>(popResult.getMsgFoundList().size());
-                for (MessageExt msg : popResult.getMsgFoundList()) {
-                    if (msg.getTags() != null) {
-                        if (subscriptionData.getTagsSet().contains(msg.getTags())) {
-                            msgListFilterAgain.add(msg);
-                        }
-                    }
-                }
-            }
-
-            if (!this.filterMessageHookList.isEmpty()) {
-                FilterMessageContext filterMessageContext = new FilterMessageContext();
-                filterMessageContext.setUnitMode(this.defaultMQPushConsumer.isUnitMode());
-                filterMessageContext.setMsgList(msgListFilterAgain);
-                if (!this.filterMessageHookList.isEmpty()) {
-                    for (FilterMessageHook hook : this.filterMessageHookList) {
-                        try {
-                            hook.filterMessage(filterMessageContext);
-                        } catch (Throwable e) {
-                            log.error("execute hook error. hookName={}", hook.hookName());
-                        }
-                    }
-                }
-            }
-
-            if (msgFoundList.size() != msgListFilterAgain.size()) {
-                for (MessageExt msg : msgFoundList) {
-                    if (!msgListFilterAgain.contains(msg)) {
-                        ackAsync(msg, this.groupName());
-                    }
-                }
-            }
-
-            popResult.setMsgFoundList(msgListFilterAgain);
+        if (PopStatus.FOUND != popResult.getPopStatus()) {
+            return popResult;
         }
+
+        List<MessageExt> msgFoundList = popResult.getMsgFoundList();
+        List<MessageExt> msgListFilterAgain = msgFoundList;
+        if (!subscriptionData.getTagsSet().isEmpty() && !subscriptionData.isClassFilterMode()
+            && popResult.getMsgFoundList().size() > 0) {
+            msgListFilterAgain = new ArrayList<>(popResult.getMsgFoundList().size());
+            for (MessageExt msg : popResult.getMsgFoundList()) {
+                if (msg.getTags() != null) {
+                    if (subscriptionData.getTagsSet().contains(msg.getTags())) {
+                        msgListFilterAgain.add(msg);
+                    }
+                }
+            }
+        }
+
+        if (!this.filterMessageHookList.isEmpty()) {
+            FilterMessageContext filterMessageContext = new FilterMessageContext();
+            filterMessageContext.setUnitMode(this.defaultMQPushConsumer.isUnitMode());
+            filterMessageContext.setMsgList(msgListFilterAgain);
+            if (!this.filterMessageHookList.isEmpty()) {
+                for (FilterMessageHook hook : this.filterMessageHookList) {
+                    try {
+                        hook.filterMessage(filterMessageContext);
+                    } catch (Throwable e) {
+                        log.error("execute hook error. hookName={}", hook.hookName());
+                    }
+                }
+            }
+        }
+
+        if (msgFoundList.size() != msgListFilterAgain.size()) {
+            for (MessageExt msg : msgFoundList) {
+                if (!msgListFilterAgain.contains(msg)) {
+                    ackAsync(msg, this.groupName());
+                }
+            }
+        }
+
+        popResult.setMsgFoundList(msgListFilterAgain);
 
         return popResult;
     }
