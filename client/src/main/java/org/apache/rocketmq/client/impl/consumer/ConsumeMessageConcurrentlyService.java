@@ -418,6 +418,43 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             this.messageQueue = messageQueue;
         }
 
+
+        @Override
+        public void run() {
+            if (this.processQueue.isDropped()) {
+                log.info("the message queue not be able to consume, because it's dropped. group={} {}", ConsumeMessageConcurrentlyService.this.consumerGroup, this.messageQueue);
+                return;
+            }
+
+            MessageListenerConcurrently listener = ConsumeMessageConcurrentlyService.this.messageListener;
+            ConsumeConcurrentlyContext context = new ConsumeConcurrentlyContext(messageQueue);
+            ConsumeConcurrentlyStatus status = null;
+            defaultMQPushConsumerImpl.tryResetPopRetryTopic(msgs, consumerGroup);
+            defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, defaultMQPushConsumer.getConsumerGroup());
+
+            ConsumeMessageContext consumeMessageContext = null;
+            consumeMessageContext = executeHookBefore();
+
+            long beginTimestamp = System.currentTimeMillis();
+            boolean hasException = false;
+
+            try {
+                initMsgs(msgs);
+                status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);
+            } catch (Throwable e) {
+                logConsumeException(e, msgs);
+                hasException = true;
+            }
+
+            long consumeRT = System.currentTimeMillis() - beginTimestamp;
+            ConsumeReturnType returnType = getConsumeReturnType(consumeRT, hasException, status);
+            status = logErrorStatus(status, msgs);
+
+            executeHookAfter(consumeMessageContext, returnType, status);
+            incConsumeRT(consumeRT);
+            processConsumeResult(context, status);
+        }
+
         public List<MessageExt> getMsgs() {
             return msgs;
         }
@@ -461,48 +498,6 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             return returnType;
         }
 
-        @Override
-        public void run() {
-            if (this.processQueue.isDropped()) {
-                log.info("the message queue not be able to consume, because it's dropped. group={} {}", ConsumeMessageConcurrentlyService.this.consumerGroup, this.messageQueue);
-                return;
-            }
-
-            MessageListenerConcurrently listener = ConsumeMessageConcurrentlyService.this.messageListener;
-            ConsumeConcurrentlyContext context = new ConsumeConcurrentlyContext(messageQueue);
-            ConsumeConcurrentlyStatus status = null;
-            defaultMQPushConsumerImpl.tryResetPopRetryTopic(msgs, consumerGroup);
-            defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, defaultMQPushConsumer.getConsumerGroup());
-
-            ConsumeMessageContext consumeMessageContext = null;
-            consumeMessageContext = executeHookBefore();
-
-            long beginTimestamp = System.currentTimeMillis();
-            boolean hasException = false;
-
-            try {
-                initMsgs(msgs);
-                status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);
-            } catch (Throwable e) {
-                logConsumeException(e, msgs);
-                hasException = true;
-            }
-            long consumeRT = System.currentTimeMillis() - beginTimestamp;
-            ConsumeReturnType returnType = getConsumeReturnType(consumeRT, hasException, status);
-            status = logErrorStatus(status, msgs);
-
-            executeHookAfter(consumeMessageContext, returnType, status);
-
-            ConsumeMessageConcurrentlyService.this.getConsumerStatsManager()
-                .incConsumeRT(ConsumeMessageConcurrentlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
-
-            if (!processQueue.isDropped()) {
-                ConsumeMessageConcurrentlyService.this.processConsumeResult(status, context, this);
-            } else {
-                log.warn("processQueue is dropped without process consume result. messageQueue={}, msgs={}", messageQueue, msgs);
-            }
-        }
-
         private void initMsgs(List<MessageExt> msgs) {
             if (msgs == null || msgs.isEmpty()) {
                 return;
@@ -521,6 +516,18 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 messageQueue), e);
         }
 
+        private ConsumeConcurrentlyStatus logErrorStatus(ConsumeConcurrentlyStatus status, List<MessageExt> msgs) {
+            if (null != status) {
+                return status;
+            }
+
+            log.warn("consumeMessage return null, Group: {} Msgs: {} MQ: {}",
+                ConsumeMessageConcurrentlyService.this.consumerGroup,
+                msgs,
+                messageQueue);
+            return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+        }
+
         private void executeHookAfter(ConsumeMessageContext consumeMessageContext, ConsumeReturnType returnType, ConsumeConcurrentlyStatus status) {
             if (ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.hasHook()) {
                 consumeMessageContext.getProps().put(MixAll.CONSUME_CONTEXT_TYPE, returnType.name());
@@ -532,16 +539,17 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             }
         }
 
-        private ConsumeConcurrentlyStatus logErrorStatus(ConsumeConcurrentlyStatus status, List<MessageExt> msgs) {
-            if (null != status) {
-                return status;
-            }
+        private void incConsumeRT( long consumeRT) {
+            ConsumeMessageConcurrentlyService.this.getConsumerStatsManager()
+                .incConsumeRT(ConsumeMessageConcurrentlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
+        }
 
-            log.warn("consumeMessage return null, Group: {} Msgs: {} MQ: {}",
-                ConsumeMessageConcurrentlyService.this.consumerGroup,
-                msgs,
-                messageQueue);
-            return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+        private void processConsumeResult(ConsumeConcurrentlyContext context, ConsumeConcurrentlyStatus status) {
+            if (!processQueue.isDropped()) {
+                ConsumeMessageConcurrentlyService.this.processConsumeResult(status, context, this);
+            } else {
+                log.warn("processQueue is dropped without process consume result. messageQueue={}, msgs={}", messageQueue, msgs);
+            }
         }
 
         public MessageQueue getMessageQueue() {

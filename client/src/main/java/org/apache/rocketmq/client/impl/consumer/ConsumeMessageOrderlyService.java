@@ -516,6 +516,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 final ConsumeOrderlyContext context = new ConsumeOrderlyContext(this.messageQueue);
                 ConsumeOrderlyStatus status = null;
                 boolean hasException = false;
+                long beginTimestamp = System.currentTimeMillis();
 
                 try {
                     this.processQueue.getConsumeLock().lock();
@@ -530,7 +531,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 }
 
                 ConsumeMessageContext consumeMessageContext = executeHookBefore(msgs);
-                status = runAfterConsume(consumeMessageContext, status, msgs, hasException);
+                status = runAfterConsume(consumeMessageContext, status, msgs, hasException, beginTimestamp);
                 continueConsume = ConsumeMessageOrderlyService.this.processConsumeResult(msgs, status, context, this);
             }
 
@@ -619,8 +620,8 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 messageQueue), e);
         }
 
-        private ConsumeOrderlyStatus runAfterConsume(ConsumeMessageContext consumeMessageContext, ConsumeOrderlyStatus status, List<MessageExt> msgs, boolean hasException) {
-            long beginTimestamp = System.currentTimeMillis();
+        private ConsumeOrderlyStatus runAfterConsume(ConsumeMessageContext consumeMessageContext, ConsumeOrderlyStatus status, List<MessageExt> msgs, boolean hasException, long beginTimestamp) {
+
             logErrorStatus(status, msgs);
 
             long consumeRT = System.currentTimeMillis() - beginTimestamp;
