@@ -243,17 +243,17 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
             findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MixAll.MASTER_ID, false);
         }
 
-        if (findBrokerResult != null) {
-            QueryConsumerOffsetRequestHeader requestHeader = new QueryConsumerOffsetRequestHeader();
-            requestHeader.setTopic(mq.getTopic());
-            requestHeader.setConsumerGroup(this.groupName);
-            requestHeader.setQueueId(mq.getQueueId());
-            requestHeader.setBname(mq.getBrokerName());
-
-            return this.mQClientFactory.getMQClientAPIImpl().queryConsumerOffset(
-                findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
-        } else {
+        if (findBrokerResult == null) {
             throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
         }
+
+        QueryConsumerOffsetRequestHeader requestHeader = new QueryConsumerOffsetRequestHeader();
+        requestHeader.setTopic(mq.getTopic());
+        requestHeader.setConsumerGroup(this.groupName);
+        requestHeader.setQueueId(mq.getQueueId());
+        requestHeader.setBname(mq.getBrokerName());
+
+        return this.mQClientFactory.getMQClientAPIImpl().queryConsumerOffset(
+            findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
     }
 }
