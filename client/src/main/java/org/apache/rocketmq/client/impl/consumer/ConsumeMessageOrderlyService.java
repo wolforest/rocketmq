@@ -250,9 +250,11 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
     }
 
     public synchronized void lockMQPeriodically() {
-        if (!this.stopped) {
-            this.defaultMQPushConsumerImpl.getRebalanceImpl().lockAll();
+        if (this.stopped) {
+            return;
         }
+
+        this.defaultMQPushConsumerImpl.getRebalanceImpl().lockAll();
     }
 
     public void tryLockLaterAndReconsume(final MessageQueue mq, final ProcessQueue processQueue,
