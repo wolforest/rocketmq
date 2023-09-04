@@ -1251,6 +1251,14 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
     }
 
+    /**
+     * @deprecated to be deprecated
+     * copy defaultMQPushConsumer.SubscriptionData to rebalanceImpl.subscriptionInner
+     * Since defaultMQPushConsumer.SubscriptionData is always empty map
+     * this method is useless now
+     *
+     * @throws Exception
+     */
     private void copyTopicSubscription() throws Exception {
         Map<String, String> sub = this.defaultMQPushConsumer.getSubscription();
         if (sub == null) {
