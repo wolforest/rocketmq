@@ -85,11 +85,12 @@ public class PullMessageService extends ServiceThread {
     }
 
     public void executeTaskLater(final Runnable r, final long timeDelay) {
-        if (!isStopped()) {
-            this.scheduledExecutorService.schedule(r, timeDelay, TimeUnit.MILLISECONDS);
-        } else {
+        if (isStopped()) {
             logger.warn("PullMessageServiceScheduledThread has shutdown");
+            return;
         }
+
+        this.scheduledExecutorService.schedule(r, timeDelay, TimeUnit.MILLISECONDS);
     }
 
     public ScheduledExecutorService getScheduledExecutorService() {
