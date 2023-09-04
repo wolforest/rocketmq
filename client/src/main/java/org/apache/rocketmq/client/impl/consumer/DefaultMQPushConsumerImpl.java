@@ -760,7 +760,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         sendMessageBack(msg, delayLevel, null, mq);
     }
 
-
     private void sendMessageBack(MessageExt msg, int delayLevel, final String brokerName, final MessageQueue mq)
         throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
         boolean needRetry = true;
