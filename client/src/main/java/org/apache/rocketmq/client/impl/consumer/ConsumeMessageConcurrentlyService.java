@@ -86,6 +86,13 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
     }
 
     public void start() {
+        startCleanExpiredMsgService();
+    }
+
+    /**
+     * resend the expired msg back to MQ periodically
+     */
+    private void startCleanExpiredMsgService() {
         this.cleanExpireMsgExecutors.scheduleAtFixedRate(new Runnable() {
 
             @Override
