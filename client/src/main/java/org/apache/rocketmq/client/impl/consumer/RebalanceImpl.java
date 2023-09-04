@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;
+import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.FindBrokerResult;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
@@ -36,6 +37,7 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.message.MessageQueueAssignment;
 import org.apache.rocketmq.common.message.MessageRequestMode;
+import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.protocol.body.LockBatchRequestBody;
 import org.apache.rocketmq.remoting.protocol.body.UnlockBatchRequestBody;
@@ -186,46 +188,53 @@ public abstract class RebalanceImpl {
 
     public void lockAll() {
         HashMap<String, Set<MessageQueue>> brokerMqs = this.buildProcessQueueTableByBrokerName();
-
-        Iterator<Entry<String, Set<MessageQueue>>> it = brokerMqs.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, Set<MessageQueue>> entry = it.next();
-            final String brokerName = entry.getKey();
+        for (Entry<String, Set<MessageQueue>> entry : brokerMqs.entrySet()) {
             final Set<MessageQueue> mqs = entry.getValue();
-
             if (mqs.isEmpty()) {
                 continue;
             }
 
-            FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(brokerName, MixAll.MASTER_ID, true);
-            if (findBrokerResult != null) {
-                LockBatchRequestBody requestBody = new LockBatchRequestBody();
-                requestBody.setConsumerGroup(this.consumerGroup);
-                requestBody.setClientId(this.mQClientFactory.getClientId());
-                requestBody.setMqSet(mqs);
+            FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(entry.getKey(), MixAll.MASTER_ID, true);
+            if (findBrokerResult == null) {
+                continue;
+            }
 
-                try {
-                    Set<MessageQueue> lockOKMQSet =
-                        this.mQClientFactory.getMQClientAPIImpl().lockBatchMQ(findBrokerResult.getBrokerAddr(), requestBody, 1000);
+            lockAll(mqs, findBrokerResult);
+        }
+    }
 
-                    for (MessageQueue mq : mqs) {
-                        ProcessQueue processQueue = this.processQueueTable.get(mq);
-                        if (processQueue != null) {
-                            if (lockOKMQSet.contains(mq)) {
-                                if (!processQueue.isLocked()) {
-                                    log.info("the message queue locked OK, Group: {} {}", this.consumerGroup, mq);
-                                }
-                                processQueue.setLocked(true);
-                                processQueue.setLastLockTimestamp(System.currentTimeMillis());
-                            } else {
-                                processQueue.setLocked(false);
-                                log.warn("the message queue locked Failed, Group: {} {}", this.consumerGroup, mq);
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    log.error("lockBatchMQ exception, " + mqs, e);
+    private void lockAll(Set<MessageQueue> mqs, FindBrokerResult findBrokerResult) {
+        LockBatchRequestBody requestBody = new LockBatchRequestBody();
+        requestBody.setConsumerGroup(this.consumerGroup);
+        requestBody.setClientId(this.mQClientFactory.getClientId());
+        requestBody.setMqSet(mqs);
+
+        try {
+            lockAll(mqs, findBrokerResult, requestBody);
+        } catch (Exception e) {
+            log.error("lockBatchMQ exception, " + mqs, e);
+        }
+    }
+
+    private void lockAll(Set<MessageQueue> mqs, FindBrokerResult findBrokerResult, LockBatchRequestBody requestBody) throws MQBrokerException, RemotingException, InterruptedException {
+        Set<MessageQueue> lockOKMQSet =
+            this.mQClientFactory.getMQClientAPIImpl().lockBatchMQ(findBrokerResult.getBrokerAddr(), requestBody, 1000);
+
+        for (MessageQueue mq : mqs) {
+            ProcessQueue processQueue = this.processQueueTable.get(mq);
+            if (processQueue == null) {
+                continue;
+            }
+
+            if (lockOKMQSet.contains(mq)) {
+                if (!processQueue.isLocked()) {
+                    log.info("the message queue locked OK, Group: {} {}", this.consumerGroup, mq);
                 }
+                processQueue.setLocked(true);
+                processQueue.setLastLockTimestamp(System.currentTimeMillis());
+            } else {
+                processQueue.setLocked(false);
+                log.warn("the message queue locked Failed, Group: {} {}", this.consumerGroup, mq);
             }
         }
     }
