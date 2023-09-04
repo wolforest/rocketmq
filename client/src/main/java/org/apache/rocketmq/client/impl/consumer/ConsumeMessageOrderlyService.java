@@ -225,15 +225,13 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
     }
 
     @Override
-    public void submitConsumeRequest(
-        final List<MessageExt> msgs,
-        final ProcessQueue processQueue,
-        final MessageQueue messageQueue,
-        final boolean dispathToConsume) {
-        if (dispathToConsume) {
-            ConsumeRequest consumeRequest = new ConsumeRequest(processQueue, messageQueue);
-            this.consumeExecutor.submit(consumeRequest);
+    public void submitConsumeRequest(List<MessageExt> msgs, ProcessQueue processQueue, MessageQueue messageQueue, boolean dispatchToConsume) {
+        if (!dispatchToConsume) {
+            return;
         }
+
+        ConsumeRequest consumeRequest = new ConsumeRequest(processQueue, messageQueue);
+        this.consumeExecutor.submit(consumeRequest);
     }
 
     @Override
