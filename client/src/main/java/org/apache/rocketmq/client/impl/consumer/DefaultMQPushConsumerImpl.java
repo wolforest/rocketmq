@@ -1017,6 +1017,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     this.offsetStore = new RemoteBrokerOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
                     break;
                 default:
+                    //this is useless, message mode only have two values: BROADCASTING, CLUSTERING
                     break;
             }
             this.defaultMQPushConsumer.setOffsetStore(this.offsetStore);
