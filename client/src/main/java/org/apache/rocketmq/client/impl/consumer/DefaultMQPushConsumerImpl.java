@@ -615,6 +615,22 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
     }
 
+    private PopResult processPopResult(final PopResult popResult, final SubscriptionData subscriptionData) {
+        if (PopStatus.FOUND != popResult.getPopStatus()) {
+            return popResult;
+        }
+
+        List<MessageExt> msgFoundList = popResult.getMsgFoundList();
+        List<MessageExt> msgListFilterAgain = getMsgListFilterAgain(popResult, subscriptionData, msgFoundList);
+
+        processPopResultHook(msgListFilterAgain);
+        ackPopResult(msgFoundList, msgListFilterAgain);
+
+        popResult.setMsgFoundList(msgListFilterAgain);
+
+        return popResult;
+    }
+
     private List<MessageExt> getMsgListFilterAgain(final PopResult popResult, final SubscriptionData subscriptionData, List<MessageExt> msgFoundList) {
         List<MessageExt> msgListFilterAgain = msgFoundList;
         if (subscriptionData.getTagsSet().isEmpty() || subscriptionData.isClassFilterMode() || popResult.getMsgFoundList().size() <= 0) {
@@ -654,27 +670,16 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
     }
 
-    private PopResult processPopResult(final PopResult popResult, final SubscriptionData subscriptionData) {
-        if (PopStatus.FOUND != popResult.getPopStatus()) {
-            return popResult;
+    private void ackPopResult(List<MessageExt> msgFoundList, List<MessageExt> msgListFilterAgain) {
+        if (msgFoundList.size() == msgListFilterAgain.size()) {
+            return;
         }
 
-        List<MessageExt> msgFoundList = popResult.getMsgFoundList();
-        List<MessageExt> msgListFilterAgain = getMsgListFilterAgain(popResult, subscriptionData, msgFoundList);
-
-        processPopResultHook(msgListFilterAgain);
-
-        if (msgFoundList.size() != msgListFilterAgain.size()) {
-            for (MessageExt msg : msgFoundList) {
-                if (!msgListFilterAgain.contains(msg)) {
-                    ackAsync(msg, this.groupName());
-                }
+        for (MessageExt msg : msgFoundList) {
+            if (!msgListFilterAgain.contains(msg)) {
+                ackAsync(msg, this.groupName());
             }
         }
-
-        popResult.setMsgFoundList(msgListFilterAgain);
-
-        return popResult;
     }
 
     private void makeSureStateOK() throws MQClientException {
