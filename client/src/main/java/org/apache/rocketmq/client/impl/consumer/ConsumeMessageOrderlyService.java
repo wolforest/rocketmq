@@ -90,6 +90,10 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
     }
 
     public void start() {
+        startLockMQService();
+    }
+
+    private void startLockMQService() {
         if (!MessageModel.CLUSTERING.equals(ConsumeMessageOrderlyService.this.defaultMQPushConsumerImpl.messageModel())) {
             return;
         }
