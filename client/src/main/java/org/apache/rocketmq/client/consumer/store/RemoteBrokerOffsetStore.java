@@ -156,17 +156,19 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     @Override
     public void persist(MessageQueue mq) {
         AtomicLong offset = this.offsetTable.get(mq);
-        if (offset != null) {
-            try {
-                this.updateConsumeOffsetToBroker(mq, offset.get());
-                log.info("[persist] Group: {} ClientId: {} updateConsumeOffsetToBroker {} {}",
-                    this.groupName,
-                    this.mQClientFactory.getClientId(),
-                    mq,
-                    offset.get());
-            } catch (Exception e) {
-                log.error("updateConsumeOffsetToBroker exception, " + mq.toString(), e);
-            }
+        if (offset == null) {
+            return;
+        }
+
+        try {
+            this.updateConsumeOffsetToBroker(mq, offset.get());
+            log.info("[persist] Group: {} ClientId: {} updateConsumeOffsetToBroker {} {}",
+                this.groupName,
+                this.mQClientFactory.getClientId(),
+                mq,
+                offset.get());
+        } catch (Exception e) {
+            log.error("updateConsumeOffsetToBroker exception, " + mq.toString(), e);
         }
     }
 
