@@ -124,20 +124,24 @@ public class PullMessageService extends ServiceThread {
         logger.info(this.getServiceName() + " service started");
 
         while (!this.isStopped()) {
-            try {
-                MessageRequest messageRequest = this.messageRequestQueue.take();
-                if (messageRequest.getMessageRequestMode() == MessageRequestMode.POP) {
-                    this.popMessage((PopRequest) messageRequest);
-                } else {
-                    this.pullMessage((PullRequest) messageRequest);
-                }
-            } catch (InterruptedException ignored) {
-            } catch (Exception e) {
-                logger.error("Pull Message Service Run Method exception", e);
-            }
+            pullOrPopMessage();
         }
 
         logger.info(this.getServiceName() + " service end");
+    }
+
+    private void pullOrPopMessage() {
+        try {
+            MessageRequest messageRequest = this.messageRequestQueue.take();
+            if (messageRequest.getMessageRequestMode() == MessageRequestMode.POP) {
+                this.popMessage((PopRequest) messageRequest);
+            } else {
+                this.pullMessage((PullRequest) messageRequest);
+            }
+        } catch (InterruptedException ignored) {
+        } catch (Exception e) {
+            logger.error("Pull Message Service Run Method exception", e);
+        }
     }
 
     @Override
