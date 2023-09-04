@@ -1284,6 +1284,11 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         this.messageListenerInner = this.defaultMQPushConsumer.getMessageListener();
     }
 
+    /**
+     * copy retry topic SubscriptionData to rebalanceImpl.subscriptionData
+     * retryTopic = RETRY_GROUP_TOPIC_PREFIX + consumerGroup
+     * @throws Exception
+     */
     private void copyRetryTopicSubscription() throws Exception {
         switch (this.defaultMQPushConsumer.getMessageModel()) {
             case BROADCASTING:
