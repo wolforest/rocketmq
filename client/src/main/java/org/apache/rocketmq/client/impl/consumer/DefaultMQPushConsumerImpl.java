@@ -361,27 +361,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         return new PullCallback() {
             @Override
             public void onSuccess(PullResult pullResult) {
-                if (pullResult != null) {
-                    pullResult = DefaultMQPushConsumerImpl.this.pullAPIWrapper.processPullResult(pullRequest.getMessageQueue(), pullResult,
-                        subscriptionData);
-
-                    switch (pullResult.getPullStatus()) {
-                        case FOUND:
-                            handleFoundStatus(pullRequest, beginTimestamp, pullResult);
-                            break;
-                        case NO_NEW_MSG:
-                        case NO_MATCHED_MSG:
-                            pullRequest.setNextOffset(pullResult.getNextBeginOffset());
-                            DefaultMQPushConsumerImpl.this.correctTagsOffset(pullRequest);
-                            DefaultMQPushConsumerImpl.this.executePullRequestImmediately(pullRequest);
-                            break;
-                        case OFFSET_ILLEGAL:
-                            handleOffsetIllegalStatus(pullRequest, beginTimestamp);
-                            break;
-                        default:
-                            break;
-                    }
-                }
+                handleSuccessEvent(pullRequest, subscriptionData, beginTimestamp, pullResult);
             }
 
             @Override
@@ -389,6 +369,29 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 handleExceptionEvent(pullRequest, e);
             }
         };
+    }
+
+    private void handleSuccessEvent(PullRequest pullRequest, SubscriptionData subscriptionData, long beginTimestamp, PullResult pullResult) {
+        if (pullResult != null) {
+            pullResult = DefaultMQPushConsumerImpl.this.pullAPIWrapper.processPullResult(pullRequest.getMessageQueue(), pullResult, subscriptionData);
+
+            switch (pullResult.getPullStatus()) {
+                case FOUND:
+                    handleFoundStatus(pullRequest, beginTimestamp, pullResult);
+                    break;
+                case NO_NEW_MSG:
+                case NO_MATCHED_MSG:
+                    pullRequest.setNextOffset(pullResult.getNextBeginOffset());
+                    DefaultMQPushConsumerImpl.this.correctTagsOffset(pullRequest);
+                    DefaultMQPushConsumerImpl.this.executePullRequestImmediately(pullRequest);
+                    break;
+                case OFFSET_ILLEGAL:
+                    handleOffsetIllegalStatus(pullRequest, pullResult);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     private void handleExceptionEvent(PullRequest pullRequest, Throwable e) {
