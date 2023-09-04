@@ -633,6 +633,27 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         return msgListFilterAgain;
     }
 
+    private void processPopResultHook(List<MessageExt> msgListFilterAgain) {
+        if (this.filterMessageHookList.isEmpty()) {
+            return;
+        }
+
+        FilterMessageContext filterMessageContext = new FilterMessageContext();
+        filterMessageContext.setUnitMode(this.defaultMQPushConsumer.isUnitMode());
+        filterMessageContext.setMsgList(msgListFilterAgain);
+        if (this.filterMessageHookList.isEmpty()) {
+            return;
+        }
+
+        for (FilterMessageHook hook : this.filterMessageHookList) {
+            try {
+                hook.filterMessage(filterMessageContext);
+            } catch (Throwable e) {
+                log.error("execute hook error. hookName={}", hook.hookName());
+            }
+        }
+    }
+
     private PopResult processPopResult(final PopResult popResult, final SubscriptionData subscriptionData) {
         if (PopStatus.FOUND != popResult.getPopStatus()) {
             return popResult;
@@ -641,20 +662,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         List<MessageExt> msgFoundList = popResult.getMsgFoundList();
         List<MessageExt> msgListFilterAgain = getMsgListFilterAgain(popResult, subscriptionData, msgFoundList);
 
-        if (!this.filterMessageHookList.isEmpty()) {
-            FilterMessageContext filterMessageContext = new FilterMessageContext();
-            filterMessageContext.setUnitMode(this.defaultMQPushConsumer.isUnitMode());
-            filterMessageContext.setMsgList(msgListFilterAgain);
-            if (!this.filterMessageHookList.isEmpty()) {
-                for (FilterMessageHook hook : this.filterMessageHookList) {
-                    try {
-                        hook.filterMessage(filterMessageContext);
-                    } catch (Throwable e) {
-                        log.error("execute hook error. hookName={}", hook.hookName());
-                    }
-                }
-            }
-        }
+        processPopResultHook(msgListFilterAgain);
 
         if (msgFoundList.size() != msgListFilterAgain.size()) {
             for (MessageExt msg : msgFoundList) {
