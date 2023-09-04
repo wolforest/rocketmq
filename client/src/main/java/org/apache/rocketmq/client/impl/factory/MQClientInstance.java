@@ -154,16 +154,20 @@ public class MQClientInstance {
         this.nettyClientConfig.setSocksProxyConfig(clientConfig.getSocksProxyConfig());
     }
 
+    private void updateNameServerAddressList() {
+        if (this.clientConfig.getNamesrvAddr() != null) {
+            this.mQClientAPIImpl.updateNameServerAddressList(this.clientConfig.getNamesrvAddr());
+            log.info("user specified name server address: {}", this.clientConfig.getNamesrvAddr());
+        }
+    }
+
     public MQClientInstance(ClientConfig clientConfig, int instanceIndex, String clientId, RPCHook rpcHook) {
         initConfig(clientConfig);
 
         ClientRemotingProcessor clientRemotingProcessor = new ClientRemotingProcessor(this);
         this.mQClientAPIImpl = new MQClientAPIImpl(this.nettyClientConfig, clientRemotingProcessor, rpcHook, clientConfig);
 
-        if (this.clientConfig.getNamesrvAddr() != null) {
-            this.mQClientAPIImpl.updateNameServerAddressList(this.clientConfig.getNamesrvAddr());
-            log.info("user specified name server address: {}", this.clientConfig.getNamesrvAddr());
-        }
+        updateNameServerAddressList();
 
         this.clientId = clientId;
 
