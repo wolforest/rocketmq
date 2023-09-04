@@ -450,16 +450,29 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             }
         };
 
+        long commitOffsetValue = getCommitOffsetValue(pullRequest);
+        boolean commitOffsetEnable = getCommitOffsetEnable(commitOffsetValue);
+        pullKernelImpl(pullRequest, subscriptionData, commitOffsetEnable, commitOffsetValue, pullCallback);
+    }
+
+    private boolean getCommitOffsetEnable(long commitOffsetValue) {
         boolean commitOffsetEnable = false;
-        long commitOffsetValue = 0L;
         if (MessageModel.CLUSTERING == this.defaultMQPushConsumer.getMessageModel()) {
-            commitOffsetValue = this.offsetStore.readOffset(pullRequest.getMessageQueue(), ReadOffsetType.READ_FROM_MEMORY);
             if (commitOffsetValue > 0) {
                 commitOffsetEnable = true;
             }
         }
 
-        pullKernelImpl(pullRequest, subscriptionData, commitOffsetEnable, commitOffsetValue, pullCallback);
+        return commitOffsetEnable;
+    }
+
+    private long getCommitOffsetValue(PullRequest pullRequest) {
+        long commitOffsetValue = 0L;
+        if (MessageModel.CLUSTERING == this.defaultMQPushConsumer.getMessageModel()) {
+            commitOffsetValue = this.offsetStore.readOffset(pullRequest.getMessageQueue(), ReadOffsetType.READ_FROM_MEMORY);
+        }
+
+        return commitOffsetValue;
     }
 
     private void pullKernelImpl(PullRequest pullRequest, SubscriptionData subscriptionData, boolean commitOffsetEnable, long commitOffsetValue, PullCallback pullCallback) {
