@@ -80,36 +80,38 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
 
     @Override
     public long readOffset(final MessageQueue mq, final ReadOffsetType type) {
-        if (mq != null) {
-            switch (type) {
-                case MEMORY_FIRST_THEN_STORE:
-                case READ_FROM_MEMORY: {
-                    AtomicLong offset = this.offsetTable.get(mq);
-                    if (offset != null) {
-                        return offset.get();
-                    } else if (ReadOffsetType.READ_FROM_MEMORY == type) {
-                        return -1;
-                    }
+        if (mq == null) {
+            return -3;
+        }
+
+        switch (type) {
+            case MEMORY_FIRST_THEN_STORE:
+            case READ_FROM_MEMORY: {
+                AtomicLong offset = this.offsetTable.get(mq);
+                if (offset != null) {
+                    return offset.get();
+                } else if (ReadOffsetType.READ_FROM_MEMORY == type) {
+                    return -1;
                 }
-                case READ_FROM_STORE: {
-                    try {
-                        long brokerOffset = this.fetchConsumeOffsetFromBroker(mq);
-                        this.updateOffset(mq, brokerOffset, false);
-                        return brokerOffset;
-                    }
-                    // No offset in broker
-                    catch (OffsetNotFoundException e) {
-                        return -1;
-                    }
-                    //Other exceptions
-                    catch (Exception e) {
-                        log.warn("fetchConsumeOffsetFromBroker exception, " + mq, e);
-                        return -2;
-                    }
-                }
-                default:
-                    break;
             }
+            case READ_FROM_STORE: {
+                try {
+                    long brokerOffset = this.fetchConsumeOffsetFromBroker(mq);
+                    this.updateOffset(mq, brokerOffset, false);
+                    return brokerOffset;
+                }
+                // No offset in broker
+                catch (OffsetNotFoundException e) {
+                    return -1;
+                }
+                //Other exceptions
+                catch (Exception e) {
+                    log.warn("fetchConsumeOffsetFromBroker exception, " + mq, e);
+                    return -2;
+                }
+            }
+            default:
+                break;
         }
 
         return -3;
