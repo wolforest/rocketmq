@@ -433,38 +433,50 @@ public class MQClientInstance {
     }
 
     public void checkClientInBroker() throws MQClientException {
-
         for (Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
-            Set<SubscriptionData> subscriptionInner = entry.getValue().subscriptions();
-            if (subscriptionInner == null || subscriptionInner.isEmpty()) {
-                return;
-            }
+            checkClientInBroker(entry);
+        }
+    }
 
-            for (SubscriptionData subscriptionData : subscriptionInner) {
-                if (ExpressionType.isTagType(subscriptionData.getExpressionType())) {
-                    continue;
-                }
-                // may need to check one broker every cluster...
-                // assume that the configs of every broker in cluster are the same.
-                String addr = findBrokerAddrByTopic(subscriptionData.getTopic());
+    private void checkClientInBroker(Entry<String, MQConsumerInner> entry) throws MQClientException {
+        Set<SubscriptionData> subscriptionInner = entry.getValue().subscriptions();
+        if (subscriptionInner == null || subscriptionInner.isEmpty()) {
+            return;
+        }
 
-                if (addr != null) {
-                    try {
-                        this.getMQClientAPIImpl().checkClientInBroker(
-                            addr, entry.getKey(), this.clientId, subscriptionData, clientConfig.getMqClientApiTimeout()
-                        );
-                    } catch (Exception e) {
-                        if (e instanceof MQClientException) {
-                            throw (MQClientException) e;
-                        } else {
-                            throw new MQClientException("Check client in broker error, maybe because you use "
-                                + subscriptionData.getExpressionType() + " to filter message, but server has not been upgraded to support!"
-                                + "This error would not affect the launch of consumer, but may has impact on message receiving if you " +
-                                "have use the new features which are not supported by server, please check the log!", e);
-                        }
-                    }
-                }
-            }
+        for (SubscriptionData subscriptionData : subscriptionInner) {
+            checkClientInBroker(entry, subscriptionData);
+        }
+    }
+
+    private void checkClientInBroker(Entry<String, MQConsumerInner> entry, SubscriptionData subscriptionData) throws MQClientException {
+        if (ExpressionType.isTagType(subscriptionData.getExpressionType())) {
+            return;
+        }
+        // may need to check one broker every cluster...
+        // assume that the configs of every broker in cluster are the same.
+        String addr = findBrokerAddrByTopic(subscriptionData.getTopic());
+        if (addr == null) {
+            return;
+        }
+
+        try {
+            this.getMQClientAPIImpl().checkClientInBroker(
+                addr, entry.getKey(), this.clientId, subscriptionData, clientConfig.getMqClientApiTimeout()
+            );
+        } catch (Exception e) {
+            handleCheckClientInBrokerException(e, subscriptionData);
+        }
+    }
+
+    private void handleCheckClientInBrokerException(Exception e, SubscriptionData subscriptionData) throws MQClientException {
+        if (e instanceof MQClientException) {
+            throw (MQClientException) e;
+        } else {
+            throw new MQClientException("Check client in broker error, maybe because you use "
+                + subscriptionData.getExpressionType() + " to filter message, but server has not been upgraded to support!"
+                + "This error would not affect the launch of consumer, but may has impact on message receiving if you " +
+                "have use the new features which are not supported by server, please check the log!", e);
         }
     }
 
