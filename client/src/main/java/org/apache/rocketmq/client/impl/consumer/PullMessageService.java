@@ -41,16 +41,17 @@ public class PullMessageService extends ServiceThread {
     }
 
     public void executePullRequestLater(final PullRequest pullRequest, final long timeDelay) {
-        if (!isStopped()) {
-            this.scheduledExecutorService.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    PullMessageService.this.executePullRequestImmediately(pullRequest);
-                }
-            }, timeDelay, TimeUnit.MILLISECONDS);
-        } else {
+        if (isStopped()) {
             logger.warn("PullMessageServiceScheduledThread has shutdown");
+            return;
         }
+
+        this.scheduledExecutorService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                PullMessageService.this.executePullRequestImmediately(pullRequest);
+            }
+        }, timeDelay, TimeUnit.MILLISECONDS);
     }
 
     public void executePullRequestImmediately(final PullRequest pullRequest) {
