@@ -215,23 +215,23 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
             findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MixAll.MASTER_ID, false);
         }
 
-        if (findBrokerResult != null) {
-            UpdateConsumerOffsetRequestHeader requestHeader = new UpdateConsumerOffsetRequestHeader();
-            requestHeader.setTopic(mq.getTopic());
-            requestHeader.setConsumerGroup(this.groupName);
-            requestHeader.setQueueId(mq.getQueueId());
-            requestHeader.setCommitOffset(offset);
-            requestHeader.setBname(mq.getBrokerName());
-
-            if (isOneway) {
-                this.mQClientFactory.getMQClientAPIImpl().updateConsumerOffsetOneway(
-                    findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
-            } else {
-                this.mQClientFactory.getMQClientAPIImpl().updateConsumerOffset(
-                    findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
-            }
-        } else {
+        if (findBrokerResult == null) {
             throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
+        }
+
+        UpdateConsumerOffsetRequestHeader requestHeader = new UpdateConsumerOffsetRequestHeader();
+        requestHeader.setTopic(mq.getTopic());
+        requestHeader.setConsumerGroup(this.groupName);
+        requestHeader.setQueueId(mq.getQueueId());
+        requestHeader.setCommitOffset(offset);
+        requestHeader.setBname(mq.getBrokerName());
+
+        if (isOneway) {
+            this.mQClientFactory.getMQClientAPIImpl().updateConsumerOffsetOneway(
+                findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
+        } else {
+            this.mQClientFactory.getMQClientAPIImpl().updateConsumerOffset(
+                findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
         }
     }
 
