@@ -158,29 +158,36 @@ public abstract class RebalanceImpl {
 
     public boolean lock(final MessageQueue mq) {
         FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MixAll.MASTER_ID, true);
-        if (findBrokerResult != null) {
-            LockBatchRequestBody requestBody = new LockBatchRequestBody();
-            requestBody.setConsumerGroup(this.consumerGroup);
-            requestBody.setClientId(this.mQClientFactory.getClientId());
-            requestBody.getMqSet().add(mq);
+        if (findBrokerResult == null) {
+            return false;
+        }
 
-            try {
-                Set<MessageQueue> lockedMq =
-                    this.mQClientFactory.getMQClientAPIImpl().lockBatchMQ(findBrokerResult.getBrokerAddr(), requestBody, 1000);
-                for (MessageQueue mmqq : lockedMq) {
-                    ProcessQueue processQueue = this.processQueueTable.get(mmqq);
-                    if (processQueue != null) {
-                        processQueue.setLocked(true);
-                        processQueue.setLastLockTimestamp(System.currentTimeMillis());
-                    }
+        LockBatchRequestBody requestBody = new LockBatchRequestBody();
+        requestBody.setConsumerGroup(this.consumerGroup);
+        requestBody.setClientId(this.mQClientFactory.getClientId());
+        requestBody.getMqSet().add(mq);
+
+        return lock(mq, findBrokerResult, requestBody);
+    }
+
+    private boolean lock(final MessageQueue mq, FindBrokerResult findBrokerResult, LockBatchRequestBody requestBody) {
+        try {
+            Set<MessageQueue> lockedMq = this.mQClientFactory.getMQClientAPIImpl().lockBatchMQ(findBrokerResult.getBrokerAddr(), requestBody, 1000);
+            for (MessageQueue mmqq : lockedMq) {
+                ProcessQueue processQueue = this.processQueueTable.get(mmqq);
+                if (processQueue == null) {
+                    continue;
                 }
 
-                boolean lockOK = lockedMq.contains(mq);
-                log.info("message queue lock {}, {} {}", lockOK ? "OK" : "Failed", this.consumerGroup, mq);
-                return lockOK;
-            } catch (Exception e) {
-                log.error("lockBatchMQ exception, " + mq, e);
+                processQueue.setLocked(true);
+                processQueue.setLastLockTimestamp(System.currentTimeMillis());
             }
+
+            boolean lockOK = lockedMq.contains(mq);
+            log.info("message queue lock {}, {} {}", lockOK ? "OK" : "Failed", this.consumerGroup, mq);
+            return lockOK;
+        } catch (Exception e) {
+            log.error("lockBatchMQ exception, " + mq, e);
         }
 
         return false;
