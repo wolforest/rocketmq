@@ -481,8 +481,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
 
         @Override
         public void run() {
-            if (this.processQueue.isDropped()) {
-                log.warn("run, the message queue not be able to consume, because it's dropped. {}", this.messageQueue);
+            if (isDropped()) {
                 return;
             }
 
@@ -498,8 +497,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         }
 
         private void tryLockLater() {
-            if (this.processQueue.isDropped()) {
-                log.warn("the message queue not be able to consume, because it's dropped. {}", this.messageQueue);
+            if (isDropped()) {
                 return;
             }
 
