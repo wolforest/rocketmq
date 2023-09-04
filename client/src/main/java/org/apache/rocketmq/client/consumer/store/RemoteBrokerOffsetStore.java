@@ -127,21 +127,24 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
         for (Map.Entry<MessageQueue, AtomicLong> entry : this.offsetTable.entrySet()) {
             MessageQueue mq = entry.getKey();
             AtomicLong offset = entry.getValue();
-            if (offset != null) {
-                if (mqs.contains(mq)) {
-                    try {
-                        this.updateConsumeOffsetToBroker(mq, offset.get());
-                        log.info("[persistAll] Group: {} ClientId: {} updateConsumeOffsetToBroker {} {}",
-                            this.groupName,
-                            this.mQClientFactory.getClientId(),
-                            mq,
-                            offset.get());
-                    } catch (Exception e) {
-                        log.error("updateConsumeOffsetToBroker exception, " + mq.toString(), e);
-                    }
-                } else {
-                    unusedMQ.add(mq);
-                }
+            if (offset == null) {
+                continue;
+            }
+
+            if (!mqs.contains(mq)) {
+                unusedMQ.add(mq);
+                continue;
+            }
+
+            try {
+                this.updateConsumeOffsetToBroker(mq, offset.get());
+                log.info("[persistAll] Group: {} ClientId: {} updateConsumeOffsetToBroker {} {}",
+                    this.groupName,
+                    this.mQClientFactory.getClientId(),
+                    mq,
+                    offset.get());
+            } catch (Exception e) {
+                log.error("updateConsumeOffsetToBroker exception, " + mq.toString(), e);
             }
         }
 
