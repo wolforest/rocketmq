@@ -368,6 +368,18 @@ public class MQClientInstance {
         }
     }
 
+    private void getProducerTopicRouterInfo(Set<String> topicList) {
+        for (Entry<String, MQProducerInner> entry : this.producerTable.entrySet()) {
+            MQProducerInner impl = entry.getValue();
+            if (impl == null) {
+                continue;
+            }
+
+            Set<String> lst = impl.getPublishTopicList();
+            topicList.addAll(lst);
+        }
+    }
+
     public void updateTopicRouteInfoFromNameServer() {
         Set<String> topicList = new HashSet<>();
 
@@ -375,15 +387,7 @@ public class MQClientInstance {
         getConsumerTopicRouterInfo(topicList);
 
         // Producer
-        {
-            for (Entry<String, MQProducerInner> entry : this.producerTable.entrySet()) {
-                MQProducerInner impl = entry.getValue();
-                if (impl != null) {
-                    Set<String> lst = impl.getPublishTopicList();
-                    topicList.addAll(lst);
-                }
-            }
-        }
+        getProducerTopicRouterInfo(topicList);
 
         for (String topic : topicList) {
             this.updateTopicRouteInfoFromNameServer(topic);
