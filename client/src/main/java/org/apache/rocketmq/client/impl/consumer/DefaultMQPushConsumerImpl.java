@@ -966,7 +966,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
         loadOffsetStore();
         startMessageService();
-        checkRegisterStatus();
+        registerConsumer();
 
         mQClientFactory.start();
         log.info("the consumer [{}] start OK.", this.defaultMQPushConsumer.getConsumerGroup());
@@ -1046,7 +1046,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         this.consumeMessagePopService.start();
     }
 
-    private void checkRegisterStatus() throws MQClientException {
+    private void registerConsumer() throws MQClientException {
         boolean registerOK = mQClientFactory.registerConsumer(this.defaultMQPushConsumer.getConsumerGroup(), this);
         if (registerOK) {
             return;
