@@ -1273,6 +1273,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
     }
 
+    /**
+     * pass MessageListener from defaultMQPushConsumer to this.messageListenerInner
+     */
     private void resetMessageListenerInner() {
         if (null != this.messageListenerInner) {
             return;
