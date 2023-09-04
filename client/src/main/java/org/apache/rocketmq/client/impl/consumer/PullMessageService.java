@@ -110,12 +110,13 @@ public class PullMessageService extends ServiceThread {
 
     private void popMessage(final PopRequest popRequest) {
         final MQConsumerInner consumer = this.mQClientFactory.selectConsumer(popRequest.getConsumerGroup());
-        if (consumer != null) {
-            DefaultMQPushConsumerImpl impl = (DefaultMQPushConsumerImpl) consumer;
-            impl.popMessage(popRequest);
-        } else {
+        if (consumer == null) {
             logger.warn("No matched consumer for the PopRequest {}, drop it", popRequest);
+            return;
         }
+
+        DefaultMQPushConsumerImpl impl = (DefaultMQPushConsumerImpl) consumer;
+        impl.popMessage(popRequest);
     }
 
     @Override
