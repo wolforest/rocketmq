@@ -492,14 +492,18 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 if (MessageModel.BROADCASTING.equals(model) || this.processQueue.isLocked() && !this.processQueue.isLockExpired()) {
                     runWithLock();
                 } else {
-                    if (this.processQueue.isDropped()) {
-                        log.warn("the message queue not be able to consume, because it's dropped. {}", this.messageQueue);
-                        return;
-                    }
-
-                    ConsumeMessageOrderlyService.this.tryLockLaterAndReconsume(this.messageQueue, this.processQueue, 100);
+                    tryLockLater();
                 }
             }
+        }
+
+        private void tryLockLater() {
+            if (this.processQueue.isDropped()) {
+                log.warn("the message queue not be able to consume, because it's dropped. {}", this.messageQueue);
+                return;
+            }
+
+            ConsumeMessageOrderlyService.this.tryLockLaterAndReconsume(this.messageQueue, this.processQueue, 100);
         }
 
         private void runWithLock() {
