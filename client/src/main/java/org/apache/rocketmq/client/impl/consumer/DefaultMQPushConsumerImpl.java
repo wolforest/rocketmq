@@ -348,7 +348,16 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
         final long beginTimestamp = System.currentTimeMillis();
 
-        PullCallback pullCallback = new PullCallback() {
+        PullCallback pullCallback = getPullCallback(pullRequest, subscriptionData, beginTimestamp);
+        long commitOffsetValue = getCommitOffsetValue(pullRequest);
+        boolean commitOffsetEnable = getCommitOffsetEnable(commitOffsetValue);
+
+        pullKernelImpl(pullRequest, subscriptionData, commitOffsetEnable, commitOffsetValue, pullCallback);
+    }
+
+    private PullCallback getPullCallback(PullRequest pullRequest, SubscriptionData subscriptionData, long beginTimestamp) {
+        final ProcessQueue processQueue = pullRequest.getProcessQueue();
+        return new PullCallback() {
             @Override
             public void onSuccess(PullResult pullResult) {
                 if (pullResult != null) {
@@ -449,10 +458,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 }
             }
         };
-
-        long commitOffsetValue = getCommitOffsetValue(pullRequest);
-        boolean commitOffsetEnable = getCommitOffsetEnable(commitOffsetValue);
-        pullKernelImpl(pullRequest, subscriptionData, commitOffsetEnable, commitOffsetValue, pullCallback);
     }
 
     private boolean getCommitOffsetEnable(long commitOffsetValue) {
