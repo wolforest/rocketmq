@@ -1006,23 +1006,30 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     }
 
     private void loadOffsetStore() throws MQClientException {
-        if (this.defaultMQPushConsumer.getOffsetStore() != null) {
-            this.offsetStore = this.defaultMQPushConsumer.getOffsetStore();
-        } else {
-            switch (this.defaultMQPushConsumer.getMessageModel()) {
-                case BROADCASTING:
-                    this.offsetStore = new LocalFileOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
-                    break;
-                case CLUSTERING:
-                    this.offsetStore = new RemoteBrokerOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
-                    break;
-                default:
-                    //this is useless, message mode only have two values: BROADCASTING, CLUSTERING
-                    break;
-            }
-            this.defaultMQPushConsumer.setOffsetStore(this.offsetStore);
-        }
+        initOffsetStore();
         this.offsetStore.load();
+    }
+
+    private void initOffsetStore() {
+        if (this.defaultMQPushConsumer.getOffsetStore() != null) {
+            //this process has been Deprecated
+            this.offsetStore = this.defaultMQPushConsumer.getOffsetStore();
+
+            return;
+        }
+
+        switch (this.defaultMQPushConsumer.getMessageModel()) {
+            case BROADCASTING:
+                this.offsetStore = new LocalFileOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
+                break;
+            case CLUSTERING:
+                this.offsetStore = new RemoteBrokerOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
+                break;
+            default:
+                //this is useless, message mode only have two values: BROADCASTING, CLUSTERING
+                break;
+        }
+        this.defaultMQPushConsumer.setOffsetStore(this.offsetStore);
     }
 
     private void startMessageService() {
