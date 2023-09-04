@@ -245,6 +245,33 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         this.offsetStore = offsetStore;
     }
 
+    /**
+     * pull Message
+     * called by Daemon Thread service PullMessageService
+     * @param pullRequest PullRequest
+     */
+    public void pullMessage(final PullRequest pullRequest) {
+        if (!checkPullMessageStatus(pullRequest)) {
+            return;
+        }
+
+        final long beginTimestamp = System.currentTimeMillis();
+        pullRequest.getProcessQueue().setLastPullTimestamp(beginTimestamp);
+
+        final SubscriptionData subscriptionData = this.rebalanceImpl.getSubscriptionInner().get(pullRequest.getMessageQueue().getTopic());
+        if (null == subscriptionData) {
+            this.executePullRequestLater(pullRequest, pullTimeDelayMillsWhenException);
+            log.warn("find the consumer's subscription failed, {}", pullRequest);
+            return;
+        }
+
+        PullCallback pullCallback = getPullCallback(pullRequest, subscriptionData, beginTimestamp);
+        long commitOffsetValue = getCommitOffsetValue(pullRequest);
+        boolean commitOffsetEnable = getCommitOffsetEnable(commitOffsetValue);
+
+        pullKernelImpl(pullRequest, subscriptionData, commitOffsetEnable, commitOffsetValue, pullCallback);
+    }
+
     private boolean checkPullMessageStatus(PullRequest pullRequest) {
         final ProcessQueue processQueue = pullRequest.getProcessQueue();
         if (processQueue.isDropped()) {
@@ -334,35 +361,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
         return true;
     }
-
-    /**
-     * pull Message
-     * called by Daemon Thread service PullMessageService
-     * @param pullRequest PullRequest
-     */
-    public void pullMessage(final PullRequest pullRequest) {
-        if (!checkPullMessageStatus(pullRequest)) {
-            return;
-        }
-
-        final long beginTimestamp = System.currentTimeMillis();
-        pullRequest.getProcessQueue().setLastPullTimestamp(beginTimestamp);
-
-
-        final SubscriptionData subscriptionData = this.rebalanceImpl.getSubscriptionInner().get(pullRequest.getMessageQueue().getTopic());
-        if (null == subscriptionData) {
-            this.executePullRequestLater(pullRequest, pullTimeDelayMillsWhenException);
-            log.warn("find the consumer's subscription failed, {}", pullRequest);
-            return;
-        }
-
-        PullCallback pullCallback = getPullCallback(pullRequest, subscriptionData, beginTimestamp);
-        long commitOffsetValue = getCommitOffsetValue(pullRequest);
-        boolean commitOffsetEnable = getCommitOffsetEnable(commitOffsetValue);
-
-        pullKernelImpl(pullRequest, subscriptionData, commitOffsetEnable, commitOffsetValue, pullCallback);
-    }
-
 
     private PullCallback getPullCallback(PullRequest pullRequest, SubscriptionData subscriptionData, long beginTimestamp) {
 
