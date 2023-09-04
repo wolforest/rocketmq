@@ -251,27 +251,41 @@ public abstract class RebalanceImpl {
     }
 
     public boolean doRebalance(final boolean isOrder) {
-        boolean balanced = true;
+        boolean balanced = reblanceBySubscription(isOrder);
+        this.truncateMessageQueueNotMyTopic();
+
+        return balanced;
+    }
+
+    private boolean reblanceBySubscription(boolean isOrder) {
         Map<String, SubscriptionData> subTable = this.getSubscriptionInner();
-        if (subTable != null) {
-            for (final Map.Entry<String, SubscriptionData> entry : subTable.entrySet()) {
-                final String topic = entry.getKey();
-                try {
-                    if (!clientRebalance(topic) && tryQueryAssignment(topic)) {
-                        balanced = this.getRebalanceResultFromBroker(topic, isOrder);
-                    } else {
-                        balanced = this.rebalanceByTopic(topic, isOrder);
-                    }
-                } catch (Throwable e) {
-                    if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-                        log.warn("rebalance Exception", e);
-                        balanced = false;
-                    }
-                }
-            }
+        if (subTable == null) {
+            return true;
         }
 
-        this.truncateMessageQueueNotMyTopic();
+        boolean balanced = true;
+        for (final Map.Entry<String, SubscriptionData> entry : subTable.entrySet()) {
+            final String topic = entry.getKey();
+            balanced = reblanceBySubscription(topic, isOrder);
+        }
+
+        return balanced;
+    }
+
+    private boolean reblanceBySubscription(String topic, boolean isOrder) {
+        boolean balanced = true;
+        try {
+            if (!clientRebalance(topic) && tryQueryAssignment(topic)) {
+                balanced = this.getRebalanceResultFromBroker(topic, isOrder);
+            } else {
+                balanced = this.rebalanceByTopic(topic, isOrder);
+            }
+        } catch (Throwable e) {
+            if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                log.warn("rebalance Exception", e);
+                balanced = false;
+            }
+        }
 
         return balanced;
     }
