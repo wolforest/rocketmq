@@ -1029,16 +1029,24 @@ public class MQClientInstance {
         this.rebalanceService.wakeup();
     }
 
+
+
     public void doRebalance() {
         for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
             MQConsumerInner impl = entry.getValue();
-            if (impl != null) {
-                try {
-                    impl.doRebalance();
-                } catch (Throwable e) {
-                    log.error("doRebalance exception", e);
-                }
+            if (impl == null) {
+                continue;
             }
+
+            doRebalance(impl);
+        }
+    }
+
+    private void doRebalance(MQConsumerInner impl) {
+        try {
+            impl.doRebalance();
+        } catch (Throwable e) {
+            log.error("doRebalance exception", e);
         }
     }
 
