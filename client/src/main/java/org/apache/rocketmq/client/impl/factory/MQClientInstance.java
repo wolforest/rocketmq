@@ -261,23 +261,7 @@ public class MQClientInstance {
         synchronized (this) {
             switch (this.serviceState) {
                 case CREATE_JUST:
-                    this.serviceState = ServiceState.START_FAILED;
-                    // If not specified,looking address from name server
-                    if (null == this.clientConfig.getNamesrvAddr()) {
-                        this.mQClientAPIImpl.fetchNameServerAddr();
-                    }
-                    // Start request-response channel
-                    this.mQClientAPIImpl.start();
-                    // Start various schedule tasks
-                    this.startScheduledTask();
-                    // Start pull service
-                    this.pullMessageService.start();
-                    // Start rebalance service
-                    this.rebalanceService.start();
-                    // Start push service
-                    this.defaultMQProducer.getDefaultMQProducerImpl().start(false);
-                    log.info("the client factory [{}] start OK", this.clientId);
-                    this.serviceState = ServiceState.RUNNING;
+                    startAfterCreation();
                     break;
                 case START_FAILED:
                     throw new MQClientException("The Factory object[" + this.getClientId() + "] has been created before, and failed.", null);
@@ -285,6 +269,26 @@ public class MQClientInstance {
                     break;
             }
         }
+    }
+
+    private void startAfterCreation() throws MQClientException {
+        this.serviceState = ServiceState.START_FAILED;
+        // If not specified,looking address from name server
+        if (null == this.clientConfig.getNamesrvAddr()) {
+            this.mQClientAPIImpl.fetchNameServerAddr();
+        }
+        // Start request-response channel
+        this.mQClientAPIImpl.start();
+        // Start various schedule tasks
+        this.startScheduledTask();
+        // Start pull service
+        this.pullMessageService.start();
+        // Start rebalance service
+        this.rebalanceService.start();
+        // Start push service
+        this.defaultMQProducer.getDefaultMQProducerImpl().start(false);
+        log.info("the client factory [{}] start OK", this.clientId);
+        this.serviceState = ServiceState.RUNNING;
     }
 
     private void startScheduledTask() {
