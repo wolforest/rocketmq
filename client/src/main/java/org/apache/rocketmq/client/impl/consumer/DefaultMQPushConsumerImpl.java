@@ -615,24 +615,31 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
     }
 
+    private List<MessageExt> getMsgListFilterAgain(final PopResult popResult, final SubscriptionData subscriptionData, List<MessageExt> msgFoundList) {
+        List<MessageExt> msgListFilterAgain = msgFoundList;
+        if (subscriptionData.getTagsSet().isEmpty() || subscriptionData.isClassFilterMode() || popResult.getMsgFoundList().size() <= 0) {
+            return msgListFilterAgain;
+        }
+
+        msgListFilterAgain = new ArrayList<>(popResult.getMsgFoundList().size());
+        for (MessageExt msg : popResult.getMsgFoundList()) {
+            if (msg.getTags() != null) {
+                if (subscriptionData.getTagsSet().contains(msg.getTags())) {
+                    msgListFilterAgain.add(msg);
+                }
+            }
+        }
+
+        return msgListFilterAgain;
+    }
+
     private PopResult processPopResult(final PopResult popResult, final SubscriptionData subscriptionData) {
         if (PopStatus.FOUND != popResult.getPopStatus()) {
             return popResult;
         }
 
         List<MessageExt> msgFoundList = popResult.getMsgFoundList();
-        List<MessageExt> msgListFilterAgain = msgFoundList;
-        if (!subscriptionData.getTagsSet().isEmpty() && !subscriptionData.isClassFilterMode()
-            && popResult.getMsgFoundList().size() > 0) {
-            msgListFilterAgain = new ArrayList<>(popResult.getMsgFoundList().size());
-            for (MessageExt msg : popResult.getMsgFoundList()) {
-                if (msg.getTags() != null) {
-                    if (subscriptionData.getTagsSet().contains(msg.getTags())) {
-                        msgListFilterAgain.add(msg);
-                    }
-                }
-            }
-        }
+        List<MessageExt> msgListFilterAgain = getMsgListFilterAgain(popResult, subscriptionData, msgFoundList);
 
         if (!this.filterMessageHookList.isEmpty()) {
             FilterMessageContext filterMessageContext = new FilterMessageContext();
