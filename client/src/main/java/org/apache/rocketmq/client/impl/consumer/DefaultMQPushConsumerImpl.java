@@ -162,13 +162,15 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     }
 
     public void executeHookBefore(final ConsumeMessageContext context) {
-        if (!this.consumeMessageHookList.isEmpty()) {
-            for (ConsumeMessageHook hook : this.consumeMessageHookList) {
-                try {
-                    hook.consumeMessageBefore(context);
-                } catch (Throwable e) {
-                    log.warn("consumeMessageHook {} executeHookBefore exception", hook.hookName(), e);
-                }
+        if (this.consumeMessageHookList.isEmpty()) {
+            return;
+        }
+
+        for (ConsumeMessageHook hook : this.consumeMessageHookList) {
+            try {
+                hook.consumeMessageBefore(context);
+            } catch (Throwable e) {
+                log.warn("consumeMessageHook {} executeHookBefore exception", hook.hookName(), e);
             }
         }
     }
