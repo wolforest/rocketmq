@@ -154,6 +154,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     private MessageListener messageListener;
 
     /**
+     * @deprecated to be deleted
      * Offset Storage
      */
     private OffsetStore offsetStore;
