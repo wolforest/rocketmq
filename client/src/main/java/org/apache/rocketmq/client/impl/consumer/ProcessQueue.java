@@ -71,6 +71,29 @@ public class ProcessQueue {
         return (System.currentTimeMillis() - this.lastPullTimestamp) > PULL_MAX_IDLE_TIME;
     }
 
+    public MessageExt getExpiredMsg(DefaultMQPushConsumer pushConsumer) {
+        MessageExt msg = null;
+        try {
+            this.treeMapLock.readLock().lockInterruptibly();
+            try {
+                if (msgTreeMap.isEmpty()) {
+                    return msg;
+                }
+
+                String consumeStartTimeStamp = MessageAccessor.getConsumeStartTimeStamp(msgTreeMap.firstEntry().getValue());
+                if (StringUtils.isNotEmpty(consumeStartTimeStamp) && System.currentTimeMillis() - Long.parseLong(consumeStartTimeStamp) > pushConsumer.getConsumeTimeout() * 60 * 1000) {
+                    msg = msgTreeMap.firstEntry().getValue();
+                }
+            } finally {
+                this.treeMapLock.readLock().unlock();
+            }
+        } catch (InterruptedException e) {
+            log.error("getExpiredMsg exception", e);
+        }
+
+        return msg;
+    }
+
     /**
      * @param pushConsumer
      */
@@ -81,23 +104,7 @@ public class ProcessQueue {
 
         int loop = Math.min(msgTreeMap.size(), 16);
         for (int i = 0; i < loop; i++) {
-            MessageExt msg = null;
-            try {
-                this.treeMapLock.readLock().lockInterruptibly();
-                try {
-                    if (!msgTreeMap.isEmpty()) {
-                        String consumeStartTimeStamp = MessageAccessor.getConsumeStartTimeStamp(msgTreeMap.firstEntry().getValue());
-                        if (StringUtils.isNotEmpty(consumeStartTimeStamp) && System.currentTimeMillis() - Long.parseLong(consumeStartTimeStamp) > pushConsumer.getConsumeTimeout() * 60 * 1000) {
-                            msg = msgTreeMap.firstEntry().getValue();
-                        }
-                    }
-                } finally {
-                    this.treeMapLock.readLock().unlock();
-                }
-            } catch (InterruptedException e) {
-                log.error("getExpiredMsg exception", e);
-            }
-
+            MessageExt msg = getExpiredMsg(pushConsumer);
             if (msg == null) {
                 break;
             }
