@@ -245,32 +245,25 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         this.offsetStore = offsetStore;
     }
 
-    /**
-     * pull Message
-     * called by Daemon Thread service PullMessageService
-     * @param pullRequest PullRequest
-     */
-    public void pullMessage(final PullRequest pullRequest) {
+    private boolean checkPullMessageStatus(PullRequest pullRequest) {
         final ProcessQueue processQueue = pullRequest.getProcessQueue();
         if (processQueue.isDropped()) {
             log.info("the pull request[{}] is dropped.", pullRequest.toString());
-            return;
+            return false;
         }
-
-        pullRequest.getProcessQueue().setLastPullTimestamp(System.currentTimeMillis());
 
         try {
             this.makeSureStateOK();
         } catch (MQClientException e) {
             log.warn("pullMessage exception, consumer state not ok", e);
             this.executePullRequestLater(pullRequest, pullTimeDelayMillsWhenException);
-            return;
+            return false;
         }
 
         if (this.isPause()) {
             log.warn("consumer was paused, execute pull request later. instanceName={}, group={}", this.defaultMQPushConsumer.getInstanceName(), this.defaultMQPushConsumer.getConsumerGroup());
             this.executePullRequestLater(pullRequest, PULL_TIME_DELAY_MILLS_WHEN_SUSPEND);
-            return;
+            return false;
         }
 
         long cachedMessageCount = processQueue.getMsgCount().get();
@@ -283,7 +276,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     "the cached message count exceeds the threshold {}, so do flow control, minOffset={}, maxOffset={}, count={}, size={} MiB, pullRequest={}, flowControlTimes={}",
                     this.defaultMQPushConsumer.getPullThresholdForQueue(), processQueue.getMsgTreeMap().firstKey(), processQueue.getMsgTreeMap().lastKey(), cachedMessageCount, cachedMessageSizeInMiB, pullRequest, queueFlowControlTimes);
             }
-            return;
+            return false;
         }
 
         if (cachedMessageSizeInMiB > this.defaultMQPushConsumer.getPullThresholdSizeForQueue()) {
@@ -293,7 +286,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     "the cached message size exceeds the threshold {} MiB, so do flow control, minOffset={}, maxOffset={}, count={}, size={} MiB, pullRequest={}, flowControlTimes={}",
                     this.defaultMQPushConsumer.getPullThresholdSizeForQueue(), processQueue.getMsgTreeMap().firstKey(), processQueue.getMsgTreeMap().lastKey(), cachedMessageCount, cachedMessageSizeInMiB, pullRequest, queueFlowControlTimes);
             }
-            return;
+            return false;
         }
 
         if (!this.consumeOrderly) {
@@ -305,7 +298,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                         processQueue.getMsgTreeMap().firstKey(), processQueue.getMsgTreeMap().lastKey(), processQueue.getMaxSpan(),
                         pullRequest, queueMaxSpanFlowControlTimes);
                 }
-                return;
+                return false;
             }
         } else {
             if (processQueue.isLocked()) {
@@ -319,7 +312,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     } catch (Exception e) {
                         this.executePullRequestLater(pullRequest, pullTimeDelayMillsWhenException);
                         log.error("Failed to compute pull offset, pullResult: {}", pullRequest, e);
-                        return;
+                        return false;
                     }
                     boolean brokerBusy = offset < pullRequest.getNextOffset();
                     log.info("the first time to pull message, so fix offset from broker. pullRequest: {} NewOffset: {} brokerBusy: {}",
@@ -335,9 +328,26 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             } else {
                 this.executePullRequestLater(pullRequest, pullTimeDelayMillsWhenException);
                 log.info("pull message later because not locked in broker, {}", pullRequest);
-                return;
+                return false;
             }
         }
+
+        return true;
+    }
+
+    /**
+     * pull Message
+     * called by Daemon Thread service PullMessageService
+     * @param pullRequest PullRequest
+     */
+    public void pullMessage(final PullRequest pullRequest) {
+        if (!checkPullMessageStatus(pullRequest)) {
+            return;
+        }
+
+        final long beginTimestamp = System.currentTimeMillis();
+        pullRequest.getProcessQueue().setLastPullTimestamp(beginTimestamp);
+
 
         final SubscriptionData subscriptionData = this.rebalanceImpl.getSubscriptionInner().get(pullRequest.getMessageQueue().getTopic());
         if (null == subscriptionData) {
@@ -345,8 +355,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             log.warn("find the consumer's subscription failed, {}", pullRequest);
             return;
         }
-
-        final long beginTimestamp = System.currentTimeMillis();
 
         PullCallback pullCallback = getPullCallback(pullRequest, subscriptionData, beginTimestamp);
         long commitOffsetValue = getCommitOffsetValue(pullRequest);
