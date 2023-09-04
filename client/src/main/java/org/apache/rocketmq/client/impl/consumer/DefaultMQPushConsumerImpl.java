@@ -470,8 +470,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             }
         }
 
-        if (pullResult.getNextBeginOffset() < prevRequestOffset
-            || firstMsgOffset < prevRequestOffset) {
+        if (pullResult.getNextBeginOffset() < prevRequestOffset || firstMsgOffset < prevRequestOffset) {
             log.warn(
                 "[BUG] pull message result maybe data wrong, nextBeginOffset: {} firstMsgOffset: {} prevRequestOffset: {}",
                 pullResult.getNextBeginOffset(),
