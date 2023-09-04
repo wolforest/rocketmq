@@ -58,19 +58,23 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
 
     @Override
     public void updateOffset(MessageQueue mq, long offset, boolean increaseOnly) {
-        if (mq != null) {
-            AtomicLong offsetOld = this.offsetTable.get(mq);
-            if (null == offsetOld) {
-                offsetOld = this.offsetTable.putIfAbsent(mq, new AtomicLong(offset));
-            }
+        if (mq == null) {
+            return;
+        }
 
-            if (null != offsetOld) {
-                if (increaseOnly) {
-                    MixAll.compareAndIncreaseOnly(offsetOld, offset);
-                } else {
-                    offsetOld.set(offset);
-                }
-            }
+        AtomicLong offsetOld = this.offsetTable.get(mq);
+        if (null == offsetOld) {
+            offsetOld = this.offsetTable.putIfAbsent(mq, new AtomicLong(offset));
+        }
+
+        if (null == offsetOld) {
+            return;
+        }
+
+        if (increaseOnly) {
+            MixAll.compareAndIncreaseOnly(offsetOld, offset);
+        } else {
+            offsetOld.set(offset);
         }
     }
 
