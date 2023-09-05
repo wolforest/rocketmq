@@ -52,24 +52,12 @@ public class GetTopicRouteActivity extends AbstractRemotingActivity {
         return response;
     }
 
-    private List<Address> createAddressList() {
-        List<Address> addressList = new ArrayList<>();
-        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
-        // AddressScheme is just a placeholder and will not affect topic route result in this case.
-        addressList.add(new Address(Address.AddressScheme.IPv4, HostAndPort.fromParts(proxyConfig.getRemotingAccessAddr(), proxyConfig.getRemotingListenPort())));
-
-        return addressList;
-    }
-
     private byte[] getBody(RemotingCommand request, ProxyContext context) throws Exception {
-        byte[] content;
         final GetRouteInfoRequestHeader requestHeader = (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
-        List<Address> addressList = createAddressList();
-
-        ProxyTopicRouteData proxyTopicRouteData = messagingProcessor.getTopicRouteDataForProxy(context, addressList, requestHeader.getTopic());
-        TopicRouteData topicRouteData = proxyTopicRouteData.buildTopicRouteData();
-
+        TopicRouteData topicRouteData = buildTopicRouteData(requestHeader, context);
         Boolean standardJsonOnly = requestHeader.getAcceptStandardJsonOnly();
+
+        byte[] content;
         if (request.getVersion() >= MQVersion.Version.V4_9_4.ordinal() || null != standardJsonOnly && standardJsonOnly) {
             content = topicRouteData.encode(SerializerFeature.BrowserCompatible,
                 SerializerFeature.QuoteFieldNames, SerializerFeature.SkipTransientField,
@@ -80,4 +68,21 @@ public class GetTopicRouteActivity extends AbstractRemotingActivity {
 
         return content;
     }
+
+    private TopicRouteData buildTopicRouteData(GetRouteInfoRequestHeader requestHeader, ProxyContext context) throws Exception {
+        List<Address> addressList = createAddressList();
+        ProxyTopicRouteData proxyTopicRouteData = messagingProcessor.getTopicRouteDataForProxy(context, addressList, requestHeader.getTopic());
+
+        return proxyTopicRouteData.buildTopicRouteData();
+    }
+
+    private List<Address> createAddressList() {
+        List<Address> addressList = new ArrayList<>();
+        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
+        // AddressScheme is just a placeholder and will not affect topic route result in this case.
+        addressList.add(new Address(Address.AddressScheme.IPv4, HostAndPort.fromParts(proxyConfig.getRemotingAccessAddr(), proxyConfig.getRemotingListenPort())));
+
+        return addressList;
+    }
+
 }
