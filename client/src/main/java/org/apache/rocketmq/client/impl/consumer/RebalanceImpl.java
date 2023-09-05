@@ -518,12 +518,7 @@ public abstract class RebalanceImpl {
         }
     }
 
-    private boolean updateProcessQueueTableInRebalance(final String topic, final Set<MessageQueue> mqSet,
-        final boolean isOrder) {
-        boolean changed = false;
-
-        // drop process queues no longer belong me
-        HashMap<MessageQueue, ProcessQueue> removeQueueMap = new HashMap<>(this.processQueueTable.size());
+    private void dropOthersProcessQueue(String topic, Set<MessageQueue> mqSet, HashMap<MessageQueue, ProcessQueue> removeQueueMap) {
         Iterator<Entry<MessageQueue, ProcessQueue>> it = this.processQueueTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<MessageQueue, ProcessQueue> next = it.next();
@@ -542,6 +537,15 @@ public abstract class RebalanceImpl {
                 }
             }
         }
+    }
+
+    private boolean updateProcessQueueTableInRebalance(final String topic, final Set<MessageQueue> mqSet,
+        final boolean isOrder) {
+        boolean changed = false;
+
+        // drop process queues no longer belong me
+        HashMap<MessageQueue, ProcessQueue> removeQueueMap = new HashMap<>(this.processQueueTable.size());
+        dropOthersProcessQueue(topic,mqSet, removeQueueMap);
 
         // remove message queues no longer belong me
         for (Entry<MessageQueue, ProcessQueue> entry : removeQueueMap.entrySet()) {
