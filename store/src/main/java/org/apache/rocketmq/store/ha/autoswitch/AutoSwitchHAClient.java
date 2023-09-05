@@ -238,28 +238,31 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
 
     @Override
     public void closeMaster() {
-        if (null != this.socketChannel) {
-            try {
-                SelectionKey sk = this.socketChannel.keyFor(this.selector);
-                if (sk != null) {
-                    sk.cancel();
-                }
+        if (null == this.socketChannel) {
+            return;
+        }
 
-                this.socketChannel.close();
-                this.socketChannel = null;
-
-                LOGGER.info("AutoSwitchHAClient close connection with master {}", this.masterHaAddress.get());
-                this.changeCurrentState(HAConnectionState.READY);
-            } catch (IOException e) {
-                LOGGER.warn("CloseMaster exception. ", e);
+        try {
+            SelectionKey sk = this.socketChannel.keyFor(this.selector);
+            if (sk != null) {
+                sk.cancel();
             }
 
-            this.lastReadTimestamp = 0;
-            this.processPosition = 0;
+            this.socketChannel.close();
+            this.socketChannel = null;
 
-            this.byteBufferRead.position(0);
-            this.byteBufferRead.limit(READ_MAX_BUFFER_SIZE);
+            LOGGER.info("AutoSwitchHAClient close connection with master {}", this.masterHaAddress.get());
+            this.changeCurrentState(HAConnectionState.READY);
+        } catch (IOException e) {
+            LOGGER.warn("CloseMaster exception. ", e);
         }
+
+        this.lastReadTimestamp = 0;
+        this.processPosition = 0;
+
+        this.byteBufferRead.position(0);
+        this.byteBufferRead.limit(READ_MAX_BUFFER_SIZE);
+
     }
 
     @Override
