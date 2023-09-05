@@ -100,6 +100,7 @@ public class UtilAll {
         }
     }
 
+    @Deprecated
     public static String currentStackTrace() {
         StringBuilder sb = new StringBuilder();
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
