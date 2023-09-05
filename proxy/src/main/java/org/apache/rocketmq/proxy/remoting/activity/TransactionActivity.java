@@ -42,7 +42,20 @@ public class TransactionActivity extends AbstractRemotingActivity {
         response.setRemark(null);
 
         final EndTransactionRequestHeader requestHeader = (EndTransactionRequestHeader) request.decodeCommandCustomHeader(EndTransactionRequestHeader.class);
+        TransactionStatus transactionStatus = getTransactionStatus(requestHeader);
 
+        this.messagingProcessor.endTransaction(
+            context,
+            requestHeader.getTransactionId(),
+            requestHeader.getMsgId(),
+            requestHeader.getProducerGroup(),
+            transactionStatus,
+            requestHeader.getFromTransactionCheck()
+        );
+        return response;
+    }
+
+    private TransactionStatus getTransactionStatus(EndTransactionRequestHeader requestHeader) {
         TransactionStatus transactionStatus = TransactionStatus.UNKNOWN;
         switch (requestHeader.getCommitOrRollback()) {
             case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
@@ -55,14 +68,6 @@ public class TransactionActivity extends AbstractRemotingActivity {
                 break;
         }
 
-        this.messagingProcessor.endTransaction(
-            context,
-            requestHeader.getTransactionId(),
-            requestHeader.getMsgId(),
-            requestHeader.getProducerGroup(),
-            transactionStatus,
-            requestHeader.getFromTransactionCheck()
-        );
-        return response;
+        return transactionStatus;
     }
 }
