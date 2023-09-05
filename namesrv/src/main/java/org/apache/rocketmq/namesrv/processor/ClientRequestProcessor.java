@@ -71,39 +71,38 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
         }
 
         TopicRouteData topicRouteData = this.namesrvController.getRouteInfoManager().pickupTopicRouteData(requestHeader.getTopic());
-
-        if (topicRouteData != null) {
-            //topic route info register success ,so disable namesrvReady check
-            if (needCheckNamesrvReady.get()) {
-                needCheckNamesrvReady.set(false);
-            }
-
-            if (this.namesrvController.getNamesrvConfig().isOrderMessageEnable()) {
-                String orderTopicConf =
-                    this.namesrvController.getKvConfigManager().getKVConfig(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG,
-                        requestHeader.getTopic());
-                topicRouteData.setOrderTopicConf(orderTopicConf);
-            }
-
-            byte[] content;
-            Boolean standardJsonOnly = requestHeader.getAcceptStandardJsonOnly();
-            if (request.getVersion() >= MQVersion.Version.V4_9_4.ordinal() || null != standardJsonOnly && standardJsonOnly) {
-                content = topicRouteData.encode(SerializerFeature.BrowserCompatible,
-                    SerializerFeature.QuoteFieldNames, SerializerFeature.SkipTransientField,
-                    SerializerFeature.MapSortField);
-            } else {
-                content = topicRouteData.encode();
-            }
-
-            response.setBody(content);
-            response.setCode(ResponseCode.SUCCESS);
-            response.setRemark(null);
+        if (null == topicRouteData) {
+            response.setCode(ResponseCode.TOPIC_NOT_EXIST);
+            response.setRemark("No topic route info in name server for the topic: " + requestHeader.getTopic()
+                + FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL));
             return response;
         }
 
-        response.setCode(ResponseCode.TOPIC_NOT_EXIST);
-        response.setRemark("No topic route info in name server for the topic: " + requestHeader.getTopic()
-            + FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL));
+        //topic route info register success ,so disable namesrvReady check
+        if (needCheckNamesrvReady.get()) {
+            needCheckNamesrvReady.set(false);
+        }
+
+        if (this.namesrvController.getNamesrvConfig().isOrderMessageEnable()) {
+            String orderTopicConf =
+                this.namesrvController.getKvConfigManager().getKVConfig(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG,
+                    requestHeader.getTopic());
+            topicRouteData.setOrderTopicConf(orderTopicConf);
+        }
+
+        byte[] content;
+        Boolean standardJsonOnly = requestHeader.getAcceptStandardJsonOnly();
+        if (request.getVersion() >= MQVersion.Version.V4_9_4.ordinal() || null != standardJsonOnly && standardJsonOnly) {
+            content = topicRouteData.encode(SerializerFeature.BrowserCompatible,
+                SerializerFeature.QuoteFieldNames, SerializerFeature.SkipTransientField,
+                SerializerFeature.MapSortField);
+        } else {
+            content = topicRouteData.encode();
+        }
+
+        response.setBody(content);
+        response.setCode(ResponseCode.SUCCESS);
+        response.setRemark(null);
         return response;
     }
 
