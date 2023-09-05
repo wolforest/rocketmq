@@ -141,6 +141,9 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     private AllocateMessageQueueStrategy allocateMessageQueueStrategy;
 
     /**
+     * @Deprecated allays empty Map
+     * replaced by RebalanceImpl.subscriptionInner
+     *
      * Subscription relationship
      */
     private Map<String /* topic */, String /* sub expression */> subscription = new HashMap<>();
@@ -151,6 +154,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     private MessageListener messageListener;
 
     /**
+     * @deprecated to be deleted
      * Offset Storage
      */
     private OffsetStore offsetStore;

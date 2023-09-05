@@ -71,8 +71,10 @@ public class ProcessQueue {
         return (System.currentTimeMillis() - this.lastPullTimestamp) > PULL_MAX_IDLE_TIME;
     }
 
+
     /**
-     * @param pushConsumer
+     * resend the expired msg back to MQ
+     * @param pushConsumer DefaultMQPushConsumer
      */
     public void cleanExpiredMsg(DefaultMQPushConsumer pushConsumer) {
         if (pushConsumer.isConsumeOrderly()) {
@@ -81,50 +83,70 @@ public class ProcessQueue {
 
         int loop = Math.min(msgTreeMap.size(), 16);
         for (int i = 0; i < loop; i++) {
-            MessageExt msg = null;
-            try {
-                this.treeMapLock.readLock().lockInterruptibly();
-                try {
-                    if (!msgTreeMap.isEmpty()) {
-                        String consumeStartTimeStamp = MessageAccessor.getConsumeStartTimeStamp(msgTreeMap.firstEntry().getValue());
-                        if (StringUtils.isNotEmpty(consumeStartTimeStamp) && System.currentTimeMillis() - Long.parseLong(consumeStartTimeStamp) > pushConsumer.getConsumeTimeout() * 60 * 1000) {
-                            msg = msgTreeMap.firstEntry().getValue();
-                        }
-                    }
-                } finally {
-                    this.treeMapLock.readLock().unlock();
-                }
-            } catch (InterruptedException e) {
-                log.error("getExpiredMsg exception", e);
-            }
-
+            MessageExt msg = getExpiredMsg(pushConsumer);
             if (msg == null) {
                 break;
             }
 
-            try {
+            resendExpiredMsg(pushConsumer, msg);
+        }
+    }
 
-                pushConsumer.sendMessageBack(msg, 3);
-                log.info("send expire msg back. topic={}, msgId={}, storeHost={}, queueId={}, queueOffset={}", msg.getTopic(), msg.getMsgId(), msg.getStoreHost(), msg.getQueueId(), msg.getQueueOffset());
-                try {
-                    this.treeMapLock.writeLock().lockInterruptibly();
-                    try {
-                        if (!msgTreeMap.isEmpty() && msg.getQueueOffset() == msgTreeMap.firstKey()) {
-                            try {
-                                removeMessage(Collections.singletonList(msg));
-                            } catch (Exception e) {
-                                log.error("send expired msg exception", e);
-                            }
-                        }
-                    } finally {
-                        this.treeMapLock.writeLock().unlock();
-                    }
-                } catch (InterruptedException e) {
-                    log.error("getExpiredMsg exception", e);
+    private MessageExt getExpiredMsg(DefaultMQPushConsumer pushConsumer) {
+        MessageExt msg = null;
+        try {
+            this.treeMapLock.readLock().lockInterruptibly();
+            try {
+                if (msgTreeMap.isEmpty()) {
+                    return msg;
                 }
-            } catch (Exception e) {
-                log.error("send expired msg exception", e);
+
+                String consumeStartTimeStamp = MessageAccessor.getConsumeStartTimeStamp(msgTreeMap.firstEntry().getValue());
+                if (StringUtils.isNotEmpty(consumeStartTimeStamp) && System.currentTimeMillis() - Long.parseLong(consumeStartTimeStamp) > pushConsumer.getConsumeTimeout() * 60 * 1000) {
+                    msg = msgTreeMap.firstEntry().getValue();
+                }
+            } finally {
+                this.treeMapLock.readLock().unlock();
             }
+        } catch (InterruptedException e) {
+            log.error("getExpiredMsg exception", e);
+        }
+
+        return msg;
+    }
+
+    private void resendExpiredMsg(DefaultMQPushConsumer pushConsumer, MessageExt msg) {
+        try {
+            pushConsumer.sendMessageBack(msg, 3);
+            log.info("send expire msg back. topic={}, msgId={}, storeHost={}, queueId={}, queueOffset={}", msg.getTopic(), msg.getMsgId(), msg.getStoreHost(), msg.getQueueId(), msg.getQueueOffset());
+            removeExpiredMsg(msg);
+        } catch (Exception e) {
+            log.error("send expired msg exception", e);
+        }
+    }
+
+    private void removeExpiredMsg(MessageExt msg) {
+        try {
+            this.treeMapLock.writeLock().lockInterruptibly();
+            try {
+                tryRemoveExpiredMsg(msg);
+            } finally {
+                this.treeMapLock.writeLock().unlock();
+            }
+        } catch (InterruptedException e) {
+            log.error("getExpiredMsg exception", e);
+        }
+    }
+
+    private void tryRemoveExpiredMsg(MessageExt msg) {
+        if (msgTreeMap.isEmpty() || msg.getQueueOffset() != msgTreeMap.firstKey()) {
+            return;
+        }
+
+        try {
+            removeMessage(Collections.singletonList(msg));
+        } catch (Exception e) {
+            log.error("send expired msg exception", e);
         }
     }
 
