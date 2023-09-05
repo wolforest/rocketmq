@@ -317,7 +317,7 @@ public class TopicQueueMappingCleanService extends ServiceThread {
                 } catch (Throwable tt) {
                     log.error("Try cleanItemListMoreThanSecondGen failed for topic {}", topic, tt);
                 } finally {
-                    UtilAll.sleep(10);
+                    ThreadUtils.sleep(10);
                 }
             }
         } catch (Throwable t) {
