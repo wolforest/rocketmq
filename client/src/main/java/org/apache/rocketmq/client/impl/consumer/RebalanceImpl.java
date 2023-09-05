@@ -558,8 +558,55 @@ public abstract class RebalanceImpl {
         return changed;
     }
 
-    private boolean updateProcessQueueTableInRebalance(final String topic, final Set<MessageQueue> mqSet,
-        final boolean isOrder) {
+    private boolean updateProcessQueueTableInRebalance(final String topic, final Set<MessageQueue> mqSet, final boolean isOrder, boolean changed) {
+        boolean allMQLocked = true;
+        List<PullRequest> pullRequestList = new ArrayList<>();
+        for (MessageQueue mq : mqSet) {
+            if (this.processQueueTable.containsKey(mq)) {
+                continue;
+            }
+
+            if (isOrder && !this.lock(mq)) {
+                log.warn("doRebalance, {}, add a new mq failed, {}, because lock failed", consumerGroup, mq);
+                allMQLocked = false;
+                continue;
+            }
+
+            this.removeDirtyOffset(mq);
+            ProcessQueue pq = createProcessQueue(topic);
+            pq.setLocked(true);
+
+            long nextOffset = this.computePullFromWhere(mq);
+            if (nextOffset < 0) {
+                log.warn("doRebalance, {}, add new mq failed, {}", consumerGroup, mq);
+                continue;
+            }
+
+            ProcessQueue pre = this.processQueueTable.putIfAbsent(mq, pq);
+            if (pre != null) {
+                log.info("doRebalance, {}, mq already exists, {}", consumerGroup, mq);
+                continue;
+            }
+
+            log.info("doRebalance, {}, add a new mq, {}", consumerGroup, mq);
+            PullRequest pullRequest = new PullRequest();
+            pullRequest.setConsumerGroup(consumerGroup);
+            pullRequest.setNextOffset(nextOffset);
+            pullRequest.setMessageQueue(mq);
+            pullRequest.setProcessQueue(pq);
+            pullRequestList.add(pullRequest);
+            changed = true;
+        }
+
+        if (!allMQLocked) {
+            mQClientFactory.rebalanceLater(500);
+        }
+        this.dispatchPullRequest(pullRequestList, 500);
+
+        return changed;
+    }
+
+    private boolean updateProcessQueueTableInRebalance(final String topic, final Set<MessageQueue> mqSet, final boolean isOrder) {
         // drop process queues no longer belong me
         HashMap<MessageQueue, ProcessQueue> removeQueueMap = dropOthersProcessQueue(topic,mqSet);
 
@@ -567,48 +614,7 @@ public abstract class RebalanceImpl {
         boolean changed = dropOthersMessageQueue(removeQueueMap);
 
         // add new message queue
-        boolean allMQLocked = true;
-        List<PullRequest> pullRequestList = new ArrayList<>();
-        for (MessageQueue mq : mqSet) {
-            if (!this.processQueueTable.containsKey(mq)) {
-                if (isOrder && !this.lock(mq)) {
-                    log.warn("doRebalance, {}, add a new mq failed, {}, because lock failed", consumerGroup, mq);
-                    allMQLocked = false;
-                    continue;
-                }
-
-                this.removeDirtyOffset(mq);
-                ProcessQueue pq = createProcessQueue(topic);
-                pq.setLocked(true);
-                long nextOffset = this.computePullFromWhere(mq);
-                if (nextOffset >= 0) {
-                    ProcessQueue pre = this.processQueueTable.putIfAbsent(mq, pq);
-                    if (pre != null) {
-                        log.info("doRebalance, {}, mq already exists, {}", consumerGroup, mq);
-                    } else {
-                        log.info("doRebalance, {}, add a new mq, {}", consumerGroup, mq);
-                        PullRequest pullRequest = new PullRequest();
-                        pullRequest.setConsumerGroup(consumerGroup);
-                        pullRequest.setNextOffset(nextOffset);
-                        pullRequest.setMessageQueue(mq);
-                        pullRequest.setProcessQueue(pq);
-                        pullRequestList.add(pullRequest);
-                        changed = true;
-                    }
-                } else {
-                    log.warn("doRebalance, {}, add new mq failed, {}", consumerGroup, mq);
-                }
-            }
-
-        }
-
-        if (!allMQLocked) {
-            mQClientFactory.rebalanceLater(500);
-        }
-
-        this.dispatchPullRequest(pullRequestList, 500);
-
-        return changed;
+        return updateProcessQueueTableInRebalance(topic, mqSet, isOrder, changed);
     }
 
     private boolean updateMessageQueueAssignment(final String topic, final Set<MessageQueueAssignment> assignments,
