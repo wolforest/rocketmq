@@ -89,7 +89,7 @@ public class UtilAll {
         sleep(sleepMs, TimeUnit.MILLISECONDS);
     }
 
-    public static void sleep(long timeOut, TimeUnit timeUnit) {
+    private static void sleep(long timeOut, TimeUnit timeUnit) {
         if (null == timeUnit) {
             return;
         }
