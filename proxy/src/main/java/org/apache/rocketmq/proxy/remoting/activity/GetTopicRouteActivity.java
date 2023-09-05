@@ -44,17 +44,26 @@ public class GetTopicRouteActivity extends AbstractRemotingActivity {
     @Override
     protected RemotingCommand processRequest0(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
-        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        final GetRouteInfoRequestHeader requestHeader =
-            (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
-        List<Address> addressList = new ArrayList<>();
+
+        response.setBody(getBody(request, context));
+        response.setCode(ResponseCode.SUCCESS);
+        response.setRemark(null);
+        return response;
+    }
+
+    private byte[] getBody(RemotingCommand request, ProxyContext context) throws Exception {
+        byte[] content;
+        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
+        final GetRouteInfoRequestHeader requestHeader = (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
+
         // AddressScheme is just a placeholder and will not affect topic route result in this case.
+        List<Address> addressList = new ArrayList<>();
         addressList.add(new Address(Address.AddressScheme.IPv4, HostAndPort.fromParts(proxyConfig.getRemotingAccessAddr(), proxyConfig.getRemotingListenPort())));
+
         ProxyTopicRouteData proxyTopicRouteData = messagingProcessor.getTopicRouteDataForProxy(context, addressList, requestHeader.getTopic());
         TopicRouteData topicRouteData = proxyTopicRouteData.buildTopicRouteData();
 
-        byte[] content;
         Boolean standardJsonOnly = requestHeader.getAcceptStandardJsonOnly();
         if (request.getVersion() >= MQVersion.Version.V4_9_4.ordinal() || null != standardJsonOnly && standardJsonOnly) {
             content = topicRouteData.encode(SerializerFeature.BrowserCompatible,
@@ -64,9 +73,6 @@ public class GetTopicRouteActivity extends AbstractRemotingActivity {
             content = topicRouteData.encode();
         }
 
-        response.setBody(content);
-        response.setCode(ResponseCode.SUCCESS);
-        response.setRemark(null);
-        return response;
+        return content;
     }
 }
