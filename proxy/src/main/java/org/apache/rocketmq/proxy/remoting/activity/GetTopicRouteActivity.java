@@ -52,14 +52,19 @@ public class GetTopicRouteActivity extends AbstractRemotingActivity {
         return response;
     }
 
+    private List<Address> createAddressList() {
+        List<Address> addressList = new ArrayList<>();
+        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
+        // AddressScheme is just a placeholder and will not affect topic route result in this case.
+        addressList.add(new Address(Address.AddressScheme.IPv4, HostAndPort.fromParts(proxyConfig.getRemotingAccessAddr(), proxyConfig.getRemotingListenPort())));
+
+        return addressList;
+    }
+
     private byte[] getBody(RemotingCommand request, ProxyContext context) throws Exception {
         byte[] content;
-        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
         final GetRouteInfoRequestHeader requestHeader = (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
-
-        // AddressScheme is just a placeholder and will not affect topic route result in this case.
-        List<Address> addressList = new ArrayList<>();
-        addressList.add(new Address(Address.AddressScheme.IPv4, HostAndPort.fromParts(proxyConfig.getRemotingAccessAddr(), proxyConfig.getRemotingListenPort())));
+        List<Address> addressList = createAddressList();
 
         ProxyTopicRouteData proxyTopicRouteData = messagingProcessor.getTopicRouteDataForProxy(context, addressList, requestHeader.getTopic());
         TopicRouteData topicRouteData = proxyTopicRouteData.buildTopicRouteData();
