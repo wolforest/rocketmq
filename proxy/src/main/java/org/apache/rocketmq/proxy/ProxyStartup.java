@@ -209,10 +209,22 @@ public class ProxyStartup {
     protected static MessagingProcessor createLocalMessagingProcessor() {
         BrokerController brokerController = createBrokerController();
         ProxyMetricsManager.initLocalMode(brokerController.getBrokerServiceManager().getBrokerMetricsManager(), ConfigurationManager.getProxyConfig());
-        StartAndShutdown brokerControllerWrapper = new StartAndShutdown() {
+
+        StartAndShutdown brokerControllerWrapper = createBrokerControllerWrapper(brokerController);
+        PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(brokerControllerWrapper);
+
+        MessagingProcessor messagingProcessor = DefaultMessagingProcessor.createForLocalMode(brokerController);
+        PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(messagingProcessor);
+
+        return messagingProcessor;
+    }
+
+    protected static StartAndShutdown createBrokerControllerWrapper(BrokerController brokerController) {
+        return new StartAndShutdown() {
             @Override
             public void start() throws Exception {
                 brokerController.start();
+
                 String tip = "The broker[" + brokerController.getBrokerConfig().getBrokerName() + ", "
                     + brokerController.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
                 if (null != brokerController.getBrokerConfig().getNamesrvAddr()) {
@@ -226,12 +238,6 @@ public class ProxyStartup {
                 brokerController.shutdown();
             }
         };
-        PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(brokerControllerWrapper);
-
-        MessagingProcessor messagingProcessor = DefaultMessagingProcessor.createForLocalMode(brokerController);
-        PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(messagingProcessor);
-
-        return messagingProcessor;
     }
 
     private static GrpcMessagingApplication createServiceProcessor(MessagingProcessor messagingProcessor) {
