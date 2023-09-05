@@ -73,33 +73,35 @@ public class GroupCheckService extends FlushCommitLogService {
 
     private void doCommit() {
         synchronized (this.requestsRead) {
-            if (!this.requestsRead.isEmpty()) {
-                for (GroupCommitRequest req : this.requestsRead) {
-                    // There may be a message in the next file, so a maximum of
-                    // two times the flush
-                    boolean flushOK = false;
-                    for (int i = 0; i < 1000; i++) {
-                        flushOK = commitLog.getMappedFileQueue().getFlushedWhere() >= req.getNextOffset();
-                        if (flushOK) {
-                            break;
-                        } else {
-                            try {
-                                Thread.sleep(1);
-                            } catch (Throwable ignored) {
+            if (this.requestsRead.isEmpty()) {
+                return;
+            }
 
-                            }
+            for (GroupCommitRequest req : this.requestsRead) {
+                // There may be a message in the next file, so a maximum of
+                // two times the flush
+                boolean flushOK = false;
+                for (int i = 0; i < 1000; i++) {
+                    flushOK = commitLog.getMappedFileQueue().getFlushedWhere() >= req.getNextOffset();
+                    if (flushOK) {
+                        break;
+                    } else {
+                        try {
+                            Thread.sleep(1);
+                        } catch (Throwable ignored) {
+
                         }
                     }
-                    req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);
                 }
-
-                long storeTimestamp = commitLog.getMappedFileQueue().getStoreTimestamp();
-                if (storeTimestamp > 0) {
-                    defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
-                }
-
-                this.requestsRead.clear();
+                req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);
             }
+
+            long storeTimestamp = commitLog.getMappedFileQueue().getStoreTimestamp();
+            if (storeTimestamp > 0) {
+                defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
+            }
+
+            this.requestsRead.clear();
         }
     }
 
