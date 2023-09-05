@@ -1168,20 +1168,22 @@ public class DefaultMessageStore implements MessageStore {
         this.scheduledExecutorService.scheduleAtFixedRate(new AbstractBrokerRunnable(this.getBrokerIdentity()) {
             @Override
             public void run0() {
-                if (DefaultMessageStore.this.getMessageStoreConfig().isDebugLockEnable()) {
-                    try {
-                        if (DefaultMessageStore.this.commitLog.getBeginTimeInLock() != 0) {
-                            long lockTime = System.currentTimeMillis() - DefaultMessageStore.this.commitLog.getBeginTimeInLock();
-                            if (lockTime > 1000 && lockTime < 10000000) {
+                if (!DefaultMessageStore.this.getMessageStoreConfig().isDebugLockEnable()) {
+                    return;
+                }
 
-                                String stack = UtilAll.jstack();
-                                final String fileName = System.getProperty("user.home") + File.separator + "debug/lock/stack-"
-                                    + DefaultMessageStore.this.commitLog.getBeginTimeInLock() + "-" + lockTime;
-                                MixAll.string2FileNotSafe(stack, fileName);
-                            }
+                try {
+                    if (DefaultMessageStore.this.commitLog.getBeginTimeInLock() != 0) {
+                        long lockTime = System.currentTimeMillis() - DefaultMessageStore.this.commitLog.getBeginTimeInLock();
+                        if (lockTime > 1000 && lockTime < 10000000) {
+
+                            String stack = UtilAll.jstack();
+                            final String fileName = System.getProperty("user.home") + File.separator + "debug/lock/stack-"
+                                + DefaultMessageStore.this.commitLog.getBeginTimeInLock() + "-" + lockTime;
+                            MixAll.string2FileNotSafe(stack, fileName);
                         }
-                    } catch (Exception e) {
                     }
+                } catch (Exception e) {
                 }
             }
         }, 1, 1, TimeUnit.SECONDS);
