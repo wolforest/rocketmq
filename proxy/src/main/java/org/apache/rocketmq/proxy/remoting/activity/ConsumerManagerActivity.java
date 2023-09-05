@@ -92,40 +92,47 @@ public class ConsumerManagerActivity extends AbstractRemotingActivity {
         return response;
     }
 
+    private ConsumerConnection createConsumerConnection(ConsumerGroupInfo consumerGroupInfo) {
+        ConsumerConnection bodydata = new ConsumerConnection();
+        bodydata.setConsumeFromWhere(consumerGroupInfo.getConsumeFromWhere());
+        bodydata.setConsumeType(consumerGroupInfo.getConsumeType());
+        bodydata.setMessageModel(consumerGroupInfo.getMessageModel());
+        bodydata.getSubscriptionTable().putAll(consumerGroupInfo.getSubscriptionTable());
+
+        return bodydata;
+    }
+
+    private void addConnection(ConsumerConnection bodydata, ConsumerGroupInfo consumerGroupInfo) {
+        for (Map.Entry<Channel, ClientChannelInfo> entry : consumerGroupInfo.getChannelInfoTable().entrySet()) {
+            ClientChannelInfo info = entry.getValue();
+            Connection connection = new Connection();
+            connection.setClientId(info.getClientId());
+            connection.setLanguage(info.getLanguage());
+            connection.setVersion(info.getVersion());
+            connection.setClientAddr(RemotingHelper.parseChannelRemoteAddr(info.getChannel()));
+
+            bodydata.getConnectionSet().add(connection);
+        }
+    }
+
     protected RemotingCommand getConsumerConnectionList(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
         RemotingCommand response = RemotingCommand.createResponseCommand(GetConsumerConnectionListRequestHeader.class);
         GetConsumerConnectionListRequestHeader header = (GetConsumerConnectionListRequestHeader) request.decodeCommandCustomHeader(GetConsumerConnectionListRequestHeader.class);
         ConsumerGroupInfo consumerGroupInfo = messagingProcessor.getConsumerGroupInfo(context, header.getConsumerGroup());
-        if (consumerGroupInfo != null) {
-            ConsumerConnection bodydata = new ConsumerConnection();
-            bodydata.setConsumeFromWhere(consumerGroupInfo.getConsumeFromWhere());
-            bodydata.setConsumeType(consumerGroupInfo.getConsumeType());
-            bodydata.setMessageModel(consumerGroupInfo.getMessageModel());
-            bodydata.getSubscriptionTable().putAll(consumerGroupInfo.getSubscriptionTable());
 
-            Iterator<Map.Entry<Channel, ClientChannelInfo>> it = consumerGroupInfo.getChannelInfoTable().entrySet().iterator();
-            while (it.hasNext()) {
-                ClientChannelInfo info = it.next().getValue();
-                Connection connection = new Connection();
-                connection.setClientId(info.getClientId());
-                connection.setLanguage(info.getLanguage());
-                connection.setVersion(info.getVersion());
-                connection.setClientAddr(RemotingHelper.parseChannelRemoteAddr(info.getChannel()));
-
-                bodydata.getConnectionSet().add(connection);
-            }
-
-            byte[] body = bodydata.encode();
-            response.setBody(body);
-            response.setCode(ResponseCode.SUCCESS);
-            response.setRemark(null);
-
-            return response;
+        if (consumerGroupInfo == null) {
+            return response.setCodeAndRemark(ResponseCode.CONSUMER_NOT_ONLINE, "the consumer group[" + header.getConsumerGroup() + "] not online");
         }
 
-        response.setCode(ResponseCode.CONSUMER_NOT_ONLINE);
-        response.setRemark("the consumer group[" + header.getConsumerGroup() + "] not online");
+        ConsumerConnection bodydata = createConsumerConnection(consumerGroupInfo);
+        addConnection(bodydata, consumerGroupInfo);
+        byte[] body = bodydata.encode();
+
+        response.setBody(body);
+        response.setCode(ResponseCode.SUCCESS);
+        response.setRemark(null);
+
         return response;
     }
 
