@@ -37,10 +37,8 @@ public class TransactionActivity extends AbstractRemotingActivity {
     @Override
     protected RemotingCommand processRequest0(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
-        RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        response.setCode(ResponseCode.SUCCESS);
-        response.setRemark(null);
 
+        RemotingCommand response = createResponse();
         final EndTransactionRequestHeader requestHeader = (EndTransactionRequestHeader) request.decodeCommandCustomHeader(EndTransactionRequestHeader.class);
         TransactionStatus transactionStatus = getTransactionStatus(requestHeader);
 
@@ -55,8 +53,17 @@ public class TransactionActivity extends AbstractRemotingActivity {
         return response;
     }
 
+    private RemotingCommand createResponse() {
+        RemotingCommand response = RemotingCommand.createResponseCommand(null);
+        response.setCode(ResponseCode.SUCCESS);
+        response.setRemark(null);
+
+        return response;
+    }
+
     private TransactionStatus getTransactionStatus(EndTransactionRequestHeader requestHeader) {
         TransactionStatus transactionStatus = TransactionStatus.UNKNOWN;
+
         switch (requestHeader.getCommitOrRollback()) {
             case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
                 transactionStatus = TransactionStatus.COMMIT;
