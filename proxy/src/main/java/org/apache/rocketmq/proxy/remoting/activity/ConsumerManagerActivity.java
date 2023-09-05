@@ -115,6 +115,12 @@ public class ConsumerManagerActivity extends AbstractRemotingActivity {
         }
     }
 
+    private byte[] getBody(ConsumerGroupInfo consumerGroupInfo) {
+        ConsumerConnection connection = createConsumerConnection(consumerGroupInfo);
+        addConnection(connection, consumerGroupInfo);
+        return connection.encode();
+    }
+
     protected RemotingCommand getConsumerConnectionList(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
         RemotingCommand response = RemotingCommand.createResponseCommand(GetConsumerConnectionListRequestHeader.class);
@@ -125,11 +131,9 @@ public class ConsumerManagerActivity extends AbstractRemotingActivity {
             return response.setCodeAndRemark(ResponseCode.CONSUMER_NOT_ONLINE, "the consumer group[" + header.getConsumerGroup() + "] not online");
         }
 
-        ConsumerConnection bodydata = createConsumerConnection(consumerGroupInfo);
-        addConnection(bodydata, consumerGroupInfo);
-        byte[] body = bodydata.encode();
-
+        byte[] body = getBody(consumerGroupInfo);
         response.setBody(body);
+
         response.setCode(ResponseCode.SUCCESS);
         response.setRemark(null);
 
