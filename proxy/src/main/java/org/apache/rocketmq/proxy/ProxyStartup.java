@@ -74,18 +74,11 @@ public class ProxyStartup {
             // init thread pool monitor for proxy.
             initThreadPoolMonitor();
 
-            ThreadPoolExecutor executor = createServerExecutor();
-
             MessagingProcessor messagingProcessor = createMessagingProcessor();
-
             List<AccessValidator> accessValidators = loadAccessValidators();
+
             // create grpcServer
-            GrpcServer grpcServer = GrpcServerBuilder.newBuilder(executor, ConfigurationManager.getProxyConfig().getGrpcServerPort())
-                .addService(createServiceProcessor(messagingProcessor))
-                .addService(ChannelzService.newInstance(100))
-                .addService(ProtoReflectionService.newInstance())
-                .configInterceptor(accessValidators)
-                .build();
+            GrpcServer grpcServer = createGrpcServer(messagingProcessor, accessValidators);
             PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(grpcServer);
 
             RemotingProtocolServer remotingServer = new RemotingProtocolServer(messagingProcessor, accessValidators);
@@ -104,6 +97,16 @@ public class ProxyStartup {
 
         System.out.printf("%s%n", new Date() + " rocketmq-proxy startup successfully");
         log.info(new Date() + " rocketmq-proxy startup successfully");
+    }
+
+    protected static GrpcServer createGrpcServer(MessagingProcessor messagingProcessor, List<AccessValidator> accessValidators) {
+        ThreadPoolExecutor executor = createServerExecutor();
+        return GrpcServerBuilder.newBuilder(executor, ConfigurationManager.getProxyConfig().getGrpcServerPort())
+            .addService(createServiceProcessor(messagingProcessor))
+            .addService(ChannelzService.newInstance(100))
+            .addService(ProtoReflectionService.newInstance())
+            .configInterceptor(accessValidators)
+            .build();
     }
 
     protected static void addShutdownHook() {
