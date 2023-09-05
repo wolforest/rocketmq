@@ -140,15 +140,26 @@ public class ConsumerManagerActivity extends AbstractRemotingActivity {
         return response;
     }
 
+    private RemotingCommand emptyMQ(LockBatchRequestBody requestBody) {
+        final RemotingCommand response = RemotingCommand.createResponseCommand(null);
+        response.setBody(requestBody.encode());
+        response.setRemark("MessageQueue set is empty");
+        return response;
+    }
+
+    private RemotingCommand emptyMQ(UnlockBatchRequestBody requestBody) {
+        final RemotingCommand response = RemotingCommand.createResponseCommand(null);
+        response.setBody(requestBody.encode());
+        response.setRemark("MessageQueue set is empty");
+        return response;
+    }
+
     protected RemotingCommand lockBatchMQ(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
-        final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         LockBatchRequestBody requestBody = LockBatchRequestBody.decode(request.getBody(), LockBatchRequestBody.class);
         Set<MessageQueue> mqSet = requestBody.getMqSet();
         if (mqSet.isEmpty()) {
-            response.setBody(requestBody.encode());
-            response.setRemark("MessageQueue set is empty");
-            return response;
+            return emptyMQ(requestBody);
         }
 
         String brokerName = new ArrayList<>(mqSet).get(0).getBrokerName();
@@ -163,13 +174,10 @@ public class ConsumerManagerActivity extends AbstractRemotingActivity {
 
     protected RemotingCommand unlockBatchMQ(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
-        final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         UnlockBatchRequestBody requestBody = UnlockBatchRequestBody.decode(request.getBody(), UnlockBatchRequestBody.class);
         Set<MessageQueue> mqSet = requestBody.getMqSet();
         if (mqSet.isEmpty()) {
-            response.setBody(requestBody.encode());
-            response.setRemark("MessageQueue set is empty");
-            return response;
+            return emptyMQ(requestBody);
         }
 
         String brokerName = new ArrayList<>(mqSet).get(0).getBrokerName();
