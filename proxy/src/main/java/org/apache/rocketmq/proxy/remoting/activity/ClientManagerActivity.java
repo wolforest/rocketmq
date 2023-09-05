@@ -117,6 +117,18 @@ public class ClientManagerActivity extends AbstractRemotingActivity {
 
     }
 
+    protected RemotingCommand unregisterClient(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context) throws RemotingCommandException {
+        UnregisterClientRequestHeader requestHeader = (UnregisterClientRequestHeader) request.decodeCommandCustomHeader(UnregisterClientRequestHeader.class);
+
+        unRegisterProducer(ctx, request, context, requestHeader);
+        unRegisterConsumer(ctx, request, context, requestHeader);
+
+        RemotingCommand response = RemotingCommand.createResponseCommand(UnregisterClientResponseHeader.class);
+        response.setCode(ResponseCode.SUCCESS);
+        response.setRemark("");
+        return response;
+    }
+
     private void unRegisterProducer(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context, UnregisterClientRequestHeader requestHeader) {
         final String producerGroup = requestHeader.getProducerGroup();
         if (producerGroup == null) {
@@ -132,28 +144,19 @@ public class ClientManagerActivity extends AbstractRemotingActivity {
         this.messagingProcessor.unRegisterProducer(context, producerGroup, clientChannelInfo);
     }
 
-    protected RemotingCommand unregisterClient(ChannelHandlerContext ctx, RemotingCommand request,
-        ProxyContext context) throws RemotingCommandException {
-        final UnregisterClientRequestHeader requestHeader =
-            (UnregisterClientRequestHeader) request.decodeCommandCustomHeader(UnregisterClientRequestHeader.class);
-
-        unRegisterProducer(ctx, request, context, requestHeader);
-
+    private void unRegisterConsumer(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context, UnregisterClientRequestHeader requestHeader) {
         final String consumerGroup = requestHeader.getConsumerGroup();
-        if (consumerGroup != null) {
-            RemotingChannel channel = this.remotingChannelManager.removeConsumerChannel(context, consumerGroup, ctx.channel());
-            ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
-                channel,
-                requestHeader.getClientID(),
-                request.getLanguage(),
-                request.getVersion());
-            this.messagingProcessor.unRegisterConsumer(context, consumerGroup, clientChannelInfo);
+        if (consumerGroup == null) {
+            return;
         }
 
-        final RemotingCommand response = RemotingCommand.createResponseCommand(UnregisterClientResponseHeader.class);
-        response.setCode(ResponseCode.SUCCESS);
-        response.setRemark("");
-        return response;
+        RemotingChannel channel = this.remotingChannelManager.removeConsumerChannel(context, consumerGroup, ctx.channel());
+        ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
+            channel,
+            requestHeader.getClientID(),
+            request.getLanguage(),
+            request.getVersion());
+        this.messagingProcessor.unRegisterConsumer(context, consumerGroup, clientChannelInfo);
     }
 
     protected RemotingCommand checkClientConfig(ChannelHandlerContext ctx, RemotingCommand request,
