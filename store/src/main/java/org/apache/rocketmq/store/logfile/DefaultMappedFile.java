@@ -423,7 +423,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         int lastCommittedPosition = COMMITTED_POSITION_UPDATER.get(this);
 
         if (writePos - lastCommittedPosition <= 0) {
-           return;
+            return;
         }
 
         try {

@@ -84,6 +84,7 @@ public class UtilAll {
         return PID;
     }
 
+    @Deprecated
     public static void sleep(long sleepMs) {
         sleep(sleepMs, TimeUnit.MILLISECONDS);
     }
