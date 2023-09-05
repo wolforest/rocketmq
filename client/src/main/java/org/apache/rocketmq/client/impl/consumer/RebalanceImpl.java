@@ -518,36 +518,32 @@ public abstract class RebalanceImpl {
         }
     }
 
-    private void dropOthersProcessQueue(String topic, Set<MessageQueue> mqSet, HashMap<MessageQueue, ProcessQueue> removeQueueMap) {
-        Iterator<Entry<MessageQueue, ProcessQueue>> it = this.processQueueTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<MessageQueue, ProcessQueue> next = it.next();
+    private HashMap<MessageQueue, ProcessQueue> dropOthersProcessQueue(String topic, Set<MessageQueue> mqSet) {
+        HashMap<MessageQueue, ProcessQueue> removeQueueMap = new HashMap<>(this.processQueueTable.size());
+        for (Entry<MessageQueue, ProcessQueue> next : this.processQueueTable.entrySet()) {
             MessageQueue mq = next.getKey();
             ProcessQueue pq = next.getValue();
 
-            if (mq.getTopic().equals(topic)) {
-                if (!mqSet.contains(mq)) {
-                    pq.setDropped(true);
-                    removeQueueMap.put(mq, pq);
-                } else if (pq.isPullExpired() && this.consumeType() == ConsumeType.CONSUME_PASSIVELY) {
-                    pq.setDropped(true);
-                    removeQueueMap.put(mq, pq);
-                    log.error("[BUG]doRebalance, {}, try remove unnecessary mq, {}, because pull is pause, so try to fixed it",
-                        consumerGroup, mq);
-                }
+            if (!mq.getTopic().equals(topic)) {
+                continue;
+            }
+
+            if (!mqSet.contains(mq)) {
+                pq.setDropped(true);
+                removeQueueMap.put(mq, pq);
+            } else if (pq.isPullExpired() && this.consumeType() == ConsumeType.CONSUME_PASSIVELY) {
+                pq.setDropped(true);
+                removeQueueMap.put(mq, pq);
+                log.error("[BUG]doRebalance, {}, try remove unnecessary mq, {}, because pull is pause, so try to fixed it",
+                    consumerGroup, mq);
             }
         }
+
+        return removeQueueMap;
     }
 
-    private boolean updateProcessQueueTableInRebalance(final String topic, final Set<MessageQueue> mqSet,
-        final boolean isOrder) {
+    private boolean dropOthersMessageQueue(HashMap<MessageQueue, ProcessQueue> removeQueueMap) {
         boolean changed = false;
-
-        // drop process queues no longer belong me
-        HashMap<MessageQueue, ProcessQueue> removeQueueMap = new HashMap<>(this.processQueueTable.size());
-        dropOthersProcessQueue(topic,mqSet, removeQueueMap);
-
-        // remove message queues no longer belong me
         for (Entry<MessageQueue, ProcessQueue> entry : removeQueueMap.entrySet()) {
             MessageQueue mq = entry.getKey();
             ProcessQueue pq = entry.getValue();
@@ -558,6 +554,17 @@ public abstract class RebalanceImpl {
                 log.info("doRebalance, {}, remove unnecessary mq, {}", consumerGroup, mq);
             }
         }
+
+        return changed;
+    }
+
+    private boolean updateProcessQueueTableInRebalance(final String topic, final Set<MessageQueue> mqSet,
+        final boolean isOrder) {
+        // drop process queues no longer belong me
+        HashMap<MessageQueue, ProcessQueue> removeQueueMap = dropOthersProcessQueue(topic,mqSet);
+
+        // remove message queues no longer belong me
+        boolean changed = dropOthersMessageQueue(removeQueueMap);
 
         // add new message queue
         boolean allMQLocked = true;
