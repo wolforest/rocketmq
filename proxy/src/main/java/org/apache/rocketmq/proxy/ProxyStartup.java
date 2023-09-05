@@ -94,15 +94,8 @@ public class ProxyStartup {
             // start servers one by one.
             PROXY_START_AND_SHUTDOWN.start();
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                log.info("try to shutdown server");
-                try {
-                    PROXY_START_AND_SHUTDOWN.preShutdown();
-                    PROXY_START_AND_SHUTDOWN.shutdown();
-                } catch (Exception e) {
-                    log.error("err when shutdown rocketmq-proxy", e);
-                }
-            }));
+            addShutdownHook();
+
         } catch (Exception e) {
             e.printStackTrace();
             log.error("find an unexpect err.", e);
@@ -111,6 +104,18 @@ public class ProxyStartup {
 
         System.out.printf("%s%n", new Date() + " rocketmq-proxy startup successfully");
         log.info(new Date() + " rocketmq-proxy startup successfully");
+    }
+
+    protected static void addShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("try to shutdown server");
+            try {
+                PROXY_START_AND_SHUTDOWN.preShutdown();
+                PROXY_START_AND_SHUTDOWN.shutdown();
+            } catch (Exception e) {
+                log.error("err when shutdown rocketmq-proxy", e);
+            }
+        }));
     }
 
     protected static List<AccessValidator> loadAccessValidators() {
