@@ -30,6 +30,7 @@ import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
@@ -194,7 +195,7 @@ public class TopicQueueMappingCleanService extends ServiceThread {
                 } catch (Throwable tt) {
                     log.error("Try CleanItemExpired failed for {}", topic, tt);
                 } finally {
-                    UtilAll.sleep(10);
+                    ThreadUtils.sleep(10);
                 }
             }
         } catch (Throwable t) {
