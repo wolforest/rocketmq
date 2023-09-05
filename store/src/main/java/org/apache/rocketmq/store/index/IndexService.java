@@ -121,19 +121,21 @@ public class IndexService {
             this.readWriteLock.readLock().unlock();
         }
 
-        if (files != null) {
-            List<IndexFile> fileList = new ArrayList<>();
-            for (int i = 0; i < (files.length - 1); i++) {
-                IndexFile f = (IndexFile) files[i];
-                if (f.getEndPhyOffset() < offset) {
-                    fileList.add(f);
-                } else {
-                    break;
-                }
-            }
-
-            this.deleteExpiredFile(fileList);
+        if (null == files) {
+            return;
         }
+
+        List<IndexFile> fileList = new ArrayList<>();
+        for (int i = 0; i < (files.length - 1); i++) {
+            IndexFile f = (IndexFile) files[i];
+            if (f.getEndPhyOffset() < offset) {
+                fileList.add(f);
+            } else {
+                break;
+            }
+        }
+
+        this.deleteExpiredFile(fileList);
     }
 
     private void deleteExpiredFile(List<IndexFile> files) {

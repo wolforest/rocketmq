@@ -84,11 +84,12 @@ public class UtilAll {
         return PID;
     }
 
+    @Deprecated
     public static void sleep(long sleepMs) {
         sleep(sleepMs, TimeUnit.MILLISECONDS);
     }
 
-    public static void sleep(long timeOut, TimeUnit timeUnit) {
+    private static void sleep(long timeOut, TimeUnit timeUnit) {
         if (null == timeUnit) {
             return;
         }
@@ -99,6 +100,7 @@ public class UtilAll {
         }
     }
 
+    @Deprecated
     public static String currentStackTrace() {
         StringBuilder sb = new StringBuilder();
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -110,6 +112,7 @@ public class UtilAll {
         return sb.toString();
     }
 
+    @Deprecated
     public static String offset2FileName(final long offset) {
         final NumberFormat nf = NumberFormat.getInstance();
         nf.setMinimumIntegerDigits(20);

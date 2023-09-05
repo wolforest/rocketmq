@@ -30,6 +30,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -155,4 +156,13 @@ public class IOTinyUtils {
             }
         }
     }
+
+    public static String offset2FileName(final long offset) {
+        final NumberFormat nf = NumberFormat.getInstance();
+        nf.setMinimumIntegerDigits(20);
+        nf.setMaximumFractionDigits(0);
+        nf.setGroupingUsed(false);
+        return nf.format(offset);
+    }
+
 }

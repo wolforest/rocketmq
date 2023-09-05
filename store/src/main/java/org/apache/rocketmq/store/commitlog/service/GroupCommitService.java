@@ -67,30 +67,32 @@ public class GroupCommitService extends FlushCommitLogService {
     }
 
     private void doCommit() {
-        if (!this.requestsRead.isEmpty()) {
-            for (GroupCommitRequest req : this.requestsRead) {
-                // There may be a message in the next file, so a maximum of
-                // two times the flush
-                boolean flushOK = commitLog.getMappedFileQueue().getFlushedWhere() >= req.getNextOffset();
-                for (int i = 0; i < 2 && !flushOK; i++) {
-                    commitLog.getMappedFileQueue().flush(0);
-                    flushOK = commitLog.getMappedFileQueue().getFlushedWhere() >= req.getNextOffset();
-                }
-
-                req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);
-            }
-
-            long storeTimestamp = commitLog.getMappedFileQueue().getStoreTimestamp();
-            if (storeTimestamp > 0) {
-                defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
-            }
-
-            this.requestsRead = new LinkedList<>();
-        } else {
+        if (this.requestsRead.isEmpty()) {
             // Because of individual messages is set to not sync flush, it
             // will come to this process
             commitLog.getMappedFileQueue().flush(0);
+            return;
         }
+
+        for (GroupCommitRequest req : this.requestsRead) {
+            // There may be a message in the next file, so a maximum of
+            // two times the flush
+            boolean flushOK = commitLog.getMappedFileQueue().getFlushedWhere() >= req.getNextOffset();
+            for (int i = 0; i < 2 && !flushOK; i++) {
+                commitLog.getMappedFileQueue().flush(0);
+                flushOK = commitLog.getMappedFileQueue().getFlushedWhere() >= req.getNextOffset();
+            }
+
+            req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);
+        }
+
+        long storeTimestamp = commitLog.getMappedFileQueue().getStoreTimestamp();
+        if (storeTimestamp > 0) {
+            defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
+        }
+
+        this.requestsRead = new LinkedList<>();
+
     }
 
     @Override

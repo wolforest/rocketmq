@@ -567,25 +567,26 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
         this.byteBufferItem.putInt(0); // 4 bytes reserved
 
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(this.mappedFileQueue.getMaxOffset());
-        if (mappedFile != null) {
-            boolean isNewFile = isNewFile(mappedFile);
-            boolean appendRes = mappedFile.appendMessage(this.byteBufferItem.array());
-            if (appendRes) {
-                maxMsgPhyOffsetInCommitLog = offset;
-                maxOffsetInQueue = msgBaseOffset + batchSize;
-                //only the first time need to correct the minOffsetInQueue
-                //the other correctness is done in correctLogicMinoffsetService
-                if (mappedFile.isFirstCreateInQueue() && minOffsetInQueue == -1) {
-                    reviseMinOffsetInQueue();
-                }
-                if (isNewFile) {
-                    // cache new file
-                    this.cacheBcq(mappedFile);
-                }
-            }
-            return appendRes;
+        if (null == mappedFile) {
+            return false;
         }
-        return false;
+
+        boolean isNewFile = isNewFile(mappedFile);
+        boolean appendRes = mappedFile.appendMessage(this.byteBufferItem.array());
+        if (appendRes) {
+            maxMsgPhyOffsetInCommitLog = offset;
+            maxOffsetInQueue = msgBaseOffset + batchSize;
+            //only the first time need to correct the minOffsetInQueue
+            //the other correctness is done in correctLogicMinoffsetService
+            if (mappedFile.isFirstCreateInQueue() && minOffsetInQueue == -1) {
+                reviseMinOffsetInQueue();
+            }
+            if (isNewFile) {
+                // cache new file
+                this.cacheBcq(mappedFile);
+            }
+        }
+        return appendRes;
     }
 
     protected BatchOffsetIndex getMinMsgOffset(MappedFile mappedFile, boolean getBatchSize, boolean getStoreTime) {

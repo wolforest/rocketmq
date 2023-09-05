@@ -117,22 +117,24 @@ public class ConsumeQueueStore {
                 String topic = fileTopic.getName();
 
                 File[] fileQueueIdList = fileTopic.listFiles();
-                if (fileQueueIdList != null) {
-                    for (File fileQueueId : fileQueueIdList) {
-                        int queueId;
-                        try {
-                            queueId = Integer.parseInt(fileQueueId.getName());
-                        } catch (NumberFormatException e) {
-                            continue;
-                        }
+                if (null == fileQueueIdList) {
+                    continue;
+                }
 
-                        queueTypeShouldBe(topic, cqType);
+                for (File fileQueueId : fileQueueIdList) {
+                    int queueId;
+                    try {
+                        queueId = Integer.parseInt(fileQueueId.getName());
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
 
-                        ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
-                        this.putConsumeQueue(topic, queueId, logic);
-                        if (!this.load(logic)) {
-                            return false;
-                        }
+                    queueTypeShouldBe(topic, cqType);
+
+                    ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
+                    this.putConsumeQueue(topic, queueId, logic);
+                    if (!this.load(logic)) {
+                        return false;
                     }
                 }
             }
