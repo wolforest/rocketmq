@@ -185,38 +185,52 @@ public class ProxyStartup {
 
     protected static MessagingProcessor createMessagingProcessor() {
         String proxyModeStr = ConfigurationManager.getProxyConfig().getProxyMode();
-        MessagingProcessor messagingProcessor;
-
-        if (ProxyMode.isClusterMode(proxyModeStr)) {
-            messagingProcessor = DefaultMessagingProcessor.createForClusterMode();
-            ProxyMetricsManager proxyMetricsManager = ProxyMetricsManager.initClusterMode(ConfigurationManager.getProxyConfig());
-            PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(proxyMetricsManager);
-        } else if (ProxyMode.isLocalMode(proxyModeStr)) {
-            BrokerController brokerController = createBrokerController();
-            ProxyMetricsManager.initLocalMode(brokerController.getBrokerServiceManager().getBrokerMetricsManager(), ConfigurationManager.getProxyConfig());
-            StartAndShutdown brokerControllerWrapper = new StartAndShutdown() {
-                @Override
-                public void start() throws Exception {
-                    brokerController.start();
-                    String tip = "The broker[" + brokerController.getBrokerConfig().getBrokerName() + ", "
-                        + brokerController.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
-                    if (null != brokerController.getBrokerConfig().getNamesrvAddr()) {
-                        tip += " and name server is " + brokerController.getBrokerConfig().getNamesrvAddr();
-                    }
-                    log.info(tip);
-                }
-
-                @Override
-                public void shutdown() throws Exception {
-                    brokerController.shutdown();
-                }
-            };
-            PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(brokerControllerWrapper);
-            messagingProcessor = DefaultMessagingProcessor.createForLocalMode(brokerController);
-        } else {
+        if (!ProxyMode.isValid(proxyModeStr)) {
             throw new IllegalArgumentException("try to start grpc server with wrong mode, use 'local' or 'cluster'");
         }
+
+        if (ProxyMode.isClusterMode(proxyModeStr)) {
+            return createClusterMessagingProcessor();
+        }
+
+        return createLocalMessagingProcessor();
+    }
+
+    protected static MessagingProcessor createClusterMessagingProcessor() {
+        MessagingProcessor messagingProcessor = DefaultMessagingProcessor.createForClusterMode();
+        ProxyMetricsManager proxyMetricsManager = ProxyMetricsManager.initClusterMode(ConfigurationManager.getProxyConfig());
+
+        PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(proxyMetricsManager);
         PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(messagingProcessor);
+
+        return messagingProcessor;
+    }
+
+    protected static MessagingProcessor createLocalMessagingProcessor() {
+        BrokerController brokerController = createBrokerController();
+        ProxyMetricsManager.initLocalMode(brokerController.getBrokerServiceManager().getBrokerMetricsManager(), ConfigurationManager.getProxyConfig());
+        StartAndShutdown brokerControllerWrapper = new StartAndShutdown() {
+            @Override
+            public void start() throws Exception {
+                brokerController.start();
+                String tip = "The broker[" + brokerController.getBrokerConfig().getBrokerName() + ", "
+                    + brokerController.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
+                if (null != brokerController.getBrokerConfig().getNamesrvAddr()) {
+                    tip += " and name server is " + brokerController.getBrokerConfig().getNamesrvAddr();
+                }
+                log.info(tip);
+            }
+
+            @Override
+            public void shutdown() throws Exception {
+                brokerController.shutdown();
+            }
+        };
+        PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(brokerControllerWrapper);
+
+        MessagingProcessor messagingProcessor = DefaultMessagingProcessor.createForLocalMode(brokerController);
+        PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(messagingProcessor);
+
         return messagingProcessor;
     }
 
