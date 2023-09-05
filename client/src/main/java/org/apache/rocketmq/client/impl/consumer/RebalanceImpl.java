@@ -518,6 +518,17 @@ public abstract class RebalanceImpl {
         }
     }
 
+    private boolean updateProcessQueueTableInRebalance(final String topic, final Set<MessageQueue> mqSet, final boolean isOrder) {
+        // drop process queues no longer belong me
+        HashMap<MessageQueue, ProcessQueue> removeQueueMap = dropOthersProcessQueue(topic,mqSet);
+
+        // remove message queues no longer belong me
+        boolean changed = dropOthersMessageQueue(removeQueueMap);
+
+        // add new message queue
+        return updateProcessQueueTableInRebalance(topic, mqSet, isOrder, changed);
+    }
+
     private HashMap<MessageQueue, ProcessQueue> dropOthersProcessQueue(String topic, Set<MessageQueue> mqSet) {
         HashMap<MessageQueue, ProcessQueue> removeQueueMap = new HashMap<>(this.processQueueTable.size());
         for (Entry<MessageQueue, ProcessQueue> next : this.processQueueTable.entrySet()) {
@@ -589,12 +600,7 @@ public abstract class RebalanceImpl {
             }
 
             log.info("doRebalance, {}, add a new mq, {}", consumerGroup, mq);
-            PullRequest pullRequest = new PullRequest();
-            pullRequest.setConsumerGroup(consumerGroup);
-            pullRequest.setNextOffset(nextOffset);
-            pullRequest.setMessageQueue(mq);
-            pullRequest.setProcessQueue(pq);
-            pullRequestList.add(pullRequest);
+            pullRequestList.add(initPullRequest(nextOffset, mq, pq));
             changed = true;
         }
 
@@ -606,15 +612,14 @@ public abstract class RebalanceImpl {
         return changed;
     }
 
-    private boolean updateProcessQueueTableInRebalance(final String topic, final Set<MessageQueue> mqSet, final boolean isOrder) {
-        // drop process queues no longer belong me
-        HashMap<MessageQueue, ProcessQueue> removeQueueMap = dropOthersProcessQueue(topic,mqSet);
+    private PullRequest initPullRequest(long nextOffset, MessageQueue mq, ProcessQueue pq) {
+        PullRequest pullRequest = new PullRequest();
+        pullRequest.setConsumerGroup(consumerGroup);
+        pullRequest.setNextOffset(nextOffset);
+        pullRequest.setMessageQueue(mq);
+        pullRequest.setProcessQueue(pq);
 
-        // remove message queues no longer belong me
-        boolean changed = dropOthersMessageQueue(removeQueueMap);
-
-        // add new message queue
-        return updateProcessQueueTableInRebalance(topic, mqSet, isOrder, changed);
+        return pullRequest;
     }
 
     private boolean updateMessageQueueAssignment(final String topic, final Set<MessageQueueAssignment> assignments,
