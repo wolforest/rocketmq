@@ -225,17 +225,22 @@ public class ProxyStartup {
             public void start() throws Exception {
                 brokerController.start();
 
-                String tip = "The broker[" + brokerController.getBrokerConfig().getBrokerName() + ", "
-                    + brokerController.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
-                if (null != brokerController.getBrokerConfig().getNamesrvAddr()) {
-                    tip += " and name server is " + brokerController.getBrokerConfig().getNamesrvAddr();
-                }
-                log.info(tip);
+                logStartInfo();
             }
 
             @Override
             public void shutdown() throws Exception {
                 brokerController.shutdown();
+            }
+
+            private void logStartInfo() {
+                String tip = "The broker[" + brokerController.getBrokerConfig().getBrokerName() + ", "
+                    + brokerController.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
+
+                if (null != brokerController.getBrokerConfig().getNamesrvAddr()) {
+                    tip += " and name server is " + brokerController.getBrokerConfig().getNamesrvAddr();
+                }
+                log.info(tip);
             }
         };
     }
