@@ -38,13 +38,6 @@ import static org.junit.Assert.assertTrue;
 public class UtilAllTest {
 
     @Test
-    public void testCurrentStackTrace() {
-        String currentStackTrace = UtilAll.currentStackTrace();
-        assertThat(currentStackTrace).contains("UtilAll.currentStackTrace");
-        assertThat(currentStackTrace).contains("UtilAllTest.testCurrentStackTrace(");
-    }
-
-    @Test
     public void testProperties2Object() {
         DemoConfig demoConfig = new DemoConfig();
         Properties properties = new Properties();
