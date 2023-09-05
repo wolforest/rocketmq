@@ -112,6 +112,7 @@ public class UtilAll {
         return sb.toString();
     }
 
+    @Deprecated
     public static String offset2FileName(final long offset) {
         final NumberFormat nf = NumberFormat.getInstance();
         nf.setMinimumIntegerDigits(20);
