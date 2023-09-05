@@ -64,18 +64,27 @@ public class SendMessageActivity extends AbstractRemotingActivity {
         ProxyContext context) throws Exception {
         SendMessageRequestHeader requestHeader = SendMessageRequestHeader.parseRequestHeader(request);
 
-        String topic = requestHeader.getTopic();
+
         Map<String, String> property = MessageDecoder.string2messageProperties(requestHeader.getProperties());
         TopicMessageType messageType = TopicMessageType.parseFromMessageProperty(property);
 
-        validateTopicMessageType(context, topic, messageType);
+        validateTopicMessageType(context, requestHeader.getTopic(), messageType);
+        addTransactionSubscription(context, requestHeader, messageType);
 
-        if (!NamespaceUtil.isRetryTopic(topic) && !NamespaceUtil.isDLQTopic(topic)) {
-            if (TopicMessageType.TRANSACTION.equals(messageType)) {
-                messagingProcessor.addTransactionSubscription(context, requestHeader.getProducerGroup(), requestHeader.getTopic());
-            }
-        }
         return request(ctx, request, context, Duration.ofSeconds(3).toMillis());
+    }
+
+    private void addTransactionSubscription(ProxyContext context, SendMessageRequestHeader requestHeader, TopicMessageType messageType) {
+        String topic = requestHeader.getTopic();
+        if (NamespaceUtil.isRetryTopic(topic) || NamespaceUtil.isDLQTopic(topic)) {
+            return;
+        }
+
+        if (!TopicMessageType.TRANSACTION.equals(messageType)) {
+            return;
+        }
+
+        messagingProcessor.addTransactionSubscription(context, requestHeader.getProducerGroup(), requestHeader.getTopic());
     }
 
     private void validateTopicMessageType(ProxyContext context, String topic, TopicMessageType messageType) {
