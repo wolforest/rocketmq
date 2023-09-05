@@ -107,14 +107,15 @@ public class ClientManagerActivity extends AbstractRemotingActivity {
 
     private void setClientPropertiesToChannelAttr(final ClientChannelInfo clientChannelInfo) {
         Channel channel = clientChannelInfo.getChannel();
-        if (channel instanceof RemotingChannel) {
-            RemotingChannel remotingChannel = (RemotingChannel) channel;
-            Channel parent = remotingChannel.parent();
-            RemotingHelper.setPropertyToAttr(parent, AttributeKeys.CLIENT_ID_KEY, clientChannelInfo.getClientId());
-            RemotingHelper.setPropertyToAttr(parent, AttributeKeys.LANGUAGE_CODE_KEY, clientChannelInfo.getLanguage());
-            RemotingHelper.setPropertyToAttr(parent, AttributeKeys.VERSION_KEY, clientChannelInfo.getVersion());
+        if (!(channel instanceof RemotingChannel)) {
+            return;
         }
 
+        RemotingChannel remotingChannel = (RemotingChannel) channel;
+        Channel parent = remotingChannel.parent();
+        RemotingHelper.setPropertyToAttr(parent, AttributeKeys.CLIENT_ID_KEY, clientChannelInfo.getClientId());
+        RemotingHelper.setPropertyToAttr(parent, AttributeKeys.LANGUAGE_CODE_KEY, clientChannelInfo.getLanguage());
+        RemotingHelper.setPropertyToAttr(parent, AttributeKeys.VERSION_KEY, clientChannelInfo.getVersion());
     }
 
     protected RemotingCommand unregisterClient(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context) throws RemotingCommandException {
