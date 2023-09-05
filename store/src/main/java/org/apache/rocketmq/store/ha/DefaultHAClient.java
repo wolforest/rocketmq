@@ -270,33 +270,33 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
     }
 
     public void closeMaster() {
-        if (null != this.socketChannel) {
-            try {
+        if (null == this.socketChannel) {
+            return;
+        }
 
-                SelectionKey sk = this.socketChannel.keyFor(this.selector);
-                if (sk != null) {
-                    sk.cancel();
-                }
-
-                this.socketChannel.close();
-
-                this.socketChannel = null;
-
-                log.info("HAClient close connection with master {}", this.masterHaAddress.get());
-                this.changeCurrentState(HAConnectionState.READY);
-            } catch (IOException e) {
-                log.warn("closeMaster exception. ", e);
+        try {
+            SelectionKey sk = this.socketChannel.keyFor(this.selector);
+            if (sk != null) {
+                sk.cancel();
             }
 
-            this.lastReadTimestamp = 0;
-            this.dispatchPosition = 0;
+            this.socketChannel.close();
+            this.socketChannel = null;
 
-            this.byteBufferBackup.position(0);
-            this.byteBufferBackup.limit(READ_MAX_BUFFER_SIZE);
-
-            this.byteBufferRead.position(0);
-            this.byteBufferRead.limit(READ_MAX_BUFFER_SIZE);
+            log.info("HAClient close connection with master {}", this.masterHaAddress.get());
+            this.changeCurrentState(HAConnectionState.READY);
+        } catch (IOException e) {
+            log.warn("closeMaster exception. ", e);
         }
+
+        this.lastReadTimestamp = 0;
+        this.dispatchPosition = 0;
+
+        this.byteBufferBackup.position(0);
+        this.byteBufferBackup.limit(READ_MAX_BUFFER_SIZE);
+
+        this.byteBufferRead.position(0);
+        this.byteBufferRead.limit(READ_MAX_BUFFER_SIZE);
     }
 
     @Override
