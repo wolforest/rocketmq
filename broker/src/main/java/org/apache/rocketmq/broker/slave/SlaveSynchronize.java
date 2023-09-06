@@ -141,26 +141,28 @@ public class SlaveSynchronize {
 
     private void syncDelayOffset() {
         String masterAddrBak = this.masterAddr;
-        if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
-            try {
-                String delayOffset =
-                    this.brokerController.getBrokerOuterAPI().getAllDelayOffset(masterAddrBak);
-                if (delayOffset != null) {
+        if (null == masterAddrBak || masterAddrBak.equals(brokerController.getBrokerAddr())) {
+            return;
+        }
 
-                    String fileName =
-                        StorePathConfigHelper.getDelayOffsetStorePath(this.brokerController
-                            .getMessageStoreConfig().getStorePathRootDir());
-                    try {
-                        MixAll.string2File(delayOffset, fileName);
-                        this.brokerController.getScheduleMessageService().loadWhenSyncDelayOffset();
-                    } catch (IOException e) {
-                        LOGGER.error("Persist file Exception, {}", fileName, e);
-                    }
+        try {
+            String delayOffset =
+                this.brokerController.getBrokerOuterAPI().getAllDelayOffset(masterAddrBak);
+            if (delayOffset != null) {
+
+                String fileName =
+                    StorePathConfigHelper.getDelayOffsetStorePath(this.brokerController
+                        .getMessageStoreConfig().getStorePathRootDir());
+                try {
+                    MixAll.string2File(delayOffset, fileName);
+                    this.brokerController.getScheduleMessageService().loadWhenSyncDelayOffset();
+                } catch (IOException e) {
+                    LOGGER.error("Persist file Exception, {}", fileName, e);
                 }
-                LOGGER.info("Update slave delay offset from master, {}", masterAddrBak);
-            } catch (Exception e) {
-                LOGGER.error("SyncDelayOffset Exception, {}", masterAddrBak, e);
             }
+            LOGGER.info("Update slave delay offset from master, {}", masterAddrBak);
+        } catch (Exception e) {
+            LOGGER.error("SyncDelayOffset Exception, {}", masterAddrBak, e);
         }
     }
 
