@@ -105,25 +105,29 @@ public class PosixFileSegment extends TieredFileSegment {
 
     @Override
     public void createFile() {
-        if (file == null) {
-            synchronized (this) {
-                if (file == null) {
-                    File file = new File(fullPath);
-                    try {
-                        File dir = file.getParentFile();
-                        if (!dir.exists()) {
-                            dir.mkdirs();
-                        }
+        if (null != file) {
+            return;
+        }
 
-                        // TODO use direct IO to avoid polluting the page cache
-                        file.createNewFile();
-                        this.readFileChannel = new RandomAccessFile(file, "r").getChannel();
-                        this.writeFileChannel = new RandomAccessFile(file, "rwd").getChannel();
-                        this.file = file;
-                    } catch (Exception e) {
-                        logger.error("PosixFileSegment#createFile: create file {} failed: ", filePath, e);
-                    }
+        synchronized (this) {
+            if (null != file) {
+                return;
+            }
+
+            File file = new File(fullPath);
+            try {
+                File dir = file.getParentFile();
+                if (!dir.exists()) {
+                    dir.mkdirs();
                 }
+
+                // TODO use direct IO to avoid polluting the page cache
+                file.createNewFile();
+                this.readFileChannel = new RandomAccessFile(file, "r").getChannel();
+                this.writeFileChannel = new RandomAccessFile(file, "rwd").getChannel();
+                this.file = file;
+            } catch (Exception e) {
+                logger.error("PosixFileSegment#createFile: create file {} failed: ", filePath, e);
             }
         }
     }
