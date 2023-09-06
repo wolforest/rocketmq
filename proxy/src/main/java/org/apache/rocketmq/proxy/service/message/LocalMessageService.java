@@ -122,6 +122,11 @@ public class LocalMessageService implements MessageService {
             channel.eraseInvocationContext(request.getOpaque());
             log.error("Failed to process sendMessage command", e);
         }
+
+        return createSendResponse(future, messageId, requestHeader);
+    }
+
+    private CompletableFuture<List<SendResult>> createSendResponse(CompletableFuture<RemotingCommand> future, String messageId, SendMessageRequestHeader requestHeader) {
         return future.thenApply(r -> {
             SendResult sendResult = new SendResult();
             SendMessageResponseHeader responseHeader = (SendMessageResponseHeader) r.readCustomHeader();
