@@ -127,67 +127,66 @@ public class TransactionalMessageBridge {
         SubscriptionData sub) {
         GetMessageResult getMessageResult = store.getMessage(group, topic, queueId, offset, nums, null);
 
-        if (getMessageResult != null) {
-            PullStatus pullStatus = PullStatus.NO_NEW_MSG;
-            List<MessageExt> foundList = null;
-            switch (getMessageResult.getStatus()) {
-                case FOUND:
-                    pullStatus = PullStatus.FOUND;
-                    foundList = decodeMsgList(getMessageResult);
-                    this.brokerController.getBrokerStatsManager().incGroupGetNums(group, topic,
-                        getMessageResult.getMessageCount());
-                    this.brokerController.getBrokerStatsManager().incGroupGetSize(group, topic,
-                        getMessageResult.getBufferTotalSize());
-                    this.brokerController.getBrokerStatsManager().incBrokerGetNums(topic, getMessageResult.getMessageCount());
-                    if (foundList == null || foundList.size() == 0) {
-                        break;
-                    }
-                    this.brokerController.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId,
-                        this.brokerController.getMessageStore().now() - foundList.get(foundList.size() - 1)
-                            .getStoreTimestamp());
-
-                    Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
-                        .put(LABEL_TOPIC, topic)
-                        .put(LABEL_CONSUMER_GROUP, group)
-                        .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(topic) || MixAll.isSysConsumerGroup(group))
-                        .build();
-                    BrokerMetricsManager.messagesOutTotal.add(getMessageResult.getMessageCount(), attributes);
-                    BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);
-
-                    break;
-                case NO_MATCHED_MESSAGE:
-                    pullStatus = PullStatus.NO_MATCHED_MSG;
-                    LOGGER.warn("No matched message. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}",
-                        getMessageResult.getStatus(), topic, group, offset);
-                    break;
-                case NO_MESSAGE_IN_QUEUE:
-                case OFFSET_OVERFLOW_ONE:
-                    pullStatus = PullStatus.NO_NEW_MSG;
-                    LOGGER.warn("No new message. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}",
-                        getMessageResult.getStatus(), topic, group, offset);
-                    break;
-                case MESSAGE_WAS_REMOVING:
-                case NO_MATCHED_LOGIC_QUEUE:
-                case OFFSET_FOUND_NULL:
-                case OFFSET_OVERFLOW_BADLY:
-                case OFFSET_TOO_SMALL:
-                    pullStatus = PullStatus.OFFSET_ILLEGAL;
-                    LOGGER.warn("Offset illegal. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}",
-                        getMessageResult.getStatus(), topic, group, offset);
-                    break;
-                default:
-                    assert false;
-                    break;
-            }
-
-            return new PullResult(pullStatus, getMessageResult.getNextBeginOffset(), getMessageResult.getMinOffset(),
-                getMessageResult.getMaxOffset(), foundList);
-
-        } else {
+        if (null == getMessageResult) {
             LOGGER.error("Get message from store return null. topic={}, groupId={}, requestOffset={}", topic, group,
                 offset);
             return null;
         }
+
+        PullStatus pullStatus = PullStatus.NO_NEW_MSG;
+        List<MessageExt> foundList = null;
+        switch (getMessageResult.getStatus()) {
+            case FOUND:
+                pullStatus = PullStatus.FOUND;
+                foundList = decodeMsgList(getMessageResult);
+                this.brokerController.getBrokerStatsManager().incGroupGetNums(group, topic,
+                    getMessageResult.getMessageCount());
+                this.brokerController.getBrokerStatsManager().incGroupGetSize(group, topic,
+                    getMessageResult.getBufferTotalSize());
+                this.brokerController.getBrokerStatsManager().incBrokerGetNums(topic, getMessageResult.getMessageCount());
+                if (foundList == null || foundList.size() == 0) {
+                    break;
+                }
+                this.brokerController.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId,
+                    this.brokerController.getMessageStore().now() - foundList.get(foundList.size() - 1)
+                        .getStoreTimestamp());
+
+                Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
+                    .put(LABEL_TOPIC, topic)
+                    .put(LABEL_CONSUMER_GROUP, group)
+                    .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(topic) || MixAll.isSysConsumerGroup(group))
+                    .build();
+                BrokerMetricsManager.messagesOutTotal.add(getMessageResult.getMessageCount(), attributes);
+                BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);
+
+                break;
+            case NO_MATCHED_MESSAGE:
+                pullStatus = PullStatus.NO_MATCHED_MSG;
+                LOGGER.warn("No matched message. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}",
+                    getMessageResult.getStatus(), topic, group, offset);
+                break;
+            case NO_MESSAGE_IN_QUEUE:
+            case OFFSET_OVERFLOW_ONE:
+                pullStatus = PullStatus.NO_NEW_MSG;
+                LOGGER.warn("No new message. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}",
+                    getMessageResult.getStatus(), topic, group, offset);
+                break;
+            case MESSAGE_WAS_REMOVING:
+            case NO_MATCHED_LOGIC_QUEUE:
+            case OFFSET_FOUND_NULL:
+            case OFFSET_OVERFLOW_BADLY:
+            case OFFSET_TOO_SMALL:
+                pullStatus = PullStatus.OFFSET_ILLEGAL;
+                LOGGER.warn("Offset illegal. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}",
+                    getMessageResult.getStatus(), topic, group, offset);
+                break;
+            default:
+                assert false;
+                break;
+        }
+
+        return new PullResult(pullStatus, getMessageResult.getNextBeginOffset(), getMessageResult.getMinOffset(),
+            getMessageResult.getMaxOffset(), foundList);
     }
 
     private List<MessageExt> decodeMsgList(GetMessageResult getMessageResult) {

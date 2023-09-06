@@ -72,179 +72,197 @@ public class SlaveSynchronize {
 
     private void syncTopicConfig() {
         String masterAddrBak = this.masterAddr;
-        if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
-            try {
-                TopicConfigAndMappingSerializeWrapper topicWrapper =
-                        this.brokerController.getBrokerOuterAPI().getAllTopicConfig(masterAddrBak);
-                if (!this.brokerController.getTopicConfigManager().getDataVersion()
-                        .equals(topicWrapper.getDataVersion())) {
+        if (null == masterAddrBak || masterAddrBak.equals(brokerController.getBrokerAddr())) {
+            return;
+        }
 
-                    this.brokerController.getTopicConfigManager().getDataVersion()
-                            .assignNewOne(topicWrapper.getDataVersion());
+        try {
+            TopicConfigAndMappingSerializeWrapper topicWrapper =
+                this.brokerController.getBrokerOuterAPI().getAllTopicConfig(masterAddrBak);
+            if (!this.brokerController.getTopicConfigManager().getDataVersion()
+                .equals(topicWrapper.getDataVersion())) {
 
-                    ConcurrentMap<String, TopicConfig> newTopicConfigTable = topicWrapper.getTopicConfigTable();
-                    //delete
-                    ConcurrentMap<String, TopicConfig> topicConfigTable = this.brokerController.getTopicConfigManager().getTopicConfigTable();
-                    for (Iterator<Map.Entry<String, TopicConfig>> it = topicConfigTable.entrySet().iterator(); it.hasNext(); ) {
-                        Map.Entry<String, TopicConfig> item = it.next();
-                        if (!newTopicConfigTable.containsKey(item.getKey())) {
-                            it.remove();
-                        }
+                this.brokerController.getTopicConfigManager().getDataVersion()
+                    .assignNewOne(topicWrapper.getDataVersion());
+
+                ConcurrentMap<String, TopicConfig> newTopicConfigTable = topicWrapper.getTopicConfigTable();
+                //delete
+                ConcurrentMap<String, TopicConfig> topicConfigTable = this.brokerController.getTopicConfigManager().getTopicConfigTable();
+                for (Iterator<Map.Entry<String, TopicConfig>> it = topicConfigTable.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry<String, TopicConfig> item = it.next();
+                    if (!newTopicConfigTable.containsKey(item.getKey())) {
+                        it.remove();
                     }
-                    //update
-                    topicConfigTable.putAll(newTopicConfigTable);
-
-                    this.brokerController.getTopicConfigManager().persist();
                 }
-                if (topicWrapper.getTopicQueueMappingDetailMap() != null
-                        && !topicWrapper.getMappingDataVersion().equals(this.brokerController.getTopicQueueMappingManager().getDataVersion())) {
-                    this.brokerController.getTopicQueueMappingManager().getDataVersion()
-                            .assignNewOne(topicWrapper.getMappingDataVersion());
+                //update
+                topicConfigTable.putAll(newTopicConfigTable);
 
-                    ConcurrentMap<String, TopicConfig> newTopicConfigTable = topicWrapper.getTopicConfigTable();
-                    //delete
-                    ConcurrentMap<String, TopicConfig> topicConfigTable = this.brokerController.getTopicConfigManager().getTopicConfigTable();
-                    for (Iterator<Map.Entry<String, TopicConfig>> it = topicConfigTable.entrySet().iterator(); it.hasNext(); ) {
-                        Map.Entry<String, TopicConfig> item = it.next();
-                        if (!newTopicConfigTable.containsKey(item.getKey())) {
-                            it.remove();
-                        }
-                    }
-                    //update
-                    topicConfigTable.putAll(newTopicConfigTable);
-
-                    this.brokerController.getTopicQueueMappingManager().persist();
-                }
-                LOGGER.info("Update slave topic config from master, {}", masterAddrBak);
-            } catch (Exception e) {
-                LOGGER.error("SyncTopicConfig Exception, {}", masterAddrBak, e);
+                this.brokerController.getTopicConfigManager().persist();
             }
+            if (topicWrapper.getTopicQueueMappingDetailMap() != null
+                && !topicWrapper.getMappingDataVersion().equals(this.brokerController.getTopicQueueMappingManager().getDataVersion())) {
+                this.brokerController.getTopicQueueMappingManager().getDataVersion()
+                    .assignNewOne(topicWrapper.getMappingDataVersion());
+
+                ConcurrentMap<String, TopicConfig> newTopicConfigTable = topicWrapper.getTopicConfigTable();
+                //delete
+                ConcurrentMap<String, TopicConfig> topicConfigTable = this.brokerController.getTopicConfigManager().getTopicConfigTable();
+                for (Iterator<Map.Entry<String, TopicConfig>> it = topicConfigTable.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry<String, TopicConfig> item = it.next();
+                    if (!newTopicConfigTable.containsKey(item.getKey())) {
+                        it.remove();
+                    }
+                }
+                //update
+                topicConfigTable.putAll(newTopicConfigTable);
+
+                this.brokerController.getTopicQueueMappingManager().persist();
+            }
+            LOGGER.info("Update slave topic config from master, {}", masterAddrBak);
+        } catch (Exception e) {
+            LOGGER.error("SyncTopicConfig Exception, {}", masterAddrBak, e);
         }
     }
 
     private void syncConsumerOffset() {
         String masterAddrBak = this.masterAddr;
-        if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
-            try {
-                ConsumerOffsetSerializeWrapper offsetWrapper =
-                        this.brokerController.getBrokerOuterAPI().getAllConsumerOffset(masterAddrBak);
-                this.brokerController.getConsumerOffsetManager().getOffsetTable()
-                        .putAll(offsetWrapper.getOffsetTable());
-                this.brokerController.getConsumerOffsetManager().getDataVersion().assignNewOne(offsetWrapper.getDataVersion());
-                this.brokerController.getConsumerOffsetManager().persist();
-                LOGGER.info("Update slave consumer offset from master, {}", masterAddrBak);
-            } catch (Exception e) {
-                LOGGER.error("SyncConsumerOffset Exception, {}", masterAddrBak, e);
-            }
+        if (null == masterAddrBak || masterAddrBak.equals(brokerController.getBrokerAddr())) {
+            return;
+        }
+
+        try {
+            ConsumerOffsetSerializeWrapper offsetWrapper =
+                this.brokerController.getBrokerOuterAPI().getAllConsumerOffset(masterAddrBak);
+            this.brokerController.getConsumerOffsetManager().getOffsetTable()
+                .putAll(offsetWrapper.getOffsetTable());
+            this.brokerController.getConsumerOffsetManager().getDataVersion().assignNewOne(offsetWrapper.getDataVersion());
+            this.brokerController.getConsumerOffsetManager().persist();
+            LOGGER.info("Update slave consumer offset from master, {}", masterAddrBak);
+        } catch (Exception e) {
+            LOGGER.error("SyncConsumerOffset Exception, {}", masterAddrBak, e);
         }
     }
 
     private void syncDelayOffset() {
         String masterAddrBak = this.masterAddr;
-        if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
-            try {
-                String delayOffset =
-                        this.brokerController.getBrokerOuterAPI().getAllDelayOffset(masterAddrBak);
-                if (delayOffset != null) {
+        if (null == masterAddrBak || masterAddrBak.equals(brokerController.getBrokerAddr())) {
+            return;
+        }
 
-                    String fileName =
-                            StorePathConfigHelper.getDelayOffsetStorePath(this.brokerController
-                                    .getMessageStoreConfig().getStorePathRootDir());
-                    try {
-                        MixAll.string2File(delayOffset, fileName);
-                        this.brokerController.getScheduleMessageService().loadWhenSyncDelayOffset();
-                    } catch (IOException e) {
-                        LOGGER.error("Persist file Exception, {}", fileName, e);
-                    }
+        try {
+            String delayOffset =
+                this.brokerController.getBrokerOuterAPI().getAllDelayOffset(masterAddrBak);
+            if (delayOffset != null) {
+
+                String fileName =
+                    StorePathConfigHelper.getDelayOffsetStorePath(this.brokerController
+                        .getMessageStoreConfig().getStorePathRootDir());
+                try {
+                    MixAll.string2File(delayOffset, fileName);
+                    this.brokerController.getScheduleMessageService().loadWhenSyncDelayOffset();
+                } catch (IOException e) {
+                    LOGGER.error("Persist file Exception, {}", fileName, e);
                 }
-                LOGGER.info("Update slave delay offset from master, {}", masterAddrBak);
-            } catch (Exception e) {
-                LOGGER.error("SyncDelayOffset Exception, {}", masterAddrBak, e);
             }
+            LOGGER.info("Update slave delay offset from master, {}", masterAddrBak);
+        } catch (Exception e) {
+            LOGGER.error("SyncDelayOffset Exception, {}", masterAddrBak, e);
         }
     }
 
     private void syncSubscriptionGroupConfig() {
         String masterAddrBak = this.masterAddr;
-        if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
-            try {
-                SubscriptionGroupWrapper subscriptionWrapper =
-                        this.brokerController.getBrokerOuterAPI()
-                                .getAllSubscriptionGroupConfig(masterAddrBak);
+        if (null == masterAddrBak || masterAddrBak.equals(brokerController.getBrokerAddr())) {
+            return;
+        }
 
-                if (!this.brokerController.getSubscriptionGroupManager().getDataVersion()
-                        .equals(subscriptionWrapper.getDataVersion())) {
-                    SubscriptionGroupManager subscriptionGroupManager =
-                            this.brokerController.getSubscriptionGroupManager();
-                    subscriptionGroupManager.getDataVersion().assignNewOne(
-                            subscriptionWrapper.getDataVersion());
-                    subscriptionGroupManager.getSubscriptionGroupTable().clear();
-                    subscriptionGroupManager.getSubscriptionGroupTable().putAll(
-                            subscriptionWrapper.getSubscriptionGroupTable());
-                    subscriptionGroupManager.persist();
-                    LOGGER.info("Update slave Subscription Group from master, {}", masterAddrBak);
-                }
-            } catch (Exception e) {
-                LOGGER.error("SyncSubscriptionGroup Exception, {}", masterAddrBak, e);
+        try {
+            SubscriptionGroupWrapper subscriptionWrapper =
+                this.brokerController.getBrokerOuterAPI()
+                    .getAllSubscriptionGroupConfig(masterAddrBak);
+
+            if (!this.brokerController.getSubscriptionGroupManager().getDataVersion()
+                .equals(subscriptionWrapper.getDataVersion())) {
+                SubscriptionGroupManager subscriptionGroupManager =
+                    this.brokerController.getSubscriptionGroupManager();
+                subscriptionGroupManager.getDataVersion().assignNewOne(
+                    subscriptionWrapper.getDataVersion());
+                subscriptionGroupManager.getSubscriptionGroupTable().clear();
+                subscriptionGroupManager.getSubscriptionGroupTable().putAll(
+                    subscriptionWrapper.getSubscriptionGroupTable());
+                subscriptionGroupManager.persist();
+                LOGGER.info("Update slave Subscription Group from master, {}", masterAddrBak);
             }
+        } catch (Exception e) {
+            LOGGER.error("SyncSubscriptionGroup Exception, {}", masterAddrBak, e);
         }
     }
 
     private void syncMessageRequestMode() {
         String masterAddrBak = this.masterAddr;
-        if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
-            try {
-                MessageRequestModeSerializeWrapper messageRequestModeSerializeWrapper =
-                        this.brokerController.getBrokerOuterAPI().getAllMessageRequestMode(masterAddrBak);
+        if (null == masterAddrBak || masterAddrBak.equals(brokerController.getBrokerAddr())) {
+            return;
+        }
 
-                MessageRequestModeManager messageRequestModeManager =
-                        this.brokerController.getBrokerNettyServer().getQueryAssignmentProcessor().getMessageRequestModeManager();
-                messageRequestModeManager.getMessageRequestModeMap().clear();
-                messageRequestModeManager.getMessageRequestModeMap().putAll(
-                        messageRequestModeSerializeWrapper.getMessageRequestModeMap()
-                );
-                messageRequestModeManager.persist();
-                LOGGER.info("Update slave Message Request Mode from master, {}", masterAddrBak);
-            } catch (Exception e) {
-                LOGGER.error("SyncMessageRequestMode Exception, {}", masterAddrBak, e);
-            }
+        try {
+            MessageRequestModeSerializeWrapper messageRequestModeSerializeWrapper =
+                this.brokerController.getBrokerOuterAPI().getAllMessageRequestMode(masterAddrBak);
+
+            MessageRequestModeManager messageRequestModeManager =
+                this.brokerController.getBrokerNettyServer().getQueryAssignmentProcessor().getMessageRequestModeManager();
+            messageRequestModeManager.getMessageRequestModeMap().clear();
+            messageRequestModeManager.getMessageRequestModeMap().putAll(
+                messageRequestModeSerializeWrapper.getMessageRequestModeMap()
+            );
+            messageRequestModeManager.persist();
+            LOGGER.info("Update slave Message Request Mode from master, {}", masterAddrBak);
+        } catch (Exception e) {
+            LOGGER.error("SyncMessageRequestMode Exception, {}", masterAddrBak, e);
         }
     }
 
     public void syncTimerCheckPoint() {
         String masterAddrBak = this.masterAddr;
-        if (masterAddrBak != null) {
-            try {
-                if (null != brokerController.getMessageStore().getTimerMessageStore()) {
-                    TimerCheckpoint checkpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(masterAddrBak);
-                    if (null != this.brokerController.getTimerCheckpoint()) {
-                        this.brokerController.getTimerCheckpoint().setLastReadTimeMs(checkpoint.getLastReadTimeMs());
-                        this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(checkpoint.getMasterTimerQueueOffset());
-                    }
-                }
-            } catch (Exception e) {
-                LOGGER.error("syncTimerCheckPoint Exception, {}", masterAddrBak, e);
+        if (null == masterAddrBak) {
+            return;
+        }
+
+        try {
+            if (null == brokerController.getMessageStore().getTimerMessageStore()) {
+                return;
             }
+
+            TimerCheckpoint checkpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(masterAddrBak);
+            if (null != this.brokerController.getTimerCheckpoint()) {
+                this.brokerController.getTimerCheckpoint().setLastReadTimeMs(checkpoint.getLastReadTimeMs());
+                this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(checkpoint.getMasterTimerQueueOffset());
+            }
+        } catch (Exception e) {
+            LOGGER.error("syncTimerCheckPoint Exception, {}", masterAddrBak, e);
         }
     }
 
     private void syncTimerMetrics() {
         String masterAddrBak = this.masterAddr;
-        if (masterAddrBak != null) {
-            try {
-                if (null != brokerController.getMessageStore().getTimerMessageStore()) {
-                    TimerMetrics.TimerMetricsSerializeWrapper metricsSerializeWrapper =
-                            this.brokerController.getBrokerOuterAPI().getTimerMetrics(masterAddrBak);
-                    if (!brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().equals(metricsSerializeWrapper.getDataVersion())) {
-                        this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().assignNewOne(metricsSerializeWrapper.getDataVersion());
-                        this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().clear();
-                        this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().putAll(metricsSerializeWrapper.getTimingCount());
-                        this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().persist();
-                    }
-                }
-            } catch (Exception e) {
-                LOGGER.error("SyncTimerMetrics Exception, {}", masterAddrBak, e);
+        if (null == masterAddrBak) {
+            return;
+        }
+
+        try {
+            if (null == brokerController.getMessageStore().getTimerMessageStore()) {
+                return;
             }
+
+            TimerMetrics.TimerMetricsSerializeWrapper metricsSerializeWrapper =
+                this.brokerController.getBrokerOuterAPI().getTimerMetrics(masterAddrBak);
+            if (!brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().equals(metricsSerializeWrapper.getDataVersion())) {
+                this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().assignNewOne(metricsSerializeWrapper.getDataVersion());
+                this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().clear();
+                this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().putAll(metricsSerializeWrapper.getTimingCount());
+                this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().persist();
+            }
+        } catch (Exception e) {
+            LOGGER.error("SyncTimerMetrics Exception, {}", masterAddrBak, e);
         }
     }
 }
