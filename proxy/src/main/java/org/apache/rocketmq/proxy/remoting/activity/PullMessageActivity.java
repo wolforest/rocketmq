@@ -39,25 +39,33 @@ public class PullMessageActivity extends AbstractRemotingActivity {
     protected RemotingCommand processRequest0(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
         PullMessageRequestHeader requestHeader = (PullMessageRequestHeader) request.decodeCommandCustomHeader(PullMessageRequestHeader.class);
-        int sysFlag = requestHeader.getSysFlag();
-        if (!PullSysFlag.hasSubscriptionFlag(sysFlag)) {
-            ConsumerGroupInfo consumerInfo = messagingProcessor.getConsumerGroupInfo(context, requestHeader.getConsumerGroup());
-            if (consumerInfo == null) {
-                return RemotingCommand.buildErrorResponse(ResponseCode.SUBSCRIPTION_NOT_LATEST,
-                    "the consumer's subscription not latest");
-            }
-            SubscriptionData subscriptionData = consumerInfo.findSubscriptionData(requestHeader.getTopic());
-            if (subscriptionData == null) {
-                return RemotingCommand.buildErrorResponse(ResponseCode.SUBSCRIPTION_NOT_EXIST,
-                    "the consumer's subscription not exist");
-            }
-            requestHeader.setSysFlag(PullSysFlag.buildSysFlagWithSubscription(sysFlag));
-            requestHeader.setSubscription(subscriptionData.getSubString());
-            requestHeader.setExpressionType(subscriptionData.getExpressionType());
-            request.writeCustomHeader(requestHeader);
-            request.makeCustomHeaderToNet();
-        }
+
         long timeoutMillis = requestHeader.getSuspendTimeoutMillis() + Duration.ofSeconds(10).toMillis();
+        int sysFlag = requestHeader.getSysFlag();
+        if (PullSysFlag.hasSubscriptionFlag(sysFlag)) {
+            return request(ctx, request, context, timeoutMillis);
+        }
+
+        ConsumerGroupInfo consumerInfo = messagingProcessor.getConsumerGroupInfo(context, requestHeader.getConsumerGroup());
+        if (consumerInfo == null) {
+            return RemotingCommand.buildErrorResponse(ResponseCode.SUBSCRIPTION_NOT_LATEST,
+                "the consumer's subscription not latest");
+        }
+        SubscriptionData subscriptionData = consumerInfo.findSubscriptionData(requestHeader.getTopic());
+        if (subscriptionData == null) {
+            return RemotingCommand.buildErrorResponse(ResponseCode.SUBSCRIPTION_NOT_EXIST,
+                "the consumer's subscription not exist");
+        }
+
+        formatRequest(request, requestHeader, sysFlag, subscriptionData);
         return request(ctx, request, context, timeoutMillis);
+    }
+
+    private void formatRequest(RemotingCommand request, PullMessageRequestHeader requestHeader, int sysFlag, SubscriptionData subscriptionData) {
+        requestHeader.setSysFlag(PullSysFlag.buildSysFlagWithSubscription(sysFlag));
+        requestHeader.setSubscription(subscriptionData.getSubString());
+        requestHeader.setExpressionType(subscriptionData.getExpressionType());
+        request.writeCustomHeader(requestHeader);
+        request.makeCustomHeaderToNet();
     }
 }

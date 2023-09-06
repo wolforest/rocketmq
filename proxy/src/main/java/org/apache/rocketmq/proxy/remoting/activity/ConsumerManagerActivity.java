@@ -92,52 +92,74 @@ public class ConsumerManagerActivity extends AbstractRemotingActivity {
         return response;
     }
 
+    private ConsumerConnection createConsumerConnection(ConsumerGroupInfo consumerGroupInfo) {
+        ConsumerConnection bodydata = new ConsumerConnection();
+        bodydata.setConsumeFromWhere(consumerGroupInfo.getConsumeFromWhere());
+        bodydata.setConsumeType(consumerGroupInfo.getConsumeType());
+        bodydata.setMessageModel(consumerGroupInfo.getMessageModel());
+        bodydata.getSubscriptionTable().putAll(consumerGroupInfo.getSubscriptionTable());
+
+        return bodydata;
+    }
+
+    private void addConnection(ConsumerConnection bodydata, ConsumerGroupInfo consumerGroupInfo) {
+        for (Map.Entry<Channel, ClientChannelInfo> entry : consumerGroupInfo.getChannelInfoTable().entrySet()) {
+            ClientChannelInfo info = entry.getValue();
+            Connection connection = new Connection();
+            connection.setClientId(info.getClientId());
+            connection.setLanguage(info.getLanguage());
+            connection.setVersion(info.getVersion());
+            connection.setClientAddr(RemotingHelper.parseChannelRemoteAddr(info.getChannel()));
+
+            bodydata.getConnectionSet().add(connection);
+        }
+    }
+
+    private byte[] getBody(ConsumerGroupInfo consumerGroupInfo) {
+        ConsumerConnection connection = createConsumerConnection(consumerGroupInfo);
+        addConnection(connection, consumerGroupInfo);
+        return connection.encode();
+    }
+
     protected RemotingCommand getConsumerConnectionList(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
         RemotingCommand response = RemotingCommand.createResponseCommand(GetConsumerConnectionListRequestHeader.class);
         GetConsumerConnectionListRequestHeader header = (GetConsumerConnectionListRequestHeader) request.decodeCommandCustomHeader(GetConsumerConnectionListRequestHeader.class);
         ConsumerGroupInfo consumerGroupInfo = messagingProcessor.getConsumerGroupInfo(context, header.getConsumerGroup());
-        if (consumerGroupInfo != null) {
-            ConsumerConnection bodydata = new ConsumerConnection();
-            bodydata.setConsumeFromWhere(consumerGroupInfo.getConsumeFromWhere());
-            bodydata.setConsumeType(consumerGroupInfo.getConsumeType());
-            bodydata.setMessageModel(consumerGroupInfo.getMessageModel());
-            bodydata.getSubscriptionTable().putAll(consumerGroupInfo.getSubscriptionTable());
 
-            Iterator<Map.Entry<Channel, ClientChannelInfo>> it = consumerGroupInfo.getChannelInfoTable().entrySet().iterator();
-            while (it.hasNext()) {
-                ClientChannelInfo info = it.next().getValue();
-                Connection connection = new Connection();
-                connection.setClientId(info.getClientId());
-                connection.setLanguage(info.getLanguage());
-                connection.setVersion(info.getVersion());
-                connection.setClientAddr(RemotingHelper.parseChannelRemoteAddr(info.getChannel()));
-
-                bodydata.getConnectionSet().add(connection);
-            }
-
-            byte[] body = bodydata.encode();
-            response.setBody(body);
-            response.setCode(ResponseCode.SUCCESS);
-            response.setRemark(null);
-
-            return response;
+        if (consumerGroupInfo == null) {
+            return response.setCodeAndRemark(ResponseCode.CONSUMER_NOT_ONLINE, "the consumer group[" + header.getConsumerGroup() + "] not online");
         }
 
-        response.setCode(ResponseCode.CONSUMER_NOT_ONLINE);
-        response.setRemark("the consumer group[" + header.getConsumerGroup() + "] not online");
+        byte[] body = getBody(consumerGroupInfo);
+        response.setBody(body);
+
+        response.setCode(ResponseCode.SUCCESS);
+        response.setRemark(null);
+
+        return response;
+    }
+
+    private RemotingCommand emptyMQ(LockBatchRequestBody requestBody) {
+        final RemotingCommand response = RemotingCommand.createResponseCommand(null);
+        response.setBody(requestBody.encode());
+        response.setRemark("MessageQueue set is empty");
+        return response;
+    }
+
+    private RemotingCommand emptyMQ(UnlockBatchRequestBody requestBody) {
+        final RemotingCommand response = RemotingCommand.createResponseCommand(null);
+        response.setBody(requestBody.encode());
+        response.setRemark("MessageQueue set is empty");
         return response;
     }
 
     protected RemotingCommand lockBatchMQ(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
-        final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         LockBatchRequestBody requestBody = LockBatchRequestBody.decode(request.getBody(), LockBatchRequestBody.class);
         Set<MessageQueue> mqSet = requestBody.getMqSet();
         if (mqSet.isEmpty()) {
-            response.setBody(requestBody.encode());
-            response.setRemark("MessageQueue set is empty");
-            return response;
+            return emptyMQ(requestBody);
         }
 
         String brokerName = new ArrayList<>(mqSet).get(0).getBrokerName();
@@ -152,13 +174,10 @@ public class ConsumerManagerActivity extends AbstractRemotingActivity {
 
     protected RemotingCommand unlockBatchMQ(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
-        final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         UnlockBatchRequestBody requestBody = UnlockBatchRequestBody.decode(request.getBody(), UnlockBatchRequestBody.class);
         Set<MessageQueue> mqSet = requestBody.getMqSet();
         if (mqSet.isEmpty()) {
-            response.setBody(requestBody.encode());
-            response.setRemark("MessageQueue set is empty");
-            return response;
+            return emptyMQ(requestBody);
         }
 
         String brokerName = new ArrayList<>(mqSet).get(0).getBrokerName();

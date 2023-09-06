@@ -27,6 +27,10 @@ public enum ProxyMode {
         this.mode = mode;
     }
 
+    public static boolean isValid(String mode) {
+        return !isClusterMode(mode) && !isLocalMode(mode);
+    }
+
     public static boolean isClusterMode(String mode) {
         if (mode == null) {
             return false;

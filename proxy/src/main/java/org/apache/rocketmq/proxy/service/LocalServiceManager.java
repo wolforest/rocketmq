@@ -55,7 +55,7 @@ public class LocalServiceManager extends AbstractStartAndShutdown implements Ser
     private final MetadataService metadataService;
     private final AdminService adminService;
 
-    private final MQClientAPIFactory mqClientAPIFactory;
+    private MQClientAPIFactory mqClientAPIFactory;
     private final ChannelManager channelManager;
 
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(
@@ -65,6 +65,18 @@ public class LocalServiceManager extends AbstractStartAndShutdown implements Ser
         this.brokerController = brokerController;
         this.channelManager = new ChannelManager();
         this.messageService = new LocalMessageService(brokerController, channelManager, rpcHook);
+
+        initMQClientAPIFactory(rpcHook);
+
+        this.topicRouteService = new LocalTopicRouteService(brokerController, mqClientAPIFactory);
+        this.transactionService = new LocalTransactionService(brokerController.getBrokerConfig());
+        this.proxyRelayService = new LocalProxyRelayService(brokerController, this.transactionService);
+        this.metadataService = new LocalMetadataService(brokerController);
+        this.adminService = new DefaultAdminService(this.mqClientAPIFactory);
+        this.init();
+    }
+
+    private void initMQClientAPIFactory(RPCHook rpcHook) {
         ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
         NameserverAccessConfig nameserverAccessConfig = new NameserverAccessConfig(proxyConfig.getNamesrvAddr(),
             proxyConfig.getNamesrvDomain(), proxyConfig.getNamesrvDomainSubgroup());
@@ -76,12 +88,6 @@ public class LocalServiceManager extends AbstractStartAndShutdown implements Ser
             rpcHook,
             scheduledExecutorService
         );
-        this.topicRouteService = new LocalTopicRouteService(brokerController, mqClientAPIFactory);
-        this.transactionService = new LocalTransactionService(brokerController.getBrokerConfig());
-        this.proxyRelayService = new LocalProxyRelayService(brokerController, this.transactionService);
-        this.metadataService = new LocalMetadataService(brokerController);
-        this.adminService = new DefaultAdminService(this.mqClientAPIFactory);
-        this.init();
     }
 
     protected void init() {

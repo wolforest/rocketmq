@@ -74,18 +74,11 @@ public class ProxyStartup {
             // init thread pool monitor for proxy.
             initThreadPoolMonitor();
 
-            ThreadPoolExecutor executor = createServerExecutor();
-
             MessagingProcessor messagingProcessor = createMessagingProcessor();
-
             List<AccessValidator> accessValidators = loadAccessValidators();
+
             // create grpcServer
-            GrpcServer grpcServer = GrpcServerBuilder.newBuilder(executor, ConfigurationManager.getProxyConfig().getGrpcServerPort())
-                .addService(createServiceProcessor(messagingProcessor))
-                .addService(ChannelzService.newInstance(100))
-                .addService(ProtoReflectionService.newInstance())
-                .configInterceptor(accessValidators)
-                .build();
+            GrpcServer grpcServer = createGrpcServer(messagingProcessor, accessValidators);
             PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(grpcServer);
 
             RemotingProtocolServer remotingServer = new RemotingProtocolServer(messagingProcessor, accessValidators);
@@ -94,15 +87,8 @@ public class ProxyStartup {
             // start servers one by one.
             PROXY_START_AND_SHUTDOWN.start();
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                log.info("try to shutdown server");
-                try {
-                    PROXY_START_AND_SHUTDOWN.preShutdown();
-                    PROXY_START_AND_SHUTDOWN.shutdown();
-                } catch (Exception e) {
-                    log.error("err when shutdown rocketmq-proxy", e);
-                }
-            }));
+            addShutdownHook();
+
         } catch (Exception e) {
             e.printStackTrace();
             log.error("find an unexpect err.", e);
@@ -111,6 +97,28 @@ public class ProxyStartup {
 
         System.out.printf("%s%n", new Date() + " rocketmq-proxy startup successfully");
         log.info(new Date() + " rocketmq-proxy startup successfully");
+    }
+
+    protected static GrpcServer createGrpcServer(MessagingProcessor messagingProcessor, List<AccessValidator> accessValidators) {
+        ThreadPoolExecutor executor = createServerExecutor();
+        return GrpcServerBuilder.newBuilder(executor, ConfigurationManager.getProxyConfig().getGrpcServerPort())
+            .addService(createServiceProcessor(messagingProcessor))
+            .addService(ChannelzService.newInstance(100))
+            .addService(ProtoReflectionService.newInstance())
+            .configInterceptor(accessValidators)
+            .build();
+    }
+
+    protected static void addShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("try to shutdown server");
+            try {
+                PROXY_START_AND_SHUTDOWN.preShutdown();
+                PROXY_START_AND_SHUTDOWN.shutdown();
+            } catch (Exception e) {
+                log.error("err when shutdown rocketmq-proxy", e);
+            }
+        }));
     }
 
     protected static List<AccessValidator> loadAccessValidators() {
@@ -177,39 +185,64 @@ public class ProxyStartup {
 
     protected static MessagingProcessor createMessagingProcessor() {
         String proxyModeStr = ConfigurationManager.getProxyConfig().getProxyMode();
-        MessagingProcessor messagingProcessor;
-
-        if (ProxyMode.isClusterMode(proxyModeStr)) {
-            messagingProcessor = DefaultMessagingProcessor.createForClusterMode();
-            ProxyMetricsManager proxyMetricsManager = ProxyMetricsManager.initClusterMode(ConfigurationManager.getProxyConfig());
-            PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(proxyMetricsManager);
-        } else if (ProxyMode.isLocalMode(proxyModeStr)) {
-            BrokerController brokerController = createBrokerController();
-            ProxyMetricsManager.initLocalMode(brokerController.getBrokerServiceManager().getBrokerMetricsManager(), ConfigurationManager.getProxyConfig());
-            StartAndShutdown brokerControllerWrapper = new StartAndShutdown() {
-                @Override
-                public void start() throws Exception {
-                    brokerController.start();
-                    String tip = "The broker[" + brokerController.getBrokerConfig().getBrokerName() + ", "
-                        + brokerController.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
-                    if (null != brokerController.getBrokerConfig().getNamesrvAddr()) {
-                        tip += " and name server is " + brokerController.getBrokerConfig().getNamesrvAddr();
-                    }
-                    log.info(tip);
-                }
-
-                @Override
-                public void shutdown() throws Exception {
-                    brokerController.shutdown();
-                }
-            };
-            PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(brokerControllerWrapper);
-            messagingProcessor = DefaultMessagingProcessor.createForLocalMode(brokerController);
-        } else {
+        if (!ProxyMode.isValid(proxyModeStr)) {
             throw new IllegalArgumentException("try to start grpc server with wrong mode, use 'local' or 'cluster'");
         }
+
+        if (ProxyMode.isClusterMode(proxyModeStr)) {
+            return createClusterMessagingProcessor();
+        }
+
+        return createLocalMessagingProcessor();
+    }
+
+    protected static MessagingProcessor createClusterMessagingProcessor() {
+        MessagingProcessor messagingProcessor = DefaultMessagingProcessor.createForClusterMode();
+        ProxyMetricsManager proxyMetricsManager = ProxyMetricsManager.initClusterMode(ConfigurationManager.getProxyConfig());
+
+        PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(proxyMetricsManager);
         PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(messagingProcessor);
+
         return messagingProcessor;
+    }
+
+    protected static MessagingProcessor createLocalMessagingProcessor() {
+        BrokerController brokerController = createBrokerController();
+        ProxyMetricsManager.initLocalMode(brokerController.getBrokerServiceManager().getBrokerMetricsManager(), ConfigurationManager.getProxyConfig());
+
+        StartAndShutdown brokerControllerWrapper = createBrokerControllerWrapper(brokerController);
+        PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(brokerControllerWrapper);
+
+        MessagingProcessor messagingProcessor = DefaultMessagingProcessor.createForLocalMode(brokerController);
+        PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(messagingProcessor);
+
+        return messagingProcessor;
+    }
+
+    protected static StartAndShutdown createBrokerControllerWrapper(BrokerController brokerController) {
+        return new StartAndShutdown() {
+            @Override
+            public void start() throws Exception {
+                brokerController.start();
+
+                logStartInfo();
+            }
+
+            @Override
+            public void shutdown() throws Exception {
+                brokerController.shutdown();
+            }
+
+            private void logStartInfo() {
+                String tip = "The broker[" + brokerController.getBrokerConfig().getBrokerName() + ", "
+                    + brokerController.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
+
+                if (null != brokerController.getBrokerConfig().getNamesrvAddr()) {
+                    tip += " and name server is " + brokerController.getBrokerConfig().getNamesrvAddr();
+                }
+                log.info(tip);
+            }
+        };
     }
 
     private static GrpcMessagingApplication createServiceProcessor(MessagingProcessor messagingProcessor) {

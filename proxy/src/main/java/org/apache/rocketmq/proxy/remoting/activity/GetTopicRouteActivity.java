@@ -44,18 +44,20 @@ public class GetTopicRouteActivity extends AbstractRemotingActivity {
     @Override
     protected RemotingCommand processRequest0(ChannelHandlerContext ctx, RemotingCommand request,
         ProxyContext context) throws Exception {
-        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        final GetRouteInfoRequestHeader requestHeader =
-            (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
-        List<Address> addressList = new ArrayList<>();
-        // AddressScheme is just a placeholder and will not affect topic route result in this case.
-        addressList.add(new Address(Address.AddressScheme.IPv4, HostAndPort.fromParts(proxyConfig.getRemotingAccessAddr(), proxyConfig.getRemotingListenPort())));
-        ProxyTopicRouteData proxyTopicRouteData = messagingProcessor.getTopicRouteDataForProxy(context, addressList, requestHeader.getTopic());
-        TopicRouteData topicRouteData = proxyTopicRouteData.buildTopicRouteData();
+
+        response.setBody(getBody(request, context));
+        response.setCode(ResponseCode.SUCCESS);
+        response.setRemark(null);
+        return response;
+    }
+
+    private byte[] getBody(RemotingCommand request, ProxyContext context) throws Exception {
+        final GetRouteInfoRequestHeader requestHeader = (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
+        TopicRouteData topicRouteData = buildTopicRouteData(requestHeader, context);
+        Boolean standardJsonOnly = requestHeader.getAcceptStandardJsonOnly();
 
         byte[] content;
-        Boolean standardJsonOnly = requestHeader.getAcceptStandardJsonOnly();
         if (request.getVersion() >= MQVersion.Version.V4_9_4.ordinal() || null != standardJsonOnly && standardJsonOnly) {
             content = topicRouteData.encode(SerializerFeature.BrowserCompatible,
                 SerializerFeature.QuoteFieldNames, SerializerFeature.SkipTransientField,
@@ -64,9 +66,23 @@ public class GetTopicRouteActivity extends AbstractRemotingActivity {
             content = topicRouteData.encode();
         }
 
-        response.setBody(content);
-        response.setCode(ResponseCode.SUCCESS);
-        response.setRemark(null);
-        return response;
+        return content;
     }
+
+    private TopicRouteData buildTopicRouteData(GetRouteInfoRequestHeader requestHeader, ProxyContext context) throws Exception {
+        List<Address> addressList = createAddressList();
+        ProxyTopicRouteData proxyTopicRouteData = messagingProcessor.getTopicRouteDataForProxy(context, addressList, requestHeader.getTopic());
+
+        return proxyTopicRouteData.buildTopicRouteData();
+    }
+
+    private List<Address> createAddressList() {
+        List<Address> addressList = new ArrayList<>();
+        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
+        // AddressScheme is just a placeholder and will not affect topic route result in this case.
+        addressList.add(new Address(Address.AddressScheme.IPv4, HostAndPort.fromParts(proxyConfig.getRemotingAccessAddr(), proxyConfig.getRemotingListenPort())));
+
+        return addressList;
+    }
+
 }

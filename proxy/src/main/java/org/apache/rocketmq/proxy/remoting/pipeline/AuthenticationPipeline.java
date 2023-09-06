@@ -36,11 +36,13 @@ public class AuthenticationPipeline implements RequestPipeline {
     @Override
     public void execute(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context) throws Exception {
         ProxyConfig config = ConfigurationManager.getProxyConfig();
-        if (config.isEnableACL()) {
-            for (AccessValidator accessValidator : accessValidatorList) {
-                AccessResource accessResource = accessValidator.parse(request, context.getRemoteAddress());
-                accessValidator.validate(accessResource);
-            }
+        if (!config.isEnableACL()) {
+            return;
+        }
+
+        for (AccessValidator accessValidator : accessValidatorList) {
+            AccessResource accessResource = accessValidator.parse(request, context.getRemoteAddress());
+            accessValidator.validate(accessResource);
         }
     }
 }

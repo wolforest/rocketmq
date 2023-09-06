@@ -30,11 +30,13 @@ public class RemotingConverter {
     protected static volatile RemotingConverter instance;
 
     public static RemotingConverter getInstance() {
-        if (instance == null) {
-            synchronized (INSTANCE_CREATE_LOCK) {
-                if (instance == null) {
-                    instance = new RemotingConverter();
-                }
+        if (instance != null) {
+            return instance;
+        }
+
+        synchronized (INSTANCE_CREATE_LOCK) {
+            if (instance == null) {
+                instance = new RemotingConverter();
             }
         }
         return instance;
