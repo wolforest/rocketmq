@@ -166,48 +166,52 @@ public class SlaveSynchronize {
 
     private void syncSubscriptionGroupConfig() {
         String masterAddrBak = this.masterAddr;
-        if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
-            try {
-                SubscriptionGroupWrapper subscriptionWrapper =
-                    this.brokerController.getBrokerOuterAPI()
-                        .getAllSubscriptionGroupConfig(masterAddrBak);
+        if (null == masterAddrBak || masterAddrBak.equals(brokerController.getBrokerAddr())) {
+            return;
+        }
 
-                if (!this.brokerController.getSubscriptionGroupManager().getDataVersion()
-                    .equals(subscriptionWrapper.getDataVersion())) {
-                    SubscriptionGroupManager subscriptionGroupManager =
-                        this.brokerController.getSubscriptionGroupManager();
-                    subscriptionGroupManager.getDataVersion().assignNewOne(
-                        subscriptionWrapper.getDataVersion());
-                    subscriptionGroupManager.getSubscriptionGroupTable().clear();
-                    subscriptionGroupManager.getSubscriptionGroupTable().putAll(
-                        subscriptionWrapper.getSubscriptionGroupTable());
-                    subscriptionGroupManager.persist();
-                    LOGGER.info("Update slave Subscription Group from master, {}", masterAddrBak);
-                }
-            } catch (Exception e) {
-                LOGGER.error("SyncSubscriptionGroup Exception, {}", masterAddrBak, e);
+        try {
+            SubscriptionGroupWrapper subscriptionWrapper =
+                this.brokerController.getBrokerOuterAPI()
+                    .getAllSubscriptionGroupConfig(masterAddrBak);
+
+            if (!this.brokerController.getSubscriptionGroupManager().getDataVersion()
+                .equals(subscriptionWrapper.getDataVersion())) {
+                SubscriptionGroupManager subscriptionGroupManager =
+                    this.brokerController.getSubscriptionGroupManager();
+                subscriptionGroupManager.getDataVersion().assignNewOne(
+                    subscriptionWrapper.getDataVersion());
+                subscriptionGroupManager.getSubscriptionGroupTable().clear();
+                subscriptionGroupManager.getSubscriptionGroupTable().putAll(
+                    subscriptionWrapper.getSubscriptionGroupTable());
+                subscriptionGroupManager.persist();
+                LOGGER.info("Update slave Subscription Group from master, {}", masterAddrBak);
             }
+        } catch (Exception e) {
+            LOGGER.error("SyncSubscriptionGroup Exception, {}", masterAddrBak, e);
         }
     }
 
     private void syncMessageRequestMode() {
         String masterAddrBak = this.masterAddr;
-        if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
-            try {
-                MessageRequestModeSerializeWrapper messageRequestModeSerializeWrapper =
-                    this.brokerController.getBrokerOuterAPI().getAllMessageRequestMode(masterAddrBak);
+        if (null == masterAddrBak || masterAddrBak.equals(brokerController.getBrokerAddr())) {
+            return;
+        }
 
-                MessageRequestModeManager messageRequestModeManager =
-                    this.brokerController.getBrokerNettyServer().getQueryAssignmentProcessor().getMessageRequestModeManager();
-                messageRequestModeManager.getMessageRequestModeMap().clear();
-                messageRequestModeManager.getMessageRequestModeMap().putAll(
-                    messageRequestModeSerializeWrapper.getMessageRequestModeMap()
-                );
-                messageRequestModeManager.persist();
-                LOGGER.info("Update slave Message Request Mode from master, {}", masterAddrBak);
-            } catch (Exception e) {
-                LOGGER.error("SyncMessageRequestMode Exception, {}", masterAddrBak, e);
-            }
+        try {
+            MessageRequestModeSerializeWrapper messageRequestModeSerializeWrapper =
+                this.brokerController.getBrokerOuterAPI().getAllMessageRequestMode(masterAddrBak);
+
+            MessageRequestModeManager messageRequestModeManager =
+                this.brokerController.getBrokerNettyServer().getQueryAssignmentProcessor().getMessageRequestModeManager();
+            messageRequestModeManager.getMessageRequestModeMap().clear();
+            messageRequestModeManager.getMessageRequestModeMap().putAll(
+                messageRequestModeSerializeWrapper.getMessageRequestModeMap()
+            );
+            messageRequestModeManager.persist();
+            LOGGER.info("Update slave Message Request Mode from master, {}", masterAddrBak);
+        } catch (Exception e) {
+            LOGGER.error("SyncMessageRequestMode Exception, {}", masterAddrBak, e);
         }
     }
 
