@@ -243,31 +243,41 @@ public class LocalMessageService implements MessageService {
         }
     }
 
+    private PopStatus codeToPopStatus(RemotingCommand r) {
+        PopStatus popStatus;
+
+        switch (r.getCode()) {
+            case ResponseCode.SUCCESS:
+                popStatus = PopStatus.FOUND;
+                break;
+            case ResponseCode.POLLING_FULL:
+                popStatus = PopStatus.POLLING_FULL;
+                break;
+            case ResponseCode.POLLING_TIMEOUT:
+            case ResponseCode.PULL_NOT_FOUND:
+                popStatus = PopStatus.POLLING_NOT_FOUND;
+                break;
+            default:
+                throw new ProxyException(ProxyExceptionCode.INTERNAL_SERVER_ERROR, r.getRemark());
+        }
+
+        return popStatus;
+    }
+
     private CompletableFuture<PopResult> createPopResponse(CompletableFuture<RemotingCommand> future, AddressableMessageQueue messageQueue, PopMessageRequestHeader requestHeader) {
         return future.thenApply(r -> {
-            PopStatus popStatus;
+            PopStatus popStatus = codeToPopStatus(r);
             List<MessageExt> messageExtList = new ArrayList<>();
-            switch (r.getCode()) {
-                case ResponseCode.SUCCESS:
-                    popStatus = PopStatus.FOUND;
-                    ByteBuffer byteBuffer = ByteBuffer.wrap(r.getBody());
-                    messageExtList = MessageDecoder.decodesBatch(
-                        byteBuffer,
-                        true,
-                        false,
-                        true
-                    );
-                    break;
-                case ResponseCode.POLLING_FULL:
-                    popStatus = PopStatus.POLLING_FULL;
-                    break;
-                case ResponseCode.POLLING_TIMEOUT:
-                case ResponseCode.PULL_NOT_FOUND:
-                    popStatus = PopStatus.POLLING_NOT_FOUND;
-                    break;
-                default:
-                    throw new ProxyException(ProxyExceptionCode.INTERNAL_SERVER_ERROR, r.getRemark());
+            if (ResponseCode.SUCCESS == r.getCode()) {
+                ByteBuffer byteBuffer = ByteBuffer.wrap(r.getBody());
+                messageExtList = MessageDecoder.decodesBatch(
+                    byteBuffer,
+                    true,
+                    false,
+                    true
+                );
             }
+
             PopResult popResult = new PopResult(popStatus, messageExtList);
             PopMessageResponseHeader responseHeader = (PopMessageResponseHeader) r.readCustomHeader();
 
