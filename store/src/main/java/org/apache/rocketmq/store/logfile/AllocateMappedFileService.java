@@ -16,19 +16,20 @@
  */
 package org.apache.rocketmq.store.logfile;
 
+import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.TimeUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.config.BrokerRole;
+
 import java.io.IOException;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.common.ServiceThread;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.DefaultMessageStore;
-import org.apache.rocketmq.store.config.BrokerRole;
 
 /**
  * Create MappedFile in advance
@@ -185,7 +186,7 @@ public class AllocateMappedFileService extends ServiceThread {
                 mappedFile = new DefaultMappedFile(req.getFilePath(), req.getFileSize());
             }
 
-            long elapsedTime = UtilAll.computeElapsedTimeMilliseconds(beginTime);
+            long elapsedTime = TimeUtils.computeElapsedTimeMilliseconds(beginTime);
             if (elapsedTime > 10) {
                 int queueSize = this.requestQueue.size();
                 log.warn("create mappedFile spent time(ms) " + elapsedTime + " queue size " + queueSize

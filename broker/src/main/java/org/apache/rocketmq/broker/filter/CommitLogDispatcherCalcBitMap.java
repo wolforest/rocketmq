@@ -20,6 +20,7 @@ package org.apache.rocketmq.broker.filter;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.filter.util.BitsArray;
@@ -99,7 +100,7 @@ public class CommitLogDispatcherCalcBitMap implements CommitLogDispatcher {
 
             request.setBitMap(filterBitMap.bytes());
 
-            long elapsedTime = UtilAll.computeElapsedTimeMilliseconds(startTime);
+            long elapsedTime = TimeUtils.computeElapsedTimeMilliseconds(startTime);
             // 1ms
             if (elapsedTime >= 1) {
                 log.warn("Spend {} ms to calc bit map, consumerNum={}, topic={}", elapsedTime, filterDatas.size(), request.getTopic());
