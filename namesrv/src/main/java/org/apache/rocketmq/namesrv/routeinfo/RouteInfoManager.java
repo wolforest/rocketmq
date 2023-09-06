@@ -1022,24 +1022,22 @@ public class RouteInfoManager {
     public TopicList getTopicsByCluster(String cluster) {
         TopicList topicList = new TopicList();
         try {
-            try {
-                this.lock.readLock().lockInterruptibly();
-                Set<String> brokerNameSet = this.clusterAddrTable.get(cluster);
-                for (String brokerName : brokerNameSet) {
-                    for (Entry<String, Map<String, QueueData>> topicEntry : this.topicQueueTable.entrySet()) {
-                        String topic = topicEntry.getKey();
-                        Map<String, QueueData> queueDataMap = topicEntry.getValue();
-                        final QueueData qd = queueDataMap.get(brokerName);
-                        if (qd != null) {
-                            topicList.getTopicList().add(topic);
-                        }
+            this.lock.readLock().lockInterruptibly();
+            Set<String> brokerNameSet = this.clusterAddrTable.get(cluster);
+            for (String brokerName : brokerNameSet) {
+                for (Entry<String, Map<String, QueueData>> topicEntry : this.topicQueueTable.entrySet()) {
+                    String topic = topicEntry.getKey();
+                    Map<String, QueueData> queueDataMap = topicEntry.getValue();
+                    final QueueData qd = queueDataMap.get(brokerName);
+                    if (qd != null) {
+                        topicList.getTopicList().add(topic);
                     }
                 }
-            } finally {
-                this.lock.readLock().unlock();
             }
         } catch (Exception e) {
             log.error("getTopicsByCluster Exception", e);
+        } finally {
+            this.lock.readLock().unlock();
         }
 
         return topicList;
