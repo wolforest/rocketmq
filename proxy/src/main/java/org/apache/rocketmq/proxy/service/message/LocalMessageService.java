@@ -216,12 +216,20 @@ public class LocalMessageService implements MessageService {
     public CompletableFuture<PopResult> popMessage(ProxyContext ctx, AddressableMessageQueue messageQueue,
         PopMessageRequestHeader requestHeader, long timeoutMillis) {
         requestHeader.setBornTime(System.currentTimeMillis());
-        RemotingCommand request = LocalRemotingCommand.createRequestCommand(RequestCode.POP_MESSAGE, requestHeader);
+
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
+        processPopRequest(ctx, requestHeader, future);
+
+        return createPopResponse(future, messageQueue, requestHeader);
+    }
+
+    private void processPopRequest(ProxyContext ctx, PopMessageRequestHeader requestHeader, CompletableFuture<RemotingCommand> future) {
+        RemotingCommand request = LocalRemotingCommand.createRequestCommand(RequestCode.POP_MESSAGE, requestHeader);
         SimpleChannel channel = channelManager.createInvocationChannel(ctx);
         InvocationContext invocationContext = new InvocationContext(future);
         channel.registerInvocationContext(request.getOpaque(), invocationContext);
         ChannelHandlerContext simpleChannelHandlerContext = channel.getChannelHandlerContext();
+
         try {
             RemotingCommand response = brokerController.getBrokerNettyServer().getPopMessageProcessor().processRequest(simpleChannelHandlerContext, request);
             if (response != null) {
@@ -233,8 +241,6 @@ public class LocalMessageService implements MessageService {
             channel.eraseInvocationContext(request.getOpaque());
             log.error("Failed to process popMessage command", e);
         }
-
-        return createPopResponse(future, messageQueue, requestHeader);
     }
 
     private CompletableFuture<PopResult> createPopResponse(CompletableFuture<RemotingCommand> future, AddressableMessageQueue messageQueue, PopMessageRequestHeader requestHeader) {
