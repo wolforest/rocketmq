@@ -75,11 +75,7 @@ public class ClientManagerActivity extends AbstractRemotingActivity {
         return null;
     }
 
-    protected RemotingCommand heartBeat(ChannelHandlerContext ctx, RemotingCommand request,
-        ProxyContext context) {
-        HeartbeatData heartbeatData = HeartbeatData.decode(request.getBody(), HeartbeatData.class);
-        String clientId = heartbeatData.getClientID();
-
+    private void registerProducer(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context, HeartbeatData heartbeatData, String clientId) {
         for (ProducerData data : heartbeatData.getProducerDataSet()) {
             ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
                 this.remotingChannelManager.createProducerChannel(context, ctx.channel(), data.getGroupName(), clientId),
@@ -88,6 +84,13 @@ public class ClientManagerActivity extends AbstractRemotingActivity {
             setClientPropertiesToChannelAttr(clientChannelInfo);
             messagingProcessor.registerProducer(context, data.getGroupName(), clientChannelInfo);
         }
+    }
+
+    protected RemotingCommand heartBeat(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context) {
+        HeartbeatData heartbeatData = HeartbeatData.decode(request.getBody(), HeartbeatData.class);
+        String clientId = heartbeatData.getClientID();
+
+        registerProducer(ctx, request, context, heartbeatData, clientId);
 
         for (ConsumerData data : heartbeatData.getConsumerDataSet()) {
             ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
