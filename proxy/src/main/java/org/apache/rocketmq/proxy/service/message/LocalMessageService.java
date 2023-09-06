@@ -114,69 +114,6 @@ public class LocalMessageService implements MessageService {
         return createSendResponse(future, messageId, requestHeader);
     }
 
-    private void processSendRequest(ProxyContext ctx, RemotingCommand request, CompletableFuture<RemotingCommand> future) {
-        SimpleChannel channel = channelManager.createInvocationChannel(ctx);
-        InvocationContext invocationContext = new InvocationContext(future);
-        channel.registerInvocationContext(request.getOpaque(), invocationContext);
-        ChannelHandlerContext simpleChannelHandlerContext = channel.getChannelHandlerContext();
-
-        try {
-            RemotingCommand response = brokerController.getBrokerNettyServer().getSendMessageProcessor().processRequest(simpleChannelHandlerContext, request);
-            if (response != null) {
-                invocationContext.handle(response);
-                channel.eraseInvocationContext(request.getOpaque());
-            }
-        } catch (Exception e) {
-            future.completeExceptionally(e);
-            channel.eraseInvocationContext(request.getOpaque());
-            log.error("Failed to process sendMessage command", e);
-        }
-    }
-
-    private CompletableFuture<List<SendResult>> createSendResponse(CompletableFuture<RemotingCommand> future, String messageId, SendMessageRequestHeader requestHeader) {
-        return future.thenApply(r -> {
-            SendResult sendResult = new SendResult();
-            SendMessageResponseHeader responseHeader = (SendMessageResponseHeader) r.readCustomHeader();
-
-            SendStatus sendStatus = codeToSendStatus(r);
-            sendResult.setSendStatus(sendStatus);
-
-            sendResult.setMsgId(messageId);
-            sendResult.setMessageQueue(new MessageQueue(requestHeader.getTopic(), brokerController.getBrokerConfig().getBrokerName(), requestHeader.getQueueId()));
-            sendResult.setQueueOffset(responseHeader.getQueueOffset());
-            sendResult.setTransactionId(responseHeader.getTransactionId());
-            sendResult.setOffsetMsgId(responseHeader.getMsgId());
-            return Collections.singletonList(sendResult);
-        });
-    }
-
-    private SendStatus codeToSendStatus(RemotingCommand r) {
-        SendStatus sendStatus;
-        switch (r.getCode()) {
-            case ResponseCode.FLUSH_DISK_TIMEOUT: {
-                sendStatus = SendStatus.FLUSH_DISK_TIMEOUT;
-                break;
-            }
-            case ResponseCode.FLUSH_SLAVE_TIMEOUT: {
-                sendStatus = SendStatus.FLUSH_SLAVE_TIMEOUT;
-                break;
-            }
-            case ResponseCode.SLAVE_NOT_AVAILABLE: {
-                sendStatus = SendStatus.SLAVE_NOT_AVAILABLE;
-                break;
-            }
-            case ResponseCode.SUCCESS: {
-                sendStatus = SendStatus.SEND_OK;
-                break;
-            }
-            default: {
-                throw new ProxyException(ProxyExceptionCode.INTERNAL_SERVER_ERROR, r.getRemark());
-            }
-        }
-
-        return sendStatus;
-    }
-
     @Override
     public CompletableFuture<RemotingCommand> sendMessageBack(ProxyContext ctx, ReceiptHandle handle, String messageId,
         ConsumerSendMsgBackRequestHeader requestHeader, long timeoutMillis) {
@@ -216,110 +153,11 @@ public class LocalMessageService implements MessageService {
     public CompletableFuture<PopResult> popMessage(ProxyContext ctx, AddressableMessageQueue messageQueue,
         PopMessageRequestHeader requestHeader, long timeoutMillis) {
         requestHeader.setBornTime(System.currentTimeMillis());
-        RemotingCommand request = LocalRemotingCommand.createRequestCommand(RequestCode.POP_MESSAGE, requestHeader);
+
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
-        SimpleChannel channel = channelManager.createInvocationChannel(ctx);
-        InvocationContext invocationContext = new InvocationContext(future);
-        channel.registerInvocationContext(request.getOpaque(), invocationContext);
-        ChannelHandlerContext simpleChannelHandlerContext = channel.getChannelHandlerContext();
-        try {
-            RemotingCommand response = brokerController.getBrokerNettyServer().getPopMessageProcessor().processRequest(simpleChannelHandlerContext, request);
-            if (response != null) {
-                invocationContext.handle(response);
-                channel.eraseInvocationContext(request.getOpaque());
-            }
-        } catch (Exception e) {
-            future.completeExceptionally(e);
-            channel.eraseInvocationContext(request.getOpaque());
-            log.error("Failed to process popMessage command", e);
-        }
-        return future.thenApply(r -> {
-            PopStatus popStatus;
-            List<MessageExt> messageExtList = new ArrayList<>();
-            switch (r.getCode()) {
-                case ResponseCode.SUCCESS:
-                    popStatus = PopStatus.FOUND;
-                    ByteBuffer byteBuffer = ByteBuffer.wrap(r.getBody());
-                    messageExtList = MessageDecoder.decodesBatch(
-                        byteBuffer,
-                        true,
-                        false,
-                        true
-                    );
-                    break;
-                case ResponseCode.POLLING_FULL:
-                    popStatus = PopStatus.POLLING_FULL;
-                    break;
-                case ResponseCode.POLLING_TIMEOUT:
-                case ResponseCode.PULL_NOT_FOUND:
-                    popStatus = PopStatus.POLLING_NOT_FOUND;
-                    break;
-                default:
-                    throw new ProxyException(ProxyExceptionCode.INTERNAL_SERVER_ERROR, r.getRemark());
-            }
-            PopResult popResult = new PopResult(popStatus, messageExtList);
-            PopMessageResponseHeader responseHeader = (PopMessageResponseHeader) r.readCustomHeader();
+        processPopRequest(ctx, requestHeader, future);
 
-            if (popStatus == PopStatus.FOUND) {
-                Map<String, Long> startOffsetInfo;
-                Map<String, List<Long>> msgOffsetInfo;
-                Map<String, Integer> orderCountInfo;
-                popResult.setInvisibleTime(responseHeader.getInvisibleTime());
-                popResult.setPopTime(responseHeader.getPopTime());
-                startOffsetInfo = ExtraInfoUtil.parseStartOffsetInfo(responseHeader.getStartOffsetInfo());
-                msgOffsetInfo = ExtraInfoUtil.parseMsgOffsetInfo(responseHeader.getMsgOffsetInfo());
-                orderCountInfo = ExtraInfoUtil.parseOrderCountInfo(responseHeader.getOrderCountInfo());
-                // <topicMark@queueId, msg queueOffset>
-                Map<String, List<Long>> sortMap = new HashMap<>(16);
-                for (MessageExt messageExt : messageExtList) {
-                    // Value of POP_CK is used to determine whether it is a pop retry,
-                    // cause topic could be rewritten by broker.
-                    String key = ExtraInfoUtil.getStartOffsetInfoMapKey(messageExt.getTopic(),
-                        messageExt.getProperty(MessageConst.PROPERTY_POP_CK), messageExt.getQueueId());
-                    if (!sortMap.containsKey(key)) {
-                        sortMap.put(key, new ArrayList<>(4));
-                    }
-                    sortMap.get(key).add(messageExt.getQueueOffset());
-                }
-                Map<String, String> map = new HashMap<>(5);
-                for (MessageExt messageExt : messageExtList) {
-                    if (startOffsetInfo == null) {
-                        // we should set the check point info to extraInfo field , if the command is popMsg
-                        // find pop ck offset
-                        String key = messageExt.getTopic() + messageExt.getQueueId();
-                        if (!map.containsKey(messageExt.getTopic() + messageExt.getQueueId())) {
-                            map.put(key, ExtraInfoUtil.buildExtraInfo(messageExt.getQueueOffset(), responseHeader.getPopTime(), responseHeader.getInvisibleTime(), responseHeader.getReviveQid(),
-                                messageExt.getTopic(), messageQueue.getBrokerName(), messageExt.getQueueId()));
-                        }
-                        messageExt.getProperties().put(MessageConst.PROPERTY_POP_CK, map.get(key) + MessageConst.KEY_SEPARATOR + messageExt.getQueueOffset());
-                    } else {
-                        if (messageExt.getProperty(MessageConst.PROPERTY_POP_CK) == null) {
-                            String key = ExtraInfoUtil.getStartOffsetInfoMapKey(messageExt.getTopic(), messageExt.getQueueId());
-                            int index = sortMap.get(key).indexOf(messageExt.getQueueOffset());
-                            Long msgQueueOffset = msgOffsetInfo.get(key).get(index);
-                            if (msgQueueOffset != messageExt.getQueueOffset()) {
-                                log.warn("Queue offset [{}] of msg is strange, not equal to the stored in msg, {}", msgQueueOffset, messageExt);
-                            }
-
-                            messageExt.getProperties().put(MessageConst.PROPERTY_POP_CK,
-                                ExtraInfoUtil.buildExtraInfo(startOffsetInfo.get(key), responseHeader.getPopTime(), responseHeader.getInvisibleTime(),
-                                    responseHeader.getReviveQid(), messageExt.getTopic(), messageQueue.getBrokerName(), messageExt.getQueueId(), msgQueueOffset)
-                            );
-                            if (requestHeader.isOrder() && orderCountInfo != null) {
-                                Integer count = orderCountInfo.get(key);
-                                if (count != null && count > 0) {
-                                    messageExt.setReconsumeTimes(count);
-                                }
-                            }
-                        }
-                    }
-                    messageExt.getProperties().computeIfAbsent(MessageConst.PROPERTY_FIRST_POP_TIME, k -> String.valueOf(responseHeader.getPopTime()));
-                    messageExt.setBrokerName(messageExt.getBrokerName());
-                    messageExt.setTopic(messageQueue.getTopic());
-                }
-            }
-            return popResult;
-        });
+        return createPopResponse(future, messageQueue, requestHeader);
     }
 
     @Override
@@ -495,4 +333,217 @@ public class LocalMessageService implements MessageService {
         long timeoutMillis) {
         throw new NotImplementedException("requestOneway is not implemented in LocalMessageService");
     }
+
+    private void processSendRequest(ProxyContext ctx, RemotingCommand request, CompletableFuture<RemotingCommand> future) {
+        SimpleChannel channel = channelManager.createInvocationChannel(ctx);
+        InvocationContext invocationContext = new InvocationContext(future);
+        channel.registerInvocationContext(request.getOpaque(), invocationContext);
+        ChannelHandlerContext simpleChannelHandlerContext = channel.getChannelHandlerContext();
+
+        try {
+            RemotingCommand response = brokerController.getBrokerNettyServer().getSendMessageProcessor().processRequest(simpleChannelHandlerContext, request);
+            if (response != null) {
+                invocationContext.handle(response);
+                channel.eraseInvocationContext(request.getOpaque());
+            }
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+            channel.eraseInvocationContext(request.getOpaque());
+            log.error("Failed to process sendMessage command", e);
+        }
+    }
+
+    private CompletableFuture<List<SendResult>> createSendResponse(CompletableFuture<RemotingCommand> future, String messageId, SendMessageRequestHeader requestHeader) {
+        return future.thenApply(r -> {
+            SendResult sendResult = new SendResult();
+            SendMessageResponseHeader responseHeader = (SendMessageResponseHeader) r.readCustomHeader();
+
+            SendStatus sendStatus = codeToSendStatus(r);
+            sendResult.setSendStatus(sendStatus);
+
+            sendResult.setMsgId(messageId);
+            sendResult.setMessageQueue(new MessageQueue(requestHeader.getTopic(), brokerController.getBrokerConfig().getBrokerName(), requestHeader.getQueueId()));
+            sendResult.setQueueOffset(responseHeader.getQueueOffset());
+            sendResult.setTransactionId(responseHeader.getTransactionId());
+            sendResult.setOffsetMsgId(responseHeader.getMsgId());
+            return Collections.singletonList(sendResult);
+        });
+    }
+
+    private SendStatus codeToSendStatus(RemotingCommand r) {
+        SendStatus sendStatus;
+        switch (r.getCode()) {
+            case ResponseCode.FLUSH_DISK_TIMEOUT: {
+                sendStatus = SendStatus.FLUSH_DISK_TIMEOUT;
+                break;
+            }
+            case ResponseCode.FLUSH_SLAVE_TIMEOUT: {
+                sendStatus = SendStatus.FLUSH_SLAVE_TIMEOUT;
+                break;
+            }
+            case ResponseCode.SLAVE_NOT_AVAILABLE: {
+                sendStatus = SendStatus.SLAVE_NOT_AVAILABLE;
+                break;
+            }
+            case ResponseCode.SUCCESS: {
+                sendStatus = SendStatus.SEND_OK;
+                break;
+            }
+            default: {
+                throw new ProxyException(ProxyExceptionCode.INTERNAL_SERVER_ERROR, r.getRemark());
+            }
+        }
+
+        return sendStatus;
+    }
+
+    private void processPopRequest(ProxyContext ctx, PopMessageRequestHeader requestHeader, CompletableFuture<RemotingCommand> future) {
+        RemotingCommand request = LocalRemotingCommand.createRequestCommand(RequestCode.POP_MESSAGE, requestHeader);
+        SimpleChannel channel = channelManager.createInvocationChannel(ctx);
+        InvocationContext invocationContext = new InvocationContext(future);
+        channel.registerInvocationContext(request.getOpaque(), invocationContext);
+        ChannelHandlerContext simpleChannelHandlerContext = channel.getChannelHandlerContext();
+
+        try {
+            RemotingCommand response = brokerController.getBrokerNettyServer().getPopMessageProcessor().processRequest(simpleChannelHandlerContext, request);
+            if (response != null) {
+                invocationContext.handle(response);
+                channel.eraseInvocationContext(request.getOpaque());
+            }
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+            channel.eraseInvocationContext(request.getOpaque());
+            log.error("Failed to process popMessage command", e);
+        }
+    }
+
+    private CompletableFuture<PopResult> createPopResponse(CompletableFuture<RemotingCommand> future, AddressableMessageQueue messageQueue, PopMessageRequestHeader requestHeader) {
+        return future.thenApply(r -> {
+            PopStatus popStatus = codeToPopStatus(r);
+            List<MessageExt> messageExtList = initMessageExtList(r);
+
+            PopResult popResult = new PopResult(popStatus, messageExtList);
+            if (popStatus != PopStatus.FOUND) {
+                return popResult;
+            }
+
+            PopMessageResponseHeader responseHeader = (PopMessageResponseHeader) r.readCustomHeader();
+            popResult.setInvisibleTime(responseHeader.getInvisibleTime());
+            popResult.setPopTime(responseHeader.getPopTime());
+
+            Map<String, Long> startOffsetInfo = ExtraInfoUtil.parseStartOffsetInfo(responseHeader.getStartOffsetInfo());
+            Map<String, List<Long>> msgOffsetInfo = ExtraInfoUtil.parseMsgOffsetInfo(responseHeader.getMsgOffsetInfo());
+            Map<String, Integer> orderCountInfo = ExtraInfoUtil.parseOrderCountInfo(responseHeader.getOrderCountInfo());
+
+            // <topicMark@queueId, msg queueOffset>
+            Map<String, List<Long>> sortMap = toSortMap(messageExtList);
+            Map<String, String> map = new HashMap<>(5);
+            for (MessageExt messageExt : messageExtList) {
+                if (startOffsetInfo == null) {
+                    handleNoStartOffsetInfo(messageExt, map, responseHeader, messageQueue);
+                } else if (messageExt.getProperty(MessageConst.PROPERTY_POP_CK) == null) {
+                    String key = ExtraInfoUtil.getStartOffsetInfoMapKey(messageExt.getTopic(), messageExt.getQueueId());
+                    Long msgQueueOffset = getMsgQueueOffset(messageExt, sortMap, key, msgOffsetInfo);
+
+                    messageExt.getProperties().put(MessageConst.PROPERTY_POP_CK,
+                        ExtraInfoUtil.buildExtraInfo(startOffsetInfo.get(key), responseHeader.getPopTime(), responseHeader.getInvisibleTime(),
+                            responseHeader.getReviveQid(), messageExt.getTopic(), messageQueue.getBrokerName(), messageExt.getQueueId(), msgQueueOffset)
+                    );
+
+                    setReconsumeTimes(requestHeader, orderCountInfo, key, messageExt);
+                }
+                messageExt.getProperties().computeIfAbsent(MessageConst.PROPERTY_FIRST_POP_TIME, k -> String.valueOf(responseHeader.getPopTime()));
+                messageExt.setBrokerName(messageExt.getBrokerName());
+                messageExt.setTopic(messageQueue.getTopic());
+            }
+            return popResult;
+        });
+    }
+
+    private void handleNoStartOffsetInfo(MessageExt messageExt, Map<String, String> map, PopMessageResponseHeader responseHeader, AddressableMessageQueue messageQueue) {
+        // we should set the check point info to extraInfo field , if the command is popMsg
+        // find pop ck offset
+        String key = messageExt.getTopic() + messageExt.getQueueId();
+        if (!map.containsKey(messageExt.getTopic() + messageExt.getQueueId())) {
+            map.put(key, ExtraInfoUtil.buildExtraInfo(messageExt.getQueueOffset(), responseHeader.getPopTime(), responseHeader.getInvisibleTime(), responseHeader.getReviveQid(),
+                messageExt.getTopic(), messageQueue.getBrokerName(), messageExt.getQueueId()));
+        }
+        messageExt.getProperties().put(MessageConst.PROPERTY_POP_CK, map.get(key) + MessageConst.KEY_SEPARATOR + messageExt.getQueueOffset());
+    }
+
+    private Long getMsgQueueOffset(MessageExt messageExt, Map<String, List<Long>> sortMap, String key, Map<String, List<Long>> msgOffsetInfo) {
+        int index = sortMap.get(key).indexOf(messageExt.getQueueOffset());
+        Long msgQueueOffset = msgOffsetInfo.get(key).get(index);
+        if (msgQueueOffset != messageExt.getQueueOffset()) {
+            log.warn("Queue offset [{}] of msg is strange, not equal to the stored in msg, {}", msgQueueOffset, messageExt);
+        }
+
+        return msgQueueOffset;
+    }
+
+    private PopStatus codeToPopStatus(RemotingCommand r) {
+        PopStatus popStatus;
+
+        switch (r.getCode()) {
+            case ResponseCode.SUCCESS:
+                popStatus = PopStatus.FOUND;
+                break;
+            case ResponseCode.POLLING_FULL:
+                popStatus = PopStatus.POLLING_FULL;
+                break;
+            case ResponseCode.POLLING_TIMEOUT:
+            case ResponseCode.PULL_NOT_FOUND:
+                popStatus = PopStatus.POLLING_NOT_FOUND;
+                break;
+            default:
+                throw new ProxyException(ProxyExceptionCode.INTERNAL_SERVER_ERROR, r.getRemark());
+        }
+
+        return popStatus;
+    }
+
+    private List<MessageExt> initMessageExtList(RemotingCommand r) {
+        List<MessageExt> messageExtList = new ArrayList<>();
+        if (ResponseCode.SUCCESS != r.getCode()) {
+            return messageExtList;
+        }
+
+        ByteBuffer byteBuffer = ByteBuffer.wrap(r.getBody());
+        messageExtList = MessageDecoder.decodesBatch(
+            byteBuffer,
+            true,
+            false,
+            true
+        );
+
+        return messageExtList;
+    }
+
+    private Map<String, List<Long>> toSortMap(List<MessageExt> messageExtList) {
+        Map<String, List<Long>> sortMap = new HashMap<>(16);
+        for (MessageExt messageExt : messageExtList) {
+            // Value of POP_CK is used to determine whether it is a pop retry,
+            // cause topic could be rewritten by broker.
+            String key = ExtraInfoUtil.getStartOffsetInfoMapKey(messageExt.getTopic(),
+                messageExt.getProperty(MessageConst.PROPERTY_POP_CK), messageExt.getQueueId());
+            if (!sortMap.containsKey(key)) {
+                sortMap.put(key, new ArrayList<>(4));
+            }
+            sortMap.get(key).add(messageExt.getQueueOffset());
+        }
+
+        return sortMap;
+    }
+
+    private void setReconsumeTimes(PopMessageRequestHeader requestHeader, Map<String, Integer> orderCountInfo, String key, MessageExt messageExt) {
+        if (!requestHeader.isOrder() || orderCountInfo == null) {
+            return;
+        }
+
+        Integer count = orderCountInfo.get(key);
+        if (count != null && count > 0) {
+            messageExt.setReconsumeTimes(count);
+        }
+    }
+
 }
