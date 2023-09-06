@@ -108,89 +108,89 @@ public class RemotingHelper {
         long beginTime = System.currentTimeMillis();
         SocketAddress socketAddress = NetworkUtil.string2SocketAddress(addr);
         SocketChannel socketChannel = connect(socketAddress);
-        if (socketChannel != null) {
-            boolean sendRequestOK = false;
+        if (null == socketChannel) {
+            throw new RemotingConnectException(addr);
+        }
 
-            try {
+        boolean sendRequestOK = false;
 
-                socketChannel.configureBlocking(true);
+        try {
 
-                //bugfix  http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4614802
-                socketChannel.socket().setSoTimeout((int) timeoutMillis);
+            socketChannel.configureBlocking(true);
 
-                ByteBuffer byteBufferRequest = request.encode();
-                while (byteBufferRequest.hasRemaining()) {
-                    int length = socketChannel.write(byteBufferRequest);
-                    if (length > 0) {
-                        if (byteBufferRequest.hasRemaining()) {
-                            if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
+            //bugfix  http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4614802
+            socketChannel.socket().setSoTimeout((int) timeoutMillis);
 
-                                throw new RemotingSendRequestException(addr);
-                            }
+            ByteBuffer byteBufferRequest = request.encode();
+            while (byteBufferRequest.hasRemaining()) {
+                int length = socketChannel.write(byteBufferRequest);
+                if (length > 0) {
+                    if (byteBufferRequest.hasRemaining()) {
+                        if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
+
+                            throw new RemotingSendRequestException(addr);
                         }
-                    } else {
-                        throw new RemotingSendRequestException(addr);
                     }
-
-                    Thread.sleep(1);
-                }
-
-                sendRequestOK = true;
-
-                ByteBuffer byteBufferSize = ByteBuffer.allocate(4);
-                while (byteBufferSize.hasRemaining()) {
-                    int length = socketChannel.read(byteBufferSize);
-                    if (length > 0) {
-                        if (byteBufferSize.hasRemaining()) {
-                            if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
-
-                                throw new RemotingTimeoutException(addr, timeoutMillis);
-                            }
-                        }
-                    } else {
-                        throw new RemotingTimeoutException(addr, timeoutMillis);
-                    }
-
-                    Thread.sleep(1);
-                }
-
-                int size = byteBufferSize.getInt(0);
-                ByteBuffer byteBufferBody = ByteBuffer.allocate(size);
-                while (byteBufferBody.hasRemaining()) {
-                    int length = socketChannel.read(byteBufferBody);
-                    if (length > 0) {
-                        if (byteBufferBody.hasRemaining()) {
-                            if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
-
-                                throw new RemotingTimeoutException(addr, timeoutMillis);
-                            }
-                        }
-                    } else {
-                        throw new RemotingTimeoutException(addr, timeoutMillis);
-                    }
-
-                    Thread.sleep(1);
-                }
-
-                byteBufferBody.flip();
-                return RemotingCommand.decode(byteBufferBody);
-            } catch (IOException e) {
-                log.error("invokeSync failure", e);
-
-                if (sendRequestOK) {
-                    throw new RemotingTimeoutException(addr, timeoutMillis);
                 } else {
                     throw new RemotingSendRequestException(addr);
                 }
-            } finally {
-                try {
-                    socketChannel.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+
+                Thread.sleep(1);
             }
-        } else {
-            throw new RemotingConnectException(addr);
+
+            sendRequestOK = true;
+
+            ByteBuffer byteBufferSize = ByteBuffer.allocate(4);
+            while (byteBufferSize.hasRemaining()) {
+                int length = socketChannel.read(byteBufferSize);
+                if (length > 0) {
+                    if (byteBufferSize.hasRemaining()) {
+                        if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
+
+                            throw new RemotingTimeoutException(addr, timeoutMillis);
+                        }
+                    }
+                } else {
+                    throw new RemotingTimeoutException(addr, timeoutMillis);
+                }
+
+                Thread.sleep(1);
+            }
+
+            int size = byteBufferSize.getInt(0);
+            ByteBuffer byteBufferBody = ByteBuffer.allocate(size);
+            while (byteBufferBody.hasRemaining()) {
+                int length = socketChannel.read(byteBufferBody);
+                if (length > 0) {
+                    if (byteBufferBody.hasRemaining()) {
+                        if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
+
+                            throw new RemotingTimeoutException(addr, timeoutMillis);
+                        }
+                    }
+                } else {
+                    throw new RemotingTimeoutException(addr, timeoutMillis);
+                }
+
+                Thread.sleep(1);
+            }
+
+            byteBufferBody.flip();
+            return RemotingCommand.decode(byteBufferBody);
+        } catch (IOException e) {
+            log.error("invokeSync failure", e);
+
+            if (sendRequestOK) {
+                throw new RemotingTimeoutException(addr, timeoutMillis);
+            } else {
+                throw new RemotingSendRequestException(addr);
+            }
+        } finally {
+            try {
+                socketChannel.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
