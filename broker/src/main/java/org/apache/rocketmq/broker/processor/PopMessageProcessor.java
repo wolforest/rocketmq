@@ -352,7 +352,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return new GetMessageResult(commercialSizePerMsg);
     }
 
-    private CompletableFuture<Long> initGetMessageFuture(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
+    private CompletableFuture<Long> popMessageFuture(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime) {
         int randomQ = random.nextInt(100);
         boolean needRetry = randomQ % 5 == 0;
@@ -538,7 +538,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         long popTime = System.currentTimeMillis();
 
         GetMessageResult getMessageResult = initGetMessageResult();
-        CompletableFuture<Long> getMessageFuture = initGetMessageFuture(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime);
+        CompletableFuture<Long> getMessageFuture = popMessageFuture(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime);
         bindGetMessageFutureCallback(ctx, requestHeader, getMessageResult, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime, getMessageFuture, response, request);
 
         return null;
