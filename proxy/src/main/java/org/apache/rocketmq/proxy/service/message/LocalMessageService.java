@@ -104,13 +104,22 @@ public class LocalMessageService implements MessageService {
             body = message.getBody();
             messageId = MessageClientIDSetter.getUniqID(message);
         }
+
         RemotingCommand request = LocalRemotingCommand.createRequestCommand(RequestCode.SEND_MESSAGE, requestHeader);
         request.setBody(body);
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
+
+        processSendRequest(ctx, request, future);
+
+        return createSendResponse(future, messageId, requestHeader);
+    }
+
+    private void processSendRequest(ProxyContext ctx, RemotingCommand request, CompletableFuture<RemotingCommand> future) {
         SimpleChannel channel = channelManager.createInvocationChannel(ctx);
         InvocationContext invocationContext = new InvocationContext(future);
         channel.registerInvocationContext(request.getOpaque(), invocationContext);
         ChannelHandlerContext simpleChannelHandlerContext = channel.getChannelHandlerContext();
+
         try {
             RemotingCommand response = brokerController.getBrokerNettyServer().getSendMessageProcessor().processRequest(simpleChannelHandlerContext, request);
             if (response != null) {
@@ -122,8 +131,6 @@ public class LocalMessageService implements MessageService {
             channel.eraseInvocationContext(request.getOpaque());
             log.error("Failed to process sendMessage command", e);
         }
-
-        return createSendResponse(future, messageId, requestHeader);
     }
 
     private CompletableFuture<List<SendResult>> createSendResponse(CompletableFuture<RemotingCommand> future, String messageId, SendMessageRequestHeader requestHeader) {
@@ -169,7 +176,6 @@ public class LocalMessageService implements MessageService {
 
         return sendStatus;
     }
-
 
     @Override
     public CompletableFuture<RemotingCommand> sendMessageBack(ProxyContext ctx, ReceiptHandle handle, String messageId,
