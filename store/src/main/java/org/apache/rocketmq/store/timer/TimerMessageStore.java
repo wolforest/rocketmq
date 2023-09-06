@@ -51,6 +51,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
@@ -465,7 +466,7 @@ public class TimerMessageStore {
                 try {
                     if (storeConfig.isTimerEnableCheckMetrics()) {
                         String when = storeConfig.getTimerCheckMetricsWhen();
-                        if (!UtilAll.isItTimeToDo(when)) {
+                        if (!TimeUtils.isItTimeToDo(when)) {
                             return;
                         }
                         long curr = System.currentTimeMillis();

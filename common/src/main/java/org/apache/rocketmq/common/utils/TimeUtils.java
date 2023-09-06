@@ -16,9 +16,27 @@
  */
 package org.apache.rocketmq.common.utils;
 
+import java.util.Calendar;
+
 public class TimeUtils {
+
     public static long computeElapsedTimeMilliseconds(final long beginTime) {
         return System.currentTimeMillis() - beginTime;
+    }
+
+    public static boolean isItTimeToDo(final String when) {
+        String[] whiles = when.split(";");
+        if (whiles.length > 0) {
+            Calendar now = Calendar.getInstance();
+            for (String w : whiles) {
+                int nowHour = Integer.parseInt(w);
+                if (nowHour == now.get(Calendar.HOUR_OF_DAY)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
 }
