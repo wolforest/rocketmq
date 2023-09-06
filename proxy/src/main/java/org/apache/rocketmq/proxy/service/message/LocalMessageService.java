@@ -233,6 +233,11 @@ public class LocalMessageService implements MessageService {
             channel.eraseInvocationContext(request.getOpaque());
             log.error("Failed to process popMessage command", e);
         }
+
+        return createPopResponse(future, messageQueue, requestHeader);
+    }
+
+    private CompletableFuture<PopResult> createPopResponse(CompletableFuture<RemotingCommand> future, AddressableMessageQueue messageQueue, PopMessageRequestHeader requestHeader) {
         return future.thenApply(r -> {
             PopStatus popStatus;
             List<MessageExt> messageExtList = new ArrayList<>();
