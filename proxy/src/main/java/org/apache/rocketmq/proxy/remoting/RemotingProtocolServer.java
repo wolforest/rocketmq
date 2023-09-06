@@ -319,28 +319,28 @@ public class RemotingProtocolServer implements StartAndShutdown, RemotingProxyOu
         while (true) {
             try {
                 BlockingQueue<Runnable> blockingQueue = threadPoolExecutor.getQueue();
-                if (!blockingQueue.isEmpty()) {
-                    final Runnable runnable = blockingQueue.peek();
-                    if (null == runnable) {
-                        break;
-                    }
-                    final RequestTask rt = castRunnable(runnable);
-                    if (rt == null || rt.isStopRun()) {
-                        break;
-                    }
-
-                    final long behind = System.currentTimeMillis() - rt.getCreateTimestamp();
-                    if (behind >= maxWaitTimeMillsInQueue) {
-                        if (blockingQueue.remove(runnable)) {
-                            rt.setStopRun(true);
-                            rt.returnResponse(ResponseCode.SYSTEM_BUSY,
-                                String.format("[TIMEOUT_CLEAN_QUEUE]broker busy, start flow control for a while, period in queue: %sms, size of queue: %d", behind, blockingQueue.size()));
-                        }
-                    } else {
-                        break;
-                    }
-                } else {
+                if (blockingQueue.isEmpty()) {
                     break;
+                }
+
+                final Runnable runnable = blockingQueue.peek();
+                if (null == runnable) {
+                    break;
+                }
+                final RequestTask rt = castRunnable(runnable);
+                if (rt == null || rt.isStopRun()) {
+                    break;
+                }
+
+                final long behind = System.currentTimeMillis() - rt.getCreateTimestamp();
+                if (behind < maxWaitTimeMillsInQueue) {
+                    break;
+                }
+
+                if (blockingQueue.remove(runnable)) {
+                    rt.setStopRun(true);
+                    rt.returnResponse(ResponseCode.SYSTEM_BUSY,
+                        String.format("[TIMEOUT_CLEAN_QUEUE]broker busy, start flow control for a while, period in queue: %sms, size of queue: %d", behind, blockingQueue.size()));
                 }
             } catch (Throwable ignored) {
             }
