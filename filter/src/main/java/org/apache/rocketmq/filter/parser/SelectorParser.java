@@ -851,49 +851,36 @@ public class SelectorParser implements SelectorParserConstants {
     }
 
     private boolean jj_3R_32() {
-        Token xsp;
-        xsp = jjScanpos;
-        if (jj_3R_36()) {
-            jjScanpos = xsp;
-            if (jj_3R_37()) {
-                jjScanpos = xsp;
-                if (jj_3R_38()) {
-                    jjScanpos = xsp;
-                    if (jj_3R_39()) {
-                        jjScanpos = xsp;
-                        if (jj_3R_40()) {
-                            jjScanpos = xsp;
-                            if (jj_3_2()) {
-                                jjScanpos = xsp;
-                                if (jj_3R_41()) {
-                                    jjScanpos = xsp;
-                                    if (jj_3_3()) {
-                                        jjScanpos = xsp;
-                                        if (jj_3R_42()) {
-                                            jjScanpos = xsp;
-                                            if (jj_3_4()) {
-                                                jjScanpos = xsp;
-                                                if (jj_3R_43()) {
-                                                    jjScanpos = xsp;
-                                                    if (jj_3_5()) {
-                                                        jjScanpos = xsp;
-                                                        if (jj_3R_44()) {
-                                                            jjScanpos = xsp;
-                                                            if (jj_3_6()) return true;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return false;
+        Token xsp = jjScanpos;
+        if (!jj_3R_36()) return false;
+        jjScanpos = xsp;
+        if (!jj_3R_37()) return false;
+        jjScanpos = xsp;
+        if (!jj_3R_38()) return false;
+        jjScanpos = xsp;
+        if (!jj_3R_39()) return false;
+        jjScanpos = xsp;
+        if (!jj_3R_40()) return false;
+        jjScanpos = xsp;
+
+        if (!jj_3_2()) return false;
+        jjScanpos = xsp;
+        if (!jj_3R_41()) return false;
+        jjScanpos = xsp;
+        if (!jj_3_3()) return false;
+        jjScanpos = xsp;
+        if (!jj_3R_42()) return false;
+        jjScanpos = xsp;
+        if (!jj_3_4()) return false;
+        jjScanpos = xsp;
+        if (!jj_3R_43()) return false;
+        jjScanpos = xsp;
+        if (!jj_3_5()) return false;
+        jjScanpos = xsp;
+        if (!jj_3R_44()) return false;
+        jjScanpos = xsp;
+
+        return jj_3_6();
     }
 
     private boolean jj_3R_23() {
