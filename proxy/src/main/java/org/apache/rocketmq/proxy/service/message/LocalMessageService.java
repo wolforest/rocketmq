@@ -281,6 +281,22 @@ public class LocalMessageService implements MessageService {
         return messageExtList;
     }
 
+    private Map<String, List<Long>> toSortMap(List<MessageExt> messageExtList) {
+        Map<String, List<Long>> sortMap = new HashMap<>(16);
+        for (MessageExt messageExt : messageExtList) {
+            // Value of POP_CK is used to determine whether it is a pop retry,
+            // cause topic could be rewritten by broker.
+            String key = ExtraInfoUtil.getStartOffsetInfoMapKey(messageExt.getTopic(),
+                messageExt.getProperty(MessageConst.PROPERTY_POP_CK), messageExt.getQueueId());
+            if (!sortMap.containsKey(key)) {
+                sortMap.put(key, new ArrayList<>(4));
+            }
+            sortMap.get(key).add(messageExt.getQueueOffset());
+        }
+
+        return sortMap;
+    }
+
     private CompletableFuture<PopResult> createPopResponse(CompletableFuture<RemotingCommand> future, AddressableMessageQueue messageQueue, PopMessageRequestHeader requestHeader) {
         return future.thenApply(r -> {
             PopStatus popStatus = codeToPopStatus(r);
@@ -299,17 +315,7 @@ public class LocalMessageService implements MessageService {
                 msgOffsetInfo = ExtraInfoUtil.parseMsgOffsetInfo(responseHeader.getMsgOffsetInfo());
                 orderCountInfo = ExtraInfoUtil.parseOrderCountInfo(responseHeader.getOrderCountInfo());
                 // <topicMark@queueId, msg queueOffset>
-                Map<String, List<Long>> sortMap = new HashMap<>(16);
-                for (MessageExt messageExt : messageExtList) {
-                    // Value of POP_CK is used to determine whether it is a pop retry,
-                    // cause topic could be rewritten by broker.
-                    String key = ExtraInfoUtil.getStartOffsetInfoMapKey(messageExt.getTopic(),
-                        messageExt.getProperty(MessageConst.PROPERTY_POP_CK), messageExt.getQueueId());
-                    if (!sortMap.containsKey(key)) {
-                        sortMap.put(key, new ArrayList<>(4));
-                    }
-                    sortMap.get(key).add(messageExt.getQueueOffset());
-                }
+                Map<String, List<Long>> sortMap = toSortMap(messageExtList);
                 Map<String, String> map = new HashMap<>(5);
                 for (MessageExt messageExt : messageExtList) {
                     if (startOffsetInfo == null) {
