@@ -76,14 +76,7 @@ public class ClusterServiceManager extends AbstractStartAndShutdown implements S
         this.scheduledExecutorService = Executors.newScheduledThreadPool(3);
 
         initMessagingClientAPIFactory(proxyConfig, nameserverAccessConfig, rpcHook);
-        this.operationClientAPIFactory = new MQClientAPIFactory(
-            nameserverAccessConfig,
-            "OperationClient_",
-            1,
-            new DoNothingClientRemotingProcessor(null),
-            rpcHook,
-            this.scheduledExecutorService
-        );
+        initOperationClientAPIFactory(nameserverAccessConfig, rpcHook);
 
         this.topicRouteService = new ClusterTopicRouteService(operationClientAPIFactory);
         this.messageService = new ClusterMessageService(this.topicRouteService, this.messagingClientAPIFactory);
@@ -105,6 +98,17 @@ public class ClusterServiceManager extends AbstractStartAndShutdown implements S
         this.proxyRelayService = new ClusterProxyRelayService(this.clusterTransactionService);
 
         this.init();
+    }
+
+    private void initOperationClientAPIFactory(NameserverAccessConfig nameserverAccessConfig, RPCHook rpcHook) {
+        this.operationClientAPIFactory = new MQClientAPIFactory(
+            nameserverAccessConfig,
+            "OperationClient_",
+            1,
+            new DoNothingClientRemotingProcessor(null),
+            rpcHook,
+            this.scheduledExecutorService
+        );
     }
 
     private void initMessagingClientAPIFactory(ProxyConfig proxyConfig, NameserverAccessConfig nameserverAccessConfig, RPCHook rpcHook) {
