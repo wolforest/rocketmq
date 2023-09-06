@@ -228,12 +228,14 @@ public class SlaveSynchronize {
         }
 
         try {
-            if (null != brokerController.getMessageStore().getTimerMessageStore()) {
-                TimerCheckpoint checkpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(masterAddrBak);
-                if (null != this.brokerController.getTimerCheckpoint()) {
-                    this.brokerController.getTimerCheckpoint().setLastReadTimeMs(checkpoint.getLastReadTimeMs());
-                    this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(checkpoint.getMasterTimerQueueOffset());
-                }
+            if (null == brokerController.getMessageStore().getTimerMessageStore()) {
+                return;
+            }
+
+            TimerCheckpoint checkpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(masterAddrBak);
+            if (null != this.brokerController.getTimerCheckpoint()) {
+                this.brokerController.getTimerCheckpoint().setLastReadTimeMs(checkpoint.getLastReadTimeMs());
+                this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(checkpoint.getMasterTimerQueueOffset());
             }
         } catch (Exception e) {
             LOGGER.error("syncTimerCheckPoint Exception, {}", masterAddrBak, e);
@@ -247,15 +249,17 @@ public class SlaveSynchronize {
         }
 
         try {
-            if (null != brokerController.getMessageStore().getTimerMessageStore()) {
-                TimerMetrics.TimerMetricsSerializeWrapper metricsSerializeWrapper =
-                    this.brokerController.getBrokerOuterAPI().getTimerMetrics(masterAddrBak);
-                if (!brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().equals(metricsSerializeWrapper.getDataVersion())) {
-                    this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().assignNewOne(metricsSerializeWrapper.getDataVersion());
-                    this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().clear();
-                    this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().putAll(metricsSerializeWrapper.getTimingCount());
-                    this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().persist();
-                }
+            if (null == brokerController.getMessageStore().getTimerMessageStore()) {
+                return;
+            }
+
+            TimerMetrics.TimerMetricsSerializeWrapper metricsSerializeWrapper =
+                this.brokerController.getBrokerOuterAPI().getTimerMetrics(masterAddrBak);
+            if (!brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().equals(metricsSerializeWrapper.getDataVersion())) {
+                this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().assignNewOne(metricsSerializeWrapper.getDataVersion());
+                this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().clear();
+                this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().putAll(metricsSerializeWrapper.getTimingCount());
+                this.brokerController.getMessageStore().getTimerMessageStore().getTimerMetrics().persist();
             }
         } catch (Exception e) {
             LOGGER.error("SyncTimerMetrics Exception, {}", masterAddrBak, e);
