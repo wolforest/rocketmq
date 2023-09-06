@@ -91,21 +91,23 @@ public class TieredMetadataManager extends ConfigManager implements TieredMetada
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            TieredMetadataSerializeWrapper dataWrapper =
-                TieredMetadataSerializeWrapper.fromJson(jsonString, TieredMetadataSerializeWrapper.class);
-            if (dataWrapper != null) {
-                this.topicSequenceNumber.set(dataWrapper.getTopicSerialNumber().get());
-                this.topicMetadataTable.putAll(dataWrapper.getTopicMetadataTable());
-                dataWrapper.getQueueMetadataTable().forEach(
-                    (topic, entry) -> this.queueMetadataTable.put(topic, new ConcurrentHashMap<>(entry)));
-                dataWrapper.getCommitLogFileSegmentTable().forEach(
-                    (filePath, entry) -> this.commitLogFileSegmentTable.put(filePath, new ConcurrentHashMap<>(entry)));
-                dataWrapper.getConsumeQueueFileSegmentTable().forEach(
-                    (filePath, entry) -> this.consumeQueueFileSegmentTable.put(filePath, new ConcurrentHashMap<>(entry)));
-                dataWrapper.getIndexFileSegmentTable().forEach(
-                    (filePath, entry) -> this.indexFileSegmentTable.put(filePath, new ConcurrentHashMap<>(entry)));
-            }
+        if (null == jsonString) {
+            return;
+        }
+
+        TieredMetadataSerializeWrapper dataWrapper =
+            TieredMetadataSerializeWrapper.fromJson(jsonString, TieredMetadataSerializeWrapper.class);
+        if (dataWrapper != null) {
+            this.topicSequenceNumber.set(dataWrapper.getTopicSerialNumber().get());
+            this.topicMetadataTable.putAll(dataWrapper.getTopicMetadataTable());
+            dataWrapper.getQueueMetadataTable().forEach(
+                (topic, entry) -> this.queueMetadataTable.put(topic, new ConcurrentHashMap<>(entry)));
+            dataWrapper.getCommitLogFileSegmentTable().forEach(
+                (filePath, entry) -> this.commitLogFileSegmentTable.put(filePath, new ConcurrentHashMap<>(entry)));
+            dataWrapper.getConsumeQueueFileSegmentTable().forEach(
+                (filePath, entry) -> this.consumeQueueFileSegmentTable.put(filePath, new ConcurrentHashMap<>(entry)));
+            dataWrapper.getIndexFileSegmentTable().forEach(
+                (filePath, entry) -> this.indexFileSegmentTable.put(filePath, new ConcurrentHashMap<>(entry)));
         }
     }
 
