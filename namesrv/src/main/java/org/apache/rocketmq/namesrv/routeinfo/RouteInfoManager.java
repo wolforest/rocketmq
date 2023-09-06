@@ -742,60 +742,59 @@ public class RouteInfoManager {
 
         log.debug("pickupTopicRouteData {} {}", topic, topicRouteData);
 
-        if (foundBrokerData && foundQueueData) {
+        if (!foundQueueData || !foundBrokerData) {
+            return null;
+        }
 
-            topicRouteData.setTopicQueueMappingByBroker(this.topicQueueMappingInfoTable.get(topic));
+        topicRouteData.setTopicQueueMappingByBroker(this.topicQueueMappingInfoTable.get(topic));
 
-            if (!namesrvConfig.isSupportActingMaster()) {
-                return topicRouteData;
+        if (!namesrvConfig.isSupportActingMaster()) {
+            return topicRouteData;
+        }
+
+        if (topic.startsWith(TopicValidator.SYNC_BROKER_MEMBER_GROUP_PREFIX)) {
+            return topicRouteData;
+        }
+
+        if (topicRouteData.getBrokerDatas().size() == 0 || topicRouteData.getQueueDatas().size() == 0) {
+            return topicRouteData;
+        }
+
+        boolean needActingMaster = false;
+
+        for (final BrokerData brokerData : topicRouteData.getBrokerDatas()) {
+            if (brokerData.getBrokerAddrs().size() != 0
+                && !brokerData.getBrokerAddrs().containsKey(MixAll.MASTER_ID)) {
+                needActingMaster = true;
+                break;
+            }
+        }
+
+        if (!needActingMaster) {
+            return topicRouteData;
+        }
+
+        for (final BrokerData brokerData : topicRouteData.getBrokerDatas()) {
+            final HashMap<Long, String> brokerAddrs = brokerData.getBrokerAddrs();
+            if (brokerAddrs.size() == 0 || brokerAddrs.containsKey(MixAll.MASTER_ID) || !brokerData.isEnableActingMaster()) {
+                continue;
             }
 
-            if (topic.startsWith(TopicValidator.SYNC_BROKER_MEMBER_GROUP_PREFIX)) {
-                return topicRouteData;
-            }
-
-            if (topicRouteData.getBrokerDatas().size() == 0 || topicRouteData.getQueueDatas().size() == 0) {
-                return topicRouteData;
-            }
-
-            boolean needActingMaster = false;
-
-            for (final BrokerData brokerData : topicRouteData.getBrokerDatas()) {
-                if (brokerData.getBrokerAddrs().size() != 0
-                    && !brokerData.getBrokerAddrs().containsKey(MixAll.MASTER_ID)) {
-                    needActingMaster = true;
+            // No master
+            for (final QueueData queueData : topicRouteData.getQueueDatas()) {
+                if (queueData.getBrokerName().equals(brokerData.getBrokerName())) {
+                    if (!PermName.isWriteable(queueData.getPerm())) {
+                        final Long minBrokerId = Collections.min(brokerAddrs.keySet());
+                        final String actingMasterAddr = brokerAddrs.remove(minBrokerId);
+                        brokerAddrs.put(MixAll.MASTER_ID, actingMasterAddr);
+                    }
                     break;
                 }
             }
 
-            if (!needActingMaster) {
-                return topicRouteData;
-            }
-
-            for (final BrokerData brokerData : topicRouteData.getBrokerDatas()) {
-                final HashMap<Long, String> brokerAddrs = brokerData.getBrokerAddrs();
-                if (brokerAddrs.size() == 0 || brokerAddrs.containsKey(MixAll.MASTER_ID) || !brokerData.isEnableActingMaster()) {
-                    continue;
-                }
-
-                // No master
-                for (final QueueData queueData : topicRouteData.getQueueDatas()) {
-                    if (queueData.getBrokerName().equals(brokerData.getBrokerName())) {
-                        if (!PermName.isWriteable(queueData.getPerm())) {
-                            final Long minBrokerId = Collections.min(brokerAddrs.keySet());
-                            final String actingMasterAddr = brokerAddrs.remove(minBrokerId);
-                            brokerAddrs.put(MixAll.MASTER_ID, actingMasterAddr);
-                        }
-                        break;
-                    }
-                }
-
-            }
-
-            return topicRouteData;
         }
 
-        return null;
+        return topicRouteData;
     }
 
     public void scanNotActiveBroker() {
