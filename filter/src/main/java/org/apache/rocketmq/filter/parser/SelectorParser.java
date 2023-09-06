@@ -989,23 +989,22 @@ public class SelectorParser implements SelectorParserConstants {
     private boolean jj_3R_16() {
         Token xsp;
         xsp = jjScanpos;
-        if (jj_3R_19()) {
-            jjScanpos = xsp;
-            if (jj_3R_20()) {
-                jjScanpos = xsp;
-                if (jj_3R_21()) {
-                    jjScanpos = xsp;
-                    if (jj_3R_22()) {
-                        jjScanpos = xsp;
-                        if (jj_3R_23()) {
-                            jjScanpos = xsp;
-                            if (jj_3R_24()) return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
+        if (!jj_3R_19()) return false;
+        jjScanpos = xsp;
+
+        if (!jj_3R_20()) return false;
+        jjScanpos = xsp;
+
+        if (!jj_3R_21()) return false;
+        jjScanpos = xsp;
+
+        if (!jj_3R_22()) return false;
+        jjScanpos = xsp;
+
+        if (!jj_3R_23()) return false;
+        jjScanpos = xsp;
+
+        return jj_3R_24();
     }
 
     private boolean jj_3_5() {
