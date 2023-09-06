@@ -75,6 +75,19 @@ public class ClientManagerActivity extends AbstractRemotingActivity {
         return null;
     }
 
+    protected RemotingCommand heartBeat(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context) {
+        HeartbeatData heartbeatData = HeartbeatData.decode(request.getBody(), HeartbeatData.class);
+        String clientId = heartbeatData.getClientID();
+
+        registerProducer(ctx, request, context, heartbeatData, clientId);
+        registerConsumer(ctx, request, context, heartbeatData, clientId);
+
+        RemotingCommand response = RemotingCommand.createResponseCommand(null);
+        response.setCode(ResponseCode.SUCCESS);
+        response.setRemark("");
+        return response;
+    }
+
     private void registerProducer(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context, HeartbeatData heartbeatData, String clientId) {
         for (ProducerData data : heartbeatData.getProducerDataSet()) {
             ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
@@ -86,12 +99,7 @@ public class ClientManagerActivity extends AbstractRemotingActivity {
         }
     }
 
-    protected RemotingCommand heartBeat(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context) {
-        HeartbeatData heartbeatData = HeartbeatData.decode(request.getBody(), HeartbeatData.class);
-        String clientId = heartbeatData.getClientID();
-
-        registerProducer(ctx, request, context, heartbeatData, clientId);
-
+    private void registerConsumer(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context, HeartbeatData heartbeatData, String clientId) {
         for (ConsumerData data : heartbeatData.getConsumerDataSet()) {
             ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
                 this.remotingChannelManager.createConsumerChannel(context, ctx.channel(), data.getGroupName(), clientId, data.getSubscriptionDataSet()),
@@ -101,11 +109,6 @@ public class ClientManagerActivity extends AbstractRemotingActivity {
             messagingProcessor.registerConsumer(context, data.getGroupName(), clientChannelInfo, data.getConsumeType(),
                 data.getMessageModel(), data.getConsumeFromWhere(), data.getSubscriptionDataSet(), true);
         }
-
-        RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        response.setCode(ResponseCode.SUCCESS);
-        response.setRemark("");
-        return response;
     }
 
     private void setClientPropertiesToChannelAttr(final ClientChannelInfo clientChannelInfo) {
