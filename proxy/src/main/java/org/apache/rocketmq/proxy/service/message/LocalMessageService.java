@@ -264,19 +264,27 @@ public class LocalMessageService implements MessageService {
         return popStatus;
     }
 
+    private List<MessageExt> initMessageExtList(RemotingCommand r) {
+        List<MessageExt> messageExtList = new ArrayList<>();
+        if (ResponseCode.SUCCESS != r.getCode()) {
+            return messageExtList;
+        }
+
+        ByteBuffer byteBuffer = ByteBuffer.wrap(r.getBody());
+        messageExtList = MessageDecoder.decodesBatch(
+            byteBuffer,
+            true,
+            false,
+            true
+        );
+
+        return messageExtList;
+    }
+
     private CompletableFuture<PopResult> createPopResponse(CompletableFuture<RemotingCommand> future, AddressableMessageQueue messageQueue, PopMessageRequestHeader requestHeader) {
         return future.thenApply(r -> {
             PopStatus popStatus = codeToPopStatus(r);
-            List<MessageExt> messageExtList = new ArrayList<>();
-            if (ResponseCode.SUCCESS == r.getCode()) {
-                ByteBuffer byteBuffer = ByteBuffer.wrap(r.getBody());
-                messageExtList = MessageDecoder.decodesBatch(
-                    byteBuffer,
-                    true,
-                    false,
-                    true
-                );
-            }
+            List<MessageExt> messageExtList = initMessageExtList(r);
 
             PopResult popResult = new PopResult(popStatus, messageExtList);
             PopMessageResponseHeader responseHeader = (PopMessageResponseHeader) r.readCustomHeader();
