@@ -123,58 +123,62 @@ public class PullRequestHoldService extends ServiceThread {
         long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) {
         String key = this.buildKey(topic, queueId);
         ManyPullRequest mpr = this.pullRequestTable.get(key);
-        if (mpr != null) {
-            List<PullRequest> requestList = mpr.cloneListAndClear();
-            if (requestList != null) {
-                List<PullRequest> replayList = new ArrayList<>();
+        if (null == mpr) {
+            return;
+        }
 
-                for (PullRequest request : requestList) {
-                    long newestOffset = maxOffset;
-                    if (newestOffset <= request.getPullFromThisOffset()) {
-                        newestOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
-                    }
+        List<PullRequest> requestList = mpr.cloneListAndClear();
+        if (null == requestList) {
+            return;
+        }
 
-                    if (newestOffset > request.getPullFromThisOffset()) {
-                        boolean match = request.getMessageFilter().isMatchedByConsumeQueue(tagsCode,
-                            new CqExtUnit(tagsCode, msgStoreTime, filterBitMap));
-                        // match by bit map, need eval again when properties is not null.
-                        if (match && properties != null) {
-                            match = request.getMessageFilter().isMatchedByCommitLog(null, properties);
-                        }
+        List<PullRequest> replayList = new ArrayList<>();
+        for (PullRequest request : requestList) {
+            long newestOffset = maxOffset;
+            if (newestOffset <= request.getPullFromThisOffset()) {
+                newestOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
+            }
 
-                        if (match) {
-                            try {
-                                this.brokerController.getBrokerNettyServer().getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
-                                    request.getRequestCommand());
-                            } catch (Throwable e) {
-                                log.error(
-                                    "PullRequestHoldService#notifyMessageArriving: failed to execute request when "
-                                        + "message matched, topic={}, queueId={}", topic, queueId, e);
-                            }
-                            continue;
-                        }
-                    }
-
-                    if (System.currentTimeMillis() >= (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
-                        try {
-                            this.brokerController.getBrokerNettyServer().getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
-                                request.getRequestCommand());
-                        } catch (Throwable e) {
-                            log.error(
-                                "PullRequestHoldService#notifyMessageArriving: failed to execute request when time's "
-                                    + "up, topic={}, queueId={}", topic, queueId, e);
-                        }
-                        continue;
-                    }
-
-                    replayList.add(request);
+            if (newestOffset > request.getPullFromThisOffset()) {
+                boolean match = request.getMessageFilter().isMatchedByConsumeQueue(tagsCode,
+                    new CqExtUnit(tagsCode, msgStoreTime, filterBitMap));
+                // match by bit map, need eval again when properties is not null.
+                if (match && properties != null) {
+                    match = request.getMessageFilter().isMatchedByCommitLog(null, properties);
                 }
 
-                if (!replayList.isEmpty()) {
-                    mpr.addPullRequest(replayList);
+                if (match) {
+                    try {
+                        this.brokerController.getBrokerNettyServer().getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
+                            request.getRequestCommand());
+                    } catch (Throwable e) {
+                        log.error(
+                            "PullRequestHoldService#notifyMessageArriving: failed to execute request when "
+                                + "message matched, topic={}, queueId={}", topic, queueId, e);
+                    }
+                    continue;
                 }
             }
+
+            if (System.currentTimeMillis() >= (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
+                try {
+                    this.brokerController.getBrokerNettyServer().getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
+                        request.getRequestCommand());
+                } catch (Throwable e) {
+                    log.error(
+                        "PullRequestHoldService#notifyMessageArriving: failed to execute request when time's "
+                            + "up, topic={}, queueId={}", topic, queueId, e);
+                }
+                continue;
+            }
+
+            replayList.add(request);
         }
+
+        if (!replayList.isEmpty()) {
+            mpr.addPullRequest(replayList);
+        }
+
     }
 
     public void notifyMasterOnline() {
