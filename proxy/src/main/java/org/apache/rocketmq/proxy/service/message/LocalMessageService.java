@@ -130,29 +130,10 @@ public class LocalMessageService implements MessageService {
         return future.thenApply(r -> {
             SendResult sendResult = new SendResult();
             SendMessageResponseHeader responseHeader = (SendMessageResponseHeader) r.readCustomHeader();
-            SendStatus sendStatus;
-            switch (r.getCode()) {
-                case ResponseCode.FLUSH_DISK_TIMEOUT: {
-                    sendStatus = SendStatus.FLUSH_DISK_TIMEOUT;
-                    break;
-                }
-                case ResponseCode.FLUSH_SLAVE_TIMEOUT: {
-                    sendStatus = SendStatus.FLUSH_SLAVE_TIMEOUT;
-                    break;
-                }
-                case ResponseCode.SLAVE_NOT_AVAILABLE: {
-                    sendStatus = SendStatus.SLAVE_NOT_AVAILABLE;
-                    break;
-                }
-                case ResponseCode.SUCCESS: {
-                    sendStatus = SendStatus.SEND_OK;
-                    break;
-                }
-                default: {
-                    throw new ProxyException(ProxyExceptionCode.INTERNAL_SERVER_ERROR, r.getRemark());
-                }
-            }
+
+            SendStatus sendStatus = codeToSendStatus(r);
             sendResult.setSendStatus(sendStatus);
+
             sendResult.setMsgId(messageId);
             sendResult.setMessageQueue(new MessageQueue(requestHeader.getTopic(), brokerController.getBrokerConfig().getBrokerName(), requestHeader.getQueueId()));
             sendResult.setQueueOffset(responseHeader.getQueueOffset());
@@ -161,6 +142,34 @@ public class LocalMessageService implements MessageService {
             return Collections.singletonList(sendResult);
         });
     }
+
+    private SendStatus codeToSendStatus(RemotingCommand r) {
+        SendStatus sendStatus;
+        switch (r.getCode()) {
+            case ResponseCode.FLUSH_DISK_TIMEOUT: {
+                sendStatus = SendStatus.FLUSH_DISK_TIMEOUT;
+                break;
+            }
+            case ResponseCode.FLUSH_SLAVE_TIMEOUT: {
+                sendStatus = SendStatus.FLUSH_SLAVE_TIMEOUT;
+                break;
+            }
+            case ResponseCode.SLAVE_NOT_AVAILABLE: {
+                sendStatus = SendStatus.SLAVE_NOT_AVAILABLE;
+                break;
+            }
+            case ResponseCode.SUCCESS: {
+                sendStatus = SendStatus.SEND_OK;
+                break;
+            }
+            default: {
+                throw new ProxyException(ProxyExceptionCode.INTERNAL_SERVER_ERROR, r.getRemark());
+            }
+        }
+
+        return sendStatus;
+    }
+
 
     @Override
     public CompletableFuture<RemotingCommand> sendMessageBack(ProxyContext ctx, ReceiptHandle handle, String messageId,
