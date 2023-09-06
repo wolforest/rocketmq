@@ -121,10 +121,12 @@ public class UtilAll {
         return nf.format(offset);
     }
 
+    @Deprecated
     public static long computeElapsedTimeMilliseconds(final long beginTime) {
         return System.currentTimeMillis() - beginTime;
     }
 
+    @Deprecated
     public static boolean isItTimeToDo(final String when) {
         String[] whiles = when.split(";");
         if (whiles.length > 0) {

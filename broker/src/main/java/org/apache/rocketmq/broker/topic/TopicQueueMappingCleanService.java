@@ -16,21 +16,15 @@
  */
 package org.apache.rocketmq.broker.topic;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceThread;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.ThreadUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
@@ -48,6 +42,8 @@ import org.apache.rocketmq.remoting.rpc.RpcClient;
 import org.apache.rocketmq.remoting.rpc.RpcRequest;
 import org.apache.rocketmq.remoting.rpc.RpcResponse;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
+
+import java.util.*;
 
 public class TopicQueueMappingCleanService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
@@ -103,7 +99,7 @@ public class TopicQueueMappingCleanService extends ServiceThread {
 
     public void cleanItemExpired() {
         String when = messageStoreConfig.getDeleteWhen();
-        if (!UtilAll.isItTimeToDo(when)) {
+        if (!TimeUtils.isItTimeToDo(when)) {
             return;
         }
         boolean changed = false;
@@ -212,7 +208,7 @@ public class TopicQueueMappingCleanService extends ServiceThread {
 
     public void cleanItemListMoreThanSecondGen() {
         String when = messageStoreConfig.getDeleteWhen();
-        if (!UtilAll.isItTimeToDo(when)) {
+        if (!TimeUtils.isItTimeToDo(when)) {
             return;
         }
         boolean changed = false;
