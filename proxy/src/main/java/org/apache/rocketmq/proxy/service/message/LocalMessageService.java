@@ -277,11 +277,7 @@ public class LocalMessageService implements MessageService {
                     messageExt.getProperties().put(MessageConst.PROPERTY_POP_CK, map.get(key) + MessageConst.KEY_SEPARATOR + messageExt.getQueueOffset());
                 } else if (messageExt.getProperty(MessageConst.PROPERTY_POP_CK) == null) {
                     String key = ExtraInfoUtil.getStartOffsetInfoMapKey(messageExt.getTopic(), messageExt.getQueueId());
-                    int index = sortMap.get(key).indexOf(messageExt.getQueueOffset());
-                    Long msgQueueOffset = msgOffsetInfo.get(key).get(index);
-                    if (msgQueueOffset != messageExt.getQueueOffset()) {
-                        log.warn("Queue offset [{}] of msg is strange, not equal to the stored in msg, {}", msgQueueOffset, messageExt);
-                    }
+                    Long msgQueueOffset = getMsgQueueOffset(messageExt, sortMap, key, msgOffsetInfo);
 
                     messageExt.getProperties().put(MessageConst.PROPERTY_POP_CK,
                         ExtraInfoUtil.buildExtraInfo(startOffsetInfo.get(key), responseHeader.getPopTime(), responseHeader.getInvisibleTime(),
@@ -296,6 +292,16 @@ public class LocalMessageService implements MessageService {
             }
             return popResult;
         });
+    }
+
+    private Long getMsgQueueOffset(MessageExt messageExt, Map<String, List<Long>> sortMap, String key, Map<String, List<Long>> msgOffsetInfo) {
+        int index = sortMap.get(key).indexOf(messageExt.getQueueOffset());
+        Long msgQueueOffset = msgOffsetInfo.get(key).get(index);
+        if (msgQueueOffset != messageExt.getQueueOffset()) {
+            log.warn("Queue offset [{}] of msg is strange, not equal to the stored in msg, {}", msgQueueOffset, messageExt);
+        }
+
+        return msgQueueOffset;
     }
 
     private PopStatus codeToPopStatus(RemotingCommand r) {
