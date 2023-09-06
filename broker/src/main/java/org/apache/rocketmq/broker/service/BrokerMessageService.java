@@ -147,6 +147,10 @@ public class BrokerMessageService {
             escapeBridge.shutdown();
         }
 
+        if (this.transactionalMessageService != null) {
+            this.transactionalMessageService.close();
+        }
+
         if (this.transactionalMessageCheckService != null) {
             this.transactionalMessageCheckService.shutdown(false);
         }

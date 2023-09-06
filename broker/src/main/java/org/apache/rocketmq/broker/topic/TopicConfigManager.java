@@ -275,7 +275,11 @@ public class TopicConfigManager extends ConfigManager {
             log.error("createTopicIfAbsent ", e);
         }
         if (createNew && register) {
-            this.brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, dataVersion);
+            if (brokerController.getBrokerConfig().isEnableSingleTopicRegister()) {
+                this.brokerController.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
+            } else {
+                this.brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, dataVersion);
+            }
         }
         return getTopicConfig(topicConfig.getTopicName());
     }

@@ -183,6 +183,10 @@ public class BrokerServiceManager {
             this.topicQueueMappingCleanService.shutdown();
         }
 
+        if (this.brokerMetricsManager != null) {
+            this.brokerMetricsManager.shutdown();
+        }
+
         if (this.brokerStatsManager != null) {
             this.brokerStatsManager.shutdown();
         }
