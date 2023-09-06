@@ -208,22 +208,26 @@ public class RemotingChannel extends ProxyChannel implements RemoteChannelConver
     }
 
     public static Set<SubscriptionData> parseChannelExtendAttribute(Channel channel) {
-        if (ChannelHelper.getChannelProtocolType(channel).equals(ChannelProtocolType.REMOTING) &&
-            channel instanceof ChannelExtendAttributeGetter) {
-            String attr = ((ChannelExtendAttributeGetter) channel).getChannelExtendAttribute();
-            if (attr == null) {
-                return null;
-            }
-
-            try {
-                return JSON.parseObject(attr, new TypeReference<Set<SubscriptionData>>() {
-                });
-            } catch (Exception e) {
-                log.error("convert remoting extend attribute to subscriptionDataSet failed. data:{}", attr, e);
-                return null;
-            }
+        if (!ChannelHelper.getChannelProtocolType(channel).equals(ChannelProtocolType.REMOTING)) {
+            return null;
         }
-        return null;
+
+        if (!(channel instanceof ChannelExtendAttributeGetter)) {
+            return null;
+        }
+
+        String attr = ((ChannelExtendAttributeGetter) channel).getChannelExtendAttribute();
+        if (attr == null) {
+            return null;
+        }
+
+        try {
+            return JSON.parseObject(attr, new TypeReference<Set<SubscriptionData>>() {
+            });
+        } catch (Exception e) {
+            log.error("convert remoting extend attribute to subscriptionDataSet failed. data:{}", attr, e);
+            return null;
+        }
     }
 
     @Override
