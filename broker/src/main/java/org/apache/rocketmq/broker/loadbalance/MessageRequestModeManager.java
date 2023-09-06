@@ -80,11 +80,13 @@ public class MessageRequestModeManager extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            MessageRequestModeManager obj = RemotingSerializable.fromJson(jsonString, MessageRequestModeManager.class);
-            if (obj != null) {
-                this.messageRequestModeMap = obj.messageRequestModeMap;
-            }
+        if (null == jsonString) {
+            return;
+        }
+
+        MessageRequestModeManager obj = RemotingSerializable.fromJson(jsonString, MessageRequestModeManager.class);
+        if (obj != null) {
+            this.messageRequestModeMap = obj.messageRequestModeMap;
         }
     }
 
