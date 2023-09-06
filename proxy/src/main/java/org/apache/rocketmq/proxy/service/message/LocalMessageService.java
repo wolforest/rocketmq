@@ -267,14 +267,7 @@ public class LocalMessageService implements MessageService {
             Map<String, String> map = new HashMap<>(5);
             for (MessageExt messageExt : messageExtList) {
                 if (startOffsetInfo == null) {
-                    // we should set the check point info to extraInfo field , if the command is popMsg
-                    // find pop ck offset
-                    String key = messageExt.getTopic() + messageExt.getQueueId();
-                    if (!map.containsKey(messageExt.getTopic() + messageExt.getQueueId())) {
-                        map.put(key, ExtraInfoUtil.buildExtraInfo(messageExt.getQueueOffset(), responseHeader.getPopTime(), responseHeader.getInvisibleTime(), responseHeader.getReviveQid(),
-                            messageExt.getTopic(), messageQueue.getBrokerName(), messageExt.getQueueId()));
-                    }
-                    messageExt.getProperties().put(MessageConst.PROPERTY_POP_CK, map.get(key) + MessageConst.KEY_SEPARATOR + messageExt.getQueueOffset());
+                    handleNoStartOffsetInfo(messageExt, map, responseHeader, messageQueue);
                 } else if (messageExt.getProperty(MessageConst.PROPERTY_POP_CK) == null) {
                     String key = ExtraInfoUtil.getStartOffsetInfoMapKey(messageExt.getTopic(), messageExt.getQueueId());
                     Long msgQueueOffset = getMsgQueueOffset(messageExt, sortMap, key, msgOffsetInfo);
@@ -292,6 +285,17 @@ public class LocalMessageService implements MessageService {
             }
             return popResult;
         });
+    }
+
+    private void handleNoStartOffsetInfo(MessageExt messageExt, Map<String, String> map, PopMessageResponseHeader responseHeader, AddressableMessageQueue messageQueue) {
+        // we should set the check point info to extraInfo field , if the command is popMsg
+        // find pop ck offset
+        String key = messageExt.getTopic() + messageExt.getQueueId();
+        if (!map.containsKey(messageExt.getTopic() + messageExt.getQueueId())) {
+            map.put(key, ExtraInfoUtil.buildExtraInfo(messageExt.getQueueOffset(), responseHeader.getPopTime(), responseHeader.getInvisibleTime(), responseHeader.getReviveQid(),
+                messageExt.getTopic(), messageQueue.getBrokerName(), messageExt.getQueueId()));
+        }
+        messageExt.getProperties().put(MessageConst.PROPERTY_POP_CK, map.get(key) + MessageConst.KEY_SEPARATOR + messageExt.getQueueOffset());
     }
 
     private Long getMsgQueueOffset(MessageExt messageExt, Map<String, List<Long>> sortMap, String key, Map<String, List<Long>> msgOffsetInfo) {
