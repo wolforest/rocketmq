@@ -40,6 +40,7 @@ import org.apache.rocketmq.common.message.MessageVersion;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -574,14 +575,14 @@ public class CommitLog implements Swappable {
             if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestampIndex()) {
                 log.info("find check timestamp, {} {}",
                     storeTimestamp,
-                    UtilAll.timeMillisToHumanString(storeTimestamp));
+                    TimeUtils.timeMillisToHumanString(storeTimestamp));
                 return true;
             }
         } else {
             if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestamp()) {
                 log.info("find check timestamp, {} {}",
                     storeTimestamp,
-                    UtilAll.timeMillisToHumanString(storeTimestamp));
+                    TimeUtils.timeMillisToHumanString(storeTimestamp));
                 return true;
             }
         }

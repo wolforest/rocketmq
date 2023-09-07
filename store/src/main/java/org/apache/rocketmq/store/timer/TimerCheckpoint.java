@@ -26,6 +26,7 @@ import java.nio.channels.FileChannel.MapMode;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
@@ -75,7 +76,7 @@ public class TimerCheckpoint {
         }
 
         log.info("timer checkpoint file lastReadTimeMs " + this.lastReadTimeMs + ", "
-            + UtilAll.timeMillisToHumanString(this.lastReadTimeMs));
+            + TimeUtils.timeMillisToHumanString(this.lastReadTimeMs));
         log.info("timer checkpoint file lastTimerLogFlushPos " + this.lastTimerLogFlushPos);
         log.info("timer checkpoint file lastTimerQueueOffset " + this.lastTimerQueueOffset);
         log.info("timer checkpoint file masterTimerQueueOffset " + this.masterTimerQueueOffset);

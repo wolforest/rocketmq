@@ -18,6 +18,7 @@
 package org.apache.rocketmq.remoting.protocol.body;
 
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.TimeUtils;
 
 public class ProcessQueueInfo {
     private long commitOffset;
@@ -159,8 +160,8 @@ public class ProcessQueueInfo {
             + ", transactionMsgMinOffset=" + transactionMsgMinOffset
             + ", transactionMsgMaxOffset=" + transactionMsgMaxOffset + ", transactionMsgCount="
             + transactionMsgCount + ", locked=" + locked + ", tryUnlockTimes=" + tryUnlockTimes
-            + ", lastLockTimestamp=" + UtilAll.timeMillisToHumanString(lastLockTimestamp) + ", droped="
-            + droped + ", lastPullTimestamp=" + UtilAll.timeMillisToHumanString(lastPullTimestamp)
-            + ", lastConsumeTimestamp=" + UtilAll.timeMillisToHumanString(lastConsumeTimestamp) + "]";
+            + ", lastLockTimestamp=" + TimeUtils.timeMillisToHumanString(lastLockTimestamp) + ", droped="
+            + droped + ", lastPullTimestamp=" + TimeUtils.timeMillisToHumanString(lastPullTimestamp)
+            + ", lastConsumeTimestamp=" + TimeUtils.timeMillisToHumanString(lastConsumeTimestamp) + "]";
     }
 }

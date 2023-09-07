@@ -142,10 +142,12 @@ public class UtilAll {
         return false;
     }
 
+    @Deprecated
     public static String timeMillisToHumanString() {
         return timeMillisToHumanString(System.currentTimeMillis());
     }
 
+    @Deprecated
     public static String timeMillisToHumanString(final long t) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(t);
