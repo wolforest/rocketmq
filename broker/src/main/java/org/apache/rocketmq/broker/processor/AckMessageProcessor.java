@@ -222,7 +222,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
 
         this.brokerController.getBrokerStatsManager().incBrokerAckNums(ackCount);
         this.brokerController.getBrokerStatsManager().incGroupAckNums(ackMsg.getConsumerGroup(), ackMsg.getTopic(), ackCount);
-        if (this.brokerController.getBrokerNettyServer().getPopMessageProcessor().getPopBufferMergeService().addAk(rqId, ackMsg)) {
+        if (this.brokerController.getBrokerNettyServer().getPopMessageProcessor().getPopBufferMergeService().addAckMsg(rqId, ackMsg)) {
             brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(ackMsg.getTopic(), ackMsg.getConsumerGroup(), ackMsg.getPopTime(), ackMsg.getQueueId(), ackCount);
             return;
         }

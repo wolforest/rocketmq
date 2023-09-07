@@ -566,7 +566,13 @@ public class PopBufferMergeService extends ServiceThread {
         return true;
     }
 
-    public boolean addAk(int reviveQid, AckMsg ackMsg) {
+    /**
+     * add ackMsg
+     * @param reviveQid reviveQid
+     * @param ackMsg AckMsg
+     * @return
+     */
+    public boolean addAckMsg(int reviveQid, AckMsg ackMsg) {
         if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) {
             return false;
         }

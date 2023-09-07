@@ -123,7 +123,7 @@ public class AckMessageProcessorTest {
     public void testProcessRequest_Success() throws RemotingCommandException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException {
         when(messageStore.putMessage(any(MessageExtBrokerInner.class))).thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK)));
         PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
-        when(popBufferMergeService.addAk(anyInt(), any())).thenReturn(false);
+        when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(false);
         when(popMessageProcessor.getPopBufferMergeService()).thenReturn(popBufferMergeService);
 
         int queueId = 0;
@@ -261,7 +261,7 @@ public class AckMessageProcessorTest {
         {
             // buffer addAk OK
             PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
-            when(popBufferMergeService.addAk(anyInt(), any())).thenReturn(true);
+            when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(true);
             when(popMessageProcessor.getPopBufferMergeService()).thenReturn(popBufferMergeService);
 
             AckMessageRequestHeader requestHeader = new AckMessageRequestHeader();
@@ -281,7 +281,7 @@ public class AckMessageProcessorTest {
         {
             // buffer addAk fail
             PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
-            when(popBufferMergeService.addAk(anyInt(), any())).thenReturn(false);
+            when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(false);
             when(popMessageProcessor.getPopBufferMergeService()).thenReturn(popBufferMergeService);
             // store putMessage OK
             PutMessageResult putMessageResult = new PutMessageResult(PutMessageStatus.PUT_OK, null);
@@ -307,7 +307,7 @@ public class AckMessageProcessorTest {
         {
             // buffer addAk OK
             PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
-            when(popBufferMergeService.addAk(anyInt(), any())).thenReturn(true);
+            when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(true);
             when(popMessageProcessor.getPopBufferMergeService()).thenReturn(popBufferMergeService);
 
             BatchAck bAck1 = new BatchAck();
@@ -331,7 +331,7 @@ public class AckMessageProcessorTest {
         {
             // buffer addAk fail
             PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
-            when(popBufferMergeService.addAk(anyInt(), any())).thenReturn(false);
+            when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(false);
             when(popMessageProcessor.getPopBufferMergeService()).thenReturn(popBufferMergeService);
             // store putMessage OK
             PutMessageResult putMessageResult = new PutMessageResult(PutMessageStatus.PUT_OK, null);

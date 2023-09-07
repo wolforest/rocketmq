@@ -175,7 +175,7 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
         this.brokerController.getBrokerStatsManager().incBrokerAckNums(1);
         this.brokerController.getBrokerStatsManager().incGroupAckNums(requestHeader.getConsumerGroup(), requestHeader.getTopic(), 1);
 
-        if (brokerController.getBrokerNettyServer().getPopMessageProcessor().getPopBufferMergeService().addAk(rqId, ackMsg)) {
+        if (brokerController.getBrokerNettyServer().getPopMessageProcessor().getPopBufferMergeService().addAckMsg(rqId, ackMsg)) {
             return;
         }
 
