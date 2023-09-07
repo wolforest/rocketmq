@@ -242,7 +242,7 @@ public class PopBufferMergeService extends ServiceThread {
                 continue;
             }
 
-            // put buffer ak to store
+            // put buffer ak to store, make sure store check point before storing ack msg
             if (pointWrapper.getReviveQueueOffset() < 0) {
                 putCkToStore(pointWrapper, false);
                 countCk++;
