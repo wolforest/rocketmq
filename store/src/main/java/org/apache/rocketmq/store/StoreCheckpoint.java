@@ -24,6 +24,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
@@ -57,11 +58,11 @@ public class StoreCheckpoint {
             this.confirmPhyOffset = this.mappedByteBuffer.getLong(32);
 
             log.info("store checkpoint file physicMsgTimestamp " + this.physicMsgTimestamp + ", "
-                + UtilAll.timeMillisToHumanString(this.physicMsgTimestamp));
+                + TimeUtils.timeMillisToHumanString(this.physicMsgTimestamp));
             log.info("store checkpoint file logicsMsgTimestamp " + this.logicsMsgTimestamp + ", "
-                + UtilAll.timeMillisToHumanString(this.logicsMsgTimestamp));
+                + TimeUtils.timeMillisToHumanString(this.logicsMsgTimestamp));
             log.info("store checkpoint file indexMsgTimestamp " + this.indexMsgTimestamp + ", "
-                + UtilAll.timeMillisToHumanString(this.indexMsgTimestamp));
+                + TimeUtils.timeMillisToHumanString(this.indexMsgTimestamp));
             log.info("store checkpoint file masterFlushedOffset " + this.masterFlushedOffset);
             log.info("store checkpoint file confirmPhyOffset " + this.confirmPhyOffset);
         } else {
