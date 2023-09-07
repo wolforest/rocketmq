@@ -573,10 +573,13 @@ public class PopBufferMergeService extends ServiceThread {
     }
 
     /**
-     * add ackMsg
+     * add ackMsg to buffer
+     * ackMsgs will be stored in buffer(memory)
+     * and persist periodically
+     *
      * @param reviveQid reviveQid
      * @param ackMsg AckMsg
-     * @return
+     * @return adding status
      */
     public boolean addAckMsg(int reviveQid, AckMsg ackMsg) {
         if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) {
