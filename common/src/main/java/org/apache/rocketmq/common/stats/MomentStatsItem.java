@@ -17,11 +17,12 @@
 
 package org.apache.rocketmq.common.stats;
 
+import org.apache.rocketmq.common.utils.TimeUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
 
 public class MomentStatsItem {
 
@@ -51,7 +52,7 @@ public class MomentStatsItem {
                 } catch (Throwable e) {
                 }
             }
-        }, Math.abs(UtilAll.computeNextMinutesTimeMillis() - System.currentTimeMillis()), 1000 * 60 * 5, TimeUnit.MILLISECONDS);
+        }, Math.abs(TimeUtils.computeNextMinutesTimeMillis() - System.currentTimeMillis()), 1000 * 60 * 5, TimeUnit.MILLISECONDS);
     }
 
     public void printAtMinutes() {

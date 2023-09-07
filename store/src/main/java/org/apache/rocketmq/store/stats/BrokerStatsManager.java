@@ -16,29 +16,23 @@
  */
 package org.apache.rocketmq.store.stats;
 
-import java.util.HashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.statistics.StatisticsItem;
-import org.apache.rocketmq.common.statistics.StatisticsItemFormatter;
-import org.apache.rocketmq.common.statistics.StatisticsItemPrinter;
-import org.apache.rocketmq.common.statistics.StatisticsItemScheduledIncrementPrinter;
-import org.apache.rocketmq.common.statistics.StatisticsItemScheduledPrinter;
-import org.apache.rocketmq.common.statistics.StatisticsItemStateGetter;
-import org.apache.rocketmq.common.statistics.StatisticsKindMeta;
-import org.apache.rocketmq.common.statistics.StatisticsManager;
-import org.apache.rocketmq.common.stats.Stats;
-import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.common.statistics.*;
 import org.apache.rocketmq.common.stats.MomentStatsItemSet;
+import org.apache.rocketmq.common.stats.Stats;
 import org.apache.rocketmq.common.stats.StatsItem;
 import org.apache.rocketmq.common.stats.StatsItemSet;
+import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.TimeUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class BrokerStatsManager {
 
@@ -736,7 +730,7 @@ public class BrokerStatsManager {
                 new StatisticsItemScheduledPrinter.InitialDelay() {
                     @Override
                     public long get() {
-                        return Math.abs(UtilAll.computeNextMinutesTimeMillis() - System.currentTimeMillis());
+                        return Math.abs(TimeUtils.computeNextMinutesTimeMillis() - System.currentTimeMillis());
                     }
                 },
                 interval,
