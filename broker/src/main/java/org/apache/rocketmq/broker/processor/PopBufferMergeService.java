@@ -233,6 +233,23 @@ public class PopBufferMergeService extends ServiceThread {
         return removeCk;
     }
 
+    private void resetServing(long eclipse, int count, int countCk) {
+        int offsetBufferSize = scanCommitOffset();
+
+        if (eclipse > brokerController.getBrokerConfig().getPopCkStayBufferTimeOut() - 1000) {
+            POP_LOGGER.warn("[PopBuffer]scan stop, because eclipse too long, PopBufferEclipse={}, " +
+                    "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
+                eclipse, count, countCk, counter.get(), offsetBufferSize);
+            this.serving = false;
+        } else {
+            if (scanTimes % countOfSecond1 == 0) {
+                POP_LOGGER.info("[PopBuffer]scan, PopBufferEclipse={}, " +
+                        "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
+                    eclipse, count, countCk, counter.get(), offsetBufferSize);
+            }
+        }
+    }
+
     private void scan() {
         long startTime = System.currentTimeMillis();
         int count = 0, countCk = 0;
@@ -258,84 +275,78 @@ public class PopBufferMergeService extends ServiceThread {
             // double check
             if (isCkDone(pointWrapper)) {
                 continue;
-            } else if (pointWrapper.isJustOffset()) {
+            }
+
+            if (pointWrapper.isJustOffset()) {
                 // just offset should be in store.
                 if (pointWrapper.getReviveQueueOffset() < 0) {
                     putCkToStore(pointWrapper, false);
                     countCk++;
                 }
                 continue;
-            } else if (removeCk) {
-                // put buffer ak to store
-                if (pointWrapper.getReviveQueueOffset() < 0) {
-                    putCkToStore(pointWrapper, false);
-                    countCk++;
-                }
+            }
 
-                if (!pointWrapper.isCkStored()) {
-                    continue;
-                }
+            if (!removeCk) {
+                continue;
+            }
 
-                if (brokerController.getBrokerConfig().isEnablePopBatchAck()) {
-                    List<Byte> indexList = this.batchAckIndexList;
-                    try {
-                        for (byte i = 0; i < point.getNum(); i++) {
-                            // reput buffer ak to store
-                            if (DataConverter.getBit(pointWrapper.getBits().get(), i)
-                                    && !DataConverter.getBit(pointWrapper.getToStoreBits().get(), i)) {
-                                indexList.add(i);
-                            }
-                        }
-                        if (indexList.size() > 0) {
-                            if (putBatchAckToStore(pointWrapper, indexList)) {
-                                count += indexList.size();
-                                for (Byte i : indexList) {
-                                    markBitCAS(pointWrapper.getToStoreBits(), i);
-                                }
-                            }
-                        }
-                    } finally {
-                        indexList.clear();
-                    }
-                } else {
+            // put buffer ak to store
+            if (pointWrapper.getReviveQueueOffset() < 0) {
+                putCkToStore(pointWrapper, false);
+                countCk++;
+            }
+
+            if (!pointWrapper.isCkStored()) {
+                continue;
+            }
+
+            if (brokerController.getBrokerConfig().isEnablePopBatchAck()) {
+                List<Byte> indexList = this.batchAckIndexList;
+                try {
                     for (byte i = 0; i < point.getNum(); i++) {
                         // reput buffer ak to store
                         if (DataConverter.getBit(pointWrapper.getBits().get(), i)
                                 && !DataConverter.getBit(pointWrapper.getToStoreBits().get(), i)) {
-                            if (putAckToStore(pointWrapper, i)) {
-                                count++;
+                            indexList.add(i);
+                        }
+                    }
+                    if (indexList.size() > 0) {
+                        if (putBatchAckToStore(pointWrapper, indexList)) {
+                            count += indexList.size();
+                            for (Byte i : indexList) {
                                 markBitCAS(pointWrapper.getToStoreBits(), i);
                             }
                         }
                     }
+                } finally {
+                    indexList.clear();
                 }
-
-                if (isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored()) {
-                    if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                        POP_LOGGER.info("[PopBuffer]ck finish, {}", pointWrapper);
+            } else {
+                for (byte i = 0; i < point.getNum(); i++) {
+                    // reput buffer ak to store
+                    if (DataConverter.getBit(pointWrapper.getBits().get(), i)
+                            && !DataConverter.getBit(pointWrapper.getToStoreBits().get(), i)) {
+                        if (putAckToStore(pointWrapper, i)) {
+                            count++;
+                            markBitCAS(pointWrapper.getToStoreBits(), i);
+                        }
                     }
-                    iterator.remove();
-                    counter.decrementAndGet();
-                    continue;
                 }
+            }
+
+            if (isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored()) {
+                if (brokerController.getBrokerConfig().isEnablePopLog()) {
+                    POP_LOGGER.info("[PopBuffer]ck finish, {}", pointWrapper);
+                }
+                iterator.remove();
+                counter.decrementAndGet();
             }
         }
 
-        int offsetBufferSize = scanCommitOffset();
 
         long eclipse = System.currentTimeMillis() - startTime;
-        if (eclipse > brokerController.getBrokerConfig().getPopCkStayBufferTimeOut() - 1000) {
-            POP_LOGGER.warn("[PopBuffer]scan stop, because eclipse too long, PopBufferEclipse={}, " +
-                    "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
-                eclipse, count, countCk, counter.get(), offsetBufferSize);
-            this.serving = false;
-        } else {
-            if (scanTimes % countOfSecond1 == 0) {
-                POP_LOGGER.info("[PopBuffer]scan, PopBufferEclipse={}, " +
-                        "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
-                    eclipse, count, countCk, counter.get(), offsetBufferSize);
-            }
-        }
+        resetServing(eclipse, count, countCk);
+
         PopMetricsManager.recordPopBufferScanTimeConsume(eclipse);
         scanTimes++;
 
