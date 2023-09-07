@@ -156,6 +156,7 @@ public class UtilAll {
             cal.get(Calendar.MILLISECOND));
     }
 
+    @Deprecated
     public static long computeNextMorningTimeMillis() {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(System.currentTimeMillis());

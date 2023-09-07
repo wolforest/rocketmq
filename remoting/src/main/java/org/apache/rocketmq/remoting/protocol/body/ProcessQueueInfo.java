@@ -17,7 +17,6 @@
 
 package org.apache.rocketmq.remoting.protocol.body;
 
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.TimeUtils;
 
 public class ProcessQueueInfo {

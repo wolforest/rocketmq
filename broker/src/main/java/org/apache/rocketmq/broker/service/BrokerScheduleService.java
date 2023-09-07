@@ -16,6 +16,20 @@
  */
 package org.apache.rocketmq.broker.service;
 
+import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.common.AbstractBrokerRunnable;
+import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.ThreadFactoryImpl;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.stats.MomentStatsItem;
+import org.apache.rocketmq.common.utils.TimeUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
+import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.config.BrokerRole;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,19 +37,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.AbstractBrokerRunnable;
-import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.stats.MomentStatsItem;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.config.BrokerRole;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 public class BrokerScheduleService {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
@@ -257,7 +258,7 @@ public class BrokerScheduleService {
     }
 
     public void initializeBrokerScheduledTasks() {
-        final long initialDelay = UtilAll.computeNextMorningTimeMillis() - System.currentTimeMillis();
+        final long initialDelay = TimeUtils.computeNextMorningTimeMillis() - System.currentTimeMillis();
         final long period = TimeUnit.DAYS.toMillis(1);
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
