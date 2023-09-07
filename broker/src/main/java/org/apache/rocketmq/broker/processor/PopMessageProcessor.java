@@ -791,7 +791,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             ck.addDiff((int) (msgQueueOffset - offset));
         }
 
-        final boolean addBufferSuc = this.popBufferMergeService.addCk(
+        final boolean addBufferSuc = this.popBufferMergeService.addCheckPoint(
             ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset()
         );
 

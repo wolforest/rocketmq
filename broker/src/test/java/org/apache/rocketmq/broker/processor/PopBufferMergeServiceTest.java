@@ -113,7 +113,7 @@ public class PopBufferMergeServiceTest {
         ackMsg.setQueueId(queueId);
         ackMsg.setPopTime(popTime);
         try {
-            assertThat(popBufferMergeService.addCk(ck, reviveQid, ackOffset, nextBeginOffset)).isTrue();
+            assertThat(popBufferMergeService.addCheckPoint(ck, reviveQid, ackOffset, nextBeginOffset)).isTrue();
             assertThat(popBufferMergeService.getLatestOffset(topic, group, queueId)).isEqualTo(nextBeginOffset);
             Thread.sleep(1000); // wait background threads of PopBufferMergeService run for some time
             assertThat(popBufferMergeService.addAckMsg(reviveQid, ackMsg)).isTrue();
