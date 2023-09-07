@@ -516,6 +516,12 @@ public class PopBufferMergeService extends ServiceThread {
     }
 
     /**
+     * add pop checkPoint to buffer(memory)
+     * 1. checkPoints will be stored periodically
+     *    when this.run() method is executing
+     * 2. while method run executing
+     *    checkPoints will be stored after ackMsg
+     *    to make sure every message consumed by consumer
      *
      * @param point PopCheckPoint
      * @param reviveQueueId reviveQueueId
