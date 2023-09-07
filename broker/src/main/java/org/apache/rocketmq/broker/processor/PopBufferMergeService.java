@@ -211,45 +211,6 @@ public class PopBufferMergeService extends ServiceThread {
         }
     }
 
-    private boolean getRemoveCk(PopCheckPointWrapper pointWrapper) {
-        PopCheckPoint point = pointWrapper.getCk();
-        long now = System.currentTimeMillis();
-
-        boolean removeCk = !this.serving;
-        // ck will be timeout
-        if (point.getReviveTime() - now < brokerController.getBrokerConfig().getPopCkStayBufferTimeOut()) {
-            removeCk = true;
-        }
-
-        // the time stayed is too long
-        if (now - point.getPopTime() > brokerController.getBrokerConfig().getPopCkStayBufferTime()) {
-            removeCk = true;
-        }
-
-        if (now - point.getPopTime() > brokerController.getBrokerConfig().getPopCkStayBufferTime() * 2L) {
-            POP_LOGGER.warn("[PopBuffer]ck finish fail, stay too long, {}", pointWrapper);
-        }
-
-        return removeCk;
-    }
-
-    private void resetServing(long eclipse, int count, int countCk) {
-        int offsetBufferSize = scanCommitOffset();
-
-        if (eclipse > brokerController.getBrokerConfig().getPopCkStayBufferTimeOut() - 1000) {
-            POP_LOGGER.warn("[PopBuffer]scan stop, because eclipse too long, PopBufferEclipse={}, " +
-                    "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
-                eclipse, count, countCk, counter.get(), offsetBufferSize);
-            this.serving = false;
-        } else {
-            if (scanTimes % countOfSecond1 == 0) {
-                POP_LOGGER.info("[PopBuffer]scan, PopBufferEclipse={}, " +
-                        "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
-                    eclipse, count, countCk, counter.get(), offsetBufferSize);
-            }
-        }
-    }
-
     private void scan() {
         long startTime = System.currentTimeMillis();
         int count = 0, countCk = 0;
@@ -346,7 +307,49 @@ public class PopBufferMergeService extends ServiceThread {
 
         long eclipse = System.currentTimeMillis() - startTime;
         resetServing(eclipse, count, countCk);
+        increaseScanCounter(eclipse);
+    }
 
+    private boolean getRemoveCk(PopCheckPointWrapper pointWrapper) {
+        PopCheckPoint point = pointWrapper.getCk();
+        long now = System.currentTimeMillis();
+
+        boolean removeCk = !this.serving;
+        // ck will be timeout
+        if (point.getReviveTime() - now < brokerController.getBrokerConfig().getPopCkStayBufferTimeOut()) {
+            removeCk = true;
+        }
+
+        // the time stayed is too long
+        if (now - point.getPopTime() > brokerController.getBrokerConfig().getPopCkStayBufferTime()) {
+            removeCk = true;
+        }
+
+        if (now - point.getPopTime() > brokerController.getBrokerConfig().getPopCkStayBufferTime() * 2L) {
+            POP_LOGGER.warn("[PopBuffer]ck finish fail, stay too long, {}", pointWrapper);
+        }
+
+        return removeCk;
+    }
+
+    private void resetServing(long eclipse, int count, int countCk) {
+        int offsetBufferSize = scanCommitOffset();
+
+        if (eclipse > brokerController.getBrokerConfig().getPopCkStayBufferTimeOut() - 1000) {
+            POP_LOGGER.warn("[PopBuffer]scan stop, because eclipse too long, PopBufferEclipse={}, " +
+                    "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
+                eclipse, count, countCk, counter.get(), offsetBufferSize);
+            this.serving = false;
+        } else {
+            if (scanTimes % countOfSecond1 == 0) {
+                POP_LOGGER.info("[PopBuffer]scan, PopBufferEclipse={}, " +
+                        "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
+                    eclipse, count, countCk, counter.get(), offsetBufferSize);
+            }
+        }
+    }
+
+    private void increaseScanCounter(long eclipse) {
         PopMetricsManager.recordPopBufferScanTimeConsume(eclipse);
         scanTimes++;
 
