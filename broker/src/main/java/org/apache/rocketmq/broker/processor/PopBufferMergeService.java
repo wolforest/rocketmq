@@ -206,24 +206,8 @@ public class PopBufferMergeService extends ServiceThread {
             if (System.currentTimeMillis() - entry.getValue().getTime() > minute5) {
                 POP_LOGGER.info("[PopBuffer]remove long time not used sub {} of topic {} in buffer!", cid, topic);
                 iterator.remove();
-                continue;
             }
         }
-    }
-
-    private boolean validatePointWrapper(Iterator<Map.Entry<String, PopCheckPointWrapper>> iterator, PopCheckPointWrapper pointWrapper) {
-        // just process offset(already stored at pull thread), or buffer ck(not stored and ack finish)
-        if (pointWrapper.isJustOffset() && pointWrapper.isCkStored() || isCkDone(pointWrapper)
-            || isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored()) {
-            if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                POP_LOGGER.info("[PopBuffer]ck done, {}", pointWrapper);
-            }
-            iterator.remove();
-            counter.decrementAndGet();
-            return false;
-        }
-
-        return true;
     }
 
     private void scan() {
@@ -237,7 +221,6 @@ public class PopBufferMergeService extends ServiceThread {
             if (!validatePointWrapper(iterator, pointWrapper)) {
                 continue;
             }
-
 
             boolean removeCk = getRemoveCk(pointWrapper);
 
@@ -269,6 +252,7 @@ public class PopBufferMergeService extends ServiceThread {
                 continue;
             }
 
+            //store ack info after check point info
             count = storeAckInfo(count, pointWrapper);
             removeIterator(iterator, pointWrapper);
         }
@@ -278,6 +262,20 @@ public class PopBufferMergeService extends ServiceThread {
         increaseScanCounter(eclipse);
     }
 
+    private boolean validatePointWrapper(Iterator<Map.Entry<String, PopCheckPointWrapper>> iterator, PopCheckPointWrapper pointWrapper) {
+        // just process offset(already stored at pull thread), or buffer ck(not stored and ack finish)
+        if (pointWrapper.isJustOffset() && pointWrapper.isCkStored() || isCkDone(pointWrapper)
+            || isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored()) {
+            if (brokerController.getBrokerConfig().isEnablePopLog()) {
+                POP_LOGGER.info("[PopBuffer]ck done, {}", pointWrapper);
+            }
+            iterator.remove();
+            counter.decrementAndGet();
+            return false;
+        }
+
+        return true;
+    }
 
     private int storeAckInfo(int count, PopCheckPointWrapper pointWrapper) {
         if (brokerController.getBrokerConfig().isEnablePopBatchAck()) {
