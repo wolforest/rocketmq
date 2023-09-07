@@ -47,16 +47,15 @@ import org.apache.rocketmq.store.pop.PopCheckPoint;
 
 public class PopBufferMergeService extends ServiceThread {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
-    ConcurrentHashMap<String/*mergeKey*/, PopCheckPointWrapper>
-        buffer = new ConcurrentHashMap<>(1024 * 16);
-    ConcurrentHashMap<String/*topic@cid@queueId*/, QueueWithTime<PopCheckPointWrapper>> commitOffsets =
-        new ConcurrentHashMap<>();
+    ConcurrentHashMap<String/*mergeKey*/, PopCheckPointWrapper> buffer = new ConcurrentHashMap<>(1024 * 16);
+    ConcurrentHashMap<String/*topic@cid@queueId*/, QueueWithTime<PopCheckPointWrapper>> commitOffsets = new ConcurrentHashMap<>();
     private volatile boolean serving = true;
-    private AtomicInteger counter = new AtomicInteger(0);
+    private final AtomicInteger counter = new AtomicInteger(0);
     private int scanTimes = 0;
     private final BrokerController brokerController;
     private final PopMessageProcessor popMessageProcessor;
     private final QueueLockManager queueLockManager;
+
     private final long interval = 5;
     private final long minute5 = 5 * 60 * 1000;
     private final int countOfMinute1 = (int) (60 * 1000 / interval);
@@ -212,6 +211,28 @@ public class PopBufferMergeService extends ServiceThread {
         }
     }
 
+    private boolean getRemoveCk(PopCheckPointWrapper pointWrapper) {
+        PopCheckPoint point = pointWrapper.getCk();
+        long now = System.currentTimeMillis();
+
+        boolean removeCk = !this.serving;
+        // ck will be timeout
+        if (point.getReviveTime() - now < brokerController.getBrokerConfig().getPopCkStayBufferTimeOut()) {
+            removeCk = true;
+        }
+
+        // the time stayed is too long
+        if (now - point.getPopTime() > brokerController.getBrokerConfig().getPopCkStayBufferTime()) {
+            removeCk = true;
+        }
+
+        if (now - point.getPopTime() > brokerController.getBrokerConfig().getPopCkStayBufferTime() * 2L) {
+            POP_LOGGER.warn("[PopBuffer]ck finish fail, stay too long, {}", pointWrapper);
+        }
+
+        return removeCk;
+    }
+
     private void scan() {
         long startTime = System.currentTimeMillis();
         int count = 0, countCk = 0;
@@ -232,22 +253,7 @@ public class PopBufferMergeService extends ServiceThread {
             }
 
             PopCheckPoint point = pointWrapper.getCk();
-            long now = System.currentTimeMillis();
-
-            boolean removeCk = !this.serving;
-            // ck will be timeout
-            if (point.getReviveTime() - now < brokerController.getBrokerConfig().getPopCkStayBufferTimeOut()) {
-                removeCk = true;
-            }
-
-            // the time stayed is too long
-            if (now - point.getPopTime() > brokerController.getBrokerConfig().getPopCkStayBufferTime()) {
-                removeCk = true;
-            }
-
-            if (now - point.getPopTime() > brokerController.getBrokerConfig().getPopCkStayBufferTime() * 2L) {
-                POP_LOGGER.warn("[PopBuffer]ck finish fail, stay too long, {}", pointWrapper);
-            }
+            boolean removeCk = getRemoveCk(pointWrapper);
 
             // double check
             if (isCkDone(pointWrapper)) {
@@ -421,11 +427,11 @@ public class PopBufferMergeService extends ServiceThread {
     /**
      * put to store && add to buffer.
      *
-     * @param point
-     * @param reviveQueueId
-     * @param reviveQueueOffset
-     * @param nextBeginOffset
-     * @return
+     * @param point check point
+     * @param reviveQueueId revive queue id
+     * @param reviveQueueOffset revive queue offset
+     * @param nextBeginOffset next begin offset
+     * @return boolean
      */
     public boolean addCkJustOffset(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
         PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, reviveQueueOffset, point, nextBeginOffset, true);
@@ -470,6 +476,14 @@ public class PopBufferMergeService extends ServiceThread {
         }
     }
 
+    /**
+     *
+     * @param point PopCheckPoint
+     * @param reviveQueueId reviveQueueId
+     * @param reviveQueueOffset reviveQueueOffset
+     * @param nextBeginOffset nextBeginOffset
+     * @return boolean add status
+     */
     public boolean addCk(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
         // key: point.getT() + point.getC() + point.getQ() + point.getSo() + point.getPt()
         if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) {
@@ -493,7 +507,6 @@ public class PopBufferMergeService extends ServiceThread {
         }
 
         PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, reviveQueueOffset, point, nextBeginOffset);
-
         if (!checkQueueOk(pointWrapper)) {
             return false;
         }
