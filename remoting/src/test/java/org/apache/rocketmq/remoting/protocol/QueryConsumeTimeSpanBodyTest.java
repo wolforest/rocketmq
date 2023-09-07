@@ -23,6 +23,7 @@ import java.util.Random;
 import java.util.UUID;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.protocol.body.QueryConsumeTimeSpanBody;
 import org.apache.rocketmq.remoting.protocol.body.QueueTimeSpan;
 import org.junit.Test;
@@ -102,7 +103,7 @@ public class QueryConsumeTimeSpanBodyTest {
         QueueTimeSpan queueTimeSpan = new QueueTimeSpan();
         queueTimeSpan.setMinTimeStamp(System.currentTimeMillis());
         queueTimeSpan.setMaxTimeStamp(UtilAll.computeNextHourTimeMillis());
-        queueTimeSpan.setConsumeTimeStamp(UtilAll.computeNextMinutesTimeMillis());
+        queueTimeSpan.setConsumeTimeStamp(TimeUtils.computeNextMinutesTimeMillis());
         queueTimeSpan.setDelayTime(5000L);
         MessageQueue messageQueue = new MessageQueue(UUID.randomUUID().toString(), UUID.randomUUID().toString(), new Random().nextInt());
         queueTimeSpan.setMessageQueue(messageQueue);

@@ -169,6 +169,7 @@ public class UtilAll {
         return cal.getTimeInMillis();
     }
 
+    @Deprecated
     public static long computeNextMinutesTimeMillis() {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(System.currentTimeMillis());
