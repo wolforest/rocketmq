@@ -114,6 +114,39 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         this.ckMessageNumber = new AtomicLong();
     }
 
+    @Override
+    public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
+        RemotingCommand response = RemotingCommand.createResponseCommand(PopMessageResponseHeader.class);
+        PopMessageRequestHeader requestHeader = (PopMessageRequestHeader) request.decodeCommandCustomHeader(PopMessageRequestHeader.class);
+
+        StringBuilder startOffsetInfo = new StringBuilder(64);
+        StringBuilder msgOffsetInfo = new StringBuilder(64);
+        StringBuilder orderCountInfo = initOrderCountInfo(requestHeader);
+
+        initRequestAndResponse(request, response, requestHeader);
+        if (!allowAccess(requestHeader, ctx.channel(), response)) {
+            return response;
+        }
+
+        ExpressionMessageFilter messageFilter = null;
+        if (requestHeader.getExp() != null && requestHeader.getExp().length() > 0) {
+            messageFilter = initExpressionMessageFilter(requestHeader, response);
+            if (messageFilter == null) {
+                return response;
+            }
+        }
+        compensateSubscribeData(requestHeader);
+
+        int reviveQid = getReviveQid(requestHeader);
+        long popTime = System.currentTimeMillis();
+
+        GetMessageResult getMessageResult = initGetMessageResult();
+        CompletableFuture<Long> getMessageFuture = popMessage(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime);
+        bindGetMessageFutureCallback(ctx, requestHeader, getMessageResult, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime, getMessageFuture, response, request);
+
+        return null;
+    }
+
     public PopLongPollingService getPopLongPollingService() {
         return popLongPollingService;
     }
@@ -352,7 +385,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return new GetMessageResult(commercialSizePerMsg);
     }
 
-    private CompletableFuture<Long> popMessageFuture(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
+    private CompletableFuture<Long> popMessage(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime) {
         int randomQ = random.nextInt(100);
         boolean needRetry = randomQ % 5 == 0;
@@ -508,39 +541,6 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
 
         return orderCountInfo;
-    }
-
-    @Override
-    public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
-        RemotingCommand response = RemotingCommand.createResponseCommand(PopMessageResponseHeader.class);
-        final PopMessageRequestHeader requestHeader = (PopMessageRequestHeader) request.decodeCommandCustomHeader(PopMessageRequestHeader.class);
-
-        StringBuilder startOffsetInfo = new StringBuilder(64);
-        StringBuilder msgOffsetInfo = new StringBuilder(64);
-        StringBuilder orderCountInfo = initOrderCountInfo(requestHeader);
-
-        initRequestAndResponse(request, response, requestHeader);
-        if (!allowAccess(requestHeader, ctx.channel(), response)) {
-            return response;
-        }
-
-        ExpressionMessageFilter messageFilter = null;
-        if (requestHeader.getExp() != null && requestHeader.getExp().length() > 0) {
-            messageFilter = initExpressionMessageFilter(requestHeader, response);
-            if (messageFilter == null) {
-                return response;
-            }
-        }
-        compensateSubscribeData(requestHeader);
-
-        int reviveQid = getReviveQid(requestHeader);
-        long popTime = System.currentTimeMillis();
-
-        GetMessageResult getMessageResult = initGetMessageResult();
-        CompletableFuture<Long> getMessageFuture = popMessageFuture(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime);
-        bindGetMessageFutureCallback(ctx, requestHeader, getMessageResult, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime, getMessageFuture, response, request);
-
-        return null;
     }
 
     private CompletableFuture<Long> popMsgFromQueue(String attemptId, boolean isRetry, GetMessageResult getMessageResult,
