@@ -359,8 +359,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         CompletableFuture<Long> getMessageFuture = CompletableFuture.completedFuture(0L);
         if (needRetry && !requestHeader.isOrder()) {
-            TopicConfig retryTopicConfig =
-                this.brokerController.getTopicConfigManager().selectTopicConfig(KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup()));
+            TopicConfig retryTopicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup()));
             if (retryTopicConfig != null) {
                 for (int i = 0; i < retryTopicConfig.getReadQueueNums(); i++) {
                     int queueId = (randomQ + i) % retryTopicConfig.getReadQueueNums();
@@ -548,14 +547,16 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         PopMessageRequestHeader requestHeader, int queueId, long restNum, int reviveQid,
         Channel channel, long popTime, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder orderCountInfo) {
-        String topic = isRetry ? KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(),
-            requestHeader.getConsumerGroup()) : requestHeader.getTopic();
-        String lockKey =
-            topic + PopAckConstants.SPLIT + requestHeader.getConsumerGroup() + PopAckConstants.SPLIT + queueId;
+
+        String topic = isRetry
+            ? KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup())
+            : requestHeader.getTopic();
+
+        String lockKey = topic + PopAckConstants.SPLIT + requestHeader.getConsumerGroup() + PopAckConstants.SPLIT + queueId;
         boolean isOrder = requestHeader.isOrder();
-        long offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(),
-            false, lockKey, false);
+        long offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), false, lockKey, false);
         CompletableFuture<Long> future = new CompletableFuture<>();
+
         if (!queueLockManager.tryLock(lockKey)) {
             restNum = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
             future.complete(restNum);
@@ -564,8 +565,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         try {
             future.whenComplete((result, throwable) -> queueLockManager.unLock(lockKey));
-            offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(),
-                true, lockKey, true);
+            offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), true, lockKey, true);
             if (isOrder && brokerController.getConsumerOrderInfoManager().checkBlock(attemptId, topic,
                 requestHeader.getConsumerGroup(), queueId, requestHeader.getInvisibleTime())) {
                 future.complete(this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum);
@@ -593,10 +593,10 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         AtomicLong atomicRestNum = new AtomicLong(restNum);
         AtomicLong atomicOffset = new AtomicLong(offset);
+        int maxMsgNums = requestHeader.getMaxMsgNums() - getMessageResult.getMessageMapedList().size();
         long finalOffset = offset;
         return this.brokerController.getMessageStore()
-            .getMessageAsync(requestHeader.getConsumerGroup(), topic, queueId, offset,
-                requestHeader.getMaxMsgNums() - getMessageResult.getMessageMapedList().size(), messageFilter)
+            .getMessageAsync(requestHeader.getConsumerGroup(), topic, queueId, offset, maxMsgNums, messageFilter)
             .thenCompose(result -> {
                 if (result == null) {
                     return CompletableFuture.completedFuture(null);
@@ -608,10 +608,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
                     // commit offset, because the offset is not correct
                     // If offset in store is greater than cq offset, it will cause duplicate messages,
                     // because offset in PopBuffer is not committed.
-                    POP_LOGGER.warn("Pop initial offset, because store is no correct, {}, {}->{}",
-                        lockKey, atomicOffset.get(), result.getNextBeginOffset());
-                    this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic,
-                        queueId, result.getNextBeginOffset());
+                    POP_LOGGER.warn("Pop initial offset, because store is no correct, {}, {}->{}", lockKey, atomicOffset.get(), result.getNextBeginOffset());
+                    this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic, queueId, result.getNextBeginOffset());
                     atomicOffset.set(result.getNextBeginOffset());
                     return this.brokerController.getMessageStore().getMessageAsync(requestHeader.getConsumerGroup(), topic, queueId, atomicOffset.get(),
                         requestHeader.getMaxMsgNums() - getMessageResult.getMessageMapedList().size(), messageFilter);
@@ -624,10 +622,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
                 }
                 if (!result.getMessageMapedList().isEmpty()) {
                     this.brokerController.getBrokerStatsManager().incBrokerGetNums(requestHeader.getTopic(), result.getMessageCount());
-                    this.brokerController.getBrokerStatsManager().incGroupGetNums(requestHeader.getConsumerGroup(), topic,
-                        result.getMessageCount());
-                    this.brokerController.getBrokerStatsManager().incGroupGetSize(requestHeader.getConsumerGroup(), topic,
-                        result.getBufferTotalSize());
+                    this.brokerController.getBrokerStatsManager().incGroupGetNums(requestHeader.getConsumerGroup(), topic, result.getMessageCount());
+                    this.brokerController.getBrokerStatsManager().incGroupGetSize(requestHeader.getConsumerGroup(), topic, result.getBufferTotalSize());
 
                     Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
                         .put(LABEL_TOPIC, requestHeader.getTopic())
@@ -639,12 +635,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
                     BrokerMetricsManager.throughputOutTotal.add(result.getBufferTotalSize(), attributes);
 
                     if (isOrder) {
-                        this.brokerController.getConsumerOrderInfoManager().update(requestHeader.getAttemptId(), isRetry, topic,
-                            requestHeader.getConsumerGroup(),
-                            queueId, popTime, requestHeader.getInvisibleTime(), result.getMessageQueueOffset(),
-                            orderCountInfo);
-                        this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(),
-                            requestHeader.getConsumerGroup(), topic, queueId, finalOffset);
+                        this.brokerController.getConsumerOrderInfoManager().update(requestHeader.getAttemptId(), isRetry, topic, requestHeader.getConsumerGroup(), queueId, popTime, requestHeader.getInvisibleTime(), result.getMessageQueueOffset(), orderCountInfo);
+                        this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic, queueId, finalOffset);
                     } else {
                         if (!appendCheckPoint(requestHeader, topic, reviveQid, queueId, finalOffset, result, popTime, this.brokerController.getBrokerConfig().getBrokerName())) {
                             return atomicRestNum.get() + result.getMessageCount();
