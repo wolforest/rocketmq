@@ -198,47 +198,15 @@ public class LocalMessageService implements MessageService {
         return createAckResponse(future);
     }
 
-    private Map<String, BatchAck> createBatchAckMap(List<ReceiptHandleMessage> handleList, String consumerGroup, String topic) {
-        Map<String, BatchAck> batchAckMap = new HashMap<>();
-        for (ReceiptHandleMessage receiptHandleMessage : handleList) {
-            String extraInfo = receiptHandleMessage.getReceiptHandle().getReceiptHandle();
-            String[] extraInfoData = ExtraInfoUtil.split(extraInfo);
-            String mergeKey = ExtraInfoUtil.getRetry(extraInfoData) + "@" +
-                ExtraInfoUtil.getQueueId(extraInfoData) + "@" +
-                ExtraInfoUtil.getCkQueueOffset(extraInfoData) + "@" +
-                ExtraInfoUtil.getPopTime(extraInfoData);
-            BatchAck bAck = batchAckMap.computeIfAbsent(mergeKey, k -> {
-                BatchAck newBatchAck = new BatchAck();
-                newBatchAck.setConsumerGroup(consumerGroup);
-                newBatchAck.setTopic(topic);
-                newBatchAck.setRetry(ExtraInfoUtil.getRetry(extraInfoData));
-                newBatchAck.setStartOffset(ExtraInfoUtil.getCkQueueOffset(extraInfoData));
-                newBatchAck.setQueueId(ExtraInfoUtil.getQueueId(extraInfoData));
-                newBatchAck.setReviveQueueId(ExtraInfoUtil.getReviveQid(extraInfoData));
-                newBatchAck.setPopTime(ExtraInfoUtil.getPopTime(extraInfoData));
-                newBatchAck.setInvisibleTime(ExtraInfoUtil.getInvisibleTime(extraInfoData));
-                newBatchAck.setBitSet(new BitSet());
-                return newBatchAck;
-            });
-            bAck.getBitSet().set((int) (ExtraInfoUtil.getQueueOffset(extraInfoData) - ExtraInfoUtil.getCkQueueOffset(extraInfoData)));
-        }
-
-        return batchAckMap;
-    }
-
     @Override
-    public CompletableFuture<AckResult> batchAckMessage(ProxyContext ctx, List<ReceiptHandleMessage> handleList,
-        String consumerGroup, String topic, long timeoutMillis) {
+    public CompletableFuture<AckResult> batchAckMessage(ProxyContext ctx, List<ReceiptHandleMessage> handleList, String consumerGroup, String topic, long timeoutMillis) {
         SimpleChannel channel = channelManager.createChannel(ctx);
         ChannelHandlerContext channelHandlerContext = channel.getChannelHandlerContext();
         RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.BATCH_ACK_MESSAGE, null);
 
-        Map<String, BatchAck> batchAckMap = createBatchAckMap(handleList, consumerGroup, topic);
-        BatchAckMessageRequestBody requestBody = new BatchAckMessageRequestBody();
-        requestBody.setBrokerName(brokerController.getBrokerConfig().getBrokerName());
-        requestBody.setAcks(new ArrayList<>(batchAckMap.values()));
-
+        BatchAckMessageRequestBody requestBody = createRequestBody(handleList, consumerGroup, topic);
         command.setBody(requestBody.encode());
+
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
             RemotingCommand response = brokerController.getBrokerNettyServer().getAckMessageProcessor()
@@ -466,6 +434,43 @@ public class LocalMessageService implements MessageService {
             }
             return ackResult;
         });
+    }
+
+    private Map<String, BatchAck> createBatchAckMap(List<ReceiptHandleMessage> handleList, String consumerGroup, String topic) {
+        Map<String, BatchAck> batchAckMap = new HashMap<>();
+        for (ReceiptHandleMessage receiptHandleMessage : handleList) {
+            String extraInfo = receiptHandleMessage.getReceiptHandle().getReceiptHandle();
+            String[] extraInfoData = ExtraInfoUtil.split(extraInfo);
+            String mergeKey = ExtraInfoUtil.getRetry(extraInfoData) + "@" +
+                ExtraInfoUtil.getQueueId(extraInfoData) + "@" +
+                ExtraInfoUtil.getCkQueueOffset(extraInfoData) + "@" +
+                ExtraInfoUtil.getPopTime(extraInfoData);
+            BatchAck bAck = batchAckMap.computeIfAbsent(mergeKey, k -> {
+                BatchAck newBatchAck = new BatchAck();
+                newBatchAck.setConsumerGroup(consumerGroup);
+                newBatchAck.setTopic(topic);
+                newBatchAck.setRetry(ExtraInfoUtil.getRetry(extraInfoData));
+                newBatchAck.setStartOffset(ExtraInfoUtil.getCkQueueOffset(extraInfoData));
+                newBatchAck.setQueueId(ExtraInfoUtil.getQueueId(extraInfoData));
+                newBatchAck.setReviveQueueId(ExtraInfoUtil.getReviveQid(extraInfoData));
+                newBatchAck.setPopTime(ExtraInfoUtil.getPopTime(extraInfoData));
+                newBatchAck.setInvisibleTime(ExtraInfoUtil.getInvisibleTime(extraInfoData));
+                newBatchAck.setBitSet(new BitSet());
+                return newBatchAck;
+            });
+            bAck.getBitSet().set((int) (ExtraInfoUtil.getQueueOffset(extraInfoData) - ExtraInfoUtil.getCkQueueOffset(extraInfoData)));
+        }
+
+        return batchAckMap;
+    }
+
+    private BatchAckMessageRequestBody createRequestBody(List<ReceiptHandleMessage> handleList, String consumerGroup, String topic) {
+        Map<String, BatchAck> batchAckMap = createBatchAckMap(handleList, consumerGroup, topic);
+        BatchAckMessageRequestBody requestBody = new BatchAckMessageRequestBody();
+        requestBody.setBrokerName(brokerController.getBrokerConfig().getBrokerName());
+        requestBody.setAcks(new ArrayList<>(batchAckMap.values()));
+
+        return requestBody;
     }
 
     private void handleNoStartOffsetInfo(MessageExt messageExt, Map<String, String> map, PopMessageResponseHeader responseHeader, AddressableMessageQueue messageQueue) {
