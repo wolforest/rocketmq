@@ -198,15 +198,7 @@ public class LocalMessageService implements MessageService {
         return createAckResponse(future);
     }
 
-
-
-    @Override
-    public CompletableFuture<AckResult> batchAckMessage(ProxyContext ctx, List<ReceiptHandleMessage> handleList,
-        String consumerGroup, String topic, long timeoutMillis) {
-        SimpleChannel channel = channelManager.createChannel(ctx);
-        ChannelHandlerContext channelHandlerContext = channel.getChannelHandlerContext();
-        RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.BATCH_ACK_MESSAGE, null);
-
+    private Map<String, BatchAck> createBatchAckMap(List<ReceiptHandleMessage> handleList, String consumerGroup, String topic) {
         Map<String, BatchAck> batchAckMap = new HashMap<>();
         for (ReceiptHandleMessage receiptHandleMessage : handleList) {
             String extraInfo = receiptHandleMessage.getReceiptHandle().getReceiptHandle();
@@ -230,6 +222,18 @@ public class LocalMessageService implements MessageService {
             });
             bAck.getBitSet().set((int) (ExtraInfoUtil.getQueueOffset(extraInfoData) - ExtraInfoUtil.getCkQueueOffset(extraInfoData)));
         }
+
+        return batchAckMap;
+    }
+
+    @Override
+    public CompletableFuture<AckResult> batchAckMessage(ProxyContext ctx, List<ReceiptHandleMessage> handleList,
+        String consumerGroup, String topic, long timeoutMillis) {
+        SimpleChannel channel = channelManager.createChannel(ctx);
+        ChannelHandlerContext channelHandlerContext = channel.getChannelHandlerContext();
+        RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.BATCH_ACK_MESSAGE, null);
+
+        Map<String, BatchAck> batchAckMap = createBatchAckMap(handleList, consumerGroup, topic);
         BatchAckMessageRequestBody requestBody = new BatchAckMessageRequestBody();
         requestBody.setBrokerName(brokerController.getBrokerConfig().getBrokerName());
         requestBody.setAcks(new ArrayList<>(batchAckMap.values()));
@@ -246,8 +250,6 @@ public class LocalMessageService implements MessageService {
         }
         return createAckResponse(future);
     }
-
-
 
     @Override
     public CompletableFuture<PullResult> pullMessage(ProxyContext ctx, AddressableMessageQueue messageQueue,
