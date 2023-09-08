@@ -16,6 +16,12 @@
  */
 package org.apache.rocketmq.broker.topic;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.BrokerConfig;
@@ -42,8 +48,6 @@ import org.apache.rocketmq.remoting.rpc.RpcClient;
 import org.apache.rocketmq.remoting.rpc.RpcRequest;
 import org.apache.rocketmq.remoting.rpc.RpcResponse;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
-
-import java.util.*;
 
 public class TopicQueueMappingCleanService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
