@@ -48,18 +48,7 @@ public class EndTransactionActivity extends AbstractMessingActivity {
                 throw new GrpcProxyException(Code.INVALID_TRANSACTION_ID, "transaction id cannot be empty");
             }
 
-            TransactionStatus transactionStatus = TransactionStatus.UNKNOWN;
-            TransactionResolution transactionResolution = request.getResolution();
-            switch (transactionResolution) {
-                case COMMIT:
-                    transactionStatus = TransactionStatus.COMMIT;
-                    break;
-                case ROLLBACK:
-                    transactionStatus = TransactionStatus.ROLLBACK;
-                    break;
-                default:
-                    break;
-            }
+            TransactionStatus transactionStatus = getTransactionStatus(request);
             future = this.messagingProcessor.endTransaction(
                 ctx,
                 request.getTransactionId(),
@@ -74,5 +63,22 @@ public class EndTransactionActivity extends AbstractMessingActivity {
             future.completeExceptionally(t);
         }
         return future;
+    }
+
+    private TransactionStatus getTransactionStatus(EndTransactionRequest request) {
+        TransactionStatus transactionStatus = TransactionStatus.UNKNOWN;
+        TransactionResolution transactionResolution = request.getResolution();
+        switch (transactionResolution) {
+            case COMMIT:
+                transactionStatus = TransactionStatus.COMMIT;
+                break;
+            case ROLLBACK:
+                transactionStatus = TransactionStatus.ROLLBACK;
+                break;
+            default:
+                break;
+        }
+
+        return transactionStatus;
     }
 }
