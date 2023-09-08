@@ -175,28 +175,8 @@ public class LocalMessageService implements MessageService {
             log.error("Fail to process changeInvisibleTime command", e);
             future.completeExceptionally(e);
         }
-        return future.thenApply(r -> {
-            ChangeInvisibleTimeResponseHeader responseHeader = (ChangeInvisibleTimeResponseHeader) r.readCustomHeader();
-            AckResult ackResult = new AckResult();
-            if (ResponseCode.SUCCESS == r.getCode()) {
-                ackResult.setStatus(AckStatus.OK);
-            } else {
-                ackResult.setStatus(AckStatus.NO_EXIST);
-            }
-            ackResult.setPopTime(responseHeader.getPopTime());
-            ackResult.setExtraInfo(ReceiptHandle.builder()
-                .startOffset(handle.getStartOffset())
-                .retrieveTime(responseHeader.getPopTime())
-                .invisibleTime(responseHeader.getInvisibleTime())
-                .reviveQueueId(responseHeader.getReviveQid())
-                .topicType(handle.getTopicType())
-                .brokerName(handle.getBrokerName())
-                .queueId(handle.getQueueId())
-                .offset(handle.getOffset())
-                .build()
-                .encode());
-            return ackResult;
-        });
+
+        return createChangeInvisibleTimeResponse(future, handle);
     }
 
     @Override
@@ -214,16 +194,11 @@ public class LocalMessageService implements MessageService {
             log.error("Fail to process ackMessage command", e);
             future.completeExceptionally(e);
         }
-        return future.thenApply(r -> {
-            AckResult ackResult = new AckResult();
-            if (ResponseCode.SUCCESS == r.getCode()) {
-                ackResult.setStatus(AckStatus.OK);
-            } else {
-                ackResult.setStatus(AckStatus.NO_EXIST);
-            }
-            return ackResult;
-        });
+
+        return createAckResponse(future);
     }
+
+
 
     @Override
     public CompletableFuture<AckResult> batchAckMessage(ProxyContext ctx, List<ReceiptHandleMessage> handleList,
@@ -269,16 +244,10 @@ public class LocalMessageService implements MessageService {
             log.error("Fail to process batchAckMessage command", e);
             future.completeExceptionally(e);
         }
-        return future.thenApply(r -> {
-            AckResult ackResult = new AckResult();
-            if (ResponseCode.SUCCESS == r.getCode()) {
-                ackResult.setStatus(AckStatus.OK);
-            } else {
-                ackResult.setStatus(AckStatus.NO_EXIST);
-            }
-            return ackResult;
-        });
+        return createAckResponse(future);
     }
+
+
 
     @Override
     public CompletableFuture<PullResult> pullMessage(ProxyContext ctx, AddressableMessageQueue messageQueue,
@@ -457,6 +426,43 @@ public class LocalMessageService implements MessageService {
                 messageExt.setTopic(messageQueue.getTopic());
             }
             return popResult;
+        });
+    }
+
+    private CompletableFuture<AckResult> createChangeInvisibleTimeResponse(CompletableFuture<RemotingCommand> future, ReceiptHandle handle) {
+        return future.thenApply(r -> {
+            ChangeInvisibleTimeResponseHeader responseHeader = (ChangeInvisibleTimeResponseHeader) r.readCustomHeader();
+            AckResult ackResult = new AckResult();
+            if (ResponseCode.SUCCESS == r.getCode()) {
+                ackResult.setStatus(AckStatus.OK);
+            } else {
+                ackResult.setStatus(AckStatus.NO_EXIST);
+            }
+            ackResult.setPopTime(responseHeader.getPopTime());
+            ackResult.setExtraInfo(ReceiptHandle.builder()
+                .startOffset(handle.getStartOffset())
+                .retrieveTime(responseHeader.getPopTime())
+                .invisibleTime(responseHeader.getInvisibleTime())
+                .reviveQueueId(responseHeader.getReviveQid())
+                .topicType(handle.getTopicType())
+                .brokerName(handle.getBrokerName())
+                .queueId(handle.getQueueId())
+                .offset(handle.getOffset())
+                .build()
+                .encode());
+            return ackResult;
+        });
+    }
+
+    private CompletableFuture<AckResult> createAckResponse(CompletableFuture<RemotingCommand> future) {
+        return future.thenApply(r -> {
+            AckResult ackResult = new AckResult();
+            if (ResponseCode.SUCCESS == r.getCode()) {
+                ackResult.setStatus(AckStatus.OK);
+            } else {
+                ackResult.setStatus(AckStatus.NO_EXIST);
+            }
+            return ackResult;
         });
     }
 
