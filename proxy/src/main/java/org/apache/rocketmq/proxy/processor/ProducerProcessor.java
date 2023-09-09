@@ -64,6 +64,26 @@ public class ProducerProcessor extends AbstractProcessor {
         this.topicMessageTypeValidator = new DefaultTopicMessageTypeValidator();
     }
 
+    private void validateTopic(ProxyContext ctx, Message message) {
+        String topic = message.getTopic();
+
+        if (!ConfigurationManager.getProxyConfig().isEnableTopicMessageTypeCheck()) {
+            return;
+        }
+
+        if (topicMessageTypeValidator == null) {
+            return;
+        }
+
+        if (NamespaceUtil.isRetryTopic(topic) || NamespaceUtil.isDLQTopic(topic)) {
+            return;
+        }
+
+        TopicMessageType topicMessageType = serviceManager.getMetadataService().getTopicMessageType(ctx, topic);
+        TopicMessageType messageType = TopicMessageType.parseFromMessageProperty(message.getProperties());
+        topicMessageTypeValidator.validate(topicMessageType, messageType);
+    }
+
     public CompletableFuture<List<SendResult>> sendMessage(ProxyContext ctx, QueueSelector queueSelector,
         String producerGroup, int sysFlag, List<Message> messageList, long timeoutMillis) {
         CompletableFuture<List<SendResult>> future = new CompletableFuture<>();
@@ -72,18 +92,9 @@ public class ProducerProcessor extends AbstractProcessor {
         try {
             Message message = messageList.get(0);
             String topic = message.getTopic();
-            if (ConfigurationManager.getProxyConfig().isEnableTopicMessageTypeCheck()) {
-                if (topicMessageTypeValidator != null) {
-                    // Do not check retry or dlq topic
-                    if (!NamespaceUtil.isRetryTopic(topic) && !NamespaceUtil.isDLQTopic(topic)) {
-                        TopicMessageType topicMessageType = serviceManager.getMetadataService().getTopicMessageType(ctx, topic);
-                        TopicMessageType messageType = TopicMessageType.parseFromMessageProperty(message.getProperties());
-                        topicMessageTypeValidator.validate(topicMessageType, messageType);
-                    }
-                }
-            }
-            messageQueue = queueSelector.select(ctx,
-                this.serviceManager.getTopicRouteService().getCurrentMessageQueueView(ctx, topic));
+            validateTopic(ctx, message);
+
+            messageQueue = queueSelector.select(ctx, this.serviceManager.getTopicRouteService().getCurrentMessageQueueView(ctx, topic));
             if (messageQueue == null) {
                 throw new ProxyException(ProxyExceptionCode.FORBIDDEN, "no writable queue");
             }
