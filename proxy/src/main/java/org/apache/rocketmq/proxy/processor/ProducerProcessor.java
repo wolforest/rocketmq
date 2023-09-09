@@ -134,8 +134,9 @@ public class ProducerProcessor extends AbstractProcessor {
                 }
             }
             return sendResultList;
-        }, this.executor)
-        .whenComplete((result, exception) -> {
+        }, this.executor);
+        
+        future.whenComplete((result, exception) -> {
             long endTimestamp = System.currentTimeMillis();
             if (exception != null) {
                 this.serviceManager.getTopicRouteService().updateFaultItem(finalMessageQueue.getBrokerName(), endTimestamp - beginTimestampFirst, true, false);
