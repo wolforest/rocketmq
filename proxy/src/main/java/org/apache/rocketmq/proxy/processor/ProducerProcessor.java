@@ -64,6 +64,28 @@ public class ProducerProcessor extends AbstractProcessor {
         this.topicMessageTypeValidator = new DefaultTopicMessageTypeValidator();
     }
 
+    public CompletableFuture<List<SendResult>> sendMessage(ProxyContext ctx, QueueSelector queueSelector,
+        String producerGroup, int sysFlag, List<Message> messageList, long timeoutMillis) {
+        CompletableFuture<List<SendResult>> future = new CompletableFuture<>();
+        long beginTimestampFirst = System.currentTimeMillis();
+        try {
+            Message message = messageList.get(0);
+            String topic = message.getTopic();
+
+            validateTopic(ctx, message);
+            AddressableMessageQueue messageQueue = getMessageQueue(ctx, queueSelector, topic);
+            initUniqueId(messageList);
+            SendMessageRequestHeader requestHeader = buildSendMessageRequestHeader(messageList, producerGroup, sysFlag, messageQueue.getQueueId());
+
+            future = this.serviceManager.getMessageService().sendMessage(ctx, messageQueue, messageList, requestHeader, timeoutMillis);
+            addSendCallback(future, ctx, producerGroup, beginTimestampFirst, messageList, requestHeader, messageQueue);
+
+        } catch (Throwable t) {
+            future.completeExceptionally(t);
+        }
+        return FutureUtils.addExecutor(future, this.executor);
+    }
+
     private void validateTopic(ProxyContext ctx, Message message) {
         String topic = message.getTopic();
 
@@ -100,49 +122,27 @@ public class ProducerProcessor extends AbstractProcessor {
         }
     }
 
-    public CompletableFuture<List<SendResult>> sendMessage(ProxyContext ctx, QueueSelector queueSelector,
-        String producerGroup, int sysFlag, List<Message> messageList, long timeoutMillis) {
-        CompletableFuture<List<SendResult>> future = new CompletableFuture<>();
-        long beginTimestampFirst = System.currentTimeMillis();
-        try {
-            Message message = messageList.get(0);
-            String topic = message.getTopic();
-
-            validateTopic(ctx, message);
-            AddressableMessageQueue messageQueue = getMessageQueue(ctx, queueSelector, topic);
-            initUniqueId(messageList);
-            SendMessageRequestHeader requestHeader = buildSendMessageRequestHeader(messageList, producerGroup, sysFlag, messageQueue.getQueueId());
-
-            AddressableMessageQueue finalMessageQueue = messageQueue;
-            future = this.serviceManager.getMessageService().sendMessage(
-                ctx,
-                messageQueue,
-                messageList,
-                requestHeader,
-                timeoutMillis)
-                .thenApplyAsync(sendResultList -> {
-                    for (SendResult sendResult : sendResultList) {
-                        int tranType = MessageSysFlag.getTransactionValue(requestHeader.getSysFlag());
-                        if (SendStatus.SEND_OK.equals(sendResult.getSendStatus()) &&
-                            tranType == MessageSysFlag.TRANSACTION_PREPARED_TYPE &&
-                            StringUtils.isNotBlank(sendResult.getTransactionId())) {
-                            fillTransactionData(ctx, producerGroup, finalMessageQueue, sendResult, messageList);
-                        }
-                    }
-                    return sendResultList;
-                }, this.executor)
-                    .whenComplete((result, exception) -> {
-                        long endTimestamp = System.currentTimeMillis();
-                        if (exception != null) {
-                            this.serviceManager.getTopicRouteService().updateFaultItem(finalMessageQueue.getBrokerName(), endTimestamp - beginTimestampFirst, true, false);
-                        } else {
-                            this.serviceManager.getTopicRouteService().updateFaultItem(finalMessageQueue.getBrokerName(),endTimestamp - beginTimestampFirst, false, true);
-                        }
-                    });
-        } catch (Throwable t) {
-            future.completeExceptionally(t);
-        }
-        return FutureUtils.addExecutor(future, this.executor);
+    private void addSendCallback(CompletableFuture<List<SendResult>> future, ProxyContext ctx, String producerGroup, long beginTimestampFirst,
+        List<Message> messageList, SendMessageRequestHeader requestHeader, AddressableMessageQueue finalMessageQueue) {
+        future.thenApplyAsync(sendResultList -> {
+            for (SendResult sendResult : sendResultList) {
+                int tranType = MessageSysFlag.getTransactionValue(requestHeader.getSysFlag());
+                if (SendStatus.SEND_OK.equals(sendResult.getSendStatus()) &&
+                    tranType == MessageSysFlag.TRANSACTION_PREPARED_TYPE &&
+                    StringUtils.isNotBlank(sendResult.getTransactionId())) {
+                    fillTransactionData(ctx, producerGroup, finalMessageQueue, sendResult, messageList);
+                }
+            }
+            return sendResultList;
+        }, this.executor)
+        .whenComplete((result, exception) -> {
+            long endTimestamp = System.currentTimeMillis();
+            if (exception != null) {
+                this.serviceManager.getTopicRouteService().updateFaultItem(finalMessageQueue.getBrokerName(), endTimestamp - beginTimestampFirst, true, false);
+            } else {
+                this.serviceManager.getTopicRouteService().updateFaultItem(finalMessageQueue.getBrokerName(),endTimestamp - beginTimestampFirst, false, true);
+            }
+        });
     }
 
     protected void fillTransactionData(ProxyContext ctx, String producerGroup, AddressableMessageQueue messageQueue, SendResult sendResult, List<Message> messageList) {
