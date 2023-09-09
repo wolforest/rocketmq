@@ -94,6 +94,12 @@ public class ProducerProcessor extends AbstractProcessor {
         return messageQueue;
     }
 
+    private void initUniqueId(List<Message> messageList) {
+        for (Message msg : messageList) {
+            MessageClientIDSetter.setUniqID(msg);
+        }
+    }
+
     public CompletableFuture<List<SendResult>> sendMessage(ProxyContext ctx, QueueSelector queueSelector,
         String producerGroup, int sysFlag, List<Message> messageList, long timeoutMillis) {
         CompletableFuture<List<SendResult>> future = new CompletableFuture<>();
@@ -104,10 +110,7 @@ public class ProducerProcessor extends AbstractProcessor {
 
             validateTopic(ctx, message);
             AddressableMessageQueue messageQueue = getMessageQueue(ctx, queueSelector, topic);
-
-            for (Message msg : messageList) {
-                MessageClientIDSetter.setUniqID(msg);
-            }
+            initUniqueId(messageList);
             SendMessageRequestHeader requestHeader = buildSendMessageRequestHeader(messageList, producerGroup, sysFlag, messageQueue.getQueueId());
 
             AddressableMessageQueue finalMessageQueue = messageQueue;
