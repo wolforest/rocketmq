@@ -84,20 +84,26 @@ public class ProducerProcessor extends AbstractProcessor {
         topicMessageTypeValidator.validate(topicMessageType, messageType);
     }
 
+    private AddressableMessageQueue getMessageQueue(ProxyContext ctx, QueueSelector queueSelector, String topic) throws Exception {
+        AddressableMessageQueue messageQueue;
+        messageQueue = queueSelector.select(ctx, this.serviceManager.getTopicRouteService().getCurrentMessageQueueView(ctx, topic));
+        if (messageQueue == null) {
+            throw new ProxyException(ProxyExceptionCode.FORBIDDEN, "no writable queue");
+        }
+
+        return messageQueue;
+    }
+
     public CompletableFuture<List<SendResult>> sendMessage(ProxyContext ctx, QueueSelector queueSelector,
         String producerGroup, int sysFlag, List<Message> messageList, long timeoutMillis) {
         CompletableFuture<List<SendResult>> future = new CompletableFuture<>();
         long beginTimestampFirst = System.currentTimeMillis();
-        AddressableMessageQueue messageQueue = null;
         try {
             Message message = messageList.get(0);
             String topic = message.getTopic();
-            validateTopic(ctx, message);
 
-            messageQueue = queueSelector.select(ctx, this.serviceManager.getTopicRouteService().getCurrentMessageQueueView(ctx, topic));
-            if (messageQueue == null) {
-                throw new ProxyException(ProxyExceptionCode.FORBIDDEN, "no writable queue");
-            }
+            validateTopic(ctx, message);
+            AddressableMessageQueue messageQueue = getMessageQueue(ctx, queueSelector, topic);
 
             for (Message msg : messageList) {
                 MessageClientIDSetter.setUniqID(msg);
