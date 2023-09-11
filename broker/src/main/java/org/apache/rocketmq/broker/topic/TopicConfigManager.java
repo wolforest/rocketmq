@@ -567,15 +567,18 @@ public class TopicConfigManager extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            TopicConfigSerializeWrapper topicConfigSerializeWrapper =
-                TopicConfigSerializeWrapper.fromJson(jsonString, TopicConfigSerializeWrapper.class);
-            if (topicConfigSerializeWrapper != null) {
-                this.topicConfigTable.putAll(topicConfigSerializeWrapper.getTopicConfigTable());
-                this.dataVersion.assignNewOne(topicConfigSerializeWrapper.getDataVersion());
-                this.printLoadDataWhenFirstBoot(topicConfigSerializeWrapper);
-            }
+        if (jsonString == null) {
+            return;
         }
+
+        TopicConfigSerializeWrapper topicConfigSerializeWrapper = TopicConfigSerializeWrapper.fromJson(jsonString, TopicConfigSerializeWrapper.class);
+        if (topicConfigSerializeWrapper == null) {
+            return;
+        }
+
+        this.topicConfigTable.putAll(topicConfigSerializeWrapper.getTopicConfigTable());
+        this.dataVersion.assignNewOne(topicConfigSerializeWrapper.getDataVersion());
+        this.printLoadDataWhenFirstBoot(topicConfigSerializeWrapper);
     }
 
     public String encode(final boolean prettyFormat) {
