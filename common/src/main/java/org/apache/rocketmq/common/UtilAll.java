@@ -320,6 +320,7 @@ public class UtilAll {
         return (int) (crc32.getValue() & 0x7FFFFFFF);
     }
 
+    @Deprecated
     public static String bytes2string(byte[] src) {
         char[] hexChars = new char[src.length * 2];
         for (int j = 0; j < src.length; j++) {
@@ -343,7 +344,7 @@ public class UtilAll {
             buffer[pos++] = hexArray[(value >>> moveBits) & 0x0F];
         }
     }
-
+    @Deprecated
     public static byte[] string2bytes(String hexString) {
         if (hexString == null || hexString.equals("")) {
             return null;
@@ -358,7 +359,7 @@ public class UtilAll {
         }
         return d;
     }
-
+    @Deprecated
     private static byte charToByte(char c) {
         return (byte) "0123456789ABCDEF".indexOf(c);
     }
@@ -682,6 +683,7 @@ public class UtilAll {
         return str.toString();
     }
 
+    @Deprecated
     public static List<String> split(String str, String splitter) {
         if (str == null) {
             return null;

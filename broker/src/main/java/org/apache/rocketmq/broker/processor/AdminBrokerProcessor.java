@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang3.StringUtils;
+
 import org.apache.rocketmq.acl.AccessValidator;
 import org.apache.rocketmq.acl.plain.PlainAccessValidator;
 import org.apache.rocketmq.broker.BrokerController;
@@ -75,6 +75,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.stats.StatsItem;
 import org.apache.rocketmq.common.stats.StatsSnapshot;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.filter.util.BitsArray;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -579,8 +580,8 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         accessConfig.setWhiteRemoteAddress(requestHeader.getWhiteRemoteAddress());
         accessConfig.setDefaultTopicPerm(requestHeader.getDefaultTopicPerm());
         accessConfig.setDefaultGroupPerm(requestHeader.getDefaultGroupPerm());
-        accessConfig.setTopicPerms(UtilAll.split(requestHeader.getTopicPerms(), ","));
-        accessConfig.setGroupPerms(UtilAll.split(requestHeader.getGroupPerms(), ","));
+        accessConfig.setTopicPerms(StringUtils.split(requestHeader.getTopicPerms(), ","));
+        accessConfig.setGroupPerms(StringUtils.split(requestHeader.getGroupPerms(), ","));
         accessConfig.setAdmin(requestHeader.isAdmin());
         try {
 
@@ -653,7 +654,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
         try {
             AccessValidator accessValidator = this.brokerController.getAccessValidatorMap().get(PlainAccessValidator.class);
-            if (accessValidator.updateGlobalWhiteAddrsConfig(UtilAll.split(requestHeader.getGlobalWhiteAddrs(), ","),
+            if (accessValidator.updateGlobalWhiteAddrsConfig(StringUtils.split(requestHeader.getGlobalWhiteAddrs(), ","),
                 requestHeader.getAclFileFullPath())) {
                 response.setCode(ResponseCode.SUCCESS);
                 response.setOpaque(request.getOpaque());
@@ -2165,14 +2166,14 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         // brokerName
         request.getExtFields().put("brokerName", this.brokerController.getBrokerConfig().getBrokerName());
         // topicSysFlag
-        if (StringUtils.isNotEmpty(requestHeader.getTopic())) {
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(requestHeader.getTopic())) {
             TopicConfig topicConfig = this.brokerController.getTopicConfigManager().getTopicConfigTable().get(requestHeader.getTopic());
             if (topicConfig != null) {
                 request.addExtField("topicSysFlag", String.valueOf(topicConfig.getTopicSysFlag()));
             }
         }
         // groupSysFlag
-        if (StringUtils.isNotEmpty(requestHeader.getConsumerGroup())) {
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(requestHeader.getConsumerGroup())) {
             SubscriptionGroupConfig groupConfig = brokerController.getSubscriptionGroupManager().getSubscriptionGroupTable().get(requestHeader.getConsumerGroup());
             if (groupConfig != null) {
                 request.addExtField("groupSysFlag", String.valueOf(groupConfig.getGroupSysFlag()));

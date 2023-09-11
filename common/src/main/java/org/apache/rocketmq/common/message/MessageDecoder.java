@@ -33,6 +33,7 @@ import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.compression.Compressor;
 import org.apache.rocketmq.common.compression.CompressorFactory;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.utils.StringUtils;
 
 public class MessageDecoder {
 //    public final static int MSG_ID_LENGTH = 8 + 8;
@@ -77,7 +78,7 @@ public class MessageDecoder {
         input.put(addr);
         input.putLong(offset);
 
-        return UtilAll.bytes2string(input.array());
+        return StringUtils.bytes2string(input.array());
     }
 
     public static String createMessageId(SocketAddress socketAddress, long transactionIdhashCode) {
@@ -88,11 +89,11 @@ public class MessageDecoder {
         byteBuffer.putInt(inetSocketAddress.getPort());
         byteBuffer.putLong(transactionIdhashCode);
         byteBuffer.flip();
-        return UtilAll.bytes2string(byteBuffer.array());
+        return StringUtils.bytes2string(byteBuffer.array());
     }
 
     public static MessageId decodeMessageId(final String msgId) throws UnknownHostException {
-        byte[] bytes = UtilAll.string2bytes(msgId);
+        byte[] bytes = StringUtils.string2bytes(msgId);
         ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
         // address(ip+port)

@@ -16,12 +16,12 @@
  */
 package org.apache.rocketmq.store.commitlog;
 
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.AppendMessageResult;
@@ -64,7 +64,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
             MessageExt.socketAddress2ByteBuffer(msgInner.getStoreHost(), msgIdBuffer);
             msgIdBuffer.clear();//because socketAddress2ByteBuffer flip the buffer
             msgIdBuffer.putLong(msgIdLen - 8, wroteOffset);
-            return UtilAll.bytes2string(msgIdBuffer.array());
+            return StringUtils.bytes2string(msgIdBuffer.array());
         };
 
         // Record ConsumeQueue information
@@ -157,7 +157,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
             StringBuilder buffer = new StringBuilder(batchCount * msgIdLen * 2 + batchCount - 1);
             for (int i = 0; i < phyPosArray.length; i++) {
                 msgIdBuffer.putLong(msgIdLen - 8, phyPosArray[i]);
-                String msgId = UtilAll.bytes2string(msgIdBuffer.array());
+                String msgId = StringUtils.bytes2string(msgIdBuffer.array());
                 if (i != 0) {
                     buffer.append(',');
                 }
