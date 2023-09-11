@@ -682,6 +682,7 @@ public class UtilAll {
         return str.toString();
     }
 
+    @Deprecated
     public static List<String> split(String str, String splitter) {
         if (str == null) {
             return null;
