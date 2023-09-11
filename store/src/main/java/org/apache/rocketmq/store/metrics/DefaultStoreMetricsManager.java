@@ -86,13 +86,10 @@ public class DefaultStoreMetricsManager {
         if (messageStore.getMessageStoreConfig().isTimerWheelEnable()) {
             initTimerEnqueueLag(meter, messageStore);
             initTimerEnqueueLatency(meter, messageStore);
-
             initTimerDequeueLag(meter, messageStore);
             initTimerDequeueLatency(meter, messageStore);
             initTimingMessages(meter, messageStore);
-            timerDequeueTotal = meter.counterBuilder(COUNTER_TIMER_DEQUEUE_TOTAL)
-                .setDescription("Total number of timer dequeue")
-                .build();
+            initTimerDequeueTotal(meter);
             timerEnqueueTotal = meter.counterBuilder(COUNTER_TIMER_ENQUEUE_TOTAL)
                 .setDescription("Total number of timer enqueue")
                 .build();
@@ -202,6 +199,12 @@ public class DefaultStoreMetricsManager {
                         );
                     });
             });
+    }
+
+    private static void initTimerDequeueTotal(Meter meter) {
+        timerDequeueTotal = meter.counterBuilder(COUNTER_TIMER_DEQUEUE_TOTAL)
+            .setDescription("Total number of timer dequeue")
+            .build();
     }
 
     public static void incTimerDequeueCount(String topic) {
