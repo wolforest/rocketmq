@@ -16,10 +16,29 @@
  */
 package org.apache.rocketmq.common.utils;
 
+import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class StringUtils {
+
+    private final static char[] HEX_ARRAY;
+    private final static int PID;
+
+    static {
+        HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+        Supplier<Integer> supplier = () -> {
+            // format: "pid@hostname"
+            String currentJVM = ManagementFactory.getRuntimeMXBean().getName();
+            try {
+                return Integer.parseInt(currentJVM.substring(0, currentJVM.indexOf('@')));
+            } catch (Exception e) {
+                return -1;
+            }
+        };
+        PID = supplier.get();
+    }
 
     public static List<String> split(String str, String splitter) {
         if (str == null) {
@@ -29,4 +48,16 @@ public class StringUtils {
         String[] addrArray = str.split(splitter);
         return Arrays.asList(addrArray);
     }
+
+    public static String bytes2string(byte[] src) {
+        char[] hexChars = new char[src.length * 2];
+        for (int j = 0; j < src.length; j++) {
+            int v = src[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
+
+
 }

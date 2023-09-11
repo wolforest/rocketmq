@@ -21,6 +21,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.StringUtils;
 
 public class MessageClientIDSetter {
     
@@ -42,7 +43,7 @@ public class MessageClientIDSetter {
         tempBuffer.put(ip);
         tempBuffer.putShort((short) UtilAll.getPid());
         tempBuffer.putInt(MessageClientIDSetter.class.getClassLoader().hashCode());
-        FIX_STRING = UtilAll.bytes2string(tempBuffer.array()).toCharArray();
+        FIX_STRING = StringUtils.bytes2string(tempBuffer.array()).toCharArray();
         setStartTime(System.currentTimeMillis());
         COUNTER = new AtomicInteger(0);
     }

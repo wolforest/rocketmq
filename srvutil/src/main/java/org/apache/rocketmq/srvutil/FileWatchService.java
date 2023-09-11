@@ -18,6 +18,12 @@
 package org.apache.rocketmq.srvutil;
 
 import com.google.common.base.Strings;
+import org.apache.rocketmq.common.LifecycleAwareServiceThread;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,11 +32,6 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.rocketmq.common.LifecycleAwareServiceThread;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 public class FileWatchService extends LifecycleAwareServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
@@ -103,7 +104,7 @@ public class FileWatchService extends LifecycleAwareServiceThread {
         }
         md.update(raw);
         byte[] hash = md.digest();
-        return UtilAll.bytes2string(hash);
+        return StringUtils.bytes2string(hash);
     }
 
     public interface Listener {

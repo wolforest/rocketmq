@@ -16,17 +16,18 @@
  */
 package org.apache.rocketmq.tieredstore.util;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageDecoder;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.tieredstore.file.TieredCommitLog;
 import org.apache.rocketmq.tieredstore.file.TieredConsumeQueue;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class MessageBufferUtil {
     private static final Logger logger = LoggerFactory.getLogger(TieredStoreUtil.TIERED_STORE_LOGGER_NAME);
@@ -105,7 +106,7 @@ public class MessageBufferUtil {
     }
 
     public static String getOffsetId(ByteBuffer message) {
-        return UtilAll.bytes2string(getOffsetIdBuffer(message).array());
+        return StringUtils.bytes2string(getOffsetIdBuffer(message).array());
     }
 
     public static Map<String, String> getProperties(ByteBuffer message) {
