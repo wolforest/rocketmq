@@ -90,6 +90,12 @@ public class StoreStatsService extends ServiceThread {
     }
 
     public StoreStatsService() {
+        this.initBucketRules();
+        this.resetPutMessageTimeBuckets();
+        this.resetPutMessageDistributeTime();
+    }
+
+    private void initBucketRules() {
         PUT_MESSAGE_ENTIRE_TIME_BUCKETS.put(1,20);  //0-20
         PUT_MESSAGE_ENTIRE_TIME_BUCKETS.put(2,15);  //20-50
         PUT_MESSAGE_ENTIRE_TIME_BUCKETS.put(5,10);  //50-100
@@ -97,9 +103,6 @@ public class StoreStatsService extends ServiceThread {
         PUT_MESSAGE_ENTIRE_TIME_BUCKETS.put(50,6);  //200-500
         PUT_MESSAGE_ENTIRE_TIME_BUCKETS.put(100,5);  //500-1000
         PUT_MESSAGE_ENTIRE_TIME_BUCKETS.put(1000,9);  //1s-10s
-
-        this.resetPutMessageTimeBuckets();
-        this.resetPutMessageDistributeTime();
     }
 
     private void resetPutMessageTimeBuckets() {
