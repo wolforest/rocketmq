@@ -615,13 +615,13 @@ public class TopicConfigManager extends ConfigManager {
         TopicConfig topicConfig = getTopicConfig(topic);
         if (topicConfig == null) {
             return new HashMap<>();
+        }
+
+        Map<String, String> attributes = topicConfig.getAttributes();
+        if (attributes == null) {
+            return new HashMap<>();
         } else {
-            Map<String, String> attributes = topicConfig.getAttributes();
-            if (attributes == null) {
-                return new HashMap<>();
-            } else {
-                return attributes;
-            }
+            return attributes;
         }
     }
 
