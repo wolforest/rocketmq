@@ -17,14 +17,13 @@
 
 package org.apache.rocketmq.common.stats;
 
+import org.apache.rocketmq.common.utils.TimeUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+
 import java.util.LinkedList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.utils.TimeUtils;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
 
 public class StatsItem {
     private final LongAdder value = new LongAdder();
@@ -140,7 +139,7 @@ public class StatsItem {
                 } catch (Throwable ignored) {
                 }
             }
-        }, Math.abs(UtilAll.computeNextHourTimeMillis() - System.currentTimeMillis()), 1000 * 60 * 60, TimeUnit.MILLISECONDS);
+        }, Math.abs(TimeUtils.computeNextHourTimeMillis() - System.currentTimeMillis()), 1000 * 60 * 60, TimeUnit.MILLISECONDS);
 
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override

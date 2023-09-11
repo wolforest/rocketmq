@@ -182,6 +182,7 @@ public class UtilAll {
         return cal.getTimeInMillis();
     }
 
+    @Deprecated
     public static long computeNextHourTimeMillis() {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(System.currentTimeMillis());
