@@ -63,7 +63,7 @@ public class MessageClientIDSetter {
 
     public static Date getNearlyTimeFromID(String msgID) {
         ByteBuffer buf = ByteBuffer.allocate(8);
-        byte[] bytes = UtilAll.string2bytes(msgID);
+        byte[] bytes = StringUtils.string2bytes(msgID);
         int ipLength = bytes.length == 28 ? 16 : 4;
         buf.put((byte) 0);
         buf.put((byte) 0);
@@ -98,7 +98,7 @@ public class MessageClientIDSetter {
     }
 
     public static byte[] getIPFromID(String msgID) {
-        byte[] bytes = UtilAll.string2bytes(msgID);
+        byte[] bytes = StringUtils.string2bytes(msgID);
         int ipLength = bytes.length == 28 ? 16 : 4;
         byte[] result = new byte[ipLength];
         System.arraycopy(bytes, 0, result, 0, ipLength);
@@ -106,7 +106,7 @@ public class MessageClientIDSetter {
     }
 
     public static int getPidFromID(String msgID) {
-        byte[] bytes = UtilAll.string2bytes(msgID);
+        byte[] bytes = StringUtils.string2bytes(msgID);
         ByteBuffer wrap = ByteBuffer.wrap(bytes);
         int value = wrap.getShort(bytes.length - 2 - 4 - 4 - 2);
         return value & 0x0000FFFF;

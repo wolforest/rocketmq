@@ -93,7 +93,7 @@ public class MessageDecoder {
     }
 
     public static MessageId decodeMessageId(final String msgId) throws UnknownHostException {
-        byte[] bytes = UtilAll.string2bytes(msgId);
+        byte[] bytes = StringUtils.string2bytes(msgId);
         ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
 
         // address(ip+port)

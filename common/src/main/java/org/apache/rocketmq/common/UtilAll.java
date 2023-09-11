@@ -344,7 +344,7 @@ public class UtilAll {
             buffer[pos++] = hexArray[(value >>> moveBits) & 0x0F];
         }
     }
-
+    @Deprecated
     public static byte[] string2bytes(String hexString) {
         if (hexString == null || hexString.equals("")) {
             return null;
@@ -359,7 +359,7 @@ public class UtilAll {
         }
         return d;
     }
-
+    @Deprecated
     private static byte charToByte(char c) {
         return (byte) "0123456789ABCDEF".indexOf(c);
     }
