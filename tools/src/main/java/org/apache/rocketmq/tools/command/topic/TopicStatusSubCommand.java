@@ -24,6 +24,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
 import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
@@ -80,7 +81,7 @@ public class TopicStatusSubCommand implements SubCommand {
 
                 String humanTimestamp = "";
                 if (topicOffset.getLastUpdateTimestamp() > 0) {
-                    humanTimestamp = UtilAll.timeMillisToHumanString2(topicOffset.getLastUpdateTimestamp());
+                    humanTimestamp = TimeUtils.timeMillisToHumanString2(topicOffset.getLastUpdateTimestamp());
                 }
 
                 System.out.printf("%-32s  %-4d  %-20d  %-20d    %s%n",

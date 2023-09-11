@@ -17,11 +17,10 @@
 
 package org.apache.rocketmq.tools.command.ha;
 
-import java.util.Set;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo.HAClientRuntimeInfo;
@@ -31,6 +30,8 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+
+import java.util.Set;
 
 public class HAStatusSubCommand implements SubCommand {
 
@@ -141,8 +142,8 @@ public class HAStatusSubCommand implements SubCommand {
             System.out.printf("\n#MasterAddr\t%s\n", haClientRuntimeInfo.getMasterAddr());
             System.out.printf("#CommitLogMaxOffset\t%d\n", haClientRuntimeInfo.getMaxOffset());
             System.out.printf("#TransferSpeed(KB/s)\t%.2f\n", haClientRuntimeInfo.getTransferredByteInSecond() / 1024.0);
-            System.out.printf("#LastReadTime\t%s\n", UtilAll.timeMillisToHumanString2(haClientRuntimeInfo.getLastReadTimestamp()));
-            System.out.printf("#LastWriteTime\t%s\n", UtilAll.timeMillisToHumanString2(haClientRuntimeInfo.getLastWriteTimestamp()));
+            System.out.printf("#LastReadTime\t%s\n", TimeUtils.timeMillisToHumanString2(haClientRuntimeInfo.getLastReadTimestamp()));
+            System.out.printf("#LastWriteTime\t%s\n", TimeUtils.timeMillisToHumanString2(haClientRuntimeInfo.getLastWriteTimestamp()));
             System.out.printf("#MasterFlushOffset\t%s\n", haClientRuntimeInfo.getMasterFlushOffset());
         }
     }

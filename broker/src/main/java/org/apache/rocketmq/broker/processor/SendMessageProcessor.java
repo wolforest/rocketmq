@@ -48,6 +48,7 @@ import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.CleanupPolicyUtils;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -651,7 +652,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
         final long startTimestamp = this.brokerController.getBrokerConfig().getStartAcceptSendRequestTimeStamp();
         if (this.brokerController.getMessageStore().now() < startTimestamp) {
-            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, String.format("broker unable to service, until %s", UtilAll.timeMillisToHumanString2(startTimestamp)));
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, String.format("broker unable to service, until %s", TimeUtils.timeMillisToHumanString2(startTimestamp)));
         }
 
         response.setCode(-1);

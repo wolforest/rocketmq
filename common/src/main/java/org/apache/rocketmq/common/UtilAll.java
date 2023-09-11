@@ -195,6 +195,7 @@ public class UtilAll {
         return cal.getTimeInMillis();
     }
 
+    @Deprecated
     public static long computeNextHalfHourTimeMillis() {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(System.currentTimeMillis());
@@ -207,6 +208,7 @@ public class UtilAll {
         return cal.getTimeInMillis();
     }
 
+    @Deprecated
     public static String timeMillisToHumanString2(final long t) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(t);

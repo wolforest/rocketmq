@@ -16,12 +16,6 @@
  */
 package org.apache.rocketmq.tools.command.message;
 
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -30,9 +24,9 @@ import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageClientExt;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -42,6 +36,13 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.api.MessageTrack;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.List;
 
 public class QueryMsgByIdSubCommand implements SubCommand {
     public static void queryById(final DefaultMQAdminExt admin, final String msgId, final Charset msgBodyCharset) throws MQClientException,
@@ -109,12 +110,12 @@ public class QueryMsgByIdSubCommand implements SubCommand {
 
         System.out.printf("%-20s %s%n",
             "Born Timestamp:",
-            UtilAll.timeMillisToHumanString2(msg.getBornTimestamp())
+            TimeUtils.timeMillisToHumanString2(msg.getBornTimestamp())
         );
 
         System.out.printf("%-20s %s%n",
             "Store Timestamp:",
-            UtilAll.timeMillisToHumanString2(msg.getStoreTimestamp())
+            TimeUtils.timeMillisToHumanString2(msg.getStoreTimestamp())
         );
 
         System.out.printf("%-20s %s%n",

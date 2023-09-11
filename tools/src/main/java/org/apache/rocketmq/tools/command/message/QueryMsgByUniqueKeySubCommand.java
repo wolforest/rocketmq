@@ -16,19 +16,14 @@
  */
 package org.apache.rocketmq.tools.command.message;
 
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.QueryResult;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -38,6 +33,12 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.api.MessageTrack;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
 
 public class QueryMsgByUniqueKeySubCommand implements SubCommand {
 
@@ -88,8 +89,8 @@ public class QueryMsgByUniqueKeySubCommand implements SubCommand {
         System.out.printf(intFormat, "Queue Offset:", msg.getQueueOffset());
         System.out.printf(intFormat, "CommitLog Offset:", msg.getCommitLogOffset());
         System.out.printf(intFormat, "Reconsume Times:", msg.getReconsumeTimes());
-        System.out.printf(strFormat, "Born Timestamp:", UtilAll.timeMillisToHumanString2(msg.getBornTimestamp()));
-        System.out.printf(strFormat, "Store Timestamp:", UtilAll.timeMillisToHumanString2(msg.getStoreTimestamp()));
+        System.out.printf(strFormat, "Born Timestamp:", TimeUtils.timeMillisToHumanString2(msg.getBornTimestamp()));
+        System.out.printf(strFormat, "Store Timestamp:", TimeUtils.timeMillisToHumanString2(msg.getStoreTimestamp()));
         System.out.printf(strFormat, "Born Host:", RemotingHelper.parseSocketAddressAddr(msg.getBornHost()));
         System.out.printf(strFormat, "Store Host:", RemotingHelper.parseSocketAddressAddr(msg.getStoreHost()));
         System.out.printf(intFormat, "System Flag:", msg.getSysFlag());

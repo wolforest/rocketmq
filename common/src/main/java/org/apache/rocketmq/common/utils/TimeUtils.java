@@ -87,4 +87,29 @@ public class TimeUtils {
         return cal.getTimeInMillis();
     }
 
+    public static long computeNextHalfHourTimeMillis() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(System.currentTimeMillis());
+        cal.add(Calendar.DAY_OF_MONTH, 0);
+        cal.add(Calendar.HOUR_OF_DAY, 1);
+        cal.set(Calendar.MINUTE, 30);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        return cal.getTimeInMillis();
+    }
+
+    public static String timeMillisToHumanString2(final long t) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(t);
+        return String.format("%04d-%02d-%02d %02d:%02d:%02d,%03d",
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH) + 1,
+                cal.get(Calendar.DAY_OF_MONTH),
+                cal.get(Calendar.HOUR_OF_DAY),
+                cal.get(Calendar.MINUTE),
+                cal.get(Calendar.SECOND),
+                cal.get(Calendar.MILLISECOND));
+    }
+
 }
