@@ -158,6 +158,7 @@ public class BrokerNettyServer {
     public void init() throws CloneNotSupportedException {
         initRemotingServer();
         initResources();
+        registerProcessor();
         initAcl();
         initRpcHooks();
     }
@@ -345,7 +346,7 @@ public class BrokerNettyServer {
 
     }
 
-    public void registerProcessor() {
+    private void registerProcessor() {
         /*
          * SendMessageProcessor
          */

@@ -135,28 +135,34 @@ public class BrokerServiceRegistry {
     }
 
     public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway, boolean forceRegister) {
-        TopicConfigAndMappingSerializeWrapper topicConfigWrapper = new TopicConfigAndMappingSerializeWrapper();
+        ConcurrentMap<String, TopicConfig> topicConfigMap = brokerController.getTopicConfigManager().getTopicConfigTable();
+        ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>();
 
-        topicConfigWrapper.setDataVersion(brokerController.getBrokerMetadataManager().getTopicConfigManager().getDataVersion());
-        topicConfigWrapper.setTopicConfigTable(brokerController.getBrokerMetadataManager().getTopicConfigManager().getTopicConfigTable());
-
-        topicConfigWrapper.setTopicQueueMappingInfoMap(brokerController.getBrokerMetadataManager().getTopicQueueMappingManager().getTopicQueueMappingTable().entrySet().stream().map(
-            entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), TopicQueueMappingDetail.cloneAsMappingInfo(entry.getValue()))
-        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-
-        if (!PermName.isWriteable(this.brokerConfig.getBrokerPermission())
-            || !PermName.isReadable(this.brokerConfig.getBrokerPermission())) {
-            ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>();
-            for (TopicConfig topicConfig : topicConfigWrapper.getTopicConfigTable().values()) {
-                TopicConfig tmp =
+        for (TopicConfig topicConfig : topicConfigMap.values()) {
+            if (!PermName.isWriteable(brokerController.getBrokerConfig().getBrokerPermission())
+                || !PermName.isReadable(brokerController.getBrokerConfig().getBrokerPermission())) {
+                topicConfigTable.put(topicConfig.getTopicName(),
                     new TopicConfig(topicConfig.getTopicName(), topicConfig.getReadQueueNums(), topicConfig.getWriteQueueNums(),
-                        topicConfig.getPerm() & this.brokerConfig.getBrokerPermission(), topicConfig.getTopicSysFlag());
-                topicConfigTable.put(topicConfig.getTopicName(), tmp);
+                        topicConfig.getPerm() & brokerController.getBrokerConfig().getBrokerPermission()));
+            } else {
+                topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
             }
-            topicConfigWrapper.setTopicConfigTable(topicConfigTable);
+
+            if (this.brokerConfig.isEnableSplitRegistration()
+                && topicConfigTable.size() >= this.brokerConfig.getSplitRegistrationSize()) {
+                TopicConfigAndMappingSerializeWrapper topicConfigWrapper = brokerController.getTopicConfigManager().buildSerializeWrapper(topicConfigTable);
+                doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);
+                topicConfigTable.clear();
+            }
         }
 
-        if (forceRegister || needRegister(this.brokerConfig.getBrokerClusterName(),
+        Map<String, TopicQueueMappingInfo> topicQueueMappingInfoMap = brokerController.getTopicQueueMappingManager().getTopicQueueMappingTable().entrySet().stream()
+            .map(entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), TopicQueueMappingDetail.cloneAsMappingInfo(entry.getValue())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        TopicConfigAndMappingSerializeWrapper topicConfigWrapper = brokerController.getTopicConfigManager().
+            buildSerializeWrapper(topicConfigTable, topicQueueMappingInfoMap);
+        if (this.brokerConfig.isEnableSplitRegistration() || forceRegister || needRegister(this.brokerConfig.getBrokerClusterName(),
             brokerController.getBrokerAddr(),
             this.brokerConfig.getBrokerName(),
             this.brokerConfig.getBrokerId(),
