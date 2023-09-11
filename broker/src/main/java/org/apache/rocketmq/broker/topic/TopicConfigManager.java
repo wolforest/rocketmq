@@ -518,14 +518,15 @@ public class TopicConfigManager extends ConfigManager {
 
     public void deleteTopicConfig(final String topic) {
         TopicConfig old = removeTopicConfig(topic);
-        if (old != null) {
-            log.info("delete topic config OK, topic: {}", old);
-            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-            dataVersion.nextVersion(stateMachineVersion);
-            this.persist();
-        } else {
+        if (old == null) {
             log.warn("delete topic config failed, topic: {} not exists", topic);
+            return;
         }
+
+        log.info("delete topic config OK, topic: {}", old);
+        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        dataVersion.nextVersion(stateMachineVersion);
+        this.persist();
     }
 
     public TopicConfigSerializeWrapper buildTopicConfigSerializeWrapper() {
