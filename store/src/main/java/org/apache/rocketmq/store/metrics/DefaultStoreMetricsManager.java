@@ -90,9 +90,7 @@ public class DefaultStoreMetricsManager {
             initTimerDequeueLatency(meter, messageStore);
             initTimingMessages(meter, messageStore);
             initTimerDequeueTotal(meter);
-            timerEnqueueTotal = meter.counterBuilder(COUNTER_TIMER_ENQUEUE_TOTAL)
-                .setDescription("Total number of timer enqueue")
-                .build();
+            initTimerEnqueueTotal(meter);
         }
     }
 
@@ -204,6 +202,12 @@ public class DefaultStoreMetricsManager {
     private static void initTimerDequeueTotal(Meter meter) {
         timerDequeueTotal = meter.counterBuilder(COUNTER_TIMER_DEQUEUE_TOTAL)
             .setDescription("Total number of timer dequeue")
+            .build();
+    }
+
+    private static void initTimerEnqueueTotal(Meter meter) {
+        timerEnqueueTotal = meter.counterBuilder(COUNTER_TIMER_ENQUEUE_TOTAL)
+            .setDescription("Total number of timer enqueue")
             .build();
     }
 
