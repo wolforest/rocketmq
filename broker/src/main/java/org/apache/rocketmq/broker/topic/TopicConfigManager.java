@@ -388,28 +388,29 @@ public class TopicConfigManager extends ConfigManager {
     }
 
     public void updateTopicUnitFlag(final String topic, final boolean unit) {
-
         TopicConfig topicConfig = getTopicConfig(topic);
-        if (topicConfig != null) {
-            int oldTopicSysFlag = topicConfig.getTopicSysFlag();
-            if (unit) {
-                topicConfig.setTopicSysFlag(TopicSysFlag.setUnitFlag(oldTopicSysFlag));
-            } else {
-                topicConfig.setTopicSysFlag(TopicSysFlag.clearUnitFlag(oldTopicSysFlag));
-            }
-
-            log.info("update topic sys flag. oldTopicSysFlag={}, newTopicSysFlag={}", oldTopicSysFlag,
-                topicConfig.getTopicSysFlag());
-
-            putTopicConfig(topicConfig);
-
-            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-            dataVersion.nextVersion(stateMachineVersion);
-
-            this.persist();
-
-            registerTopicConfig(topicConfig);
+        if (topicConfig == null) {
+            return;
         }
+
+        int oldTopicSysFlag = topicConfig.getTopicSysFlag();
+        if (unit) {
+            topicConfig.setTopicSysFlag(TopicSysFlag.setUnitFlag(oldTopicSysFlag));
+        } else {
+            topicConfig.setTopicSysFlag(TopicSysFlag.clearUnitFlag(oldTopicSysFlag));
+        }
+
+        log.info("update topic sys flag. oldTopicSysFlag={}, newTopicSysFlag={}", oldTopicSysFlag,
+            topicConfig.getTopicSysFlag());
+
+        putTopicConfig(topicConfig);
+
+        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        dataVersion.nextVersion(stateMachineVersion);
+
+        this.persist();
+
+        registerTopicConfig(topicConfig);
     }
 
     public void updateTopicUnitSubFlag(final String topic, final boolean hasUnitSub) {
