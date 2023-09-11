@@ -78,19 +78,7 @@ public class DefaultStoreMetricsManager {
         DefaultStoreMetricsManager.attributesBuilderSupplier = attributesBuilderSupplier;
         DefaultStoreMetricsManager.messageStoreConfig = messageStore.getMessageStoreConfig();
 
-        storageSize = meter.gaugeBuilder(GAUGE_STORAGE_SIZE)
-            .setDescription("Broker storage size")
-            .setUnit("bytes")
-            .ofLongs()
-            .buildWithCallback(measurement -> {
-                File storeDir = new File(messageStoreConfig.getStorePathRootDir());
-                if (storeDir.exists() && storeDir.isDirectory()) {
-                    long totalSpace = storeDir.getTotalSpace();
-                    if (totalSpace > 0) {
-                        measurement.record(totalSpace - storeDir.getFreeSpace(), newAttributesBuilder().build());
-                    }
-                }
-            });
+        initStorageSize(meter);
 
         flushBehind = meter.gaugeBuilder(GAUGE_STORAGE_FLUSH_BEHIND)
             .setDescription("Broker flush behind bytes")
@@ -169,6 +157,22 @@ public class DefaultStoreMetricsManager {
                 .setDescription("Total number of timer enqueue")
                 .build();
         }
+    }
+
+    private static void initStorageSize(Meter meter) {
+        storageSize = meter.gaugeBuilder(GAUGE_STORAGE_SIZE)
+            .setDescription("Broker storage size")
+            .setUnit("bytes")
+            .ofLongs()
+            .buildWithCallback(measurement -> {
+                File storeDir = new File(messageStoreConfig.getStorePathRootDir());
+                if (storeDir.exists() && storeDir.isDirectory()) {
+                    long totalSpace = storeDir.getTotalSpace();
+                    if (totalSpace > 0) {
+                        measurement.record(totalSpace - storeDir.getFreeSpace(), newAttributesBuilder().build());
+                    }
+                }
+            });
     }
 
     public static void incTimerDequeueCount(String topic) {
