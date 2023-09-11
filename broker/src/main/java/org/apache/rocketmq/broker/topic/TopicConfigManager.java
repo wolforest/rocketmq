@@ -235,7 +235,11 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         if (createNew) {
-            this.brokerController.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
+            if (brokerController.getBrokerConfig().isEnableSingleTopicRegister()) {
+                this.brokerController.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
+            } else {
+                this.brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, dataVersion);
+            }
         }
 
         return topicConfig;
@@ -339,7 +343,11 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         if (createNew) {
-            this.brokerController.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
+            if (brokerController.getBrokerConfig().isEnableSingleTopicRegister()) {
+                this.brokerController.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
+            } else {
+                this.brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, dataVersion);
+            }
         }
 
         return topicConfig;
@@ -380,7 +388,11 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         if (createNew) {
-            this.brokerController.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
+            if (brokerController.getBrokerConfig().isEnableSingleTopicRegister()) {
+                this.brokerController.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
+            } else {
+                this.brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, dataVersion);
+            }
         }
 
         return topicConfig;
@@ -406,7 +418,12 @@ public class TopicConfigManager extends ConfigManager {
             dataVersion.nextVersion(stateMachineVersion);
 
             this.persist();
-            this.brokerController.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
+
+            if (brokerController.getBrokerConfig().isEnableSingleTopicRegister()) {
+                this.brokerController.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
+            } else {
+                this.brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, dataVersion);
+            }
         }
     }
 
@@ -429,7 +446,12 @@ public class TopicConfigManager extends ConfigManager {
             dataVersion.nextVersion(stateMachineVersion);
 
             this.persist();
-            this.brokerController.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
+
+            if (brokerController.getBrokerConfig().isEnableSingleTopicRegister()) {
+                this.brokerController.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
+            } else {
+                this.brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, dataVersion);
+            }
         }
     }
 

@@ -166,6 +166,7 @@ public class BrokerController {
         }
 
         this.brokerScheduleService.refreshMetadata();
+        this.brokerNettyServer.registerProcessor();
     }
 
     public BrokerIdentity getBrokerIdentity() {
