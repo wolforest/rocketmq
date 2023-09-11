@@ -222,6 +222,7 @@ public class UtilAll {
             cal.get(Calendar.MILLISECOND));
     }
 
+    @Deprecated
     public static String timeMillisToHumanString3(final long t) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(t);
