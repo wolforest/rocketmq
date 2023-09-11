@@ -85,15 +85,8 @@ public class DefaultStoreMetricsManager {
 
         if (messageStore.getMessageStoreConfig().isTimerWheelEnable()) {
             initTimerEnqueueLag(meter, messageStore);
+            initTimerEnqueueLatency(meter, messageStore);
 
-            timerEnqueueLatency = meter.gaugeBuilder(GAUGE_TIMER_ENQUEUE_LATENCY)
-                .setDescription("Timer enqueue latency")
-                .setUnit("milliseconds")
-                .ofLongs()
-                .buildWithCallback(measurement -> {
-                    TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
-                    measurement.record(timerMessageStore.getEnqueueBehindMillis(), newAttributesBuilder().build());
-                });
             timerDequeueLag = meter.gaugeBuilder(GAUGE_TIMER_DEQUEUE_LAG)
                 .setDescription("Timer dequeue messages lag")
                 .ofLongs()
@@ -185,6 +178,17 @@ public class DefaultStoreMetricsManager {
             .buildWithCallback(measurement -> {
                 TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
                 measurement.record(timerMessageStore.getEnqueueBehindMessages(), newAttributesBuilder().build());
+            });
+    }
+
+    private static void initTimerEnqueueLatency(Meter meter, DefaultMessageStore messageStore) {
+        timerEnqueueLatency = meter.gaugeBuilder(GAUGE_TIMER_ENQUEUE_LATENCY)
+            .setDescription("Timer enqueue latency")
+            .setUnit("milliseconds")
+            .ofLongs()
+            .buildWithCallback(measurement -> {
+                TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
+                measurement.record(timerMessageStore.getEnqueueBehindMillis(), newAttributesBuilder().build());
             });
     }
 
