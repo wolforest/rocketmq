@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -40,7 +41,7 @@ public class MainBatchDispatchRequestService extends ServiceThread {
     public MainBatchDispatchRequestService(DefaultMessageStore messageStore) {
         this.messageStore = messageStore;
 
-        batchDispatchRequestExecutor = new ThreadPoolExecutor(
+        batchDispatchRequestExecutor = ThreadUtils.newThreadPoolExecutor(
             messageStore.getMessageStoreConfig().getBatchDispatchRequestThreadPoolNums(),
             messageStore.getMessageStoreConfig().getBatchDispatchRequestThreadPoolNums(),
             1000 * 60,

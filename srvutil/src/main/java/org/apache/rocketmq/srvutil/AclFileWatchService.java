@@ -17,20 +17,21 @@
 
 package org.apache.rocketmq.srvutil;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.rocketmq.common.ServiceThread;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AclFileWatchService extends ServiceThread {
@@ -141,7 +142,7 @@ public class AclFileWatchService extends ServiceThread {
         Path path = Paths.get(filePath);
         md.update(Files.readAllBytes(path));
         byte[] hash = md.digest();
-        return UtilAll.bytes2string(hash);
+        return StringUtils.bytes2string(hash);
     }
 
     public interface Listener {

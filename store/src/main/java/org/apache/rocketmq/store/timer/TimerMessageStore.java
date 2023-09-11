@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +51,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.TimeUtils;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
@@ -165,12 +165,12 @@ public class TimerMessageStore {
         this.lastBrokerRole = storeConfig.getBrokerRole();
 
         if (messageStore instanceof DefaultMessageStore) {
-            scheduler = Executors.newSingleThreadScheduledExecutor(
-                    new ThreadFactoryImpl("TimerScheduledThread",
-                            ((DefaultMessageStore) messageStore).getBrokerIdentity()));
+            scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
+                new ThreadFactoryImpl("TimerScheduledThread",
+                    ((DefaultMessageStore) messageStore).getBrokerIdentity()));
         } else {
-            scheduler = Executors.newSingleThreadScheduledExecutor(
-                    new ThreadFactoryImpl("TimerScheduledThread"));
+            scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
+                new ThreadFactoryImpl("TimerScheduledThread"));
         }
 
         // timerRollWindow contains the fixed number of slots regardless of precision.
