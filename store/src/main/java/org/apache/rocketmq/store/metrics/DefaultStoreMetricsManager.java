@@ -81,18 +81,7 @@ public class DefaultStoreMetricsManager {
         initStorageSize(meter);
         initFlushBehind(meter, messageStore);
         initDispatchBehind(meter, messageStore);
-
-        messageReserveTime = meter.gaugeBuilder(GAUGE_STORAGE_MESSAGE_RESERVE_TIME)
-            .setDescription("Broker message reserve time")
-            .setUnit("milliseconds")
-            .ofLongs()
-            .buildWithCallback(measurement -> {
-                long earliestMessageTime = messageStore.getEarliestMessageTime();
-                if (earliestMessageTime <= 0) {
-                    return;
-                }
-                measurement.record(System.currentTimeMillis() - earliestMessageTime, newAttributesBuilder().build());
-            });
+        initMessageReserveTime(meter, messageStore);
 
         if (messageStore.getMessageStoreConfig().isTimerWheelEnable()) {
             timerEnqueueLag = meter.gaugeBuilder(GAUGE_TIMER_ENQUEUE_LAG)
@@ -179,6 +168,20 @@ public class DefaultStoreMetricsManager {
             .setUnit("bytes")
             .ofLongs()
             .buildWithCallback(measurement -> measurement.record(messageStore.dispatchBehindBytes(), newAttributesBuilder().build()));
+    }
+
+    private static void initMessageReserveTime(Meter meter, DefaultMessageStore messageStore) {
+        messageReserveTime = meter.gaugeBuilder(GAUGE_STORAGE_MESSAGE_RESERVE_TIME)
+            .setDescription("Broker message reserve time")
+            .setUnit("milliseconds")
+            .ofLongs()
+            .buildWithCallback(measurement -> {
+                long earliestMessageTime = messageStore.getEarliestMessageTime();
+                if (earliestMessageTime <= 0) {
+                    return;
+                }
+                measurement.record(System.currentTimeMillis() - earliestMessageTime, newAttributesBuilder().build());
+            });
     }
 
     public static void incTimerDequeueCount(String topic) {
