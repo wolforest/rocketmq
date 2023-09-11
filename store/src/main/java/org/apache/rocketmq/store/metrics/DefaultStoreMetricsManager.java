@@ -79,12 +79,7 @@ public class DefaultStoreMetricsManager {
         DefaultStoreMetricsManager.messageStoreConfig = messageStore.getMessageStoreConfig();
 
         initStorageSize(meter);
-
-        flushBehind = meter.gaugeBuilder(GAUGE_STORAGE_FLUSH_BEHIND)
-            .setDescription("Broker flush behind bytes")
-            .setUnit("bytes")
-            .ofLongs()
-            .buildWithCallback(measurement -> measurement.record(messageStore.flushBehindBytes(), newAttributesBuilder().build()));
+        initFlushBehind(meter, messageStore);
 
         dispatchBehind = meter.gaugeBuilder(GAUGE_STORAGE_DISPATCH_BEHIND)
             .setDescription("Broker dispatch behind bytes")
@@ -173,6 +168,14 @@ public class DefaultStoreMetricsManager {
                     }
                 }
             });
+    }
+
+    private static void initFlushBehind(Meter meter, DefaultMessageStore messageStore) {
+        flushBehind = meter.gaugeBuilder(GAUGE_STORAGE_FLUSH_BEHIND)
+            .setDescription("Broker flush behind bytes")
+            .setUnit("bytes")
+            .ofLongs()
+            .buildWithCallback(measurement -> measurement.record(messageStore.flushBehindBytes(), newAttributesBuilder().build()));
     }
 
     public static void incTimerDequeueCount(String topic) {
