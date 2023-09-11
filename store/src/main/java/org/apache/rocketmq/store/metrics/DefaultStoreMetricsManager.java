@@ -89,20 +89,7 @@ public class DefaultStoreMetricsManager {
 
             initTimerDequeueLag(meter, messageStore);
             initTimerDequeueLatency(meter, messageStore);
-            timingMessages = meter.gaugeBuilder(GAUGE_TIMING_MESSAGES)
-                .setDescription("Current message number in timing")
-                .ofLongs()
-                .buildWithCallback(measurement -> {
-                    TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
-                    timerMessageStore.getTimerMetrics()
-                        .getTimingCount()
-                        .forEach((topic, metric) -> {
-                            measurement.record(
-                                metric.getCount().get(),
-                                newAttributesBuilder().put(LABEL_TOPIC, topic).build()
-                            );
-                        });
-                });
+            initTimingMessages(meter, messageStore);
             timerDequeueTotal = meter.counterBuilder(COUNTER_TIMER_DEQUEUE_TOTAL)
                 .setDescription("Total number of timer dequeue")
                 .build();
@@ -197,6 +184,23 @@ public class DefaultStoreMetricsManager {
             .buildWithCallback(measurement -> {
                 TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
                 measurement.record(timerMessageStore.getDequeueBehind(), newAttributesBuilder().build());
+            });
+    }
+
+    private static void initTimingMessages(Meter meter, DefaultMessageStore messageStore) {
+        timingMessages = meter.gaugeBuilder(GAUGE_TIMING_MESSAGES)
+            .setDescription("Current message number in timing")
+            .ofLongs()
+            .buildWithCallback(measurement -> {
+                TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
+                timerMessageStore.getTimerMetrics()
+                    .getTimingCount()
+                    .forEach((topic, metric) -> {
+                        measurement.record(
+                            metric.getCount().get(),
+                            newAttributesBuilder().put(LABEL_TOPIC, topic).build()
+                        );
+                    });
             });
     }
 
