@@ -87,21 +87,8 @@ public class DefaultStoreMetricsManager {
             initTimerEnqueueLag(meter, messageStore);
             initTimerEnqueueLatency(meter, messageStore);
 
-            timerDequeueLag = meter.gaugeBuilder(GAUGE_TIMER_DEQUEUE_LAG)
-                .setDescription("Timer dequeue messages lag")
-                .ofLongs()
-                .buildWithCallback(measurement -> {
-                    TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
-                    measurement.record(timerMessageStore.getDequeueBehindMessages(), newAttributesBuilder().build());
-                });
-            timerDequeueLatency = meter.gaugeBuilder(GAUGE_TIMER_DEQUEUE_LATENCY)
-                .setDescription("Timer dequeue latency")
-                .setUnit("milliseconds")
-                .ofLongs()
-                .buildWithCallback(measurement -> {
-                    TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
-                    measurement.record(timerMessageStore.getDequeueBehind(), newAttributesBuilder().build());
-                });
+            initTimerDequeueLag(meter, messageStore);
+            initTimerDequeueLatency(meter, messageStore);
             timingMessages = meter.gaugeBuilder(GAUGE_TIMING_MESSAGES)
                 .setDescription("Current message number in timing")
                 .ofLongs()
@@ -189,6 +176,27 @@ public class DefaultStoreMetricsManager {
             .buildWithCallback(measurement -> {
                 TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
                 measurement.record(timerMessageStore.getEnqueueBehindMillis(), newAttributesBuilder().build());
+            });
+    }
+
+    private static void initTimerDequeueLag(Meter meter, DefaultMessageStore messageStore) {
+        timerDequeueLag = meter.gaugeBuilder(GAUGE_TIMER_DEQUEUE_LAG)
+            .setDescription("Timer dequeue messages lag")
+            .ofLongs()
+            .buildWithCallback(measurement -> {
+                TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
+                measurement.record(timerMessageStore.getDequeueBehindMessages(), newAttributesBuilder().build());
+            });
+    }
+
+    private static void initTimerDequeueLatency(Meter meter, DefaultMessageStore messageStore) {
+        timerDequeueLatency = meter.gaugeBuilder(GAUGE_TIMER_DEQUEUE_LATENCY)
+            .setDescription("Timer dequeue latency")
+            .setUnit("milliseconds")
+            .ofLongs()
+            .buildWithCallback(measurement -> {
+                TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
+                measurement.record(timerMessageStore.getDequeueBehind(), newAttributesBuilder().build());
             });
     }
 
