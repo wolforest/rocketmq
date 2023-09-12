@@ -302,9 +302,7 @@ public class BrokerMessageService {
         this.transactionalMessageCheckService = new TransactionalMessageCheckService(brokerController);
     }
 
-    private void registerMessageStoreHook() {
-        List<PutMessageHook> putMessageHookList = messageStore.getPutMessageHookList();
-
+    private void addCheckBeforePutMessageHook(List<PutMessageHook> putMessageHookList) {
         putMessageHookList.add(new PutMessageHook() {
             @Override
             public String hookName() {
@@ -316,6 +314,12 @@ public class BrokerMessageService {
                 return HookUtils.checkBeforePutMessage(brokerController, msg);
             }
         });
+    }
+
+    private void registerMessageStoreHook() {
+        List<PutMessageHook> putMessageHookList = messageStore.getPutMessageHookList();
+
+        addCheckBeforePutMessageHook(putMessageHookList);
 
         putMessageHookList.add(new PutMessageHook() {
             @Override
