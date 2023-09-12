@@ -68,7 +68,7 @@ import org.apache.rocketmq.store.timer.service.TimerDequeueGetMessageService;
 import org.apache.rocketmq.store.timer.service.TimerDequeueGetService;
 import org.apache.rocketmq.store.timer.service.TimerDequeuePutMessageService;
 import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
-import org.apache.rocketmq.store.timer.service.TimerEnqueueGetService;
+import org.apache.rocketmq.store.timer.service.DelayMessageFetcher;
 import org.apache.rocketmq.store.timer.service.TimerEnqueuePutService;
 import org.apache.rocketmq.store.timer.service.TimerFlushService;
 import org.apache.rocketmq.store.util.PerfCounter;
@@ -119,7 +119,7 @@ public class TimerMessageStore {
     private final TimerLog timerLog;
     private final TimerCheckpoint timerCheckpoint;
 
-    private TimerEnqueueGetService enqueueGetService;
+    private DelayMessageFetcher enqueueGetService;
     private TimerEnqueuePutService enqueuePutService;
     private TimerDequeueWarmService dequeueWarmService;
     private TimerDequeueGetService dequeueGetService;
@@ -201,7 +201,7 @@ public class TimerMessageStore {
     }
 
     public void initService() {
-        enqueueGetService = new TimerEnqueueGetService(this);
+        enqueueGetService = new DelayMessageFetcher(this);
         enqueuePutService = new TimerEnqueuePutService(this);
         dequeueWarmService = new TimerDequeueWarmService(this);
         dequeueGetService = new TimerDequeueGetService(this);
@@ -1399,11 +1399,11 @@ public class TimerMessageStore {
         return precisionMs;
     }
 
-    public TimerEnqueueGetService getEnqueueGetService() {
+    public DelayMessageFetcher getEnqueueGetService() {
         return enqueueGetService;
     }
 
-    public void setEnqueueGetService(TimerEnqueueGetService enqueueGetService) {
+    public void setEnqueueGetService(DelayMessageFetcher enqueueGetService) {
         this.enqueueGetService = enqueueGetService;
     }
 
