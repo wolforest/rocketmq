@@ -17,7 +17,6 @@
 package org.apache.rocketmq.broker.topic;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -238,7 +237,7 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         if (createNew) {
-            registerTopicConfig(topicConfig);
+            registerBrokerData(topicConfig);
         }
 
         return topicConfig;
@@ -280,7 +279,7 @@ public class TopicConfigManager extends ConfigManager {
             log.error("createTopicIfAbsent ", e);
         }
         if (createNew && register) {
-            registerTopicConfig(topicConfig);
+            registerBrokerData(topicConfig);
         }
         return getTopicConfig(topicConfig.getTopicName());
     }
@@ -340,7 +339,7 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         if (createNew) {
-            registerTopicConfig(topicConfig);
+            registerBrokerData(topicConfig);
         }
 
         return topicConfig;
@@ -381,7 +380,7 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         if (createNew) {
-            registerTopicConfig(topicConfig);
+            registerBrokerData(topicConfig);
         }
 
         return topicConfig;
@@ -410,7 +409,7 @@ public class TopicConfigManager extends ConfigManager {
 
         this.persist();
 
-        registerTopicConfig(topicConfig);
+        registerBrokerData(topicConfig);
     }
 
     public void updateTopicUnitSubFlag(final String topic, final boolean hasUnitSub) {
@@ -436,7 +435,7 @@ public class TopicConfigManager extends ConfigManager {
 
         this.persist();
 
-        registerTopicConfig(topicConfig);
+        registerBrokerData(topicConfig);
     }
 
     public void updateTopicConfig(final TopicConfig topicConfig) {
@@ -629,11 +628,7 @@ public class TopicConfigManager extends ConfigManager {
         }
     }
 
-    public boolean containsTopic(String topic) {
-        return topicConfigTable.containsKey(topic);
-    }
-
-    private void registerTopicConfig(TopicConfig topicConfig) {
+    private void registerBrokerData(TopicConfig topicConfig) {
         if (brokerController.getBrokerConfig().isEnableSingleTopicRegister()) {
             this.brokerController.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
         } else {
@@ -641,4 +636,7 @@ public class TopicConfigManager extends ConfigManager {
         }
     }
 
+    public boolean containsTopic(String topic) {
+        return topicConfigTable.containsKey(topic);
+    }
 }
