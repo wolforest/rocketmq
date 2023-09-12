@@ -467,40 +467,43 @@ public class TopicConfigManager extends ConfigManager {
     }
 
     public void updateOrderTopicConfig(final KVTable orderKVTableFromNs) {
+        if (orderKVTableFromNs == null || orderKVTableFromNs.getTable() == null) {
+            return;
+        }
 
-        if (orderKVTableFromNs != null && orderKVTableFromNs.getTable() != null) {
-            boolean isChange = false;
-            Set<String> orderTopics = orderKVTableFromNs.getTable().keySet();
-            for (String topic : orderTopics) {
-                TopicConfig topicConfig = getTopicConfig(topic);
-                if (topicConfig != null && !topicConfig.isOrder()) {
-                    topicConfig.setOrder(true);
+        boolean isChange = false;
+        Set<String> orderTopics = orderKVTableFromNs.getTable().keySet();
+        for (String topic : orderTopics) {
+            TopicConfig topicConfig = getTopicConfig(topic);
+            if (topicConfig == null || topicConfig.isOrder()) {
+                continue;
+            }
+
+            topicConfig.setOrder(true);
+            isChange = true;
+            log.info("update order topic config, topic={}, order={}", topic, true);
+        }
+
+        // We don't have a mandatory rule to maintain the validity of order conf in NameServer,
+        // so we may overwrite the order field mistakenly.
+        // To avoid the above case, we comment the below codes, please use mqadmin API to update
+        // the order filed.
+        /*for (Map.Entry<String, TopicConfig> entry : this.topicConfigTable.entrySet()) {
+            String topic = entry.getKey();
+            if (!orderTopics.contains(topic)) {
+                TopicConfig topicConfig = entry.getValue();
+                if (topicConfig.isOrder()) {
+                    topicConfig.setOrder(false);
                     isChange = true;
-                    log.info("update order topic config, topic={}, order={}", topic, true);
+                    log.info("update order topic config, topic={}, order={}", topic, false);
                 }
             }
+        }*/
 
-            // We don't have a mandatory rule to maintain the validity of order conf in NameServer,
-            // so we may overwrite the order field mistakenly.
-            // To avoid the above case, we comment the below codes, please use mqadmin API to update
-            // the order filed.
-            /*for (Map.Entry<String, TopicConfig> entry : this.topicConfigTable.entrySet()) {
-                String topic = entry.getKey();
-                if (!orderTopics.contains(topic)) {
-                    TopicConfig topicConfig = entry.getValue();
-                    if (topicConfig.isOrder()) {
-                        topicConfig.setOrder(false);
-                        isChange = true;
-                        log.info("update order topic config, topic={}, order={}", topic, false);
-                    }
-                }
-            }*/
-
-            if (isChange) {
-                long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-                dataVersion.nextVersion(stateMachineVersion);
-                this.persist();
-            }
+        if (isChange) {
+            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+            dataVersion.nextVersion(stateMachineVersion);
+            this.persist();
         }
     }
 
