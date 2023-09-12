@@ -105,8 +105,16 @@ public class AutoSwitchHAConnection implements HAConnection {
         EpochFileCache epochCache) throws IOException {
         this.haService = haService;
         this.socketChannel = socketChannel;
-        this.epochCache = epochCache;
+        this.configureSocketChannel();
         this.clientAddress = this.socketChannel.socket().getRemoteSocketAddress().toString();
+        this.epochCache = epochCache;
+        this.writeSocketService = new WriteSocketService(this.socketChannel);
+        this.readSocketService = new ReadSocketService(this.socketChannel);
+        this.haService.getConnectionCount().incrementAndGet();
+        this.flowMonitor = new FlowMonitor(haService.getDefaultMessageStore().getMessageStoreConfig());
+    }
+
+    private void configureSocketChannel() throws IOException {
         this.socketChannel.configureBlocking(false);
         this.socketChannel.socket().setSoLinger(false, -1);
         this.socketChannel.socket().setTcpNoDelay(true);
@@ -116,10 +124,6 @@ public class AutoSwitchHAConnection implements HAConnection {
         if (NettySystemConfig.socketRcvbufSize > 0) {
             this.socketChannel.socket().setSendBufferSize(NettySystemConfig.socketRcvbufSize);
         }
-        this.writeSocketService = new WriteSocketService(this.socketChannel);
-        this.readSocketService = new ReadSocketService(this.socketChannel);
-        this.haService.getConnectionCount().incrementAndGet();
-        this.flowMonitor = new FlowMonitor(haService.getDefaultMessageStore().getMessageStoreConfig());
     }
 
     @Override

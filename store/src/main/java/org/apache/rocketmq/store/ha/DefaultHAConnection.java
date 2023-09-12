@@ -61,7 +61,15 @@ public class DefaultHAConnection implements HAConnection {
     public DefaultHAConnection(final DefaultHAService haService, final SocketChannel socketChannel) throws IOException {
         this.haService = haService;
         this.socketChannel = socketChannel;
+        this.configureSocketChannel();
         this.clientAddress = this.socketChannel.socket().getRemoteSocketAddress().toString();
+        this.writeSocketService = new WriteSocketService(this.socketChannel);
+        this.readSocketService = new ReadSocketService(this.socketChannel);
+        this.haService.getConnectionCount().incrementAndGet();
+        this.flowMonitor = new FlowMonitor(haService.getDefaultMessageStore().getMessageStoreConfig());
+    }
+
+    private void configureSocketChannel() throws IOException {
         this.socketChannel.configureBlocking(false);
         this.socketChannel.socket().setSoLinger(false, -1);
         this.socketChannel.socket().setTcpNoDelay(true);
@@ -71,10 +79,6 @@ public class DefaultHAConnection implements HAConnection {
         if (NettySystemConfig.socketRcvbufSize > 0) {
             this.socketChannel.socket().setSendBufferSize(NettySystemConfig.socketRcvbufSize);
         }
-        this.writeSocketService = new WriteSocketService(this.socketChannel);
-        this.readSocketService = new ReadSocketService(this.socketChannel);
-        this.haService.getConnectionCount().incrementAndGet();
-        this.flowMonitor = new FlowMonitor(haService.getDefaultMessageStore().getMessageStoreConfig());
     }
 
     public void start() {
