@@ -23,6 +23,7 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -58,10 +59,7 @@ public class ReputMessageService extends ServiceThread {
     @Override
     public void shutdown() {
         for (int i = 0; i < 50 && this.isCommitLogAvailable(); i++) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ignored) {
-            }
+            ThreadUtils.sleep(100);
         }
 
         if (this.isCommitLogAvailable()) {
