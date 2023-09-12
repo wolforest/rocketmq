@@ -64,7 +64,7 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.service.AbstractStateService;
-import org.apache.rocketmq.store.timer.service.TimerDequeueGetMessageService;
+import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
 import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
 import org.apache.rocketmq.store.timer.service.TimerDequeuePutMessageService;
 import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
@@ -124,7 +124,7 @@ public class TimerMessageStore {
     private TimerDequeueWarmService dequeueWarmService;
     private TimerWheelFetcher dequeueGetService;
     private TimerDequeuePutMessageService[] dequeuePutMessageServices;
-    private TimerDequeueGetMessageService[] dequeueGetMessageServices;
+    private TimerMessageQuery[] dequeueGetMessageServices;
     private TimerFlushService timerFlushService;
 
     private final int commitLogFileSize;
@@ -208,9 +208,9 @@ public class TimerMessageStore {
         timerFlushService = new TimerFlushService(this);
 
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
-        dequeueGetMessageServices = new TimerDequeueGetMessageService[getThreadNum];
+        dequeueGetMessageServices = new TimerMessageQuery[getThreadNum];
         for (int i = 0; i < dequeueGetMessageServices.length; i++) {
-            dequeueGetMessageServices[i] = new TimerDequeueGetMessageService(this);
+            dequeueGetMessageServices[i] = new TimerMessageQuery(this);
         }
 
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
@@ -1441,12 +1441,12 @@ public class TimerMessageStore {
         this.dequeuePutMessageServices = dequeuePutMessageServices;
     }
 
-    public TimerDequeueGetMessageService[] getDequeueGetMessageServices() {
+    public TimerMessageQuery[] getDequeueGetMessageServices() {
         return dequeueGetMessageServices;
     }
 
     public void setDequeueGetMessageServices(
-            TimerDequeueGetMessageService[] dequeueGetMessageServices) {
+            TimerMessageQuery[] dequeueGetMessageServices) {
         this.dequeueGetMessageServices = dequeueGetMessageServices;
     }
 
