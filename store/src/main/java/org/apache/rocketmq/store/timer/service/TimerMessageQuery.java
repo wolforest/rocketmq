@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-public class TimerDequeueGetMessageService extends AbstractStateService {
+public class TimerMessageQuery extends AbstractStateService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     @Override
@@ -48,7 +48,7 @@ public class TimerDequeueGetMessageService extends AbstractStateService {
     private Pointer pointer;
     private MessageStoreConfig storeConfig;
     private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
-    public TimerDequeueGetMessageService(TimerMessageStore timerMessageStore) {
+    public TimerMessageQuery(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
         dequeuePutQueue = timerMessageStore.getDequeuePutQueue();
         dequeueGetQueue = timerMessageStore.getDequeueGetQueue();

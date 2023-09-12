@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import static org.apache.rocketmq.store.timer.TimerMessageStore.DEQUEUE_PUT;
 import static org.apache.rocketmq.store.timer.TimerMessageStore.PUT_NEED_RETRY;
 
-public class TimerDequeuePutMessageService extends AbstractStateService {
+public class TimerMessageDeliver extends AbstractStateService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     @Override
     public String getServiceName() {
@@ -46,7 +46,7 @@ public class TimerDequeuePutMessageService extends AbstractStateService {
     private TimerCheckpoint timerCheckpoint;
     private Pointer pointer;
     private MessageStoreConfig storeConfig;
-    public TimerDequeuePutMessageService(TimerMessageStore timerMessageStore) {
+    public TimerMessageDeliver(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
         dequeuePutQueue = timerMessageStore.getDequeuePutQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
