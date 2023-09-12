@@ -285,16 +285,19 @@ public class ScheduleMessageService extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            DelayOffsetSerializeWrapper delayOffsetSerializeWrapper =
-                DelayOffsetSerializeWrapper.fromJson(jsonString, DelayOffsetSerializeWrapper.class);
-            if (delayOffsetSerializeWrapper != null) {
-                this.offsetTable.putAll(delayOffsetSerializeWrapper.getOffsetTable());
-                // For compatible
-                if (delayOffsetSerializeWrapper.getDataVersion() != null) {
-                    this.dataVersion.assignNewOne(delayOffsetSerializeWrapper.getDataVersion());
-                }
-            }
+        if (jsonString == null) {
+            return;
+        }
+
+        DelayOffsetSerializeWrapper delayOffsetSerializeWrapper = DelayOffsetSerializeWrapper.fromJson(jsonString, DelayOffsetSerializeWrapper.class);
+        if (delayOffsetSerializeWrapper == null) {
+            return;
+        }
+
+        this.offsetTable.putAll(delayOffsetSerializeWrapper.getOffsetTable());
+        // For compatible
+        if (delayOffsetSerializeWrapper.getDataVersion() != null) {
+            this.dataVersion.assignNewOne(delayOffsetSerializeWrapper.getDataVersion());
         }
     }
 
