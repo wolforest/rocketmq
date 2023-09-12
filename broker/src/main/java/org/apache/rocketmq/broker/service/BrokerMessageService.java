@@ -350,6 +350,15 @@ public class BrokerMessageService {
         });
     }
 
+    private SendMessageBackHook createSendMessageBackHook() {
+        return new SendMessageBackHook() {
+            @Override
+            public boolean executeSendMessageBack(List<MessageExt> msgList, String brokerName, String brokerAddr) {
+                return HookUtils.sendMessageBack(brokerController, msgList, brokerName, brokerAddr);
+            }
+        };
+    }
+
     private void registerMessageStoreHook() {
         List<PutMessageHook> putMessageHookList = messageStore.getPutMessageHookList();
 
@@ -357,12 +366,7 @@ public class BrokerMessageService {
         addInnerBatchCheckerHook(putMessageHookList);
         addHandleScheduleMessageHook(putMessageHookList);
 
-        SendMessageBackHook sendMessageBackHook = new SendMessageBackHook() {
-            @Override
-            public boolean executeSendMessageBack(List<MessageExt> msgList, String brokerName, String brokerAddr) {
-                return HookUtils.sendMessageBack(brokerController, msgList, brokerName, brokerAddr);
-            }
-        };
+        SendMessageBackHook sendMessageBackHook = createSendMessageBackHook();
 
         if (messageStore != null) {
             messageStore.setSendMessageBackHook(sendMessageBackHook);
