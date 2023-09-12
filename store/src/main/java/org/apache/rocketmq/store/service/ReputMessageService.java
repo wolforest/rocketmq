@@ -79,12 +79,18 @@ public class ReputMessageService extends ServiceThread {
         return this.reputFromOffset < messageStore.getConfirmOffset();
     }
 
-    public void doReput() {
-        if (this.reputFromOffset < messageStore.getCommitLog().getMinOffset()) {
-            LOGGER.warn("The reputFromOffset={} is smaller than minPyOffset={}, this usually indicate that the dispatch behind too much and the commitlog has expired.",
-                this.reputFromOffset, messageStore.getCommitLog().getMinOffset());
-            this.reputFromOffset = messageStore.getCommitLog().getMinOffset();
+    private void loadReputOffset() {
+        if (this.reputFromOffset >= messageStore.getCommitLog().getMinOffset()) {
+            return;
         }
+
+        LOGGER.warn("The reputFromOffset={} is smaller than minPyOffset={}, this usually indicate that the dispatch behind too much and the commitlog has expired.",
+            this.reputFromOffset, messageStore.getCommitLog().getMinOffset());
+        this.reputFromOffset = messageStore.getCommitLog().getMinOffset();
+    }
+
+    public void doReput() {
+        loadReputOffset();
         for (boolean doNext = true; this.isCommitLogAvailable() && doNext; ) {
 
             SelectMappedBufferResult result = messageStore.getCommitLog().getData(reputFromOffset);
