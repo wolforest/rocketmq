@@ -30,6 +30,11 @@ import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.BrokerRole;
 
+/**
+ * send commitLog messages to consume queue, index service, ...
+ *
+ * daemon thread, start by DefaultMessageStore.start()
+ */
 public class ReputMessageService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
