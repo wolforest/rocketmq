@@ -77,7 +77,6 @@ public class BrokerNettyServer {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final Logger LOG_WATER_MARK = LoggerFactory.getLogger(LoggerName.WATER_MARK_LOGGER_NAME);
 
-    private ClientHousekeepingService clientHousekeepingService;
     private PullMessageProcessor pullMessageProcessor;
     private PeekMessageProcessor peekMessageProcessor;
     private PopMessageProcessor popMessageProcessor;
@@ -89,9 +88,10 @@ public class BrokerNettyServer {
     private ClientManageProcessor clientManageProcessor;
     private SendMessageProcessor sendMessageProcessor;
     private ReplyMessageProcessor replyMessageProcessor;
-    private ConsumerIdsChangeListener consumerIdsChangeListener;
     private EndTransactionProcessor endTransactionProcessor;
 
+    private ConsumerIdsChangeListener consumerIdsChangeListener;
+    private ClientHousekeepingService clientHousekeepingService;
     private PullRequestHoldService pullRequestHoldService;
     private MessageArrivingListener messageArrivingListener;
     protected FileWatchService fileWatchService;
