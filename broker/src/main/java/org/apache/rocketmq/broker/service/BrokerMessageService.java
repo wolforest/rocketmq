@@ -333,13 +333,7 @@ public class BrokerMessageService {
         });
     }
 
-    private void registerMessageStoreHook() {
-        List<PutMessageHook> putMessageHookList = messageStore.getPutMessageHookList();
-
-        addCheckBeforePutMessageHook(putMessageHookList);
-        addInnerBatchCheckerHook(putMessageHookList);
-
-
+    private void addHandleScheduleMessageHook(List<PutMessageHook> putMessageHookList) {
         putMessageHookList.add(new PutMessageHook() {
             @Override
             public String hookName() {
@@ -354,6 +348,14 @@ public class BrokerMessageService {
                 return null;
             }
         });
+    }
+
+    private void registerMessageStoreHook() {
+        List<PutMessageHook> putMessageHookList = messageStore.getPutMessageHookList();
+
+        addCheckBeforePutMessageHook(putMessageHookList);
+        addInnerBatchCheckerHook(putMessageHookList);
+        addHandleScheduleMessageHook(putMessageHookList);
 
         SendMessageBackHook sendMessageBackHook = new SendMessageBackHook() {
             @Override
