@@ -120,6 +120,17 @@ public class ReputMessageService extends ServiceThread {
         return readSize;
     }
 
+    private void fixReputOffset(SelectMappedBufferResult result, int readSize) {
+        // If user open the dledger pattern or the broker is master node,
+        // it will not ignore the exception and fix the reputFromOffset variable
+        if (messageStore.getMessageStoreConfig().isEnableDLegerCommitLog() ||
+            messageStore.getBrokerConfig().getBrokerId() == MixAll.MASTER_ID) {
+            LOGGER.error("[BUG]dispatch message to consume queue error, COMMITLOG OFFSET: {}",
+                this.reputFromOffset);
+            this.reputFromOffset += result.getSize() - readSize;
+        }
+    }
+
     /**
      *
      * @param doNext boolean
@@ -127,9 +138,9 @@ public class ReputMessageService extends ServiceThread {
      * @return boolean
      */
     private boolean doReput(boolean doNext, SelectMappedBufferResult result) {
-        try {
-            this.reputFromOffset = result.getStartOffset();
+        this.reputFromOffset = result.getStartOffset();
 
+        try {
             for (int readSize = 0; readSize < result.getSize() && reputFromOffset < messageStore.getConfirmOffset() && doNext; ) {
                 DispatchRequest dispatchRequest = messageStore.getCommitLog().checkMessageAndReturnSize(result.getByteBuffer(), false, false, false);
                 int size = dispatchRequest.getBufferSize() == -1 ? dispatchRequest.getMsgSize() : dispatchRequest.getBufferSize();
@@ -146,14 +157,7 @@ public class ReputMessageService extends ServiceThread {
                     this.reputFromOffset += size;
                 } else {
                     doNext = false;
-                    // If user open the dledger pattern or the broker is master node,
-                    // it will not ignore the exception and fix the reputFromOffset variable
-                    if (messageStore.getMessageStoreConfig().isEnableDLegerCommitLog() ||
-                        messageStore.getBrokerConfig().getBrokerId() == MixAll.MASTER_ID) {
-                        LOGGER.error("[BUG]dispatch message to consume queue error, COMMITLOG OFFSET: {}",
-                            this.reputFromOffset);
-                        this.reputFromOffset += result.getSize() - readSize;
-                    }
+                    fixReputOffset(result, readSize);
                 }
             }
         } finally {
