@@ -141,12 +141,14 @@ public class ScheduleMessageService extends ConfigManager {
                 offset = 0L;
             }
 
-            if (timeDelay != null) {
-                if (this.enableAsyncDeliver) {
-                    this.handleExecutorService.schedule(new HandlePutResultTask(this, level), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
-                }
-                this.deliverExecutorService.schedule(new DeliverDelayedMessageTimerTask(this, level, offset), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
+            if (timeDelay == null) {
+                continue;
             }
+
+            if (this.enableAsyncDeliver) {
+                this.handleExecutorService.schedule(new HandlePutResultTask(this, level), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
+            }
+            this.deliverExecutorService.schedule(new DeliverDelayedMessageTimerTask(this, level, offset), FIRST_DELAY_TIME, TimeUnit.MILLISECONDS);
         }
     }
 
