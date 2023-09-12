@@ -66,7 +66,7 @@ import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.service.AbstractStateService;
 import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
 import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
-import org.apache.rocketmq.store.timer.service.TimerDequeuePutMessageService;
+import org.apache.rocketmq.store.timer.service.TimerMessageDeliver;
 import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
 import org.apache.rocketmq.store.timer.service.TimerMessageFetcher;
 import org.apache.rocketmq.store.timer.service.TimerWheelLocator;
@@ -123,7 +123,7 @@ public class TimerMessageStore {
     private TimerWheelLocator enqueuePutService;
     private TimerDequeueWarmService dequeueWarmService;
     private TimerWheelFetcher dequeueGetService;
-    private TimerDequeuePutMessageService[] dequeuePutMessageServices;
+    private TimerMessageDeliver[] dequeuePutMessageServices;
     private TimerMessageQuery[] dequeueGetMessageServices;
     private TimerFlushService timerFlushService;
 
@@ -214,9 +214,9 @@ public class TimerMessageStore {
         }
 
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
-        dequeuePutMessageServices = new TimerDequeuePutMessageService[putThreadNum];
+        dequeuePutMessageServices = new TimerMessageDeliver[putThreadNum];
         for (int i = 0; i < dequeuePutMessageServices.length; i++) {
-            dequeuePutMessageServices[i] = new TimerDequeuePutMessageService(this);
+            dequeuePutMessageServices[i] = new TimerMessageDeliver(this);
         }
     }
 
@@ -1432,12 +1432,12 @@ public class TimerMessageStore {
         this.dequeueGetService = dequeueGetService;
     }
 
-    public TimerDequeuePutMessageService[] getDequeuePutMessageServices() {
+    public TimerMessageDeliver[] getDequeuePutMessageServices() {
         return dequeuePutMessageServices;
     }
 
     public void setDequeuePutMessageServices(
-            TimerDequeuePutMessageService[] dequeuePutMessageServices) {
+            TimerMessageDeliver[] dequeuePutMessageServices) {
         this.dequeuePutMessageServices = dequeuePutMessageServices;
     }
 
