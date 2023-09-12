@@ -316,11 +316,7 @@ public class BrokerMessageService {
         });
     }
 
-    private void registerMessageStoreHook() {
-        List<PutMessageHook> putMessageHookList = messageStore.getPutMessageHookList();
-
-        addCheckBeforePutMessageHook(putMessageHookList);
-
+    private void addInnerBatchCheckerHook(List<PutMessageHook> putMessageHookList) {
         putMessageHookList.add(new PutMessageHook() {
             @Override
             public String hookName() {
@@ -335,6 +331,14 @@ public class BrokerMessageService {
                 return null;
             }
         });
+    }
+
+    private void registerMessageStoreHook() {
+        List<PutMessageHook> putMessageHookList = messageStore.getPutMessageHookList();
+
+        addCheckBeforePutMessageHook(putMessageHookList);
+        addInnerBatchCheckerHook(putMessageHookList);
+
 
         putMessageHookList.add(new PutMessageHook() {
             @Override
