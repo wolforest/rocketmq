@@ -65,7 +65,7 @@ import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.service.AbstractStateService;
 import org.apache.rocketmq.store.timer.service.TimerDequeueGetMessageService;
-import org.apache.rocketmq.store.timer.service.TimerDequeueGetService;
+import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
 import org.apache.rocketmq.store.timer.service.TimerDequeuePutMessageService;
 import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
 import org.apache.rocketmq.store.timer.service.TimerMessageFetcher;
@@ -122,7 +122,7 @@ public class TimerMessageStore {
     private TimerMessageFetcher enqueueGetService;
     private TimerWheelLocator enqueuePutService;
     private TimerDequeueWarmService dequeueWarmService;
-    private TimerDequeueGetService dequeueGetService;
+    private TimerWheelFetcher dequeueGetService;
     private TimerDequeuePutMessageService[] dequeuePutMessageServices;
     private TimerDequeueGetMessageService[] dequeueGetMessageServices;
     private TimerFlushService timerFlushService;
@@ -204,7 +204,7 @@ public class TimerMessageStore {
         enqueueGetService = new TimerMessageFetcher(this);
         enqueuePutService = new TimerWheelLocator(this);
         dequeueWarmService = new TimerDequeueWarmService(this);
-        dequeueGetService = new TimerDequeueGetService(this);
+        dequeueGetService = new TimerWheelFetcher(this);
         timerFlushService = new TimerFlushService(this);
 
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
@@ -1424,11 +1424,11 @@ public class TimerMessageStore {
         this.dequeueWarmService = dequeueWarmService;
     }
 
-    public TimerDequeueGetService getDequeueGetService() {
+    public TimerWheelFetcher getDequeueGetService() {
         return dequeueGetService;
     }
 
-    public void setDequeueGetService(TimerDequeueGetService dequeueGetService) {
+    public void setDequeueGetService(TimerWheelFetcher dequeueGetService) {
         this.dequeueGetService = dequeueGetService;
     }
 

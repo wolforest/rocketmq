@@ -22,13 +22,13 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 
-public class TimerDequeueGetService extends ServiceThread {
+public class TimerWheelFetcher extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private TimerMessageStore timerMessageStore;
     private long shouldStartTime;
 
-    public TimerDequeueGetService(TimerMessageStore timerMessageStore) {
+    public TimerWheelFetcher(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
     }
 
