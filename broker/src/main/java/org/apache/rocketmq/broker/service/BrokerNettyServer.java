@@ -640,22 +640,26 @@ public class BrokerNettyServer {
         }
 
         for (AccessValidator accessValidator : accessValidators) {
-            final AccessValidator validator = accessValidator;
-            accessValidatorMap.put(validator.getClass(), validator);
-            this.registerServerRPCHook(new RPCHook() {
-
-                @Override
-                public void doBeforeRequest(String remoteAddr, RemotingCommand request) {
-                    //Do not catch the exception
-                    validator.validate(validator.parse(request, remoteAddr));
-                }
-
-                @Override
-                public void doAfterResponse(String remoteAddr, RemotingCommand request, RemotingCommand response) {
-                }
-
-            });
+            initAcl(accessValidator);
         }
+    }
+
+    private void initAcl(AccessValidator accessValidator) {
+        final AccessValidator validator = accessValidator;
+        accessValidatorMap.put(validator.getClass(), validator);
+        this.registerServerRPCHook(new RPCHook() {
+
+            @Override
+            public void doBeforeRequest(String remoteAddr, RemotingCommand request) {
+                //Do not catch the exception
+                validator.validate(validator.parse(request, remoteAddr));
+            }
+
+            @Override
+            public void doAfterResponse(String remoteAddr, RemotingCommand request, RemotingCommand response) {
+            }
+
+        });
     }
 
     private void initRpcHooks() {
