@@ -302,8 +302,8 @@ public class BrokerMessageService {
         this.transactionalMessageCheckService = new TransactionalMessageCheckService(brokerController);
     }
 
-    private void addCheckBeforePutMessageHook(List<PutMessageHook> putMessageHookList) {
-        putMessageHookList.add(new PutMessageHook() {
+    private void addCheckBeforePutMessageHook() {
+        messageStore.getPutMessageHookList().add(new PutMessageHook() {
             @Override
             public String hookName() {
                 return "checkBeforePutMessage";
@@ -316,8 +316,8 @@ public class BrokerMessageService {
         });
     }
 
-    private void addInnerBatchCheckerHook(List<PutMessageHook> putMessageHookList) {
-        putMessageHookList.add(new PutMessageHook() {
+    private void addInnerBatchCheckerHook() {
+        messageStore.getPutMessageHookList().add(new PutMessageHook() {
             @Override
             public String hookName() {
                 return "innerBatchChecker";
@@ -333,8 +333,8 @@ public class BrokerMessageService {
         });
     }
 
-    private void addHandleScheduleMessageHook(List<PutMessageHook> putMessageHookList) {
-        putMessageHookList.add(new PutMessageHook() {
+    private void addHandleScheduleMessageHook() {
+        messageStore.getPutMessageHookList().add(new PutMessageHook() {
             @Override
             public String hookName() {
                 return "handleScheduleMessage";
@@ -360,14 +360,11 @@ public class BrokerMessageService {
     }
 
     private void registerMessageStoreHook() {
-        List<PutMessageHook> putMessageHookList = messageStore.getPutMessageHookList();
-
-        addCheckBeforePutMessageHook(putMessageHookList);
-        addInnerBatchCheckerHook(putMessageHookList);
-        addHandleScheduleMessageHook(putMessageHookList);
+        addCheckBeforePutMessageHook();
+        addInnerBatchCheckerHook();
+        addHandleScheduleMessageHook();
 
         SendMessageBackHook sendMessageBackHook = createSendMessageBackHook();
-
         if (messageStore != null) {
             messageStore.setSendMessageBackHook(sendMessageBackHook);
         }
