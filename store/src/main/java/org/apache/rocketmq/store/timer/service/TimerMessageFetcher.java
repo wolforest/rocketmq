@@ -25,11 +25,11 @@ import org.apache.rocketmq.store.timer.TimerMessageStore;
 /**
  * Consume the original topic queue,convert message to TimerTask and put it into the in-memory pending queue
  */
-public class TimerEnqueueGetService extends ServiceThread {
+public class TimerMessageFetcher extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private TimerMessageStore timerMessageStore;
 
-    public TimerEnqueueGetService(TimerMessageStore timerMessageStore) {
+    public TimerMessageFetcher(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
     }
 

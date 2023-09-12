@@ -64,12 +64,12 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.service.AbstractStateService;
-import org.apache.rocketmq.store.timer.service.TimerDequeueGetMessageService;
-import org.apache.rocketmq.store.timer.service.TimerDequeueGetService;
-import org.apache.rocketmq.store.timer.service.TimerDequeuePutMessageService;
+import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
+import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
+import org.apache.rocketmq.store.timer.service.TimerMessageDeliver;
 import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
-import org.apache.rocketmq.store.timer.service.TimerEnqueueGetService;
-import org.apache.rocketmq.store.timer.service.TimerEnqueuePutService;
+import org.apache.rocketmq.store.timer.service.TimerMessageFetcher;
+import org.apache.rocketmq.store.timer.service.TimerWheelLocator;
 import org.apache.rocketmq.store.timer.service.TimerFlushService;
 import org.apache.rocketmq.store.util.PerfCounter;
 
@@ -119,12 +119,12 @@ public class TimerMessageStore {
     private final TimerLog timerLog;
     private final TimerCheckpoint timerCheckpoint;
 
-    private TimerEnqueueGetService enqueueGetService;
-    private TimerEnqueuePutService enqueuePutService;
+    private TimerMessageFetcher enqueueGetService;
+    private TimerWheelLocator enqueuePutService;
     private TimerDequeueWarmService dequeueWarmService;
-    private TimerDequeueGetService dequeueGetService;
-    private TimerDequeuePutMessageService[] dequeuePutMessageServices;
-    private TimerDequeueGetMessageService[] dequeueGetMessageServices;
+    private TimerWheelFetcher dequeueGetService;
+    private TimerMessageDeliver[] dequeuePutMessageServices;
+    private TimerMessageQuery[] dequeueGetMessageServices;
     private TimerFlushService timerFlushService;
 
     private final int commitLogFileSize;
@@ -201,22 +201,22 @@ public class TimerMessageStore {
     }
 
     public void initService() {
-        enqueueGetService = new TimerEnqueueGetService(this);
-        enqueuePutService = new TimerEnqueuePutService(this);
+        enqueueGetService = new TimerMessageFetcher(this);
+        enqueuePutService = new TimerWheelLocator(this);
         dequeueWarmService = new TimerDequeueWarmService(this);
-        dequeueGetService = new TimerDequeueGetService(this);
+        dequeueGetService = new TimerWheelFetcher(this);
         timerFlushService = new TimerFlushService(this);
 
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
-        dequeueGetMessageServices = new TimerDequeueGetMessageService[getThreadNum];
+        dequeueGetMessageServices = new TimerMessageQuery[getThreadNum];
         for (int i = 0; i < dequeueGetMessageServices.length; i++) {
-            dequeueGetMessageServices[i] = new TimerDequeueGetMessageService(this);
+            dequeueGetMessageServices[i] = new TimerMessageQuery(this);
         }
 
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
-        dequeuePutMessageServices = new TimerDequeuePutMessageService[putThreadNum];
+        dequeuePutMessageServices = new TimerMessageDeliver[putThreadNum];
         for (int i = 0; i < dequeuePutMessageServices.length; i++) {
-            dequeuePutMessageServices[i] = new TimerDequeuePutMessageService(this);
+            dequeuePutMessageServices[i] = new TimerMessageDeliver(this);
         }
     }
 
@@ -1399,19 +1399,19 @@ public class TimerMessageStore {
         return precisionMs;
     }
 
-    public TimerEnqueueGetService getEnqueueGetService() {
+    public TimerMessageFetcher getEnqueueGetService() {
         return enqueueGetService;
     }
 
-    public void setEnqueueGetService(TimerEnqueueGetService enqueueGetService) {
+    public void setEnqueueGetService(TimerMessageFetcher enqueueGetService) {
         this.enqueueGetService = enqueueGetService;
     }
 
-    public TimerEnqueuePutService getEnqueuePutService() {
+    public TimerWheelLocator getEnqueuePutService() {
         return enqueuePutService;
     }
 
-    public void setEnqueuePutService(TimerEnqueuePutService enqueuePutService) {
+    public void setEnqueuePutService(TimerWheelLocator enqueuePutService) {
         this.enqueuePutService = enqueuePutService;
     }
 
@@ -1424,29 +1424,29 @@ public class TimerMessageStore {
         this.dequeueWarmService = dequeueWarmService;
     }
 
-    public TimerDequeueGetService getDequeueGetService() {
+    public TimerWheelFetcher getDequeueGetService() {
         return dequeueGetService;
     }
 
-    public void setDequeueGetService(TimerDequeueGetService dequeueGetService) {
+    public void setDequeueGetService(TimerWheelFetcher dequeueGetService) {
         this.dequeueGetService = dequeueGetService;
     }
 
-    public TimerDequeuePutMessageService[] getDequeuePutMessageServices() {
+    public TimerMessageDeliver[] getDequeuePutMessageServices() {
         return dequeuePutMessageServices;
     }
 
     public void setDequeuePutMessageServices(
-            TimerDequeuePutMessageService[] dequeuePutMessageServices) {
+            TimerMessageDeliver[] dequeuePutMessageServices) {
         this.dequeuePutMessageServices = dequeuePutMessageServices;
     }
 
-    public TimerDequeueGetMessageService[] getDequeueGetMessageServices() {
+    public TimerMessageQuery[] getDequeueGetMessageServices() {
         return dequeueGetMessageServices;
     }
 
     public void setDequeueGetMessageServices(
-            TimerDequeueGetMessageService[] dequeueGetMessageServices) {
+            TimerMessageQuery[] dequeueGetMessageServices) {
         this.dequeueGetMessageServices = dequeueGetMessageServices;
     }
 

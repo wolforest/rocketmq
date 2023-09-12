@@ -17,7 +17,6 @@
 package org.apache.rocketmq.broker.topic;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -29,6 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.common.collect.ImmutableMap;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
@@ -47,7 +47,9 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
 import org.apache.rocketmq.remoting.protocol.body.KVTable;
+import org.apache.rocketmq.remoting.protocol.body.TopicConfigAndMappingSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
+import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingInfo;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -235,7 +237,7 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         if (createNew) {
-            registerTopicConfig(topicConfig);
+            registerBrokerData(topicConfig);
         }
 
         return topicConfig;
@@ -277,7 +279,7 @@ public class TopicConfigManager extends ConfigManager {
             log.error("createTopicIfAbsent ", e);
         }
         if (createNew && register) {
-            registerTopicConfig(topicConfig);
+            registerBrokerData(topicConfig);
         }
         return getTopicConfig(topicConfig.getTopicName());
     }
@@ -337,7 +339,7 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         if (createNew) {
-            registerTopicConfig(topicConfig);
+            registerBrokerData(topicConfig);
         }
 
         return topicConfig;
@@ -378,59 +380,62 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         if (createNew) {
-            registerTopicConfig(topicConfig);
+            registerBrokerData(topicConfig);
         }
 
         return topicConfig;
     }
 
     public void updateTopicUnitFlag(final String topic, final boolean unit) {
-
         TopicConfig topicConfig = getTopicConfig(topic);
-        if (topicConfig != null) {
-            int oldTopicSysFlag = topicConfig.getTopicSysFlag();
-            if (unit) {
-                topicConfig.setTopicSysFlag(TopicSysFlag.setUnitFlag(oldTopicSysFlag));
-            } else {
-                topicConfig.setTopicSysFlag(TopicSysFlag.clearUnitFlag(oldTopicSysFlag));
-            }
-
-            log.info("update topic sys flag. oldTopicSysFlag={}, newTopicSysFlag={}", oldTopicSysFlag,
-                topicConfig.getTopicSysFlag());
-
-            putTopicConfig(topicConfig);
-
-            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-            dataVersion.nextVersion(stateMachineVersion);
-
-            this.persist();
-
-            registerTopicConfig(topicConfig);
+        if (topicConfig == null) {
+            return;
         }
+
+        int oldTopicSysFlag = topicConfig.getTopicSysFlag();
+        if (unit) {
+            topicConfig.setTopicSysFlag(TopicSysFlag.setUnitFlag(oldTopicSysFlag));
+        } else {
+            topicConfig.setTopicSysFlag(TopicSysFlag.clearUnitFlag(oldTopicSysFlag));
+        }
+
+        log.info("update topic sys flag. oldTopicSysFlag={}, newTopicSysFlag={}", oldTopicSysFlag,
+            topicConfig.getTopicSysFlag());
+
+        putTopicConfig(topicConfig);
+
+        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        dataVersion.nextVersion(stateMachineVersion);
+
+        this.persist();
+
+        registerBrokerData(topicConfig);
     }
 
     public void updateTopicUnitSubFlag(final String topic, final boolean hasUnitSub) {
         TopicConfig topicConfig = getTopicConfig(topic);
-        if (topicConfig != null) {
-            int oldTopicSysFlag = topicConfig.getTopicSysFlag();
-            if (hasUnitSub) {
-                topicConfig.setTopicSysFlag(TopicSysFlag.setUnitSubFlag(oldTopicSysFlag));
-            } else {
-                topicConfig.setTopicSysFlag(TopicSysFlag.clearUnitSubFlag(oldTopicSysFlag));
-            }
-
-            log.info("update topic sys flag. oldTopicSysFlag={}, newTopicSysFlag={}", oldTopicSysFlag,
-                topicConfig.getTopicSysFlag());
-
-            putTopicConfig(topicConfig);
-
-            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-            dataVersion.nextVersion(stateMachineVersion);
-
-            this.persist();
-
-            registerTopicConfig(topicConfig);
+        if (topicConfig == null) {
+            return;
         }
+
+        int oldTopicSysFlag = topicConfig.getTopicSysFlag();
+        if (hasUnitSub) {
+            topicConfig.setTopicSysFlag(TopicSysFlag.setUnitSubFlag(oldTopicSysFlag));
+        } else {
+            topicConfig.setTopicSysFlag(TopicSysFlag.clearUnitSubFlag(oldTopicSysFlag));
+        }
+
+        log.info("update topic sys flag. oldTopicSysFlag={}, newTopicSysFlag={}", oldTopicSysFlag,
+            topicConfig.getTopicSysFlag());
+
+        putTopicConfig(topicConfig);
+
+        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        dataVersion.nextVersion(stateMachineVersion);
+
+        this.persist();
+
+        registerBrokerData(topicConfig);
     }
 
     public void updateTopicConfig(final TopicConfig topicConfig) {
@@ -515,14 +520,15 @@ public class TopicConfigManager extends ConfigManager {
 
     public void deleteTopicConfig(final String topic) {
         TopicConfig old = removeTopicConfig(topic);
-        if (old != null) {
-            log.info("delete topic config OK, topic: {}", old);
-            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-            dataVersion.nextVersion(stateMachineVersion);
-            this.persist();
-        } else {
+        if (old == null) {
             log.warn("delete topic config failed, topic: {} not exists", topic);
+            return;
         }
+
+        log.info("delete topic config OK, topic: {}", old);
+        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        dataVersion.nextVersion(stateMachineVersion);
+        this.persist();
     }
 
     public TopicConfigSerializeWrapper buildTopicConfigSerializeWrapper() {
@@ -532,6 +538,24 @@ public class TopicConfigManager extends ConfigManager {
         dataVersionCopy.assignNewOne(this.dataVersion);
         topicConfigSerializeWrapper.setDataVersion(dataVersionCopy);
         return topicConfigSerializeWrapper;
+    }
+
+    public TopicConfigAndMappingSerializeWrapper buildSerializeWrapper(final ConcurrentMap<String, TopicConfig> topicConfigTable) {
+        return buildSerializeWrapper(topicConfigTable, Maps.newHashMap());
+    }
+
+    public TopicConfigAndMappingSerializeWrapper buildSerializeWrapper(
+        final ConcurrentMap<String, TopicConfig> topicConfigTable,
+        final Map<String, TopicQueueMappingInfo> topicQueueMappingInfoMap
+    ) {
+        TopicConfigAndMappingSerializeWrapper topicConfigWrapper = new TopicConfigAndMappingSerializeWrapper();
+        topicConfigWrapper.setTopicConfigTable(topicConfigTable);
+        topicConfigWrapper.setTopicQueueMappingInfoMap(topicQueueMappingInfoMap);
+        topicConfigWrapper.setDataVersion(this.getDataVersion());
+        if (this.brokerController.getBrokerConfig().isEnableSplitRegistration()) {
+            this.getDataVersion().nextVersion();
+        }
+        return topicConfigWrapper;
     }
 
     @Override
@@ -546,15 +570,18 @@ public class TopicConfigManager extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            TopicConfigSerializeWrapper topicConfigSerializeWrapper =
-                TopicConfigSerializeWrapper.fromJson(jsonString, TopicConfigSerializeWrapper.class);
-            if (topicConfigSerializeWrapper != null) {
-                this.topicConfigTable.putAll(topicConfigSerializeWrapper.getTopicConfigTable());
-                this.dataVersion.assignNewOne(topicConfigSerializeWrapper.getDataVersion());
-                this.printLoadDataWhenFirstBoot(topicConfigSerializeWrapper);
-            }
+        if (jsonString == null) {
+            return;
         }
+
+        TopicConfigSerializeWrapper topicConfigSerializeWrapper = TopicConfigSerializeWrapper.fromJson(jsonString, TopicConfigSerializeWrapper.class);
+        if (topicConfigSerializeWrapper == null) {
+            return;
+        }
+
+        this.topicConfigTable.putAll(topicConfigSerializeWrapper.getTopicConfigTable());
+        this.dataVersion.assignNewOne(topicConfigSerializeWrapper.getDataVersion());
+        this.printLoadDataWhenFirstBoot(topicConfigSerializeWrapper);
     }
 
     public String encode(final boolean prettyFormat) {
@@ -565,9 +592,7 @@ public class TopicConfigManager extends ConfigManager {
     }
 
     private void printLoadDataWhenFirstBoot(final TopicConfigSerializeWrapper tcs) {
-        Iterator<Entry<String, TopicConfig>> it = tcs.getTopicConfigTable().entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, TopicConfig> next = it.next();
+        for (Entry<String, TopicConfig> next : tcs.getTopicConfigTable().entrySet()) {
             log.info("load exist local topic, {}", next.getValue().toString());
         }
     }
@@ -593,21 +618,17 @@ public class TopicConfigManager extends ConfigManager {
         TopicConfig topicConfig = getTopicConfig(topic);
         if (topicConfig == null) {
             return new HashMap<>();
+        }
+
+        Map<String, String> attributes = topicConfig.getAttributes();
+        if (attributes == null) {
+            return new HashMap<>();
         } else {
-            Map<String, String> attributes = topicConfig.getAttributes();
-            if (attributes == null) {
-                return new HashMap<>();
-            } else {
-                return attributes;
-            }
+            return attributes;
         }
     }
 
-    public boolean containsTopic(String topic) {
-        return topicConfigTable.containsKey(topic);
-    }
-
-    private void registerTopicConfig(TopicConfig topicConfig) {
+    private void registerBrokerData(TopicConfig topicConfig) {
         if (brokerController.getBrokerConfig().isEnableSingleTopicRegister()) {
             this.brokerController.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
         } else {
@@ -615,4 +636,7 @@ public class TopicConfigManager extends ConfigManager {
         }
     }
 
+    public boolean containsTopic(String topic) {
+        return topicConfigTable.containsKey(topic);
+    }
 }
