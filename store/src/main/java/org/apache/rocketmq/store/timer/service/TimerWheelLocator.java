@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.rocketmq.store.timer.TimerMessageStore.ENQUEUE_PUT;
 
-public class TimerEnqueuePutService extends ServiceThread {
+public class TimerWheelLocator extends ServiceThread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private TimerMessageStore timerMessageStore;
@@ -47,7 +47,7 @@ public class TimerEnqueuePutService extends ServiceThread {
     private PerfCounter.Ticks perfCounterTicks;
     private Pointer pointer;
     private MessageStoreConfig storeConfig;
-    public TimerEnqueuePutService(TimerMessageStore timerMessageStore) {
+    public TimerWheelLocator(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
         enqueuePutQueue = timerMessageStore.getEnqueuePutQueue();
         dequeueGetQueue = timerMessageStore.getDequeueGetQueue();
