@@ -105,7 +105,7 @@ public class TimerMessageStore {
     protected final PerfCounter.Ticks perfCounterTicks = new PerfCounter.Ticks(LOGGER);
 
 
-    protected final BlockingQueue<TimerRequest>  enqueuePutQueue;
+    protected final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     protected final BlockingQueue<List<TimerRequest>> dequeueGetQueue;
     protected final BlockingQueue<TimerRequest> dequeuePutQueue;
 
@@ -182,11 +182,11 @@ public class TimerMessageStore {
         this.messageReader = new MessageReader(messageStore,storeConfig);
 
         if (storeConfig.isTimerEnableDisruptor()) {
-            enqueuePutQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
+            fetchedTimerMessageQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
             dequeueGetQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
             dequeuePutQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
         } else {
-            enqueuePutQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
+            fetchedTimerMessageQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
             dequeueGetQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
             dequeuePutQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
         }
@@ -194,7 +194,7 @@ public class TimerMessageStore {
     }
 
     public void initService() {
-        enqueueGetService = new TimerMessageFetcher(enqueuePutQueue,storeConfig, perfCounterTicks,messageReader, messageStore, pointer, timerCheckpoint, getServiceThreadName());
+        enqueueGetService = new TimerMessageFetcher(fetchedTimerMessageQueue,storeConfig, perfCounterTicks,messageReader, messageStore, pointer, timerCheckpoint, getServiceThreadName());
         enqueuePutService = new TimerWheelLocator(this);
         dequeueWarmService = new TimerDequeueWarmService(this);
         dequeueGetService = new TimerWheelFetcher(this);
@@ -496,7 +496,7 @@ public class TimerMessageStore {
         timerLog.shutdown();
         timerCheckpoint.shutdown();
 
-        enqueuePutQueue.clear(); //avoid blocking
+        fetchedTimerMessageQueue.clear(); //avoid blocking
         dequeueGetQueue.clear(); //avoid blocking
         dequeuePutQueue.clear(); //avoid blocking
 
@@ -1116,8 +1116,8 @@ public class TimerMessageStore {
         return brokerIdentifier;
     }
 
-    public BlockingQueue<TimerRequest> getEnqueuePutQueue() {
-        return enqueuePutQueue;
+    public BlockingQueue<TimerRequest> getFetchedTimerMessageQueue() {
+        return fetchedTimerMessageQueue;
     }
 
     public BlockingQueue<List<TimerRequest>> getDequeueGetQueue() {
