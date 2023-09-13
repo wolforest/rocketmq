@@ -91,10 +91,24 @@ public class ReputMessageService extends ServiceThread {
     }
 
     private void addDispatchCount(DispatchRequest dispatchRequest) {
-        if (!messageStore.getMessageStoreConfig().isDuplicationEnable() && messageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
-            messageStore.getStoreStatsService().getSinglePutMessageTopicTimesTotal(dispatchRequest.getTopic()).add(dispatchRequest.getBatchSize());
-            messageStore.getStoreStatsService().getSinglePutMessageTopicSizeTotal(dispatchRequest.getTopic()).add(dispatchRequest.getMsgSize());
+        if (messageStore.getMessageStoreConfig().isDuplicationEnable() || messageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE) {
+            return;
         }
+
+        messageStore.getStoreStatsService().getSinglePutMessageTopicTimesTotal(dispatchRequest.getTopic()).add(dispatchRequest.getBatchSize());
+        messageStore.getStoreStatsService().getSinglePutMessageTopicSizeTotal(dispatchRequest.getTopic()).add(dispatchRequest.getMsgSize());
+    }
+
+    private void invokeArrivingListener(DispatchRequest dispatchRequest) {
+        if (!messageStore.getBrokerConfig().isLongPollingEnable() || messageStore.getMessageArrivingListener() == null) {
+            return;
+        }
+
+        messageStore.getMessageArrivingListener().arriving(dispatchRequest.getTopic(),
+            dispatchRequest.getQueueId(), dispatchRequest.getConsumeQueueOffset() + 1,
+            dispatchRequest.getTagsCode(), dispatchRequest.getStoreTimestamp(),
+            dispatchRequest.getBitMap(), dispatchRequest.getPropertiesMap());
+        notifyMessageArrive4MultiQueue(dispatchRequest);
     }
 
     private int handleDispatchSuccess(int readSize, int size, SelectMappedBufferResult result, DispatchRequest dispatchRequest) {
@@ -109,14 +123,7 @@ public class ReputMessageService extends ServiceThread {
         }
 
         messageStore.doDispatch(dispatchRequest);
-
-        if (messageStore.getBrokerConfig().isLongPollingEnable() && messageStore.getMessageArrivingListener() != null) {
-            messageStore.getMessageArrivingListener().arriving(dispatchRequest.getTopic(),
-                dispatchRequest.getQueueId(), dispatchRequest.getConsumeQueueOffset() + 1,
-                dispatchRequest.getTagsCode(), dispatchRequest.getStoreTimestamp(),
-                dispatchRequest.getBitMap(), dispatchRequest.getPropertiesMap());
-            notifyMessageArrive4MultiQueue(dispatchRequest);
-        }
+        invokeArrivingListener(dispatchRequest);
 
         this.reputFromOffset += size;
         readSize += size;
