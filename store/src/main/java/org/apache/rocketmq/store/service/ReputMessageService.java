@@ -90,31 +90,31 @@ public class ReputMessageService extends ServiceThread {
     }
 
     private int handleDispatchSuccess(int readSize, int size, SelectMappedBufferResult result, DispatchRequest dispatchRequest) {
-        if (size > 0) {
-            messageStore.doDispatch(dispatchRequest);
+        if (size < 0) {
+            return readSize;
+        }
 
-            if (messageStore.getBrokerConfig().isLongPollingEnable()
-                && messageStore.getMessageArrivingListener() != null) {
-                messageStore.getMessageArrivingListener().arriving(dispatchRequest.getTopic(),
-                    dispatchRequest.getQueueId(), dispatchRequest.getConsumeQueueOffset() + 1,
-                    dispatchRequest.getTagsCode(), dispatchRequest.getStoreTimestamp(),
-                    dispatchRequest.getBitMap(), dispatchRequest.getPropertiesMap());
-                notifyMessageArrive4MultiQueue(dispatchRequest);
-            }
-
-            this.reputFromOffset += size;
-            readSize += size;
-            if (!messageStore.getMessageStoreConfig().isDuplicationEnable() &&
-                messageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
-                messageStore.getStoreStatsService()
-                    .getSinglePutMessageTopicTimesTotal(dispatchRequest.getTopic()).add(dispatchRequest.getBatchSize());
-                messageStore.getStoreStatsService()
-                    .getSinglePutMessageTopicSizeTotal(dispatchRequest.getTopic())
-                    .add(dispatchRequest.getMsgSize());
-            }
-        } else if (size == 0) {
+        if (size == 0) {
             this.reputFromOffset = messageStore.getCommitLog().rollNextFile(this.reputFromOffset);
             readSize = result.getSize();
+            return readSize;
+        }
+
+        messageStore.doDispatch(dispatchRequest);
+
+        if (messageStore.getBrokerConfig().isLongPollingEnable() && messageStore.getMessageArrivingListener() != null) {
+            messageStore.getMessageArrivingListener().arriving(dispatchRequest.getTopic(),
+                dispatchRequest.getQueueId(), dispatchRequest.getConsumeQueueOffset() + 1,
+                dispatchRequest.getTagsCode(), dispatchRequest.getStoreTimestamp(),
+                dispatchRequest.getBitMap(), dispatchRequest.getPropertiesMap());
+            notifyMessageArrive4MultiQueue(dispatchRequest);
+        }
+
+        this.reputFromOffset += size;
+        readSize += size;
+        if (!messageStore.getMessageStoreConfig().isDuplicationEnable() && messageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
+            messageStore.getStoreStatsService().getSinglePutMessageTopicTimesTotal(dispatchRequest.getTopic()).add(dispatchRequest.getBatchSize());
+            messageStore.getStoreStatsService().getSinglePutMessageTopicSizeTotal(dispatchRequest.getTopic()).add(dispatchRequest.getMsgSize());
         }
 
         return readSize;
