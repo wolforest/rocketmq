@@ -57,22 +57,19 @@ public class ConcurrentReputMessageService extends ReputMessageService {
 
     @Override
     public void doReput() {
-        if (this.reputFromOffset < messageStore.getCommitLog().getMinOffset()) {
-            LOGGER.warn("The reputFromOffset={} is smaller than minPyOffset={}, this usually indicate that the dispatch behind too much and the commitlog has expired.",
-                this.reputFromOffset, messageStore.getCommitLog().getMinOffset());
-            this.reputFromOffset = messageStore.getCommitLog().getMinOffset();
-        }
+        loadReputOffset();
+
         for (boolean doNext = true; this.isCommitLogAvailable() && doNext; ) {
             SelectMappedBufferResult result = messageStore.getCommitLog().getData(reputFromOffset);
             if (result == null) {
                 break;
             }
 
-            doNext = reputMappedFile(result, doNext);
+            doNext = doReput(result, doNext);
         }
     }
 
-    private boolean reputMappedFile(SelectMappedBufferResult result, boolean doNext) {
+    private boolean doReput(SelectMappedBufferResult result, boolean doNext) {
         int start = -1;
         int size = -1;
         try {

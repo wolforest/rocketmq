@@ -143,7 +143,7 @@ public class ReputMessageService extends ServiceThread {
         return doNext;
     }
 
-    private void loadReputOffset() {
+    protected void loadReputOffset() {
         if (this.reputFromOffset >= messageStore.getCommitLog().getMinOffset()) {
             return;
         }
