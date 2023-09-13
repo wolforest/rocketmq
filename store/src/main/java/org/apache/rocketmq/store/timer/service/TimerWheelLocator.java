@@ -44,7 +44,7 @@ public class TimerWheelLocator extends ServiceThread {
     private TimerMessageStore timerMessageStore;
     private BlockingQueue<TimerRequest> enqueuePutQueue;
     private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
-    private BlockingQueue<TimerRequest> dequeuePutQueue;
+    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private PerfCounter.Ticks perfCounterTicks;
     private TimerState pointer;
     private MessageStoreConfig storeConfig;
@@ -52,7 +52,7 @@ public class TimerWheelLocator extends ServiceThread {
         this.timerMessageStore = timerMessageStore;
         enqueuePutQueue = timerMessageStore.getFetchedTimerMessageQueue();
         dequeueGetQueue = timerMessageStore.getDequeueGetQueue();
-        dequeuePutQueue = timerMessageStore.getTimerMessageDeliverQueue();
+        timerMessageDeliverQueue = timerMessageStore.getTimerMessageDeliverQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
         pointer = timerMessageStore.getPointer();
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
@@ -91,7 +91,7 @@ public class TimerWheelLocator extends ServiceThread {
             perfCounterTicks.startTick(ENQUEUE_PUT);
             DefaultStoreMetricsManager.incTimerEnqueueCount(timerMessageStore.getRealTopic(req.getMsg()));
             if (pointer.shouldRunningDequeue && req.getDelayTime() < pointer.currWriteTimeMs) {
-                dequeuePutQueue.put(req);
+                timerMessageDeliverQueue.put(req);
             } else {
                 boolean doEnqueueRes = timerMessageStore.doEnqueue(
                         req.getOffsetPy(), req.getSizePy(), req.getDelayTime(), req.getMsg());
@@ -132,7 +132,7 @@ public class TimerWheelLocator extends ServiceThread {
         }
         int checkNum = 0;
         while (true) {
-            if (dequeuePutQueue.size() > 0
+            if (timerMessageDeliverQueue.size() > 0
                     || !checkStateForGetMessages(AbstractStateService.WAITING)
                     || !checkStateForPutMessages(AbstractStateService.WAITING)) {
                 //let it go
