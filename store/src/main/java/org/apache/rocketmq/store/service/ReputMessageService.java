@@ -32,7 +32,8 @@ import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.BrokerRole;
 
 /**
- * send commitLog messages to consume queue, index service, ...
+ * synchronize commitLog messages to consume queue, index service, ...
+ * CommitLogSynchronizer may be a better name
  *
  * daemon thread, start by DefaultMessageStore.start()
  */
@@ -89,6 +90,13 @@ public class ReputMessageService extends ServiceThread {
         this.reputFromOffset = messageStore.getCommitLog().getMinOffset();
     }
 
+    private void addDispatchCount(DispatchRequest dispatchRequest) {
+        if (!messageStore.getMessageStoreConfig().isDuplicationEnable() && messageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
+            messageStore.getStoreStatsService().getSinglePutMessageTopicTimesTotal(dispatchRequest.getTopic()).add(dispatchRequest.getBatchSize());
+            messageStore.getStoreStatsService().getSinglePutMessageTopicSizeTotal(dispatchRequest.getTopic()).add(dispatchRequest.getMsgSize());
+        }
+    }
+
     private int handleDispatchSuccess(int readSize, int size, SelectMappedBufferResult result, DispatchRequest dispatchRequest) {
         if (size < 0) {
             return readSize;
@@ -112,10 +120,7 @@ public class ReputMessageService extends ServiceThread {
 
         this.reputFromOffset += size;
         readSize += size;
-        if (!messageStore.getMessageStoreConfig().isDuplicationEnable() && messageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
-            messageStore.getStoreStatsService().getSinglePutMessageTopicTimesTotal(dispatchRequest.getTopic()).add(dispatchRequest.getBatchSize());
-            messageStore.getStoreStatsService().getSinglePutMessageTopicSizeTotal(dispatchRequest.getTopic()).add(dispatchRequest.getMsgSize());
-        }
+        addDispatchCount(dispatchRequest);
 
         return readSize;
     }
