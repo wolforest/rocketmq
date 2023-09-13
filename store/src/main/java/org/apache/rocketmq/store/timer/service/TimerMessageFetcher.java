@@ -16,7 +16,6 @@
  */
 package org.apache.rocketmq.store.timer.service;
 
-import com.conversantmedia.util.concurrent.DisruptorBlockingQueue;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -35,9 +34,7 @@ import org.apache.rocketmq.store.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.util.PerfCounter;
 
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -58,11 +55,11 @@ public class TimerMessageFetcher extends ServiceThread {
     private MessageStore messageStore;
     private PerfCounter.Ticks perfCounterTicks;
     private MessageReader messageReader;
-    private BlockingQueue<TimerRequest> enqueuePutQueue;
+    private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
 
-    public TimerMessageFetcher(BlockingQueue<TimerRequest> enqueuePutQueue , MessageStoreConfig storeConfig, PerfCounter.Ticks perfCounterTicks, MessageReader messageReader, MessageStore messageStore, TimerState pointer, TimerCheckpoint timerCheckpoint, String serviceThreadName) {
-        this.enqueuePutQueue = enqueuePutQueue;
+    public TimerMessageFetcher(BlockingQueue<TimerRequest> fetchedTimerMessageQueue, MessageStoreConfig storeConfig, PerfCounter.Ticks perfCounterTicks, MessageReader messageReader, MessageStore messageStore, TimerState pointer, TimerCheckpoint timerCheckpoint, String serviceThreadName) {
+        this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.storeConfig = storeConfig;
         this.serviceThreadName = serviceThreadName;
         this.lastBrokerRole = storeConfig.getBrokerRole();
@@ -152,7 +149,7 @@ public class TimerMessageFetcher extends ServiceThread {
                         msgExt.setQueueOffset(offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE));
                         TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
                         // System.out.printf("build enqueue request, %s%n", timerRequest);
-                        while (!enqueuePutQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
+                        while (!fetchedTimerMessageQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
                             if (!isRunningEnqueue()) {
                                 return false;
                             }
