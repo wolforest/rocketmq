@@ -48,13 +48,20 @@ public class ReputMessageService extends ServiceThread {
         this.messageStore = messageStore;
     }
 
+    @Override
+    public void run() {
+        LOGGER.info(this.getServiceName() + " service started");
 
-    public long getReputFromOffset() {
-        return reputFromOffset;
-    }
+        while (!this.isStopped()) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(1);
+                this.doReput();
+            } catch (Exception e) {
+                LOGGER.warn(this.getServiceName() + " service has exception. ", e);
+            }
+        }
 
-    public void setReputFromOffset(long reputFromOffset) {
-        this.reputFromOffset = reputFromOffset;
+        LOGGER.info(this.getServiceName() + " service end");
     }
 
     @Override
@@ -72,12 +79,68 @@ public class ReputMessageService extends ServiceThread {
         super.shutdown();
     }
 
+    public long getReputFromOffset() {
+        return reputFromOffset;
+    }
+
+    public void setReputFromOffset(long reputFromOffset) {
+        this.reputFromOffset = reputFromOffset;
+    }
+
     public long behind() {
         return messageStore.getConfirmOffset() - this.reputFromOffset;
     }
 
     public boolean isCommitLogAvailable() {
         return this.reputFromOffset < messageStore.getConfirmOffset();
+    }
+
+    public void doReput() {
+        loadReputOffset();
+        for (boolean doNext = true; this.isCommitLogAvailable() && doNext; ) {
+            SelectMappedBufferResult result = messageStore.getCommitLog().getData(reputFromOffset);
+            if (result == null) {
+                break;
+            }
+
+            doNext = doReput(doNext, result);
+        }
+    }
+
+    /**
+     *
+     * @param doNext boolean
+     * @param result not null
+     * @return boolean
+     */
+    private boolean doReput(boolean doNext, SelectMappedBufferResult result) {
+        this.reputFromOffset = result.getStartOffset();
+
+        try {
+            for (int readSize = 0; readSize < result.getSize() && reputFromOffset < messageStore.getConfirmOffset() && doNext; ) {
+                DispatchRequest dispatchRequest = messageStore.getCommitLog().checkMessageAndReturnSize(result.getByteBuffer(), false, false, false);
+                int size = dispatchRequest.getBufferSize() == -1 ? dispatchRequest.getMsgSize() : dispatchRequest.getBufferSize();
+
+                if (reputFromOffset + size > messageStore.getConfirmOffset()) {
+                    doNext = false;
+                    break;
+                }
+
+                if (dispatchRequest.isSuccess()) {
+                    readSize = handleDispatchSuccess(readSize, size, result, dispatchRequest);
+                } else if(size > 0) {
+                    LOGGER.error("[BUG]read total count not equals msg total size. reputFromOffset={}", reputFromOffset);
+                    this.reputFromOffset += size;
+                } else {
+                    doNext = false;
+                    fixReputOffset(result, readSize);
+                }
+            }
+        } finally {
+            result.release();
+        }
+
+        return doNext;
     }
 
     private void loadReputOffset() {
@@ -143,53 +206,7 @@ public class ReputMessageService extends ServiceThread {
         }
     }
 
-    /**
-     *
-     * @param doNext boolean
-     * @param result not null
-     * @return boolean
-     */
-    private boolean doReput(boolean doNext, SelectMappedBufferResult result) {
-        this.reputFromOffset = result.getStartOffset();
 
-        try {
-            for (int readSize = 0; readSize < result.getSize() && reputFromOffset < messageStore.getConfirmOffset() && doNext; ) {
-                DispatchRequest dispatchRequest = messageStore.getCommitLog().checkMessageAndReturnSize(result.getByteBuffer(), false, false, false);
-                int size = dispatchRequest.getBufferSize() == -1 ? dispatchRequest.getMsgSize() : dispatchRequest.getBufferSize();
-
-                if (reputFromOffset + size > messageStore.getConfirmOffset()) {
-                    doNext = false;
-                    break;
-                }
-
-                if (dispatchRequest.isSuccess()) {
-                    readSize = handleDispatchSuccess(readSize, size, result, dispatchRequest);
-                } else if(size > 0) {
-                    LOGGER.error("[BUG]read total count not equals msg total size. reputFromOffset={}", reputFromOffset);
-                    this.reputFromOffset += size;
-                } else {
-                    doNext = false;
-                    fixReputOffset(result, readSize);
-                }
-            }
-        } finally {
-            result.release();
-        }
-
-        return doNext;
-    }
-
-    public void doReput() {
-        loadReputOffset();
-        for (boolean doNext = true; this.isCommitLogAvailable() && doNext; ) {
-            SelectMappedBufferResult result = messageStore.getCommitLog().getData(reputFromOffset);
-            if (result == null) {
-                break;
-            }
-
-            doNext = doReput(doNext, result);
-        }
-    }
 
     public void notifyMessageArrive4MultiQueue(DispatchRequest dispatchRequest) {
         Map<String, String> prop = dispatchRequest.getPropertiesMap();
@@ -219,21 +236,7 @@ public class ReputMessageService extends ServiceThread {
         }
     }
 
-    @Override
-    public void run() {
-        LOGGER.info(this.getServiceName() + " service started");
 
-        while (!this.isStopped()) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(1);
-                this.doReput();
-            } catch (Exception e) {
-                LOGGER.warn(this.getServiceName() + " service has exception. ", e);
-            }
-        }
-
-        LOGGER.info(this.getServiceName() + " service end");
-    }
 
     @Override
     public String getServiceName() {
