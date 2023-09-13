@@ -108,6 +108,50 @@ public class TimerWheelLocator extends ServiceThread {
         }
     }
 
+    public boolean checkStateForPutMessages(int state) {
+        for (AbstractStateService service : dequeuePutMessageServices) {
+            if (!service.isState(state)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean checkStateForGetMessages(int state) {
+        for (AbstractStateService service : dequeueGetMessageServices) {
+            if (!service.isState(state)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void checkDequeueLatch(CountDownLatch latch, long delayedTime) throws Exception {
+        if (latch.await(1, TimeUnit.SECONDS)) {
+            return;
+        }
+        int checkNum = 0;
+        while (true) {
+            if (dequeuePutQueue.size() > 0
+                    || !checkStateForGetMessages(AbstractStateService.WAITING)
+                    || !checkStateForPutMessages(AbstractStateService.WAITING)) {
+                //let it go
+            } else {
+                checkNum++;
+                if (checkNum >= 2) {
+                    break;
+                }
+            }
+            if (latch.await(1, TimeUnit.SECONDS)) {
+                break;
+            }
+        }
+        if (!latch.await(1, TimeUnit.SECONDS)) {
+            LOGGER.warn("Check latch failed delayedTime:{}", delayedTime);
+        }
+    }
+
+
     protected void fetchAndPutTimerRequest() throws Exception {
         long tmpCommitQueueOffset = pointer.currQueueOffset;
         List<TimerRequest> trs = this.fetchTimerRequests();
@@ -123,7 +167,7 @@ public class TimerWheelLocator extends ServiceThread {
                 req.setLatch(latch);
                 this.putMessageToTimerWheel(req);
             }
-            timerMessageStore.checkDequeueLatch(latch, -1);
+            checkDequeueLatch(latch, -1);
             boolean allSuccess = trs.stream().allMatch(TimerRequest::isSucc);
             if (allSuccess) {
                 break;
