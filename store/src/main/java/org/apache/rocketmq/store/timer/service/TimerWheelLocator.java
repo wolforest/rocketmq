@@ -43,7 +43,6 @@ public class TimerWheelLocator extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private TimerMessageStore timerMessageStore;
     private BlockingQueue<TimerRequest> enqueuePutQueue;
-    private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private PerfCounter.Ticks perfCounterTicks;
     private TimerState pointer;
@@ -51,7 +50,6 @@ public class TimerWheelLocator extends ServiceThread {
     public TimerWheelLocator(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
         enqueuePutQueue = timerMessageStore.getFetchedTimerMessageQueue();
-        dequeueGetQueue = timerMessageStore.getDequeueGetQueue();
         timerMessageDeliverQueue = timerMessageStore.getTimerMessageDeliverQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
         pointer = timerMessageStore.getPointer();
@@ -126,7 +124,7 @@ public class TimerWheelLocator extends ServiceThread {
         return true;
     }
 
-    public void checkDequeueLatch(CountDownLatch latch, long delayedTime) throws Exception {
+    public void checkDeliverQueueLatch(CountDownLatch latch, long delayedTime) throws Exception {
         if (latch.await(1, TimeUnit.SECONDS)) {
             return;
         }
