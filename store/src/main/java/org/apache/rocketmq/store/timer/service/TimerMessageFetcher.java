@@ -50,7 +50,7 @@ public class TimerMessageFetcher extends ServiceThread {
     private MessageStoreConfig storeConfig;
     private String serviceThreadName;
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
-    private TimerState pointer;
+    private TimerState timerState;
     private TimerCheckpoint timerCheckpoint;
     private MessageStore messageStore;
     private PerfCounter.Ticks perfCounterTicks;
@@ -58,13 +58,13 @@ public class TimerMessageFetcher extends ServiceThread {
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
 
-    public TimerMessageFetcher(BlockingQueue<TimerRequest> fetchedTimerMessageQueue, MessageStoreConfig storeConfig, PerfCounter.Ticks perfCounterTicks, MessageReader messageReader, MessageStore messageStore, TimerState pointer, TimerCheckpoint timerCheckpoint, String serviceThreadName) {
+    public TimerMessageFetcher(BlockingQueue<TimerRequest> fetchedTimerMessageQueue, MessageStoreConfig storeConfig, PerfCounter.Ticks perfCounterTicks, MessageReader messageReader, MessageStore messageStore, TimerState timerState, TimerCheckpoint timerCheckpoint, String serviceThreadName) {
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.storeConfig = storeConfig;
         this.serviceThreadName = serviceThreadName;
         this.lastBrokerRole = storeConfig.getBrokerRole();
         this.messageReader = messageReader;
-        this.pointer = pointer;
+        this.timerState = timerState;
         this.timerCheckpoint = timerCheckpoint;
         this.messageStore = messageStore;
         this.perfCounterTicks = perfCounterTicks;
@@ -83,12 +83,12 @@ public class TimerMessageFetcher extends ServiceThread {
                 LOGGER.info("Broker role change from {} to {}", lastBrokerRole, currRole);
                 //if change to master, do something
                 if (BrokerRole.SLAVE != currRole) {
-                    pointer.currQueueOffset = Math.min(pointer.currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
-                    pointer.commitQueueOffset = pointer.currQueueOffset;
-                    pointer.prepareTimerCheckPoint();
+                    timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
+                    timerState.commitQueueOffset = timerState.currQueueOffset;
+                    timerState.prepareTimerCheckPoint();
                     timerCheckpoint.flush();
-                    pointer.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
-                    pointer.commitReadTimeMs = pointer.currReadTimeMs;
+                    timerState.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
+                    timerState.commitReadTimeMs = timerState.currReadTimeMs;
                 }
                 //if change to slave, just let it go
                 lastBrokerRole = currRole;
@@ -102,11 +102,11 @@ public class TimerMessageFetcher extends ServiceThread {
 
     private boolean isRunningEnqueue() {
         checkBrokerRole();
-        if (!pointer.shouldRunningDequeue && !isMaster() && pointer.currQueueOffset >= timerCheckpoint.getMasterTimerQueueOffset()) {
+        if (!timerState.shouldRunningDequeue && !isMaster() && timerState.currQueueOffset >= timerCheckpoint.getMasterTimerQueueOffset()) {
             return false;
         }
 
-        return pointer.isRunning();
+        return timerState.isRunning();
     }
 
     public boolean enqueue(int queueId) {
@@ -120,12 +120,12 @@ public class TimerMessageFetcher extends ServiceThread {
         if (null == cq) {
             return false;
         }
-        if (pointer.currQueueOffset < cq.getMinOffsetInQueue()) {
+        if (timerState.currQueueOffset < cq.getMinOffsetInQueue()) {
             LOGGER.warn("Timer currQueueOffset:{} is smaller than minOffsetInQueue:{}",
-                    pointer.currQueueOffset, cq.getMinOffsetInQueue());
-            pointer.currQueueOffset = cq.getMinOffsetInQueue();
+                    timerState.currQueueOffset, cq.getMinOffsetInQueue());
+            timerState.currQueueOffset = cq.getMinOffsetInQueue();
         }
-        long offset = pointer.currQueueOffset;
+        long offset = timerState.currQueueOffset;
         SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(offset);
         if (null == bufferCQ) {
             return false;
@@ -142,8 +142,8 @@ public class TimerMessageFetcher extends ServiceThread {
                     if (null == msgExt) {
                         perfCounterTicks.getCounter("enqueue_get_miss");
                     } else {
-                        pointer.lastEnqueueButExpiredTime = System.currentTimeMillis();
-                        pointer.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
+                        timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
+                        timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
                         long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
                         // use CQ offset, not offset in Message
                         msgExt.setQueueOffset(offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE));
@@ -170,9 +170,9 @@ public class TimerMessageFetcher extends ServiceThread {
                 if (!isRunningEnqueue()) {
                     return false;
                 }
-                pointer.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
+                timerState.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
             }
-            pointer.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
+            timerState.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
             return i > 0;
         } catch (Exception e) {
             LOGGER.error("Unknown exception in enqueuing", e);
