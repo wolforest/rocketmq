@@ -165,7 +165,7 @@ public class TimerWheelLocator extends ServiceThread {
                 req.setLatch(latch);
                 this.putMessageToTimerWheel(req);
             }
-            checkDequeueLatch(latch, -1);
+            checkDeliverQueueLatch(latch, -1);
             boolean allSuccess = trs.stream().allMatch(TimerRequest::isSucc);
             if (allSuccess) {
                 break;
