@@ -52,7 +52,7 @@ public class TimerWheelLocator extends ServiceThread {
         this.timerMessageStore = timerMessageStore;
         enqueuePutQueue = timerMessageStore.getFetchedTimerMessageQueue();
         dequeueGetQueue = timerMessageStore.getDequeueGetQueue();
-        dequeuePutQueue = timerMessageStore.getDequeuePutQueue();
+        dequeuePutQueue = timerMessageStore.getTimerMessageDeliverQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
         pointer = timerMessageStore.getPointer();
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();

@@ -49,7 +49,7 @@ public class TimerMessageDeliver extends AbstractStateService {
     private MessageStoreConfig storeConfig;
     public TimerMessageDeliver(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
-        dequeuePutQueue = timerMessageStore.getDequeuePutQueue();
+        dequeuePutQueue = timerMessageStore.getTimerMessageDeliverQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
         pointer = timerMessageStore.getPointer();
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();

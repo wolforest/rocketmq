@@ -106,7 +106,7 @@ public class TimerMessageStore {
 
     protected final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     protected final BlockingQueue<List<TimerRequest>> dequeueGetQueue;
-    protected final BlockingQueue<TimerRequest> dequeuePutQueue;
+    protected final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
 
     private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
 
@@ -183,11 +183,11 @@ public class TimerMessageStore {
         if (storeConfig.isTimerEnableDisruptor()) {
             fetchedTimerMessageQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
             dequeueGetQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
-            dequeuePutQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
+            timerMessageDeliverQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
         } else {
             fetchedTimerMessageQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
             dequeueGetQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
-            dequeuePutQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
+            timerMessageDeliverQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
         }
         this.brokerStatsManager = brokerStatsManager;
     }
@@ -497,7 +497,7 @@ public class TimerMessageStore {
 
         fetchedTimerMessageQueue.clear(); //avoid blocking
         dequeueGetQueue.clear(); //avoid blocking
-        dequeuePutQueue.clear(); //avoid blocking
+        timerMessageDeliverQueue.clear(); //avoid blocking
 
         enqueueGetService.shutdown();
         enqueuePutService.shutdown();
@@ -1083,8 +1083,8 @@ public class TimerMessageStore {
         return dequeueGetQueue;
     }
 
-    public BlockingQueue<TimerRequest> getDequeuePutQueue() {
-        return dequeuePutQueue;
+    public BlockingQueue<TimerRequest> getTimerMessageDeliverQueue() {
+        return timerMessageDeliverQueue;
     }
 
     public PerfCounter.Ticks getPerfCounterTicks() {
