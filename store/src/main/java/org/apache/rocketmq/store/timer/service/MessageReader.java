@@ -32,7 +32,7 @@ public class MessageReader {
     private final ThreadLocal<ByteBuffer> bufferLocal;
     private MessageStore messageStore;
     private MessageStoreConfig storeConfig;
-    public MessageReader(MessageStore messageStore,MessageStoreConfig storeConfig){
+    public MessageReader(MessageStore messageStore,MessageStoreConfig storeConfig) {
         this.messageStore = messageStore;
         this.storeConfig = storeConfig;
         bufferLocal = new ThreadLocal<ByteBuffer>() {
@@ -61,7 +61,7 @@ public class MessageReader {
         }
         return null;
     }
-    public void clean(){
+    public void clean() {
         UtilAll.cleanBuffer(this.bufferLocal.get());
         this.bufferLocal.remove();
     }
