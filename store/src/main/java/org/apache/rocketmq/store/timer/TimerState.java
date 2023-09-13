@@ -16,6 +16,9 @@
  */
 package org.apache.rocketmq.store.timer;
 
+import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.store.MessageStore;
+
 public class Pointer {
     public volatile long currReadTimeMs;
     public volatile long currWriteTimeMs;
@@ -30,12 +33,34 @@ public class Pointer {
     // True if current store is master or current brokerId is equal to the minimum brokerId of the replica group in slaveActingMaster mode.
     public volatile boolean shouldRunningDequeue;
 
-    public Pointer() {
+    private TimerCheckpoint timerCheckpoint;
+    private TimerLog timerLog;
+    private MessageStore messageStore;
 
+    public Pointer(TimerCheckpoint timerCheckpoint, TimerLog timerLog, MessageStore messageStore) {
+        this.timerCheckpoint = timerCheckpoint;
+        this.timerLog = timerLog;
+        this.messageStore = messageStore;
     }
 
     public void syncLastReadTimeMs(Long lastReadTimeMs) {
         currReadTimeMs = lastReadTimeMs;// timerCheckpoint.getLastReadTimeMs();
         commitReadTimeMs = currReadTimeMs;
     }
+
+    public void prepareTimerCheckPoint() {
+        timerCheckpoint.setLastTimerLogFlushPos(timerLog.getMappedFileQueue().getFlushedWhere());
+        timerCheckpoint.setLastReadTimeMs(commitReadTimeMs);
+        if (shouldRunningDequeue) {
+            timerCheckpoint.setMasterTimerQueueOffset(commitQueueOffset);
+            if (commitReadTimeMs != lastCommitReadTimeMs || commitQueueOffset != lastCommitQueueOffset) {
+                timerCheckpoint.updateDateVersion(messageStore.getStateMachineVersion());
+                lastCommitReadTimeMs = commitReadTimeMs;
+                lastCommitQueueOffset = commitQueueOffset;
+            }
+        }
+        timerCheckpoint.setLastTimerQueueOffset(Math.min(commitQueueOffset, timerCheckpoint.getMasterTimerQueueOffset()));
+    }
+
+
 }
