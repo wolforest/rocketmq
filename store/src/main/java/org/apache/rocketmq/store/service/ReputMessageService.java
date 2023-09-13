@@ -128,7 +128,7 @@ public class ReputMessageService extends ServiceThread {
 
                 if (dispatchRequest.isSuccess()) {
                     readSize = handleDispatchSuccess(readSize, size, result, dispatchRequest);
-                } else if(size > 0) {
+                } else if (size > 0) {
                     LOGGER.error("[BUG]read total count not equals msg total size. reputFromOffset={}", reputFromOffset);
                     this.reputFromOffset += size;
                 } else {
