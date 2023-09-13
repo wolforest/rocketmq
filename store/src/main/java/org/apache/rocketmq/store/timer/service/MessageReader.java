@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.store.timer.service;
 
+import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -32,12 +33,15 @@ public class MessageReader {
     private MessageStore messageStore;
     private MessageStoreConfig storeConfig;
     public MessageReader(MessageStore messageStore,MessageStoreConfig storeConfig){
+        this.messageStore = messageStore;
+        this.storeConfig = storeConfig;
         bufferLocal = new ThreadLocal<ByteBuffer>() {
             @Override
             protected ByteBuffer initialValue() {
                 return ByteBuffer.allocateDirect(storeConfig.getMaxMessageSize() + 100);
             }
         };
+
     }
     public MessageExt getMessageByCommitOffset(long offsetPy, int sizePy) {
         for (int i = 0; i < 3; i++) {
@@ -56,5 +60,9 @@ public class MessageReader {
             }
         }
         return null;
+    }
+    public void clean(){
+        UtilAll.cleanBuffer(this.bufferLocal.get());
+        this.bufferLocal.remove();
     }
 }
