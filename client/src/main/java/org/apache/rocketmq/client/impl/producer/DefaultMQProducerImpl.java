@@ -294,11 +294,11 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 null);
         }
 
-        this.mQClientFactory.start();
-
-        if (this.mqFaultStrategy.isStartDetectorEnable()) {
-            this.mqFaultStrategy.startDetector();
+        if (startFactory) {
+            this.mQClientFactory.start();
         }
+
+        this.mqFaultStrategy.startDetector();
 
         log.info("the producer [{}] start OK. sendMessageWithVIPChannel={}", this.defaultMQProducer.getProducerGroup(),
             this.defaultMQProducer.isSendMessageWithVIPChannel());
