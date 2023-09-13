@@ -23,7 +23,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.timer.Pointer;
+import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.timer.TimerLog;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
@@ -47,7 +47,7 @@ public class TimerFlushService extends ServiceThread {
     private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
     private BlockingQueue<TimerRequest> dequeuePutQueue;
     private MessageStoreConfig storeConfig;
-    private Pointer pointer;
+    private TimerState pointer;
     private TimerMetrics timerMetrics;
     private TimerCheckpoint timerCheckpoint;
     private TimerLog timerLog;
@@ -86,7 +86,7 @@ public class TimerFlushService extends ServiceThread {
 
         while (!this.isStopped()) {
             try {
-                timerMessageStore.prepareTimerCheckPoint();
+                pointer.prepareTimerCheckPoint();
                 timerLog.getMappedFileQueue().flush(0);
                 timerWheel.flush();
                 timerCheckpoint.flush();

@@ -18,11 +18,12 @@ package org.apache.rocketmq.store.timer.service;
 
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
-import org.apache.rocketmq.store.timer.Pointer;
+import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerRequest;
@@ -44,7 +45,7 @@ public class TimerMessageDeliver extends AbstractStateService {
     private BlockingQueue<TimerRequest> dequeuePutQueue;
     private PerfCounter.Ticks perfCounterTicks;
     private TimerCheckpoint timerCheckpoint;
-    private Pointer pointer;
+    private TimerState pointer;
     private MessageStoreConfig storeConfig;
     public TimerMessageDeliver(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
@@ -60,7 +61,7 @@ public class TimerMessageDeliver extends AbstractStateService {
             pointer.syncLastReadTimeMs(timerCheckpoint.getLastReadTimeMs());
             return false;
         }
-        return timerMessageStore.isRunning();
+        return pointer.isRunning();
     }
 
     @Override
@@ -105,7 +106,7 @@ public class TimerMessageDeliver extends AbstractStateService {
                             if (storeConfig.isTimerSkipUnknownError()) {
                                 doRes = true;
                             } else {
-                                timerMessageStore.holdMomentForUnknownError();
+                                ThreadUtils.sleep(50);
                             }
                         }
                     }

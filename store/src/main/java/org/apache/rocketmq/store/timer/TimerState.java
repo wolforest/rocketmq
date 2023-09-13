@@ -16,10 +16,11 @@
  */
 package org.apache.rocketmq.store.timer;
 
-import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.store.MessageStore;
 
-public class Pointer {
+public class TimerState {
+    public static final int INITIAL = 0, RUNNING = 1, HAULT = 2, SHUTDOWN = 3;
+
     public volatile long currReadTimeMs;
     public volatile long currWriteTimeMs;
     public volatile long preReadTimeMs;
@@ -32,12 +33,12 @@ public class Pointer {
     public long lastEnqueueButExpiredStoreTime;
     // True if current store is master or current brokerId is equal to the minimum brokerId of the replica group in slaveActingMaster mode.
     public volatile boolean shouldRunningDequeue;
-
+    private volatile int state = INITIAL;
     private TimerCheckpoint timerCheckpoint;
     private TimerLog timerLog;
     private MessageStore messageStore;
 
-    public Pointer(TimerCheckpoint timerCheckpoint, TimerLog timerLog, MessageStore messageStore) {
+    public TimerState(TimerCheckpoint timerCheckpoint, TimerLog timerLog, MessageStore messageStore) {
         this.timerCheckpoint = timerCheckpoint;
         this.timerLog = timerLog;
         this.messageStore = messageStore;
@@ -63,4 +64,19 @@ public class Pointer {
     }
 
 
+    public void flagShutdown() {
+        state = SHUTDOWN;
+    }
+
+    public boolean isShutdown() {
+        return SHUTDOWN == state;
+    }
+
+    public boolean isRunning() {
+        return RUNNING == state;
+    }
+
+    public void flagRunning() {
+        state = RUNNING;
+    }
 }
