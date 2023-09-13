@@ -20,11 +20,12 @@ package org.apache.rocketmq.store.timer.service;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
-import org.apache.rocketmq.store.timer.Pointer;
+import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.util.PerfCounter;
@@ -45,11 +46,11 @@ public class TimerWheelLocator extends ServiceThread {
     private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
     private BlockingQueue<TimerRequest> dequeuePutQueue;
     private PerfCounter.Ticks perfCounterTicks;
-    private Pointer pointer;
+    private TimerState pointer;
     private MessageStoreConfig storeConfig;
     public TimerWheelLocator(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
-        enqueuePutQueue = timerMessageStore.getEnqueuePutQueue();
+        enqueuePutQueue = timerMessageStore.getFetchedTimerMessageQueue();
         dequeueGetQueue = timerMessageStore.getDequeueGetQueue();
         dequeuePutQueue = timerMessageStore.getDequeuePutQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
@@ -102,7 +103,7 @@ public class TimerWheelLocator extends ServiceThread {
             if (storeConfig.isTimerSkipUnknownError()) {
                 req.idempotentRelease(true);
             } else {
-                timerMessageStore.holdMomentForUnknownError();
+                ThreadUtils.sleep(50);
             }
         }
     }
@@ -127,7 +128,7 @@ public class TimerWheelLocator extends ServiceThread {
             if (allSuccess) {
                 break;
             } else {
-                timerMessageStore.holdMomentForUnknownError();
+                ThreadUtils.sleep(50);
             }
         }
         pointer.commitQueueOffset = trs.get(trs.size() - 1).getMsg().getQueueOffset();

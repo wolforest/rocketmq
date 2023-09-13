@@ -20,10 +20,11 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.timer.Pointer;
+import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerRequest;
@@ -45,11 +46,13 @@ public class TimerMessageQuery extends AbstractStateService {
     private BlockingQueue<TimerRequest> dequeuePutQueue;
     private PerfCounter.Ticks perfCounterTicks;
     private TimerCheckpoint timerCheckpoint;
-    private Pointer pointer;
+    private TimerState pointer;
     private MessageStoreConfig storeConfig;
     private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
-    public TimerMessageQuery(TimerMessageStore timerMessageStore) {
+    private MessageReader messageReader;
+    public TimerMessageQuery(TimerMessageStore timerMessageStore,MessageReader messageReader) {
         this.timerMessageStore = timerMessageStore;
+        this.messageReader = messageReader;
         dequeuePutQueue = timerMessageStore.getDequeuePutQueue();
         dequeueGetQueue = timerMessageStore.getDequeueGetQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
@@ -75,7 +78,7 @@ public class TimerMessageQuery extends AbstractStateService {
                     boolean doRes = false;
                     try {
                         long start = System.currentTimeMillis();
-                        MessageExt msgExt = timerMessageStore.getMessageByCommitOffset(tr.getOffsetPy(), tr.getSizePy());
+                        MessageExt msgExt = messageReader.getMessageByCommitOffset(tr.getOffsetPy(), tr.getSizePy());
                         if (null != msgExt) {
                             if (timerMessageStore.needDelete(tr.getMagic()) && !timerMessageStore.needRoll(tr.getMagic())) {
                                 if (msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY) != null && tr.getDeleteList() != null) {
@@ -112,7 +115,7 @@ public class TimerMessageQuery extends AbstractStateService {
                             tr.idempotentRelease();
                             doRes = true;
                         } else {
-                            timerMessageStore.holdMomentForUnknownError();
+                            ThreadUtils.sleep(50);
                         }
                     } finally {
                         if (doRes) {

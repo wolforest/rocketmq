@@ -16,7 +16,11 @@
  */
 package org.apache.rocketmq.store.timer;
 
-public class Pointer {
+import org.apache.rocketmq.store.MessageStore;
+
+public class TimerState {
+    public static final int INITIAL = 0, RUNNING = 1, HAULT = 2, SHUTDOWN = 3;
+
     public volatile long currReadTimeMs;
     public volatile long currWriteTimeMs;
     public volatile long preReadTimeMs;
@@ -29,13 +33,50 @@ public class Pointer {
     public long lastEnqueueButExpiredStoreTime;
     // True if current store is master or current brokerId is equal to the minimum brokerId of the replica group in slaveActingMaster mode.
     public volatile boolean shouldRunningDequeue;
+    private volatile int state = INITIAL;
+    private TimerCheckpoint timerCheckpoint;
+    private TimerLog timerLog;
+    private MessageStore messageStore;
 
-    public Pointer() {
-
+    public TimerState(TimerCheckpoint timerCheckpoint, TimerLog timerLog, MessageStore messageStore) {
+        this.timerCheckpoint = timerCheckpoint;
+        this.timerLog = timerLog;
+        this.messageStore = messageStore;
     }
 
     public void syncLastReadTimeMs(Long lastReadTimeMs) {
         currReadTimeMs = lastReadTimeMs;// timerCheckpoint.getLastReadTimeMs();
         commitReadTimeMs = currReadTimeMs;
+    }
+
+    public void prepareTimerCheckPoint() {
+        timerCheckpoint.setLastTimerLogFlushPos(timerLog.getMappedFileQueue().getFlushedWhere());
+        timerCheckpoint.setLastReadTimeMs(commitReadTimeMs);
+        if (shouldRunningDequeue) {
+            timerCheckpoint.setMasterTimerQueueOffset(commitQueueOffset);
+            if (commitReadTimeMs != lastCommitReadTimeMs || commitQueueOffset != lastCommitQueueOffset) {
+                timerCheckpoint.updateDateVersion(messageStore.getStateMachineVersion());
+                lastCommitReadTimeMs = commitReadTimeMs;
+                lastCommitQueueOffset = commitQueueOffset;
+            }
+        }
+        timerCheckpoint.setLastTimerQueueOffset(Math.min(commitQueueOffset, timerCheckpoint.getMasterTimerQueueOffset()));
+    }
+
+
+    public void flagShutdown() {
+        state = SHUTDOWN;
+    }
+
+    public boolean isShutdown() {
+        return SHUTDOWN == state;
+    }
+
+    public boolean isRunning() {
+        return RUNNING == state;
+    }
+
+    public void flagRunning() {
+        state = RUNNING;
     }
 }
