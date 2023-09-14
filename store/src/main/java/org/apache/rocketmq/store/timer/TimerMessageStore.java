@@ -167,7 +167,7 @@ public class TimerMessageStore {
         enqueueGetService = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, getServiceThreadName());
         enqueuePutService = new TimerWheelLocator(storeConfig, timerWheel, timerLog, timerMetricManager, fetchedTimerMessageQueue, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState, perfCounterTicks, getServiceThreadName());
         dequeueWarmService = new TimerDequeueWarmService(this);
-        dequeueGetService = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName());
+        dequeueGetService = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName(),timerMessageQueryQueue,timerMessageDeliverQueue,timerMessageDelivers,timerMessageQueries);
         timerFlushService = new TimerFlushService(this);
 
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
