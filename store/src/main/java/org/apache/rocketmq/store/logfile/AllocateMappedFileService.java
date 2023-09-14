@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.store.logfile;
 
+import java.util.Map;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -57,6 +58,25 @@ public class AllocateMappedFileService extends ServiceThread {
         log.info(this.getServiceName() + " service end");
     }
 
+
+    public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
+        int canSubmitRequests = calculateCanSubmitRequests();
+
+        if (!putRequest(nextFilePath, fileSize, canSubmitRequests)) {
+            return null;
+        }
+        canSubmitRequests--;
+
+        putRequest(nextNextFilePath, fileSize, canSubmitRequests);
+
+        if (hasException) {
+            log.warn(this.getServiceName() + " service has exception. so return null");
+            return null;
+        }
+
+        return waitAndReturnMappedFile(nextFilePath);
+    }
+
     private int calculateCanSubmitRequests() {
         int canSubmitRequests = 2;
 
@@ -94,36 +114,23 @@ public class AllocateMappedFileService extends ServiceThread {
         return true;
     }
 
-    public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
-        int canSubmitRequests = calculateCanSubmitRequests();
-
-        if (!putRequest(nextFilePath, fileSize, canSubmitRequests)) {
-            return null;
-        }
-        canSubmitRequests--;
-
-        putRequest(nextNextFilePath, fileSize, canSubmitRequests);
-
-        if (hasException) {
-            log.warn(this.getServiceName() + " service has exception. so return null");
-            return null;
-        }
-
+    private MappedFile waitAndReturnMappedFile(String nextFilePath) {
         AllocateRequest result = this.requestTable.get(nextFilePath);
+        if (result == null) {
+            log.error("find preallocate mmap failed, this never happen");
+            return null;
+        }
+
         try {
-            if (result != null) {
-                messageStore.getPerfCounter().startTick("WAIT_MAPFILE_TIME_MS");
-                boolean waitOK = result.getCountDownLatch().await(waitTimeOut, TimeUnit.MILLISECONDS);
-                messageStore.getPerfCounter().endTick("WAIT_MAPFILE_TIME_MS");
-                if (!waitOK) {
-                    log.warn("create mmap timeout " + result.getFilePath() + " " + result.getFileSize());
-                    return null;
-                } else {
-                    this.requestTable.remove(nextFilePath);
-                    return result.getMappedFile();
-                }
+            messageStore.getPerfCounter().startTick("WAIT_MAPFILE_TIME_MS");
+            boolean waitOK = result.getCountDownLatch().await(waitTimeOut, TimeUnit.MILLISECONDS);
+            messageStore.getPerfCounter().endTick("WAIT_MAPFILE_TIME_MS");
+            if (!waitOK) {
+                log.warn("create mmap timeout " + result.getFilePath() + " " + result.getFileSize());
+                return null;
             } else {
-                log.error("find preallocate mmap failed, this never happen");
+                this.requestTable.remove(nextFilePath);
+                return result.getMappedFile();
             }
         } catch (InterruptedException e) {
             log.warn(this.getServiceName() + " service has exception. ", e);
