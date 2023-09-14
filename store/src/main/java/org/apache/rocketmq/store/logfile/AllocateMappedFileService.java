@@ -57,16 +57,24 @@ public class AllocateMappedFileService extends ServiceThread {
         log.info(this.getServiceName() + " service end");
     }
 
-    public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
+    private int calculateCanSubmitRequests() {
         int canSubmitRequests = 2;
 
-        if (this.messageStore.isTransientStorePoolEnable()) {
-            if (this.messageStore.getMessageStoreConfig().isFastFailIfNoBufferInStorePool()
-                && BrokerRole.SLAVE != this.messageStore.getMessageStoreConfig().getBrokerRole()) { //if broker is slave, don't fast fail even no buffer in pool
-                //if broker is slave, don't fast fail even no buffer in pool
-                canSubmitRequests = this.messageStore.remainTransientStoreBufferNumbs() - this.requestQueue.size();
-            }
+        if (!this.messageStore.isTransientStorePoolEnable()) {
+            return canSubmitRequests;
         }
+
+        if (this.messageStore.getMessageStoreConfig().isFastFailIfNoBufferInStorePool()
+            && BrokerRole.SLAVE != this.messageStore.getMessageStoreConfig().getBrokerRole()) { //if broker is slave, don't fast fail even no buffer in pool
+            //if broker is slave, don't fast fail even no buffer in pool
+            canSubmitRequests = this.messageStore.remainTransientStoreBufferNumbs() - this.requestQueue.size();
+        }
+
+        return canSubmitRequests;
+    }
+
+    public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
+        int canSubmitRequests = calculateCanSubmitRequests()
 
         AllocateRequest nextReq = new AllocateRequest(nextFilePath, fileSize);
         boolean nextPutOK = this.requestTable.putIfAbsent(nextFilePath, nextReq) == null;
