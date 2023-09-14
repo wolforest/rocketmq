@@ -50,7 +50,7 @@ public class TimerMessageQuery extends AbstractStateService {
     private MessageStoreConfig storeConfig;
     private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
     private MessageReader messageReader;
-    public TimerMessageQuery(TimerMessageStore timerMessageStore,TimerState timerState,MessageReader messageReader) {
+    public TimerMessageQuery(TimerMessageStore timerMessageStore,TimerState timerState,TimerCheckpoint timerCheckpoint,MessageReader messageReader) {
         this.timerMessageStore = timerMessageStore;
         this.messageReader = messageReader;
         dequeuePutQueue = timerMessageStore.getTimerMessageDeliverQueue();
@@ -58,7 +58,7 @@ public class TimerMessageQuery extends AbstractStateService {
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
         this.timerState = timerState;
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
-        timerCheckpoint = timerMessageStore.getTimerCheckpoint();
+        this.timerCheckpoint = timerCheckpoint;
         timerMessageStore.getTimerMessageQueryQueue();
     }
     @Override
