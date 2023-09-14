@@ -73,9 +73,7 @@ public class AllocateMappedFileService extends ServiceThread {
         return canSubmitRequests;
     }
 
-    public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
-        int canSubmitRequests = calculateCanSubmitRequests()
-
+    private boolean putRequest(String nextFilePath, int fileSize, int canSubmitRequests) {
         AllocateRequest nextReq = new AllocateRequest(nextFilePath, fileSize);
         boolean nextPutOK = this.requestTable.putIfAbsent(nextFilePath, nextReq) == null;
 
@@ -84,29 +82,27 @@ public class AllocateMappedFileService extends ServiceThread {
                 log.warn("[NOTIFYME]TransientStorePool is not enough, so create mapped file error, " +
                     "RequestQueueSize : {}, StorePoolSize: {}", this.requestQueue.size(), this.messageStore.remainTransientStoreBufferNumbs());
                 this.requestTable.remove(nextFilePath);
-                return null;
+                return false;
             }
             boolean offerOK = this.requestQueue.offer(nextReq);
             if (!offerOK) {
                 log.warn("never expected here, add a request to preallocate queue failed");
             }
-            canSubmitRequests--;
+
         }
 
-        AllocateRequest nextNextReq = new AllocateRequest(nextNextFilePath, fileSize);
-        boolean nextNextPutOK = this.requestTable.putIfAbsent(nextNextFilePath, nextNextReq) == null;
-        if (nextNextPutOK) {
-            if (canSubmitRequests <= 0) {
-                log.warn("[NOTIFYME]TransientStorePool is not enough, so skip preallocate mapped file, " +
-                    "RequestQueueSize : {}, StorePoolSize: {}", this.requestQueue.size(), this.messageStore.remainTransientStoreBufferNumbs());
-                this.requestTable.remove(nextNextFilePath);
-            } else {
-                boolean offerOK = this.requestQueue.offer(nextNextReq);
-                if (!offerOK) {
-                    log.warn("never expected here, add a request to preallocate queue failed");
-                }
-            }
+        return true;
+    }
+
+    public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
+        int canSubmitRequests = calculateCanSubmitRequests();
+
+        if (!putRequest(nextFilePath, fileSize, canSubmitRequests)) {
+            return null;
         }
+        canSubmitRequests--;
+
+        putRequest(nextNextFilePath, fileSize, canSubmitRequests);
 
         if (hasException) {
             log.warn(this.getServiceName() + " service has exception. so return null");
