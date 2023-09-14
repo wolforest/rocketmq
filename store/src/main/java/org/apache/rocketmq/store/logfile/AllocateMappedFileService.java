@@ -176,18 +176,7 @@ public class AllocateMappedFileService extends ServiceThread {
 
             long beginTime = System.currentTimeMillis();
 
-            MappedFile mappedFile;
-            if (messageStore.isTransientStorePoolEnable()) {
-                try {
-                    mappedFile = ServiceLoader.load(MappedFile.class).iterator().next();
-                    mappedFile.init(req.getFilePath(), req.getFileSize(), messageStore.getTransientStorePool());
-                } catch (RuntimeException e) {
-                    log.warn("Use default implementation.");
-                    mappedFile = new DefaultMappedFile(req.getFilePath(), req.getFileSize(), messageStore.getTransientStorePool());
-                }
-            } else {
-                mappedFile = new DefaultMappedFile(req.getFilePath(), req.getFileSize());
-            }
+            MappedFile mappedFile = getMappedFile(req);
 
             long elapsedTime = TimeUtils.computeElapsedTimeMilliseconds(beginTime);
             if (elapsedTime > 10) {
@@ -226,5 +215,22 @@ public class AllocateMappedFileService extends ServiceThread {
                 req.getCountDownLatch().countDown();
         }
         return true;
+    }
+
+    private MappedFile getMappedFile(AllocateRequest req) throws IOException {
+        MappedFile mappedFile;
+        if (messageStore.isTransientStorePoolEnable()) {
+            try {
+                mappedFile = ServiceLoader.load(MappedFile.class).iterator().next();
+                mappedFile.init(req.getFilePath(), req.getFileSize(), messageStore.getTransientStorePool());
+            } catch (RuntimeException e) {
+                log.warn("Use default implementation.");
+                mappedFile = new DefaultMappedFile(req.getFilePath(), req.getFileSize(), messageStore.getTransientStorePool());
+            }
+        } else {
+            mappedFile = new DefaultMappedFile(req.getFilePath(), req.getFileSize());
+        }
+
+        return mappedFile;
     }
 }
