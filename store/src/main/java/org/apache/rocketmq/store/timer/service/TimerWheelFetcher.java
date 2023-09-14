@@ -52,7 +52,7 @@ public class TimerWheelFetcher extends ServiceThread {
     private PerfCounter.Ticks perfCounterTicks;
     private String serviceThreadName;
 
-    private int commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
+    private int commitLogFileSize;
 
     private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
@@ -85,6 +85,7 @@ public class TimerWheelFetcher extends ServiceThread {
 
         timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
         precisionMs = storeConfig.getTimerPrecisionMs();
+        commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
     }
 
     @Override

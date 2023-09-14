@@ -98,10 +98,10 @@ public class TimerMessageStore {
     private final TimerLog timerLog;
     private final TimerCheckpoint timerCheckpoint;
 
-    private TimerMessageFetcher enqueueGetService;
-    private TimerWheelLocator enqueuePutService;
+    private TimerMessageFetcher timerMessageFetcher;
+    private TimerWheelLocator timerWheelLocator;
     private TimerDequeueWarmService dequeueWarmService;
-    private TimerWheelFetcher dequeueGetService;
+    private TimerWheelFetcher timerWheelFetcher;
     private TimerMessageDeliver[] timerMessageDelivers;
     private TimerMessageQuery[] timerMessageQueries;
     private TimerFlushService timerFlushService;
@@ -142,11 +142,12 @@ public class TimerMessageStore {
 
         this.timerLog = new TimerLog(getTimerLogPath(storeConfig.getStorePathRootDir()), timerLogFileSize);
         this.timerMetrics = timerMetrics;
-        timerMetricManager = new TimerMetricManager(timerMetrics);
+
         this.timerCheckpoint = timerCheckpoint;
         this.timerState = new TimerState(timerCheckpoint, storeConfig, timerLog, messageStore);
         this.timerWheel = new TimerWheel(
                 getTimerWheelPath(storeConfig.getStorePathRootDir()), timerState.slotsTotal, precisionMs);
+        timerMetricManager = new TimerMetricManager(timerMetrics,storeConfig,messageReader,timerWheel,timerLog,timerState);
         if (messageStore instanceof DefaultMessageStore) {
             scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
                     new ThreadFactoryImpl("TimerScheduledThread",
@@ -164,10 +165,10 @@ public class TimerMessageStore {
     }
 
     public void initService() {
-        enqueueGetService = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, getServiceThreadName());
-        enqueuePutService = new TimerWheelLocator(storeConfig, timerWheel, timerLog, timerMetricManager, fetchedTimerMessageQueue, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState, perfCounterTicks, getServiceThreadName());
+        timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, getServiceThreadName());
+        timerWheelLocator = new TimerWheelLocator(storeConfig, timerWheel, timerLog, timerMetricManager, fetchedTimerMessageQueue, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState, perfCounterTicks, getServiceThreadName());
         dequeueWarmService = new TimerDequeueWarmService(this);
-        dequeueGetService = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName(),timerMessageQueryQueue,timerMessageDeliverQueue,timerMessageDelivers,timerMessageQueries);
+        timerWheelFetcher = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName(),timerMessageQueryQueue,timerMessageDeliverQueue,timerMessageDelivers,timerMessageQueries);
         timerFlushService = new TimerFlushService(this);
 
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
@@ -397,10 +398,10 @@ public class TimerMessageStore {
     public void start() {
         final long shouldStartTime = storeConfig.getDisappearTimeAfterStart() + System.currentTimeMillis();
         timerState.maybeMoveWriteTime();
-        enqueueGetService.start();
-        enqueuePutService.start();
+        timerMessageFetcher.start();
+        timerWheelLocator.start();
         dequeueWarmService.start();
-        dequeueGetService.start(shouldStartTime);
+        timerWheelFetcher.start(shouldStartTime);
         for (int i = 0; i < timerMessageQueries.length; i++) {
             timerMessageQueries[i].start();
         }
@@ -470,10 +471,10 @@ public class TimerMessageStore {
         timerMessageQueryQueue.clear(); //avoid blocking
         timerMessageDeliverQueue.clear(); //avoid blocking
 
-        enqueueGetService.shutdown();
-        enqueuePutService.shutdown();
+        timerMessageFetcher.shutdown();
+        timerWheelLocator.shutdown();
         dequeueWarmService.shutdown();
-        dequeueGetService.shutdown();
+        timerWheelFetcher.shutdown();
         for (int i = 0; i < timerMessageQueries.length; i++) {
             timerMessageQueries[i].shutdown();
         }
@@ -807,20 +808,20 @@ public class TimerMessageStore {
         return precisionMs;
     }
 
-    public TimerMessageFetcher getEnqueueGetService() {
-        return enqueueGetService;
+    public TimerMessageFetcher getTimerMessageFetcher() {
+        return timerMessageFetcher;
     }
 
-    public void setEnqueueGetService(TimerMessageFetcher enqueueGetService) {
-        this.enqueueGetService = enqueueGetService;
+    public void setTimerMessageFetcher(TimerMessageFetcher timerMessageFetcher) {
+        this.timerMessageFetcher = timerMessageFetcher;
     }
 
-    public TimerWheelLocator getEnqueuePutService() {
-        return enqueuePutService;
+    public TimerWheelLocator getTimerWheelLocator() {
+        return timerWheelLocator;
     }
 
-    public void setEnqueuePutService(TimerWheelLocator enqueuePutService) {
-        this.enqueuePutService = enqueuePutService;
+    public void setTimerWheelLocator(TimerWheelLocator timerWheelLocator) {
+        this.timerWheelLocator = timerWheelLocator;
     }
 
     public TimerDequeueWarmService getDequeueWarmService() {
@@ -832,12 +833,12 @@ public class TimerMessageStore {
         this.dequeueWarmService = dequeueWarmService;
     }
 
-    public TimerWheelFetcher getDequeueGetService() {
-        return dequeueGetService;
+    public TimerWheelFetcher getTimerWheelFetcher() {
+        return timerWheelFetcher;
     }
 
-    public void setDequeueGetService(TimerWheelFetcher dequeueGetService) {
-        this.dequeueGetService = dequeueGetService;
+    public void setTimerWheelFetcher(TimerWheelFetcher timerWheelFetcher) {
+        this.timerWheelFetcher = timerWheelFetcher;
     }
 
     public TimerMessageDeliver[] getTimerMessageDelivers() {
