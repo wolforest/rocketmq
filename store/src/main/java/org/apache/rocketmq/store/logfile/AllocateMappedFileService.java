@@ -37,13 +37,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class AllocateMappedFileService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private static int waitTimeOut = 1000 * 5;
-    private ConcurrentMap<String, AllocateRequest> requestTable =
-        new ConcurrentHashMap<>();
-    private PriorityBlockingQueue<AllocateRequest> requestQueue =
-        new PriorityBlockingQueue<>();
+    private static final int waitTimeOut = 1000 * 5;
+
+    private final ConcurrentMap<String, AllocateRequest> requestTable = new ConcurrentHashMap<>();
+    private final PriorityBlockingQueue<AllocateRequest> requestQueue = new PriorityBlockingQueue<>();
     private volatile boolean hasException = false;
-    private DefaultMessageStore messageStore;
+    private final DefaultMessageStore messageStore;
 
     public AllocateMappedFileService(DefaultMessageStore messageStore) {
         this.messageStore = messageStore;
@@ -175,8 +174,8 @@ public class AllocateMappedFileService extends ServiceThread {
 
             MappedFile mappedFile = createMappedFile(req);
             warmMappedFile(mappedFile);
-
             req.setMappedFile(mappedFile);
+
             this.hasException = false;
             isSuccess = true;
         } catch (InterruptedException e) {
