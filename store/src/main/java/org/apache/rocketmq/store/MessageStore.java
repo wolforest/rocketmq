@@ -207,6 +207,13 @@ public interface MessageStore {
 
     TimerMessageStore getTimerMessageStore();
 
+    /**
+     * set TimerMessageStore then, get timer related matrix
+     *
+     * when store is a standalone service
+     * this method and getTimerMessageStore can be deleted
+     * @param timerMessageStore timerMessageStore
+     */
     void setTimerMessageStore(TimerMessageStore timerMessageStore);
 
     /**
