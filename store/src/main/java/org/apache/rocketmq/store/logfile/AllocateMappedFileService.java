@@ -48,6 +48,15 @@ public class AllocateMappedFileService extends ServiceThread {
         this.messageStore = messageStore;
     }
 
+    public void run() {
+        log.info(this.getServiceName() + " service started");
+
+        while (!this.isStopped() && this.mmapOperation()) {
+
+        }
+        log.info(this.getServiceName() + " service end");
+    }
+
     public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
         int canSubmitRequests = 2;
 
@@ -130,21 +139,15 @@ public class AllocateMappedFileService extends ServiceThread {
     @Override
     public void shutdown() {
         super.shutdown(true);
+
         for (AllocateRequest req : this.requestTable.values()) {
-            if (req.mappedFile != null) {
-                log.info("delete pre allocated maped file, {}", req.mappedFile.getFileName());
-                req.mappedFile.destroy(1000);
+            if (req.mappedFile == null) {
+                continue;
             }
+
+            log.info("delete pre allocated maped file, {}", req.mappedFile.getFileName());
+            req.mappedFile.destroy(1000);
         }
-    }
-
-    public void run() {
-        log.info(this.getServiceName() + " service started");
-
-        while (!this.isStopped() && this.mmapOperation()) {
-
-        }
-        log.info(this.getServiceName() + " service end");
     }
 
     /**
