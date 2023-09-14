@@ -47,7 +47,7 @@ public class TimerState {
     private TimerLog timerLog;
     private MessageStore messageStore;
     private MessageStoreConfig storeConfig;
-    private final int precisionMs;
+    public final int precisionMs;
     public final int timerRollWindowSlots;
     public final int slotsTotal;
 

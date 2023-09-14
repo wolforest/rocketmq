@@ -130,12 +130,11 @@ public class TimerWheelLocator extends ServiceThread {
         }
     }
 
-    private final int timerRollWindowSlots;
     public boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
         //copy the value first, avoid concurrent problem
         long tmpWriteTimeMs = pointer.currWriteTimeMs;
-        boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) timerRollWindowSlots * precisionMs;
+        boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) pointer.timerRollWindowSlots * pointer.precisionMs;
         int magic = MAGIC_DEFAULT;
         if (needRoll) {
             magic = magic | MAGIC_ROLL;
