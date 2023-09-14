@@ -32,8 +32,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -87,13 +85,11 @@ public class TimerMessageStore {
 
     public static final Random RANDOM = new Random();
     public static final int PUT_OK = 0, PUT_NEED_RETRY = 1, PUT_NO_RETRY = 2;
-    public static final int DAY_SECS = 24 * 3600;
+
     public static final int DEFAULT_CAPACITY = 1024;
 
-    // The total days in the timer wheel when precision is 1000ms.
-    // If the broker shutdown last more than the configured days, will cause message loss
-    public static final int TIMER_WHEEL_TTL_DAY = 7;
-    public static final int TIMER_BLANK_SLOTS = 60;
+
+
     public static final int MAGIC_DEFAULT = 1;
     public static final int MAGIC_ROLL = 1 << 1;
     public static final int MAGIC_DELETE = 1 << 2;
@@ -105,7 +101,7 @@ public class TimerMessageStore {
 
 
     protected final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
-    protected final BlockingQueue<List<TimerRequest>> dequeueGetQueue;
+    protected final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     protected final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
 
     private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
@@ -127,8 +123,7 @@ public class TimerMessageStore {
 
     private final int commitLogFileSize;
     private final int timerLogFileSize;
-    private final int timerRollWindowSlots;
-    private final int slotsTotal;
+
 
     protected final int precisionMs;
     protected final MessageStoreConfig storeConfig;
@@ -136,13 +131,10 @@ public class TimerMessageStore {
     protected long lastTimeOfCheckMetrics = System.currentTimeMillis();
     protected AtomicInteger frequency = new AtomicInteger(0);
 
-
-    //the dequeue is an asynchronous process, use this flag to track if the status has changed
-    public boolean dequeueStatusChangeFlag = false;
-
     private final BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
     private MessageReader messageReader;
+
     public TimerMessageStore(final MessageStore messageStore, final MessageStoreConfig storeConfig,
                              TimerCheckpoint timerCheckpoint, TimerMetrics timerMetrics,
                              final BrokerStatsManager brokerStatsManager) throws IOException {
@@ -153,14 +145,14 @@ public class TimerMessageStore {
         this.timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
         this.precisionMs = storeConfig.getTimerPrecisionMs();
 
-        // TimerWheel contains the fixed number of slots regardless of precision.
-        this.slotsTotal = TIMER_WHEEL_TTL_DAY * DAY_SECS;
-        this.timerWheel = new TimerWheel(
-                getTimerWheelPath(storeConfig.getStorePathRootDir()), this.slotsTotal, precisionMs);
+
+
         this.timerLog = new TimerLog(getTimerLogPath(storeConfig.getStorePathRootDir()), timerLogFileSize);
         this.timerMetrics = timerMetrics;
         this.timerCheckpoint = timerCheckpoint;
-        this.pointer = new TimerState(timerCheckpoint, timerLog, messageStore);
+        this.pointer = new TimerState(timerCheckpoint, storeConfig, timerLog, messageStore);
+        this.timerWheel = new TimerWheel(
+                getTimerWheelPath(storeConfig.getStorePathRootDir()), pointer.slotsTotal, precisionMs);
         if (messageStore instanceof DefaultMessageStore) {
             scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
                     new ThreadFactoryImpl("TimerScheduledThread",
@@ -170,39 +162,33 @@ public class TimerMessageStore {
                     new ThreadFactoryImpl("TimerScheduledThread"));
         }
 
-        // timerRollWindow contains the fixed number of slots regardless of precision.
-        if (storeConfig.getTimerRollWindowSlot() > slotsTotal - TIMER_BLANK_SLOTS
-                || storeConfig.getTimerRollWindowSlot() < 2) {
-            this.timerRollWindowSlots = slotsTotal - TIMER_BLANK_SLOTS;
-        } else {
-            this.timerRollWindowSlots = storeConfig.getTimerRollWindowSlot();
-        }
 
-        this.messageReader = new MessageReader(messageStore,storeConfig);
+
+        this.messageReader = new MessageReader(messageStore, storeConfig);
 
         if (storeConfig.isTimerEnableDisruptor()) {
             fetchedTimerMessageQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
-            dequeueGetQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
+            timerMessageQueryQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
             timerMessageDeliverQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
         } else {
             fetchedTimerMessageQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
-            dequeueGetQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
+            timerMessageQueryQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
             timerMessageDeliverQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
         }
         this.brokerStatsManager = brokerStatsManager;
     }
 
     public void initService() {
-        enqueueGetService = new TimerMessageFetcher(fetchedTimerMessageQueue,storeConfig, perfCounterTicks,messageReader, messageStore, pointer, timerCheckpoint, getServiceThreadName());
-        enqueuePutService = new TimerWheelLocator(this);
+        enqueueGetService = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, pointer, timerCheckpoint, getServiceThreadName());
+        enqueuePutService = new TimerWheelLocator(storeConfig, fetchedTimerMessageQueue, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, pointer, perfCounterTicks, getServiceThreadName());
         dequeueWarmService = new TimerDequeueWarmService(this);
-        dequeueGetService = new TimerWheelFetcher(this);
+        dequeueGetService = new TimerWheelFetcher(storeConfig, pointer, timerWheel, timerLog, perfCounterTicks, getServiceThreadName());
         timerFlushService = new TimerFlushService(this);
 
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
         timerMessageQueries = new TimerMessageQuery[getThreadNum];
         for (int i = 0; i < timerMessageQueries.length; i++) {
-            timerMessageQueries[i] = new TimerMessageQuery(this,messageReader);
+            timerMessageQueries[i] = new TimerMessageQuery(this, messageReader);
         }
 
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
@@ -274,7 +260,7 @@ public class TimerMessageStore {
         //check timer wheel
         pointer.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
         long nextReadTimeMs = formatTimeMs(
-                System.currentTimeMillis()) - (long) slotsTotal * precisionMs + (long) TIMER_BLANK_SLOTS * precisionMs;
+                System.currentTimeMillis()) - (long) pointer.slotsTotal * precisionMs + (long) TimerState.TIMER_BLANK_SLOTS * precisionMs;
         if (pointer.currReadTimeMs < nextReadTimeMs) {
             pointer.currReadTimeMs = nextReadTimeMs;
         }
@@ -425,7 +411,7 @@ public class TimerMessageStore {
 
     public void start() {
         final long shouldStartTime = storeConfig.getDisappearTimeAfterStart() + System.currentTimeMillis();
-        maybeMoveWriteTime();
+        pointer.maybeMoveWriteTime();
         enqueueGetService.start();
         enqueuePutService.start();
         dequeueWarmService.start();
@@ -496,7 +482,7 @@ public class TimerMessageStore {
         timerCheckpoint.shutdown();
 
         fetchedTimerMessageQueue.clear(); //avoid blocking
-        dequeueGetQueue.clear(); //avoid blocking
+        timerMessageQueryQueue.clear(); //avoid blocking
         timerMessageDeliverQueue.clear(); //avoid blocking
 
         enqueueGetService.shutdown();
@@ -515,29 +501,6 @@ public class TimerMessageStore {
 
     }
 
-    public void maybeMoveWriteTime() {
-        if (pointer.currWriteTimeMs < formatTimeMs(System.currentTimeMillis())) {
-            pointer.currWriteTimeMs = formatTimeMs(System.currentTimeMillis());
-        }
-    }
-
-    private void moveReadTime() {
-        pointer.currReadTimeMs = pointer.currReadTimeMs + precisionMs;
-        pointer.commitReadTimeMs = pointer.currReadTimeMs;
-    }
-
-    private boolean isRunningDequeue() {
-        if (!this.pointer.shouldRunningDequeue) {
-            syncLastReadTimeMs();
-            return false;
-        }
-        return pointer.isRunning();
-    }
-
-    public void syncLastReadTimeMs() {
-        pointer.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
-        pointer.commitReadTimeMs = pointer.currReadTimeMs;
-    }
 
     public void setShouldRunningDequeue(final boolean shouldRunningDequeue) {
         this.pointer.shouldRunningDequeue = shouldRunningDequeue;
@@ -559,52 +522,9 @@ public class TimerMessageStore {
 
 
 
-    public boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
-        LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
-        //copy the value first, avoid concurrent problem
-        long tmpWriteTimeMs = pointer.currWriteTimeMs;
-        boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) timerRollWindowSlots * precisionMs;
-        int magic = MAGIC_DEFAULT;
-        if (needRoll) {
-            magic = magic | MAGIC_ROLL;
-            if (delayedTime - tmpWriteTimeMs - (long) timerRollWindowSlots * precisionMs < (long) timerRollWindowSlots / 3 * precisionMs) {
-                //give enough time to next roll
-                delayedTime = tmpWriteTimeMs + (long) (timerRollWindowSlots / 2) * precisionMs;
-            } else {
-                delayedTime = tmpWriteTimeMs + (long) timerRollWindowSlots * precisionMs;
-            }
-        }
-        boolean isDelete = messageExt.getProperty(TIMER_DELETE_UNIQUE_KEY) != null;
-        if (isDelete) {
-            magic = magic | MAGIC_DELETE;
-        }
-        String realTopic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
-        Slot slot = timerWheel.getSlot(delayedTime);
-        ByteBuffer tmpBuffer = timerLogBuffer;
-        tmpBuffer.clear();
-        tmpBuffer.putInt(TimerLog.UNIT_SIZE); //size
-        tmpBuffer.putLong(slot.lastPos); //prev pos
-        tmpBuffer.putInt(magic); //magic
-        tmpBuffer.putLong(tmpWriteTimeMs); //currWriteTime
-        tmpBuffer.putInt((int) (delayedTime - tmpWriteTimeMs)); //delayTime
-        tmpBuffer.putLong(offsetPy); //offset
-        tmpBuffer.putInt(sizePy); //size
-        tmpBuffer.putInt(hashTopicForMetrics(realTopic)); //hashcode of real topic
-        tmpBuffer.putLong(0); //reserved value, just set to 0 now
-        long ret = timerLog.append(tmpBuffer.array(), 0, TimerLog.UNIT_SIZE);
-        if (-1 != ret) {
-            // If it's a delete message, then slot's total num -1
-            // TODO: check if the delete msg is in the same slot with "the msg to be deleted".
-            timerWheel.putSlot(delayedTime, slot.firstPos == -1 ? ret : slot.firstPos, ret,
-                    isDelete ? slot.num - 1 : slot.num + 1, slot.magic);
-            addMetric(messageExt, isDelete ? -1 : 1);
-        }
-        return -1 != ret;
-    }
-
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     public int warmDequeue() {
-        if (!isRunningDequeue()) {
+        if (!pointer.isRunningDequeue()) {
             return -1;
         }
         if (!storeConfig.isTimerWarmEnable()) {
@@ -684,45 +604,6 @@ public class TimerMessageStore {
         }
         return 1;
     }
-
-
-
-
-
-
-    private List<List<TimerRequest>> splitIntoLists(List<TimerRequest> origin) {
-        //this method assume that the origin is not null;
-        List<List<TimerRequest>> lists = new LinkedList<>();
-        if (origin.size() < 100) {
-            lists.add(origin);
-            return lists;
-        }
-        List<TimerRequest> currList = null;
-        int fileIndexPy = -1;
-        int msgIndex = 0;
-        for (TimerRequest tr : origin) {
-            if (fileIndexPy != tr.getOffsetPy() / commitLogFileSize) {
-                msgIndex = 0;
-                if (null != currList && currList.size() > 0) {
-                    lists.add(currList);
-                }
-                currList = new LinkedList<>();
-                currList.add(tr);
-                fileIndexPy = (int) (tr.getOffsetPy() / commitLogFileSize);
-            } else {
-                currList.add(tr);
-                if (++msgIndex % 2000 == 0) {
-                    lists.add(currList);
-                    currList = new ArrayList<>();
-                }
-            }
-        }
-        if (null != currList && currList.size() > 0) {
-            lists.add(currList);
-        }
-        return lists;
-    }
-
 
 
     public MessageExtBrokerInner convert(MessageExt messageExt, long enqueueTime, boolean needRoll) {
@@ -821,13 +702,6 @@ public class TimerMessageStore {
             MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_REAL_QUEUE_ID);
         }
         return msgInner;
-    }
-
-    public String getRealTopic(MessageExt msgExt) {
-        if (msgExt == null) {
-            return null;
-        }
-        return msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
     }
 
     private long formatTimeMs(long timeMs) {
@@ -970,8 +844,8 @@ public class TimerMessageStore {
         return fetchedTimerMessageQueue;
     }
 
-    public BlockingQueue<List<TimerRequest>> getDequeueGetQueue() {
-        return dequeueGetQueue;
+    public BlockingQueue<List<TimerRequest>> getTimerMessageQueryQueue() {
+        return timerMessageQueryQueue;
     }
 
     public BlockingQueue<TimerRequest> getTimerMessageDeliverQueue() {

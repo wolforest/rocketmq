@@ -17,6 +17,8 @@
 package org.apache.rocketmq.store.timer.service;
 
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageConst;
+import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -56,13 +58,6 @@ public class TimerMessageDeliver extends AbstractStateService {
         timerCheckpoint = timerMessageStore.getTimerCheckpoint();
     }
 
-    private boolean isRunningDequeue() {
-        if (!this.pointer.shouldRunningDequeue) {
-            pointer.syncLastReadTimeMs(timerCheckpoint.getLastReadTimeMs());
-            return false;
-        }
-        return pointer.isRunning();
-    }
 
     @Override
     public void run() {
@@ -80,20 +75,20 @@ public class TimerMessageDeliver extends AbstractStateService {
                 boolean tmpDequeueChangeFlag = false;
                 try {
                     while (!isStopped() && !doRes) {
-                        if (!isRunningDequeue()) {
-                            timerMessageStore.dequeueStatusChangeFlag = true;
+                        if (!pointer.isRunningDequeue()) {
+                            pointer.dequeueStatusChangeFlag = true;
                             tmpDequeueChangeFlag = true;
                             break;
                         }
                         try {
                             perfCounterTicks.startTick(DEQUEUE_PUT);
-                            DefaultStoreMetricsManager.incTimerDequeueCount(timerMessageStore.getRealTopic(tr.getMsg()));
+                            DefaultStoreMetricsManager.incTimerDequeueCount(getRealTopic(tr.getMsg()));
                             timerMessageStore.addMetric(tr.getMsg(), -1);
                             MessageExtBrokerInner msg = timerMessageStore.convert(tr.getMsg(), tr.getEnqueueTime(), timerMessageStore.needRoll(tr.getMagic()));
                             doRes = PUT_NEED_RETRY != timerMessageStore.doPut(msg, timerMessageStore.needRoll(tr.getMagic()));
                             while (!doRes && !isStopped()) {
-                                if (!isRunningDequeue()) {
-                                    timerMessageStore.dequeueStatusChangeFlag = true;
+                                if (!pointer.isRunningDequeue()) {
+                                    pointer.dequeueStatusChangeFlag = true;
                                     tmpDequeueChangeFlag = true;
                                     break;
                                 }
@@ -120,6 +115,12 @@ public class TimerMessageDeliver extends AbstractStateService {
         }
         LOGGER.info(this.getServiceName() + " service end");
         setState(AbstractStateService.END);
+    }
+    public String getRealTopic(MessageExt msgExt) {
+        if (msgExt == null) {
+            return null;
+        }
+        return msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
     }
 }
 
