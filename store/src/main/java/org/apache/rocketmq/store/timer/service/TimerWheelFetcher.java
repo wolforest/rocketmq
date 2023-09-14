@@ -42,8 +42,6 @@ import java.util.concurrent.CountDownLatch;
 
 public class TimerWheelFetcher extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    public static final int MAGIC_ROLL = 1 << 1;
-    public static final int MAGIC_DELETE = 1 << 2;
 
     private MessageStoreConfig storeConfig;
     private TimerState timerState;
@@ -57,6 +55,7 @@ public class TimerWheelFetcher extends ServiceThread {
     private int commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
 
     private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    private BlockingQueue<TimerRequest>
     private long shouldStartTime;
     private int timerLogFileSize;
     private int precisionMs;
@@ -187,7 +186,7 @@ public class TimerWheelFetcher extends ServiceThread {
                 timerMessageQueryQueue.put(deleteList);
             }
             //do we need to use loop with tryAcquire
-            checkDeliverQueueLatch(deleteLatch, timerMessageDeliverQueueSize, timerState.currReadTimeMs);
+            timerState.checkDeliverQueueLatch(deleteLatch, timerMessageDeliverQueueSize, timerState.currReadTimeMs);
 
             CountDownLatch normalLatch = new CountDownLatch(normalMsgStack.size());
             //read the normal msg
@@ -197,7 +196,7 @@ public class TimerWheelFetcher extends ServiceThread {
                 }
                 timerMessageQueryQueue.put(normalList);
             }
-            checkDeliverQueueLatch(normalLatch, timerMessageDeliverQueueSize, timerState.currReadTimeMs);
+            timerState.checkDeliverQueueLatch(normalLatch, timerMessageDeliverQueueSize, timerState.currReadTimeMs);
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (timerState.dequeueStatusChangeFlag) {
                 return -1;
@@ -250,11 +249,11 @@ public class TimerWheelFetcher extends ServiceThread {
 
 
     public boolean needRoll(int magic) {
-        return (magic & MAGIC_ROLL) != 0;
+        return (magic & TimerState.MAGIC_ROLL) != 0;
     }
 
     public boolean needDelete(int magic) {
-        return (magic & MAGIC_DELETE) != 0;
+        return (magic & TimerState.MAGIC_DELETE) != 0;
     }
 
 

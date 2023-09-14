@@ -44,14 +44,15 @@ public class TimerMessageDeliver extends AbstractStateService {
     }
 
     private TimerMessageStore timerMessageStore;
-    private BlockingQueue<TimerRequest> dequeuePutQueue;
+    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private PerfCounter.Ticks perfCounterTicks;
     private TimerCheckpoint timerCheckpoint;
     private TimerState pointer;
     private MessageStoreConfig storeConfig;
+    private TimerMetricManager metricManager;
     public TimerMessageDeliver(TimerMessageStore timerMessageStore) {
         this.timerMessageStore = timerMessageStore;
-        dequeuePutQueue = timerMessageStore.getTimerMessageDeliverQueue();
+        timerMessageDeliverQueue = timerMessageStore.getTimerMessageDeliverQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
         pointer = timerMessageStore.getPointer();
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
@@ -63,10 +64,10 @@ public class TimerMessageDeliver extends AbstractStateService {
     public void run() {
         setState(AbstractStateService.START);
         LOGGER.info(this.getServiceName() + " service start");
-        while (!this.isStopped() || dequeuePutQueue.size() != 0) {
+        while (!this.isStopped() || timerMessageDeliverQueue.size() != 0) {
             try {
                 setState(AbstractStateService.WAITING);
-                TimerRequest tr = dequeuePutQueue.poll(10, TimeUnit.MILLISECONDS);
+                TimerRequest tr = timerMessageDeliverQueue.poll(10, TimeUnit.MILLISECONDS);
                 if (null == tr) {
                     continue;
                 }
@@ -83,16 +84,16 @@ public class TimerMessageDeliver extends AbstractStateService {
                         try {
                             perfCounterTicks.startTick(DEQUEUE_PUT);
                             DefaultStoreMetricsManager.incTimerDequeueCount(getRealTopic(tr.getMsg()));
-                            timerMessageStore.addMetric(tr.getMsg(), -1);
-                            MessageExtBrokerInner msg = timerMessageStore.convert(tr.getMsg(), tr.getEnqueueTime(), timerMessageStore.needRoll(tr.getMagic()));
-                            doRes = PUT_NEED_RETRY != timerMessageStore.doPut(msg, timerMessageStore.needRoll(tr.getMagic()));
+                            metricManager.addMetric(tr.getMsg(), -1);
+                            MessageExtBrokerInner msg = timerMessageStore.convert(tr.getMsg(), tr.getEnqueueTime(), timerMessageStore.pointer.needRoll(tr.getMagic()));
+                            doRes = PUT_NEED_RETRY != timerMessageStore.doPut(msg, timerMessageStore.pointer.needRoll(tr.getMagic()));
                             while (!doRes && !isStopped()) {
                                 if (!pointer.isRunningDequeue()) {
                                     pointer.dequeueStatusChangeFlag = true;
                                     tmpDequeueChangeFlag = true;
                                     break;
                                 }
-                                doRes = PUT_NEED_RETRY != timerMessageStore.doPut(msg, timerMessageStore.needRoll(tr.getMagic()));
+                                doRes = PUT_NEED_RETRY != timerMessageStore.doPut(msg, timerMessageStore.pointer.needRoll(tr.getMagic()));
                                 Thread.sleep(500L * timerMessageStore.getPrecisionMs() / 1000);
                             }
                             perfCounterTicks.endTick(DEQUEUE_PUT);

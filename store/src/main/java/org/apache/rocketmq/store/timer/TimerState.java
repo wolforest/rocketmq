@@ -16,11 +16,32 @@
  */
 package org.apache.rocketmq.store.timer;
 
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageConst;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.timer.service.AbstractStateService;
+import org.apache.rocketmq.store.timer.service.TimerMessageDeliver;
+import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class TimerState {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+
     public static final int INITIAL = 0, RUNNING = 1, HAULT = 2, SHUTDOWN = 3;
+    public static final int MAGIC_DEFAULT = 1;
+    public static final int MAGIC_ROLL = 1 << 1;
+    public static final int MAGIC_DELETE = 1 << 2;
+    public static final String TIMER_ENQUEUE_MS = MessageConst.PROPERTY_TIMER_ENQUEUE_MS;
+    public static final String TIMER_DEQUEUE_MS = MessageConst.PROPERTY_TIMER_DEQUEUE_MS;
+    public static final String TIMER_ROLL_TIMES = MessageConst.PROPERTY_TIMER_ROLL_TIMES;
+    public static final String TIMER_DELETE_UNIQUE_KEY = MessageConst.PROPERTY_TIMER_DEL_UNIQKEY;
+
     // The total days in the timer wheel when precision is 1000ms.
     // If the broker shutdown last more than the configured days, will cause message loss
     public static final int TIMER_WHEEL_TTL_DAY = 7;
@@ -51,7 +72,7 @@ public class TimerState {
     public final int timerRollWindowSlots;
     public final int slotsTotal;
 
-    public TimerState(TimerCheckpoint timerCheckpoint,MessageStoreConfig storeConfig, TimerLog timerLog, MessageStore messageStore) {
+    public TimerState(TimerCheckpoint timerCheckpoint, MessageStoreConfig storeConfig, TimerLog timerLog, MessageStore messageStore) {
         this.timerCheckpoint = timerCheckpoint;
         this.storeConfig = storeConfig;
         this.timerLog = timerLog;
@@ -105,6 +126,7 @@ public class TimerState {
             currWriteTimeMs = formatTimeMs(System.currentTimeMillis());
         }
     }
+
     private long formatTimeMs(long timeMs) {
         return timeMs / precisionMs * precisionMs;
     }
@@ -125,4 +147,57 @@ public class TimerState {
     public void flagRunning() {
         state = RUNNING;
     }
+
+    public boolean needDelete(int magic) {
+        return (magic & MAGIC_DELETE) != 0;
+    }
+
+    public boolean needRoll(int magic) {
+        return (magic & MAGIC_ROLL) != 0;
+    }
+
+    public boolean checkStateForTimerMessageDelivers(TimerMessageDeliver[] timerMessageDelivers, int state) {
+        for (AbstractStateService service : timerMessageDelivers) {
+            if (!service.isState(state)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean checkStateForTimerMessageQueries(TimerMessageQuery[] timerMessageQueries, int state) {
+        for (AbstractStateService service : timerMessageQueries) {
+            if (!service.isState(state)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void checkDeliverQueueLatch(CountDownLatch latch, BlockingQueue<TimerRequest> fetchedTimerMessageQueue, TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries, long delayedTime) throws Exception {
+        if (latch.await(1, TimeUnit.SECONDS)) {
+            return;
+        }
+        int checkNum = 0;
+        while (true) {
+            if (fetchedTimerMessageQueue.size() > 0
+                    || !checkStateForTimerMessageQueries(timerMessageQueries, AbstractStateService.WAITING)
+                    || !checkStateForTimerMessageDelivers(timerMessageDelivers, AbstractStateService.WAITING)) {
+                //let it go
+            } else {
+                checkNum++;
+                if (checkNum >= 2) {
+                    break;
+                }
+            }
+            if (latch.await(1, TimeUnit.SECONDS)) {
+                break;
+            }
+        }
+        if (!latch.await(1, TimeUnit.SECONDS)) {
+            LOGGER.warn("Check latch failed delayedTime:{}", delayedTime);
+        }
+    }
+
+
 }

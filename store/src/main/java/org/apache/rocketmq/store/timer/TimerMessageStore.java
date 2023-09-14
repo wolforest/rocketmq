@@ -61,6 +61,7 @@ import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.service.MessageReader;
 import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
+import org.apache.rocketmq.store.timer.service.TimerMetricManager;
 import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
 import org.apache.rocketmq.store.timer.service.TimerMessageDeliver;
 import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
@@ -74,14 +75,10 @@ public class TimerMessageStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
 
-    protected final TimerState pointer;
+    public final TimerState pointer;
 
     public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
 
-    public static final String TIMER_ENQUEUE_MS = MessageConst.PROPERTY_TIMER_ENQUEUE_MS;
-    public static final String TIMER_DEQUEUE_MS = MessageConst.PROPERTY_TIMER_DEQUEUE_MS;
-    public static final String TIMER_ROLL_TIMES = MessageConst.PROPERTY_TIMER_ROLL_TIMES;
-    public static final String TIMER_DELETE_UNIQUE_KEY = MessageConst.PROPERTY_TIMER_DEL_UNIQKEY;
 
     public static final Random RANDOM = new Random();
     public static final int PUT_OK = 0, PUT_NEED_RETRY = 1, PUT_NO_RETRY = 2;
@@ -89,10 +86,6 @@ public class TimerMessageStore {
     public static final int DEFAULT_CAPACITY = 1024;
 
 
-
-    public static final int MAGIC_DEFAULT = 1;
-    public static final int MAGIC_ROLL = 1 << 1;
-    public static final int MAGIC_DELETE = 1 << 2;
     public boolean debug = false;
 
     public static final String ENQUEUE_PUT = "enqueue_put";
@@ -104,7 +97,6 @@ public class TimerMessageStore {
     protected final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     protected final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
 
-    private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
 
     private final ScheduledExecutorService scheduler;
 
@@ -129,15 +121,23 @@ public class TimerMessageStore {
     protected final MessageStoreConfig storeConfig;
     protected TimerMetrics timerMetrics;
     protected long lastTimeOfCheckMetrics = System.currentTimeMillis();
-    protected AtomicInteger frequency = new AtomicInteger(0);
 
     private final BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
     private MessageReader messageReader;
-
+    private TimerMetricManager timerMetricManager;
     public TimerMessageStore(final MessageStore messageStore, final MessageStoreConfig storeConfig,
                              TimerCheckpoint timerCheckpoint, TimerMetrics timerMetrics,
                              final BrokerStatsManager brokerStatsManager) throws IOException {
+        if (storeConfig.isTimerEnableDisruptor()) {
+            fetchedTimerMessageQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
+            timerMessageQueryQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
+            timerMessageDeliverQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
+        } else {
+            fetchedTimerMessageQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
+            timerMessageQueryQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
+            timerMessageDeliverQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
+        }
 
         this.messageStore = messageStore;
         this.storeConfig = storeConfig;
@@ -149,6 +149,7 @@ public class TimerMessageStore {
 
         this.timerLog = new TimerLog(getTimerLogPath(storeConfig.getStorePathRootDir()), timerLogFileSize);
         this.timerMetrics = timerMetrics;
+        timerMetricManager = new TimerMetricManager(timerMetrics);
         this.timerCheckpoint = timerCheckpoint;
         this.pointer = new TimerState(timerCheckpoint, storeConfig, timerLog, messageStore);
         this.timerWheel = new TimerWheel(
@@ -166,21 +167,13 @@ public class TimerMessageStore {
 
         this.messageReader = new MessageReader(messageStore, storeConfig);
 
-        if (storeConfig.isTimerEnableDisruptor()) {
-            fetchedTimerMessageQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
-            timerMessageQueryQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
-            timerMessageDeliverQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
-        } else {
-            fetchedTimerMessageQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
-            timerMessageQueryQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
-            timerMessageDeliverQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
-        }
+
         this.brokerStatsManager = brokerStatsManager;
     }
 
     public void initService() {
         enqueueGetService = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, pointer, timerCheckpoint, getServiceThreadName());
-        enqueuePutService = new TimerWheelLocator(storeConfig, fetchedTimerMessageQueue, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, pointer, perfCounterTicks, getServiceThreadName());
+        enqueuePutService = new TimerWheelLocator(storeConfig,timerWheel,timerLog, timerMetricManager,fetchedTimerMessageQueue, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, pointer, perfCounterTicks, getServiceThreadName());
         dequeueWarmService = new TimerDequeueWarmService(this);
         dequeueGetService = new TimerWheelFetcher(storeConfig, pointer, timerWheel, timerLog, perfCounterTicks, getServiceThreadName());
         timerFlushService = new TimerFlushService(this);
@@ -450,7 +443,7 @@ public class TimerMessageStore {
                         long curr = System.currentTimeMillis();
                         if (curr - lastTimeOfCheckMetrics > 70 * 60 * 1000) {
                             lastTimeOfCheckMetrics = curr;
-                            checkAndReviseMetrics();
+                            timerMetricManager.checkAndReviseMetrics();
                             LOGGER.info("[CheckAndReviseMetrics]Timer do check timer metrics cost {} ms",
                                     System.currentTimeMillis() - curr);
                         }
@@ -504,20 +497,6 @@ public class TimerMessageStore {
 
     public void setShouldRunningDequeue(final boolean shouldRunningDequeue) {
         this.pointer.shouldRunningDequeue = shouldRunningDequeue;
-    }
-
-    public void addMetric(MessageExt msg, int value) {
-        try {
-            if (null == msg || null == msg.getProperty(MessageConst.PROPERTY_REAL_TOPIC)) {
-                return;
-            }
-            timerMetrics.addAndGet(msg.getProperty(MessageConst.PROPERTY_REAL_TOPIC), value);
-        } catch (Throwable t) {
-            if (frequency.incrementAndGet() % 1000 == 0) {
-                LOGGER.error("error in adding metric", t);
-            }
-        }
-
     }
 
 
@@ -608,16 +587,16 @@ public class TimerMessageStore {
 
     public MessageExtBrokerInner convert(MessageExt messageExt, long enqueueTime, boolean needRoll) {
         if (enqueueTime != -1) {
-            MessageAccessor.putProperty(messageExt, TIMER_ENQUEUE_MS, enqueueTime + "");
+            MessageAccessor.putProperty(messageExt, TimerState.TIMER_ENQUEUE_MS, enqueueTime + "");
         }
         if (needRoll) {
-            if (messageExt.getProperty(TIMER_ROLL_TIMES) != null) {
-                MessageAccessor.putProperty(messageExt, TIMER_ROLL_TIMES, Integer.parseInt(messageExt.getProperty(TIMER_ROLL_TIMES)) + 1 + "");
+            if (messageExt.getProperty(TimerState.TIMER_ROLL_TIMES) != null) {
+                MessageAccessor.putProperty(messageExt, TimerState.TIMER_ROLL_TIMES, Integer.parseInt(messageExt.getProperty(TimerState.TIMER_ROLL_TIMES)) + 1 + "");
             } else {
-                MessageAccessor.putProperty(messageExt, TIMER_ROLL_TIMES, 1 + "");
+                MessageAccessor.putProperty(messageExt, TimerState.TIMER_ROLL_TIMES, 1 + "");
             }
         }
-        MessageAccessor.putProperty(messageExt, TIMER_DEQUEUE_MS, System.currentTimeMillis() + "");
+        MessageAccessor.putProperty(messageExt, TimerState.TIMER_DEQUEUE_MS, System.currentTimeMillis() + "");
         MessageExtBrokerInner message = convertMessage(messageExt, needRoll);
         return message;
     }
@@ -708,126 +687,6 @@ public class TimerMessageStore {
         return timeMs / precisionMs * precisionMs;
     }
 
-    public int hashTopicForMetrics(String topic) {
-        return null == topic ? 0 : topic.hashCode();
-    }
-
-    public void checkAndReviseMetrics() {
-        Map<String, TimerMetrics.Metric> smallOnes = new HashMap<>();
-        Map<String, TimerMetrics.Metric> bigOnes = new HashMap<>();
-        Map<Integer, String> smallHashs = new HashMap<>();
-        Set<Integer> smallHashCollisions = new HashSet<>();
-        for (Map.Entry<String, TimerMetrics.Metric> entry : timerMetrics.getTimingCount().entrySet()) {
-            if (entry.getValue().getCount().get() < storeConfig.getTimerMetricSmallThreshold()) {
-                smallOnes.put(entry.getKey(), entry.getValue());
-                int hash = hashTopicForMetrics(entry.getKey());
-                if (smallHashs.containsKey(hash)) {
-                    LOGGER.warn("[CheckAndReviseMetrics]Metric hash collision between small-small code:{} small topic:{}{} small topic:{}{}", hash,
-                            entry.getKey(), entry.getValue(),
-                            smallHashs.get(hash), smallOnes.get(smallHashs.get(hash)));
-                    smallHashCollisions.add(hash);
-                }
-                smallHashs.put(hash, entry.getKey());
-            } else {
-                bigOnes.put(entry.getKey(), entry.getValue());
-            }
-        }
-        //check the hash collision between small ons and big ons
-        for (Map.Entry<String, TimerMetrics.Metric> bjgEntry : bigOnes.entrySet()) {
-            if (smallHashs.containsKey(hashTopicForMetrics(bjgEntry.getKey()))) {
-                Iterator<Map.Entry<String, TimerMetrics.Metric>> smallIt = smallOnes.entrySet().iterator();
-                while (smallIt.hasNext()) {
-                    Map.Entry<String, TimerMetrics.Metric> smallEntry = smallIt.next();
-                    if (hashTopicForMetrics(smallEntry.getKey()) == hashTopicForMetrics(bjgEntry.getKey())) {
-                        LOGGER.warn("[CheckAndReviseMetrics]Metric hash collision between small-big code:{} small topic:{}{} big topic:{}{}", hashTopicForMetrics(smallEntry.getKey()),
-                                smallEntry.getKey(), smallEntry.getValue(),
-                                bjgEntry.getKey(), bjgEntry.getValue());
-                        smallIt.remove();
-                    }
-                }
-            }
-        }
-        //refresh
-        smallHashs.clear();
-        Map<String, TimerMetrics.Metric> newSmallOnes = new HashMap<>();
-        for (String topic : smallOnes.keySet()) {
-            newSmallOnes.put(topic, new TimerMetrics.Metric());
-            smallHashs.put(hashTopicForMetrics(topic), topic);
-        }
-
-        //travel the timer log
-        long readTimeMs = pointer.currReadTimeMs;
-        long currOffsetPy = timerWheel.checkPhyPos(readTimeMs, 0);
-        LinkedList<SelectMappedBufferResult> sbrs = new LinkedList<>();
-        boolean hasError = false;
-        try {
-            while (true) {
-                SelectMappedBufferResult timeSbr = timerLog.getWholeBuffer(currOffsetPy);
-                if (timeSbr == null) {
-                    break;
-                } else {
-                    sbrs.add(timeSbr);
-                }
-                ByteBuffer bf = timeSbr.getByteBuffer();
-                for (int position = 0; position < timeSbr.getSize(); position += TimerLog.UNIT_SIZE) {
-                    bf.position(position);
-                    bf.getInt();//size
-                    bf.getLong();//prev pos
-                    int magic = bf.getInt(); //magic
-                    long enqueueTime = bf.getLong();
-                    long delayedTime = bf.getInt() + enqueueTime;
-                    long offsetPy = bf.getLong();
-                    int sizePy = bf.getInt();
-                    int hashCode = bf.getInt();
-                    if (delayedTime < readTimeMs) {
-                        continue;
-                    }
-                    if (!smallHashs.containsKey(hashCode)) {
-                        continue;
-                    }
-                    String topic = null;
-                    if (smallHashCollisions.contains(hashCode)) {
-                        MessageExt messageExt = messageReader.getMessageByCommitOffset(offsetPy, sizePy);
-                        if (null != messageExt) {
-                            topic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
-                        }
-                    } else {
-                        topic = smallHashs.get(hashCode);
-                    }
-                    if (null != topic && newSmallOnes.containsKey(topic)) {
-                        newSmallOnes.get(topic).getCount().addAndGet(needDelete(magic) ? -1 : 1);
-                    } else {
-                        LOGGER.warn("[CheckAndReviseMetrics]Unexpected topic in checking timer metrics topic:{} code:{} offsetPy:{} size:{}", topic, hashCode, offsetPy, sizePy);
-                    }
-                }
-                if (timeSbr.getSize() < timerLogFileSize) {
-                    break;
-                } else {
-                    currOffsetPy = currOffsetPy + timerLogFileSize;
-                }
-            }
-
-        } catch (Exception e) {
-            hasError = true;
-            LOGGER.error("[CheckAndReviseMetrics]Unknown error in checkAndReviseMetrics and abort", e);
-        } finally {
-            for (SelectMappedBufferResult sbr : sbrs) {
-                if (null != sbr) {
-                    sbr.release();
-                }
-            }
-        }
-
-        if (!hasError) {
-            //update
-            for (String topic : newSmallOnes.keySet()) {
-                LOGGER.info("[CheckAndReviseMetrics]Revise metric for topic {} from {} to {}", topic, smallOnes.get(topic), newSmallOnes.get(topic));
-            }
-            timerMetrics.getTimingCount().putAll(newSmallOnes);
-        }
-
-    }
-
 
     public String getServiceThreadName() {
         String brokerIdentifier = "";
@@ -854,14 +713,6 @@ public class TimerMessageStore {
 
     public PerfCounter.Ticks getPerfCounterTicks() {
         return perfCounterTicks;
-    }
-
-    public boolean needRoll(int magic) {
-        return (magic & MAGIC_ROLL) != 0;
-    }
-
-    public boolean needDelete(int magic) {
-        return (magic & MAGIC_DELETE) != 0;
     }
 
     public long getAllCongestNum() {
@@ -1016,17 +867,6 @@ public class TimerMessageStore {
         this.timerMessageQueries = timerMessageQueries;
     }
 
-    public void setTimerMetrics(TimerMetrics timerMetrics) {
-        this.timerMetrics = timerMetrics;
-    }
-
-    public AtomicInteger getFrequency() {
-        return frequency;
-    }
-
-    public void setFrequency(AtomicInteger frequency) {
-        this.frequency = frequency;
-    }
 
     public TimerCheckpoint getTimerCheckpoint() {
         return timerCheckpoint;

@@ -32,6 +32,7 @@ import org.apache.rocketmq.store.timer.TimerLog;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerRequest;
+import org.apache.rocketmq.store.timer.TimerWheel;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.nio.ByteBuffer;
@@ -48,13 +49,22 @@ public class TimerWheelLocator extends ServiceThread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private MessageStoreConfig storeConfig;
+    private TimerLog timerLog;
+    private TimerWheel timerWheel;
+    private TimerMetricManager metricManager;
 
     public TimerWheelLocator(MessageStoreConfig storeConfig,
+                             TimerWheel timerWheel,
+                             TimerLog timerLog,
+                             TimerMetricManager metricManager,
                              BlockingQueue<TimerRequest> fetchedTimerMessageQueue, BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                              TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries,
                              TimerState pointer, PerfCounter.Ticks perfCounterTicks,
                              String serviceThreadName) {
         this.storeConfig = storeConfig;
+        this.timerWheel = timerWheel;
+        this.timerLog = timerLog;
+        this.metricManager = metricManager;
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageDelivers = timerMessageDelivers;
@@ -129,25 +139,26 @@ public class TimerWheelLocator extends ServiceThread {
             }
         }
     }
+    private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
 
     public boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
         //copy the value first, avoid concurrent problem
         long tmpWriteTimeMs = pointer.currWriteTimeMs;
         boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) pointer.timerRollWindowSlots * pointer.precisionMs;
-        int magic = MAGIC_DEFAULT;
+        int magic = TimerState.MAGIC_DEFAULT;
         if (needRoll) {
-            magic = magic | MAGIC_ROLL;
-            if (delayedTime - tmpWriteTimeMs - (long) timerRollWindowSlots * precisionMs < (long) timerRollWindowSlots / 3 * precisionMs) {
+            magic = magic | TimerState.MAGIC_ROLL;
+            if (delayedTime - tmpWriteTimeMs - (long) pointer.timerRollWindowSlots * pointer.precisionMs < (long) pointer.timerRollWindowSlots / 3 * pointer.precisionMs) {
                 //give enough time to next roll
-                delayedTime = tmpWriteTimeMs + (long) (timerRollWindowSlots / 2) * precisionMs;
+                delayedTime = tmpWriteTimeMs + (long) (pointer.timerRollWindowSlots / 2) * pointer.precisionMs;
             } else {
-                delayedTime = tmpWriteTimeMs + (long) timerRollWindowSlots * precisionMs;
+                delayedTime = tmpWriteTimeMs + (long) pointer.timerRollWindowSlots * pointer.precisionMs;
             }
         }
-        boolean isDelete = messageExt.getProperty(TIMER_DELETE_UNIQUE_KEY) != null;
+        boolean isDelete = messageExt.getProperty(TimerState.TIMER_DELETE_UNIQUE_KEY) != null;
         if (isDelete) {
-            magic = magic | MAGIC_DELETE;
+            magic = magic | TimerState.MAGIC_DELETE;
         }
         String realTopic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
         Slot slot = timerWheel.getSlot(delayedTime);
@@ -160,7 +171,7 @@ public class TimerWheelLocator extends ServiceThread {
         tmpBuffer.putInt((int) (delayedTime - tmpWriteTimeMs)); //delayTime
         tmpBuffer.putLong(offsetPy); //offset
         tmpBuffer.putInt(sizePy); //size
-        tmpBuffer.putInt(hashTopicForMetrics(realTopic)); //hashcode of real topic
+        tmpBuffer.putInt(metricManager.hashTopicForMetrics(realTopic)); //hashcode of real topic
         tmpBuffer.putLong(0); //reserved value, just set to 0 now
         long ret = timerLog.append(tmpBuffer.array(), 0, TimerLog.UNIT_SIZE);
         if (-1 != ret) {
@@ -168,54 +179,12 @@ public class TimerWheelLocator extends ServiceThread {
             // TODO: check if the delete msg is in the same slot with "the msg to be deleted".
             timerWheel.putSlot(delayedTime, slot.firstPos == -1 ? ret : slot.firstPos, ret,
                     isDelete ? slot.num - 1 : slot.num + 1, slot.magic);
-            addMetric(messageExt, isDelete ? -1 : 1);
+            metricManager.addMetric(messageExt, isDelete ? -1 : 1);
         }
         return -1 != ret;
     }
 
 
-    public boolean checkStateForTimerMessageDelivers(int state) {
-        for (AbstractStateService service : timerMessageDelivers) {
-            if (!service.isState(state)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public boolean checkStateForTimerMessageQueries(int state) {
-        for (AbstractStateService service : timerMessageQueries) {
-            if (!service.isState(state)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public void checkDeliverQueueLatch(CountDownLatch latch, int timerMessageDeliverQueueSize, long delayedTime) throws Exception {
-        if (latch.await(1, TimeUnit.SECONDS)) {
-            return;
-        }
-        int checkNum = 0;
-        while (true) {
-            if (timerMessageDeliverQueueSize > 0
-                    || !checkStateForTimerMessageQueries(AbstractStateService.WAITING)
-                    || !checkStateForTimerMessageDelivers(AbstractStateService.WAITING)) {
-                //let it go
-            } else {
-                checkNum++;
-                if (checkNum >= 2) {
-                    break;
-                }
-            }
-            if (latch.await(1, TimeUnit.SECONDS)) {
-                break;
-            }
-        }
-        if (!latch.await(1, TimeUnit.SECONDS)) {
-            LOGGER.warn("Check latch failed delayedTime:{}", delayedTime);
-        }
-    }
 
     protected void fetchAndPutTimerRequest() throws Exception {
         long tmpCommitQueueOffset = pointer.currQueueOffset;
@@ -232,7 +201,7 @@ public class TimerWheelLocator extends ServiceThread {
                 req.setLatch(latch);
                 this.putMessageToTimerWheel(req);
             }
-            checkDeliverQueueLatch(latch, fetchedTimerMessageQueue.size(), -1);
+            pointer.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue,timerMessageDelivers,timerMessageQueries, -1);
             boolean allSuccess = trs.stream().allMatch(TimerRequest::isSucc);
             if (allSuccess) {
                 break;
