@@ -18,6 +18,7 @@ package org.apache.rocketmq.store.logfile;
 
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -183,15 +184,7 @@ public class AllocateMappedFileService extends ServiceThread {
             this.hasException = true;
             return false;
         } catch (IOException e) {
-            log.warn(this.getServiceName() + " service has exception. ", e);
-            this.hasException = true;
-            if (null != req) {
-                requestQueue.offer(req);
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException ignored) {
-                }
-            }
+            handleMmapIOException(e, req);
         } finally {
             if (req != null && isSuccess)
                 req.getCountDownLatch().countDown();
@@ -241,4 +234,16 @@ public class AllocateMappedFileService extends ServiceThread {
                 this.messageStore.getMessageStoreConfig().getFlushLeastPagesWhenWarmMapedFile());
         }
     }
+
+    private void handleMmapIOException(IOException e, AllocateRequest req) {
+        log.warn(this.getServiceName() + " service has exception. ", e);
+        this.hasException = true;
+        if (null == req) {
+            return;
+        }
+
+        requestQueue.offer(req);
+        ThreadUtils.sleep(1);
+    }
+
 }
