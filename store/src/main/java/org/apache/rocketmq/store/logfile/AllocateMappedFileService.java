@@ -16,7 +16,12 @@
  */
 package org.apache.rocketmq.store.logfile;
 
-import java.util.Map;
+import java.io.IOException;
+import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -26,19 +31,12 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.config.BrokerRole;
 
-import java.io.IOException;
-import java.util.ServiceLoader;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
-
 /**
  * Create MappedFile in advance
  */
 public class AllocateMappedFileService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private static final int waitTimeOut = 1000 * 5;
+    private static int waitTimeOut = 1000 * 5;
 
     private final ConcurrentMap<String, AllocateRequest> requestTable = new ConcurrentHashMap<>();
     private final PriorityBlockingQueue<AllocateRequest> requestQueue = new PriorityBlockingQueue<>();
