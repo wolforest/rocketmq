@@ -55,7 +55,10 @@ public class TimerWheelFetcher extends ServiceThread {
     private int commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
 
     private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
-    private BlockingQueue<TimerRequest>
+    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private TimerMessageDeliver[] timerMessageDelivers;
+    private TimerMessageQuery[] timerMessageQueries;
+
     private long shouldStartTime;
     private int timerLogFileSize;
     private int precisionMs;
@@ -186,7 +189,7 @@ public class TimerWheelFetcher extends ServiceThread {
                 timerMessageQueryQueue.put(deleteList);
             }
             //do we need to use loop with tryAcquire
-            timerState.checkDeliverQueueLatch(deleteLatch, timerMessageDeliverQueueSize, timerState.currReadTimeMs);
+            timerState.checkDeliverQueueLatch(deleteLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
 
             CountDownLatch normalLatch = new CountDownLatch(normalMsgStack.size());
             //read the normal msg
@@ -196,7 +199,7 @@ public class TimerWheelFetcher extends ServiceThread {
                 }
                 timerMessageQueryQueue.put(normalList);
             }
-            timerState.checkDeliverQueueLatch(normalLatch, timerMessageDeliverQueueSize, timerState.currReadTimeMs);
+            timerState.checkDeliverQueueLatch(normalLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (timerState.dequeueStatusChangeFlag) {
                 return -1;

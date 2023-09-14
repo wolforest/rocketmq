@@ -174,13 +174,13 @@ public class TimerState {
         return true;
     }
 
-    public void checkDeliverQueueLatch(CountDownLatch latch, BlockingQueue<TimerRequest> fetchedTimerMessageQueue, TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries, long delayedTime) throws Exception {
+    public void checkDeliverQueueLatch(CountDownLatch latch, BlockingQueue<TimerRequest> timerMessageDeliverQueue, TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries, long delayedTime) throws Exception {
         if (latch.await(1, TimeUnit.SECONDS)) {
             return;
         }
         int checkNum = 0;
         while (true) {
-            if (fetchedTimerMessageQueue.size() > 0
+            if (timerMessageDeliverQueue.size() > 0
                     || !checkStateForTimerMessageQueries(timerMessageQueries, AbstractStateService.WAITING)
                     || !checkStateForTimerMessageDelivers(timerMessageDelivers, AbstractStateService.WAITING)) {
                 //let it go
