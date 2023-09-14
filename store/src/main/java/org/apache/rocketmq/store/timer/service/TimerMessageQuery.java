@@ -46,7 +46,7 @@ public class TimerMessageQuery extends AbstractStateService {
     private BlockingQueue<TimerRequest> dequeuePutQueue;
     private PerfCounter.Ticks perfCounterTicks;
     private TimerCheckpoint timerCheckpoint;
-    private TimerState pointer;
+    private TimerState timerState;
     private MessageStoreConfig storeConfig;
     private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
     private MessageReader messageReader;
@@ -56,7 +56,7 @@ public class TimerMessageQuery extends AbstractStateService {
         dequeuePutQueue = timerMessageStore.getTimerMessageDeliverQueue();
         dequeueGetQueue = timerMessageStore.getTimerMessageQueryQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
-        pointer = timerMessageStore.getPointer();
+        timerState = timerMessageStore.getPointer();
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
         timerCheckpoint = timerMessageStore.getTimerCheckpoint();
         timerMessageStore.getTimerMessageQueryQueue();
