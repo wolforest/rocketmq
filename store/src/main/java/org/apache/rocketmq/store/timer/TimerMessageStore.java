@@ -173,7 +173,7 @@ public class TimerMessageStore {
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
         timerMessageQueries = new TimerMessageQuery[getThreadNum];
         for (int i = 0; i < timerMessageQueries.length; i++) {
-            timerMessageQueries[i] = new TimerMessageQuery(this, timerState,timerCheckpoint, messageReader);
+            timerMessageQueries[i] = new TimerMessageQuery(timerState,timerCheckpoint,messageReader,perfCounterTicks,storeConfig,timerMessageDeliverQueue,timerMessageQueryQueue,getServiceThreadName());
         }
 
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
