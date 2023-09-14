@@ -174,24 +174,8 @@ public class AllocateMappedFileService extends ServiceThread {
                 return true;
             }
 
-            long beginTime = System.currentTimeMillis();
-
-            MappedFile mappedFile = getMappedFile(req);
-
-            long elapsedTime = TimeUtils.computeElapsedTimeMilliseconds(beginTime);
-            if (elapsedTime > 10) {
-                int queueSize = this.requestQueue.size();
-                log.warn("create mappedFile spent time(ms) " + elapsedTime + " queue size " + queueSize
-                    + " " + req.getFilePath() + " " + req.getFileSize());
-            }
-
-            // pre write mappedFile
-            if (mappedFile.getFileSize() >= this.messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog()
-                && this.messageStore.getMessageStoreConfig().isWarmMapedFileEnable()) {
-
-                mappedFile.warmMappedFile(this.messageStore.getMessageStoreConfig().getFlushDiskType(),
-                    this.messageStore.getMessageStoreConfig().getFlushLeastPagesWhenWarmMapedFile());
-            }
+            MappedFile mappedFile = createMappedFile(req);
+            warmMappedFile(mappedFile);
 
             req.setMappedFile(mappedFile);
             this.hasException = false;
@@ -217,7 +201,19 @@ public class AllocateMappedFileService extends ServiceThread {
         return true;
     }
 
-    private MappedFile getMappedFile(AllocateRequest req) throws IOException {
+    private void warmMappedFile(MappedFile mappedFile) {
+        // warm mappedFile
+        if (mappedFile.getFileSize() >= this.messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog()
+            && this.messageStore.getMessageStoreConfig().isWarmMapedFileEnable()) {
+
+            mappedFile.warmMappedFile(this.messageStore.getMessageStoreConfig().getFlushDiskType(),
+                this.messageStore.getMessageStoreConfig().getFlushLeastPagesWhenWarmMapedFile());
+        }
+    }
+
+    private MappedFile createMappedFile(AllocateRequest req) throws IOException {
+        long beginTime = System.currentTimeMillis();
+
         MappedFile mappedFile;
         if (messageStore.isTransientStorePoolEnable()) {
             try {
@@ -229,6 +225,13 @@ public class AllocateMappedFileService extends ServiceThread {
             }
         } else {
             mappedFile = new DefaultMappedFile(req.getFilePath(), req.getFileSize());
+        }
+
+        long elapsedTime = TimeUtils.computeElapsedTimeMilliseconds(beginTime);
+        if (elapsedTime > 10) {
+            int queueSize = this.requestQueue.size();
+            log.warn("create mappedFile spent time(ms) " + elapsedTime + " queue size " + queueSize
+                + " " + req.getFilePath() + " " + req.getFileSize());
         }
 
         return mappedFile;
