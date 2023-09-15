@@ -245,19 +245,7 @@ public class ConsumeQueueStore {
 
     private void recoverConcurrently(ConcurrentMap<Integer, ConsumeQueueInterface> maps, ExecutorService executor, List<FutureTask<Boolean>> result, CountDownLatch countDownLatch) {
         for (final ConsumeQueueInterface logic : maps.values()) {
-            FutureTask<Boolean> futureTask = new FutureTask<>(() -> {
-                boolean ret = true;
-                try {
-                    logic.recover();
-                } catch (Throwable e) {
-                    ret = false;
-                    log.error("Exception occurs while recover consume queue concurrently, " +
-                        "topic={}, queueId={}", logic.getTopic(), logic.getQueueId(), e);
-                } finally {
-                    countDownLatch.countDown();
-                }
-                return ret;
-            });
+            FutureTask<Boolean> futureTask = createFutureTask(logic, countDownLatch);
 
             result.add(futureTask);
             executor.submit(futureTask);
@@ -266,14 +254,32 @@ public class ConsumeQueueStore {
 
     private boolean getFutureResult(List<FutureTask<Boolean>> result) throws ExecutionException, InterruptedException {
         for (FutureTask<Boolean> task : result) {
-            if (task != null && task.isDone()) {
-                if (!task.get()) {
-                    return false;
-                }
+            if (task == null || !task.isDone()) {
+                continue;
+            }
+
+            if (!task.get()) {
+                return false;
             }
         }
 
         return true;
+    }
+
+    private FutureTask<Boolean> createFutureTask(ConsumeQueueInterface logic, CountDownLatch countDownLatch) {
+        return new FutureTask<>(() -> {
+            boolean ret = true;
+            try {
+                logic.recover();
+            } catch (Throwable e) {
+                ret = false;
+                log.error("Exception occurs while recover consume queue concurrently, " +
+                    "topic={}, queueId={}", logic.getTopic(), logic.getQueueId(), e);
+            } finally {
+                countDownLatch.countDown();
+            }
+            return ret;
+        });
     }
 
     public long getMaxOffsetInConsumeQueue() {
