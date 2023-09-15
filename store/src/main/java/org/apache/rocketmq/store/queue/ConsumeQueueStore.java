@@ -201,9 +201,13 @@ public class ConsumeQueueStore {
 
     public void recover() {
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-            for (ConsumeQueueInterface logic : maps.values()) {
-                this.recover(logic);
-            }
+            recover(maps);
+        }
+    }
+
+    private void recover(ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (ConsumeQueueInterface logic : maps.values()) {
+            this.recover(logic);
         }
     }
 
