@@ -332,6 +332,25 @@ public class CommitLog implements Swappable {
         return byteBuffer1;
     }
 
+    private DispatchRequest checkBody(java.nio.ByteBuffer byteBuffer, int bodyLen, int bodyCRC, byte[] bytesContent, boolean readBody, boolean checkCRC) {
+        if (bodyLen > 0) {
+            if (readBody) {
+                byteBuffer.get(bytesContent, 0, bodyLen);
+
+                if (checkCRC) {
+                    int crc = UtilAll.crc32(bytesContent, 0, bodyLen);
+                    if (crc != bodyCRC) {
+                        log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
+                        return new DispatchRequest(-1, false/* success */);
+                    }
+                }
+            } else {
+                byteBuffer.position(byteBuffer.position() + bodyLen);
+            }
+        }
+        return null;
+    }
+
     /**
      * check the message and returns the message size
      *
@@ -369,20 +388,9 @@ public class CommitLog implements Swappable {
             long preparedTransactionOffset = byteBuffer.getLong();
 
             int bodyLen = byteBuffer.getInt();
-            if (bodyLen > 0) {
-                if (readBody) {
-                    byteBuffer.get(bytesContent, 0, bodyLen);
-
-                    if (checkCRC) {
-                        int crc = UtilAll.crc32(bytesContent, 0, bodyLen);
-                        if (crc != bodyCRC) {
-                            log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
-                            return new DispatchRequest(-1, false/* success */);
-                        }
-                    }
-                } else {
-                    byteBuffer.position(byteBuffer.position() + bodyLen);
-                }
+            DispatchRequest bodyResult = checkBody(byteBuffer, bodyLen, bodyCRC, bytesContent, readBody, checkCRC);
+            if (bodyResult != null) {
+                return bodyResult;
             }
 
             int topicLen = messageVersion.getTopicLength(byteBuffer);
