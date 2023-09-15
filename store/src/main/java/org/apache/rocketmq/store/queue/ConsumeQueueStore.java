@@ -282,14 +282,22 @@ public class ConsumeQueueStore {
         });
     }
 
+    private long getMaxOffsetInConsumeQueue(long maxPhysicOffset, ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (ConsumeQueueInterface logic : maps.values()) {
+            if (logic.getMaxPhysicOffset() <= maxPhysicOffset) {
+                continue;
+            }
+
+            maxPhysicOffset = logic.getMaxPhysicOffset();
+        }
+
+        return maxPhysicOffset;
+    }
+
     public long getMaxOffsetInConsumeQueue() {
         long maxPhysicOffset = -1L;
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-            for (ConsumeQueueInterface logic : maps.values()) {
-                if (logic.getMaxPhysicOffset() > maxPhysicOffset) {
-                    maxPhysicOffset = logic.getMaxPhysicOffset();
-                }
-            }
+            maxPhysicOffset = getMaxOffsetInConsumeQueue(maxPhysicOffset, maps);
         }
         return maxPhysicOffset;
     }
