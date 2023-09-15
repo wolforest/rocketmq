@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -232,6 +233,18 @@ public class ConsumeQueueStore {
         }
     }
 
+    private boolean getFutureResult(List<FutureTask<Boolean>> result) throws ExecutionException, InterruptedException {
+        for (FutureTask<Boolean> task : result) {
+            if (task != null && task.isDone()) {
+                if (!task.get()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     public boolean recoverConcurrently() {
         int count = 0;
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
@@ -246,20 +259,13 @@ public class ConsumeQueueStore {
                 recoverConcurrently(maps, executor, result, countDownLatch);
             }
             countDownLatch.await();
-            for (FutureTask<Boolean> task : result) {
-                if (task != null && task.isDone()) {
-                    if (!task.get()) {
-                        return false;
-                    }
-                }
-            }
+            return getFutureResult(result);
         } catch (Exception e) {
             log.error("Exception occurs while recover consume queue concurrently", e);
             return false;
         } finally {
             executor.shutdown();
         }
-        return true;
     }
 
     public long getMaxOffsetInConsumeQueue() {
