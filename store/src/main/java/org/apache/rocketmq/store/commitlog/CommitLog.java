@@ -306,6 +306,21 @@ public class CommitLog implements Swappable {
         }
     }
 
+    private DispatchRequest checkMagicCode(int magicCode) {
+        switch (magicCode) {
+            case MessageDecoder.MESSAGE_MAGIC_CODE:
+            case MessageDecoder.MESSAGE_MAGIC_CODE_V2:
+                break;
+            case BLANK_MAGIC_CODE:
+                return new DispatchRequest(0, true /* success */);
+            default:
+                log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
+                return new DispatchRequest(-1, false /* success */);
+        }
+
+        return null;
+    }
+
     /**
      * check the message and returns the message size
      *
@@ -319,33 +334,20 @@ public class CommitLog implements Swappable {
 
             // 2 MAGIC CODE
             int magicCode = byteBuffer.getInt();
-            switch (magicCode) {
-                case MessageDecoder.MESSAGE_MAGIC_CODE:
-                case MessageDecoder.MESSAGE_MAGIC_CODE_V2:
-                    break;
-                case BLANK_MAGIC_CODE:
-                    return new DispatchRequest(0, true /* success */);
-                default:
-                    log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
-                    return new DispatchRequest(-1, false /* success */);
+            DispatchRequest codeResult = checkMagicCode(magicCode);
+            if (codeResult != null) {
+                return codeResult;
             }
 
             MessageVersion messageVersion = MessageVersion.valueOfMagicCode(magicCode);
-
             byte[] bytesContent = new byte[totalSize];
 
             int bodyCRC = byteBuffer.getInt();
-
             int queueId = byteBuffer.getInt();
-
             int flag = byteBuffer.getInt();
-
             long queueOffset = byteBuffer.getLong();
-
             long physicOffset = byteBuffer.getLong();
-
             int sysFlag = byteBuffer.getInt();
-
             long bornTimeStamp = byteBuffer.getLong();
 
             ByteBuffer byteBuffer1;
@@ -365,7 +367,6 @@ public class CommitLog implements Swappable {
             }
 
             int reconsumeTimes = byteBuffer.getInt();
-
             long preparedTransactionOffset = byteBuffer.getLong();
 
             int bodyLen = byteBuffer.getInt();
