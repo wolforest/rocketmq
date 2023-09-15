@@ -483,22 +483,26 @@ public class CommitLog implements Swappable {
     // Even if it is just inited.
     public long getConfirmOffset() {
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-            if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE && !this.defaultMessageStore.getRunningFlags().isFenced()) {
-                if (((AutoSwitchHAService) this.defaultMessageStore.getHaService()).getLocalSyncStateSet().size() == 1) {
-                    return this.defaultMessageStore.getMaxPhyOffset();
-                }
-                // First time it will compute the confirmOffset.
-                if (this.confirmOffset <= 0) {
-                    setConfirmOffset(((AutoSwitchHAService) this.defaultMessageStore.getHaService()).computeConfirmOffset());
-                    log.info("Init the confirmOffset to {}.", this.confirmOffset);
-                }
-            }
-            return this.confirmOffset;
+            return getConfirmOffsetInControllerMode();
         } else if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
             return this.confirmOffset;
         } else {
             return getMaxOffset();
         }
+    }
+
+    public long getConfirmOffsetInControllerMode() {
+        if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE && !this.defaultMessageStore.getRunningFlags().isFenced()) {
+            if (((AutoSwitchHAService) this.defaultMessageStore.getHaService()).getLocalSyncStateSet().size() == 1) {
+                return this.defaultMessageStore.getMaxPhyOffset();
+            }
+            // First time it will compute the confirmOffset.
+            if (this.confirmOffset <= 0) {
+                setConfirmOffset(((AutoSwitchHAService) this.defaultMessageStore.getHaService()).computeConfirmOffset());
+                log.info("Init the confirmOffset to {}.", this.confirmOffset);
+            }
+        }
+        return this.confirmOffset;
     }
 
     // Fetch the original confirmOffset's value.
