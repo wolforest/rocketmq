@@ -111,36 +111,45 @@ public class ConsumeQueueStore {
     private boolean loadConsumeQueues(String storePath, CQType cqType) {
         File dirLogic = new File(storePath);
         File[] fileTopicList = dirLogic.listFiles();
-        if (fileTopicList != null) {
+        if (fileTopicList == null) {
+            return true;
+        }
 
-            for (File fileTopic : fileTopicList) {
-                String topic = fileTopic.getName();
 
-                File[] fileQueueIdList = fileTopic.listFiles();
-                if (null == fileQueueIdList) {
-                    continue;
-                }
+        for (File fileTopic : fileTopicList) {
+            String topic = fileTopic.getName();
 
-                for (File fileQueueId : fileQueueIdList) {
-                    int queueId;
-                    try {
-                        queueId = Integer.parseInt(fileQueueId.getName());
-                    } catch (NumberFormatException e) {
-                        continue;
-                    }
+            File[] fileQueueIdList = fileTopic.listFiles();
+            if (null == fileQueueIdList) {
+                continue;
+            }
 
-                    queueTypeShouldBe(topic, cqType);
-
-                    ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
-                    this.putConsumeQueue(topic, queueId, logic);
-                    if (!this.load(logic)) {
-                        return false;
-                    }
-                }
+            if (!loadConsumeQueues(storePath, cqType, topic, fileQueueIdList)) {
+                return false;
             }
         }
 
         log.info("load {} all over, OK", cqType);
+        return true;
+    }
+
+    private boolean loadConsumeQueues(String storePath, CQType cqType, String topic, File[] fileQueueIdList) {
+        for (File fileQueueId : fileQueueIdList) {
+            int queueId;
+            try {
+                queueId = Integer.parseInt(fileQueueId.getName());
+            } catch (NumberFormatException e) {
+                continue;
+            }
+
+            queueTypeShouldBe(topic, cqType);
+
+            ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
+            this.putConsumeQueue(topic, queueId, logic);
+            if (!this.load(logic)) {
+                return false;
+            }
+        }
 
         return true;
     }
