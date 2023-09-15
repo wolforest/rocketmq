@@ -249,6 +249,7 @@ public interface MessageStore {
 
     /**
      * Look up the message by given commit log offset.
+     * TODO: rename to getMessageByOffset
      *
      * @param commitLogOffset physical offset.
      * @return Message whose physical offset is as specified.
@@ -257,6 +258,7 @@ public interface MessageStore {
 
     /**
      * Look up the message by given commit log offset and size.
+     * TODO: rename to getMessageByOffset
      *
      * @param commitLogOffset physical offset.
      * @param size            message size
@@ -266,6 +268,7 @@ public interface MessageStore {
 
     /**
      * Get one message from the specified commit log offset.
+     * TODO: rename to getBufferByOffset
      *
      * @param commitLogOffset commit log offset.
      * @return wrapped result of the message.
@@ -274,6 +277,7 @@ public interface MessageStore {
 
     /**
      * Get one message from the specified commit log offset.
+     * TODO: rename to getBufferByOffset
      *
      * @param commitLogOffset commit log offset.
      * @param msgSize         message size.
@@ -283,28 +287,38 @@ public interface MessageStore {
 
     /**
      * Get the running information of this store.
+     * information from storeStatsService
      *
      * @return message store running info.
      */
     String getRunningDataInfo();
 
+    /**
+     * get timing count from timerMessageStore.getTimerMetrics()
+     *
+     * @param topic string
+     * @return timing message count
+     */
     long getTimingMessageCount(String topic);
 
     /**
      * Message store runtime information, which should generally contains various statistical information.
+     * get information from storeStatsService
      *
      * @return runtime information of the message store in format of key-value pairs.
      */
     HashMap<String, String> getRuntimeInfo();
 
     /**
-     * HA runtime information
+     * HA runtime information from HaService
+     *
      * @return runtime information of ha
      */
     HARuntimeInfo getHARuntimeInfo();
 
     /**
      * Get the maximum commit log offset.
+     * TODO: rename to getCommitLogMaxOffset
      *
      * @return maximum commit log offset.
      */
@@ -312,6 +326,7 @@ public interface MessageStore {
 
     /**
      * Get the minimum commit log offset.
+     * TODO: rename to getCommitLogMinOffset
      *
      * @return minimum commit log offset.
      */
@@ -375,6 +390,7 @@ public interface MessageStore {
     /**
      * Get the raw commit log data starting from the given offset, which should used for replication purpose.
      *
+     *
      * @param offset starting offset.
      * @return commit log data.
      */
@@ -382,6 +398,7 @@ public interface MessageStore {
 
     /**
      * Get the raw commit log data starting from the given offset, across multiple mapped files.
+     *
      *
      * @param offset starting offset.
      * @param size   size of data to get
@@ -402,6 +419,8 @@ public interface MessageStore {
 
     /**
      * Execute file deletion manually.
+     * operation in admin portal
+     *
      */
     void executeDeleteFilesManually();
 
@@ -446,6 +465,7 @@ public interface MessageStore {
 
     /**
      * Return how much the slave falls behind.
+     * TODO: rename to getSlaveCommitLogLag or getSlaveLag
      *
      * @return number of bytes that slave falls behind.
      */
