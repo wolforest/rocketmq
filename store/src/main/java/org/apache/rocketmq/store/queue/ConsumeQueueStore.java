@@ -212,6 +212,37 @@ public class ConsumeQueueStore {
         }
     }
 
+    public boolean recoverConcurrently() {
+        int count = countConsumeQueue();
+
+        final CountDownLatch countDownLatch = new CountDownLatch(count);
+        BlockingQueue<Runnable> recoverQueue = new LinkedBlockingQueue<>();
+        final ExecutorService executor = buildExecutorService(recoverQueue, "RecoverConsumeQueueThread_");
+        List<FutureTask<Boolean>> result = new ArrayList<>(count);
+
+        try {
+            for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
+                recoverConcurrently(maps, executor, result, countDownLatch);
+            }
+            countDownLatch.await();
+            return getFutureResult(result);
+        } catch (Exception e) {
+            log.error("Exception occurs while recover consume queue concurrently", e);
+            return false;
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    private int countConsumeQueue() {
+        int count = 0;
+        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
+            count += maps.values().size();
+        }
+
+        return count;
+    }
+
     private void recoverConcurrently(ConcurrentMap<Integer, ConsumeQueueInterface> maps, ExecutorService executor, List<FutureTask<Boolean>> result, CountDownLatch countDownLatch) {
         for (final ConsumeQueueInterface logic : maps.values()) {
             FutureTask<Boolean> futureTask = new FutureTask<>(() -> {
@@ -243,29 +274,6 @@ public class ConsumeQueueStore {
         }
 
         return true;
-    }
-
-    public boolean recoverConcurrently() {
-        int count = 0;
-        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-            count += maps.values().size();
-        }
-        final CountDownLatch countDownLatch = new CountDownLatch(count);
-        BlockingQueue<Runnable> recoverQueue = new LinkedBlockingQueue<>();
-        final ExecutorService executor = buildExecutorService(recoverQueue, "RecoverConsumeQueueThread_");
-        List<FutureTask<Boolean>> result = new ArrayList<>(count);
-        try {
-            for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-                recoverConcurrently(maps, executor, result, countDownLatch);
-            }
-            countDownLatch.await();
-            return getFutureResult(result);
-        } catch (Exception e) {
-            log.error("Exception occurs while recover consume queue concurrently", e);
-            return false;
-        } finally {
-            executor.shutdown();
-        }
     }
 
     public long getMaxOffsetInConsumeQueue() {
