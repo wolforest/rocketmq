@@ -211,6 +211,27 @@ public class ConsumeQueueStore {
         }
     }
 
+    private void recoverConcurrently(ConcurrentMap<Integer, ConsumeQueueInterface> maps, ExecutorService executor, List<FutureTask<Boolean>> result, CountDownLatch countDownLatch) {
+        for (final ConsumeQueueInterface logic : maps.values()) {
+            FutureTask<Boolean> futureTask = new FutureTask<>(() -> {
+                boolean ret = true;
+                try {
+                    logic.recover();
+                } catch (Throwable e) {
+                    ret = false;
+                    log.error("Exception occurs while recover consume queue concurrently, " +
+                        "topic={}, queueId={}", logic.getTopic(), logic.getQueueId(), e);
+                } finally {
+                    countDownLatch.countDown();
+                }
+                return ret;
+            });
+
+            result.add(futureTask);
+            executor.submit(futureTask);
+        }
+    }
+
     public boolean recoverConcurrently() {
         int count = 0;
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
@@ -222,24 +243,7 @@ public class ConsumeQueueStore {
         List<FutureTask<Boolean>> result = new ArrayList<>(count);
         try {
             for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-                for (final ConsumeQueueInterface logic : maps.values()) {
-                    FutureTask<Boolean> futureTask = new FutureTask<>(() -> {
-                        boolean ret = true;
-                        try {
-                            logic.recover();
-                        } catch (Throwable e) {
-                            ret = false;
-                            log.error("Exception occurs while recover consume queue concurrently, " +
-                                "topic={}, queueId={}", logic.getTopic(), logic.getQueueId(), e);
-                        } finally {
-                            countDownLatch.countDown();
-                        }
-                        return ret;
-                    });
-
-                    result.add(futureTask);
-                    executor.submit(futureTask);
-                }
+                recoverConcurrently(maps, executor, result, countDownLatch);
             }
             countDownLatch.await();
             for (FutureTask<Boolean> task : result) {
