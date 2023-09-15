@@ -248,6 +248,11 @@ public class DefaultMessageStore implements MessageStore {
                 result = loadIndexService(lastExitOK);
             }
 
+            if (result) {
+                this.recover(lastExitOK);
+                LOGGER.info("message store recover end, and the max phy offset = {}", this.getMaxPhyOffset());
+            }
+
             long maxOffset = this.getMaxPhyOffset();
             this.setBrokerInitMaxOffset(maxOffset);
             LOGGER.info("load over, and the max phy offset = {}", maxOffset);
@@ -1114,11 +1119,7 @@ public class DefaultMessageStore implements MessageStore {
         this.masterFlushedOffset = this.storeCheckpoint.getMasterFlushedOffset();
         setConfirmOffset(this.storeCheckpoint.getConfirmPhyOffset());
 
-        boolean result = this.indexService.load(lastExitOK);
-        this.recover(lastExitOK);
-        LOGGER.info("message store recover end, and the max phy offset = {}", this.getMaxPhyOffset());
-
-        return result;
+        return this.indexService.load(lastExitOK);
     }
 
     private void prepareLock() throws IOException {
