@@ -321,6 +321,17 @@ public class CommitLog implements Swappable {
         return null;
     }
 
+    private ByteBuffer getByteBuffer(java.nio.ByteBuffer byteBuffer, int sysFlag, byte[] bytesContent, int flag) {
+        ByteBuffer byteBuffer1;
+        if ((sysFlag & flag) == 0) {
+            byteBuffer1 = byteBuffer.get(bytesContent, 0, 4 + 4);
+        } else {
+            byteBuffer1 = byteBuffer.get(bytesContent, 0, 16 + 4);
+        }
+
+        return byteBuffer1;
+    }
+
     /**
      * check the message and returns the message size
      *
@@ -350,21 +361,9 @@ public class CommitLog implements Swappable {
             int sysFlag = byteBuffer.getInt();
             long bornTimeStamp = byteBuffer.getLong();
 
-            ByteBuffer byteBuffer1;
-            if ((sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0) {
-                byteBuffer1 = byteBuffer.get(bytesContent, 0, 4 + 4);
-            } else {
-                byteBuffer1 = byteBuffer.get(bytesContent, 0, 16 + 4);
-            }
-
+            ByteBuffer byteBuffer1 = getByteBuffer(byteBuffer, sysFlag, bytesContent, MessageSysFlag.BORNHOST_V6_FLAG);
             long storeTimestamp = byteBuffer.getLong();
-
-            ByteBuffer byteBuffer2;
-            if ((sysFlag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0) {
-                byteBuffer2 = byteBuffer.get(bytesContent, 0, 4 + 4);
-            } else {
-                byteBuffer2 = byteBuffer.get(bytesContent, 0, 16 + 4);
-            }
+            ByteBuffer byteBuffer2 = getByteBuffer(byteBuffer, sysFlag, bytesContent, MessageSysFlag.STOREHOSTADDRESS_V6_FLAG);
 
             int reconsumeTimes = byteBuffer.getInt();
             long preparedTransactionOffset = byteBuffer.getLong();
