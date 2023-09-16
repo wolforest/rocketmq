@@ -79,14 +79,6 @@ public class ReputMessageService extends ServiceThread {
         super.shutdown();
     }
 
-    public long getReputFromOffset() {
-        return reputFromOffset;
-    }
-
-    public void setReputFromOffset(long reputFromOffset) {
-        this.reputFromOffset = reputFromOffset;
-    }
-
     public long behind() {
         return messageStore.getConfirmOffset() - this.reputFromOffset;
     }
@@ -236,7 +228,13 @@ public class ReputMessageService extends ServiceThread {
         }
     }
 
+    public long getReputFromOffset() {
+        return reputFromOffset;
+    }
 
+    public void setReputFromOffset(long reputFromOffset) {
+        this.reputFromOffset = reputFromOffset;
+    }
 
     @Override
     public String getServiceName() {

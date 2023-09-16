@@ -87,6 +87,10 @@ public class CommitLog implements Swappable {
     private final AppendMessageCallback appendMessageCallback;
     private ThreadLocal<PutMessageThreadLocal> putMessageThreadLocal;
 
+    /**
+     * only set while DefaultMessageStore.recover()
+     * while recover used by ReputMessageService
+     */
     protected volatile long confirmOffset = -1L;
     private volatile long beginTimeInLock = 0;
     protected int commitLogSize;
@@ -300,12 +304,6 @@ public class CommitLog implements Swappable {
         return this.checkMessageAndReturnSize(byteBuffer, checkCRC, checkDupInfo, true);
     }
 
-    private void doNothingForDeadCode(final Object obj) {
-        if (obj != null) {
-            log.debug(String.valueOf(obj.hashCode()));
-        }
-    }
-
     /**
      * check the message and returns the message size
      *
@@ -319,70 +317,33 @@ public class CommitLog implements Swappable {
 
             // 2 MAGIC CODE
             int magicCode = byteBuffer.getInt();
-            switch (magicCode) {
-                case MessageDecoder.MESSAGE_MAGIC_CODE:
-                case MessageDecoder.MESSAGE_MAGIC_CODE_V2:
-                    break;
-                case BLANK_MAGIC_CODE:
-                    return new DispatchRequest(0, true /* success */);
-                default:
-                    log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
-                    return new DispatchRequest(-1, false /* success */);
+            DispatchRequest codeResult = checkMagicCode(magicCode);
+            if (codeResult != null) {
+                return codeResult;
             }
 
             MessageVersion messageVersion = MessageVersion.valueOfMagicCode(magicCode);
-
             byte[] bytesContent = new byte[totalSize];
 
             int bodyCRC = byteBuffer.getInt();
-
             int queueId = byteBuffer.getInt();
-
             int flag = byteBuffer.getInt();
-
             long queueOffset = byteBuffer.getLong();
-
             long physicOffset = byteBuffer.getLong();
-
             int sysFlag = byteBuffer.getInt();
-
             long bornTimeStamp = byteBuffer.getLong();
 
-            ByteBuffer byteBuffer1;
-            if ((sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0) {
-                byteBuffer1 = byteBuffer.get(bytesContent, 0, 4 + 4);
-            } else {
-                byteBuffer1 = byteBuffer.get(bytesContent, 0, 16 + 4);
-            }
-
+            ByteBuffer byteBuffer1 = getByteBuffer(byteBuffer, sysFlag, bytesContent, MessageSysFlag.BORNHOST_V6_FLAG);
             long storeTimestamp = byteBuffer.getLong();
-
-            ByteBuffer byteBuffer2;
-            if ((sysFlag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0) {
-                byteBuffer2 = byteBuffer.get(bytesContent, 0, 4 + 4);
-            } else {
-                byteBuffer2 = byteBuffer.get(bytesContent, 0, 16 + 4);
-            }
+            ByteBuffer byteBuffer2 = getByteBuffer(byteBuffer, sysFlag, bytesContent, MessageSysFlag.STOREHOSTADDRESS_V6_FLAG);
 
             int reconsumeTimes = byteBuffer.getInt();
-
             long preparedTransactionOffset = byteBuffer.getLong();
 
             int bodyLen = byteBuffer.getInt();
-            if (bodyLen > 0) {
-                if (readBody) {
-                    byteBuffer.get(bytesContent, 0, bodyLen);
-
-                    if (checkCRC) {
-                        int crc = UtilAll.crc32(bytesContent, 0, bodyLen);
-                        if (crc != bodyCRC) {
-                            log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
-                            return new DispatchRequest(-1, false/* success */);
-                        }
-                    }
-                } else {
-                    byteBuffer.position(byteBuffer.position() + bodyLen);
-                }
+            DispatchRequest bodyResult = checkBody(byteBuffer, bodyLen, bodyCRC, bytesContent, readBody, checkCRC);
+            if (bodyResult != null) {
+                return bodyResult;
             }
 
             int topicLen = messageVersion.getTopicLength(byteBuffer);
@@ -401,38 +362,14 @@ public class CommitLog implements Swappable {
                 propertiesMap = MessageDecoder.string2messageProperties(properties);
 
                 keys = propertiesMap.get(MessageConst.PROPERTY_KEYS);
-
                 uniqKey = propertiesMap.get(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
 
-                if (checkDupInfo) {
-                    String dupInfo = propertiesMap.get(MessageConst.DUP_INFO);
-                    if (null == dupInfo || dupInfo.split("_").length != 2) {
-                        log.warn("DupInfo in properties check failed. dupInfo={}", dupInfo);
-                        return new DispatchRequest(-1, false);
-                    }
+                DispatchRequest duplicateResult = checkDuplicate(checkDupInfo, propertiesMap);
+                if (duplicateResult != null) {
+                    return duplicateResult;
                 }
 
-                String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
-                if (tags != null && tags.length() > 0) {
-                    tagsCode = MessageExtBrokerInner.tagsString2tagsCode(MessageExt.parseTopicFilterType(sysFlag), tags);
-                }
-
-                // Timing message processing
-                {
-                    String t = propertiesMap.get(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
-                    if (TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(topic) && t != null) {
-                        int delayLevel = Integer.parseInt(t);
-
-                        if (delayLevel > this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel()) {
-                            delayLevel = this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel();
-                        }
-
-                        if (delayLevel > 0) {
-                            tagsCode = this.defaultMessageStore.getDelayLevelService().computeDeliverTimestamp(delayLevel,
-                                storeTimestamp);
-                        }
-                    }
-                }
+                tagsCode = getTagsCode(tagsCode, propertiesMap, topic, storeTimestamp, sysFlag);
             }
 
             int readLength = MessageExtEncoder.calMsgLength(messageVersion, sysFlag, bodyLen, topicLen, propertiesLength);
@@ -472,6 +409,98 @@ public class CommitLog implements Swappable {
         return new DispatchRequest(-1, false /* success */);
     }
 
+    private void doNothingForDeadCode(final Object obj) {
+        if (obj == null) {
+            return;
+        }
+
+        log.debug(String.valueOf(obj.hashCode()));
+    }
+
+    private DispatchRequest checkMagicCode(int magicCode) {
+        switch (magicCode) {
+            case MessageDecoder.MESSAGE_MAGIC_CODE:
+            case MessageDecoder.MESSAGE_MAGIC_CODE_V2:
+                break;
+            case BLANK_MAGIC_CODE:
+                return new DispatchRequest(0, true /* success */);
+            default:
+                log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
+                return new DispatchRequest(-1, false /* success */);
+        }
+
+        return null;
+    }
+
+    private ByteBuffer getByteBuffer(java.nio.ByteBuffer byteBuffer, int sysFlag, byte[] bytesContent, int flag) {
+        ByteBuffer byteBuffer1;
+        if ((sysFlag & flag) == 0) {
+            byteBuffer1 = byteBuffer.get(bytesContent, 0, 4 + 4);
+        } else {
+            byteBuffer1 = byteBuffer.get(bytesContent, 0, 16 + 4);
+        }
+
+        return byteBuffer1;
+    }
+
+    private DispatchRequest checkBody(java.nio.ByteBuffer byteBuffer, int bodyLen, int bodyCRC, byte[] bytesContent, boolean readBody, boolean checkCRC) {
+        if (bodyLen > 0) {
+            if (readBody) {
+                byteBuffer.get(bytesContent, 0, bodyLen);
+
+                if (checkCRC) {
+                    int crc = UtilAll.crc32(bytesContent, 0, bodyLen);
+                    if (crc != bodyCRC) {
+                        log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
+                        return new DispatchRequest(-1, false/* success */);
+                    }
+                }
+            } else {
+                byteBuffer.position(byteBuffer.position() + bodyLen);
+            }
+        }
+        return null;
+    }
+
+    private DispatchRequest checkDuplicate(boolean checkDupInfo, Map<String, String> propertiesMap) {
+        if (!checkDupInfo) {
+            return null;
+        }
+
+        String dupInfo = propertiesMap.get(MessageConst.DUP_INFO);
+        if (null == dupInfo || dupInfo.split("_").length != 2) {
+            log.warn("DupInfo in properties check failed. dupInfo={}", dupInfo);
+            return new DispatchRequest(-1, false);
+        }
+
+        return null;
+    }
+
+    private long getTagsCode(long tagsCode, Map<String, String> propertiesMap, String topic, long storeTimestamp, int sysFlag) {
+        String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
+        if (tags != null && tags.length() > 0) {
+            tagsCode = MessageExtBrokerInner.tagsString2tagsCode(MessageExt.parseTopicFilterType(sysFlag), tags);
+        }
+
+        // Timing message processing
+        String t = propertiesMap.get(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
+        if (!TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(topic) || t == null) {
+            return tagsCode;
+        }
+
+        int delayLevel = Integer.parseInt(t);
+        if (delayLevel > this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel()) {
+            delayLevel = this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel();
+        }
+
+        if (delayLevel > 0) {
+            tagsCode = this.defaultMessageStore.getDelayLevelService().computeDeliverTimestamp(delayLevel,
+                storeTimestamp);
+        }
+
+        return tagsCode;
+    }
+
     private void setBatchSizeIfNeeded(Map<String, String> propertiesMap, DispatchRequest dispatchRequest) {
         if (null != propertiesMap && propertiesMap.containsKey(MessageConst.PROPERTY_INNER_NUM) && propertiesMap.containsKey(MessageConst.PROPERTY_INNER_BASE)) {
             dispatchRequest.setMsgBaseOffset(Long.parseLong(propertiesMap.get(MessageConst.PROPERTY_INNER_BASE)));
@@ -483,43 +512,38 @@ public class CommitLog implements Swappable {
     // Even if it is just inited.
     public long getConfirmOffset() {
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-            return getConfirmOffsetInControllerMode();
+            return getConfirmOffsetInControllerMode(false);
         } else if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
             return this.confirmOffset;
         } else {
             return getMaxOffset();
         }
-    }
-
-    public long getConfirmOffsetInControllerMode() {
-        if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE && !this.defaultMessageStore.getRunningFlags().isFenced()) {
-            if (((AutoSwitchHAService) this.defaultMessageStore.getHaService()).getLocalSyncStateSet().size() == 1) {
-                return this.defaultMessageStore.getMaxPhyOffset();
-            }
-            // First time it will compute the confirmOffset.
-            if (this.confirmOffset <= 0) {
-                setConfirmOffset(((AutoSwitchHAService) this.defaultMessageStore.getHaService()).computeConfirmOffset());
-                log.info("Init the confirmOffset to {}.", this.confirmOffset);
-            }
-        }
-        return this.confirmOffset;
     }
 
     // Fetch the original confirmOffset's value.
     // Without checking and re-computing.
     public long getConfirmOffsetDirectly() {
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-            if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE && !this.defaultMessageStore.getRunningFlags().isFenced()) {
-                if (((AutoSwitchHAService) this.defaultMessageStore.getHaService()).getLocalSyncStateSet().size() == 1) {
-                    return this.defaultMessageStore.getMaxPhyOffset();
-                }
-            }
-            return this.confirmOffset;
+            return getConfirmOffsetInControllerMode(true);
         } else if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
             return this.confirmOffset;
         } else {
             return getMaxOffset();
         }
+    }
+
+    private long getConfirmOffsetInControllerMode(boolean directly) {
+        if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE && !this.defaultMessageStore.getRunningFlags().isFenced()) {
+            if (((AutoSwitchHAService) this.defaultMessageStore.getHaService()).getLocalSyncStateSet().size() == 1) {
+                return this.defaultMessageStore.getMaxPhyOffset();
+            }
+            // First time it will compute the confirmOffset.
+            if (!directly && this.confirmOffset <= 0) {
+                setConfirmOffset(((AutoSwitchHAService) this.defaultMessageStore.getHaService()).computeConfirmOffset());
+                log.info("Init the confirmOffset to {}.", this.confirmOffset);
+            }
+        }
+        return this.confirmOffset;
     }
 
     public void setConfirmOffset(long phyOffset) {
@@ -529,10 +553,12 @@ public class CommitLog implements Swappable {
 
     public long getLastFileFromOffset() {
         MappedFile lastMappedFile = this.mappedFileQueue.getLastMappedFile();
-        if (lastMappedFile != null) {
-            if (lastMappedFile.isAvailable()) {
-                return lastMappedFile.getFileFromOffset();
-            }
+        if (lastMappedFile == null) {
+            return -1;
+        }
+
+        if (lastMappedFile.isAvailable()) {
+            return lastMappedFile.getFileFromOffset();
         }
 
         return -1;

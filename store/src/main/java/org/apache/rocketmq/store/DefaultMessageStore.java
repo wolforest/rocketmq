@@ -249,6 +249,7 @@ public class DefaultMessageStore implements MessageStore {
             }
 
             if (result) {
+                setConfirmOffset(this.storeCheckpoint.getConfirmPhyOffset());
                 this.recover(lastExitOK);
                 LOGGER.info("message store recover end, and the max phy offset = {}", this.getMaxPhyOffset());
             }
@@ -1008,7 +1009,7 @@ public class DefaultMessageStore implements MessageStore {
             return;
         }
 
-        /**
+        /*
          * 1. Make sure the fast-forward messages to be truncated during the recovering according to the max physical offset of the commitlog;
          * 2. DLedger committedPos may be missing, so the maxPhysicalPosInLogicQueue maybe bigger that maxOffset returned by DLedgerCommitLog, just let it go;
          * 3. Calculate the reput offset according to the consume queue;
@@ -1028,7 +1029,7 @@ public class DefaultMessageStore implements MessageStore {
         }
         if (maxPhysicalPosInLogicQueue < this.commitLog.getMinOffset()) {
             maxPhysicalPosInLogicQueue = this.commitLog.getMinOffset();
-            /**
+            /*
              * This happens in following conditions:
              * 1. If someone removes all the consumequeue files or the disk get damaged.
              * 2. Launch a new broker, and copy the commitlog from other brokers.
@@ -1042,7 +1043,7 @@ public class DefaultMessageStore implements MessageStore {
             maxPhysicalPosInLogicQueue, this.commitLog.getMinOffset(), this.commitLog.getMaxOffset(), this.commitLog.getConfirmOffset());
         this.reputMessageService.setReputFromOffset(maxPhysicalPosInLogicQueue);
 
-        /**
+        /*
          *  1. Finish dispatching the messages fall behind, then to start other services.
          *  2. DLedger committedPos may be missing, so here just require dispatchBehindBytes <= 0
          */
@@ -1117,8 +1118,6 @@ public class DefaultMessageStore implements MessageStore {
         this.storeCheckpoint = new StoreCheckpoint(
             StorePathConfigHelper.getStoreCheckpoint(this.messageStoreConfig.getStorePathRootDir()));
         this.masterFlushedOffset = this.storeCheckpoint.getMasterFlushedOffset();
-        setConfirmOffset(this.storeCheckpoint.getConfirmPhyOffset());
-
         return this.indexService.load(lastExitOK);
     }
 
