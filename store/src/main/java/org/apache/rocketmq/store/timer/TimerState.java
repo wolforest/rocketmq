@@ -57,8 +57,17 @@ public class TimerState {
     public volatile long lastCommitQueueOffset;
     public long lastEnqueueButExpiredTime;
     public long lastEnqueueButExpiredStoreTime;
+
+    public boolean isShouldRunningDequeue() {
+        return shouldRunningDequeue;
+    }
+
+    public void setShouldRunningDequeue(boolean shouldRunningDequeue) {
+        this.shouldRunningDequeue = shouldRunningDequeue;
+    }
+
     // True if current store is master or current brokerId is equal to the minimum brokerId of the replica group in slaveActingMaster mode.
-    public volatile boolean shouldRunningDequeue;
+    private volatile boolean shouldRunningDequeue;
 
     //the dequeue is an asynchronous process, use this flag to track if the status has changed
     public boolean dequeueStatusChangeFlag = false;

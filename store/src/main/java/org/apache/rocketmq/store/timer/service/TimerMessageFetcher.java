@@ -99,7 +99,7 @@ public class TimerMessageFetcher extends ServiceThread {
 
     private boolean isRunningEnqueue() {
         checkBrokerRole();
-        if (!timerState.shouldRunningDequeue && !isMaster() && timerState.currQueueOffset >= timerState.timerCheckpoint.getMasterTimerQueueOffset()) {
+        if (!timerState.isShouldRunningDequeue() && !isMaster() && timerState.currQueueOffset >= timerState.timerCheckpoint.getMasterTimerQueueOffset()) {
             return false;
         }
 

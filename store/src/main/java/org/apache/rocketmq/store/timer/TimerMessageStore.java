@@ -504,7 +504,7 @@ public class TimerMessageStore {
     }
 
     public void start(boolean shouldRunningDequeue) {
-        this.timerState.shouldRunningDequeue = shouldRunningDequeue;
+        this.timerState.setShouldRunningDequeue(shouldRunningDequeue);
         this.start();
     }
 
@@ -539,10 +539,6 @@ public class TimerMessageStore {
 
     }
 
-
-    public void setShouldRunningDequeue(final boolean shouldRunningDequeue) {
-        this.timerState.shouldRunningDequeue = shouldRunningDequeue;
-    }
 
 
     @SuppressWarnings("NonAtomicOperationOnVolatileField")

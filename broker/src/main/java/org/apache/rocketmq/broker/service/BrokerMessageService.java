@@ -227,7 +227,7 @@ public class BrokerMessageService {
         isScheduleServiceStart = shouldStart;
 
         if (timerMessageStore != null) {
-            timerMessageStore.setShouldRunningDequeue(shouldStart);
+            timerMessageStore.timerState.setShouldRunningDequeue(shouldStart);
         }
     }
 

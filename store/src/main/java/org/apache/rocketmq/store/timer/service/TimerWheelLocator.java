@@ -122,7 +122,7 @@ public class TimerWheelLocator extends ServiceThread {
         try {
             perfCounterTicks.startTick(ENQUEUE_PUT);
             DefaultStoreMetricsManager.incTimerEnqueueCount(getRealTopic(req.getMsg()));
-            if (pointer.shouldRunningDequeue && req.getDelayTime() < pointer.currWriteTimeMs) {
+            if (pointer.isShouldRunningDequeue() && req.getDelayTime() < pointer.currWriteTimeMs) {
                 timerMessageDeliverQueue.put(req);
             } else {
                 boolean doEnqueueRes = doEnqueue(
