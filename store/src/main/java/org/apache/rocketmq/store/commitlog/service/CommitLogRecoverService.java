@@ -109,7 +109,16 @@ public class CommitLogRecoverService {
         }
 
         processOffset += mappedFileOffset;
+        storeRecoverOffset(processOffset, lastValidMsgPhyOffset);
 
+        // Clear ConsumeQueue redundant data
+        if (maxPhyOffsetOfConsumeQueue >= processOffset) {
+            log.warn("maxPhyOffsetOfConsumeQueue({}) >= processOffset({}), truncate dirty logic files", maxPhyOffsetOfConsumeQueue, processOffset);
+            this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
+        }
+    }
+
+    private void storeRecoverOffset(long processOffset, long lastValidMsgPhyOffset) {
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
             if (this.defaultMessageStore.getConfirmOffset() < this.defaultMessageStore.getMinPhyOffset()) {
                 log.error("confirmOffset {} is less than minPhyOffset {}, correct confirmOffset to minPhyOffset", this.defaultMessageStore.getConfirmOffset(), this.defaultMessageStore.getMinPhyOffset());
@@ -125,12 +134,6 @@ public class CommitLogRecoverService {
         this.mappedFileQueue.setFlushedWhere(processOffset);
         this.mappedFileQueue.setCommittedWhere(processOffset);
         this.mappedFileQueue.truncateDirtyFiles(processOffset);
-
-        // Clear ConsumeQueue redundant data
-        if (maxPhyOffsetOfConsumeQueue >= processOffset) {
-            log.warn("maxPhyOffsetOfConsumeQueue({}) >= processOffset({}), truncate dirty logic files", maxPhyOffsetOfConsumeQueue, processOffset);
-            this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
-        }
     }
 
     @Deprecated
