@@ -723,39 +723,6 @@ public class TimerMessageStore {
         return precisionMs;
     }
 
-    public TimerMessageFetcher getTimerMessageFetcher() {
-        return timerMessageFetcher;
-    }
-
-    public void setTimerMessageFetcher(TimerMessageFetcher timerMessageFetcher) {
-        this.timerMessageFetcher = timerMessageFetcher;
-    }
-
-    public TimerWheelLocator getTimerWheelLocator() {
-        return timerWheelLocator;
-    }
-
-    public void setTimerWheelLocator(TimerWheelLocator timerWheelLocator) {
-        this.timerWheelLocator = timerWheelLocator;
-    }
-
-    public TimerDequeueWarmService getDequeueWarmService() {
-        return dequeueWarmService;
-    }
-
-    public void setDequeueWarmService(
-            TimerDequeueWarmService dequeueWarmService) {
-        this.dequeueWarmService = dequeueWarmService;
-    }
-
-    public TimerWheelFetcher getTimerWheelFetcher() {
-        return timerWheelFetcher;
-    }
-
-    public void setTimerWheelFetcher(TimerWheelFetcher timerWheelFetcher) {
-        this.timerWheelFetcher = timerWheelFetcher;
-    }
-
     public TimerMessageDeliver[] getTimerMessageDelivers() {
         return timerMessageDelivers;
     }
@@ -764,16 +731,6 @@ public class TimerMessageStore {
             TimerMessageDeliver[] timerMessageDelivers) {
         this.timerMessageDelivers = timerMessageDelivers;
     }
-
-    public TimerMessageQuery[] getTimerMessageQueries() {
-        return timerMessageQueries;
-    }
-
-    public void setTimerMessageQueries(
-            TimerMessageQuery[] timerMessageQueries) {
-        this.timerMessageQueries = timerMessageQueries;
-    }
-
 
     public TimerCheckpoint getTimerCheckpoint() {
         return timerCheckpoint;
