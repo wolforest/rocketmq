@@ -300,96 +300,6 @@ public class CommitLog implements Swappable {
         return this.checkMessageAndReturnSize(byteBuffer, checkCRC, checkDupInfo, true);
     }
 
-    private void doNothingForDeadCode(final Object obj) {
-        if (obj != null) {
-            log.debug(String.valueOf(obj.hashCode()));
-        }
-    }
-
-    private DispatchRequest checkMagicCode(int magicCode) {
-        switch (magicCode) {
-            case MessageDecoder.MESSAGE_MAGIC_CODE:
-            case MessageDecoder.MESSAGE_MAGIC_CODE_V2:
-                break;
-            case BLANK_MAGIC_CODE:
-                return new DispatchRequest(0, true /* success */);
-            default:
-                log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
-                return new DispatchRequest(-1, false /* success */);
-        }
-
-        return null;
-    }
-
-    private ByteBuffer getByteBuffer(java.nio.ByteBuffer byteBuffer, int sysFlag, byte[] bytesContent, int flag) {
-        ByteBuffer byteBuffer1;
-        if ((sysFlag & flag) == 0) {
-            byteBuffer1 = byteBuffer.get(bytesContent, 0, 4 + 4);
-        } else {
-            byteBuffer1 = byteBuffer.get(bytesContent, 0, 16 + 4);
-        }
-
-        return byteBuffer1;
-    }
-
-    private DispatchRequest checkBody(java.nio.ByteBuffer byteBuffer, int bodyLen, int bodyCRC, byte[] bytesContent, boolean readBody, boolean checkCRC) {
-        if (bodyLen > 0) {
-            if (readBody) {
-                byteBuffer.get(bytesContent, 0, bodyLen);
-
-                if (checkCRC) {
-                    int crc = UtilAll.crc32(bytesContent, 0, bodyLen);
-                    if (crc != bodyCRC) {
-                        log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
-                        return new DispatchRequest(-1, false/* success */);
-                    }
-                }
-            } else {
-                byteBuffer.position(byteBuffer.position() + bodyLen);
-            }
-        }
-        return null;
-    }
-
-    private DispatchRequest checkDuplicate(boolean checkDupInfo, Map<String, String> propertiesMap) {
-        if (!checkDupInfo) {
-            return null;
-        }
-
-        String dupInfo = propertiesMap.get(MessageConst.DUP_INFO);
-        if (null == dupInfo || dupInfo.split("_").length != 2) {
-            log.warn("DupInfo in properties check failed. dupInfo={}", dupInfo);
-            return new DispatchRequest(-1, false);
-        }
-
-        return null;
-    }
-
-    private long getTagsCode(long tagsCode, Map<String, String> propertiesMap, String topic, long storeTimestamp, int sysFlag) {
-        String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
-        if (tags != null && tags.length() > 0) {
-            tagsCode = MessageExtBrokerInner.tagsString2tagsCode(MessageExt.parseTopicFilterType(sysFlag), tags);
-        }
-
-        // Timing message processing
-        String t = propertiesMap.get(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
-        if (!TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(topic) || t == null) {
-            return tagsCode;
-        }
-
-        int delayLevel = Integer.parseInt(t);
-        if (delayLevel > this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel()) {
-            delayLevel = this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel();
-        }
-
-        if (delayLevel > 0) {
-            tagsCode = this.defaultMessageStore.getDelayLevelService().computeDeliverTimestamp(delayLevel,
-                storeTimestamp);
-        }
-
-        return tagsCode;
-    }
-
     /**
      * check the message and returns the message size
      *
@@ -493,6 +403,98 @@ public class CommitLog implements Swappable {
         }
 
         return new DispatchRequest(-1, false /* success */);
+    }
+
+    private void doNothingForDeadCode(final Object obj) {
+        if (obj == null) {
+            return;
+        }
+
+        log.debug(String.valueOf(obj.hashCode()));
+    }
+
+    private DispatchRequest checkMagicCode(int magicCode) {
+        switch (magicCode) {
+            case MessageDecoder.MESSAGE_MAGIC_CODE:
+            case MessageDecoder.MESSAGE_MAGIC_CODE_V2:
+                break;
+            case BLANK_MAGIC_CODE:
+                return new DispatchRequest(0, true /* success */);
+            default:
+                log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
+                return new DispatchRequest(-1, false /* success */);
+        }
+
+        return null;
+    }
+
+    private ByteBuffer getByteBuffer(java.nio.ByteBuffer byteBuffer, int sysFlag, byte[] bytesContent, int flag) {
+        ByteBuffer byteBuffer1;
+        if ((sysFlag & flag) == 0) {
+            byteBuffer1 = byteBuffer.get(bytesContent, 0, 4 + 4);
+        } else {
+            byteBuffer1 = byteBuffer.get(bytesContent, 0, 16 + 4);
+        }
+
+        return byteBuffer1;
+    }
+
+    private DispatchRequest checkBody(java.nio.ByteBuffer byteBuffer, int bodyLen, int bodyCRC, byte[] bytesContent, boolean readBody, boolean checkCRC) {
+        if (bodyLen > 0) {
+            if (readBody) {
+                byteBuffer.get(bytesContent, 0, bodyLen);
+
+                if (checkCRC) {
+                    int crc = UtilAll.crc32(bytesContent, 0, bodyLen);
+                    if (crc != bodyCRC) {
+                        log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
+                        return new DispatchRequest(-1, false/* success */);
+                    }
+                }
+            } else {
+                byteBuffer.position(byteBuffer.position() + bodyLen);
+            }
+        }
+        return null;
+    }
+
+    private DispatchRequest checkDuplicate(boolean checkDupInfo, Map<String, String> propertiesMap) {
+        if (!checkDupInfo) {
+            return null;
+        }
+
+        String dupInfo = propertiesMap.get(MessageConst.DUP_INFO);
+        if (null == dupInfo || dupInfo.split("_").length != 2) {
+            log.warn("DupInfo in properties check failed. dupInfo={}", dupInfo);
+            return new DispatchRequest(-1, false);
+        }
+
+        return null;
+    }
+
+    private long getTagsCode(long tagsCode, Map<String, String> propertiesMap, String topic, long storeTimestamp, int sysFlag) {
+        String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
+        if (tags != null && tags.length() > 0) {
+            tagsCode = MessageExtBrokerInner.tagsString2tagsCode(MessageExt.parseTopicFilterType(sysFlag), tags);
+        }
+
+        // Timing message processing
+        String t = propertiesMap.get(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
+        if (!TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(topic) || t == null) {
+            return tagsCode;
+        }
+
+        int delayLevel = Integer.parseInt(t);
+        if (delayLevel > this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel()) {
+            delayLevel = this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel();
+        }
+
+        if (delayLevel > 0) {
+            tagsCode = this.defaultMessageStore.getDelayLevelService().computeDeliverTimestamp(delayLevel,
+                storeTimestamp);
+        }
+
+        return tagsCode;
     }
 
     private void setBatchSizeIfNeeded(Map<String, String> propertiesMap, DispatchRequest dispatchRequest) {
