@@ -606,10 +606,6 @@ public class TimerMessageStore {
         return timerMessageDeliverQueue;
     }
 
-    public PerfCounter.Ticks getPerfCounterTicks() {
-        return perfCounterTicks;
-    }
-
     public long getAllCongestNum() {
         return timerWheel.getAllNum(timerState.currReadTimeMs);
     }
