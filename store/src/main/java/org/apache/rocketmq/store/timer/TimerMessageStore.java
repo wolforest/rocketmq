@@ -181,7 +181,7 @@ public class TimerMessageStore {
             timerMessageDelivers[i] = new TimerMessageDeliver(timerMetricManager, timerMessageDeliverQueue, perfCounterTicks, timerState,
                     storeConfig, brokerStatsManager, escapeBridgeHook, messageStore);
         }
-        timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, timerState.getServiceThreadName());
+        timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint);
         timerWheelLocator = new TimerWheelLocator(storeConfig, timerWheel, timerLog, timerMetricManager,
                 fetchedTimerMessageQueue, timerMessageDeliverQueue,
                 timerMessageDelivers, timerMessageQueries, timerState, perfCounterTicks, timerState.getServiceThreadName());

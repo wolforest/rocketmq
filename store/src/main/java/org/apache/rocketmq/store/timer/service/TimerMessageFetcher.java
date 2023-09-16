@@ -46,9 +46,7 @@ public class TimerMessageFetcher extends ServiceThread {
     public static final String TIMER_OUT_MS = MessageConst.PROPERTY_TIMER_OUT_MS;
     public static final int MAGIC_DEFAULT = 1;
     public static final int DEFAULT_CAPACITY = 1024;
-    //private TimerMessageStore timerMessageStore;
     private MessageStoreConfig storeConfig;
-    private String serviceThreadName;
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
     private TimerState timerState;
     private TimerCheckpoint timerCheckpoint;
@@ -58,10 +56,15 @@ public class TimerMessageFetcher extends ServiceThread {
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
 
-    public TimerMessageFetcher(BlockingQueue<TimerRequest> fetchedTimerMessageQueue, MessageStoreConfig storeConfig, PerfCounter.Ticks perfCounterTicks, MessageReader messageReader, MessageStore messageStore, TimerState timerState, TimerCheckpoint timerCheckpoint, String serviceThreadName) {
+    public TimerMessageFetcher(BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
+                               MessageStoreConfig storeConfig,
+                               PerfCounter.Ticks perfCounterTicks,
+                               MessageReader messageReader,
+                               MessageStore messageStore,
+                               TimerState timerState,
+                               TimerCheckpoint timerCheckpoint) {
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.storeConfig = storeConfig;
-        this.serviceThreadName = serviceThreadName;
         this.lastBrokerRole = storeConfig.getBrokerRole();
         this.messageReader = messageReader;
         this.timerState = timerState;
@@ -73,7 +76,7 @@ public class TimerMessageFetcher extends ServiceThread {
 
     @Override
     public String getServiceName() {
-        return serviceThreadName + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
     private void checkBrokerRole() {
