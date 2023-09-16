@@ -994,8 +994,6 @@ public class DefaultMessageStore implements MessageStore {
         this.transientStorePool = new TransientStorePool(messageStoreConfig.getTransientStorePoolSize(), messageStoreConfig.getMappedFileSizeCommitLog());
     }
 
-
-
     /**
      * 1. Make sure the fast-forward messages to be truncated during the recovering according to the max physical offset of the commitLog;
      *    Make sure this method called after DefaultMessageStore.recover(), the recover method truncate dirty messages(half written or other error happened)

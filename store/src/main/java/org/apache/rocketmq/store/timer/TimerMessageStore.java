@@ -17,7 +17,6 @@
 package org.apache.rocketmq.store.timer;
 
 import com.conversantmedia.util.concurrent.DisruptorBlockingQueue;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -30,42 +29,33 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-
 import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.service.MessageReader;
+import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
+import org.apache.rocketmq.store.timer.service.TimerFlushService;
+import org.apache.rocketmq.store.timer.service.TimerMessageDeliver;
+import org.apache.rocketmq.store.timer.service.TimerMessageFetcher;
 import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
 import org.apache.rocketmq.store.timer.service.TimerMetricManager;
 import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
-import org.apache.rocketmq.store.timer.service.TimerMessageDeliver;
-import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
-import org.apache.rocketmq.store.timer.service.TimerMessageFetcher;
 import org.apache.rocketmq.store.timer.service.TimerWheelLocator;
-import org.apache.rocketmq.store.timer.service.TimerFlushService;
 import org.apache.rocketmq.store.util.PerfCounter;
-
-import static org.apache.rocketmq.store.timer.TimerState.PUT_NEED_RETRY;
-import static org.apache.rocketmq.store.timer.TimerState.PUT_NO_RETRY;
-import static org.apache.rocketmq.store.timer.TimerState.PUT_OK;
 
 public class TimerMessageStore {
 

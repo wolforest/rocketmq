@@ -16,22 +16,6 @@
  */
 package org.apache.rocketmq.store.timer.service;
 
-import org.apache.rocketmq.common.ServiceThread;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.timer.Slot;
-import org.apache.rocketmq.store.timer.TimerLog;
-import org.apache.rocketmq.store.timer.TimerMessageStore;
-import org.apache.rocketmq.store.timer.TimerRequest;
-import org.apache.rocketmq.store.timer.TimerState;
-import org.apache.rocketmq.store.timer.TimerWheel;
-import org.apache.rocketmq.store.util.PerfCounter;
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,6 +23,18 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
+import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.timer.Slot;
+import org.apache.rocketmq.store.timer.TimerLog;
+import org.apache.rocketmq.store.timer.TimerRequest;
+import org.apache.rocketmq.store.timer.TimerState;
+import org.apache.rocketmq.store.timer.TimerWheel;
+import org.apache.rocketmq.store.util.PerfCounter;
 
 public class TimerWheelFetcher extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -78,7 +74,7 @@ public class TimerWheelFetcher extends ServiceThread {
         this.timerLog = timerLog;
         this.perfCounterTicks = perfCounterTicks;
         this.serviceThreadName = serviceThreadName;
-        this.timerMessageQueryQueue= timerMessageQueryQueue;
+        this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageDelivers = timerMessageDelivers;
         this.timerMessageQueries = timerMessageQueries;
@@ -215,10 +211,10 @@ public class TimerWheelFetcher extends ServiceThread {
             timerState.checkDeliverQueueLatch(normalLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (timerState.dequeueStatusChangeFlag) {
-                 return -1;
+                return -1;
             }
             if (!timerState.isRunningDequeue()) {
-                  return -1;
+                return -1;
             }
 
             timerState.moveReadTime(precisionMs);
