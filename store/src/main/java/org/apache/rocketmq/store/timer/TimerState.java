@@ -20,6 +20,7 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.timer.service.AbstractStateService;
@@ -215,5 +216,16 @@ public class TimerState {
 
     public long getAllCongestNum() {
         return timerWheel.getAllNum(currReadTimeMs);
+    }
+
+    public String getServiceThreadName() {
+        String brokerIdentifier = "";
+        if (this.messageStore instanceof DefaultMessageStore) {
+            DefaultMessageStore messageStore = (DefaultMessageStore) this.messageStore;
+            if (messageStore.getBrokerConfig().isInBrokerContainer()) {
+                brokerIdentifier = messageStore.getBrokerConfig().getIdentifier();
+            }
+        }
+        return brokerIdentifier;
     }
 }

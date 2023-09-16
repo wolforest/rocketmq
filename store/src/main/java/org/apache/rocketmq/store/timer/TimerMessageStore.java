@@ -172,21 +172,21 @@ public class TimerMessageStore {
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
         timerMessageQueries = new TimerMessageQuery[getThreadNum];
         for (int i = 0; i < timerMessageQueries.length; i++) {
-            timerMessageQueries[i] = new TimerMessageQuery(timerState, timerCheckpoint, messageReader, perfCounterTicks, storeConfig, timerMessageDeliverQueue, timerMessageQueryQueue, getServiceThreadName());
+            timerMessageQueries[i] = new TimerMessageQuery(timerState, timerCheckpoint, messageReader, perfCounterTicks, storeConfig, timerMessageDeliverQueue, timerMessageQueryQueue, timerState.getServiceThreadName());
         }
 
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
         timerMessageDelivers = new TimerMessageDeliver[putThreadNum];
         for (int i = 0; i < timerMessageDelivers.length; i++) {
             timerMessageDelivers[i] = new TimerMessageDeliver(timerMetricManager, timerMessageDeliverQueue, perfCounterTicks, timerState,
-                    storeConfig, getServiceThreadName(), brokerStatsManager, escapeBridgeHook, messageStore);
+                    storeConfig, timerState.getServiceThreadName(), brokerStatsManager, escapeBridgeHook, messageStore);
         }
-        timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, getServiceThreadName());
+        timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, timerState.getServiceThreadName());
         timerWheelLocator = new TimerWheelLocator(storeConfig, timerWheel, timerLog, timerMetricManager,
                 fetchedTimerMessageQueue, timerMessageDeliverQueue,
-                timerMessageDelivers, timerMessageQueries, timerState, perfCounterTicks, getServiceThreadName());
+                timerMessageDelivers, timerMessageQueries, timerState, perfCounterTicks, timerState.getServiceThreadName());
         dequeueWarmService = new TimerDequeueWarmService(this);
-        timerWheelFetcher = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName(),
+        timerWheelFetcher = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, timerState.getServiceThreadName(),
                 timerMessageQueryQueue, timerMessageDeliverQueue,
                 timerMessageDelivers, timerMessageQueries);
         timerFlushService = new TimerFlushService(this, messageStore, fetchedTimerMessageQueue, timerMessageQueryQueue, timerMessageDeliverQueue,
@@ -586,18 +586,6 @@ public class TimerMessageStore {
 
     private long formatTimeMs(long timeMs) {
         return timeMs / precisionMs * precisionMs;
-    }
-
-
-    public String getServiceThreadName() {
-        String brokerIdentifier = "";
-        if (TimerMessageStore.this.messageStore instanceof DefaultMessageStore) {
-            DefaultMessageStore messageStore = (DefaultMessageStore) TimerMessageStore.this.messageStore;
-            if (messageStore.getBrokerConfig().isInBrokerContainer()) {
-                brokerIdentifier = messageStore.getBrokerConfig().getIdentifier();
-            }
-        }
-        return brokerIdentifier;
     }
 
 
