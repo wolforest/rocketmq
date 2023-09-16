@@ -20,9 +20,11 @@ import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 import java.nio.ByteBuffer;
@@ -32,6 +34,7 @@ public class MessageOperator {
     private final ThreadLocal<ByteBuffer> bufferLocal;
     private MessageStore messageStore;
     private MessageStoreConfig storeConfig;
+
     public MessageOperator(MessageStore messageStore, MessageStoreConfig storeConfig) {
         this.messageStore = messageStore;
         this.storeConfig = storeConfig;
@@ -43,6 +46,11 @@ public class MessageOperator {
         };
 
     }
+
+    public PutMessageResult putMessage(MessageExtBrokerInner message) {
+        return messageStore.putMessage(message);
+    }
+
     public MessageExt readMessageByCommitOffset(long offsetPy, int sizePy) {
         for (int i = 0; i < 3; i++) {
             MessageExt msgExt = null;
@@ -61,6 +69,7 @@ public class MessageOperator {
         }
         return null;
     }
+
     public void clean() {
         UtilAll.cleanBuffer(this.bufferLocal.get());
         this.bufferLocal.remove();
