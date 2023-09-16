@@ -994,6 +994,8 @@ public class DefaultMessageStore implements MessageStore {
         this.transientStorePool = new TransientStorePool(messageStoreConfig.getTransientStorePoolSize(), messageStoreConfig.getMappedFileSizeCommitLog());
     }
 
+
+
     /**
      * 1. Make sure the fast-forward messages to be truncated during the recovering according to the max physical offset of the commitLog;
      *    Make sure this method called after DefaultMessageStore.recover(), the recover method truncate dirty messages(half written or other error happened)
@@ -1006,14 +1008,8 @@ public class DefaultMessageStore implements MessageStore {
             return;
         }
 
-        long maxPhysicalPosInLogicQueue = commitLog.getMinOffset();
-        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.getConsumeQueueTable().values()) {
-            for (ConsumeQueueInterface logic : maps.values()) {
-                if (logic.getMaxPhysicOffset() > maxPhysicalPosInLogicQueue) {
-                    maxPhysicalPosInLogicQueue = logic.getMaxPhysicOffset();
-                }
-            }
-        }
+        long maxPhysicalPosInLogicQueue = getConsumeQueueMaxOffset();
+
         // If maxPhyPos(CQs) < minPhyPos(CommitLog), some newly deleted topics may be re-dispatched into cqs mistakenly.
         if (maxPhysicalPosInLogicQueue < 0) {
             maxPhysicalPosInLogicQueue = 0;
@@ -1036,6 +1032,19 @@ public class DefaultMessageStore implements MessageStore {
         waitForReputing();
 
         this.recoverTopicQueueTable();
+    }
+
+    private long getConsumeQueueMaxOffset() {
+        long maxPhysicalPosInLogicQueue = commitLog.getMinOffset();
+        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.getConsumeQueueTable().values()) {
+            for (ConsumeQueueInterface logic : maps.values()) {
+                if (logic.getMaxPhysicOffset() > maxPhysicalPosInLogicQueue) {
+                    maxPhysicalPosInLogicQueue = logic.getMaxPhysicOffset();
+                }
+            }
+        }
+
+        return maxPhysicalPosInLogicQueue;
     }
 
     /**
