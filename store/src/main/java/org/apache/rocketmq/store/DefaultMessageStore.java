@@ -249,6 +249,7 @@ public class DefaultMessageStore implements MessageStore {
             }
 
             if (result) {
+                setConfirmOffset(this.storeCheckpoint.getConfirmPhyOffset());
                 this.recover(lastExitOK);
                 LOGGER.info("message store recover end, and the max phy offset = {}", this.getMaxPhyOffset());
             }
@@ -1117,8 +1118,6 @@ public class DefaultMessageStore implements MessageStore {
         this.storeCheckpoint = new StoreCheckpoint(
             StorePathConfigHelper.getStoreCheckpoint(this.messageStoreConfig.getStorePathRootDir()));
         this.masterFlushedOffset = this.storeCheckpoint.getMasterFlushedOffset();
-        setConfirmOffset(this.storeCheckpoint.getConfirmPhyOffset());
-
         return this.indexService.load(lastExitOK);
     }
 
