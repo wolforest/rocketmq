@@ -351,6 +351,20 @@ public class CommitLog implements Swappable {
         return null;
     }
 
+    private DispatchRequest checkDuplicate(boolean checkDupInfo, Map<String, String> propertiesMap) {
+        if (!checkDupInfo) {
+            return null;
+        }
+
+        String dupInfo = propertiesMap.get(MessageConst.DUP_INFO);
+        if (null == dupInfo || dupInfo.split("_").length != 2) {
+            log.warn("DupInfo in properties check failed. dupInfo={}", dupInfo);
+            return new DispatchRequest(-1, false);
+        }
+
+        return null;
+    }
+
     /**
      * check the message and returns the message size
      *
@@ -409,15 +423,11 @@ public class CommitLog implements Swappable {
                 propertiesMap = MessageDecoder.string2messageProperties(properties);
 
                 keys = propertiesMap.get(MessageConst.PROPERTY_KEYS);
-
                 uniqKey = propertiesMap.get(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
 
-                if (checkDupInfo) {
-                    String dupInfo = propertiesMap.get(MessageConst.DUP_INFO);
-                    if (null == dupInfo || dupInfo.split("_").length != 2) {
-                        log.warn("DupInfo in properties check failed. dupInfo={}", dupInfo);
-                        return new DispatchRequest(-1, false);
-                    }
+                DispatchRequest duplicateResult = checkDuplicate(checkDupInfo, propertiesMap);
+                if (duplicateResult != null) {
+                    return duplicateResult;
                 }
 
                 String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
