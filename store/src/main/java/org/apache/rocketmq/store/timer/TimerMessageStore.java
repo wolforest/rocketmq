@@ -78,6 +78,10 @@ public class TimerMessageStore {
 
     public static final String ENQUEUE_PUT = "enqueue_put";
     public static final String DEQUEUE_PUT = "dequeue_put";
+    // The total days in the timer wheel when precision is 1000ms.
+    // If the broker shutdown last more than the configured days, will cause message loss
+    public static final int TIMER_WHEEL_TTL_DAY = 7;
+    public static final int DAY_SECS = 24 * 3600;
     protected final PerfCounter.Ticks perfCounterTicks = new PerfCounter.Ticks(LOGGER);
 
 
@@ -125,15 +129,16 @@ public class TimerMessageStore {
         this.commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
         this.timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
         this.precisionMs = storeConfig.getTimerPrecisionMs();
-
+        final int slotsTotal = TIMER_WHEEL_TTL_DAY * DAY_SECS;
 
         this.timerLog = new TimerLog(getTimerLogPath(storeConfig.getStorePathRootDir()), timerLogFileSize);
         this.timerMetrics = timerMetrics;
 
         this.timerCheckpoint = timerCheckpoint;
-        this.timerState = new TimerState(timerCheckpoint, storeConfig, timerLog, messageStore);
         this.timerWheel = new TimerWheel(
-                getTimerWheelFileFullName(storeConfig.getStorePathRootDir()), timerState.slotsTotal, precisionMs);
+                getTimerWheelFileFullName(storeConfig.getStorePathRootDir()), slotsTotal, precisionMs);
+        this.timerState = new TimerState(timerCheckpoint, storeConfig, timerLog, slotsTotal, timerWheel, messageStore);
+
         timerMetricManager = new TimerMetricManager(timerMetrics, storeConfig, messageReader, timerWheel, timerLog, timerState);
         if (messageStore instanceof DefaultMessageStore) {
             scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
@@ -184,8 +189,8 @@ public class TimerMessageStore {
         timerWheelFetcher = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName(),
                 timerMessageQueryQueue, timerMessageDeliverQueue,
                 timerMessageDelivers, timerMessageQueries);
-        timerFlushService = new TimerFlushService(this,messageStore,fetchedTimerMessageQueue,timerMessageQueryQueue,timerMessageDeliverQueue,
-                storeConfig,timerState,timerMetrics,timerCheckpoint,timerLog,timerWheel);
+        timerFlushService = new TimerFlushService(this, messageStore, fetchedTimerMessageQueue, timerMessageQueryQueue, timerMessageDeliverQueue,
+                storeConfig, timerState, timerMetrics, timerCheckpoint, timerLog, timerWheel);
 
 
     }
@@ -595,10 +600,6 @@ public class TimerMessageStore {
         return brokerIdentifier;
     }
 
-
-    public long getAllCongestNum() {
-        return timerWheel.getAllNum(timerState.currReadTimeMs);
-    }
 
     public long getCongestNum(long deliverTimeMs) {
         return timerWheel.getNum(deliverTimeMs);

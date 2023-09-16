@@ -44,10 +44,7 @@ public class TimerState {
     public static final String TIMER_ROLL_TIMES = MessageConst.PROPERTY_TIMER_ROLL_TIMES;
     public static final String TIMER_DELETE_UNIQUE_KEY = MessageConst.PROPERTY_TIMER_DEL_UNIQKEY;
 
-    // The total days in the timer wheel when precision is 1000ms.
-    // If the broker shutdown last more than the configured days, will cause message loss
-    public static final int TIMER_WHEEL_TTL_DAY = 7;
-    public static final int DAY_SECS = 24 * 3600;
+
     public static final int TIMER_BLANK_SLOTS = 60;
     public volatile long currReadTimeMs;
     public volatile long currWriteTimeMs;
@@ -67,6 +64,7 @@ public class TimerState {
 
     private volatile int state = INITIAL;
     private TimerCheckpoint timerCheckpoint;
+    private TimerWheel timerWheel;
     private TimerLog timerLog;
     private MessageStore messageStore;
     private MessageStoreConfig storeConfig;
@@ -74,14 +72,15 @@ public class TimerState {
     public final int timerRollWindowSlots;
     public final int slotsTotal;
 
-    public TimerState(TimerCheckpoint timerCheckpoint, MessageStoreConfig storeConfig, TimerLog timerLog, MessageStore messageStore) {
+    public TimerState(TimerCheckpoint timerCheckpoint,  MessageStoreConfig storeConfig, TimerLog timerLog, int slotsTotal,TimerWheel timerWheel, MessageStore messageStore) {
         this.timerCheckpoint = timerCheckpoint;
         this.storeConfig = storeConfig;
         this.timerLog = timerLog;
+        this.timerWheel = timerWheel;
         this.messageStore = messageStore;
         this.precisionMs = storeConfig.getTimerPrecisionMs();
         // TimerWheel contains the fixed number of slots regardless of precision.
-        this.slotsTotal = TIMER_WHEEL_TTL_DAY * DAY_SECS;
+        this.slotsTotal = slotsTotal;
         // timerRollWindow contains the fixed number of slots regardless of precision.
         if (storeConfig.getTimerRollWindowSlot() > slotsTotal - TIMER_BLANK_SLOTS
                 || storeConfig.getTimerRollWindowSlot() < 2) {
@@ -161,6 +160,7 @@ public class TimerState {
     public static boolean isMagicOK(int magic) {
         return (magic | 0xF) == 0xF;
     }
+
     public boolean checkStateForTimerMessageDelivers(TimerMessageDeliver[] timerMessageDelivers, int state) {
         for (AbstractStateService service : timerMessageDelivers) {
             if (!service.isState(state)) {
@@ -211,5 +211,9 @@ public class TimerState {
 
     public long getDequeueBehind() {
         return getDequeueBehindMillis() / 1000;
+    }
+
+    public long getAllCongestNum() {
+        return timerWheel.getAllNum(currReadTimeMs);
     }
 }
