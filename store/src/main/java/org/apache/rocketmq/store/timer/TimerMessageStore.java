@@ -184,7 +184,7 @@ public class TimerMessageStore {
         timerWheelFetcher = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName(),
                 timerMessageQueryQueue, timerMessageDeliverQueue,
                 timerMessageDelivers, timerMessageQueries);
-        timerFlushService = new TimerFlushService(this,fetchedTimerMessageQueue,timerMessageQueryQueue,timerMessageDeliverQueue);
+        timerFlushService = new TimerFlushService(this,fetchedTimerMessageQueue,timerMessageQueryQueue,timerMessageDeliverQueue,storeConfig);
 
 
     }
