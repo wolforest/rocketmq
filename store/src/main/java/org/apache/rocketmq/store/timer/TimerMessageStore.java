@@ -184,7 +184,7 @@ public class TimerMessageStore {
         timerWheelFetcher = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName(),
                 timerMessageQueryQueue, timerMessageDeliverQueue,
                 timerMessageDelivers, timerMessageQueries);
-        timerFlushService = new TimerFlushService(this);
+        timerFlushService = new TimerFlushService(this,fetchedTimerMessageQueue);
 
 
     }
@@ -592,10 +592,6 @@ public class TimerMessageStore {
             }
         }
         return brokerIdentifier;
-    }
-
-    public BlockingQueue<TimerRequest> getFetchedTimerMessageQueue() {
-        return fetchedTimerMessageQueue;
     }
 
     public BlockingQueue<List<TimerRequest>> getTimerMessageQueryQueue() {
