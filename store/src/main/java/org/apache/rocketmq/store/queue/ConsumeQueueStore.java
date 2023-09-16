@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -111,36 +112,45 @@ public class ConsumeQueueStore {
     private boolean loadConsumeQueues(String storePath, CQType cqType) {
         File dirLogic = new File(storePath);
         File[] fileTopicList = dirLogic.listFiles();
-        if (fileTopicList != null) {
+        if (fileTopicList == null) {
+            return true;
+        }
 
-            for (File fileTopic : fileTopicList) {
-                String topic = fileTopic.getName();
 
-                File[] fileQueueIdList = fileTopic.listFiles();
-                if (null == fileQueueIdList) {
-                    continue;
-                }
+        for (File fileTopic : fileTopicList) {
+            String topic = fileTopic.getName();
 
-                for (File fileQueueId : fileQueueIdList) {
-                    int queueId;
-                    try {
-                        queueId = Integer.parseInt(fileQueueId.getName());
-                    } catch (NumberFormatException e) {
-                        continue;
-                    }
+            File[] fileQueueIdList = fileTopic.listFiles();
+            if (null == fileQueueIdList) {
+                continue;
+            }
 
-                    queueTypeShouldBe(topic, cqType);
-
-                    ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
-                    this.putConsumeQueue(topic, queueId, logic);
-                    if (!this.load(logic)) {
-                        return false;
-                    }
-                }
+            if (!loadConsumeQueues(storePath, cqType, topic, fileQueueIdList)) {
+                return false;
             }
         }
 
         log.info("load {} all over, OK", cqType);
+        return true;
+    }
+
+    private boolean loadConsumeQueues(String storePath, CQType cqType, String topic, File[] fileQueueIdList) {
+        for (File fileQueueId : fileQueueIdList) {
+            int queueId;
+            try {
+                queueId = Integer.parseInt(fileQueueId.getName());
+            } catch (NumberFormatException e) {
+                continue;
+            }
+
+            queueTypeShouldBe(topic, cqType);
+
+            ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
+            this.putConsumeQueue(topic, queueId, logic);
+            if (!this.load(logic)) {
+                return false;
+            }
+        }
 
         return true;
     }
@@ -192,67 +202,102 @@ public class ConsumeQueueStore {
 
     public void recover() {
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-            for (ConsumeQueueInterface logic : maps.values()) {
-                this.recover(logic);
-            }
+            recover(maps);
+        }
+    }
+
+    private void recover(ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (ConsumeQueueInterface logic : maps.values()) {
+            this.recover(logic);
         }
     }
 
     public boolean recoverConcurrently() {
-        int count = 0;
-        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-            count += maps.values().size();
-        }
+        int count = countConsumeQueue();
+
         final CountDownLatch countDownLatch = new CountDownLatch(count);
         BlockingQueue<Runnable> recoverQueue = new LinkedBlockingQueue<>();
         final ExecutorService executor = buildExecutorService(recoverQueue, "RecoverConsumeQueueThread_");
         List<FutureTask<Boolean>> result = new ArrayList<>(count);
+
         try {
             for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-                for (final ConsumeQueueInterface logic : maps.values()) {
-                    FutureTask<Boolean> futureTask = new FutureTask<>(() -> {
-                        boolean ret = true;
-                        try {
-                            logic.recover();
-                        } catch (Throwable e) {
-                            ret = false;
-                            log.error("Exception occurs while recover consume queue concurrently, " +
-                                "topic={}, queueId={}", logic.getTopic(), logic.getQueueId(), e);
-                        } finally {
-                            countDownLatch.countDown();
-                        }
-                        return ret;
-                    });
-
-                    result.add(futureTask);
-                    executor.submit(futureTask);
-                }
+                recoverConcurrently(maps, executor, result, countDownLatch);
             }
             countDownLatch.await();
-            for (FutureTask<Boolean> task : result) {
-                if (task != null && task.isDone()) {
-                    if (!task.get()) {
-                        return false;
-                    }
-                }
-            }
+            return getFutureResult(result);
         } catch (Exception e) {
             log.error("Exception occurs while recover consume queue concurrently", e);
             return false;
         } finally {
             executor.shutdown();
         }
+    }
+
+    private int countConsumeQueue() {
+        int count = 0;
+        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
+            count += maps.values().size();
+        }
+
+        return count;
+    }
+
+    private void recoverConcurrently(ConcurrentMap<Integer, ConsumeQueueInterface> maps, ExecutorService executor, List<FutureTask<Boolean>> result, CountDownLatch countDownLatch) {
+        for (final ConsumeQueueInterface logic : maps.values()) {
+            FutureTask<Boolean> futureTask = createFutureTask(logic, countDownLatch);
+
+            result.add(futureTask);
+            executor.submit(futureTask);
+        }
+    }
+
+    private boolean getFutureResult(List<FutureTask<Boolean>> result) throws ExecutionException, InterruptedException {
+        for (FutureTask<Boolean> task : result) {
+            if (task == null || !task.isDone()) {
+                continue;
+            }
+
+            if (!task.get()) {
+                return false;
+            }
+        }
+
         return true;
+    }
+
+    private FutureTask<Boolean> createFutureTask(ConsumeQueueInterface logic, CountDownLatch countDownLatch) {
+        return new FutureTask<>(() -> {
+            boolean ret = true;
+            try {
+                logic.recover();
+            } catch (Throwable e) {
+                ret = false;
+                log.error("Exception occurs while recover consume queue concurrently, " +
+                    "topic={}, queueId={}", logic.getTopic(), logic.getQueueId(), e);
+            } finally {
+                countDownLatch.countDown();
+            }
+            return ret;
+        });
+    }
+
+    private long getMaxOffsetInConsumeQueue(long maxPhysicOffset, ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (ConsumeQueueInterface logic : maps.values()) {
+            if (logic.getMaxPhysicOffset() <= maxPhysicOffset) {
+                continue;
+            }
+
+            maxPhysicOffset = logic.getMaxPhysicOffset();
+        }
+
+        return maxPhysicOffset;
     }
 
     public long getMaxOffsetInConsumeQueue() {
         long maxPhysicOffset = -1L;
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-            for (ConsumeQueueInterface logic : maps.values()) {
-                if (logic.getMaxPhysicOffset() > maxPhysicOffset) {
-                    maxPhysicOffset = logic.getMaxPhysicOffset();
-                }
-            }
+            maxPhysicOffset = getMaxOffsetInConsumeQueue(maxPhysicOffset, maps);
         }
         return maxPhysicOffset;
     }

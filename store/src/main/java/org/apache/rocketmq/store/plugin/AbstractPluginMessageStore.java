@@ -60,6 +60,12 @@ import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.util.PerfCounter;
 
+/**
+ * abstract class of pluginMessageStore
+ *
+ * inheritance (extends) maybe a better option
+ * should be deleted in inheritance scenario
+ */
 public abstract class AbstractPluginMessageStore implements MessageStore {
     protected MessageStore next = null;
     protected MessageStorePluginContext context;

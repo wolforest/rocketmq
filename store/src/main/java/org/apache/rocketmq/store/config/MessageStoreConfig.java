@@ -227,7 +227,14 @@ public class MessageStoreConfig {
     /**
      * use cases:
      * 1. if true: assign assignOffset before append message
-     * 2.
+     * 2. if true: DefaultMessageStore do not need HaService
+     * 3. if true: do not changeSpecialServiceStatus and do not registerBrokerAll
+     * 4. if true: do not do master slave related operations
+     * 5. if true: HootUtils.checkBeforePutMessage return status: SERVICE_NOT_AVAILABLE
+     * 6. if true: BrokerContainer.addDLedgerBroker return can not add broker exception
+     * 7. if true: BrokerContainer.addMasterBroker return can not add broker exception
+     * 8. if true: BrokerContainer.addSlaveBroker return can not add broker exception
+     * 9. ... ...
      */
     private boolean duplicationEnable = false;
     private boolean diskFallRecorded = true;

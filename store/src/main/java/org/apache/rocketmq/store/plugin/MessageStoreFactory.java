@@ -21,6 +21,13 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import org.apache.rocketmq.store.MessageStore;
 
+/**
+ * load PluginMessageStore if hava
+ *
+ * wrap the MessageStore by pluginMessageStore
+ * and store the MessageStore as pluginMessageStore
+ * It is an ugly design
+ */
 public final class MessageStoreFactory {
     public static MessageStore build(MessageStorePluginContext context, MessageStore messageStore) throws IOException {
         String plugin = context.getBrokerConfig().getMessageStorePlugIn();
