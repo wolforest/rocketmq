@@ -48,7 +48,6 @@ public class TimerMessageFetcher extends ServiceThread {
     private MessageStoreConfig storeConfig;
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
     private TimerState timerState;
-    private TimerCheckpoint timerCheckpoint;
     private PerfCounter.Ticks perfCounterTicks;
     private MessageOperator messageOperator;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
@@ -66,7 +65,6 @@ public class TimerMessageFetcher extends ServiceThread {
         this.lastBrokerRole = storeConfig.getBrokerRole();
         this.messageOperator = messageOperator;
         this.timerState = timerState;
-        this.timerCheckpoint = timerCheckpoint;
         this.perfCounterTicks = perfCounterTicks;
     }
 
@@ -83,11 +81,11 @@ public class TimerMessageFetcher extends ServiceThread {
                 LOGGER.info("Broker role change from {} to {}", lastBrokerRole, currRole);
                 //if change to master, do something
                 if (BrokerRole.SLAVE != currRole) {
-                    timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
+                    timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerState.timerCheckpoint.getMasterTimerQueueOffset());
                     timerState.commitQueueOffset = timerState.currQueueOffset;
                     timerState.prepareTimerCheckPoint();
-                    timerCheckpoint.flush();
-                    timerState.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
+                    timerState.timerCheckpoint.flush();
+                    timerState.currReadTimeMs = timerState.timerCheckpoint.getLastReadTimeMs();
                     timerState.commitReadTimeMs = timerState.currReadTimeMs;
                 }
                 //if change to slave, just let it go
@@ -102,7 +100,7 @@ public class TimerMessageFetcher extends ServiceThread {
 
     private boolean isRunningEnqueue() {
         checkBrokerRole();
-        if (!timerState.shouldRunningDequeue && !isMaster() && timerState.currQueueOffset >= timerCheckpoint.getMasterTimerQueueOffset()) {
+        if (!timerState.shouldRunningDequeue && !isMaster() && timerState.currQueueOffset >= timerState.timerCheckpoint.getMasterTimerQueueOffset()) {
             return false;
         }
 

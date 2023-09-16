@@ -64,7 +64,7 @@ public class TimerState {
     public boolean dequeueStatusChangeFlag = false;
 
     private volatile int state = INITIAL;
-    private TimerCheckpoint timerCheckpoint;
+    public TimerCheckpoint timerCheckpoint;
     private TimerWheel timerWheel;
     private TimerLog timerLog;
     private MessageStore messageStore;
