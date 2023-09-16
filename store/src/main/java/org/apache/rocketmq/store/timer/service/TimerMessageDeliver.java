@@ -26,6 +26,7 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
@@ -59,11 +60,12 @@ public class TimerMessageDeliver extends AbstractStateService {
     private String serviceThreadName;
     private BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
+    private MessageStore messageStore;
 
     public TimerMessageDeliver(TimerMessageStore timerMessageStore, TimerMetricManager timerMetricManager,
                                BlockingQueue<TimerRequest> timerMessageDeliverQueue, PerfCounter.Ticks perfCounterTicks,
                                TimerState timerState, MessageStoreConfig storeConfig, String serviceThreadName, BrokerStatsManager brokerStatsManager,
-                               Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook
+                               Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook, MessageStore messageStore
     ) {
         this.timerMessageStore = timerMessageStore;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
@@ -74,6 +76,7 @@ public class TimerMessageDeliver extends AbstractStateService {
         this.serviceThreadName = serviceThreadName;
         this.brokerStatsManager = brokerStatsManager;
         this.escapeBridgeHook = escapeBridgeHook;
+        this.messageStore = messageStore;
     }
 
 
