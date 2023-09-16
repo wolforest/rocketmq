@@ -49,9 +49,14 @@ public class TimerMessageQuery extends AbstractStateService {
 
     private MessageReader messageReader;
 
-    public TimerMessageQuery(TimerState timerState, MessageReader messageReader,
-                             PerfCounter.Ticks perfCounterTicks, MessageStoreConfig storeConfig,
-                             BlockingQueue<TimerRequest> timerMessageDeliverQueue, BlockingQueue<List<TimerRequest>> timerMessageQueryQueue
+    public TimerMessageQuery(
+            TimerState timerState,
+            MessageStoreConfig storeConfig,
+            BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+            BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
+            MessageReader messageReader,
+            PerfCounter.Ticks perfCounterTicks
+
     ) {
         this.messageReader = messageReader;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
