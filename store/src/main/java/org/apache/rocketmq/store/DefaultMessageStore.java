@@ -281,6 +281,7 @@ public class DefaultMessageStore implements MessageStore {
 
         // Checking is not necessary, as long as the dLedger's implementation exactly follows the definition of Recover,
         // which is eliminating the dispatch inconsistency between the commitLog and consumeQueue at the end of recovery.
+        // make sure this method called after DefaultMessageStore.recover()
         this.doRecheckReputOffsetFromCq();
 
         this.flushConsumeQueueService.start();
@@ -993,17 +994,18 @@ public class DefaultMessageStore implements MessageStore {
         this.transientStorePool = new TransientStorePool(messageStoreConfig.getTransientStorePoolSize(), messageStoreConfig.getMappedFileSizeCommitLog());
     }
 
+    /**
+     * 1. Make sure the fast-forward messages to be truncated during the recovering according to the max physical offset of the commitLog;
+     *    Make sure this method called after DefaultMessageStore.recover(), the recover method truncate dirty messages(half written or other error happened)
+     * 2. DLedger committedPos may be missing, so the maxPhysicalPosInLogicQueue maybe bigger than maxOffset returned by DLedgerCommitLog, just let it go;
+     * 3. Calculate the reput offset according to the consume queue;
+     * 4. Make sure the fall-behind messages to be dispatched before starting the commitLog, especially when the broker role are automatically changed.
+     */
     private void doRecheckReputOffsetFromCq() throws InterruptedException {
         if (!messageStoreConfig.isRecheckReputOffsetFromCq()) {
             return;
         }
 
-        /*
-         * 1. Make sure the fast-forward messages to be truncated during the recovering according to the max physical offset of the commitLog;
-         * 2. DLedger committedPos may be missing, so the maxPhysicalPosInLogicQueue maybe bigger than maxOffset returned by DLedgerCommitLog, just let it go;
-         * 3. Calculate the reput offset according to the consume queue;
-         * 4. Make sure the fall-behind messages to be dispatched before starting the commitLog, especially when the broker role are automatically changed.
-         */
         long maxPhysicalPosInLogicQueue = commitLog.getMinOffset();
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.getConsumeQueueTable().values()) {
             for (ConsumeQueueInterface logic : maps.values()) {
