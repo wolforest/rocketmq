@@ -64,6 +64,13 @@ public class ReputMessageService extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service end");
     }
 
+    /**
+     *
+     * invoked by self.run() or DispatchService.run()
+     * if enableBuildConsumeQueueConcurrently is false, this method will be useless
+     *
+     * @param dispatchRequest dispatchRequest
+     */
     public void notifyMessageArrive4MultiQueue(DispatchRequest dispatchRequest) {
         Map<String, String> prop = dispatchRequest.getPropertiesMap();
         if (prop == null || dispatchRequest.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {

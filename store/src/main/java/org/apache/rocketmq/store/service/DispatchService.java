@@ -27,6 +27,10 @@ import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.config.BrokerRole;
 
+/**
+ * DispatchService for ConcurrentReputMessageService
+ * if enableBuildConsumeQueueConcurrently is false, this class is uesless
+ */
 public class DispatchService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final List<DispatchRequest[]> dispatchRequestsList = new ArrayList<>();
