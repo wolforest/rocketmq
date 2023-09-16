@@ -44,8 +44,8 @@ public class TimerFlushService extends ServiceThread {
     private final SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm:ss");
     private TimerMessageStore timerMessageStore;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
-    private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
-    private BlockingQueue<TimerRequest> dequeuePutQueue;
+    private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private MessageStoreConfig storeConfig;
     private TimerState pointer;
     private TimerMetrics timerMetrics;
@@ -59,8 +59,8 @@ public class TimerFlushService extends ServiceThread {
     ) {
         this.timerMessageStore = timerMessageStore;
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
-        dequeueGetQueue = timerMessageQueryQueue;
-        dequeuePutQueue = timerMessageDeliverQueue;
+        this.timerMessageQueryQueue = timerMessageQueryQueue;
+        this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
         pointer = timerMessageStore.getTimerState();
         timerMetrics = timerMessageStore.getTimerMetrics();
@@ -103,7 +103,7 @@ public class TimerFlushService extends ServiceThread {
                             storeConfig.getBrokerRole(),
                             format(pointer.commitReadTimeMs), format(pointer.currReadTimeMs), format(pointer.currWriteTimeMs), timerMessageStore.getDequeueBehind(),
                             tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerCheckpoint.getMasterTimerQueueOffset() - tmpQueueOffset,
-                            fetchedTimerMessageQueue.size(), dequeueGetQueue.size(), dequeuePutQueue.size(), timerMessageStore.getAllCongestNum(), format(pointer.lastEnqueueButExpiredStoreTime));
+                            fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerMessageStore.getAllCongestNum(), format(pointer.lastEnqueueButExpiredStoreTime));
                 }
                 timerMetrics.persist();
                 waitForRunning(storeConfig.getTimerFlushIntervalMs());
