@@ -52,24 +52,23 @@ public class TimerMessageFetcher extends ServiceThread {
     private TimerCheckpoint timerCheckpoint;
     private MessageStore messageStore;
     private PerfCounter.Ticks perfCounterTicks;
-    private MessageOperator messageReader;
+    private MessageOperator messageOperator;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
 
-    public TimerMessageFetcher(BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
-                               MessageStoreConfig storeConfig,
-                               PerfCounter.Ticks perfCounterTicks,
-                               MessageOperator messageReader,
-                               MessageStore messageStore,
-                               TimerState timerState,
-                               TimerCheckpoint timerCheckpoint) {
+    public TimerMessageFetcher(
+            TimerState timerState,
+            MessageStoreConfig storeConfig,
+            MessageOperator messageOperator,
+            TimerCheckpoint timerCheckpoint,
+            BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
+            PerfCounter.Ticks perfCounterTicks) {
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.storeConfig = storeConfig;
         this.lastBrokerRole = storeConfig.getBrokerRole();
-        this.messageReader = messageReader;
+        this.messageOperator = messageOperator;
         this.timerState = timerState;
         this.timerCheckpoint = timerCheckpoint;
-        this.messageStore = messageStore;
         this.perfCounterTicks = perfCounterTicks;
     }
 
@@ -119,7 +118,7 @@ public class TimerMessageFetcher extends ServiceThread {
         if (!isRunningEnqueue()) {
             return false;
         }
-        ConsumeQueue cq = (ConsumeQueue) this.messageStore.getConsumeQueue(TIMER_TOPIC, queueId);
+        ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
         if (null == cq) {
             return false;
         }
@@ -141,7 +140,7 @@ public class TimerMessageFetcher extends ServiceThread {
                     long offsetPy = bufferCQ.getByteBuffer().getLong();
                     int sizePy = bufferCQ.getByteBuffer().getInt();
                     bufferCQ.getByteBuffer().getLong(); //tags code
-                    MessageExt msgExt = messageReader.readMessageByCommitOffset(offsetPy, sizePy);
+                    MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
                     if (null == msgExt) {
                         perfCounterTicks.getCounter("enqueue_get_miss");
                     } else {
