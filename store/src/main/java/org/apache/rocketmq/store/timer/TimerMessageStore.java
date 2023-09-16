@@ -116,7 +116,7 @@ public class TimerMessageStore {
 
     private final BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
-    private MessageOperator messageReader;
+    private MessageOperator messageOperator;
     private TimerMetricManager timerMetricManager;
 
     public TimerMessageStore(final MessageStore messageStore, final MessageStoreConfig storeConfig,
@@ -139,7 +139,7 @@ public class TimerMessageStore {
                 getTimerWheelFileFullName(storeConfig.getStorePathRootDir()), slotsTotal, precisionMs);
         this.timerState = new TimerState(timerCheckpoint, storeConfig, timerLog, slotsTotal, timerWheel, messageStore);
 
-        timerMetricManager = new TimerMetricManager(timerMetrics, storeConfig, messageReader, timerWheel, timerLog, timerState);
+        timerMetricManager = new TimerMetricManager(timerMetrics, storeConfig, messageOperator, timerWheel, timerLog, timerState);
         if (messageStore instanceof DefaultMessageStore) {
             scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
                     new ThreadFactoryImpl("TimerScheduledThread",
@@ -150,7 +150,7 @@ public class TimerMessageStore {
         }
 
 
-        this.messageReader = new MessageOperator(messageStore, storeConfig);
+        this.messageOperator = new MessageOperator(messageStore, storeConfig);
 
 
         this.brokerStatsManager = brokerStatsManager;
@@ -177,7 +177,7 @@ public class TimerMessageStore {
                     storeConfig,
                     timerMessageDeliverQueue,
                     timerMessageQueryQueue,
-                    messageReader,
+                    messageOperator,
                     perfCounterTicks);
         }
 
@@ -198,7 +198,7 @@ public class TimerMessageStore {
                 fetchedTimerMessageQueue,
                 storeConfig,
                 perfCounterTicks,
-                messageReader,
+                messageOperator,
                 messageStore,
                 timerState,
                 timerCheckpoint);
@@ -335,7 +335,7 @@ public class TimerMessageStore {
         try {
             long offsetPy = selectRes.getByteBuffer().getLong();
             int sizePy = selectRes.getByteBuffer().getInt();
-            MessageExt messageExt = messageReader.readMessageByCommitOffset(offsetPy, sizePy);
+            MessageExt messageExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
             if (null == messageExt) {
                 return -1;
             }
