@@ -108,67 +108,51 @@ import org.apache.rocketmq.store.util.PerfCounter;
 public class DefaultMessageStore implements MessageStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    public final PerfCounter.Ticks perfs = new PerfCounter.Ticks(LOGGER);
-
+    //config
+    private final BrokerConfig brokerConfig;
     private final MessageStoreConfig messageStoreConfig;
+    // this is a unmodifiableMap
+    private final ConcurrentMap<String, TopicConfig> topicConfigTable;
+
     // CommitLog
     private CommitLog commitLog;
-
-
-    private ConsumeQueueStore consumeQueueStore;
-
-    private FlushConsumeQueueService flushConsumeQueueService;
-
     private CleanCommitLogService cleanCommitLogService;
 
+    private ConsumeQueueStore consumeQueueStore;
+    private FlushConsumeQueueService flushConsumeQueueService;
     private CleanConsumeQueueService cleanConsumeQueueService;
-
     private CorrectLogicOffsetService correctLogicOffsetService;
-
 
     private IndexService indexService;
 
     private AllocateMappedFileService allocateMappedFileService;
-
+    private TransientStorePool transientStorePool;
 
     private ReputMessageService reputMessageService;
 
-    private HAService haService;
-
-
     // CompactionLog
     private CompactionStore compactionStore;
-
     private CompactionService compactionService;
 
     private StoreStatsService storeStatsService;
-
-    private TransientStorePool transientStorePool;
+    private final BrokerStatsManager brokerStatsManager;
+    public final PerfCounter.Ticks perfs = new PerfCounter.Ticks(LOGGER);
 
     private final RunningFlags runningFlags = new RunningFlags();
     private final SystemClock systemClock = new SystemClock();
-
-    private ScheduledExecutorService scheduledExecutorService;
-    private final BrokerStatsManager brokerStatsManager;
-
-
+    
+    private LinkedList<CommitLogDispatcher> dispatcherList;
     private final MessageArrivingListener messageArrivingListener;
-    private final BrokerConfig brokerConfig;
-
-    private volatile boolean shutdown = true;
+    private SendMessageBackHook sendMessageBackHook;
 
     private StoreCheckpoint storeCheckpoint;
     private TimerMessageStore timerMessageStore;
 
-    private LinkedList<CommitLogDispatcher> dispatcherList;
-
     private RandomAccessFile lockFile;
-
     private FileLock lock;
 
     boolean shutDownNormal = false;
-
-    private volatile int aliveReplicasNum = 1;
+    private volatile boolean shutdown = true;
 
     // Refer the MessageStore of MasterBroker in the same process.
     // If current broker is master, this reference point to null or itself.
@@ -177,9 +161,8 @@ public class DefaultMessageStore implements MessageStore {
     private MessageStore masterStoreInProcess = null;
     private volatile long masterFlushedOffset = -1L;
     private volatile long brokerInitMaxOffset = -1L;
-
-    private SendMessageBackHook sendMessageBackHook;
-
+    private HAService haService;
+    private volatile int aliveReplicasNum = 1;
 
     private final AtomicInteger mappedPageHoldCount = new AtomicInteger(0);
 
@@ -196,9 +179,7 @@ public class DefaultMessageStore implements MessageStore {
 
     private long stateMachineVersion = 0L;
 
-    // this is a unmodifiableMap
-    private final ConcurrentMap<String, TopicConfig> topicConfigTable;
-
+    private ScheduledExecutorService scheduledExecutorService;
     private final ScheduledExecutorService scheduledCleanQueueExecutorService =
         ThreadUtils.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("StoreCleanQueueScheduledThread"));
 
