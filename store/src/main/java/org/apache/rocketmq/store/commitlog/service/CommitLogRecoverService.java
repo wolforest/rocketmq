@@ -110,12 +110,17 @@ public class CommitLogRecoverService {
 
         processOffset += mappedFileOffset;
         storeRecoverOffset(processOffset, lastValidMsgPhyOffset);
+        truncateDirtyLogicFiles(processOffset, maxPhyOffsetOfConsumeQueue);
+    }
 
+    private void truncateDirtyLogicFiles(long processOffset, long maxPhyOffsetOfConsumeQueue) {
         // Clear ConsumeQueue redundant data
-        if (maxPhyOffsetOfConsumeQueue >= processOffset) {
-            log.warn("maxPhyOffsetOfConsumeQueue({}) >= processOffset({}), truncate dirty logic files", maxPhyOffsetOfConsumeQueue, processOffset);
-            this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
+        if (maxPhyOffsetOfConsumeQueue < processOffset) {
+            return;
         }
+
+        log.warn("maxPhyOffsetOfConsumeQueue({}) >= processOffset({}), truncate dirty logic files", maxPhyOffsetOfConsumeQueue, processOffset);
+        this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
     }
 
     private void storeRecoverOffset(long processOffset, long lastValidMsgPhyOffset) {
