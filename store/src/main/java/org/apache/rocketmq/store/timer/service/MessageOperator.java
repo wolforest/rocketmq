@@ -26,6 +26,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.queue.ConsumeQueue;
 
 import java.nio.ByteBuffer;
 
@@ -46,6 +47,11 @@ public class MessageOperator {
         };
 
     }
+
+    public ConsumeQueue getConsumeQueue(String topic, int queueId) {
+        return (ConsumeQueue) this.messageStore.getConsumeQueue(topic, queueId);
+    }
+
 
     public PutMessageResult putMessage(MessageExtBrokerInner message) {
         return messageStore.putMessage(message);
