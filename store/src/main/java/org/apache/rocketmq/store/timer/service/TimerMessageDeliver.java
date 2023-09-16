@@ -42,7 +42,7 @@ public class TimerMessageDeliver extends AbstractStateService {
 
     @Override
     public String getServiceName() {
-        return timerMessageStore.getServiceThreadName() + this.getClass().getSimpleName();
+        return serviceThreadName + this.getClass().getSimpleName();
     }
 
     private TimerMessageStore timerMessageStore;
@@ -51,10 +51,11 @@ public class TimerMessageDeliver extends AbstractStateService {
     private TimerState pointer;
     private MessageStoreConfig storeConfig;
     private TimerMetricManager metricManager;
+    private String serviceThreadName;
 
     public TimerMessageDeliver(TimerMessageStore timerMessageStore, TimerMetricManager timerMetricManager,
                                BlockingQueue<TimerRequest> timerMessageDeliverQueue, PerfCounter.Ticks perfCounterTicks,
-                               TimerState timerState,MessageStoreConfig storeConfig
+                               TimerState timerState,MessageStoreConfig storeConfig,String serviceThreadName
                                ) {
         this.timerMessageStore = timerMessageStore;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
@@ -62,6 +63,7 @@ public class TimerMessageDeliver extends AbstractStateService {
         this.pointer = timerState;
         this.storeConfig = storeConfig;
         this.metricManager = timerMetricManager;
+        this.serviceThreadName = serviceThreadName;
     }
 
 
