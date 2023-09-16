@@ -48,21 +48,19 @@ public class TimerMessageDeliver extends AbstractStateService {
     private TimerMessageStore timerMessageStore;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private PerfCounter.Ticks perfCounterTicks;
-    private TimerCheckpoint timerCheckpoint;
     private TimerState pointer;
     private MessageStoreConfig storeConfig;
     private TimerMetricManager metricManager;
 
     public TimerMessageDeliver(TimerMessageStore timerMessageStore, TimerMetricManager timerMetricManager,
                                BlockingQueue<TimerRequest> timerMessageDeliverQueue, PerfCounter.Ticks perfCounterTicks,
-                               TimerState timerState,MessageStoreConfig storeConfig,
+                               TimerState timerState,MessageStoreConfig storeConfig
                                ) {
         this.timerMessageStore = timerMessageStore;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.perfCounterTicks = perfCounterTicks;
         this.pointer = timerState;
         this.storeConfig = storeConfig;
-        timerCheckpoint = timerMessageStore.getTimerCheckpoint();
         this.metricManager = timerMetricManager;
     }
 
