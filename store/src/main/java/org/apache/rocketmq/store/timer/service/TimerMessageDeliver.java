@@ -61,10 +61,15 @@ public class TimerMessageDeliver extends AbstractStateService {
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
     private MessageStore messageStore;
 
-    public TimerMessageDeliver(TimerMetricManager timerMetricManager,
-                               BlockingQueue<TimerRequest> timerMessageDeliverQueue, PerfCounter.Ticks perfCounterTicks,
-                               TimerState timerState, MessageStoreConfig storeConfig, BrokerStatsManager brokerStatsManager,
-                               Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook, MessageStore messageStore
+    public TimerMessageDeliver(
+            TimerState timerState,
+            MessageStoreConfig storeConfig,
+            MessageStore messageStore,
+            BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+            BrokerStatsManager brokerStatsManager,
+            TimerMetricManager timerMetricManager,
+            Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook,
+            PerfCounter.Ticks perfCounterTicks
     ) {
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.perfCounterTicks = perfCounterTicks;

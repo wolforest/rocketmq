@@ -185,14 +185,14 @@ public class TimerMessageStore {
         timerMessageDelivers = new TimerMessageDeliver[putThreadNum];
         for (int i = 0; i < timerMessageDelivers.length; i++) {
             timerMessageDelivers[i] = new TimerMessageDeliver(
-                    timerMetricManager,
-                    timerMessageDeliverQueue,
-                    perfCounterTicks,
                     timerState,
                     storeConfig,
+                    messageStore,
+                    timerMessageDeliverQueue,
                     brokerStatsManager,
+                    timerMetricManager,
                     escapeBridgeHook,
-                    messageStore);
+                    perfCounterTicks);
         }
         timerMessageFetcher = new TimerMessageFetcher(
                 fetchedTimerMessageQueue,
