@@ -20,6 +20,7 @@ import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
@@ -43,6 +44,7 @@ public class TimerFlushService extends ServiceThread {
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm:ss");
     private TimerMessageStore timerMessageStore;
+    private MessageStore messageStore;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
@@ -54,6 +56,7 @@ public class TimerFlushService extends ServiceThread {
     private TimerWheel timerWheel;
 
     public TimerFlushService(TimerMessageStore timerMessageStore,
+                             MessageStore messageStore,
                              BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
                              BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
@@ -62,6 +65,7 @@ public class TimerFlushService extends ServiceThread {
                              TimerLog timerLog,TimerWheel timerWheel
     ) {
         this.timerMessageStore = timerMessageStore;
+        this.messageStore = messageStore;
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
