@@ -47,10 +47,7 @@ public class TimerWheelFetcher extends ServiceThread {
     private TimerState timerState;
     private TimerWheel timerWheel;
     private TimerLog timerLog;
-
-
     private PerfCounter.Ticks perfCounterTicks;
-    private String serviceThreadName;
 
     private int commitLogFileSize;
 
@@ -63,9 +60,11 @@ public class TimerWheelFetcher extends ServiceThread {
     private int timerLogFileSize;
     private int precisionMs;
 
-    public TimerWheelFetcher(MessageStoreConfig storeConfig, TimerState timerState,
-                             TimerWheel timerWheel, TimerLog timerLog,
-                             PerfCounter.Ticks perfCounterTicks, String serviceThreadName,
+    public TimerWheelFetcher(MessageStoreConfig storeConfig,
+                             TimerState timerState,
+                             TimerWheel timerWheel,
+                             TimerLog timerLog,
+                             PerfCounter.Ticks perfCounterTicks,
                              BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                              TimerMessageDeliver[] timerMessageDelivers,
@@ -77,7 +76,6 @@ public class TimerWheelFetcher extends ServiceThread {
         this.timerWheel = timerWheel;
         this.timerLog = timerLog;
         this.perfCounterTicks = perfCounterTicks;
-        this.serviceThreadName = serviceThreadName;
         this.timerMessageQueryQueue= timerMessageQueryQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageDelivers = timerMessageDelivers;
@@ -90,7 +88,7 @@ public class TimerWheelFetcher extends ServiceThread {
 
     @Override
     public String getServiceName() {
-        return serviceThreadName + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
     public void start(long shouldStartTime) {
