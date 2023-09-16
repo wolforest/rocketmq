@@ -92,9 +92,7 @@ public class MainBatchDispatchRequestService extends ServiceThread {
         BatchDispatchRequest task = messageStore.getBatchDispatchRequestQueue().peek();
         batchDispatchRequestExecutor.execute(() -> {
             try {
-                ByteBuffer tmpByteBuffer = task.getByteBuffer();
-                tmpByteBuffer.position(task.getPosition());
-                tmpByteBuffer.limit(task.getPosition() + task.getSize());
+                ByteBuffer tmpByteBuffer = getByteBuffer(task);
                 List<DispatchRequest> dispatchRequestList = getDispatchRequest(tmpByteBuffer);
 
                 messageStore.getDispatchRequestOrderlyQueue().put(task.getId(), dispatchRequestList.toArray(new DispatchRequest[dispatchRequestList.size()]));
@@ -103,6 +101,14 @@ public class MainBatchDispatchRequestService extends ServiceThread {
                 LOGGER.error("There is an exception in task execution.", e);
             }
         });
+    }
+
+    private ByteBuffer getByteBuffer(BatchDispatchRequest task) {
+        ByteBuffer tmpByteBuffer = task.getByteBuffer();
+        tmpByteBuffer.position(task.getPosition());
+        tmpByteBuffer.limit(task.getPosition() + task.getSize());
+
+        return tmpByteBuffer;
     }
 
     private List<DispatchRequest> getDispatchRequest(ByteBuffer tmpByteBuffer) {
