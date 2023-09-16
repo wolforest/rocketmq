@@ -42,6 +42,14 @@ public class CommitLogRecoverService {
         this.mappedFileQueue = commitLog.getMappedFileQueue();
     }
 
+    private void recoverWithoutMappedFile() {
+        // CommitLog case files are deleted
+        log.warn("The CommitLog files are deleted, and delete the consume queue files");
+        this.mappedFileQueue.setFlushedWhere(0);
+        this.mappedFileQueue.setCommittedWhere(0);
+        this.defaultMessageStore.destroyLogics();
+    }
+
     /**
      * When the normal exit, data recovery, all memory data have been flush
      */
@@ -50,11 +58,7 @@ public class CommitLogRecoverService {
         boolean checkDupInfo = this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable();
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
         if (mappedFiles.isEmpty()) {
-            // Commitlog case files are deleted
-            log.warn("The commitlog files are deleted, and delete the consume queue files");
-            this.mappedFileQueue.setFlushedWhere(0);
-            this.mappedFileQueue.setCommittedWhere(0);
-            this.defaultMessageStore.destroyLogics();
+            recoverWithoutMappedFile();
             return;
         }
 
@@ -113,16 +117,6 @@ public class CommitLogRecoverService {
         truncateDirtyLogicFiles(processOffset, maxPhyOffsetOfConsumeQueue);
     }
 
-    private void truncateDirtyLogicFiles(long processOffset, long maxPhyOffsetOfConsumeQueue) {
-        // Clear ConsumeQueue redundant data
-        if (maxPhyOffsetOfConsumeQueue < processOffset) {
-            return;
-        }
-
-        log.warn("maxPhyOffsetOfConsumeQueue({}) >= processOffset({}), truncate dirty logic files", maxPhyOffsetOfConsumeQueue, processOffset);
-        this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
-    }
-
     private void storeRecoverOffset(long processOffset, long lastValidMsgPhyOffset) {
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
             if (this.defaultMessageStore.getConfirmOffset() < this.defaultMessageStore.getMinPhyOffset()) {
@@ -139,6 +133,16 @@ public class CommitLogRecoverService {
         this.mappedFileQueue.setFlushedWhere(processOffset);
         this.mappedFileQueue.setCommittedWhere(processOffset);
         this.mappedFileQueue.truncateDirtyFiles(processOffset);
+    }
+
+    private void truncateDirtyLogicFiles(long processOffset, long maxPhyOffsetOfConsumeQueue) {
+        // Clear ConsumeQueue redundant data
+        if (maxPhyOffsetOfConsumeQueue < processOffset) {
+            return;
+        }
+
+        log.warn("maxPhyOffsetOfConsumeQueue({}) >= processOffset({}), truncate dirty logic files", maxPhyOffsetOfConsumeQueue, processOffset);
+        this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
     }
 
     @Deprecated
