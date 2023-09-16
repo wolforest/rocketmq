@@ -64,6 +64,34 @@ public class ReputMessageService extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service end");
     }
 
+    public void notifyMessageArrive4MultiQueue(DispatchRequest dispatchRequest) {
+        Map<String, String> prop = dispatchRequest.getPropertiesMap();
+        if (prop == null || dispatchRequest.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            return;
+        }
+        String multiDispatchQueue = prop.get(MessageConst.PROPERTY_INNER_MULTI_DISPATCH);
+        String multiQueueOffset = prop.get(MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET);
+        if (StringUtils.isBlank(multiDispatchQueue) || StringUtils.isBlank(multiQueueOffset)) {
+            return;
+        }
+        String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queueOffsets = multiQueueOffset.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
+        if (queues.length != queueOffsets.length) {
+            return;
+        }
+        for (int i = 0; i < queues.length; i++) {
+            String queueName = queues[i];
+            long queueOffset = Long.parseLong(queueOffsets[i]);
+            int queueId = dispatchRequest.getQueueId();
+            if (messageStore.getMessageStoreConfig().isEnableLmq() && MixAll.isLmq(queueName)) {
+                queueId = 0;
+            }
+            messageStore.getMessageArrivingListener().arriving(
+                queueName, queueId, queueOffset + 1, dispatchRequest.getTagsCode(),
+                dispatchRequest.getStoreTimestamp(), dispatchRequest.getBitMap(), dispatchRequest.getPropertiesMap());
+        }
+    }
+
     @Override
     public void shutdown() {
         for (int i = 0; i < 50 && this.isCommitLogAvailable(); i++) {
@@ -87,7 +115,7 @@ public class ReputMessageService extends ServiceThread {
         return this.reputFromOffset < messageStore.getConfirmOffset();
     }
 
-    public void doReput() {
+    protected void doReput() {
         loadReputOffset();
         for (boolean doNext = true; this.isCommitLogAvailable() && doNext; ) {
             SelectMappedBufferResult result = messageStore.getCommitLog().getData(reputFromOffset);
@@ -195,36 +223,6 @@ public class ReputMessageService extends ServiceThread {
             LOGGER.error("[BUG]dispatch message to consume queue error, COMMITLOG OFFSET: {}",
                 this.reputFromOffset);
             this.reputFromOffset += result.getSize() - readSize;
-        }
-    }
-
-
-
-    public void notifyMessageArrive4MultiQueue(DispatchRequest dispatchRequest) {
-        Map<String, String> prop = dispatchRequest.getPropertiesMap();
-        if (prop == null || dispatchRequest.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-            return;
-        }
-        String multiDispatchQueue = prop.get(MessageConst.PROPERTY_INNER_MULTI_DISPATCH);
-        String multiQueueOffset = prop.get(MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET);
-        if (StringUtils.isBlank(multiDispatchQueue) || StringUtils.isBlank(multiQueueOffset)) {
-            return;
-        }
-        String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
-        String[] queueOffsets = multiQueueOffset.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
-        if (queues.length != queueOffsets.length) {
-            return;
-        }
-        for (int i = 0; i < queues.length; i++) {
-            String queueName = queues[i];
-            long queueOffset = Long.parseLong(queueOffsets[i]);
-            int queueId = dispatchRequest.getQueueId();
-            if (messageStore.getMessageStoreConfig().isEnableLmq() && MixAll.isLmq(queueName)) {
-                queueId = 0;
-            }
-            messageStore.getMessageArrivingListener().arriving(
-                queueName, queueId, queueOffset + 1, dispatchRequest.getTagsCode(),
-                dispatchRequest.getStoreTimestamp(), dispatchRequest.getBitMap(), dispatchRequest.getPropertiesMap());
         }
     }
 
