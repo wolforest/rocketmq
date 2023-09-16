@@ -87,6 +87,10 @@ public class CommitLog implements Swappable {
     private final AppendMessageCallback appendMessageCallback;
     private ThreadLocal<PutMessageThreadLocal> putMessageThreadLocal;
 
+    /**
+     * only set while DefaultMessageStore.recover()
+     * while recover used by ReputMessageService
+     */
     protected volatile long confirmOffset = -1L;
     private volatile long beginTimeInLock = 0;
     protected int commitLogSize;
