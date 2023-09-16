@@ -37,7 +37,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.rocketmq.store.timer.TimerMessageStore.DEQUEUE_PUT;
-import static org.apache.rocketmq.store.timer.TimerMessageStore.PUT_NEED_RETRY;
+import static org.apache.rocketmq.store.timer.TimerState.PUT_NEED_RETRY;
 
 public class TimerMessageDeliver extends AbstractStateService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
