@@ -47,7 +47,7 @@ public class TimerFlushService extends ServiceThread {
     private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private MessageStoreConfig storeConfig;
-    private TimerState pointer;
+    private TimerState timerState;
     private TimerMetrics timerMetrics;
     private TimerCheckpoint timerCheckpoint;
     private TimerLog timerLog;
@@ -62,7 +62,7 @@ public class TimerFlushService extends ServiceThread {
         this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
-        pointer = timerMessageStore.getTimerState();
+        timerState = timerMessageStore.getTimerState();
         timerMetrics = timerMessageStore.getTimerMetrics();
         timerCheckpoint = timerMessageStore.getTimerCheckpoint();
         timerLog = timerMessageStore.getTimerLog();
@@ -89,21 +89,21 @@ public class TimerFlushService extends ServiceThread {
 
         while (!this.isStopped()) {
             try {
-                pointer.prepareTimerCheckPoint();
+                timerState.prepareTimerCheckPoint();
                 timerLog.getMappedFileQueue().flush(0);
                 timerWheel.flush();
                 timerCheckpoint.flush();
                 if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
                     start = System.currentTimeMillis();
-                    long tmpQueueOffset = pointer.currQueueOffset;
+                    long tmpQueueOffset = timerState.currQueueOffset;
                     ConsumeQueue cq = (ConsumeQueue) timerMessageStore.getMessageStore().getConsumeQueue(TIMER_TOPIC, 0);
                     long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
                     LOGGER.info("[{}]Timer progress-check commitRead:[{}] currRead:[{}] currWrite:[{}] readBehind:{} currReadOffset:{} offsetBehind:{} behindMaster:{} " +
                                     "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
                             storeConfig.getBrokerRole(),
-                            format(pointer.commitReadTimeMs), format(pointer.currReadTimeMs), format(pointer.currWriteTimeMs), timerMessageStore.getDequeueBehind(),
+                            format(timerState.commitReadTimeMs), format(timerState.currReadTimeMs), format(timerState.currWriteTimeMs), timerMessageStore.getDequeueBehind(),
                             tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerCheckpoint.getMasterTimerQueueOffset() - tmpQueueOffset,
-                            fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerMessageStore.getAllCongestNum(), format(pointer.lastEnqueueButExpiredStoreTime));
+                            fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerMessageStore.getAllCongestNum(), format(timerState.lastEnqueueButExpiredStoreTime));
                 }
                 timerMetrics.persist();
                 waitForRunning(storeConfig.getTimerFlushIntervalMs());
