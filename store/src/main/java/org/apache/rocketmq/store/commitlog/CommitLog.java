@@ -508,7 +508,7 @@ public class CommitLog implements Swappable {
     // Even if it is just inited.
     public long getConfirmOffset() {
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-            return getConfirmOffsetInControllerMode();
+            return getConfirmOffsetInControllerMode(false);
         } else if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
             return this.confirmOffset;
         } else {
@@ -516,13 +516,13 @@ public class CommitLog implements Swappable {
         }
     }
 
-    public long getConfirmOffsetInControllerMode() {
+    public long getConfirmOffsetInControllerMode(boolean directly) {
         if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE && !this.defaultMessageStore.getRunningFlags().isFenced()) {
             if (((AutoSwitchHAService) this.defaultMessageStore.getHaService()).getLocalSyncStateSet().size() == 1) {
                 return this.defaultMessageStore.getMaxPhyOffset();
             }
             // First time it will compute the confirmOffset.
-            if (this.confirmOffset <= 0) {
+            if (!directly && this.confirmOffset <= 0) {
                 setConfirmOffset(((AutoSwitchHAService) this.defaultMessageStore.getHaService()).computeConfirmOffset());
                 log.info("Init the confirmOffset to {}.", this.confirmOffset);
             }
@@ -534,12 +534,7 @@ public class CommitLog implements Swappable {
     // Without checking and re-computing.
     public long getConfirmOffsetDirectly() {
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-            if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE && !this.defaultMessageStore.getRunningFlags().isFenced()) {
-                if (((AutoSwitchHAService) this.defaultMessageStore.getHaService()).getLocalSyncStateSet().size() == 1) {
-                    return this.defaultMessageStore.getMaxPhyOffset();
-                }
-            }
-            return this.confirmOffset;
+            return getConfirmOffsetInControllerMode(true);
         } else if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
             return this.confirmOffset;
         } else {
