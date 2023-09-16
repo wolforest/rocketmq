@@ -365,6 +365,31 @@ public class CommitLog implements Swappable {
         return null;
     }
 
+    private long getTagsCode(long tagsCode, Map<String, String> propertiesMap, String topic, long storeTimestamp, int sysFlag) {
+        String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
+        if (tags != null && tags.length() > 0) {
+            tagsCode = MessageExtBrokerInner.tagsString2tagsCode(MessageExt.parseTopicFilterType(sysFlag), tags);
+        }
+
+        // Timing message processing
+        String t = propertiesMap.get(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
+        if (!TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(topic) || t == null) {
+            return tagsCode;
+        }
+
+        int delayLevel = Integer.parseInt(t);
+        if (delayLevel > this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel()) {
+            delayLevel = this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel();
+        }
+
+        if (delayLevel > 0) {
+            tagsCode = this.defaultMessageStore.getDelayLevelService().computeDeliverTimestamp(delayLevel,
+                storeTimestamp);
+        }
+
+        return tagsCode;
+    }
+
     /**
      * check the message and returns the message size
      *
@@ -430,27 +455,7 @@ public class CommitLog implements Swappable {
                     return duplicateResult;
                 }
 
-                String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
-                if (tags != null && tags.length() > 0) {
-                    tagsCode = MessageExtBrokerInner.tagsString2tagsCode(MessageExt.parseTopicFilterType(sysFlag), tags);
-                }
-
-                // Timing message processing
-                {
-                    String t = propertiesMap.get(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
-                    if (TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(topic) && t != null) {
-                        int delayLevel = Integer.parseInt(t);
-
-                        if (delayLevel > this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel()) {
-                            delayLevel = this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel();
-                        }
-
-                        if (delayLevel > 0) {
-                            tagsCode = this.defaultMessageStore.getDelayLevelService().computeDeliverTimestamp(delayLevel,
-                                storeTimestamp);
-                        }
-                    }
-                }
+                tagsCode = getTagsCode(tagsCode, propertiesMap, topic, storeTimestamp, sysFlag);
             }
 
             int readLength = MessageExtEncoder.calMsgLength(messageVersion, sysFlag, bodyLen, topicLen, propertiesLength);
