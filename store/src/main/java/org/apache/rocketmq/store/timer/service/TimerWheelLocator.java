@@ -49,6 +49,7 @@ public class TimerWheelLocator extends ServiceThread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private MessageStoreConfig storeConfig;
+    private TimerState timerState;
     private TimerLog timerLog;
     private TimerWheel timerWheel;
     private TimerMetricManager metricManager;
@@ -56,14 +57,15 @@ public class TimerWheelLocator extends ServiceThread {
     public TimerWheelLocator(MessageStoreConfig storeConfig,
                              TimerWheel timerWheel,
                              TimerLog timerLog,
+                             TimerState timerState,
                              TimerMetricManager metricManager,
                              BlockingQueue<TimerRequest> fetchedTimerMessageQueue, BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                              TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries,
-                             TimerState pointer, PerfCounter.Ticks perfCounterTicks,
-                             String serviceThreadName) {
+                             TimerState pointer, PerfCounter.Ticks perfCounterTicks) {
         this.storeConfig = storeConfig;
         this.timerWheel = timerWheel;
         this.timerLog = timerLog;
+        this.timerState = timerState;
         this.metricManager = metricManager;
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
@@ -71,7 +73,6 @@ public class TimerWheelLocator extends ServiceThread {
         this.timerMessageQueries = timerMessageQueries;
         this.pointer = pointer;
         this.perfCounterTicks = perfCounterTicks;
-        this.serviceThreadName = serviceThreadName;
     }
 
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
@@ -80,12 +81,11 @@ public class TimerWheelLocator extends ServiceThread {
     private TimerMessageQuery[] timerMessageQueries;
     private TimerState pointer;
     private PerfCounter.Ticks perfCounterTicks;
-    private String serviceThreadName;
 
 
     @Override
     public String getServiceName() {
-        return serviceThreadName + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
     /**

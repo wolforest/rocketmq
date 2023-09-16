@@ -172,19 +172,48 @@ public class TimerMessageStore {
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
         timerMessageQueries = new TimerMessageQuery[getThreadNum];
         for (int i = 0; i < timerMessageQueries.length; i++) {
-            timerMessageQueries[i] = new TimerMessageQuery(timerState, messageReader, perfCounterTicks, storeConfig, timerMessageDeliverQueue, timerMessageQueryQueue);
+            timerMessageQueries[i] = new TimerMessageQuery(
+                    timerState,
+                    messageReader,
+                    perfCounterTicks,
+                    storeConfig,
+                    timerMessageDeliverQueue,
+                    timerMessageQueryQueue);
         }
 
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
         timerMessageDelivers = new TimerMessageDeliver[putThreadNum];
         for (int i = 0; i < timerMessageDelivers.length; i++) {
-            timerMessageDelivers[i] = new TimerMessageDeliver(timerMetricManager, timerMessageDeliverQueue, perfCounterTicks, timerState,
-                    storeConfig, brokerStatsManager, escapeBridgeHook, messageStore);
+            timerMessageDelivers[i] = new TimerMessageDeliver(
+                    timerMetricManager,
+                    timerMessageDeliverQueue,
+                    perfCounterTicks,
+                    timerState,
+                    storeConfig,
+                    brokerStatsManager,
+                    escapeBridgeHook,
+                    messageStore);
         }
-        timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint);
-        timerWheelLocator = new TimerWheelLocator(storeConfig, timerWheel, timerLog, timerMetricManager,
-                fetchedTimerMessageQueue, timerMessageDeliverQueue,
-                timerMessageDelivers, timerMessageQueries, timerState, perfCounterTicks, timerState.getServiceThreadName());
+        timerMessageFetcher = new TimerMessageFetcher(
+                fetchedTimerMessageQueue,
+                storeConfig,
+                perfCounterTicks,
+                messageReader,
+                messageStore,
+                timerState,
+                timerCheckpoint);
+        timerWheelLocator = new TimerWheelLocator(
+                storeConfig,
+                timerWheel,
+                timerLog,
+                timerState,
+                timerMetricManager,
+                fetchedTimerMessageQueue,
+                timerMessageDeliverQueue,
+                timerMessageDelivers,
+                timerMessageQueries,
+                timerState,
+                perfCounterTicks);
         dequeueWarmService = new TimerDequeueWarmService(this);
         timerWheelFetcher = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, timerState.getServiceThreadName(),
                 timerMessageQueryQueue, timerMessageDeliverQueue,
