@@ -516,7 +516,19 @@ public class CommitLog implements Swappable {
         }
     }
 
-    public long getConfirmOffsetInControllerMode(boolean directly) {
+    // Fetch the original confirmOffset's value.
+    // Without checking and re-computing.
+    public long getConfirmOffsetDirectly() {
+        if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
+            return getConfirmOffsetInControllerMode(true);
+        } else if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
+            return this.confirmOffset;
+        } else {
+            return getMaxOffset();
+        }
+    }
+
+    private long getConfirmOffsetInControllerMode(boolean directly) {
         if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE && !this.defaultMessageStore.getRunningFlags().isFenced()) {
             if (((AutoSwitchHAService) this.defaultMessageStore.getHaService()).getLocalSyncStateSet().size() == 1) {
                 return this.defaultMessageStore.getMaxPhyOffset();
@@ -528,18 +540,6 @@ public class CommitLog implements Swappable {
             }
         }
         return this.confirmOffset;
-    }
-
-    // Fetch the original confirmOffset's value.
-    // Without checking and re-computing.
-    public long getConfirmOffsetDirectly() {
-        if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-            return getConfirmOffsetInControllerMode(true);
-        } else if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
-            return this.confirmOffset;
-        } else {
-            return getMaxOffset();
-        }
     }
 
     public void setConfirmOffset(long phyOffset) {
