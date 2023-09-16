@@ -48,7 +48,7 @@ import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.timer.service.MessageReader;
+import org.apache.rocketmq.store.timer.service.MessageOperator;
 import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
 import org.apache.rocketmq.store.timer.service.TimerMetricManager;
 import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
@@ -116,7 +116,7 @@ public class TimerMessageStore {
 
     private final BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
-    private MessageReader messageReader;
+    private MessageOperator messageReader;
     private TimerMetricManager timerMetricManager;
 
     public TimerMessageStore(final MessageStore messageStore, final MessageStoreConfig storeConfig,
@@ -150,7 +150,7 @@ public class TimerMessageStore {
         }
 
 
-        this.messageReader = new MessageReader(messageStore, storeConfig);
+        this.messageReader = new MessageOperator(messageStore, storeConfig);
 
 
         this.brokerStatsManager = brokerStatsManager;

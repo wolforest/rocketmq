@@ -27,12 +27,12 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 import java.nio.ByteBuffer;
 
-public class MessageReader {
+public class MessageOperator {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final ThreadLocal<ByteBuffer> bufferLocal;
     private MessageStore messageStore;
     private MessageStoreConfig storeConfig;
-    public MessageReader(MessageStore messageStore,MessageStoreConfig storeConfig) {
+    public MessageOperator(MessageStore messageStore, MessageStoreConfig storeConfig) {
         this.messageStore = messageStore;
         this.storeConfig = storeConfig;
         bufferLocal = new ThreadLocal<ByteBuffer>() {

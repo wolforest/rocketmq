@@ -52,14 +52,14 @@ public class TimerMessageFetcher extends ServiceThread {
     private TimerCheckpoint timerCheckpoint;
     private MessageStore messageStore;
     private PerfCounter.Ticks perfCounterTicks;
-    private MessageReader messageReader;
+    private MessageOperator messageReader;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
 
     public TimerMessageFetcher(BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
                                MessageStoreConfig storeConfig,
                                PerfCounter.Ticks perfCounterTicks,
-                               MessageReader messageReader,
+                               MessageOperator messageReader,
                                MessageStore messageStore,
                                TimerState timerState,
                                TimerCheckpoint timerCheckpoint) {

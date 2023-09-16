@@ -21,7 +21,6 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.timer.TimerLog;
@@ -46,11 +45,11 @@ public class TimerMetricManager {
     private TimerState timerState;
     private TimerWheel timerWheel;
     private TimerLog timerLog;
-    private MessageReader messageReader;
+    private MessageOperator messageReader;
     private MessageStoreConfig storeConfig;
     private final int timerLogFileSize;
-    public TimerMetricManager(TimerMetrics timerMetrics,MessageStoreConfig storeConfig,
-                              MessageReader messageReader,TimerWheel timerWheel,TimerLog timerLog,TimerState timerState) {
+    public TimerMetricManager(TimerMetrics timerMetrics, MessageStoreConfig storeConfig,
+                              MessageOperator messageReader, TimerWheel timerWheel, TimerLog timerLog, TimerState timerState) {
         this.timerMetrics = timerMetrics;
         this.storeConfig = storeConfig;
         this.messageReader = messageReader;
