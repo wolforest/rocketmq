@@ -32,11 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.topic.TopicValidator;
@@ -63,10 +59,6 @@ import org.apache.rocketmq.store.timer.service.TimerWheelLocator;
 import org.apache.rocketmq.store.timer.service.TimerFlushService;
 import org.apache.rocketmq.store.util.PerfCounter;
 
-import static org.apache.rocketmq.store.timer.TimerState.PUT_NEED_RETRY;
-import static org.apache.rocketmq.store.timer.TimerState.PUT_NO_RETRY;
-import static org.apache.rocketmq.store.timer.TimerState.PUT_OK;
-
 public class TimerMessageStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -89,9 +81,9 @@ public class TimerMessageStore {
     protected final PerfCounter.Ticks perfCounterTicks = new PerfCounter.Ticks(LOGGER);
 
 
-    protected final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
-    protected final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
-    protected final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    protected BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
+    protected BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    protected BlockingQueue<TimerRequest> timerMessageDeliverQueue;
 
 
     private final ScheduledExecutorService scheduler;
@@ -126,15 +118,7 @@ public class TimerMessageStore {
     public TimerMessageStore(final MessageStore messageStore, final MessageStoreConfig storeConfig,
                              TimerCheckpoint timerCheckpoint, TimerMetrics timerMetrics,
                              final BrokerStatsManager brokerStatsManager) throws IOException {
-        if (storeConfig.isTimerEnableDisruptor()) {
-            fetchedTimerMessageQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
-            timerMessageQueryQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
-            timerMessageDeliverQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
-        } else {
-            fetchedTimerMessageQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
-            timerMessageQueryQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
-            timerMessageDeliverQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
-        }
+        initQueues(storeConfig);
 
         this.messageStore = messageStore;
         this.storeConfig = storeConfig;
@@ -149,7 +133,7 @@ public class TimerMessageStore {
         this.timerCheckpoint = timerCheckpoint;
         this.timerState = new TimerState(timerCheckpoint, storeConfig, timerLog, messageStore);
         this.timerWheel = new TimerWheel(
-                getTimerWheelPath(storeConfig.getStorePathRootDir()), timerState.slotsTotal, precisionMs);
+                getTimerWheelFileFullName(storeConfig.getStorePathRootDir()), timerState.slotsTotal, precisionMs);
         timerMetricManager = new TimerMetricManager(timerMetrics, storeConfig, messageReader, timerWheel, timerLog, timerState);
         if (messageStore instanceof DefaultMessageStore) {
             scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
@@ -167,6 +151,18 @@ public class TimerMessageStore {
         this.brokerStatsManager = brokerStatsManager;
     }
 
+    private void initQueues(MessageStoreConfig storeConfig) {
+        if (storeConfig.isTimerEnableDisruptor()) {
+            fetchedTimerMessageQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
+            timerMessageQueryQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
+            timerMessageDeliverQueue = new DisruptorBlockingQueue<>(DEFAULT_CAPACITY);
+        } else {
+            fetchedTimerMessageQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
+            timerMessageQueryQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
+            timerMessageDeliverQueue = new LinkedBlockingDeque<>(DEFAULT_CAPACITY);
+        }
+    }
+
     public void initService() {
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
         timerMessageQueries = new TimerMessageQuery[getThreadNum];
@@ -178,7 +174,7 @@ public class TimerMessageStore {
         timerMessageDelivers = new TimerMessageDeliver[putThreadNum];
         for (int i = 0; i < timerMessageDelivers.length; i++) {
             timerMessageDelivers[i] = new TimerMessageDeliver(timerMetricManager, timerMessageDeliverQueue, perfCounterTicks, timerState,
-                    storeConfig, getServiceThreadName(), brokerStatsManager,escapeBridgeHook,messageStore);
+                    storeConfig, getServiceThreadName(), brokerStatsManager, escapeBridgeHook, messageStore);
         }
         timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, getServiceThreadName());
         timerWheelLocator = new TimerWheelLocator(storeConfig, timerWheel, timerLog, timerMetricManager,
@@ -202,7 +198,7 @@ public class TimerMessageStore {
         return load;
     }
 
-    public static String getTimerWheelPath(final String rootDir) {
+    public static String getTimerWheelFileFullName(final String rootDir) {
         return rootDir + File.separator + "timerwheel";
     }
 
