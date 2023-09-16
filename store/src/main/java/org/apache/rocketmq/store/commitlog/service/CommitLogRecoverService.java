@@ -50,6 +50,15 @@ public class CommitLogRecoverService {
         this.defaultMessageStore.destroyLogics();
     }
 
+    private int getLastThirdIndex(List<MappedFile> mappedFiles) {
+        int index = mappedFiles.size() - 3;
+        if (index < 0) {
+            index = 0;
+        }
+
+        return index;
+    }
+
     /**
      * When the normal exit, data recovery, all memory data have been flush
      */
@@ -63,10 +72,7 @@ public class CommitLogRecoverService {
         }
 
         // Began to recover from the last third file
-        int index = mappedFiles.size() - 3;
-        if (index < 0) {
-            index = 0;
-        }
+        int index = getLastThirdIndex(mappedFiles);
 
         MappedFile mappedFile = mappedFiles.get(index);
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
