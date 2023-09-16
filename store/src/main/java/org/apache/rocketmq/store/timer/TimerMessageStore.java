@@ -198,10 +198,9 @@ public class TimerMessageStore {
                 timerState,
                 storeConfig,
                 messageOperator,
-                timerCheckpoint,
                 fetchedTimerMessageQueue,
                 perfCounterTicks
-                );
+        );
         timerWheelLocator = new TimerWheelLocator(
                 storeConfig,
                 timerWheel,

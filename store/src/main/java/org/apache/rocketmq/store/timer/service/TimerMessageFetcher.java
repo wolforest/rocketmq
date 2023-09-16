@@ -57,7 +57,6 @@ public class TimerMessageFetcher extends ServiceThread {
             TimerState timerState,
             MessageStoreConfig storeConfig,
             MessageOperator messageOperator,
-            TimerCheckpoint timerCheckpoint,
             BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
             PerfCounter.Ticks perfCounterTicks) {
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
