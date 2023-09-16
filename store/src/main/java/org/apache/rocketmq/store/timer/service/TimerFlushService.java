@@ -43,7 +43,7 @@ public class TimerFlushService extends ServiceThread {
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm:ss");
     private TimerMessageStore timerMessageStore;
-    private BlockingQueue<TimerRequest> enqueuePutQueue;
+    private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
     private BlockingQueue<TimerRequest> dequeuePutQueue;
     private MessageStoreConfig storeConfig;
@@ -58,7 +58,7 @@ public class TimerFlushService extends ServiceThread {
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue
     ) {
         this.timerMessageStore = timerMessageStore;
-        enqueuePutQueue = fetchedTimerMessageQueue;
+        this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         dequeueGetQueue = timerMessageQueryQueue;
         dequeuePutQueue = timerMessageDeliverQueue;
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
@@ -103,7 +103,7 @@ public class TimerFlushService extends ServiceThread {
                             storeConfig.getBrokerRole(),
                             format(pointer.commitReadTimeMs), format(pointer.currReadTimeMs), format(pointer.currWriteTimeMs), timerMessageStore.getDequeueBehind(),
                             tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerCheckpoint.getMasterTimerQueueOffset() - tmpQueueOffset,
-                            enqueuePutQueue.size(), dequeueGetQueue.size(), dequeuePutQueue.size(), timerMessageStore.getAllCongestNum(), format(pointer.lastEnqueueButExpiredStoreTime));
+                            fetchedTimerMessageQueue.size(), dequeueGetQueue.size(), dequeuePutQueue.size(), timerMessageStore.getAllCongestNum(), format(pointer.lastEnqueueButExpiredStoreTime));
                 }
                 timerMetrics.persist();
                 waitForRunning(storeConfig.getTimerFlushIntervalMs());
