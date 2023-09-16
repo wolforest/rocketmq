@@ -88,12 +88,14 @@ public class CommitLogRecoverService {
             if (dispatchRequest.isSuccess() && size > 0) {
                 lastValidMsgPhyOffset = processOffset + mappedFileOffset;
                 mappedFileOffset += size;
+                // below dispatching action is useless, it's better to be deleted
                 this.commitLog.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, false);
             }
             // Come the end of the file, switch to the next file Since the
             // return 0 representatives met last hole,
             // this can not be included in truncate offset
             else if (dispatchRequest.isSuccess() && size == 0) {
+                // below dispatching action is useless, it's better to be deleted
                 this.commitLog.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, true);
                 index++;
                 if (index >= mappedFiles.size()) {
