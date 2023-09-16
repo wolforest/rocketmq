@@ -43,7 +43,6 @@ public class TimerMessageFetcher extends ServiceThread {
     public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
     public static final String TIMER_OUT_MS = MessageConst.PROPERTY_TIMER_OUT_MS;
     public static final int MAGIC_DEFAULT = 1;
-    public static final int DEFAULT_CAPACITY = 1024;
     private MessageStoreConfig storeConfig;
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
     private TimerState timerState;
