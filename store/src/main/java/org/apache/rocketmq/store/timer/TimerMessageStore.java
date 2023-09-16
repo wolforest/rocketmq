@@ -177,7 +177,7 @@ public class TimerMessageStore {
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
         timerMessageDelivers = new TimerMessageDeliver[putThreadNum];
         for (int i = 0; i < timerMessageDelivers.length; i++) {
-            timerMessageDelivers[i] = new TimerMessageDeliver(this, timerMetricManager, timerMessageDeliverQueue, perfCounterTicks, timerState,
+            timerMessageDelivers[i] = new TimerMessageDeliver(timerMetricManager, timerMessageDeliverQueue, perfCounterTicks, timerState,
                     storeConfig, getServiceThreadName(), brokerStatsManager,escapeBridgeHook,messageStore);
         }
         timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, getServiceThreadName());
