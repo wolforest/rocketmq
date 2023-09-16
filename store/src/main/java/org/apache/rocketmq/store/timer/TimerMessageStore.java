@@ -165,12 +165,6 @@ public class TimerMessageStore {
     }
 
     public void initService() {
-        timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, getServiceThreadName());
-        timerWheelLocator = new TimerWheelLocator(storeConfig, timerWheel, timerLog, timerMetricManager, fetchedTimerMessageQueue, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState, perfCounterTicks, getServiceThreadName());
-        dequeueWarmService = new TimerDequeueWarmService(this);
-        timerWheelFetcher = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName(),timerMessageQueryQueue,timerMessageDeliverQueue,timerMessageDelivers,timerMessageQueries);
-        timerFlushService = new TimerFlushService(this);
-
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
         timerMessageQueries = new TimerMessageQuery[getThreadNum];
         for (int i = 0; i < timerMessageQueries.length; i++) {
@@ -180,8 +174,19 @@ public class TimerMessageStore {
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
         timerMessageDelivers = new TimerMessageDeliver[putThreadNum];
         for (int i = 0; i < timerMessageDelivers.length; i++) {
-            timerMessageDelivers[i] = new TimerMessageDeliver(this);
+            timerMessageDelivers[i] = new TimerMessageDeliver(this,timerMetricManager);
         }
+        timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, getServiceThreadName());
+        timerWheelLocator = new TimerWheelLocator(storeConfig, timerWheel, timerLog, timerMetricManager,
+                fetchedTimerMessageQueue, timerMessageDeliverQueue,
+                timerMessageDelivers, timerMessageQueries, timerState, perfCounterTicks, getServiceThreadName());
+        dequeueWarmService = new TimerDequeueWarmService(this);
+        timerWheelFetcher = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName(),
+                timerMessageQueryQueue,timerMessageDeliverQueue,
+                timerMessageDelivers,timerMessageQueries);
+        timerFlushService = new TimerFlushService(this);
+
+
     }
 
     public boolean load() {

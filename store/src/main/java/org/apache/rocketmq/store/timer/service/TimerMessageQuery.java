@@ -55,13 +55,12 @@ public class TimerMessageQuery extends AbstractStateService {
     public TimerMessageQuery(TimerState timerState, TimerCheckpoint timerCheckpoint, MessageReader messageReader,
                              PerfCounter.Ticks perfCounterTicks, MessageStoreConfig storeConfig,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue, BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
-                            String serviceThreadName
+                             String serviceThreadName
     ) {
         this.messageReader = messageReader;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.perfCounterTicks = perfCounterTicks;
-        this.timerState = timerState;
         this.storeConfig = storeConfig;
         this.timerCheckpoint = timerCheckpoint;
         this.timerState = timerState;

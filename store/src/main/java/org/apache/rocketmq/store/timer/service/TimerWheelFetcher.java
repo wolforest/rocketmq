@@ -119,6 +119,7 @@ public class TimerWheelFetcher extends ServiceThread {
     }
 
     public int dequeue() throws Exception {
+
         if (storeConfig.isTimerStopDequeue()) {
             return -1;
         }
@@ -214,11 +215,12 @@ public class TimerWheelFetcher extends ServiceThread {
             timerState.checkDeliverQueueLatch(normalLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (timerState.dequeueStatusChangeFlag) {
-                return -1;
+                 return -1;
             }
             if (!timerState.isRunningDequeue()) {
-                return -1;
+                  return -1;
             }
+
             timerState.moveReadTime(precisionMs);
         } catch (Throwable t) {
             LOGGER.error("Unknown error in dequeue process", t);

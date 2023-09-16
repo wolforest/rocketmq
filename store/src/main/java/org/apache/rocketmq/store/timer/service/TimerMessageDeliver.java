@@ -50,13 +50,14 @@ public class TimerMessageDeliver extends AbstractStateService {
     private TimerState pointer;
     private MessageStoreConfig storeConfig;
     private TimerMetricManager metricManager;
-    public TimerMessageDeliver(TimerMessageStore timerMessageStore) {
+    public TimerMessageDeliver(TimerMessageStore timerMessageStore,TimerMetricManager timerMetricManager) {
         this.timerMessageStore = timerMessageStore;
         timerMessageDeliverQueue = timerMessageStore.getTimerMessageDeliverQueue();
         perfCounterTicks = timerMessageStore.getPerfCounterTicks();
         pointer = timerMessageStore.getTimerState();
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
         timerCheckpoint = timerMessageStore.getTimerCheckpoint();
+        this.metricManager = timerMetricManager;
     }
 
 
@@ -75,24 +76,29 @@ public class TimerMessageDeliver extends AbstractStateService {
                 boolean doRes = false;
                 boolean tmpDequeueChangeFlag = false;
                 try {
+
                     while (!isStopped() && !doRes) {
                         if (!pointer.isRunningDequeue()) {
                             pointer.dequeueStatusChangeFlag = true;
                             tmpDequeueChangeFlag = true;
                             break;
                         }
+
                         try {
                             perfCounterTicks.startTick(DEQUEUE_PUT);
                             DefaultStoreMetricsManager.incTimerDequeueCount(getRealTopic(tr.getMsg()));
                             metricManager.addMetric(tr.getMsg(), -1);
                             MessageExtBrokerInner msg = timerMessageStore.convert(tr.getMsg(), tr.getEnqueueTime(), timerMessageStore.timerState.needRoll(tr.getMagic()));
+
                             doRes = PUT_NEED_RETRY != timerMessageStore.doPut(msg, timerMessageStore.timerState.needRoll(tr.getMagic()));
+
                             while (!doRes && !isStopped()) {
                                 if (!pointer.isRunningDequeue()) {
                                     pointer.dequeueStatusChangeFlag = true;
                                     tmpDequeueChangeFlag = true;
                                     break;
                                 }
+
                                 doRes = PUT_NEED_RETRY != timerMessageStore.doPut(msg, timerMessageStore.timerState.needRoll(tr.getMagic()));
                                 Thread.sleep(500L * timerMessageStore.getPrecisionMs() / 1000);
                             }
