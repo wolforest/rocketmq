@@ -51,6 +51,30 @@ public class MainBatchDispatchRequestService extends ServiceThread {
             new ThreadPoolExecutor.AbortPolicy());
     }
 
+    @Override
+    public void run() {
+        LOGGER.info(this.getServiceName() + " service started");
+
+        while (!this.isStopped()) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(1);
+                pollBatchDispatchRequest();
+            } catch (Exception e) {
+                LOGGER.warn(this.getServiceName() + " service has exception. ", e);
+            }
+        }
+
+        LOGGER.info(this.getServiceName() + " service end");
+    }
+
+    @Override
+    public String getServiceName() {
+        if (messageStore.getBrokerConfig().isInBrokerContainer()) {
+            return messageStore.getBrokerIdentity().getIdentifier() + MainBatchDispatchRequestService.class.getSimpleName();
+        }
+        return MainBatchDispatchRequestService.class.getSimpleName();
+    }
+
     private void pollBatchDispatchRequest() {
         try {
             if (!messageStore.getBatchDispatchRequestQueue().isEmpty()) {
@@ -80,30 +104,6 @@ public class MainBatchDispatchRequestService extends ServiceThread {
         } catch (Exception e) {
             LOGGER.warn(this.getServiceName() + " service has exception. ", e);
         }
-    }
-
-    @Override
-    public void run() {
-        LOGGER.info(this.getServiceName() + " service started");
-
-        while (!this.isStopped()) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(1);
-                pollBatchDispatchRequest();
-            } catch (Exception e) {
-                LOGGER.warn(this.getServiceName() + " service has exception. ", e);
-            }
-        }
-
-        LOGGER.info(this.getServiceName() + " service end");
-    }
-
-    @Override
-    public String getServiceName() {
-        if (messageStore.getBrokerConfig().isInBrokerContainer()) {
-            return messageStore.getBrokerIdentity().getIdentifier() + MainBatchDispatchRequestService.class.getSimpleName();
-        }
-        return MainBatchDispatchRequestService.class.getSimpleName();
     }
 
 }

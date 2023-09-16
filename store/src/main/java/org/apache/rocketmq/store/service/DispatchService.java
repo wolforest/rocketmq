@@ -37,6 +37,22 @@ public class DispatchService extends ServiceThread {
         this.messageStore = messageStore;
     }
 
+    @Override
+    public void run() {
+        LOGGER.info(this.getServiceName() + " service started");
+
+        while (!this.isStopped()) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(1);
+                dispatch();
+            } catch (Exception e) {
+                LOGGER.warn(this.getServiceName() + " service has exception. ", e);
+            }
+        }
+
+        LOGGER.info(this.getServiceName() + " service end");
+    }
+
     // dispatchRequestsList:[
     //      {dispatchRequests:[{dispatchRequest}, {dispatchRequest}]},
     //      {dispatchRequests:[{dispatchRequest}, {dispatchRequest}]}]
@@ -84,22 +100,6 @@ public class DispatchService extends ServiceThread {
                     dispatchRequest.getTopic())
                 .add(dispatchRequest.getMsgSize());
         }
-    }
-
-    @Override
-    public void run() {
-        LOGGER.info(this.getServiceName() + " service started");
-
-        while (!this.isStopped()) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(1);
-                dispatch();
-            } catch (Exception e) {
-                LOGGER.warn(this.getServiceName() + " service has exception. ", e);
-            }
-        }
-
-        LOGGER.info(this.getServiceName() + " service end");
     }
 
     @Override
