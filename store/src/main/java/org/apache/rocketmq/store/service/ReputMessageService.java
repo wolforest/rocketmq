@@ -79,17 +79,8 @@ public class ReputMessageService extends ServiceThread {
         if (queues.length != queueOffsets.length) {
             return;
         }
-        for (int i = 0; i < queues.length; i++) {
-            String queueName = queues[i];
-            long queueOffset = Long.parseLong(queueOffsets[i]);
-            int queueId = dispatchRequest.getQueueId();
-            if (messageStore.getMessageStoreConfig().isEnableLmq() && MixAll.isLmq(queueName)) {
-                queueId = 0;
-            }
-            messageStore.getMessageArrivingListener().arriving(
-                queueName, queueId, queueOffset + 1, dispatchRequest.getTagsCode(),
-                dispatchRequest.getStoreTimestamp(), dispatchRequest.getBitMap(), dispatchRequest.getPropertiesMap());
-        }
+
+        notifyMessageArrivingListener(queues, queueOffsets, dispatchRequest);
     }
 
     @Override
@@ -213,6 +204,20 @@ public class ReputMessageService extends ServiceThread {
         addDispatchCount(dispatchRequest);
 
         return readSize;
+    }
+
+    private void notifyMessageArrivingListener(String[] queues, String[] queueOffsets, DispatchRequest dispatchRequest) {
+        for (int i = 0; i < queues.length; i++) {
+            String queueName = queues[i];
+            long queueOffset = Long.parseLong(queueOffsets[i]);
+            int queueId = dispatchRequest.getQueueId();
+            if (messageStore.getMessageStoreConfig().isEnableLmq() && MixAll.isLmq(queueName)) {
+                queueId = 0;
+            }
+            messageStore.getMessageArrivingListener().arriving(
+                queueName, queueId, queueOffset + 1, dispatchRequest.getTagsCode(),
+                dispatchRequest.getStoreTimestamp(), dispatchRequest.getBitMap(), dispatchRequest.getPropertiesMap());
+        }
     }
 
     private void fixReputOffset(SelectMappedBufferResult result, int readSize) {
