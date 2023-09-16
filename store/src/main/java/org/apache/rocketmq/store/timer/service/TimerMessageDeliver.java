@@ -16,8 +16,11 @@
  */
 package org.apache.rocketmq.store.timer.service;
 
+import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
+import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -94,7 +97,7 @@ public class TimerMessageDeliver extends AbstractStateService {
                             perfCounterTicks.startTick(DEQUEUE_PUT);
                             DefaultStoreMetricsManager.incTimerDequeueCount(getRealTopic(tr.getMsg()));
                             metricManager.addMetric(tr.getMsg(), -1);
-                            MessageExtBrokerInner msg = timerMessageStore.convert(tr.getMsg(), tr.getEnqueueTime(), timerMessageStore.timerState.needRoll(tr.getMagic()));
+                            MessageExtBrokerInner msg = convert(tr.getMsg(), tr.getEnqueueTime(), timerMessageStore.timerState.needRoll(tr.getMagic()));
 
                             doRes = PUT_NEED_RETRY != timerMessageStore.doPut(msg, timerMessageStore.timerState.needRoll(tr.getMagic()));
 
@@ -136,5 +139,52 @@ public class TimerMessageDeliver extends AbstractStateService {
         }
         return msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
     }
+
+    public MessageExtBrokerInner convert(MessageExt messageExt, long enqueueTime, boolean needRoll) {
+        if (enqueueTime != -1) {
+            MessageAccessor.putProperty(messageExt, TimerState.TIMER_ENQUEUE_MS, enqueueTime + "");
+        }
+        if (needRoll) {
+            if (messageExt.getProperty(TimerState.TIMER_ROLL_TIMES) != null) {
+                MessageAccessor.putProperty(messageExt, TimerState.TIMER_ROLL_TIMES, Integer.parseInt(messageExt.getProperty(TimerState.TIMER_ROLL_TIMES)) + 1 + "");
+            } else {
+                MessageAccessor.putProperty(messageExt, TimerState.TIMER_ROLL_TIMES, 1 + "");
+            }
+        }
+        MessageAccessor.putProperty(messageExt, TimerState.TIMER_DEQUEUE_MS, System.currentTimeMillis() + "");
+        MessageExtBrokerInner message = convertMessage(messageExt, needRoll);
+        return message;
+    }
+    public MessageExtBrokerInner convertMessage(MessageExt msgExt, boolean needRoll) {
+        MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
+        msgInner.setBody(msgExt.getBody());
+        msgInner.setFlag(msgExt.getFlag());
+        MessageAccessor.setProperties(msgInner, msgExt.getProperties());
+        TopicFilterType topicFilterType = MessageExt.parseTopicFilterType(msgInner.getSysFlag());
+        long tagsCodeValue =
+                MessageExtBrokerInner.tagsString2tagsCode(topicFilterType, msgInner.getTags());
+        msgInner.setTagsCode(tagsCodeValue);
+        msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgExt.getProperties()));
+
+        msgInner.setSysFlag(msgExt.getSysFlag());
+        msgInner.setBornTimestamp(msgExt.getBornTimestamp());
+        msgInner.setBornHost(msgExt.getBornHost());
+        msgInner.setStoreHost(msgExt.getStoreHost());
+        msgInner.setReconsumeTimes(msgExt.getReconsumeTimes());
+
+        msgInner.setWaitStoreMsgOK(false);
+
+        if (needRoll) {
+            msgInner.setTopic(msgExt.getTopic());
+            msgInner.setQueueId(msgExt.getQueueId());
+        } else {
+            msgInner.setTopic(msgInner.getProperty(MessageConst.PROPERTY_REAL_TOPIC));
+            msgInner.setQueueId(Integer.parseInt(msgInner.getProperty(MessageConst.PROPERTY_REAL_QUEUE_ID)));
+            MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_REAL_TOPIC);
+            MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_REAL_QUEUE_ID);
+        }
+        return msgInner;
+    }
+
 }
 

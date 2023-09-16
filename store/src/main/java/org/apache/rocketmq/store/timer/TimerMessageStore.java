@@ -582,22 +582,6 @@ public class TimerMessageStore {
     }
 
 
-    public MessageExtBrokerInner convert(MessageExt messageExt, long enqueueTime, boolean needRoll) {
-        if (enqueueTime != -1) {
-            MessageAccessor.putProperty(messageExt, TimerState.TIMER_ENQUEUE_MS, enqueueTime + "");
-        }
-        if (needRoll) {
-            if (messageExt.getProperty(TimerState.TIMER_ROLL_TIMES) != null) {
-                MessageAccessor.putProperty(messageExt, TimerState.TIMER_ROLL_TIMES, Integer.parseInt(messageExt.getProperty(TimerState.TIMER_ROLL_TIMES)) + 1 + "");
-            } else {
-                MessageAccessor.putProperty(messageExt, TimerState.TIMER_ROLL_TIMES, 1 + "");
-            }
-        }
-        MessageAccessor.putProperty(messageExt, TimerState.TIMER_DEQUEUE_MS, System.currentTimeMillis() + "");
-        MessageExtBrokerInner message = convertMessage(messageExt, needRoll);
-        return message;
-    }
-
     //0 succ; 1 fail, need retry; 2 fail, do not retry;
     public int doPut(MessageExtBrokerInner message, boolean roll) throws Exception {
 
@@ -649,36 +633,6 @@ public class TimerMessageStore {
         return PUT_NO_RETRY;
     }
 
-    public MessageExtBrokerInner convertMessage(MessageExt msgExt, boolean needRoll) {
-        MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
-        msgInner.setBody(msgExt.getBody());
-        msgInner.setFlag(msgExt.getFlag());
-        MessageAccessor.setProperties(msgInner, msgExt.getProperties());
-        TopicFilterType topicFilterType = MessageExt.parseTopicFilterType(msgInner.getSysFlag());
-        long tagsCodeValue =
-                MessageExtBrokerInner.tagsString2tagsCode(topicFilterType, msgInner.getTags());
-        msgInner.setTagsCode(tagsCodeValue);
-        msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgExt.getProperties()));
-
-        msgInner.setSysFlag(msgExt.getSysFlag());
-        msgInner.setBornTimestamp(msgExt.getBornTimestamp());
-        msgInner.setBornHost(msgExt.getBornHost());
-        msgInner.setStoreHost(msgExt.getStoreHost());
-        msgInner.setReconsumeTimes(msgExt.getReconsumeTimes());
-
-        msgInner.setWaitStoreMsgOK(false);
-
-        if (needRoll) {
-            msgInner.setTopic(msgExt.getTopic());
-            msgInner.setQueueId(msgExt.getQueueId());
-        } else {
-            msgInner.setTopic(msgInner.getProperty(MessageConst.PROPERTY_REAL_TOPIC));
-            msgInner.setQueueId(Integer.parseInt(msgInner.getProperty(MessageConst.PROPERTY_REAL_QUEUE_ID)));
-            MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_REAL_TOPIC);
-            MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_REAL_QUEUE_ID);
-        }
-        return msgInner;
-    }
 
     private long formatTimeMs(long timeMs) {
         return timeMs / precisionMs * precisionMs;
