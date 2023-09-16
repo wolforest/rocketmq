@@ -226,7 +226,6 @@ public class TimerMessageStore {
                 timerMessageDelivers,
                 timerMessageQueries);
         timerFlushService = new TimerFlushService(
-                this,
                 messageStore,
                 fetchedTimerMessageQueue,
                 timerMessageQueryQueue,

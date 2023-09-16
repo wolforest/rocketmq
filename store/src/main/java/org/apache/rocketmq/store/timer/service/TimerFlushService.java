@@ -54,8 +54,7 @@ public class TimerFlushService extends ServiceThread {
     private TimerLog timerLog;
     private TimerWheel timerWheel;
 
-    public TimerFlushService(TimerMessageStore timerMessageStore,
-                             MessageStore messageStore,
+    public TimerFlushService(MessageStore messageStore,
                              BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
                              BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
