@@ -370,12 +370,12 @@ public class TimerMessageStore {
                     if (magic == TimerLog.BLANK_MAGIC_CODE) {
                         break;
                     }
-                    if (checkTimerLog && (!isMagicOK(magic) || TimerLog.UNIT_SIZE != size)) {
+                    if (checkTimerLog && (!TimerState.isMagicOK(magic) || TimerLog.UNIT_SIZE != size)) {
                         stopCheck = true;
                         break;
                     }
                     long delayTime = bf.getLong() + bf.getInt();
-                    if (TimerLog.UNIT_SIZE == size && isMagicOK(magic)) {
+                    if (TimerLog.UNIT_SIZE == size && TimerState.isMagicOK(magic)) {
                         timerWheel.reviseSlot(delayTime, TimerWheel.IGNORE, sbr.getStartOffset() + position, true);
                     }
                 } catch (Exception e) {
@@ -394,10 +394,6 @@ public class TimerMessageStore {
             timerLog.getMappedFileQueue().truncateDirtyFiles(checkOffset);
         }
         return checkOffset;
-    }
-
-    public static boolean isMagicOK(int magic) {
-        return (magic | 0xF) == 0xF;
     }
 
     public void start() {

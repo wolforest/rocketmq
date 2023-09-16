@@ -158,6 +158,9 @@ public class TimerState {
         return (magic & MAGIC_ROLL) != 0;
     }
 
+    public static boolean isMagicOK(int magic) {
+        return (magic | 0xF) == 0xF;
+    }
     public boolean checkStateForTimerMessageDelivers(TimerMessageDeliver[] timerMessageDelivers, int state) {
         for (AbstractStateService service : timerMessageDelivers) {
             if (!service.isState(state)) {
