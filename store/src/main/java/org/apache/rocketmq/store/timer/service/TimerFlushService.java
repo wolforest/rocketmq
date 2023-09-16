@@ -80,8 +80,8 @@ public class TimerFlushService extends ServiceThread {
     @Override
     public String getServiceName() {
         String brokerIdentifier = "";
-        if (timerMessageStore.getMessageStore() instanceof DefaultMessageStore && ((DefaultMessageStore) timerMessageStore.getMessageStore()).getBrokerConfig().isInBrokerContainer()) {
-            brokerIdentifier = ((DefaultMessageStore) timerMessageStore.getMessageStore()).getBrokerConfig().getIdentifier();
+        if (messageStore instanceof DefaultMessageStore && ((DefaultMessageStore)messageStore).getBrokerConfig().isInBrokerContainer()) {
+            brokerIdentifier = ((DefaultMessageStore) messageStore).getBrokerConfig().getIdentifier();
         }
         return brokerIdentifier + this.getClass().getSimpleName();
     }
@@ -104,7 +104,7 @@ public class TimerFlushService extends ServiceThread {
                 if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
                     start = System.currentTimeMillis();
                     long tmpQueueOffset = timerState.currQueueOffset;
-                    ConsumeQueue cq = (ConsumeQueue) timerMessageStore.getMessageStore().getConsumeQueue(TIMER_TOPIC, 0);
+                    ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TIMER_TOPIC, 0);
                     long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
                     LOGGER.info("[{}]Timer progress-check commitRead:[{}] currRead:[{}] currWrite:[{}] readBehind:{} currReadOffset:{} offsetBehind:{} behindMaster:{} " +
                                     "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
