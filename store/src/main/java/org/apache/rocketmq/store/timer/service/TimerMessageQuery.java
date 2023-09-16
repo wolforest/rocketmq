@@ -25,7 +25,6 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.timer.TimerState;
-import org.apache.rocketmq.store.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.util.PerfCounter;
 
@@ -39,32 +38,27 @@ public class TimerMessageQuery extends AbstractStateService {
 
     @Override
     public String getServiceName() {
-        return serviceThreadName + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
-    private String serviceThreadName;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     private PerfCounter.Ticks perfCounterTicks;
-    private TimerCheckpoint timerCheckpoint;
     private TimerState timerState;
     private MessageStoreConfig storeConfig;
 
     private MessageReader messageReader;
 
-    public TimerMessageQuery(TimerState timerState, TimerCheckpoint timerCheckpoint, MessageReader messageReader,
+    public TimerMessageQuery(TimerState timerState, MessageReader messageReader,
                              PerfCounter.Ticks perfCounterTicks, MessageStoreConfig storeConfig,
-                             BlockingQueue<TimerRequest> timerMessageDeliverQueue, BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
-                             String serviceThreadName
+                             BlockingQueue<TimerRequest> timerMessageDeliverQueue, BlockingQueue<List<TimerRequest>> timerMessageQueryQueue
     ) {
         this.messageReader = messageReader;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.perfCounterTicks = perfCounterTicks;
         this.storeConfig = storeConfig;
-        this.timerCheckpoint = timerCheckpoint;
         this.timerState = timerState;
-        this.serviceThreadName = serviceThreadName;
     }
 
     @Override
