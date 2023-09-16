@@ -83,7 +83,7 @@ public class TimerMessageQuery extends AbstractStateService {
                     boolean doRes = false;
                     try {
                         long start = System.currentTimeMillis();
-                        MessageExt msgExt = messageReader.getMessageByCommitOffset(tr.getOffsetPy(), tr.getSizePy());
+                        MessageExt msgExt = messageReader.readMessageByCommitOffset(tr.getOffsetPy(), tr.getSizePy());
                         if (null != msgExt) {
                             if (timerState.needDelete(tr.getMagic()) && !timerState.needRoll(tr.getMagic())) {
                                 if (msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY) != null && tr.getDeleteList() != null) {

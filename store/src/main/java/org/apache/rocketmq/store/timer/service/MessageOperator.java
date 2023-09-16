@@ -43,7 +43,7 @@ public class MessageOperator {
         };
 
     }
-    public MessageExt getMessageByCommitOffset(long offsetPy, int sizePy) {
+    public MessageExt readMessageByCommitOffset(long offsetPy, int sizePy) {
         for (int i = 0; i < 3; i++) {
             MessageExt msgExt = null;
             bufferLocal.get().position(0);

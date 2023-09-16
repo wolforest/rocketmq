@@ -335,7 +335,7 @@ public class TimerMessageStore {
         try {
             long offsetPy = selectRes.getByteBuffer().getLong();
             int sizePy = selectRes.getByteBuffer().getInt();
-            MessageExt messageExt = messageReader.getMessageByCommitOffset(offsetPy, sizePy);
+            MessageExt messageExt = messageReader.readMessageByCommitOffset(offsetPy, sizePy);
             if (null == messageExt) {
                 return -1;
             }

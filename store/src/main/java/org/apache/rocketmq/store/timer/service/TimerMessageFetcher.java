@@ -141,7 +141,7 @@ public class TimerMessageFetcher extends ServiceThread {
                     long offsetPy = bufferCQ.getByteBuffer().getLong();
                     int sizePy = bufferCQ.getByteBuffer().getInt();
                     bufferCQ.getByteBuffer().getLong(); //tags code
-                    MessageExt msgExt = messageReader.getMessageByCommitOffset(offsetPy, sizePy);
+                    MessageExt msgExt = messageReader.readMessageByCommitOffset(offsetPy, sizePy);
                     if (null == msgExt) {
                         perfCounterTicks.getCounter("enqueue_get_miss");
                     } else {

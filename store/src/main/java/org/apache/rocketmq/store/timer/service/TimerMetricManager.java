@@ -152,7 +152,7 @@ public class TimerMetricManager {
                     }
                     String topic = null;
                     if (smallHashCollisions.contains(hashCode)) {
-                        MessageExt messageExt = messageReader.getMessageByCommitOffset(offsetPy, sizePy);
+                        MessageExt messageExt = messageReader.readMessageByCommitOffset(offsetPy, sizePy);
                         if (null != messageExt) {
                             topic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
                         }
