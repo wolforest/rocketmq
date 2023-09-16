@@ -49,7 +49,7 @@ public class TimerMessageDeliver extends AbstractStateService {
 
     @Override
     public String getServiceName() {
-        return serviceThreadName + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
@@ -57,14 +57,13 @@ public class TimerMessageDeliver extends AbstractStateService {
     private TimerState timerState;
     private MessageStoreConfig storeConfig;
     private TimerMetricManager metricManager;
-    private String serviceThreadName;
     private BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
     private MessageStore messageStore;
 
     public TimerMessageDeliver(TimerMetricManager timerMetricManager,
                                BlockingQueue<TimerRequest> timerMessageDeliverQueue, PerfCounter.Ticks perfCounterTicks,
-                               TimerState timerState, MessageStoreConfig storeConfig, String serviceThreadName, BrokerStatsManager brokerStatsManager,
+                               TimerState timerState, MessageStoreConfig storeConfig, BrokerStatsManager brokerStatsManager,
                                Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook, MessageStore messageStore
     ) {
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
@@ -72,7 +71,6 @@ public class TimerMessageDeliver extends AbstractStateService {
         this.timerState = timerState;
         this.storeConfig = storeConfig;
         this.metricManager = timerMetricManager;
-        this.serviceThreadName = serviceThreadName;
         this.brokerStatsManager = brokerStatsManager;
         this.escapeBridgeHook = escapeBridgeHook;
         this.messageStore = messageStore;
@@ -246,7 +244,6 @@ public class TimerMessageDeliver extends AbstractStateService {
         }
         return PUT_NO_RETRY;
     }
-
 
 
 }
