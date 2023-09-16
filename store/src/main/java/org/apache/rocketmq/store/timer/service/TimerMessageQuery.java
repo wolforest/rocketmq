@@ -26,7 +26,6 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerCheckpoint;
-import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.util.PerfCounter;
 
@@ -37,30 +36,37 @@ import java.util.concurrent.TimeUnit;
 public class TimerMessageQuery extends AbstractStateService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+
     @Override
     public String getServiceName() {
-        return timerMessageStore.getServiceThreadName() + this.getClass().getSimpleName();
+        return serviceThreadName + this.getClass().getSimpleName();
     }
 
-    private TimerMessageStore timerMessageStore;
-    private BlockingQueue<TimerRequest> dequeuePutQueue;
+    private String serviceThreadName;
+    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     private PerfCounter.Ticks perfCounterTicks;
     private TimerCheckpoint timerCheckpoint;
-    private TimerState pointer;
+    private TimerState timerState;
     private MessageStoreConfig storeConfig;
-    private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
+
     private MessageReader messageReader;
-    public TimerMessageQuery(TimerMessageStore timerMessageStore,MessageReader messageReader) {
-        this.timerMessageStore = timerMessageStore;
+
+    public TimerMessageQuery(TimerState timerState, TimerCheckpoint timerCheckpoint, MessageReader messageReader,
+                             PerfCounter.Ticks perfCounterTicks, MessageStoreConfig storeConfig,
+                             BlockingQueue<TimerRequest> timerMessageDeliverQueue, BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
+                             String serviceThreadName
+    ) {
         this.messageReader = messageReader;
-        dequeuePutQueue = timerMessageStore.getDequeuePutQueue();
-        dequeueGetQueue = timerMessageStore.getDequeueGetQueue();
-        perfCounterTicks = timerMessageStore.getPerfCounterTicks();
-        pointer = timerMessageStore.getPointer();
-        storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
-        timerCheckpoint = timerMessageStore.getTimerCheckpoint();
-        timerMessageStore.getDequeueGetQueue();
+        this.timerMessageDeliverQueue = timerMessageDeliverQueue;
+        this.timerMessageQueryQueue = timerMessageQueryQueue;
+        this.perfCounterTicks = perfCounterTicks;
+        this.storeConfig = storeConfig;
+        this.timerCheckpoint = timerCheckpoint;
+        this.timerState = timerState;
+        this.serviceThreadName = serviceThreadName;
     }
+
     @Override
     public void run() {
         setState(AbstractStateService.START);
@@ -68,7 +74,7 @@ public class TimerMessageQuery extends AbstractStateService {
         while (!this.isStopped()) {
             try {
                 setState(AbstractStateService.WAITING);
-                List<TimerRequest> trs = dequeueGetQueue.poll(100L * timerMessageStore.getPrecisionMs() / 1000, TimeUnit.MILLISECONDS);
+                List<TimerRequest> trs = timerMessageQueryQueue.poll(100L * timerState.precisionMs / 1000, TimeUnit.MILLISECONDS);
                 if (null == trs || trs.size() == 0) {
                     continue;
                 }
@@ -80,7 +86,7 @@ public class TimerMessageQuery extends AbstractStateService {
                         long start = System.currentTimeMillis();
                         MessageExt msgExt = messageReader.getMessageByCommitOffset(tr.getOffsetPy(), tr.getSizePy());
                         if (null != msgExt) {
-                            if (timerMessageStore.needDelete(tr.getMagic()) && !timerMessageStore.needRoll(tr.getMagic())) {
+                            if (timerState.needDelete(tr.getMagic()) && !timerState.needRoll(tr.getMagic())) {
                                 if (msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY) != null && tr.getDeleteList() != null) {
                                     tr.getDeleteList().add(msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY));
                                 }
@@ -98,7 +104,7 @@ public class TimerMessageQuery extends AbstractStateService {
                                 } else {
                                     tr.setMsg(msgExt);
                                     while (!isStopped() && !doRes) {
-                                        doRes = dequeuePutQueue.offer(tr, 3, TimeUnit.SECONDS);
+                                        doRes = timerMessageDeliverQueue.offer(tr, 3, TimeUnit.SECONDS);
                                     }
                                 }
                             }

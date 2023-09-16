@@ -18,23 +18,79 @@ package org.apache.rocketmq.store.timer.service;
 
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageConst;
+import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.timer.Slot;
+import org.apache.rocketmq.store.timer.TimerLog;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
+import org.apache.rocketmq.store.timer.TimerRequest;
+import org.apache.rocketmq.store.timer.TimerState;
+import org.apache.rocketmq.store.timer.TimerWheel;
+import org.apache.rocketmq.store.util.PerfCounter;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CountDownLatch;
 
 public class TimerWheelFetcher extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private TimerMessageStore timerMessageStore;
-    private long shouldStartTime;
+    private MessageStoreConfig storeConfig;
+    private TimerState timerState;
+    private TimerWheel timerWheel;
+    private TimerLog timerLog;
 
-    public TimerWheelFetcher(TimerMessageStore timerMessageStore) {
-        this.timerMessageStore = timerMessageStore;
+
+    private PerfCounter.Ticks perfCounterTicks;
+    private String serviceThreadName;
+
+    private int commitLogFileSize;
+
+    private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private TimerMessageDeliver[] timerMessageDelivers;
+    private TimerMessageQuery[] timerMessageQueries;
+
+    private long shouldStartTime;
+    private int timerLogFileSize;
+    private int precisionMs;
+
+    public TimerWheelFetcher(MessageStoreConfig storeConfig, TimerState timerState,
+                             TimerWheel timerWheel, TimerLog timerLog,
+                             PerfCounter.Ticks perfCounterTicks, String serviceThreadName,
+                             BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
+                             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+                             TimerMessageDeliver[] timerMessageDelivers,
+                             TimerMessageQuery[] timerMessageQueries
+
+    ) {
+        this.storeConfig = storeConfig;
+        this.timerState = timerState;
+        this.timerWheel = timerWheel;
+        this.timerLog = timerLog;
+        this.perfCounterTicks = perfCounterTicks;
+        this.serviceThreadName = serviceThreadName;
+        this.timerMessageQueryQueue= timerMessageQueryQueue;
+        this.timerMessageDeliverQueue = timerMessageDeliverQueue;
+        this.timerMessageDelivers = timerMessageDelivers;
+        this.timerMessageQueries = timerMessageQueries;
+
+        timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
+        precisionMs = storeConfig.getTimerPrecisionMs();
+        commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
     }
 
     @Override
     public String getServiceName() {
-        return timerMessageStore.getServiceThreadName() + this.getClass().getSimpleName();
+        return serviceThreadName + this.getClass().getSimpleName();
     }
 
     public void start(long shouldStartTime) {
@@ -52,8 +108,8 @@ public class TimerWheelFetcher extends ServiceThread {
                     waitForRunning(1000);
                     continue;
                 }
-                if (-1 == timerMessageStore.dequeue()) {
-                    waitForRunning(100L * timerMessageStore.getPrecisionMs() / 1000);
+                if (-1 == dequeue()) {
+                    waitForRunning(100L * storeConfig.getTimerPrecisionMs() / 1000);
                 }
             } catch (Throwable e) {
                 LOGGER.error("Error occurred in " + getServiceName(), e);
@@ -61,5 +117,162 @@ public class TimerWheelFetcher extends ServiceThread {
         }
         LOGGER.info(this.getServiceName() + " service end");
     }
+
+    public int dequeue() throws Exception {
+
+        if (storeConfig.isTimerStopDequeue()) {
+            return -1;
+        }
+        if (!timerState.isRunningDequeue()) {
+            return -1;
+        }
+        if (timerState.currReadTimeMs >= timerState.currWriteTimeMs) {
+            return -1;
+        }
+
+        Slot slot = timerWheel.getSlot(timerState.currReadTimeMs);
+        if (-1 == slot.timeMs) {
+            timerState.moveReadTime(precisionMs);
+            return 0;
+        }
+        try {
+            //clear the flag
+            timerState.dequeueStatusChangeFlag = false;
+
+            long currOffsetPy = slot.lastPos;
+            Set<String> deleteUniqKeys = new ConcurrentSkipListSet<>();
+            LinkedList<TimerRequest> normalMsgStack = new LinkedList<>();
+            LinkedList<TimerRequest> deleteMsgStack = new LinkedList<>();
+            LinkedList<SelectMappedBufferResult> sbrs = new LinkedList<>();
+            SelectMappedBufferResult timeSbr = null;
+            //read the timer log one by one
+            while (currOffsetPy != -1) {
+                perfCounterTicks.startTick("dequeue_read_timerlog");
+                if (null == timeSbr || timeSbr.getStartOffset() > currOffsetPy) {
+                    timeSbr = timerLog.getWholeBuffer(currOffsetPy);
+                    if (null != timeSbr) {
+                        sbrs.add(timeSbr);
+                    }
+                }
+                if (null == timeSbr) {
+                    break;
+                }
+                long prevPos = -1;
+                try {
+                    int position = (int) (currOffsetPy % timerLogFileSize);
+                    timeSbr.getByteBuffer().position(position);
+                    timeSbr.getByteBuffer().getInt(); //size
+                    prevPos = timeSbr.getByteBuffer().getLong();
+                    int magic = timeSbr.getByteBuffer().getInt();
+                    long enqueueTime = timeSbr.getByteBuffer().getLong();
+                    long delayedTime = timeSbr.getByteBuffer().getInt() + enqueueTime;
+                    long offsetPy = timeSbr.getByteBuffer().getLong();
+                    int sizePy = timeSbr.getByteBuffer().getInt();
+                    TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, enqueueTime, magic);
+                    timerRequest.setDeleteList(deleteUniqKeys);
+                    if (needDelete(magic) && !needRoll(magic)) {
+                        deleteMsgStack.add(timerRequest);
+                    } else {
+                        normalMsgStack.addFirst(timerRequest);
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("Error in dequeue_read_timerlog", e);
+                } finally {
+                    currOffsetPy = prevPos;
+                    perfCounterTicks.endTick("dequeue_read_timerlog");
+                }
+            }
+            if (deleteMsgStack.size() == 0 && normalMsgStack.size() == 0) {
+                LOGGER.warn("dequeue time:{} but read nothing from timerLog", timerState.currReadTimeMs);
+            }
+            for (SelectMappedBufferResult sbr : sbrs) {
+                if (null != sbr) {
+                    sbr.release();
+                }
+            }
+            if (!timerState.isRunningDequeue()) {
+                return -1;
+            }
+            CountDownLatch deleteLatch = new CountDownLatch(deleteMsgStack.size());
+            //read the delete msg: the msg used to mark another msg is deleted
+            for (List<TimerRequest> deleteList : splitIntoLists(deleteMsgStack)) {
+                for (TimerRequest tr : deleteList) {
+                    tr.setLatch(deleteLatch);
+                }
+                timerMessageQueryQueue.put(deleteList);
+            }
+            //do we need to use loop with tryAcquire
+            timerState.checkDeliverQueueLatch(deleteLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
+
+            CountDownLatch normalLatch = new CountDownLatch(normalMsgStack.size());
+            //read the normal msg
+            for (List<TimerRequest> normalList : splitIntoLists(normalMsgStack)) {
+                for (TimerRequest tr : normalList) {
+                    tr.setLatch(normalLatch);
+                }
+                timerMessageQueryQueue.put(normalList);
+            }
+            timerState.checkDeliverQueueLatch(normalLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
+            // if master -> slave -> master, then the read time move forward, and messages will be lossed
+            if (timerState.dequeueStatusChangeFlag) {
+                 return -1;
+            }
+            if (!timerState.isRunningDequeue()) {
+                  return -1;
+            }
+
+            timerState.moveReadTime(precisionMs);
+        } catch (Throwable t) {
+            LOGGER.error("Unknown error in dequeue process", t);
+            if (storeConfig.isTimerSkipUnknownError()) {
+                timerState.moveReadTime(precisionMs);
+            }
+        }
+        return 1;
+    }
+
+    private List<List<TimerRequest>> splitIntoLists(List<TimerRequest> origin) {
+        //this method assume that the origin is not null;
+        List<List<TimerRequest>> lists = new LinkedList<>();
+        if (origin.size() < 100) {
+            lists.add(origin);
+            return lists;
+        }
+        List<TimerRequest> currList = null;
+        int fileIndexPy = -1;
+        int msgIndex = 0;
+        for (TimerRequest tr : origin) {
+            if (fileIndexPy != tr.getOffsetPy() / commitLogFileSize) {
+                msgIndex = 0;
+                if (null != currList && currList.size() > 0) {
+                    lists.add(currList);
+                }
+                currList = new LinkedList<>();
+                currList.add(tr);
+                fileIndexPy = (int) (tr.getOffsetPy() / commitLogFileSize);
+            } else {
+                currList.add(tr);
+                if (++msgIndex % 2000 == 0) {
+                    lists.add(currList);
+                    currList = new ArrayList<>();
+                }
+            }
+        }
+        if (null != currList && currList.size() > 0) {
+            lists.add(currList);
+        }
+        return lists;
+    }
+
+
+    public boolean needRoll(int magic) {
+        return (magic & TimerState.MAGIC_ROLL) != 0;
+    }
+
+    public boolean needDelete(int magic) {
+        return (magic & TimerState.MAGIC_DELETE) != 0;
+    }
+
+
 }
 
