@@ -63,6 +63,10 @@ import org.apache.rocketmq.store.timer.service.TimerWheelLocator;
 import org.apache.rocketmq.store.timer.service.TimerFlushService;
 import org.apache.rocketmq.store.util.PerfCounter;
 
+import static org.apache.rocketmq.store.timer.TimerState.PUT_NEED_RETRY;
+import static org.apache.rocketmq.store.timer.TimerState.PUT_NO_RETRY;
+import static org.apache.rocketmq.store.timer.TimerState.PUT_OK;
+
 public class TimerMessageStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -74,7 +78,6 @@ public class TimerMessageStore {
 
 
     public static final Random RANDOM = new Random();
-    public static final int PUT_OK = 0, PUT_NEED_RETRY = 1, PUT_NO_RETRY = 2;
 
     public static final int DEFAULT_CAPACITY = 1024;
 
