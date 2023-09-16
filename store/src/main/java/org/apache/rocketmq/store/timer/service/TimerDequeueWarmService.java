@@ -20,17 +20,14 @@ import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerState;
 
 public class TimerDequeueWarmService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private TimerMessageStore timerMessageStore;
     private TimerState timerState;
 
-    public TimerDequeueWarmService(TimerMessageStore timerMessageStore, TimerState timerState) {
-        this.timerMessageStore = timerMessageStore;
+    public TimerDequeueWarmService(TimerState timerState) {
         this.timerState = timerState;
     }
 
