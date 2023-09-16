@@ -43,7 +43,6 @@ public class TimerFlushService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm:ss");
-    private TimerMessageStore timerMessageStore;
     private MessageStore messageStore;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
@@ -60,11 +59,10 @@ public class TimerFlushService extends ServiceThread {
                              BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
                              BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
-                             MessageStoreConfig storeConfig,TimerState timerState,
-                             TimerMetrics timerMetrics,TimerCheckpoint timerCheckpoint,
-                             TimerLog timerLog,TimerWheel timerWheel
+                             MessageStoreConfig storeConfig, TimerState timerState,
+                             TimerMetrics timerMetrics, TimerCheckpoint timerCheckpoint,
+                             TimerLog timerLog, TimerWheel timerWheel
     ) {
-        this.timerMessageStore = timerMessageStore;
         this.messageStore = messageStore;
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.timerMessageQueryQueue = timerMessageQueryQueue;
@@ -79,11 +77,7 @@ public class TimerFlushService extends ServiceThread {
 
     @Override
     public String getServiceName() {
-        String brokerIdentifier = "";
-        if (messageStore instanceof DefaultMessageStore && ((DefaultMessageStore)messageStore).getBrokerConfig().isInBrokerContainer()) {
-            brokerIdentifier = ((DefaultMessageStore) messageStore).getBrokerConfig().getIdentifier();
-        }
-        return brokerIdentifier + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
     private String format(long time) {
@@ -111,7 +105,7 @@ public class TimerFlushService extends ServiceThread {
                             storeConfig.getBrokerRole(),
                             format(timerState.commitReadTimeMs), format(timerState.currReadTimeMs), format(timerState.currWriteTimeMs), timerState.getDequeueBehind(),
                             tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerCheckpoint.getMasterTimerQueueOffset() - tmpQueueOffset,
-                            fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerMessageStore.timerState.getAllCongestNum(), format(timerState.lastEnqueueButExpiredStoreTime));
+                            fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerState.getAllCongestNum(), format(timerState.lastEnqueueButExpiredStoreTime));
                 }
                 timerMetrics.persist();
                 waitForRunning(storeConfig.getTimerFlushIntervalMs());
