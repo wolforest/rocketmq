@@ -53,10 +53,10 @@ public class TimerFlushService extends ServiceThread {
     private TimerLog timerLog;
     private TimerWheel timerWheel;
 
-    public TimerFlushService(TimerMessageStore timerMessageStore,BlockingQueue<TimerRequest> fetchedTimerMessageQueue) {
+    public TimerFlushService(TimerMessageStore timerMessageStore,BlockingQueue<TimerRequest> fetchedTimerMessageQueue,BlockingQueue<List<TimerRequest>> timerMessageQueryQueue) {
         this.timerMessageStore = timerMessageStore;
         enqueuePutQueue = fetchedTimerMessageQueue;
-        dequeueGetQueue = timerMessageStore.getTimerMessageQueryQueue();
+        dequeueGetQueue = timerMessageQueryQueue;
         dequeuePutQueue = timerMessageStore.getTimerMessageDeliverQueue();
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
         pointer = timerMessageStore.getTimerState();
