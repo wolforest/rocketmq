@@ -42,6 +42,8 @@ import java.util.function.Function;
 
 import static org.apache.rocketmq.store.timer.TimerMessageStore.DEQUEUE_PUT;
 import static org.apache.rocketmq.store.timer.TimerState.PUT_NEED_RETRY;
+import static org.apache.rocketmq.store.timer.TimerState.PUT_NO_RETRY;
+import static org.apache.rocketmq.store.timer.TimerState.PUT_OK;
 
 public class TimerMessageDeliver extends AbstractStateService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -109,7 +111,7 @@ public class TimerMessageDeliver extends AbstractStateService {
                             metricManager.addMetric(tr.getMsg(), -1);
                             MessageExtBrokerInner msg = convert(tr.getMsg(), tr.getEnqueueTime(), timerMessageStore.timerState.needRoll(tr.getMagic()));
 
-                            doRes = PUT_NEED_RETRY != timerMessageStore.doPut(msg, timerMessageStore.timerState.needRoll(tr.getMagic()));
+                            doRes = PUT_NEED_RETRY != doPut(msg, timerMessageStore.timerState.needRoll(tr.getMagic()));
 
                             while (!doRes && !isStopped()) {
                                 if (!pointer.isRunningDequeue()) {
@@ -118,7 +120,7 @@ public class TimerMessageDeliver extends AbstractStateService {
                                     break;
                                 }
 
-                                doRes = PUT_NEED_RETRY != timerMessageStore.doPut(msg, timerMessageStore.timerState.needRoll(tr.getMagic()));
+                                doRes = PUT_NEED_RETRY != doPut(msg, timerMessageStore.timerState.needRoll(tr.getMagic()));
                                 Thread.sleep(500L * timerMessageStore.getPrecisionMs() / 1000);
                             }
                             perfCounterTicks.endTick(DEQUEUE_PUT);
@@ -196,6 +198,59 @@ public class TimerMessageDeliver extends AbstractStateService {
         }
         return msgInner;
     }
+
+    //0 succ; 1 fail, need retry; 2 fail, do not retry;
+    public int doPut(MessageExtBrokerInner message, boolean roll) throws Exception {
+
+        if (!roll && null != message.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY)) {
+            LOGGER.warn("Trying do put delete timer msg:[{}] roll:[{}]", message, roll);
+            return PUT_NO_RETRY;
+        }
+
+        PutMessageResult putMessageResult = null;
+        if (escapeBridgeHook != null) {
+            putMessageResult = escapeBridgeHook.apply(message);
+        } else {
+            putMessageResult = messageStore.putMessage(message);
+        }
+
+        int retryNum = 0;
+        while (retryNum < 3) {
+            if (null == putMessageResult || null == putMessageResult.getPutMessageStatus()) {
+                retryNum++;
+            } else {
+                switch (putMessageResult.getPutMessageStatus()) {
+                    case PUT_OK:
+                        if (brokerStatsManager != null) {
+                            this.brokerStatsManager.incTopicPutNums(message.getTopic(), 1, 1);
+                            this.brokerStatsManager.incTopicPutSize(message.getTopic(),
+                                    putMessageResult.getAppendMessageResult().getWroteBytes());
+                            this.brokerStatsManager.incBrokerPutNums(message.getTopic(), 1);
+                        }
+                        return PUT_OK;
+                    case SERVICE_NOT_AVAILABLE:
+                        return PUT_NEED_RETRY;
+                    case MESSAGE_ILLEGAL:
+                    case PROPERTIES_SIZE_EXCEEDED:
+                        return PUT_NO_RETRY;
+                    case CREATE_MAPPED_FILE_FAILED:
+                    case FLUSH_DISK_TIMEOUT:
+                    case FLUSH_SLAVE_TIMEOUT:
+                    case OS_PAGE_CACHE_BUSY:
+                    case SLAVE_NOT_AVAILABLE:
+                    case UNKNOWN_ERROR:
+                    default:
+                        retryNum++;
+                }
+            }
+            Thread.sleep(50);
+            putMessageResult = messageStore.putMessage(message);
+            LOGGER.warn("Retrying to do put timer msg retryNum:{} putRes:{} msg:{}", retryNum, putMessageResult, message);
+        }
+        return PUT_NO_RETRY;
+    }
+
+
 
 }
 

@@ -586,58 +586,6 @@ public class TimerMessageStore {
     }
 
 
-    //0 succ; 1 fail, need retry; 2 fail, do not retry;
-    public int doPut(MessageExtBrokerInner message, boolean roll) throws Exception {
-
-        if (!roll && null != message.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY)) {
-            LOGGER.warn("Trying do put delete timer msg:[{}] roll:[{}]", message, roll);
-            return PUT_NO_RETRY;
-        }
-
-        PutMessageResult putMessageResult = null;
-        if (escapeBridgeHook != null) {
-            putMessageResult = escapeBridgeHook.apply(message);
-        } else {
-            putMessageResult = messageStore.putMessage(message);
-        }
-
-        int retryNum = 0;
-        while (retryNum < 3) {
-            if (null == putMessageResult || null == putMessageResult.getPutMessageStatus()) {
-                retryNum++;
-            } else {
-                switch (putMessageResult.getPutMessageStatus()) {
-                    case PUT_OK:
-                        if (brokerStatsManager != null) {
-                            this.brokerStatsManager.incTopicPutNums(message.getTopic(), 1, 1);
-                            this.brokerStatsManager.incTopicPutSize(message.getTopic(),
-                                    putMessageResult.getAppendMessageResult().getWroteBytes());
-                            this.brokerStatsManager.incBrokerPutNums(message.getTopic(), 1);
-                        }
-                        return PUT_OK;
-                    case SERVICE_NOT_AVAILABLE:
-                        return PUT_NEED_RETRY;
-                    case MESSAGE_ILLEGAL:
-                    case PROPERTIES_SIZE_EXCEEDED:
-                        return PUT_NO_RETRY;
-                    case CREATE_MAPPED_FILE_FAILED:
-                    case FLUSH_DISK_TIMEOUT:
-                    case FLUSH_SLAVE_TIMEOUT:
-                    case OS_PAGE_CACHE_BUSY:
-                    case SLAVE_NOT_AVAILABLE:
-                    case UNKNOWN_ERROR:
-                    default:
-                        retryNum++;
-                }
-            }
-            Thread.sleep(50);
-            putMessageResult = messageStore.putMessage(message);
-            LOGGER.warn("Retrying to do put timer msg retryNum:{} putRes:{} msg:{}", retryNum, putMessageResult, message);
-        }
-        return PUT_NO_RETRY;
-    }
-
-
     private long formatTimeMs(long timeMs) {
         return timeMs / precisionMs * precisionMs;
     }
