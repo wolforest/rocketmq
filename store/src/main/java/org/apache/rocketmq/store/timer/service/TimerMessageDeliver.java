@@ -28,6 +28,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
+import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerRequest;
@@ -54,10 +55,11 @@ public class TimerMessageDeliver extends AbstractStateService {
     private MessageStoreConfig storeConfig;
     private TimerMetricManager metricManager;
     private String serviceThreadName;
+    private BrokerStatsManager brokerStatsManager;
 
     public TimerMessageDeliver(TimerMessageStore timerMessageStore, TimerMetricManager timerMetricManager,
                                BlockingQueue<TimerRequest> timerMessageDeliverQueue, PerfCounter.Ticks perfCounterTicks,
-                               TimerState timerState,MessageStoreConfig storeConfig,String serviceThreadName
+                               TimerState timerState,MessageStoreConfig storeConfig,String serviceThreadName,BrokerStatsManager brokerStatsManager
                                ) {
         this.timerMessageStore = timerMessageStore;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
@@ -66,6 +68,7 @@ public class TimerMessageDeliver extends AbstractStateService {
         this.storeConfig = storeConfig;
         this.metricManager = timerMetricManager;
         this.serviceThreadName = serviceThreadName;
+        this.brokerStatsManager = brokerStatsManager;
     }
 
 
