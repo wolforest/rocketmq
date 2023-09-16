@@ -65,7 +65,7 @@ public class TimerFlushService extends ServiceThread {
         this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.storeConfig = storeConfig;
-        timerState = timerState;
+        this.timerState = timerState;
         timerMetrics = timerMessageStore.getTimerMetrics();
         timerCheckpoint = timerMessageStore.getTimerCheckpoint();
         timerLog = timerMessageStore.getTimerLog();
