@@ -58,7 +58,7 @@ public class TimerFlushService extends ServiceThread {
                              BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                              MessageStoreConfig storeConfig,TimerState timerState,
-                             TimerMetrics timerMetrics
+                             TimerMetrics timerMetrics,TimerCheckpoint timerCheckpoint
     ) {
         this.timerMessageStore = timerMessageStore;
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
@@ -67,7 +67,7 @@ public class TimerFlushService extends ServiceThread {
         this.storeConfig = storeConfig;
         this.timerState = timerState;
         this.timerMetrics = timerMetrics;
-        timerCheckpoint = timerMessageStore.getTimerCheckpoint();
+        this.timerCheckpoint = timerCheckpoint;
         timerLog = timerMessageStore.getTimerLog();
         timerWheel = timerMessageStore.getTimerWheel();
     }
