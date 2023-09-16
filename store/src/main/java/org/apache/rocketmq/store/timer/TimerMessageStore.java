@@ -214,7 +214,9 @@ public class TimerMessageStore {
                 timerMessageQueries,
                 timerState,
                 perfCounterTicks);
-        dequeueWarmService = new TimerDequeueWarmService(this);
+        dequeueWarmService = new TimerDequeueWarmService(
+                this,
+                timerState);
         timerWheelFetcher = new TimerWheelFetcher(
                 storeConfig,
                 timerState,

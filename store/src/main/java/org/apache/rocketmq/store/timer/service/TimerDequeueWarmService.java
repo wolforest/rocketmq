@@ -22,22 +22,21 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
+import org.apache.rocketmq.store.timer.TimerState;
 
 public class TimerDequeueWarmService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private TimerMessageStore timerMessageStore;
+    private TimerState timerState;
 
-    public TimerDequeueWarmService(TimerMessageStore timerMessageStore) {
+    public TimerDequeueWarmService(TimerMessageStore timerMessageStore, TimerState timerState) {
         this.timerMessageStore = timerMessageStore;
+        this.timerState = timerState;
     }
 
     @Override
     public String getServiceName() {
-        String brokerIdentifier = "";
-        if (timerMessageStore.getMessageStore() instanceof DefaultMessageStore && ((DefaultMessageStore) timerMessageStore.getMessageStore()).getBrokerConfig().isInBrokerContainer()) {
-            brokerIdentifier = ((DefaultMessageStore) timerMessageStore.getMessageStore()).getBrokerConfig().getIdentifier();
-        }
-        return brokerIdentifier + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
     @Override
