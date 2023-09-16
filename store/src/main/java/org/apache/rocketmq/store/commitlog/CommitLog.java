@@ -549,10 +549,12 @@ public class CommitLog implements Swappable {
 
     public long getLastFileFromOffset() {
         MappedFile lastMappedFile = this.mappedFileQueue.getLastMappedFile();
-        if (lastMappedFile != null) {
-            if (lastMappedFile.isAvailable()) {
-                return lastMappedFile.getFileFromOffset();
-            }
+        if (lastMappedFile == null) {
+            return -1;
+        }
+
+        if (lastMappedFile.isAvailable()) {
+            return lastMappedFile.getFileFromOffset();
         }
 
         return -1;
