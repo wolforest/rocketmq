@@ -59,12 +59,12 @@ public class TimerMessageDeliver extends AbstractStateService {
     private TimerMetricManager metricManager;
     private BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
-    private MessageStore messageStore;
+    private MessageOperator messageOperator;
 
     public TimerMessageDeliver(
             TimerState timerState,
             MessageStoreConfig storeConfig,
-            MessageStore messageStore,
+            MessageOperator messageOperator,
             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
             BrokerStatsManager brokerStatsManager,
             TimerMetricManager timerMetricManager,
@@ -78,7 +78,7 @@ public class TimerMessageDeliver extends AbstractStateService {
         this.metricManager = timerMetricManager;
         this.brokerStatsManager = brokerStatsManager;
         this.escapeBridgeHook = escapeBridgeHook;
-        this.messageStore = messageStore;
+        this.messageOperator = messageOperator;
     }
 
 
@@ -211,7 +211,7 @@ public class TimerMessageDeliver extends AbstractStateService {
         if (escapeBridgeHook != null) {
             putMessageResult = escapeBridgeHook.apply(message);
         } else {
-            putMessageResult = messageStore.putMessage(message);
+            putMessageResult = messageOperator.putMessage(message);
         }
 
         int retryNum = 0;
@@ -244,7 +244,7 @@ public class TimerMessageDeliver extends AbstractStateService {
                 }
             }
             Thread.sleep(50);
-            putMessageResult = messageStore.putMessage(message);
+            putMessageResult = messageOperator.putMessage(message);
             LOGGER.warn("Retrying to do put timer msg retryNum:{} putRes:{} msg:{}", retryNum, putMessageResult, message);
         }
         return PUT_NO_RETRY;

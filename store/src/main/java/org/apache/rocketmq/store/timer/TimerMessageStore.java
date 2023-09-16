@@ -187,7 +187,7 @@ public class TimerMessageStore {
             timerMessageDelivers[i] = new TimerMessageDeliver(
                     timerState,
                     storeConfig,
-                    messageStore,
+                    messageOperator,
                     timerMessageDeliverQueue,
                     brokerStatsManager,
                     timerMetricManager,
