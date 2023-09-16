@@ -178,7 +178,7 @@ public class DefaultStoreMetricsManager {
             .ofLongs()
             .buildWithCallback(measurement -> {
                 TimerMessageStore timerMessageStore = messageStore.getTimerMessageStore();
-                measurement.record(timerMessageStore.getDequeueBehind(), newAttributesBuilder().build());
+                measurement.record(timerMessageStore.timerState.getDequeueBehind(), newAttributesBuilder().build());
             });
     }
 

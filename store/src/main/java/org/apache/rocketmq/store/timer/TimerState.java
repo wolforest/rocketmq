@@ -205,4 +205,11 @@ public class TimerState {
     }
 
 
+    public long getDequeueBehindMillis() {
+        return System.currentTimeMillis() - currReadTimeMs;
+    }
+
+    public long getDequeueBehind() {
+        return getDequeueBehindMillis() / 1000;
+    }
 }

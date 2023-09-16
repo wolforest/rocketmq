@@ -640,14 +640,6 @@ public class TimerMessageStore {
         return timerWheel.getAllNum(timerState.currReadTimeMs);
     }
 
-    public long getDequeueBehindMillis() {
-        return System.currentTimeMillis() - timerState.currReadTimeMs;
-    }
-
-    public long getDequeueBehind() {
-        return getDequeueBehindMillis() / 1000;
-    }
-
     public float getEnqueueTps() {
         return perfCounterTicks.getCounter(ENQUEUE_PUT).getLastTps();
     }
