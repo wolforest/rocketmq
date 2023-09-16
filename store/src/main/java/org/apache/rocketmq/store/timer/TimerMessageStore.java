@@ -147,7 +147,7 @@ public class TimerMessageStore {
         this.timerState = new TimerState(timerCheckpoint, storeConfig, timerLog, messageStore);
         this.timerWheel = new TimerWheel(
                 getTimerWheelPath(storeConfig.getStorePathRootDir()), timerState.slotsTotal, precisionMs);
-        timerMetricManager = new TimerMetricManager(timerMetrics,storeConfig,messageReader,timerWheel,timerLog,timerState);
+        timerMetricManager = new TimerMetricManager(timerMetrics, storeConfig, messageReader, timerWheel, timerLog, timerState);
         if (messageStore instanceof DefaultMessageStore) {
             scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
                     new ThreadFactoryImpl("TimerScheduledThread",
@@ -168,13 +168,13 @@ public class TimerMessageStore {
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
         timerMessageQueries = new TimerMessageQuery[getThreadNum];
         for (int i = 0; i < timerMessageQueries.length; i++) {
-            timerMessageQueries[i] = new TimerMessageQuery(timerState,timerCheckpoint,messageReader,perfCounterTicks,storeConfig,timerMessageDeliverQueue,timerMessageQueryQueue,getServiceThreadName());
+            timerMessageQueries[i] = new TimerMessageQuery(timerState, timerCheckpoint, messageReader, perfCounterTicks, storeConfig, timerMessageDeliverQueue, timerMessageQueryQueue, getServiceThreadName());
         }
 
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
         timerMessageDelivers = new TimerMessageDeliver[putThreadNum];
         for (int i = 0; i < timerMessageDelivers.length; i++) {
-            timerMessageDelivers[i] = new TimerMessageDeliver(this,timerMetricManager,timerMessageDeliverQueue);
+            timerMessageDelivers[i] = new TimerMessageDeliver(this, timerMetricManager, timerMessageDeliverQueue, perfCounterTicks);
         }
         timerMessageFetcher = new TimerMessageFetcher(fetchedTimerMessageQueue, storeConfig, perfCounterTicks, messageReader, messageStore, timerState, timerCheckpoint, getServiceThreadName());
         timerWheelLocator = new TimerWheelLocator(storeConfig, timerWheel, timerLog, timerMetricManager,
@@ -182,8 +182,8 @@ public class TimerMessageStore {
                 timerMessageDelivers, timerMessageQueries, timerState, perfCounterTicks, getServiceThreadName());
         dequeueWarmService = new TimerDequeueWarmService(this);
         timerWheelFetcher = new TimerWheelFetcher(storeConfig, timerState, timerWheel, timerLog, perfCounterTicks, getServiceThreadName(),
-                timerMessageQueryQueue,timerMessageDeliverQueue,
-                timerMessageDelivers,timerMessageQueries);
+                timerMessageQueryQueue, timerMessageDeliverQueue,
+                timerMessageDelivers, timerMessageQueries);
         timerFlushService = new TimerFlushService(this);
 
 

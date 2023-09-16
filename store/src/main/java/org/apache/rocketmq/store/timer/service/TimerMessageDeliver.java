@@ -30,6 +30,7 @@ import org.apache.rocketmq.store.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.util.PerfCounter;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -38,6 +39,7 @@ import static org.apache.rocketmq.store.timer.TimerMessageStore.PUT_NEED_RETRY;
 
 public class TimerMessageDeliver extends AbstractStateService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+
     @Override
     public String getServiceName() {
         return timerMessageStore.getServiceThreadName() + this.getClass().getSimpleName();
@@ -50,10 +52,11 @@ public class TimerMessageDeliver extends AbstractStateService {
     private TimerState pointer;
     private MessageStoreConfig storeConfig;
     private TimerMetricManager metricManager;
-    public TimerMessageDeliver(TimerMessageStore timerMessageStore,TimerMetricManager timerMetricManager,BlockingQueue<TimerRequest> timerMessageDeliverQueue) {
+
+    public TimerMessageDeliver(TimerMessageStore timerMessageStore, TimerMetricManager timerMetricManager, BlockingQueue<TimerRequest> timerMessageDeliverQueue, PerfCounter.Ticks perfCounterTicks) {
         this.timerMessageStore = timerMessageStore;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
-        perfCounterTicks = timerMessageStore.getPerfCounterTicks();
+        this.perfCounterTicks = perfCounterTicks;
         pointer = timerMessageStore.getTimerState();
         storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
         timerCheckpoint = timerMessageStore.getTimerCheckpoint();
@@ -123,6 +126,7 @@ public class TimerMessageDeliver extends AbstractStateService {
         LOGGER.info(this.getServiceName() + " service end");
         setState(AbstractStateService.END);
     }
+
     public String getRealTopic(MessageExt msgExt) {
         if (msgExt == null) {
             return null;
