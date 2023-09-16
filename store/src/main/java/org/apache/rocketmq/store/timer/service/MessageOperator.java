@@ -20,19 +20,23 @@ import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.queue.ConsumeQueue;
 
 import java.nio.ByteBuffer;
 
-public class MessageReader {
+public class MessageOperator {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final ThreadLocal<ByteBuffer> bufferLocal;
     private MessageStore messageStore;
     private MessageStoreConfig storeConfig;
-    public MessageReader(MessageStore messageStore,MessageStoreConfig storeConfig) {
+
+    public MessageOperator(MessageStore messageStore, MessageStoreConfig storeConfig) {
         this.messageStore = messageStore;
         this.storeConfig = storeConfig;
         bufferLocal = new ThreadLocal<ByteBuffer>() {
@@ -43,7 +47,17 @@ public class MessageReader {
         };
 
     }
-    public MessageExt getMessageByCommitOffset(long offsetPy, int sizePy) {
+
+    public ConsumeQueue getConsumeQueue(String topic, int queueId) {
+        return (ConsumeQueue) this.messageStore.getConsumeQueue(topic, queueId);
+    }
+
+
+    public PutMessageResult putMessage(MessageExtBrokerInner message) {
+        return messageStore.putMessage(message);
+    }
+
+    public MessageExt readMessageByCommitOffset(long offsetPy, int sizePy) {
         for (int i = 0; i < 3; i++) {
             MessageExt msgExt = null;
             bufferLocal.get().position(0);
@@ -61,6 +75,7 @@ public class MessageReader {
         }
         return null;
     }
+
     public void clean() {
         UtilAll.cleanBuffer(this.bufferLocal.get());
         this.bufferLocal.remove();

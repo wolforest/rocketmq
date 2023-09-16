@@ -16,14 +16,6 @@
  */
 package org.apache.rocketmq.store.timer.service;
 
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -36,6 +28,15 @@ import org.apache.rocketmq.store.timer.TimerMetrics;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerWheel;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class TimerMetricManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -44,11 +45,11 @@ public class TimerMetricManager {
     private TimerState timerState;
     private TimerWheel timerWheel;
     private TimerLog timerLog;
-    private MessageReader messageReader;
+    private MessageOperator messageReader;
     private MessageStoreConfig storeConfig;
     private final int timerLogFileSize;
-    public TimerMetricManager(TimerMetrics timerMetrics,MessageStoreConfig storeConfig,
-                              MessageReader messageReader,TimerWheel timerWheel,TimerLog timerLog,TimerState timerState) {
+    public TimerMetricManager(TimerMetrics timerMetrics, MessageStoreConfig storeConfig,
+                              MessageOperator messageReader, TimerWheel timerWheel, TimerLog timerLog, TimerState timerState) {
         this.timerMetrics = timerMetrics;
         this.storeConfig = storeConfig;
         this.messageReader = messageReader;
@@ -151,7 +152,7 @@ public class TimerMetricManager {
                     }
                     String topic = null;
                     if (smallHashCollisions.contains(hashCode)) {
-                        MessageExt messageExt = messageReader.getMessageByCommitOffset(offsetPy, sizePy);
+                        MessageExt messageExt = messageReader.readMessageByCommitOffset(offsetPy, sizePy);
                         if (null != messageExt) {
                             topic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
                         }

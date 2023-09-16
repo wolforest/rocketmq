@@ -16,13 +16,6 @@
  */
 package org.apache.rocketmq.store.timer.service;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.CountDownLatch;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -36,6 +29,14 @@ import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerWheel;
 import org.apache.rocketmq.store.util.PerfCounter;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CountDownLatch;
+
 public class TimerWheelFetcher extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -43,10 +44,7 @@ public class TimerWheelFetcher extends ServiceThread {
     private TimerState timerState;
     private TimerWheel timerWheel;
     private TimerLog timerLog;
-
-
     private PerfCounter.Ticks perfCounterTicks;
-    private String serviceThreadName;
 
     private int commitLogFileSize;
 
@@ -59,9 +57,11 @@ public class TimerWheelFetcher extends ServiceThread {
     private int timerLogFileSize;
     private int precisionMs;
 
-    public TimerWheelFetcher(MessageStoreConfig storeConfig, TimerState timerState,
-                             TimerWheel timerWheel, TimerLog timerLog,
-                             PerfCounter.Ticks perfCounterTicks, String serviceThreadName,
+    public TimerWheelFetcher(MessageStoreConfig storeConfig,
+                             TimerState timerState,
+                             TimerWheel timerWheel,
+                             TimerLog timerLog,
+                             PerfCounter.Ticks perfCounterTicks,
                              BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                              TimerMessageDeliver[] timerMessageDelivers,
@@ -73,7 +73,6 @@ public class TimerWheelFetcher extends ServiceThread {
         this.timerWheel = timerWheel;
         this.timerLog = timerLog;
         this.perfCounterTicks = perfCounterTicks;
-        this.serviceThreadName = serviceThreadName;
         this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageDelivers = timerMessageDelivers;
@@ -86,7 +85,7 @@ public class TimerWheelFetcher extends ServiceThread {
 
     @Override
     public String getServiceName() {
-        return serviceThreadName + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
     public void start(long shouldStartTime) {

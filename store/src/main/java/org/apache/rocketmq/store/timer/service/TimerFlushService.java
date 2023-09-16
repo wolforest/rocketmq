@@ -20,13 +20,12 @@ import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
-import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.timer.TimerLog;
-import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerMetrics;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerWheel;
@@ -42,37 +41,40 @@ public class TimerFlushService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm:ss");
-    private TimerMessageStore timerMessageStore;
-    private BlockingQueue<TimerRequest> enqueuePutQueue;
-    private BlockingQueue<List<TimerRequest>> dequeueGetQueue;
-    private BlockingQueue<TimerRequest> dequeuePutQueue;
+    private MessageStore messageStore;
+    private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
+    private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private MessageStoreConfig storeConfig;
-    private TimerState pointer;
+    private TimerState timerState;
     private TimerMetrics timerMetrics;
     private TimerCheckpoint timerCheckpoint;
     private TimerLog timerLog;
     private TimerWheel timerWheel;
 
-    public TimerFlushService(TimerMessageStore timerMessageStore) {
-        this.timerMessageStore = timerMessageStore;
-        enqueuePutQueue = timerMessageStore.getFetchedTimerMessageQueue();
-        dequeueGetQueue = timerMessageStore.getTimerMessageQueryQueue();
-        dequeuePutQueue = timerMessageStore.getTimerMessageDeliverQueue();
-        storeConfig = timerMessageStore.getMessageStore().getMessageStoreConfig();
-        pointer = timerMessageStore.getTimerState();
-        timerMetrics = timerMessageStore.getTimerMetrics();
-        timerCheckpoint = timerMessageStore.getTimerCheckpoint();
-        timerLog = timerMessageStore.getTimerLog();
-        timerWheel = timerMessageStore.getTimerWheel();
+    public TimerFlushService(MessageStore messageStore,
+                             BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
+                             BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
+                             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+                             MessageStoreConfig storeConfig, TimerState timerState,
+                             TimerMetrics timerMetrics, TimerCheckpoint timerCheckpoint,
+                             TimerLog timerLog, TimerWheel timerWheel
+    ) {
+        this.messageStore = messageStore;
+        this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
+        this.timerMessageQueryQueue = timerMessageQueryQueue;
+        this.timerMessageDeliverQueue = timerMessageDeliverQueue;
+        this.storeConfig = storeConfig;
+        this.timerState = timerState;
+        this.timerMetrics = timerMetrics;
+        this.timerCheckpoint = timerCheckpoint;
+        this.timerLog = timerLog;
+        this.timerWheel = timerWheel;
     }
 
     @Override
     public String getServiceName() {
-        String brokerIdentifier = "";
-        if (timerMessageStore.getMessageStore() instanceof DefaultMessageStore && ((DefaultMessageStore) timerMessageStore.getMessageStore()).getBrokerConfig().isInBrokerContainer()) {
-            brokerIdentifier = ((DefaultMessageStore) timerMessageStore.getMessageStore()).getBrokerConfig().getIdentifier();
-        }
-        return brokerIdentifier + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
     private String format(long time) {
@@ -86,21 +88,21 @@ public class TimerFlushService extends ServiceThread {
 
         while (!this.isStopped()) {
             try {
-                pointer.prepareTimerCheckPoint();
+                timerState.prepareTimerCheckPoint();
                 timerLog.getMappedFileQueue().flush(0);
                 timerWheel.flush();
                 timerCheckpoint.flush();
                 if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
                     start = System.currentTimeMillis();
-                    long tmpQueueOffset = pointer.currQueueOffset;
-                    ConsumeQueue cq = (ConsumeQueue) timerMessageStore.getMessageStore().getConsumeQueue(TIMER_TOPIC, 0);
+                    long tmpQueueOffset = timerState.currQueueOffset;
+                    ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TIMER_TOPIC, 0);
                     long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
                     LOGGER.info("[{}]Timer progress-check commitRead:[{}] currRead:[{}] currWrite:[{}] readBehind:{} currReadOffset:{} offsetBehind:{} behindMaster:{} " +
                                     "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
                             storeConfig.getBrokerRole(),
-                            format(pointer.commitReadTimeMs), format(pointer.currReadTimeMs), format(pointer.currWriteTimeMs), timerMessageStore.getDequeueBehind(),
+                            format(timerState.commitReadTimeMs), format(timerState.currReadTimeMs), format(timerState.currWriteTimeMs), timerState.getDequeueBehind(),
                             tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerCheckpoint.getMasterTimerQueueOffset() - tmpQueueOffset,
-                            enqueuePutQueue.size(), dequeueGetQueue.size(), dequeuePutQueue.size(), timerMessageStore.getAllCongestNum(), format(pointer.lastEnqueueButExpiredStoreTime));
+                            fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerState.getAllCongestNum(), format(timerState.lastEnqueueButExpiredStoreTime));
                 }
                 timerMetrics.persist();
                 waitForRunning(storeConfig.getTimerFlushIntervalMs());

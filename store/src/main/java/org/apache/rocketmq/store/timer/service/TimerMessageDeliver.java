@@ -26,13 +26,11 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.TimerState;
-import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.util.PerfCounter;
 
@@ -50,35 +48,36 @@ public class TimerMessageDeliver extends AbstractStateService {
 
     @Override
     public String getServiceName() {
-        return serviceThreadName + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
-    private TimerMessageStore timerMessageStore;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private PerfCounter.Ticks perfCounterTicks;
-    private TimerState pointer;
+    private TimerState timerState;
     private MessageStoreConfig storeConfig;
     private TimerMetricManager metricManager;
-    private String serviceThreadName;
     private BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
-    private MessageStore messageStore;
+    private MessageOperator messageOperator;
 
-    public TimerMessageDeliver(TimerMessageStore timerMessageStore, TimerMetricManager timerMetricManager,
-                               BlockingQueue<TimerRequest> timerMessageDeliverQueue, PerfCounter.Ticks perfCounterTicks,
-                               TimerState timerState, MessageStoreConfig storeConfig, String serviceThreadName, BrokerStatsManager brokerStatsManager,
-                               Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook, MessageStore messageStore
+    public TimerMessageDeliver(
+            TimerState timerState,
+            MessageStoreConfig storeConfig,
+            MessageOperator messageOperator,
+            BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+            BrokerStatsManager brokerStatsManager,
+            TimerMetricManager timerMetricManager,
+            Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook,
+            PerfCounter.Ticks perfCounterTicks
     ) {
-        this.timerMessageStore = timerMessageStore;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.perfCounterTicks = perfCounterTicks;
-        this.pointer = timerState;
+        this.timerState = timerState;
         this.storeConfig = storeConfig;
         this.metricManager = timerMetricManager;
-        this.serviceThreadName = serviceThreadName;
         this.brokerStatsManager = brokerStatsManager;
         this.escapeBridgeHook = escapeBridgeHook;
-        this.messageStore = messageStore;
+        this.messageOperator = messageOperator;
     }
 
 
@@ -99,8 +98,8 @@ public class TimerMessageDeliver extends AbstractStateService {
                 try {
 
                     while (!isStopped() && !doRes) {
-                        if (!pointer.isRunningDequeue()) {
-                            pointer.dequeueStatusChangeFlag = true;
+                        if (!timerState.isRunningDequeue()) {
+                            timerState.dequeueStatusChangeFlag = true;
                             tmpDequeueChangeFlag = true;
                             break;
                         }
@@ -109,19 +108,19 @@ public class TimerMessageDeliver extends AbstractStateService {
                             perfCounterTicks.startTick(DEQUEUE_PUT);
                             DefaultStoreMetricsManager.incTimerDequeueCount(getRealTopic(tr.getMsg()));
                             metricManager.addMetric(tr.getMsg(), -1);
-                            MessageExtBrokerInner msg = convert(tr.getMsg(), tr.getEnqueueTime(), timerMessageStore.timerState.needRoll(tr.getMagic()));
+                            MessageExtBrokerInner msg = convert(tr.getMsg(), tr.getEnqueueTime(), timerState.needRoll(tr.getMagic()));
 
-                            doRes = PUT_NEED_RETRY != doPut(msg, timerMessageStore.timerState.needRoll(tr.getMagic()));
+                            doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(tr.getMagic()));
 
                             while (!doRes && !isStopped()) {
-                                if (!pointer.isRunningDequeue()) {
-                                    pointer.dequeueStatusChangeFlag = true;
+                                if (!timerState.isRunningDequeue()) {
+                                    timerState.dequeueStatusChangeFlag = true;
                                     tmpDequeueChangeFlag = true;
                                     break;
                                 }
 
-                                doRes = PUT_NEED_RETRY != doPut(msg, timerMessageStore.timerState.needRoll(tr.getMagic()));
-                                Thread.sleep(500L * timerMessageStore.getPrecisionMs() / 1000);
+                                doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(tr.getMagic()));
+                                Thread.sleep(500L * timerState.precisionMs / 1000);
                             }
                             perfCounterTicks.endTick(DEQUEUE_PUT);
                         } catch (Throwable t) {
@@ -211,7 +210,7 @@ public class TimerMessageDeliver extends AbstractStateService {
         if (escapeBridgeHook != null) {
             putMessageResult = escapeBridgeHook.apply(message);
         } else {
-            putMessageResult = messageStore.putMessage(message);
+            putMessageResult = messageOperator.putMessage(message);
         }
 
         int retryNum = 0;
@@ -244,12 +243,11 @@ public class TimerMessageDeliver extends AbstractStateService {
                 }
             }
             Thread.sleep(50);
-            putMessageResult = messageStore.putMessage(message);
+            putMessageResult = messageOperator.putMessage(message);
             LOGGER.warn("Retrying to do put timer msg retryNum:{} putRes:{} msg:{}", retryNum, putMessageResult, message);
         }
         return PUT_NO_RETRY;
     }
-
 
 
 }

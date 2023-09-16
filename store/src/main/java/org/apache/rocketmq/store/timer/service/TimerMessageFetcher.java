@@ -24,13 +24,11 @@ import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.timer.TimerState;
-import org.apache.rocketmq.store.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.util.PerfCounter;
 
@@ -46,34 +44,32 @@ public class TimerMessageFetcher extends ServiceThread {
     public static final String TIMER_OUT_MS = MessageConst.PROPERTY_TIMER_OUT_MS;
     public static final int MAGIC_DEFAULT = 1;
     public static final int DEFAULT_CAPACITY = 1024;
-    //private TimerMessageStore timerMessageStore;
     private MessageStoreConfig storeConfig;
-    private String serviceThreadName;
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
     private TimerState timerState;
-    private TimerCheckpoint timerCheckpoint;
-    private MessageStore messageStore;
     private PerfCounter.Ticks perfCounterTicks;
-    private MessageReader messageReader;
+    private MessageOperator messageOperator;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
 
-    public TimerMessageFetcher(BlockingQueue<TimerRequest> fetchedTimerMessageQueue, MessageStoreConfig storeConfig, PerfCounter.Ticks perfCounterTicks, MessageReader messageReader, MessageStore messageStore, TimerState timerState, TimerCheckpoint timerCheckpoint, String serviceThreadName) {
+    public TimerMessageFetcher(
+            TimerState timerState,
+            MessageStoreConfig storeConfig,
+            MessageOperator messageOperator,
+            BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
+            PerfCounter.Ticks perfCounterTicks) {
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.storeConfig = storeConfig;
-        this.serviceThreadName = serviceThreadName;
         this.lastBrokerRole = storeConfig.getBrokerRole();
-        this.messageReader = messageReader;
+        this.messageOperator = messageOperator;
         this.timerState = timerState;
-        this.timerCheckpoint = timerCheckpoint;
-        this.messageStore = messageStore;
         this.perfCounterTicks = perfCounterTicks;
     }
 
 
     @Override
     public String getServiceName() {
-        return serviceThreadName + this.getClass().getSimpleName();
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
     private void checkBrokerRole() {
@@ -83,11 +79,11 @@ public class TimerMessageFetcher extends ServiceThread {
                 LOGGER.info("Broker role change from {} to {}", lastBrokerRole, currRole);
                 //if change to master, do something
                 if (BrokerRole.SLAVE != currRole) {
-                    timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
+                    timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerState.timerCheckpoint.getMasterTimerQueueOffset());
                     timerState.commitQueueOffset = timerState.currQueueOffset;
                     timerState.prepareTimerCheckPoint();
-                    timerCheckpoint.flush();
-                    timerState.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
+                    timerState.timerCheckpoint.flush();
+                    timerState.currReadTimeMs = timerState.timerCheckpoint.getLastReadTimeMs();
                     timerState.commitReadTimeMs = timerState.currReadTimeMs;
                 }
                 //if change to slave, just let it go
@@ -102,7 +98,7 @@ public class TimerMessageFetcher extends ServiceThread {
 
     private boolean isRunningEnqueue() {
         checkBrokerRole();
-        if (!timerState.shouldRunningDequeue && !isMaster() && timerState.currQueueOffset >= timerCheckpoint.getMasterTimerQueueOffset()) {
+        if (!timerState.shouldRunningDequeue && !isMaster() && timerState.currQueueOffset >= timerState.timerCheckpoint.getMasterTimerQueueOffset()) {
             return false;
         }
 
@@ -116,7 +112,7 @@ public class TimerMessageFetcher extends ServiceThread {
         if (!isRunningEnqueue()) {
             return false;
         }
-        ConsumeQueue cq = (ConsumeQueue) this.messageStore.getConsumeQueue(TIMER_TOPIC, queueId);
+        ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
         if (null == cq) {
             return false;
         }
@@ -138,7 +134,7 @@ public class TimerMessageFetcher extends ServiceThread {
                     long offsetPy = bufferCQ.getByteBuffer().getLong();
                     int sizePy = bufferCQ.getByteBuffer().getInt();
                     bufferCQ.getByteBuffer().getLong(); //tags code
-                    MessageExt msgExt = messageReader.getMessageByCommitOffset(offsetPy, sizePy);
+                    MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
                     if (null == msgExt) {
                         perfCounterTicks.getCounter("enqueue_get_miss");
                     } else {
