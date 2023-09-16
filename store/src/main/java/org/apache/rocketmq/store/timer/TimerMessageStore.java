@@ -175,9 +175,9 @@ public class TimerMessageStore {
             timerMessageQueries[i] = new TimerMessageQuery(
                     timerState,
                     storeConfig,
+                    messageOperator,
                     timerMessageDeliverQueue,
                     timerMessageQueryQueue,
-                    messageOperator,
                     perfCounterTicks);
         }
 

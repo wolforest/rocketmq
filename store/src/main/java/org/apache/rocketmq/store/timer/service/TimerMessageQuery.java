@@ -52,9 +52,9 @@ public class TimerMessageQuery extends AbstractStateService {
     public TimerMessageQuery(
             TimerState timerState,
             MessageStoreConfig storeConfig,
+            MessageOperator messageReader,
             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
             BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
-            MessageOperator messageReader,
             PerfCounter.Ticks perfCounterTicks
 
     ) {
