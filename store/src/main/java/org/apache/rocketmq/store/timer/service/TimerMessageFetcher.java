@@ -24,7 +24,6 @@ import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
@@ -50,7 +49,6 @@ public class TimerMessageFetcher extends ServiceThread {
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
     private TimerState timerState;
     private TimerCheckpoint timerCheckpoint;
-    private MessageStore messageStore;
     private PerfCounter.Ticks perfCounterTicks;
     private MessageOperator messageOperator;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
