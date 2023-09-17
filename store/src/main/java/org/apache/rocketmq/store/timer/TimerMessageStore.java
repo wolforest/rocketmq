@@ -72,7 +72,7 @@ public class TimerMessageStore {
     public static final int TIMER_WHEEL_TTL_DAY = 7;
     public static final int DAY_SECS = 24 * 3600;
 
-    public final TimerState timerState;
+
     public static final Random RANDOM = new Random();
     public boolean debug = false;
     protected final PerfCounter.Ticks perfCounterTicks = new PerfCounter.Ticks(LOGGER);
@@ -83,6 +83,7 @@ public class TimerMessageStore {
 
 
     private ScheduledExecutorService scheduler;
+    public final TimerState timerState;
     private final MessageStore messageStore;
     private final TimerWheel timerWheel;
     private final TimerLog timerLog;
@@ -230,6 +231,9 @@ public class TimerMessageStore {
 
     }
 
+    public TimerState getTimerState(){
+        return this.timerState;
+    }
     public long getCongestNum(long deliverTimeMs) {
         return timerWheel.getNum(deliverTimeMs);
     }
