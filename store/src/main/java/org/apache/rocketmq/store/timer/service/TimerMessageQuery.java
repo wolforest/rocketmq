@@ -65,13 +65,13 @@ public class TimerMessageQuery extends AbstractStateService {
         while (!this.isStopped()) {
             try {
                 setState(AbstractStateService.WAITING);
-                List<TimerRequest> trs = timerMessageQueryQueue.poll(100L * timerState.precisionMs / 1000, TimeUnit.MILLISECONDS);
-                if (null == trs || trs.size() == 0) {
+                List<TimerRequest> timerRequestList = timerMessageQueryQueue.poll(100L * timerState.precisionMs / 1000, TimeUnit.MILLISECONDS);
+                if (null == timerRequestList || timerRequestList.size() == 0) {
                     continue;
                 }
                 setState(AbstractStateService.RUNNING);
-                for (int i = 0; i < trs.size(); ) {
-                    TimerRequest timerRequest = trs.get(i);
+                for (int i = 0; i < timerRequestList.size(); ) {
+                    TimerRequest timerRequest = timerRequestList.get(i);
                     boolean doRes = false;
                     try {
                         long start = System.currentTimeMillis();
@@ -120,7 +120,7 @@ public class TimerMessageQuery extends AbstractStateService {
                         }
                     }
                 }
-                trs.clear();
+                timerRequestList.clear();
             } catch (Throwable e) {
                 LOGGER.error("Error occurred in " + getServiceName(), e);
             }
