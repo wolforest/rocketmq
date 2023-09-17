@@ -83,7 +83,7 @@ public class TimerMessageStore {
     protected BlockingQueue<TimerRequest> timerMessageDeliverQueue;
 
 
-    private final ScheduledExecutorService scheduler;
+    private ScheduledExecutorService scheduler;
     private final MessageStore messageStore;
     private final TimerWheel timerWheel;
     private final TimerLog timerLog;
@@ -111,6 +111,7 @@ public class TimerMessageStore {
                              TimerCheckpoint timerCheckpoint, TimerMetrics timerMetrics,
                              final BrokerStatsManager brokerStatsManager) throws IOException {
         initQueues(storeConfig);
+        initScheduler(messageStore);
 
         this.messageStore = messageStore;
         this.storeConfig = storeConfig;
@@ -127,8 +128,11 @@ public class TimerMessageStore {
         timerMetricManager = new TimerMetricManager(timerMetrics, storeConfig, messageOperator, timerWheel, timerLog, timerState);
         this.messageOperator = new MessageOperator(messageStore, storeConfig);
         this.brokerStatsManager = brokerStatsManager;
+    }
+
+    private void initScheduler(MessageStore messageStore) {
         if (messageStore instanceof DefaultMessageStore) {
-            scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
+            this.scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
                     new ThreadFactoryImpl("TimerScheduledThread",
                             ((DefaultMessageStore) messageStore).getBrokerIdentity()));
         } else {
@@ -353,7 +357,6 @@ public class TimerMessageStore {
         this.scheduler.shutdown();
 
     }
-
 
 
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
