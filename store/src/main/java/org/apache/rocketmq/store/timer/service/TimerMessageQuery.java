@@ -58,7 +58,6 @@ public class TimerMessageQuery extends AbstractStateService {
         this.timerState = timerState;
     }
 
-
     @Override
     public void run() {
         setState(AbstractStateService.START);
@@ -72,45 +71,45 @@ public class TimerMessageQuery extends AbstractStateService {
                 }
                 setState(AbstractStateService.RUNNING);
                 for (int i = 0; i < trs.size(); ) {
-                    TimerRequest tr = trs.get(i);
+                    TimerRequest timerRequest = trs.get(i);
                     boolean doRes = false;
                     try {
                         long start = System.currentTimeMillis();
-                        MessageExt msgExt = messageReader.readMessageByCommitOffset(tr.getOffsetPy(), tr.getSizePy());
+                        MessageExt msgExt = messageReader.readMessageByCommitOffset(timerRequest.getOffsetPy(), timerRequest.getSizePy());
                         if (null != msgExt) {
-                            if (timerState.needDelete(tr.getMagic()) && !timerState.needRoll(tr.getMagic())) {
-                                if (msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY) != null && tr.getDeleteList() != null) {
-                                    tr.getDeleteList().add(msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY));
+                            if (timerState.needDelete(timerRequest.getMagic()) && !timerState.needRoll(timerRequest.getMagic())) {
+                                if (msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY) != null && timerRequest.getDeleteList() != null) {
+                                    timerRequest.getDeleteList().add(msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY));
                                 }
-                                tr.idempotentRelease();
+                                timerRequest.idempotentRelease();
                                 doRes = true;
                             } else {
                                 String uniqueKey = MessageClientIDSetter.getUniqID(msgExt);
                                 if (null == uniqueKey) {
                                     LOGGER.warn("No uniqueKey for msg:{}", msgExt);
                                 }
-                                if (null != uniqueKey && tr.getDeleteList() != null && tr.getDeleteList().size() > 0 && tr.getDeleteList().contains(uniqueKey)) {
+                                if (null != uniqueKey && timerRequest.getDeleteList() != null && timerRequest.getDeleteList().size() > 0 && timerRequest.getDeleteList().contains(uniqueKey)) {
                                     doRes = true;
-                                    tr.idempotentRelease();
+                                    timerRequest.idempotentRelease();
                                     perfCounterTicks.getCounter("dequeue_delete").flow(1);
                                 } else {
-                                    tr.setMsg(msgExt);
+                                    timerRequest.setMsg(msgExt);
                                     while (!isStopped() && !doRes) {
-                                        doRes = timerMessageDeliverQueue.offer(tr, 3, TimeUnit.SECONDS);
+                                        doRes = timerMessageDeliverQueue.offer(timerRequest, 3, TimeUnit.SECONDS);
                                     }
                                 }
                             }
                             perfCounterTicks.getCounter("dequeue_get_msg").flow(System.currentTimeMillis() - start);
                         } else {
                             //the tr will never be processed afterwards, so idempotentRelease it
-                            tr.idempotentRelease();
+                            timerRequest.idempotentRelease();
                             doRes = true;
                             perfCounterTicks.getCounter("dequeue_get_msg_miss").flow(System.currentTimeMillis() - start);
                         }
                     } catch (Throwable e) {
                         LOGGER.error("Unknown exception", e);
                         if (storeConfig.isTimerSkipUnknownError()) {
-                            tr.idempotentRelease();
+                            timerRequest.idempotentRelease();
                             doRes = true;
                         } else {
                             ThreadUtils.sleep(50);
