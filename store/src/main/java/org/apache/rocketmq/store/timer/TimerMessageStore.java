@@ -117,17 +117,16 @@ public class TimerMessageStore {
         this.commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
         this.timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
         this.precisionMs = storeConfig.getTimerPrecisionMs();
-        final int slotsTotal = TIMER_WHEEL_TTL_DAY * DAY_SECS;
-
         this.timerLog = new TimerLog(getTimerLogPath(storeConfig.getStorePathRootDir()), timerLogFileSize);
         this.timerMetrics = timerMetrics;
-
         this.timerCheckpoint = timerCheckpoint;
-        this.timerWheel = new TimerWheel(
-                getTimerWheelFileFullName(storeConfig.getStorePathRootDir()), slotsTotal, precisionMs);
+        final int slotsTotal = TIMER_WHEEL_TTL_DAY * DAY_SECS;
+        final String timeWheelFileName = getTimerWheelFileFullName(storeConfig.getStorePathRootDir());
+        this.timerWheel = new TimerWheel(timeWheelFileName, slotsTotal, precisionMs);
         this.timerState = new TimerState(timerCheckpoint, storeConfig, timerLog, slotsTotal, timerWheel, messageStore);
-
         timerMetricManager = new TimerMetricManager(timerMetrics, storeConfig, messageOperator, timerWheel, timerLog, timerState);
+        this.messageOperator = new MessageOperator(messageStore, storeConfig);
+        this.brokerStatsManager = brokerStatsManager;
         if (messageStore instanceof DefaultMessageStore) {
             scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
                     new ThreadFactoryImpl("TimerScheduledThread",
@@ -136,12 +135,6 @@ public class TimerMessageStore {
             scheduler = ThreadUtils.newSingleThreadScheduledExecutor(
                     new ThreadFactoryImpl("TimerScheduledThread"));
         }
-
-
-        this.messageOperator = new MessageOperator(messageStore, storeConfig);
-
-
-        this.brokerStatsManager = brokerStatsManager;
     }
 
     private void initQueues(MessageStoreConfig storeConfig) {
