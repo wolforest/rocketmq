@@ -79,6 +79,7 @@ public class TimerMessageFetcher extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service end");
     }
 
+
     private boolean fetch(int queueId) {
         if (storeConfig.isTimerStopEnqueue()) {
             return false;
@@ -86,17 +87,8 @@ public class TimerMessageFetcher extends ServiceThread {
         if (!isRunningEnqueue()) {
             return false;
         }
-        ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
-        if (null == cq) {
-            return false;
-        }
-        if (timerState.currQueueOffset < cq.getMinOffsetInQueue()) {
-            LOGGER.warn("Timer currQueueOffset:{} is smaller than minOffsetInQueue:{}",
-                    timerState.currQueueOffset, cq.getMinOffsetInQueue());
-            timerState.currQueueOffset = cq.getMinOffsetInQueue();
-        }
+        SelectMappedBufferResult bufferCQ = getIndexBuffer(queueId);
         long offset = timerState.currQueueOffset;
-        SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(offset);
         if (null == bufferCQ) {
             return false;
         }
@@ -150,6 +142,20 @@ public class TimerMessageFetcher extends ServiceThread {
             bufferCQ.release();
         }
         return false;
+    }
+
+    private SelectMappedBufferResult getIndexBuffer(int queueId) {
+        ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
+        if (null == cq) {
+            return null;
+        }
+        if (timerState.currQueueOffset < cq.getMinOffsetInQueue()) {
+            LOGGER.warn("Timer currQueueOffset:{} is smaller than minOffsetInQueue:{}",
+                    timerState.currQueueOffset, cq.getMinOffsetInQueue());
+            timerState.currQueueOffset = cq.getMinOffsetInQueue();
+        }
+        SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(timerState.currQueueOffset);
+        return bufferCQ;
     }
 
     @Override
