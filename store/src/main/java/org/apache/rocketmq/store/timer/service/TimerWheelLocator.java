@@ -106,23 +106,23 @@ public class TimerWheelLocator extends ServiceThread {
      * collect the requests
      */
     private List<TimerRequest> fetchTimerRequests() throws InterruptedException {
-        List<TimerRequest> trs = null;
+        List<TimerRequest> timerRequestList = null;
         TimerRequest firstReq = fetchedTimerMessageQueue.poll(10, TimeUnit.MILLISECONDS);
         if (null != firstReq) {
-            trs = new ArrayList<>(16);
-            trs.add(firstReq);
+            timerRequestList = new ArrayList<>(16);
+            timerRequestList.add(firstReq);
             while (true) {
                 TimerRequest tmpReq = fetchedTimerMessageQueue.poll(3, TimeUnit.MILLISECONDS);
                 if (null == tmpReq) {
                     break;
                 }
-                trs.add(tmpReq);
-                if (trs.size() > 10) {
+                timerRequestList.add(tmpReq);
+                if (timerRequestList.size() > 10) {
                     break;
                 }
             }
         }
-        return trs;
+        return timerRequestList;
     }
 
     private String getRealTopic(MessageExt msgExt) {
