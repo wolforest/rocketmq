@@ -18,15 +18,12 @@ package org.apache.rocketmq.store.timer.service;
 
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.timer.Slot;
 import org.apache.rocketmq.store.timer.TimerLog;
-import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerWheel;
@@ -76,7 +73,7 @@ public class TimerWheelFetcher extends ServiceThread {
         this.timerWheel = timerWheel;
         this.timerLog = timerLog;
         this.perfCounterTicks = perfCounterTicks;
-        this.timerMessageQueryQueue= timerMessageQueryQueue;
+        this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageDelivers = timerMessageDelivers;
         this.timerMessageQueries = timerMessageQueries;
@@ -213,10 +210,10 @@ public class TimerWheelFetcher extends ServiceThread {
             timerState.checkDeliverQueueLatch(normalLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (timerState.dequeueStatusChangeFlag) {
-                 return -1;
+                return -1;
             }
             if (!timerState.isRunningDequeue()) {
-                  return -1;
+                return -1;
             }
 
             timerState.moveReadTime(precisionMs);

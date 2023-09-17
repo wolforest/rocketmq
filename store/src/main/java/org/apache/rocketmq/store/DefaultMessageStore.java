@@ -108,67 +108,51 @@ import org.apache.rocketmq.store.util.PerfCounter;
 public class DefaultMessageStore implements MessageStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    public final PerfCounter.Ticks perfs = new PerfCounter.Ticks(LOGGER);
-
+    //config
+    private final BrokerConfig brokerConfig;
     private final MessageStoreConfig messageStoreConfig;
+    // this is a unmodifiableMap
+    private final ConcurrentMap<String, TopicConfig> topicConfigTable;
+
     // CommitLog
     private CommitLog commitLog;
-
-
-    private ConsumeQueueStore consumeQueueStore;
-
-    private FlushConsumeQueueService flushConsumeQueueService;
-
     private CleanCommitLogService cleanCommitLogService;
 
+    private ConsumeQueueStore consumeQueueStore;
+    private FlushConsumeQueueService flushConsumeQueueService;
     private CleanConsumeQueueService cleanConsumeQueueService;
-
     private CorrectLogicOffsetService correctLogicOffsetService;
-
 
     private IndexService indexService;
 
     private AllocateMappedFileService allocateMappedFileService;
-
+    private TransientStorePool transientStorePool;
 
     private ReputMessageService reputMessageService;
 
-    private HAService haService;
-
-
     // CompactionLog
     private CompactionStore compactionStore;
-
     private CompactionService compactionService;
 
     private StoreStatsService storeStatsService;
-
-    private TransientStorePool transientStorePool;
+    private final BrokerStatsManager brokerStatsManager;
+    public final PerfCounter.Ticks perfs = new PerfCounter.Ticks(LOGGER);
 
     private final RunningFlags runningFlags = new RunningFlags();
     private final SystemClock systemClock = new SystemClock();
 
-    private ScheduledExecutorService scheduledExecutorService;
-    private final BrokerStatsManager brokerStatsManager;
-
-
+    private LinkedList<CommitLogDispatcher> dispatcherList;
     private final MessageArrivingListener messageArrivingListener;
-    private final BrokerConfig brokerConfig;
-
-    private volatile boolean shutdown = true;
+    private SendMessageBackHook sendMessageBackHook;
 
     private StoreCheckpoint storeCheckpoint;
     private TimerMessageStore timerMessageStore;
 
-    private LinkedList<CommitLogDispatcher> dispatcherList;
-
     private RandomAccessFile lockFile;
-
     private FileLock lock;
 
     boolean shutDownNormal = false;
-
-    private volatile int aliveReplicasNum = 1;
+    private volatile boolean shutdown = true;
 
     // Refer the MessageStore of MasterBroker in the same process.
     // If current broker is master, this reference point to null or itself.
@@ -177,20 +161,25 @@ public class DefaultMessageStore implements MessageStore {
     private MessageStore masterStoreInProcess = null;
     private volatile long masterFlushedOffset = -1L;
     private volatile long brokerInitMaxOffset = -1L;
-
-    private SendMessageBackHook sendMessageBackHook;
-
+    private HAService haService;
+    private volatile int aliveReplicasNum = 1;
 
     private final AtomicInteger mappedPageHoldCount = new AtomicInteger(0);
+
+    /**
+     * BatchDispatchRequest queue
+     * offer by ConcurrentReputMessageService.createBatchDispatchRequest()
+     * poll by MainBatchDispatchRequestService.pollBatchDispatchRequest()
+     *
+     * if enableBuildConsumeQueueConcurrently is false, It is useless
+     */
     private final ConcurrentLinkedQueue<BatchDispatchRequest> batchDispatchRequestQueue = new ConcurrentLinkedQueue<>();
     private final int dispatchRequestOrderlyQueueSize = 16;
     private final DispatchRequestOrderlyQueue dispatchRequestOrderlyQueue = new DispatchRequestOrderlyQueue(dispatchRequestOrderlyQueueSize);
 
     private long stateMachineVersion = 0L;
 
-    // this is a unmodifiableMap
-    private final ConcurrentMap<String, TopicConfig> topicConfigTable;
-
+    private ScheduledExecutorService scheduledExecutorService;
     private final ScheduledExecutorService scheduledCleanQueueExecutorService =
         ThreadUtils.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("StoreCleanQueueScheduledThread"));
 
@@ -292,6 +281,7 @@ public class DefaultMessageStore implements MessageStore {
 
         // Checking is not necessary, as long as the dLedger's implementation exactly follows the definition of Recover,
         // which is eliminating the dispatch inconsistency between the commitLog and consumeQueue at the end of recovery.
+        // make sure this method called after DefaultMessageStore.recover()
         this.doRecheckReputOffsetFromCq();
 
         this.flushConsumeQueueService.start();
@@ -1004,25 +994,20 @@ public class DefaultMessageStore implements MessageStore {
         this.transientStorePool = new TransientStorePool(messageStoreConfig.getTransientStorePoolSize(), messageStoreConfig.getMappedFileSizeCommitLog());
     }
 
+    /**
+     * 1. Make sure the fast-forward messages to be truncated during the recovering according to the max physical offset of the commitLog;
+     *    Make sure this method called after DefaultMessageStore.recover(), the recover method truncate dirty messages(half written or other error happened)
+     * 2. DLedger committedPos may be missing, so the maxPhysicalPosInLogicQueue maybe bigger than maxOffset returned by DLedgerCommitLog, just let it go;
+     * 3. Calculate the reput offset according to the consume queue;
+     * 4. Make sure the fall-behind messages to be dispatched before starting the commitLog, especially when the broker role are automatically changed.
+     */
     private void doRecheckReputOffsetFromCq() throws InterruptedException {
         if (!messageStoreConfig.isRecheckReputOffsetFromCq()) {
             return;
         }
 
-        /*
-         * 1. Make sure the fast-forward messages to be truncated during the recovering according to the max physical offset of the commitlog;
-         * 2. DLedger committedPos may be missing, so the maxPhysicalPosInLogicQueue maybe bigger that maxOffset returned by DLedgerCommitLog, just let it go;
-         * 3. Calculate the reput offset according to the consume queue;
-         * 4. Make sure the fall-behind messages to be dispatched before starting the commitlog, especially when the broker role are automatically changed.
-         */
-        long maxPhysicalPosInLogicQueue = commitLog.getMinOffset();
-        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.getConsumeQueueTable().values()) {
-            for (ConsumeQueueInterface logic : maps.values()) {
-                if (logic.getMaxPhysicOffset() > maxPhysicalPosInLogicQueue) {
-                    maxPhysicalPosInLogicQueue = logic.getMaxPhysicOffset();
-                }
-            }
-        }
+        long maxPhysicalPosInLogicQueue = getConsumeQueueMaxOffset();
+
         // If maxPhyPos(CQs) < minPhyPos(CommitLog), some newly deleted topics may be re-dispatched into cqs mistakenly.
         if (maxPhysicalPosInLogicQueue < 0) {
             maxPhysicalPosInLogicQueue = 0;
@@ -1031,22 +1016,41 @@ public class DefaultMessageStore implements MessageStore {
             maxPhysicalPosInLogicQueue = this.commitLog.getMinOffset();
             /*
              * This happens in following conditions:
-             * 1. If someone removes all the consumequeue files or the disk get damaged.
-             * 2. Launch a new broker, and copy the commitlog from other brokers.
+             * 1. If someone removes all the consumeQueue files or the disk get damaged.
+             * 2. Launch a new broker, and copy the commitLog from other brokers.
              *
              * All the conditions has the same in common that the maxPhysicalPosInLogicQueue should be 0.
              * If the maxPhysicalPosInLogicQueue is gt 0, there maybe something wrong.
              */
             LOGGER.warn("[TooSmallCqOffset] maxPhysicalPosInLogicQueue={} clMinOffset={}", maxPhysicalPosInLogicQueue, this.commitLog.getMinOffset());
         }
-        LOGGER.info("[SetReputOffset] maxPhysicalPosInLogicQueue={} clMinOffset={} clMaxOffset={} clConfirmedOffset={}",
-            maxPhysicalPosInLogicQueue, this.commitLog.getMinOffset(), this.commitLog.getMaxOffset(), this.commitLog.getConfirmOffset());
-        this.reputMessageService.setReputFromOffset(maxPhysicalPosInLogicQueue);
 
-        /*
-         *  1. Finish dispatching the messages fall behind, then to start other services.
-         *  2. DLedger committedPos may be missing, so here just require dispatchBehindBytes <= 0
-         */
+        LOGGER.info("[SetReputOffset] maxPhysicalPosInLogicQueue={} clMinOffset={} clMaxOffset={} clConfirmedOffset={}", maxPhysicalPosInLogicQueue, this.commitLog.getMinOffset(), this.commitLog.getMaxOffset(), this.commitLog.getConfirmOffset());
+        this.reputMessageService.setReputFromOffset(maxPhysicalPosInLogicQueue);
+        waitForReputing();
+
+        this.recoverTopicQueueTable();
+    }
+
+    private long getConsumeQueueMaxOffset() {
+        long maxPhysicalPosInLogicQueue = commitLog.getMinOffset();
+        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.getConsumeQueueTable().values()) {
+            for (ConsumeQueueInterface logic : maps.values()) {
+                if (logic.getMaxPhysicOffset() > maxPhysicalPosInLogicQueue) {
+                    maxPhysicalPosInLogicQueue = logic.getMaxPhysicOffset();
+                }
+            }
+        }
+
+        return maxPhysicalPosInLogicQueue;
+    }
+
+    /**
+     * wait ReputMessageService to reput messages fall behind
+     *  1. Finish dispatching the messages fall behind, then to start other services.
+     *  2. DLedger committedPos may be missing, so here just require dispatchBehindBytes <= 0
+     */
+    private void waitForReputing() throws InterruptedException {
         while (true) {
             if (dispatchBehindBytes() <= 0) {
                 break;
@@ -1054,7 +1058,6 @@ public class DefaultMessageStore implements MessageStore {
             Thread.sleep(1000);
             LOGGER.info("Try to finish doing reput the messages fall behind during the starting, reputOffset={} maxOffset={} behind={}", this.reputMessageService.getReputFromOffset(), this.getMaxPhyOffset(), this.dispatchBehindBytes());
         }
-        this.recoverTopicQueueTable();
     }
 
     private void shutdownScheduleServices() {
@@ -1241,7 +1244,7 @@ public class DefaultMessageStore implements MessageStore {
         long maxPhyOffsetOfConsumeQueue = this.getMaxOffsetInConsumeQueue();
         long recoverConsumeQueueEnd = System.currentTimeMillis();
 
-        // recover commitlog
+        // recover commitLog
         if (lastExitOK) {
             this.commitLog.recoverNormally(maxPhyOffsetOfConsumeQueue);
         } else {

@@ -56,14 +56,18 @@ public class CommitLogRecoverService {
 
         // Began to recover from the last third file
         int index = getLastThirdIndex(mappedFiles);
-
         MappedFile mappedFile = mappedFiles.get(index);
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
+
+        // init this variable with the min offset which stored in the filename
         long processOffset = mappedFile.getFileFromOffset();
-        long mappedFileOffset = 0;
+        // init this variable with the max offset of commitLog
         long lastValidMsgPhyOffset = this.commitLog.getConfirmOffset();
+
         // normal recover doesn't require dispatching
         boolean doDispatch = false;
+        long mappedFileOffset = 0;
+
         while (true) {
             DispatchRequest dispatchRequest = this.commitLog.checkMessageAndReturnSize(byteBuffer, checkCRCOnRecover, checkDupInfo);
             int size = dispatchRequest.getMsgSize();
@@ -71,14 +75,14 @@ public class CommitLogRecoverService {
             if (dispatchRequest.isSuccess() && size > 0) {
                 lastValidMsgPhyOffset = processOffset + mappedFileOffset;
                 mappedFileOffset += size;
-                // below dispatching action is useless, it's better to be deleted
+                // below dispatching action is useless, it's better to delete it
                 this.commitLog.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, false);
             }
             // Come the end of the file, switch to the next file Since the
             // return 0 representatives met last hole,
             // this can not be included in truncate offset
             else if (dispatchRequest.isSuccess() && size == 0) {
-                // below dispatching action is useless, it's better to be deleted
+                // below dispatching action is useless, it's better to delete it
                 this.commitLog.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, true);
                 index++;
                 if (index >= mappedFiles.size()) {

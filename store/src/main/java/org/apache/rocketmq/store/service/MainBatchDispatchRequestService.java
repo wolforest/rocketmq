@@ -51,37 +51,6 @@ public class MainBatchDispatchRequestService extends ServiceThread {
             new ThreadPoolExecutor.AbortPolicy());
     }
 
-    private void pollBatchDispatchRequest() {
-        try {
-            if (!messageStore.getBatchDispatchRequestQueue().isEmpty()) {
-                BatchDispatchRequest task = messageStore.getBatchDispatchRequestQueue().peek();
-                batchDispatchRequestExecutor.execute(() -> {
-                    try {
-                        ByteBuffer tmpByteBuffer = task.getByteBuffer();
-                        tmpByteBuffer.position(task.getPosition());
-                        tmpByteBuffer.limit(task.getPosition() + task.getSize());
-                        List<DispatchRequest> dispatchRequestList = new ArrayList<>();
-                        while (tmpByteBuffer.hasRemaining()) {
-                            DispatchRequest dispatchRequest = messageStore.getCommitLog().checkMessageAndReturnSize(tmpByteBuffer, false, false, false);
-                            if (dispatchRequest.isSuccess()) {
-                                dispatchRequestList.add(dispatchRequest);
-                            } else {
-                                LOGGER.error("[BUG]read total count not equals msg total size.");
-                            }
-                        }
-                        messageStore.getDispatchRequestOrderlyQueue().put(task.getId(), dispatchRequestList.toArray(new DispatchRequest[dispatchRequestList.size()]));
-                        messageStore.getMappedPageHoldCount().getAndDecrement();
-                    } catch (Exception e) {
-                        LOGGER.error("There is an exception in task execution.", e);
-                    }
-                });
-                messageStore.getBatchDispatchRequestQueue().poll();
-            }
-        } catch (Exception e) {
-            LOGGER.warn(this.getServiceName() + " service has exception. ", e);
-        }
-    }
-
     @Override
     public void run() {
         LOGGER.info(this.getServiceName() + " service started");
@@ -104,6 +73,56 @@ public class MainBatchDispatchRequestService extends ServiceThread {
             return messageStore.getBrokerIdentity().getIdentifier() + MainBatchDispatchRequestService.class.getSimpleName();
         }
         return MainBatchDispatchRequestService.class.getSimpleName();
+    }
+
+    private void pollBatchDispatchRequest() {
+        if (messageStore.getBatchDispatchRequestQueue().isEmpty()) {
+            return;
+        }
+
+        try {
+            executeBatchDispatchRequestExecutor();
+            messageStore.getBatchDispatchRequestQueue().poll();
+        } catch (Exception e) {
+            LOGGER.warn(this.getServiceName() + " service has exception. ", e);
+        }
+    }
+
+    private void executeBatchDispatchRequestExecutor() {
+        BatchDispatchRequest task = messageStore.getBatchDispatchRequestQueue().peek();
+        batchDispatchRequestExecutor.execute(() -> {
+            try {
+                ByteBuffer tmpByteBuffer = getByteBuffer(task);
+                List<DispatchRequest> dispatchRequestList = getDispatchRequest(tmpByteBuffer);
+
+                messageStore.getDispatchRequestOrderlyQueue().put(task.getId(), dispatchRequestList.toArray(new DispatchRequest[dispatchRequestList.size()]));
+                messageStore.getMappedPageHoldCount().getAndDecrement();
+            } catch (Exception e) {
+                LOGGER.error("There is an exception in task execution.", e);
+            }
+        });
+    }
+
+    private ByteBuffer getByteBuffer(BatchDispatchRequest task) {
+        ByteBuffer tmpByteBuffer = task.getByteBuffer();
+        tmpByteBuffer.position(task.getPosition());
+        tmpByteBuffer.limit(task.getPosition() + task.getSize());
+
+        return tmpByteBuffer;
+    }
+
+    private List<DispatchRequest> getDispatchRequest(ByteBuffer tmpByteBuffer) {
+        List<DispatchRequest> dispatchRequestList = new ArrayList<>();
+        while (tmpByteBuffer.hasRemaining()) {
+            DispatchRequest dispatchRequest = messageStore.getCommitLog().checkMessageAndReturnSize(tmpByteBuffer, false, false, false);
+            if (dispatchRequest.isSuccess()) {
+                dispatchRequestList.add(dispatchRequest);
+            } else {
+                LOGGER.error("[BUG]read total count not equals msg total size.");
+            }
+        }
+
+        return dispatchRequestList;
     }
 
 }

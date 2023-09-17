@@ -20,6 +20,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.store.DispatchRequest;
 
+/**
+ * orderly queue for DispatchRequest
+ *
+ * MainBatchDispatchRequestService enqueue the requests
+ * DispatchService dequeue the requests
+ */
 public class DispatchRequestOrderlyQueue {
     DispatchRequest[][] buffer;
     long ptr = 0;

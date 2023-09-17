@@ -27,6 +27,10 @@ import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.config.BrokerRole;
 
+/**
+ * DispatchService for ConcurrentReputMessageService
+ * if enableBuildConsumeQueueConcurrently is false, this class is uesless
+ */
 public class DispatchService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final List<DispatchRequest[]> dispatchRequestsList = new ArrayList<>();
@@ -35,6 +39,22 @@ public class DispatchService extends ServiceThread {
 
     public DispatchService(DefaultMessageStore messageStore) {
         this.messageStore = messageStore;
+    }
+
+    @Override
+    public void run() {
+        LOGGER.info(this.getServiceName() + " service started");
+
+        while (!this.isStopped()) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(1);
+                dispatch();
+            } catch (Exception e) {
+                LOGGER.warn(this.getServiceName() + " service has exception. ", e);
+            }
+        }
+
+        LOGGER.info(this.getServiceName() + " service end");
     }
 
     // dispatchRequestsList:[
@@ -84,22 +104,6 @@ public class DispatchService extends ServiceThread {
                     dispatchRequest.getTopic())
                 .add(dispatchRequest.getMsgSize());
         }
-    }
-
-    @Override
-    public void run() {
-        LOGGER.info(this.getServiceName() + " service started");
-
-        while (!this.isStopped()) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(1);
-                dispatch();
-            } catch (Exception e) {
-                LOGGER.warn(this.getServiceName() + " service has exception. ", e);
-            }
-        }
-
-        LOGGER.info(this.getServiceName() + " service end");
     }
 
     @Override
