@@ -84,6 +84,18 @@ public class TimerWheelLocator extends ServiceThread {
         this.perfCounterTicks = perfCounterTicks;
     }
 
+    @Override
+    public void run() {
+        LOGGER.info(this.getServiceName() + " service start");
+        while (!this.isStopped() || fetchedTimerMessageQueue.size() != 0) {
+            try {
+                fetchAndPutTimerRequest();
+            } catch (Throwable e) {
+                LOGGER.error("Unknown error", e);
+            }
+        }
+        LOGGER.info(this.getServiceName() + " service end");
+    }
 
     @Override
     public String getServiceName() {
@@ -93,7 +105,7 @@ public class TimerWheelLocator extends ServiceThread {
     /**
      * collect the requests
      */
-    protected List<TimerRequest> fetchTimerRequests() throws InterruptedException {
+    private List<TimerRequest> fetchTimerRequests() throws InterruptedException {
         List<TimerRequest> trs = null;
         TimerRequest firstReq = fetchedTimerMessageQueue.poll(10, TimeUnit.MILLISECONDS);
         if (null != firstReq) {
@@ -113,14 +125,14 @@ public class TimerWheelLocator extends ServiceThread {
         return trs;
     }
 
-    public String getRealTopic(MessageExt msgExt) {
+    private String getRealTopic(MessageExt msgExt) {
         if (msgExt == null) {
             return null;
         }
         return msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
     }
 
-    protected void putMessageToTimerWheel(TimerRequest req) {
+    private void putMessageToTimerWheel(TimerRequest req) {
         try {
             perfCounterTicks.startTick(ENQUEUE_PUT);
             DefaultStoreMetricsManager.incTimerEnqueueCount(getRealTopic(req.getMsg()));
@@ -144,7 +156,7 @@ public class TimerWheelLocator extends ServiceThread {
 
     private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
 
-    public boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
+    private boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
         //copy the value first, avoid concurrent problem
         long tmpWriteTimeMs = timerState.currWriteTimeMs;
@@ -188,7 +200,7 @@ public class TimerWheelLocator extends ServiceThread {
     }
 
 
-    protected void fetchAndPutTimerRequest() throws Exception {
+    private void fetchAndPutTimerRequest() throws Exception {
         long tmpCommitQueueOffset = timerState.currQueueOffset;
         List<TimerRequest> trs = this.fetchTimerRequests();
         if (CollectionUtils.isEmpty(trs)) {
@@ -215,17 +227,6 @@ public class TimerWheelLocator extends ServiceThread {
         timerState.maybeMoveWriteTime();
     }
 
-    @Override
-    public void run() {
-        LOGGER.info(this.getServiceName() + " service start");
-        while (!this.isStopped() || fetchedTimerMessageQueue.size() != 0) {
-            try {
-                fetchAndPutTimerRequest();
-            } catch (Throwable e) {
-                LOGGER.error("Unknown error", e);
-            }
-        }
-        LOGGER.info(this.getServiceName() + " service end");
-    }
+
 }
 
