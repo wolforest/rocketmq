@@ -112,7 +112,9 @@ public class TimerMessageFetcher extends ServiceThread {
                     msgExt.setQueueOffset(currQueueOffset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE));
                     TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
 
-                    if (!loopOffer(timerRequest)) return false;
+                    if (!loopOffer(timerRequest)) {
+                        return false;
+                    }
 
                 } catch (Exception e) {
                     deferThrow(e);
