@@ -132,22 +132,21 @@ public class TimerWheelLocator extends ServiceThread {
         return msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
     }
 
-    private void putMessageToTimerWheel(TimerRequest req) {
+    private void putMessageToTimerWheel(TimerRequest timerRequest) {
         try {
             perfCounterTicks.startTick(ENQUEUE_PUT);
-            DefaultStoreMetricsManager.incTimerEnqueueCount(getRealTopic(req.getMsg()));
-            if (timerState.isShouldRunningDequeue() && req.getDelayTime() < timerState.currWriteTimeMs) {
-                timerMessageDeliverQueue.put(req);
+            DefaultStoreMetricsManager.incTimerEnqueueCount(getRealTopic(timerRequest.getMsg()));
+            if (timerState.isShouldRunningDequeue() && timerRequest.getDelayTime() < timerState.currWriteTimeMs) {
+                timerMessageDeliverQueue.put(timerRequest);
             } else {
-                boolean doEnqueueRes = doEnqueue(
-                        req.getOffsetPy(), req.getSizePy(), req.getDelayTime(), req.getMsg());
-                req.idempotentRelease(doEnqueueRes || storeConfig.isTimerSkipUnknownError());
+                boolean doEnqueueRes = doEnqueue(timerRequest.getOffsetPy(), timerRequest.getSizePy(), timerRequest.getDelayTime(), timerRequest.getMsg());
+                timerRequest.idempotentRelease(doEnqueueRes || storeConfig.isTimerSkipUnknownError());
             }
             perfCounterTicks.endTick(ENQUEUE_PUT);
         } catch (Throwable t) {
             LOGGER.error("Unknown error", t);
             if (storeConfig.isTimerSkipUnknownError()) {
-                req.idempotentRelease(true);
+                timerRequest.idempotentRelease(true);
             } else {
                 ThreadUtils.sleep(50);
             }
