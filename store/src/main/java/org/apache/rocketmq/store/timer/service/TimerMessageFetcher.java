@@ -64,6 +64,20 @@ public class TimerMessageFetcher extends ServiceThread {
         this.lastBrokerRole = storeConfig.getBrokerRole();
     }
 
+    @Override
+    public void run() {
+        LOGGER.info(this.getServiceName() + " service start");
+        while (!this.isStopped()) {
+            try {
+                if (!enqueue(0)) {
+                    waitForRunning(100L * storeConfig.getTimerPrecisionMs() / 1000);
+                }
+            } catch (Throwable e) {
+                LOGGER.error("Error occurred in " + getServiceName(), e);
+            }
+        }
+        LOGGER.info(this.getServiceName() + " service end");
+    }
 
     @Override
     public String getServiceName() {
@@ -174,21 +188,6 @@ public class TimerMessageFetcher extends ServiceThread {
             bufferCQ.release();
         }
         return false;
-    }
-
-    @Override
-    public void run() {
-        LOGGER.info(this.getServiceName() + " service start");
-        while (!this.isStopped()) {
-            try {
-                if (!enqueue(0)) {
-                    waitForRunning(100L * storeConfig.getTimerPrecisionMs() / 1000);
-                }
-            } catch (Throwable e) {
-                LOGGER.error("Error occurred in " + getServiceName(), e);
-            }
-        }
-        LOGGER.info(this.getServiceName() + " service end");
     }
 
 }
