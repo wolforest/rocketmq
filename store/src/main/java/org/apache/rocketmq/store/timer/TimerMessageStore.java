@@ -130,6 +130,7 @@ public class TimerMessageStore {
         timerMetricManager = new TimerMetricManager(timerMetrics, storeConfig, messageOperator, timerWheel, timerLog, timerState);
         this.messageOperator = new MessageOperator(messageStore, storeConfig);
     }
+
     public boolean load() {
         this.initService();
         boolean load = timerLog.load();
@@ -231,9 +232,10 @@ public class TimerMessageStore {
 
     }
 
-    public TimerState getTimerState(){
+    public TimerState getTimerState() {
         return this.timerState;
     }
+
     public long getCongestNum(long deliverTimeMs) {
         return timerWheel.getNum(deliverTimeMs);
     }
@@ -437,16 +439,15 @@ public class TimerMessageStore {
                 perfCounterTicks
         );
         timerWheelLocator = new TimerWheelLocator(
+                timerState,
                 storeConfig,
                 timerWheel,
                 timerLog,
-                timerState,
-                timerMetricManager,
                 fetchedTimerMessageQueue,
                 timerMessageDeliverQueue,
                 timerMessageDelivers,
                 timerMessageQueries,
-                timerState,
+                timerMetricManager,
                 perfCounterTicks);
         dequeueWarmService = new TimerDequeueWarmService(
                 timerState);

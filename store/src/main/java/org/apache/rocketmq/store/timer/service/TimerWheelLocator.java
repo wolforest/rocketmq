@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -51,24 +52,27 @@ public class TimerWheelLocator extends ServiceThread {
     private TimerWheel timerWheel;
     private TimerMetricManager metricManager;
 
-    public TimerWheelLocator(MessageStoreConfig storeConfig,
+    public TimerWheelLocator(TimerState timerState,
+                             MessageStoreConfig storeConfig,
                              TimerWheel timerWheel,
                              TimerLog timerLog,
-                             TimerState timerState,
+                             BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
+                             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+                             TimerMessageDeliver[] timerMessageDelivers,
+                             TimerMessageQuery[] timerMessageQueries,
                              TimerMetricManager metricManager,
-                             BlockingQueue<TimerRequest> fetchedTimerMessageQueue, BlockingQueue<TimerRequest> timerMessageDeliverQueue,
-                             TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries,
-                             TimerState pointer, PerfCounter.Ticks perfCounterTicks) {
+                             PerfCounter.Ticks perfCounterTicks) {
+        this.timerState = timerState;
         this.storeConfig = storeConfig;
         this.timerWheel = timerWheel;
         this.timerLog = timerLog;
-        this.timerState = timerState;
-        this.metricManager = metricManager;
+
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageDelivers = timerMessageDelivers;
         this.timerMessageQueries = timerMessageQueries;
-        this.pointer = pointer;
+
+        this.metricManager = metricManager;
         this.perfCounterTicks = perfCounterTicks;
     }
 
@@ -136,6 +140,7 @@ public class TimerWheelLocator extends ServiceThread {
             }
         }
     }
+
     private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
 
     public boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
@@ -182,7 +187,6 @@ public class TimerWheelLocator extends ServiceThread {
     }
 
 
-
     protected void fetchAndPutTimerRequest() throws Exception {
         long tmpCommitQueueOffset = pointer.currQueueOffset;
         List<TimerRequest> trs = this.fetchTimerRequests();
@@ -198,7 +202,7 @@ public class TimerWheelLocator extends ServiceThread {
                 req.setLatch(latch);
                 this.putMessageToTimerWheel(req);
             }
-            pointer.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue,timerMessageDelivers,timerMessageQueries, -1);
+            pointer.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue, timerMessageDelivers, timerMessageQueries, -1);
             boolean allSuccess = trs.stream().allMatch(TimerRequest::isSucc);
             if (allSuccess) {
                 break;
