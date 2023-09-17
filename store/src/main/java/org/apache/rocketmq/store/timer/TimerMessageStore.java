@@ -446,9 +446,6 @@ public class TimerMessageStore {
         return 1;
     }
 
-
-
-
     public long getCongestNum(long deliverTimeMs) {
         return timerWheel.getNum(deliverTimeMs);
     }
@@ -533,27 +530,5 @@ public class TimerMessageStore {
     public TimerMetrics getTimerMetrics() {
         return this.timerMetrics;
     }
-
-    public int getPrecisionMs() {
-        return precisionMs;
-    }
-
-    public TimerMessageDeliver[] getTimerMessageDelivers() {
-        return timerMessageDelivers;
-    }
-
-    public void setTimerMessageDelivers(
-            TimerMessageDeliver[] timerMessageDelivers) {
-        this.timerMessageDelivers = timerMessageDelivers;
-    }
-
-    public TimerCheckpoint getTimerCheckpoint() {
-        return timerCheckpoint;
-    }
-
-    public TimerState getTimerState() {
-        return timerState;
-    }
-
 
 }
