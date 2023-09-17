@@ -111,11 +111,7 @@ public class TimerMessageFetcher extends ServiceThread {
                         msgExt.setQueueOffset(currQueueOffset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE));
                         TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
                         // System.out.printf("build enqueue request, %s%n", timerRequest);
-                        while (!fetchedTimerMessageQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
-                            if (!isRunningEnqueue()) {
-                                return false;
-                            }
-                        }
+                        if (!loopOffer(timerRequest)) return false;
                     }
                 } catch (Exception e) {
                     // here may cause the message loss
@@ -142,6 +138,15 @@ public class TimerMessageFetcher extends ServiceThread {
             bufferCQ.release();
         }
         return false;
+    }
+
+    private boolean loopOffer(TimerRequest timerRequest) throws InterruptedException {
+        while (!fetchedTimerMessageQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
+            if (!isRunningEnqueue()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private SelectMappedBufferResult getIndexBuffer(int queueId) {
