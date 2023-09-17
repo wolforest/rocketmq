@@ -262,114 +262,7 @@ public class TimerMessageStore {
         LOGGER.debug("Total cost Time: {}", endTime - startTime);
     }
 
-    @SuppressWarnings("NonAtomicOperationOnVolatileField")
-    public void recover() {
-        //recover timerLog
-        long lastFlushPos = timerCheckpoint.getLastTimerLogFlushPos();
-        MappedFile lastFile = timerLog.getMappedFileQueue().getLastMappedFile();
-        if (null != lastFile) {
-            lastFlushPos = lastFlushPos - lastFile.getFileSize();
-        }
-        if (lastFlushPos < 0) {
-            lastFlushPos = 0;
-        }
-        long processOffset = recoverAndRevise(lastFlushPos, true);
 
-        timerLog.getMappedFileQueue().setFlushedWhere(processOffset);
-        //revise queue offset
-        long queueOffset = reviseQueueOffset(processOffset);
-        if (-1 == queueOffset) {
-            timerState.currQueueOffset = timerCheckpoint.getLastTimerQueueOffset();
-        } else {
-            timerState.currQueueOffset = queueOffset + 1;
-        }
-        timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
-
-        //check timer wheel
-        timerState.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
-        long nextReadTimeMs = formatTimeMs(
-                System.currentTimeMillis()) - (long) timerState.slotsTotal * precisionMs + (long) TimerState.TIMER_BLANK_SLOTS * precisionMs;
-        if (timerState.currReadTimeMs < nextReadTimeMs) {
-            timerState.currReadTimeMs = nextReadTimeMs;
-        }
-        //the timer wheel may contain physical offset bigger than timerLog
-        //This will only happen when the timerLog is damaged
-        //hard to test
-        long minFirst = timerWheel.checkPhyPos(timerState.currReadTimeMs, processOffset);
-        if (debug) {
-            minFirst = 0;
-        }
-        if (minFirst < processOffset) {
-            LOGGER.warn("Timer recheck because of minFirst:{} processOffset:{}", minFirst, processOffset);
-            recoverAndRevise(minFirst, false);
-        }
-        LOGGER.info("Timer recover ok currReadTimerMs:{} currQueueOffset:{} checkQueueOffset:{} processOffset:{}",
-                timerState.currReadTimeMs, timerState.currQueueOffset, timerCheckpoint.getLastTimerQueueOffset(), processOffset);
-
-        timerState.commitReadTimeMs = timerState.currReadTimeMs;
-        timerState.commitQueueOffset = timerState.currQueueOffset;
-
-        timerState.prepareTimerCheckPoint();
-    }
-
-    public long reviseQueueOffset(long processOffset) {
-        SelectMappedBufferResult selectRes = timerLog.getTimerMessage(processOffset - (TimerLog.UNIT_SIZE - TimerLog.UNIT_PRE_SIZE_FOR_MSG));
-        if (null == selectRes) {
-            return -1;
-        }
-        try {
-            long offsetPy = selectRes.getByteBuffer().getLong();
-            int sizePy = selectRes.getByteBuffer().getInt();
-            MessageExt messageExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
-            if (null == messageExt) {
-                return -1;
-            }
-
-            // check offset in msg is equal to offset of cq.
-            // if not, use cq offset.
-            long msgQueueOffset = messageExt.getQueueOffset();
-            int queueId = messageExt.getQueueId();
-            ConsumeQueue cq = (ConsumeQueue) this.messageStore.getConsumeQueue(TIMER_TOPIC, queueId);
-            if (null == cq) {
-                return msgQueueOffset;
-            }
-            long cqOffset = msgQueueOffset;
-            long tmpOffset = msgQueueOffset;
-            int maxCount = 20000;
-            while (maxCount-- > 0) {
-                if (tmpOffset < 0) {
-                    LOGGER.warn("reviseQueueOffset check cq offset fail, msg in cq is not found.{}, {}",
-                            offsetPy, sizePy);
-                    break;
-                }
-                SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(tmpOffset);
-                if (null == bufferCQ) {
-                    // offset in msg may be greater than offset of cq.
-                    tmpOffset -= 1;
-                    continue;
-                }
-                try {
-                    long offsetPyTemp = bufferCQ.getByteBuffer().getLong();
-                    int sizePyTemp = bufferCQ.getByteBuffer().getInt();
-                    if (offsetPyTemp == offsetPy && sizePyTemp == sizePy) {
-                        LOGGER.info("reviseQueueOffset check cq offset ok. {}, {}, {}",
-                                tmpOffset, offsetPyTemp, sizePyTemp);
-                        cqOffset = tmpOffset;
-                        break;
-                    }
-                    tmpOffset -= 1;
-                } catch (Throwable e) {
-                    LOGGER.error("reviseQueueOffset check cq offset error.", e);
-                } finally {
-                    bufferCQ.release();
-                }
-            }
-
-            return cqOffset;
-        } finally {
-            selectRes.release();
-        }
-    }
 
     //recover timerLog and revise timerWheel
     //return process offset
@@ -611,9 +504,6 @@ public class TimerMessageStore {
     }
 
 
-    private long formatTimeMs(long timeMs) {
-        return timeMs / precisionMs * precisionMs;
-    }
 
 
     public long getCongestNum(long deliverTimeMs) {
@@ -721,5 +611,119 @@ public class TimerMessageStore {
     public TimerState getTimerState() {
         return timerState;
     }
+
+
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
+    public void recover() {
+        //recover timerLog
+        long lastFlushPos = timerCheckpoint.getLastTimerLogFlushPos();
+        MappedFile lastFile = timerLog.getMappedFileQueue().getLastMappedFile();
+        if (null != lastFile) {
+            lastFlushPos = lastFlushPos - lastFile.getFileSize();
+        }
+        if (lastFlushPos < 0) {
+            lastFlushPos = 0;
+        }
+        long processOffset = recoverAndRevise(lastFlushPos, true);
+
+        timerLog.getMappedFileQueue().setFlushedWhere(processOffset);
+        //revise queue offset
+        long queueOffset = reviseQueueOffset(processOffset);
+        if (-1 == queueOffset) {
+            timerState.currQueueOffset = timerCheckpoint.getLastTimerQueueOffset();
+        } else {
+            timerState.currQueueOffset = queueOffset + 1;
+        }
+        timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerCheckpoint.getMasterTimerQueueOffset());
+
+        //check timer wheel
+        timerState.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
+        long nextReadTimeMs = formatTimeMs(
+                System.currentTimeMillis()) - (long) timerState.slotsTotal * precisionMs + (long) TimerState.TIMER_BLANK_SLOTS * precisionMs;
+        if (timerState.currReadTimeMs < nextReadTimeMs) {
+            timerState.currReadTimeMs = nextReadTimeMs;
+        }
+        //the timer wheel may contain physical offset bigger than timerLog
+        //This will only happen when the timerLog is damaged
+        //hard to test
+        long minFirst = timerWheel.checkPhyPos(timerState.currReadTimeMs, processOffset);
+        if (debug) {
+            minFirst = 0;
+        }
+        if (minFirst < processOffset) {
+            LOGGER.warn("Timer recheck because of minFirst:{} processOffset:{}", minFirst, processOffset);
+            recoverAndRevise(minFirst, false);
+        }
+        LOGGER.info("Timer recover ok currReadTimerMs:{} currQueueOffset:{} checkQueueOffset:{} processOffset:{}",
+                timerState.currReadTimeMs, timerState.currQueueOffset, timerCheckpoint.getLastTimerQueueOffset(), processOffset);
+
+        timerState.commitReadTimeMs = timerState.currReadTimeMs;
+        timerState.commitQueueOffset = timerState.currQueueOffset;
+
+        timerState.prepareTimerCheckPoint();
+    }
+
+    public long reviseQueueOffset(long processOffset) {
+        SelectMappedBufferResult selectRes = timerLog.getTimerMessage(processOffset - (TimerLog.UNIT_SIZE - TimerLog.UNIT_PRE_SIZE_FOR_MSG));
+        if (null == selectRes) {
+            return -1;
+        }
+        try {
+            long offsetPy = selectRes.getByteBuffer().getLong();
+            int sizePy = selectRes.getByteBuffer().getInt();
+            MessageExt messageExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
+            if (null == messageExt) {
+                return -1;
+            }
+
+            // check offset in msg is equal to offset of cq.
+            // if not, use cq offset.
+            long msgQueueOffset = messageExt.getQueueOffset();
+            int queueId = messageExt.getQueueId();
+            ConsumeQueue cq = (ConsumeQueue) messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
+            if (null == cq) {
+                return msgQueueOffset;
+            }
+            long cqOffset = msgQueueOffset;
+            long tmpOffset = msgQueueOffset;
+            int maxCount = 20000;
+            while (maxCount-- > 0) {
+                if (tmpOffset < 0) {
+                    LOGGER.warn("reviseQueueOffset check cq offset fail, msg in cq is not found.{}, {}",
+                            offsetPy, sizePy);
+                    break;
+                }
+                SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(tmpOffset);
+                if (null == bufferCQ) {
+                    // offset in msg may be greater than offset of cq.
+                    tmpOffset -= 1;
+                    continue;
+                }
+                try {
+                    long offsetPyTemp = bufferCQ.getByteBuffer().getLong();
+                    int sizePyTemp = bufferCQ.getByteBuffer().getInt();
+                    if (offsetPyTemp == offsetPy && sizePyTemp == sizePy) {
+                        LOGGER.info("reviseQueueOffset check cq offset ok. {}, {}, {}",
+                                tmpOffset, offsetPyTemp, sizePyTemp);
+                        cqOffset = tmpOffset;
+                        break;
+                    }
+                    tmpOffset -= 1;
+                } catch (Throwable e) {
+                    LOGGER.error("reviseQueueOffset check cq offset error.", e);
+                } finally {
+                    bufferCQ.release();
+                }
+            }
+
+            return cqOffset;
+        } finally {
+            selectRes.release();
+        }
+    }
+    private long formatTimeMs(long timeMs) {
+        return timeMs / precisionMs * precisionMs;
+    }
+
 
 }
