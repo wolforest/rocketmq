@@ -99,7 +99,7 @@ public class TimerMessageFetcher extends ServiceThread {
                 try {
                     long offsetPy = bufferCQ.getByteBuffer().getLong();
                     int sizePy = bufferCQ.getByteBuffer().getInt();
-                    ignoreRemain(bufferCQ);
+                    discard(bufferCQ);
                     MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
                     if (null == msgExt) {
                         perfCounterTicks.getCounter("enqueue_get_miss");
@@ -145,7 +145,7 @@ public class TimerMessageFetcher extends ServiceThread {
         }
     }
 
-    private void ignoreRemain(SelectMappedBufferResult bufferCQ) {
+    private void discard(SelectMappedBufferResult bufferCQ) {
         bufferCQ.getByteBuffer().getLong(); //tags code,Just to move the cursor
     }
 
