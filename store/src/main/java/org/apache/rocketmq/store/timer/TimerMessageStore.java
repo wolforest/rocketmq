@@ -452,15 +452,16 @@ public class TimerMessageStore {
         dequeueWarmService = new TimerDequeueWarmService(
                 timerState);
         timerWheelFetcher = new TimerWheelFetcher(
-                storeConfig,
                 timerState,
+                storeConfig,
                 timerWheel,
                 timerLog,
-                perfCounterTicks,
                 timerMessageQueryQueue,
                 timerMessageDeliverQueue,
                 timerMessageDelivers,
-                timerMessageQueries);
+                timerMessageQueries,
+                perfCounterTicks
+        );
         timerFlushService = new TimerFlushService(
                 messageStore,
                 fetchedTimerMessageQueue,

@@ -57,26 +57,24 @@ public class TimerWheelFetcher extends ServiceThread {
     private int timerLogFileSize;
     private int precisionMs;
 
-    public TimerWheelFetcher(MessageStoreConfig storeConfig,
-                             TimerState timerState,
+    public TimerWheelFetcher(TimerState timerState,
+                             MessageStoreConfig storeConfig,
                              TimerWheel timerWheel,
                              TimerLog timerLog,
-                             PerfCounter.Ticks perfCounterTicks,
                              BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                              TimerMessageDeliver[] timerMessageDelivers,
-                             TimerMessageQuery[] timerMessageQueries
-
-    ) {
-        this.storeConfig = storeConfig;
+                             TimerMessageQuery[] timerMessageQueries,
+                             PerfCounter.Ticks perfCounterTicks) {
         this.timerState = timerState;
+        this.storeConfig = storeConfig;
         this.timerWheel = timerWheel;
         this.timerLog = timerLog;
-        this.perfCounterTicks = perfCounterTicks;
         this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageDelivers = timerMessageDelivers;
         this.timerMessageQueries = timerMessageQueries;
+        this.perfCounterTicks = perfCounterTicks;
 
         timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
         precisionMs = storeConfig.getTimerPrecisionMs();
