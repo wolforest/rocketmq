@@ -83,7 +83,7 @@ public class TimerMessageStore {
 
 
     private ScheduledExecutorService scheduler;
-    public final TimerState timerState;
+    private final TimerState timerState;
     private final MessageStore messageStore;
     private final TimerWheel timerWheel;
     private final TimerLog timerLog;
