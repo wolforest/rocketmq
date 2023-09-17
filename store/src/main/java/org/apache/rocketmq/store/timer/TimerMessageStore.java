@@ -109,24 +109,25 @@ public class TimerMessageStore {
     public TimerMessageStore(final MessageStore messageStore, final MessageStoreConfig storeConfig,
                              TimerCheckpoint timerCheckpoint, TimerMetrics timerMetrics,
                              final BrokerStatsManager brokerStatsManager) throws IOException {
-        initQueues(storeConfig);
-        initScheduler(messageStore);
-
         this.messageStore = messageStore;
         this.storeConfig = storeConfig;
+        this.timerMetrics = timerMetrics;
+        this.timerCheckpoint = timerCheckpoint;
+        this.brokerStatsManager = brokerStatsManager;
         this.commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
         this.timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
         this.precisionMs = storeConfig.getTimerPrecisionMs();
+
+        initQueues(storeConfig);
+        initScheduler(messageStore);
+
         this.timerLog = new TimerLog(getTimerLogPath(storeConfig.getStorePathRootDir()), timerLogFileSize);
-        this.timerMetrics = timerMetrics;
-        this.timerCheckpoint = timerCheckpoint;
         final int slotsTotal = TIMER_WHEEL_TTL_DAY * DAY_SECS;
         final String timeWheelFileName = getTimerWheelFileFullName(storeConfig.getStorePathRootDir());
         this.timerWheel = new TimerWheel(timeWheelFileName, slotsTotal, precisionMs);
         this.timerState = new TimerState(timerCheckpoint, storeConfig, timerLog, slotsTotal, timerWheel, messageStore);
         timerMetricManager = new TimerMetricManager(timerMetrics, storeConfig, messageOperator, timerWheel, timerLog, timerState);
         this.messageOperator = new MessageOperator(messageStore, storeConfig);
-        this.brokerStatsManager = brokerStatsManager;
     }
     public boolean load() {
         this.initService();
