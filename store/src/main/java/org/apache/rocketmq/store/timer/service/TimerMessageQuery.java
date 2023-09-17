@@ -36,18 +36,12 @@ public class TimerMessageQuery extends AbstractStateService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    @Override
-    public String getServiceName() {
-        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
-    }
-
+    private TimerState timerState;
+    private MessageStoreConfig storeConfig;
+    private MessageOperator messageReader;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     private PerfCounter.Ticks perfCounterTicks;
-    private TimerState timerState;
-    private MessageStoreConfig storeConfig;
-
-    private MessageOperator messageReader;
 
     public TimerMessageQuery(
             TimerState timerState,
@@ -55,9 +49,7 @@ public class TimerMessageQuery extends AbstractStateService {
             MessageOperator messageReader,
             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
             BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
-            PerfCounter.Ticks perfCounterTicks
-
-    ) {
+            PerfCounter.Ticks perfCounterTicks) {
         this.messageReader = messageReader;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageQueryQueue = timerMessageQueryQueue;
@@ -65,6 +57,12 @@ public class TimerMessageQuery extends AbstractStateService {
         this.storeConfig = storeConfig;
         this.timerState = timerState;
     }
+
+    @Override
+    public String getServiceName() {
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
+    }
+
 
     @Override
     public void run() {
