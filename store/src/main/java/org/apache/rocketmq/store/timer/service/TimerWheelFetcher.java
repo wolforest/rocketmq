@@ -81,11 +81,6 @@ public class TimerWheelFetcher extends ServiceThread {
         commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
     }
 
-    @Override
-    public String getServiceName() {
-        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
-    }
-
     public void start(long shouldStartTime) {
         this.shouldStartTime = shouldStartTime;
         super.start();
@@ -111,7 +106,13 @@ public class TimerWheelFetcher extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service end");
     }
 
-    public int dequeue() throws Exception {
+
+    @Override
+    public String getServiceName() {
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
+    }
+
+    private int dequeue() throws Exception {
 
         if (storeConfig.isTimerStopDequeue()) {
             return -1;
@@ -258,11 +259,11 @@ public class TimerWheelFetcher extends ServiceThread {
     }
 
 
-    public boolean needRoll(int magic) {
+    private boolean needRoll(int magic) {
         return (magic & TimerState.MAGIC_ROLL) != 0;
     }
 
-    public boolean needDelete(int magic) {
+    private boolean needDelete(int magic) {
         return (magic & TimerState.MAGIC_DELETE) != 0;
     }
 
