@@ -58,11 +58,6 @@ public class TimerMessageQuery extends AbstractStateService {
         this.timerState = timerState;
     }
 
-    @Override
-    public String getServiceName() {
-        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
-    }
-
 
     @Override
     public void run() {
@@ -133,6 +128,11 @@ public class TimerMessageQuery extends AbstractStateService {
         }
         LOGGER.info(this.getServiceName() + " service end");
         setState(AbstractStateService.END);
+    }
+
+    @Override
+    public String getServiceName() {
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 }
 
