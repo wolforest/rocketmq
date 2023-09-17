@@ -79,7 +79,7 @@ public class TimerMessageFetcher extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service end");
     }
 
-    public boolean enqueue(int queueId) {
+    private boolean enqueue(int queueId) {
         if (storeConfig.isTimerStopEnqueue()) {
             return false;
         }
