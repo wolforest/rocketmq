@@ -79,44 +79,6 @@ public class TimerMessageFetcher extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service end");
     }
 
-    @Override
-    public String getServiceName() {
-        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
-    }
-
-    private void checkBrokerRole() {
-        BrokerRole currRole = storeConfig.getBrokerRole();
-        if (lastBrokerRole != currRole) {
-            synchronized (lastBrokerRole) {
-                LOGGER.info("Broker role change from {} to {}", lastBrokerRole, currRole);
-                //if change to master, do something
-                if (BrokerRole.SLAVE != currRole) {
-                    timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerState.timerCheckpoint.getMasterTimerQueueOffset());
-                    timerState.commitQueueOffset = timerState.currQueueOffset;
-                    timerState.prepareTimerCheckPoint();
-                    timerState.timerCheckpoint.flush();
-                    timerState.currReadTimeMs = timerState.timerCheckpoint.getLastReadTimeMs();
-                    timerState.commitReadTimeMs = timerState.currReadTimeMs;
-                }
-                //if change to slave, just let it go
-                lastBrokerRole = currRole;
-            }
-        }
-    }
-
-    private boolean isMaster() {
-        return BrokerRole.SLAVE != lastBrokerRole;
-    }
-
-    private boolean isRunningEnqueue() {
-        checkBrokerRole();
-        if (!timerState.isShouldRunningDequeue() && !isMaster() && timerState.currQueueOffset >= timerState.timerCheckpoint.getMasterTimerQueueOffset()) {
-            return false;
-        }
-
-        return timerState.isRunning();
-    }
-
     public boolean enqueue(int queueId) {
         if (storeConfig.isTimerStopEnqueue()) {
             return false;
@@ -190,4 +152,41 @@ public class TimerMessageFetcher extends ServiceThread {
         return false;
     }
 
+    @Override
+    public String getServiceName() {
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
+    }
+
+    private void checkBrokerRole() {
+        BrokerRole currRole = storeConfig.getBrokerRole();
+        if (lastBrokerRole != currRole) {
+            synchronized (lastBrokerRole) {
+                LOGGER.info("Broker role change from {} to {}", lastBrokerRole, currRole);
+                //if change to master, do something
+                if (BrokerRole.SLAVE != currRole) {
+                    timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerState.timerCheckpoint.getMasterTimerQueueOffset());
+                    timerState.commitQueueOffset = timerState.currQueueOffset;
+                    timerState.prepareTimerCheckPoint();
+                    timerState.timerCheckpoint.flush();
+                    timerState.currReadTimeMs = timerState.timerCheckpoint.getLastReadTimeMs();
+                    timerState.commitReadTimeMs = timerState.currReadTimeMs;
+                }
+                //if change to slave, just let it go
+                lastBrokerRole = currRole;
+            }
+        }
+    }
+
+    private boolean isMaster() {
+        return BrokerRole.SLAVE != lastBrokerRole;
+    }
+
+    private boolean isRunningEnqueue() {
+        checkBrokerRole();
+        if (!timerState.isShouldRunningDequeue() && !isMaster() && timerState.currQueueOffset >= timerState.timerCheckpoint.getMasterTimerQueueOffset()) {
+            return false;
+        }
+
+        return timerState.isRunning();
+    }
 }
