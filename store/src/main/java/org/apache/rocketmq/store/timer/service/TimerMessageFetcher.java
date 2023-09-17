@@ -69,7 +69,7 @@ public class TimerMessageFetcher extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service start");
         while (!this.isStopped()) {
             try {
-                if (!enqueue(0)) {
+                if (!fetch(0)) {
                     waitForRunning(100L * storeConfig.getTimerPrecisionMs() / 1000);
                 }
             } catch (Throwable e) {
@@ -79,7 +79,7 @@ public class TimerMessageFetcher extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service end");
     }
 
-    private boolean enqueue(int queueId) {
+    private boolean fetch(int queueId) {
         if (storeConfig.isTimerStopEnqueue()) {
             return false;
         }
