@@ -63,27 +63,19 @@ public class TimerMessageStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-
-    public final TimerState timerState;
-
     public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
-
-
-    public static final Random RANDOM = new Random();
-
     public static final int DEFAULT_CAPACITY = 1024;
-
-
-    public boolean debug = false;
-
     public static final String ENQUEUE_PUT = "enqueue_put";
     public static final String DEQUEUE_PUT = "dequeue_put";
     // The total days in the timer wheel when precision is 1000ms.
     // If the broker shutdown last more than the configured days, will cause message loss
     public static final int TIMER_WHEEL_TTL_DAY = 7;
     public static final int DAY_SECS = 24 * 3600;
-    protected final PerfCounter.Ticks perfCounterTicks = new PerfCounter.Ticks(LOGGER);
 
+    public final TimerState timerState;
+    public static final Random RANDOM = new Random();
+    public boolean debug = false;
+    protected final PerfCounter.Ticks perfCounterTicks = new PerfCounter.Ticks(LOGGER);
 
     protected BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     protected BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
@@ -91,12 +83,10 @@ public class TimerMessageStore {
 
 
     private final ScheduledExecutorService scheduler;
-
     private final MessageStore messageStore;
     private final TimerWheel timerWheel;
     private final TimerLog timerLog;
     private final TimerCheckpoint timerCheckpoint;
-
     private TimerMessageFetcher timerMessageFetcher;
     private TimerWheelLocator timerWheelLocator;
     private TimerDequeueWarmService dequeueWarmService;
@@ -104,16 +94,12 @@ public class TimerMessageStore {
     private TimerMessageDeliver[] timerMessageDelivers;
     private TimerMessageQuery[] timerMessageQueries;
     private TimerFlushService timerFlushService;
-
     private final int commitLogFileSize;
     private final int timerLogFileSize;
-
-
     protected final int precisionMs;
     protected final MessageStoreConfig storeConfig;
     protected TimerMetrics timerMetrics;
     protected long lastTimeOfCheckMetrics = System.currentTimeMillis();
-
     private final BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
     private MessageOperator messageOperator;

@@ -50,7 +50,6 @@ public class TimerMessageFetcher extends ServiceThread {
     private MessageOperator messageOperator;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
-
     public TimerMessageFetcher(
             TimerState timerState,
             MessageStoreConfig storeConfig,
