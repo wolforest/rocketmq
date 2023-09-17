@@ -56,12 +56,12 @@ public class TimerMessageFetcher extends ServiceThread {
             MessageOperator messageOperator,
             BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
             PerfCounter.Ticks perfCounterTicks) {
-        this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
-        this.storeConfig = storeConfig;
-        this.lastBrokerRole = storeConfig.getBrokerRole();
-        this.messageOperator = messageOperator;
         this.timerState = timerState;
+        this.storeConfig = storeConfig;
+        this.messageOperator = messageOperator;
+        this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.perfCounterTicks = perfCounterTicks;
+        this.lastBrokerRole = storeConfig.getBrokerRole();
     }
 
 
