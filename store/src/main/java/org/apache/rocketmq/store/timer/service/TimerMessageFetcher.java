@@ -103,24 +103,19 @@ public class TimerMessageFetcher extends ServiceThread {
                     MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
                     if (null == msgExt) {
                         perfCounterTicks.getCounter("enqueue_get_miss");
-                    } else {
-                        timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
-                        timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
-                        long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
-                        // use CQ offset, not offset in Message
-                        msgExt.setQueueOffset(currQueueOffset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE));
-                        TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
-                        // System.out.printf("build enqueue request, %s%n", timerRequest);
-                        if (!loopOffer(timerRequest)) return false;
+                        continue;
                     }
+                    timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
+                    timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
+                    long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
+                    // use CQ offset, not offset in Message
+                    msgExt.setQueueOffset(currQueueOffset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE));
+                    TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
+
+                    if (!loopOffer(timerRequest)) return false;
+
                 } catch (Exception e) {
-                    // here may cause the message loss
-                    if (storeConfig.isTimerSkipUnknownError()) {
-                        LOGGER.warn("Unknown error in skipped in enqueuing", e);
-                    } else {
-                        ThreadUtils.sleep(50);
-                        throw e;
-                    }
+                    deferThrow(e);
                 } finally {
                     perfCounterTicks.endTick("enqueue_get");
                 }
@@ -138,6 +133,16 @@ public class TimerMessageFetcher extends ServiceThread {
             bufferCQ.release();
         }
         return false;
+    }
+
+    private void deferThrow(Exception e) throws Exception {
+        // here may cause the message loss
+        if (storeConfig.isTimerSkipUnknownError()) {
+            LOGGER.warn("Unknown error in skipped in enqueuing", e);
+        } else {
+            ThreadUtils.sleep(50);
+            throw e;
+        }
     }
 
     private void ignoreRemain(SelectMappedBufferResult bufferCQ) {
