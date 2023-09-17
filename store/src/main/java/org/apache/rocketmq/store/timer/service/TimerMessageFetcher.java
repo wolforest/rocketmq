@@ -88,7 +88,7 @@ public class TimerMessageFetcher extends ServiceThread {
             return false;
         }
         SelectMappedBufferResult bufferCQ = getIndexBuffer(queueId);
-        long offset = timerState.currQueueOffset;
+        long currQueueOffset = timerState.currQueueOffset;
         if (null == bufferCQ) {
             return false;
         }
@@ -108,7 +108,7 @@ public class TimerMessageFetcher extends ServiceThread {
                         timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
                         long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
                         // use CQ offset, not offset in Message
-                        msgExt.setQueueOffset(offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE));
+                        msgExt.setQueueOffset(currQueueOffset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE));
                         TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
                         // System.out.printf("build enqueue request, %s%n", timerRequest);
                         while (!fetchedTimerMessageQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
@@ -132,9 +132,9 @@ public class TimerMessageFetcher extends ServiceThread {
                 if (!isRunningEnqueue()) {
                     return false;
                 }
-                timerState.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
+                timerState.currQueueOffset = currQueueOffset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
             }
-            timerState.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
+            timerState.currQueueOffset = currQueueOffset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
             return i > 0;
         } catch (Exception e) {
             LOGGER.error("Unknown exception in enqueuing", e);
