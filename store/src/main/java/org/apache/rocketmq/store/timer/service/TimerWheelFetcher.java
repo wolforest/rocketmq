@@ -54,8 +54,8 @@ public class TimerWheelFetcher extends ServiceThread {
     private TimerMessageQuery[] timerMessageQueries;
 
     private long shouldStartTime;
-    private int timerLogFileSize;
-    private int precisionMs;
+    private final int timerLogFileSize;
+    private final int precisionMs;
 
     public TimerWheelFetcher(TimerState timerState,
                              MessageStoreConfig storeConfig,
