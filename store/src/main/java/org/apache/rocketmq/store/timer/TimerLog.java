@@ -57,14 +57,14 @@ public class TimerLog {
         return append(data, 0, data.length);
     }
 
-    public long append(byte[] data, int pos, int len) {
+    private MappedFile getLastMappedFile(int len) {
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
         if (null == mappedFile || mappedFile.isFull()) {
             mappedFile = this.mappedFileQueue.getLastMappedFile(0);
         }
         if (null == mappedFile) {
             log.error("Create mapped file1 error for timer log");
-            return -1;
+            return null;
         }
         if (len + MIN_BLANK_LEN > mappedFile.getFileSize() - mappedFile.getWrotePosition()) {
             ByteBuffer byteBuffer = ByteBuffer.allocate(MIN_BLANK_LEN);
@@ -76,14 +76,19 @@ public class TimerLog {
                 mappedFile.setWrotePosition(mappedFile.getFileSize());
             } else {
                 log.error("Append blank error for timer log");
-                return -1;
+                return null;
             }
             mappedFile = this.mappedFileQueue.getLastMappedFile(0);
             if (null == mappedFile) {
                 log.error("create mapped file2 error for timer log");
-                return -1;
+                return null;
             }
         }
+        return mappedFile;
+    }
+
+    public long append(byte[] data, int pos, int len) {
+        MappedFile mappedFile = getLastMappedFile(len);
         long currPosition = mappedFile.getFileFromOffset() + mappedFile.getWrotePosition();
         if (!mappedFile.appendMessage(data, pos, len)) {
             log.error("Append error for timer log");
