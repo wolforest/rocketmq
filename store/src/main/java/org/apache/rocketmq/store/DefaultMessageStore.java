@@ -1033,16 +1033,12 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     private long getConsumeQueueMaxOffset() {
-        long maxPhysicalPosInLogicQueue = commitLog.getMinOffset();
-        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.getConsumeQueueTable().values()) {
-            for (ConsumeQueueInterface logic : maps.values()) {
-                if (logic.getMaxPhysicOffset() > maxPhysicalPosInLogicQueue) {
-                    maxPhysicalPosInLogicQueue = logic.getMaxPhysicOffset();
-                }
-            }
+        long maxPhysicalPosInLogicQueue = getConsumeQueueStore().getMaxOffset();
+        if (maxPhysicalPosInLogicQueue > 0) {
+            return maxPhysicalPosInLogicQueue;
         }
 
-        return maxPhysicalPosInLogicQueue;
+        return commitLog.getMinOffset();
     }
 
     /**
@@ -1492,7 +1488,17 @@ public class DefaultMessageStore implements MessageStore {
         return Optional.ofNullable(this.topicConfigTable.get(topic));
     }
 
+    /**
+     * duplicate method of BrokerController.getBrokerIdentity()
+     *
+     * @return BrokerIdentity
+     */
     public BrokerIdentity getBrokerIdentity() {
+        if (null != brokerConfig.getBrokerIdentity()) {
+            return brokerConfig.getBrokerIdentity();
+        }
+
+        //below actions will never execute
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             return new BrokerIdentity(
                 brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(),
