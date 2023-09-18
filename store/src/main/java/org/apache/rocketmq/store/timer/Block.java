@@ -37,17 +37,33 @@ public class Block {
             + 4 //hash code of real topic
             + 8; //reserved value, just in case of;
 
+    public int size;
+    public long prevPos;
+    public int magic;
+    public long currWriteTime;
+    public long delayedTime;
+    public long offsetPy;
+    public int sizePy;
+    public int hashCodeOfRealTopic;
+    public long reservedValue;
+
     public Block(int size,
                  long prevPos,
                  int magic,
                  long currWriteTime,
-                 int delayedTime,
+                 long delayedTime,
                  long offsetPy,
                  int sizePy,
                  int hashCodeOfRealTopic,
                  long reservedValue) {
-
+        this.size = size;
+        this.prevPos = prevPos;
+        this.magic = magic;
+        this.currWriteTime = currWriteTime;
+        this.delayedTime = delayedTime;
+        this.offsetPy = offsetPy;
+        this.sizePy = sizePy;
+        this.hashCodeOfRealTopic = hashCodeOfRealTopic;
+        this.reservedValue = reservedValue;
     }
-
-
 }
