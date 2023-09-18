@@ -187,9 +187,9 @@ public class TimerWheelFetcher extends ServiceThread {
             if (!timerState.isRunningDequeue()) {
                 return -1;
             }
-            putToQuery(deleteMsgStack, splitIntoLists(deleteMsgStack), timerMessageQueryQueue, timerState, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries);
+            putToQuery(deleteMsgStack,timerMessageQueryQueue, timerState, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries);
 
-            putToQuery(normalMsgStack, splitIntoLists(normalMsgStack), timerMessageQueryQueue, timerState, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries);
+            putToQuery(normalMsgStack, timerMessageQueryQueue, timerState, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries);
 
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (timerState.dequeueStatusChangeFlag) {
@@ -209,17 +209,18 @@ public class TimerWheelFetcher extends ServiceThread {
         return 1;
     }
 
-    private void putToQuery(LinkedList<TimerRequest> deleteMsgStack, List<List<TimerRequest>> deleteMsgStack1, BlockingQueue<List<TimerRequest>> timerMessageQueryQueue, TimerState timerState, BlockingQueue<TimerRequest> timerMessageDeliverQueue, TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries) throws Exception {
-        CountDownLatch deleteLatch = new CountDownLatch(deleteMsgStack.size());
+    private void putToQuery(LinkedList<TimerRequest> msgStack, BlockingQueue<List<TimerRequest>> timerMessageQueryQueue, TimerState timerState, BlockingQueue<TimerRequest> timerMessageDeliverQueue, TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries) throws Exception {
+        List<List<TimerRequest>> timerRequestListGroup =  splitIntoLists(msgStack);
+        CountDownLatch countDownLatch = new CountDownLatch(msgStack.size());
         //read the delete msg: the msg used to mark another msg is deleted
-        for (List<TimerRequest> timerRequests : deleteMsgStack1) {
+        for (List<TimerRequest> timerRequests : timerRequestListGroup) {
             for (TimerRequest timerRequest : timerRequests) {
-                timerRequest.setLatch(deleteLatch);
+                timerRequest.setLatch(countDownLatch);
             }
             timerMessageQueryQueue.put(timerRequests);
         }
         //do we need to use loop with tryAcquire
-        timerState.checkDeliverQueueLatch(deleteLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
+        timerState.checkDeliverQueueLatch(countDownLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
     }
 
     private List<List<TimerRequest>> splitIntoLists(List<TimerRequest> origin) {
