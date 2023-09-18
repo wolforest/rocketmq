@@ -95,7 +95,7 @@ public class TimerFlushService extends ServiceThread {
                 timerState.prepareTimerCheckPoint();
                 timerLog.getMappedFileQueue().flush(0);
                 timerWheel.flush();
-                timerCheckpoint.flush();
+                timerState.flushCheckpoint();
                 if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
                     start = System.currentTimeMillis();
                     long tmpQueueOffset = timerState.currQueueOffset;

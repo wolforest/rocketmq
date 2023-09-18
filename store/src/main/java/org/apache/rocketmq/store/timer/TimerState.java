@@ -115,6 +115,10 @@ public class TimerState {
         return isRunning();
     }
 
+    public long getMasterTimerQueueOffset(){
+        return timerCheckpoint.getMasterTimerQueueOffset();
+    }
+
     public void flushCheckpoint(){
         timerCheckpoint.flush();
     }
