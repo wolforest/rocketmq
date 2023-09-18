@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TimerMetricManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    protected AtomicInteger frequency = new AtomicInteger(0);
+    private AtomicInteger frequency = new AtomicInteger(0);
     private TimerMetrics timerMetrics;
     private TimerState timerState;
     private TimerWheel timerWheel;
