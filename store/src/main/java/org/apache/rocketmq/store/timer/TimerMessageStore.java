@@ -464,16 +464,17 @@ public class TimerMessageStore {
                 perfCounterTicks
         );
         timerFlushService = new TimerFlushService(
+                timerState,
+                storeConfig,
                 messageStore,
+                timerWheel,
+                timerLog,
                 fetchedTimerMessageQueue,
                 timerMessageQueryQueue,
                 timerMessageDeliverQueue,
-                storeConfig,
-                timerState,
-                timerMetrics,
                 timerCheckpoint,
-                timerLog,
-                timerWheel);
+                timerMetrics
+                );
         recover = new TimerMessageRecover(
                 timerState,
                 timerWheel,
