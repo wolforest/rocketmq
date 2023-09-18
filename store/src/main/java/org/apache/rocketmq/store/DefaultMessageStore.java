@@ -1489,16 +1489,12 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     /**
-     * duplicate method of BrokerController.getBrokerIdentity()
+     * do not store BrokerIdentity instance in the object
+     * because brokerId will change while slaveActingMaster
      *
      * @return BrokerIdentity
      */
     public BrokerIdentity getBrokerIdentity() {
-        if (null != brokerConfig.getBrokerIdentity()) {
-            return brokerConfig.getBrokerIdentity();
-        }
-
-        //below actions will never execute
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             return new BrokerIdentity(
                 brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(),

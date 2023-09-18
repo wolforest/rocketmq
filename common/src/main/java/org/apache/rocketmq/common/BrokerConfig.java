@@ -27,8 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 public class BrokerConfig extends BrokerIdentity {
 
-
-    private BrokerIdentity brokerIdentity = null;
     private String brokerConfigPath = null;
 
     private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
@@ -1756,13 +1754,5 @@ public class BrokerConfig extends BrokerIdentity {
 
     public void setSplitRegistrationSize(int splitRegistrationSize) {
         this.splitRegistrationSize = splitRegistrationSize;
-    }
-
-    public BrokerIdentity getBrokerIdentity() {
-        return brokerIdentity;
-    }
-
-    public void setBrokerIdentity(BrokerIdentity brokerIdentity) {
-        this.brokerIdentity = brokerIdentity;
     }
 }
