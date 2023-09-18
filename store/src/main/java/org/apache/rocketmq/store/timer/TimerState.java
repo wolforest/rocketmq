@@ -115,6 +115,10 @@ public class TimerState {
         return isRunning();
     }
 
+    public void flushCheckpoint(){
+        timerCheckpoint.flush();
+    }
+
     public void prepareTimerCheckPoint() {
         timerCheckpoint.setLastTimerLogFlushPos(timerLog.getMappedFileQueue().getFlushedWhere());
         timerCheckpoint.setLastReadTimeMs(commitReadTimeMs);
