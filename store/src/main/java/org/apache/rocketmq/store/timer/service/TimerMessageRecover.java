@@ -38,15 +38,18 @@ public class TimerMessageRecover {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private TimerState timerState;
-    private TimerLog timerLog;
     private TimerWheel timerWheel;
+    private TimerLog timerLog;
     private MessageOperator messageOperator;
     private TimerCheckpoint timerCheckpoint;
 
     private boolean debug = false;
     private int precisionMs;
 
-    public TimerMessageRecover(TimerState timerState,TimerWheel timerWheel,TimerLog timerLog,MessageOperator messageOperator,TimerCheckpoint timerCheckpoint){
+    public TimerMessageRecover(TimerState timerState,
+                               TimerWheel timerWheel,
+                               TimerLog timerLog,MessageOperator messageOperator,
+                               TimerCheckpoint timerCheckpoint){
         this.timerState = timerState;
         this.timerWheel = timerWheel;
         this.timerLog = timerLog;
