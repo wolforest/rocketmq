@@ -74,15 +74,6 @@ public class TimerFlushService extends ServiceThread {
     }
 
     @Override
-    public String getServiceName() {
-        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
-    }
-
-    private String format(long time) {
-        return sdf.format(new Date(time));
-    }
-
-    @Override
     public void run() {
         LOGGER.info(this.getServiceName() + " service start");
         long start = System.currentTimeMillis();
@@ -113,6 +104,16 @@ public class TimerFlushService extends ServiceThread {
         }
         LOGGER.info(this.getServiceName() + " service end");
     }
+
+    private String format(long time) {
+        return sdf.format(new Date(time));
+    }
+
+    @Override
+    public String getServiceName() {
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
+    }
+
 }
 
 
