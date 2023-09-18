@@ -53,16 +53,29 @@ public class TimerLog {
         return this.mappedFileQueue.load();
     }
 
+    /**
+     * append by block unit object
+     *
+     * @param block block object
+     * @param pos   position or offset
+     * @param len   len of block,current is fixed length Block.SIZE
+     * @return
+     */
+    public long append(Block block, int pos, int len) {
+        return append(block.bytes(), pos, len);
+    }
+
+    /**
+     * test use only
+     *
+     * @param data
+     * @return
+     */
     public long append(byte[] data) {
         return append(data, 0, data.length);
     }
 
-    public long append(Block block,int pos,int len){
-        return append(block.bytes(),pos,len);
-    }
-
-
-    public long append(byte[] data, int pos, int len) {
+    private long append(byte[] data, int pos, int len) {
         MappedFile mappedFile = chooseLastMappedFile(len);
         long currPosition = mappedFile.getFileFromOffset() + mappedFile.getWrotePosition();
         if (!mappedFile.appendMessage(data, pos, len)) {
