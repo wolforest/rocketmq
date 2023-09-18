@@ -187,9 +187,9 @@ public class TimerWheelFetcher extends ServiceThread {
             if (!timerState.isRunningDequeue()) {
                 return -1;
             }
-            putToQuery(deleteMsgStack,timerMessageQueryQueue, timerState, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries);
 
-            putToQuery(normalMsgStack, timerMessageQueryQueue, timerState, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries);
+            putToQuery(deleteMsgStack);
+            putToQuery(normalMsgStack);
 
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (timerState.dequeueStatusChangeFlag) {
@@ -209,7 +209,7 @@ public class TimerWheelFetcher extends ServiceThread {
         return 1;
     }
 
-    private void putToQuery(LinkedList<TimerRequest> msgStack, BlockingQueue<List<TimerRequest>> timerMessageQueryQueue, TimerState timerState, BlockingQueue<TimerRequest> timerMessageDeliverQueue, TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries) throws Exception {
+    private void putToQuery(LinkedList<TimerRequest> msgStack) throws Exception {
         List<List<TimerRequest>> timerRequestListGroup =  splitIntoLists(msgStack);
         CountDownLatch countDownLatch = new CountDownLatch(msgStack.size());
         //read the delete msg: the msg used to mark another msg is deleted
@@ -220,7 +220,7 @@ public class TimerWheelFetcher extends ServiceThread {
             timerMessageQueryQueue.put(timerRequests);
         }
         //do we need to use loop with tryAcquire
-        timerState.checkDeliverQueueLatch(countDownLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
+        timerState.checkDeliverQueueLatch(countDownLatch, this.timerMessageDeliverQueue, this.timerMessageDelivers, this.timerMessageQueries, this.timerState.currReadTimeMs);
     }
 
     private List<List<TimerRequest>> splitIntoLists(List<TimerRequest> origin) {
