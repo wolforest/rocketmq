@@ -136,7 +136,7 @@ public class TimerWheelLocator extends ServiceThread {
             if (timerState.isShouldRunningDequeue() && timerRequest.getDelayTime() < timerState.currWriteTimeMs) {
                 timerMessageDeliverQueue.put(timerRequest);
             } else {
-                boolean doEnqueueRes = doEnqueue(timerRequest);
+                boolean doEnqueueRes = doSave(timerRequest);
                 timerRequest.idempotentRelease(doEnqueueRes || storeConfig.isTimerSkipUnknownError());
             }
             perfCounterTicks.endTick(ENQUEUE_PUT);
@@ -150,7 +150,7 @@ public class TimerWheelLocator extends ServiceThread {
         }
     }
 
-    private boolean doEnqueue(TimerRequest timerRequest) {
+    private boolean doSave(TimerRequest timerRequest) {
         long offsetPy = timerRequest.getOffsetPy();
         int sizePy = timerRequest.getSizePy();
         long delayedTime = timerRequest.getDelayTime();
