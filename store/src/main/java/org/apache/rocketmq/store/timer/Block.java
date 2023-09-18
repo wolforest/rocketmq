@@ -26,5 +26,18 @@ package org.apache.rocketmq.store.timer;
  * └────────────┴───────────┴────────┴───────────────────┴──────────────────┴───────────┴───────────┴──────────────────────────┴──────────────────────┘
  */
 public class Block {
-   
+    public static final short SIZE = 0
+            + 4 //size
+            + 8 //prev pos
+            + 4 //magic value
+            + 8 //curr write time, for trace
+            + 4 //delayed time, for check
+            + 8 //offsetPy
+            + 4 //sizePy
+            + 4 //hash code of real topic
+            + 8; //reserved value, just in case of;
+
+
+
+
 }
