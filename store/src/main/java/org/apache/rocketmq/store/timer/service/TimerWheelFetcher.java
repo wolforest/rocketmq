@@ -190,8 +190,8 @@ public class TimerWheelFetcher extends ServiceThread {
             CountDownLatch deleteLatch = new CountDownLatch(deleteMsgStack.size());
             //read the delete msg: the msg used to mark another msg is deleted
             for (List<TimerRequest> deleteList : splitIntoLists(deleteMsgStack)) {
-                for (TimerRequest tr : deleteList) {
-                    tr.setLatch(deleteLatch);
+                for (TimerRequest timerRequest : deleteList) {
+                    timerRequest.setLatch(deleteLatch);
                 }
                 timerMessageQueryQueue.put(deleteList);
             }
@@ -201,8 +201,8 @@ public class TimerWheelFetcher extends ServiceThread {
             CountDownLatch normalLatch = new CountDownLatch(normalMsgStack.size());
             //read the normal msg
             for (List<TimerRequest> normalList : splitIntoLists(normalMsgStack)) {
-                for (TimerRequest tr : normalList) {
-                    tr.setLatch(normalLatch);
+                for (TimerRequest timerRequest : normalList) {
+                    timerRequest.setLatch(normalLatch);
                 }
                 timerMessageQueryQueue.put(normalList);
             }
