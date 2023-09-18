@@ -88,8 +88,8 @@ public class TimerMessageDeliver extends AbstractStateService {
         while (!this.isStopped() || timerMessageDeliverQueue.size() != 0) {
             try {
                 setState(AbstractStateService.WAITING);
-                TimerRequest tr = timerMessageDeliverQueue.poll(10, TimeUnit.MILLISECONDS);
-                if (null == tr) {
+                TimerRequest timerRequest = timerMessageDeliverQueue.poll(10, TimeUnit.MILLISECONDS);
+                if (null == timerRequest) {
                     continue;
                 }
                 setState(AbstractStateService.RUNNING);
@@ -106,11 +106,11 @@ public class TimerMessageDeliver extends AbstractStateService {
 
                         try {
                             perfCounterTicks.startTick(DEQUEUE_PUT);
-                            DefaultStoreMetricsManager.incTimerDequeueCount(getRealTopic(tr.getMsg()));
-                            metricManager.addMetric(tr.getMsg(), -1);
-                            MessageExtBrokerInner msg = convert(tr.getMsg(), tr.getEnqueueTime(), timerState.needRoll(tr.getMagic()));
+                            DefaultStoreMetricsManager.incTimerDequeueCount(getRealTopic(timerRequest.getMsg()));
+                            metricManager.addMetric(timerRequest.getMsg(), -1);
+                            MessageExtBrokerInner msg = convert(timerRequest.getMsg(), timerRequest.getEnqueueTime(), timerState.needRoll(timerRequest.getMagic()));
 
-                            doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(tr.getMagic()));
+                            doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(timerRequest.getMagic()));
 
                             while (!doRes && !isStopped()) {
                                 if (!timerState.isRunningDequeue()) {
@@ -119,7 +119,7 @@ public class TimerMessageDeliver extends AbstractStateService {
                                     break;
                                 }
 
-                                doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(tr.getMagic()));
+                                doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(timerRequest.getMagic()));
                                 Thread.sleep(500L * timerState.precisionMs / 1000);
                             }
                             perfCounterTicks.endTick(DEQUEUE_PUT);
@@ -133,7 +133,7 @@ public class TimerMessageDeliver extends AbstractStateService {
                         }
                     }
                 } finally {
-                    tr.idempotentRelease(!tmpDequeueChangeFlag);
+                    timerRequest.idempotentRelease(!tmpDequeueChangeFlag);
                 }
 
             } catch (Throwable e) {
