@@ -26,6 +26,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
+import org.apache.rocketmq.store.timer.Block;
 import org.apache.rocketmq.store.timer.Slot;
 import org.apache.rocketmq.store.timer.TimerLog;
 import org.apache.rocketmq.store.timer.TimerRequest;
@@ -184,19 +185,19 @@ public class TimerWheelLocator extends ServiceThread {
         return -1 != ret;
     }
 
-    private long appendTimerLog(long offsetPy, int sizePy, long delayedTime, long tmpWriteTimeMs, int magic, String realTopic,long lastPos) {
-        ByteBuffer tmpBuffer = timerLogBuffer;
-        tmpBuffer.clear();
-        tmpBuffer.putInt(TimerLog.UNIT_SIZE); //size
-        tmpBuffer.putLong(lastPos); //prev pos
-        tmpBuffer.putInt(magic); //magic
-        tmpBuffer.putLong(tmpWriteTimeMs); //currWriteTime
-        tmpBuffer.putInt((int) (delayedTime - tmpWriteTimeMs)); //delayTime
-        tmpBuffer.putLong(offsetPy); //offset
-        tmpBuffer.putInt(sizePy); //size
-        tmpBuffer.putInt(metricManager.hashTopicForMetrics(realTopic)); //hashcode of real topic
-        tmpBuffer.putLong(0); //reserved value, just set to 0 now
-        long ret = timerLog.append(tmpBuffer.array(), 0, TimerLog.UNIT_SIZE);
+    private long appendTimerLog(long offsetPy, int sizePy, long delayedTime, long tmpWriteTimeMs, int magic, String realTopic, long lastPos) {
+        Block block = new Block(
+                Block.SIZE,
+                lastPos,
+                magic,
+                tmpWriteTimeMs,
+                (int) (delayedTime - tmpWriteTimeMs),
+                offsetPy,
+                sizePy,
+                metricManager.hashTopicForMetrics(realTopic),
+                0);
+
+        long ret = timerLog.append(block, 0, Block.SIZE);
         return ret;
     }
 
