@@ -17,6 +17,8 @@
 package org.apache.rocketmq.store.timer;
 
 
+import java.nio.ByteBuffer;
+
 /**
  * Represents a block of timer log. Format:
  * ┌────────────┬───────────┬────────┬───────────────────┬──────────────────┬───────────┬───────────┬──────────────────────────┬──────────────────────┐
@@ -36,12 +38,12 @@ public class Block {
             + 4 //sizePy
             + 4 //hash code of real topic
             + 8; //reserved value, just in case of;
-
+    private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
     public int size;
     public long prevPos;
     public int magic;
     public long currWriteTime;
-    public long delayedTime;
+    public int delayedTime;
     public long offsetPy;
     public int sizePy;
     public int hashCodeOfRealTopic;
@@ -51,7 +53,7 @@ public class Block {
                  long prevPos,
                  int magic,
                  long currWriteTime,
-                 long delayedTime,
+                 int delayedTime,
                  long offsetPy,
                  int sizePy,
                  int hashCodeOfRealTopic,
@@ -65,5 +67,20 @@ public class Block {
         this.sizePy = sizePy;
         this.hashCodeOfRealTopic = hashCodeOfRealTopic;
         this.reservedValue = reservedValue;
+    }
+
+    public byte[] bytes(){
+        ByteBuffer tmpBuffer = timerLogBuffer;
+        tmpBuffer.clear();
+        tmpBuffer.putInt(TimerLog.UNIT_SIZE); //size
+        tmpBuffer.putLong(prevPos); //prev pos ,lastPos
+        tmpBuffer.putInt(magic); //magic
+        tmpBuffer.putLong(currWriteTime); //currWriteTime,tmpWriteTimeMs
+        tmpBuffer.putInt(delayedTime); //delayTime,(int) (delayedTime - tmpWriteTimeMs)
+        tmpBuffer.putLong(offsetPy); //offset
+        tmpBuffer.putInt(sizePy); //size
+        tmpBuffer.putInt(hashCodeOfRealTopic); //hashcode of real topic,metricManager.hashTopicForMetrics(realTopic)
+        tmpBuffer.putLong(0); //reserved value, just set to 0 now
+        return tmpBuffer.array();
     }
 }
