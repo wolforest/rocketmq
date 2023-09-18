@@ -18,6 +18,7 @@ package org.apache.rocketmq.store.timer;
 
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
+import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -34,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class TimerState {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
+    public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
     public static final int INITIAL = 0, RUNNING = 1, HAULT = 2, SHUTDOWN = 3;
     public static final int MAGIC_DEFAULT = 1;
     public static final int MAGIC_ROLL = 1 << 1;
@@ -57,8 +59,17 @@ public class TimerState {
     public volatile long lastCommitQueueOffset;
     public long lastEnqueueButExpiredTime;
     public long lastEnqueueButExpiredStoreTime;
+
+    public boolean isShouldRunningDequeue() {
+        return shouldRunningDequeue;
+    }
+
+    public void setShouldRunningDequeue(boolean shouldRunningDequeue) {
+        this.shouldRunningDequeue = shouldRunningDequeue;
+    }
+
     // True if current store is master or current brokerId is equal to the minimum brokerId of the replica group in slaveActingMaster mode.
-    public volatile boolean shouldRunningDequeue;
+    private volatile boolean shouldRunningDequeue;
 
     //the dequeue is an asynchronous process, use this flag to track if the status has changed
     public boolean dequeueStatusChangeFlag = false;
@@ -102,6 +113,14 @@ public class TimerState {
             return false;
         }
         return isRunning();
+    }
+
+    public long getMasterTimerQueueOffset(){
+        return timerCheckpoint.getMasterTimerQueueOffset();
+    }
+
+    public void flushCheckpoint(){
+        timerCheckpoint.flush();
     }
 
     public void prepareTimerCheckPoint() {

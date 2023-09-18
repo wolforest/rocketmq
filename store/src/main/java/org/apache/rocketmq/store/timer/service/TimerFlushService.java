@@ -35,7 +35,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
-import static org.apache.rocketmq.store.timer.TimerMessageStore.TIMER_TOPIC;
+import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
 
 public class TimerFlushService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -48,17 +48,19 @@ public class TimerFlushService extends ServiceThread {
     private MessageStoreConfig storeConfig;
     private TimerState timerState;
     private TimerMetrics timerMetrics;
-    private TimerCheckpoint timerCheckpoint;
     private TimerLog timerLog;
     private TimerWheel timerWheel;
 
-    public TimerFlushService(MessageStore messageStore,
+    public TimerFlushService(TimerState timerState,
+                             MessageStoreConfig storeConfig,
+                             MessageStore messageStore,
+                             TimerWheel timerWheel,
+                             TimerLog timerLog,
                              BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
                              BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
-                             MessageStoreConfig storeConfig, TimerState timerState,
-                             TimerMetrics timerMetrics, TimerCheckpoint timerCheckpoint,
-                             TimerLog timerLog, TimerWheel timerWheel
+                             TimerMetrics timerMetrics
+
     ) {
         this.messageStore = messageStore;
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
@@ -67,18 +69,8 @@ public class TimerFlushService extends ServiceThread {
         this.storeConfig = storeConfig;
         this.timerState = timerState;
         this.timerMetrics = timerMetrics;
-        this.timerCheckpoint = timerCheckpoint;
         this.timerLog = timerLog;
         this.timerWheel = timerWheel;
-    }
-
-    @Override
-    public String getServiceName() {
-        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
-    }
-
-    private String format(long time) {
-        return sdf.format(new Date(time));
     }
 
     @Override
@@ -91,7 +83,7 @@ public class TimerFlushService extends ServiceThread {
                 timerState.prepareTimerCheckPoint();
                 timerLog.getMappedFileQueue().flush(0);
                 timerWheel.flush();
-                timerCheckpoint.flush();
+                timerState.flushCheckpoint();
                 if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
                     start = System.currentTimeMillis();
                     long tmpQueueOffset = timerState.currQueueOffset;
@@ -101,7 +93,7 @@ public class TimerFlushService extends ServiceThread {
                                     "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
                             storeConfig.getBrokerRole(),
                             format(timerState.commitReadTimeMs), format(timerState.currReadTimeMs), format(timerState.currWriteTimeMs), timerState.getDequeueBehind(),
-                            tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerCheckpoint.getMasterTimerQueueOffset() - tmpQueueOffset,
+                            tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerState.getMasterTimerQueueOffset() - tmpQueueOffset,
                             fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerState.getAllCongestNum(), format(timerState.lastEnqueueButExpiredStoreTime));
                 }
                 timerMetrics.persist();
@@ -112,6 +104,16 @@ public class TimerFlushService extends ServiceThread {
         }
         LOGGER.info(this.getServiceName() + " service end");
     }
+
+    private String format(long time) {
+        return sdf.format(new Date(time));
+    }
+
+    @Override
+    public String getServiceName() {
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
+    }
+
 }
 
 

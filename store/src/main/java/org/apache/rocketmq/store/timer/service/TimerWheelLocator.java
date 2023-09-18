@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -45,40 +46,60 @@ import static org.apache.rocketmq.store.timer.TimerMessageStore.ENQUEUE_PUT;
 public class TimerWheelLocator extends ServiceThread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private MessageStoreConfig storeConfig;
-    private TimerState timerState;
-    private TimerLog timerLog;
-    private TimerWheel timerWheel;
-    private TimerMetricManager metricManager;
 
-    public TimerWheelLocator(MessageStoreConfig storeConfig,
-                             TimerWheel timerWheel,
-                             TimerLog timerLog,
-                             TimerState timerState,
-                             TimerMetricManager metricManager,
-                             BlockingQueue<TimerRequest> fetchedTimerMessageQueue, BlockingQueue<TimerRequest> timerMessageDeliverQueue,
-                             TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries,
-                             TimerState pointer, PerfCounter.Ticks perfCounterTicks) {
-        this.storeConfig = storeConfig;
-        this.timerWheel = timerWheel;
-        this.timerLog = timerLog;
-        this.timerState = timerState;
-        this.metricManager = metricManager;
-        this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
-        this.timerMessageDeliverQueue = timerMessageDeliverQueue;
-        this.timerMessageDelivers = timerMessageDelivers;
-        this.timerMessageQueries = timerMessageQueries;
-        this.pointer = pointer;
-        this.perfCounterTicks = perfCounterTicks;
-    }
+    private TimerState timerState;
+    private MessageStoreConfig storeConfig;
+    private TimerWheel timerWheel;
+    private TimerLog timerLog;
+    private MessageOperator messageOperator;
+
 
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private TimerMessageDeliver[] timerMessageDelivers;
     private TimerMessageQuery[] timerMessageQueries;
-    private TimerState pointer;
+
+    private TimerMetricManager metricManager;
     private PerfCounter.Ticks perfCounterTicks;
 
+    public TimerWheelLocator(TimerState timerState,
+                             MessageStoreConfig storeConfig,
+                             TimerWheel timerWheel,
+                             TimerLog timerLog,
+                             MessageOperator messageOperator,
+                             BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
+                             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+                             TimerMessageDeliver[] timerMessageDelivers,
+                             TimerMessageQuery[] timerMessageQueries,
+                             TimerMetricManager metricManager,
+                             PerfCounter.Ticks perfCounterTicks) {
+        this.timerState = timerState;
+        this.storeConfig = storeConfig;
+        this.timerWheel = timerWheel;
+        this.timerLog = timerLog;
+        this.messageOperator = messageOperator;
+
+        this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
+        this.timerMessageDeliverQueue = timerMessageDeliverQueue;
+        this.timerMessageDelivers = timerMessageDelivers;
+        this.timerMessageQueries = timerMessageQueries;
+
+        this.metricManager = metricManager;
+        this.perfCounterTicks = perfCounterTicks;
+    }
+
+    @Override
+    public void run() {
+        LOGGER.info(this.getServiceName() + " service start");
+        while (!this.isStopped() || fetchedTimerMessageQueue.size() != 0) {
+            try {
+                fetchAndPutTimerRequest();
+            } catch (Throwable e) {
+                LOGGER.error("Unknown error", e);
+            }
+        }
+        LOGGER.info(this.getServiceName() + " service end");
+    }
 
     @Override
     public String getServiceName() {
@@ -88,69 +109,62 @@ public class TimerWheelLocator extends ServiceThread {
     /**
      * collect the requests
      */
-    protected List<TimerRequest> fetchTimerRequests() throws InterruptedException {
-        List<TimerRequest> trs = null;
+    private List<TimerRequest> fetchTimerRequests() throws InterruptedException {
+        List<TimerRequest> timerRequestList = null;
         TimerRequest firstReq = fetchedTimerMessageQueue.poll(10, TimeUnit.MILLISECONDS);
         if (null != firstReq) {
-            trs = new ArrayList<>(16);
-            trs.add(firstReq);
+            timerRequestList = new ArrayList<>(16);
+            timerRequestList.add(firstReq);
             while (true) {
                 TimerRequest tmpReq = fetchedTimerMessageQueue.poll(3, TimeUnit.MILLISECONDS);
                 if (null == tmpReq) {
                     break;
                 }
-                trs.add(tmpReq);
-                if (trs.size() > 10) {
+                timerRequestList.add(tmpReq);
+                if (timerRequestList.size() > 10) {
                     break;
                 }
             }
         }
-        return trs;
+        return timerRequestList;
     }
 
-    public String getRealTopic(MessageExt msgExt) {
-        if (msgExt == null) {
-            return null;
-        }
-        return msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
-    }
-
-    protected void putMessageToTimerWheel(TimerRequest req) {
+    private void putMessageToTimerWheel(TimerRequest timerRequest) {
         try {
             perfCounterTicks.startTick(ENQUEUE_PUT);
-            DefaultStoreMetricsManager.incTimerEnqueueCount(getRealTopic(req.getMsg()));
-            if (pointer.shouldRunningDequeue && req.getDelayTime() < pointer.currWriteTimeMs) {
-                timerMessageDeliverQueue.put(req);
+            DefaultStoreMetricsManager.incTimerEnqueueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
+            if (timerState.isShouldRunningDequeue() && timerRequest.getDelayTime() < timerState.currWriteTimeMs) {
+                timerMessageDeliverQueue.put(timerRequest);
             } else {
-                boolean doEnqueueRes = doEnqueue(
-                        req.getOffsetPy(), req.getSizePy(), req.getDelayTime(), req.getMsg());
-                req.idempotentRelease(doEnqueueRes || storeConfig.isTimerSkipUnknownError());
+                boolean doEnqueueRes = doEnqueue(timerRequest.getOffsetPy(), timerRequest.getSizePy(), timerRequest.getDelayTime(), timerRequest.getMsg());
+                timerRequest.idempotentRelease(doEnqueueRes || storeConfig.isTimerSkipUnknownError());
             }
             perfCounterTicks.endTick(ENQUEUE_PUT);
         } catch (Throwable t) {
             LOGGER.error("Unknown error", t);
             if (storeConfig.isTimerSkipUnknownError()) {
-                req.idempotentRelease(true);
+                timerRequest.idempotentRelease(true);
             } else {
                 ThreadUtils.sleep(50);
             }
         }
     }
+
     private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
 
-    public boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
+    private boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
         //copy the value first, avoid concurrent problem
-        long tmpWriteTimeMs = pointer.currWriteTimeMs;
-        boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) pointer.timerRollWindowSlots * pointer.precisionMs;
+        long tmpWriteTimeMs = timerState.currWriteTimeMs;
+        boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) timerState.timerRollWindowSlots * timerState.precisionMs;
         int magic = TimerState.MAGIC_DEFAULT;
         if (needRoll) {
             magic = magic | TimerState.MAGIC_ROLL;
-            if (delayedTime - tmpWriteTimeMs - (long) pointer.timerRollWindowSlots * pointer.precisionMs < (long) pointer.timerRollWindowSlots / 3 * pointer.precisionMs) {
+            if (delayedTime - tmpWriteTimeMs - (long) timerState.timerRollWindowSlots * timerState.precisionMs < (long) timerState.timerRollWindowSlots / 3 * timerState.precisionMs) {
                 //give enough time to next roll
-                delayedTime = tmpWriteTimeMs + (long) (pointer.timerRollWindowSlots / 2) * pointer.precisionMs;
+                delayedTime = tmpWriteTimeMs + (long) (timerState.timerRollWindowSlots / 2) * timerState.precisionMs;
             } else {
-                delayedTime = tmpWriteTimeMs + (long) pointer.timerRollWindowSlots * pointer.precisionMs;
+                delayedTime = tmpWriteTimeMs + (long) timerState.timerRollWindowSlots * timerState.precisionMs;
             }
         }
         boolean isDelete = messageExt.getProperty(TimerState.TIMER_DELETE_UNIQUE_KEY) != null;
@@ -182,45 +196,33 @@ public class TimerWheelLocator extends ServiceThread {
     }
 
 
-
-    protected void fetchAndPutTimerRequest() throws Exception {
-        long tmpCommitQueueOffset = pointer.currQueueOffset;
-        List<TimerRequest> trs = this.fetchTimerRequests();
-        if (CollectionUtils.isEmpty(trs)) {
-            pointer.commitQueueOffset = tmpCommitQueueOffset;
-            pointer.maybeMoveWriteTime();
+    private void fetchAndPutTimerRequest() throws Exception {
+        long tmpCommitQueueOffset = timerState.currQueueOffset;
+        List<TimerRequest> timerRequests = this.fetchTimerRequests();
+        if (CollectionUtils.isEmpty(timerRequests)) {
+            timerState.commitQueueOffset = tmpCommitQueueOffset;
+            timerState.maybeMoveWriteTime();
             return;
         }
 
         while (!isStopped()) {
-            CountDownLatch latch = new CountDownLatch(trs.size());
-            for (TimerRequest req : trs) {
+            CountDownLatch latch = new CountDownLatch(timerRequests.size());
+            for (TimerRequest req : timerRequests) {
                 req.setLatch(latch);
                 this.putMessageToTimerWheel(req);
             }
-            pointer.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue,timerMessageDelivers,timerMessageQueries, -1);
-            boolean allSuccess = trs.stream().allMatch(TimerRequest::isSucc);
+            timerState.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue, timerMessageDelivers, timerMessageQueries, -1);
+            boolean allSuccess = timerRequests.stream().allMatch(TimerRequest::isSucc);
             if (allSuccess) {
                 break;
             } else {
                 ThreadUtils.sleep(50);
             }
         }
-        pointer.commitQueueOffset = trs.get(trs.size() - 1).getMsg().getQueueOffset();
-        pointer.maybeMoveWriteTime();
+        timerState.commitQueueOffset = timerRequests.get(timerRequests.size() - 1).getMsg().getQueueOffset();
+        timerState.maybeMoveWriteTime();
     }
 
-    @Override
-    public void run() {
-        LOGGER.info(this.getServiceName() + " service start");
-        while (!this.isStopped() || fetchedTimerMessageQueue.size() != 0) {
-            try {
-                fetchAndPutTimerRequest();
-            } catch (Throwable e) {
-                LOGGER.error("Unknown error", e);
-            }
-        }
-        LOGGER.info(this.getServiceName() + " service end");
-    }
+
 }
 

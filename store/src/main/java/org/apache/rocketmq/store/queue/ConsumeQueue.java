@@ -43,6 +43,8 @@ import org.apache.rocketmq.store.config.StorePathConfigHelper;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 
+import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
+
 public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -728,7 +730,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     private boolean checkMultiDispatchQueue(DispatchRequest dispatchRequest) {
         if (!this.messageStore.getMessageStoreConfig().isEnableMultiDispatch()
             || dispatchRequest.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)
-            || dispatchRequest.getTopic().equals(TimerMessageStore.TIMER_TOPIC)
+            || dispatchRequest.getTopic().equals(TIMER_TOPIC)
             || dispatchRequest.getTopic().equals(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC)) {
             return false;
         }
@@ -849,7 +851,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     public boolean isNeedHandleMultiDispatch(MessageExtBrokerInner msg) {
         return messageStore.getMessageStoreConfig().isEnableMultiDispatch()
             && !msg.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)
-            && !msg.getTopic().equals(TimerMessageStore.TIMER_TOPIC)
+            && !msg.getTopic().equals(TIMER_TOPIC)
             && !msg.getTopic().equals(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC);
     }
 

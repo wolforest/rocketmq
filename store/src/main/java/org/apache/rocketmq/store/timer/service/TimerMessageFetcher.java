@@ -43,7 +43,6 @@ public class TimerMessageFetcher extends ServiceThread {
     public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
     public static final String TIMER_OUT_MS = MessageConst.PROPERTY_TIMER_OUT_MS;
     public static final int MAGIC_DEFAULT = 1;
-    public static final int DEFAULT_CAPACITY = 1024;
     private MessageStoreConfig storeConfig;
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
     private TimerState timerState;
@@ -51,21 +50,133 @@ public class TimerMessageFetcher extends ServiceThread {
     private MessageOperator messageOperator;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
-
     public TimerMessageFetcher(
             TimerState timerState,
             MessageStoreConfig storeConfig,
             MessageOperator messageOperator,
             BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
             PerfCounter.Ticks perfCounterTicks) {
-        this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
-        this.storeConfig = storeConfig;
-        this.lastBrokerRole = storeConfig.getBrokerRole();
-        this.messageOperator = messageOperator;
         this.timerState = timerState;
+        this.storeConfig = storeConfig;
+        this.messageOperator = messageOperator;
+        this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.perfCounterTicks = perfCounterTicks;
+        this.lastBrokerRole = storeConfig.getBrokerRole();
     }
 
+    @Override
+    public void run() {
+        LOGGER.info(this.getServiceName() + " service start");
+        while (!this.isStopped()) {
+            try {
+                if (!fetch(0)) {
+                    waitForRunning(100L * storeConfig.getTimerPrecisionMs() / 1000);
+                }
+            } catch (Throwable e) {
+                LOGGER.error("Error occurred in " + getServiceName(), e);
+            }
+        }
+        LOGGER.info(this.getServiceName() + " service end");
+    }
+
+
+    private boolean fetch(int queueId) {
+        if (storeConfig.isTimerStopEnqueue()) {
+            return false;
+        }
+        if (!isRunningEnqueue()) {
+            return false;
+        }
+        SelectMappedBufferResult bufferCQ = getIndexBuffer(queueId);
+        long currQueueOffset = timerState.currQueueOffset;
+        if (null == bufferCQ) {
+            return false;
+        }
+        try {
+            int i = 0;
+            for (; i < bufferCQ.getSize(); i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
+                perfCounterTicks.startTick("enqueue_get");
+                try {
+                    long offsetPy = bufferCQ.getByteBuffer().getLong();
+                    int sizePy = bufferCQ.getByteBuffer().getInt();
+                    discard(bufferCQ);
+                    MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
+                    if (null == msgExt) {
+                        perfCounterTicks.getCounter("enqueue_get_miss");
+                        continue;
+                    }
+                    timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
+                    timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
+                    long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
+                    // use CQ offset, not offset in Message
+                    msgExt.setQueueOffset(forwardOffset(currQueueOffset, i));
+                    TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
+
+                    if (!loopOffer(timerRequest)) {
+                        return false;
+                    }
+
+                } catch (Exception e) {
+                    deferThrow(e);
+                } finally {
+                    perfCounterTicks.endTick("enqueue_get");
+                }
+                // if broker role changes, ignore last enqueue
+                if (!isRunningEnqueue()) {
+                    return false;
+                }
+                timerState.currQueueOffset = forwardOffset(currQueueOffset, i);
+            }
+            timerState.currQueueOffset = forwardOffset(currQueueOffset, i);
+            return i > 0;
+        } catch (Exception e) {
+            LOGGER.error("Unknown exception in enqueuing", e);
+        } finally {
+            bufferCQ.release();
+        }
+        return false;
+    }
+
+    private long forwardOffset(long currQueueOffset, int i) {
+        return currQueueOffset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
+    }
+
+    private void deferThrow(Exception e) throws Exception {
+        // here may cause the message loss
+        if (storeConfig.isTimerSkipUnknownError()) {
+            LOGGER.warn("Unknown error in skipped in enqueuing", e);
+        } else {
+            ThreadUtils.sleep(50);
+            throw e;
+        }
+    }
+
+    private void discard(SelectMappedBufferResult bufferCQ) {
+        bufferCQ.getByteBuffer().getLong(); //tags code,Just to move the cursor
+    }
+
+    private boolean loopOffer(TimerRequest timerRequest) throws InterruptedException {
+        while (!fetchedTimerMessageQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
+            if (!isRunningEnqueue()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private SelectMappedBufferResult getIndexBuffer(int queueId) {
+        ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
+        if (null == cq) {
+            return null;
+        }
+        if (timerState.currQueueOffset < cq.getMinOffsetInQueue()) {
+            LOGGER.warn("Timer currQueueOffset:{} is smaller than minOffsetInQueue:{}",
+                    timerState.currQueueOffset, cq.getMinOffsetInQueue());
+            timerState.currQueueOffset = cq.getMinOffsetInQueue();
+        }
+        SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(timerState.currQueueOffset);
+        return bufferCQ;
+    }
 
     @Override
     public String getServiceName() {
@@ -98,99 +209,10 @@ public class TimerMessageFetcher extends ServiceThread {
 
     private boolean isRunningEnqueue() {
         checkBrokerRole();
-        if (!timerState.shouldRunningDequeue && !isMaster() && timerState.currQueueOffset >= timerState.timerCheckpoint.getMasterTimerQueueOffset()) {
+        if (!timerState.isShouldRunningDequeue() && !isMaster() && timerState.currQueueOffset >= timerState.timerCheckpoint.getMasterTimerQueueOffset()) {
             return false;
         }
 
         return timerState.isRunning();
     }
-
-    public boolean enqueue(int queueId) {
-        if (storeConfig.isTimerStopEnqueue()) {
-            return false;
-        }
-        if (!isRunningEnqueue()) {
-            return false;
-        }
-        ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
-        if (null == cq) {
-            return false;
-        }
-        if (timerState.currQueueOffset < cq.getMinOffsetInQueue()) {
-            LOGGER.warn("Timer currQueueOffset:{} is smaller than minOffsetInQueue:{}",
-                    timerState.currQueueOffset, cq.getMinOffsetInQueue());
-            timerState.currQueueOffset = cq.getMinOffsetInQueue();
-        }
-        long offset = timerState.currQueueOffset;
-        SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(offset);
-        if (null == bufferCQ) {
-            return false;
-        }
-        try {
-            int i = 0;
-            for (; i < bufferCQ.getSize(); i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
-                perfCounterTicks.startTick("enqueue_get");
-                try {
-                    long offsetPy = bufferCQ.getByteBuffer().getLong();
-                    int sizePy = bufferCQ.getByteBuffer().getInt();
-                    bufferCQ.getByteBuffer().getLong(); //tags code
-                    MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
-                    if (null == msgExt) {
-                        perfCounterTicks.getCounter("enqueue_get_miss");
-                    } else {
-                        timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
-                        timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
-                        long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
-                        // use CQ offset, not offset in Message
-                        msgExt.setQueueOffset(offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE));
-                        TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
-                        // System.out.printf("build enqueue request, %s%n", timerRequest);
-                        while (!fetchedTimerMessageQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
-                            if (!isRunningEnqueue()) {
-                                return false;
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    // here may cause the message loss
-                    if (storeConfig.isTimerSkipUnknownError()) {
-                        LOGGER.warn("Unknown error in skipped in enqueuing", e);
-                    } else {
-                        ThreadUtils.sleep(50);
-                        throw e;
-                    }
-                } finally {
-                    perfCounterTicks.endTick("enqueue_get");
-                }
-                // if broker role changes, ignore last enqueue
-                if (!isRunningEnqueue()) {
-                    return false;
-                }
-                timerState.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
-            }
-            timerState.currQueueOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
-            return i > 0;
-        } catch (Exception e) {
-            LOGGER.error("Unknown exception in enqueuing", e);
-        } finally {
-            bufferCQ.release();
-        }
-        return false;
-    }
-
-    @Override
-    public void run() {
-        LOGGER.info(this.getServiceName() + " service start");
-        while (!this.isStopped()) {
-            try {
-                if (!enqueue(0)) {
-                    waitForRunning(100L * storeConfig.getTimerPrecisionMs() / 1000);
-                }
-            } catch (Throwable e) {
-                LOGGER.error("Error occurred in " + getServiceName(), e);
-            }
-        }
-        LOGGER.info(this.getServiceName() + " service end");
-    }
-
 }

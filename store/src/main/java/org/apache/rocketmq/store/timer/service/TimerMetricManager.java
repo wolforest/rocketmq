@@ -40,16 +40,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TimerMetricManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    protected AtomicInteger frequency = new AtomicInteger(0);
-    private TimerMetrics timerMetrics;
     private TimerState timerState;
+    private MessageStoreConfig storeConfig;
     private TimerWheel timerWheel;
     private TimerLog timerLog;
     private MessageOperator messageReader;
-    private MessageStoreConfig storeConfig;
+    private TimerMetrics timerMetrics;
     private final int timerLogFileSize;
-    public TimerMetricManager(TimerMetrics timerMetrics, MessageStoreConfig storeConfig,
-                              MessageOperator messageReader, TimerWheel timerWheel, TimerLog timerLog, TimerState timerState) {
+    private AtomicInteger frequency = new AtomicInteger(0);
+
+    public TimerMetricManager(TimerState timerState,
+                              MessageStoreConfig storeConfig,
+                              TimerWheel timerWheel,
+                              TimerLog timerLog,
+                              MessageOperator messageReader,
+                              TimerMetrics timerMetrics) {
         this.timerMetrics = timerMetrics;
         this.storeConfig = storeConfig;
         this.messageReader = messageReader;

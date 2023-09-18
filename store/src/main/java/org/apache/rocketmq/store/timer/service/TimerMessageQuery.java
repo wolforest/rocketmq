@@ -36,18 +36,12 @@ public class TimerMessageQuery extends AbstractStateService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    @Override
-    public String getServiceName() {
-        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
-    }
-
+    private TimerState timerState;
+    private MessageStoreConfig storeConfig;
+    private MessageOperator messageReader;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     private PerfCounter.Ticks perfCounterTicks;
-    private TimerState timerState;
-    private MessageStoreConfig storeConfig;
-
-    private MessageOperator messageReader;
 
     public TimerMessageQuery(
             TimerState timerState,
@@ -55,9 +49,7 @@ public class TimerMessageQuery extends AbstractStateService {
             MessageOperator messageReader,
             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
             BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
-            PerfCounter.Ticks perfCounterTicks
-
-    ) {
+            PerfCounter.Ticks perfCounterTicks) {
         this.messageReader = messageReader;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageQueryQueue = timerMessageQueryQueue;
@@ -73,51 +65,51 @@ public class TimerMessageQuery extends AbstractStateService {
         while (!this.isStopped()) {
             try {
                 setState(AbstractStateService.WAITING);
-                List<TimerRequest> trs = timerMessageQueryQueue.poll(100L * timerState.precisionMs / 1000, TimeUnit.MILLISECONDS);
-                if (null == trs || trs.size() == 0) {
+                List<TimerRequest> timerRequestList = timerMessageQueryQueue.poll(100L * timerState.precisionMs / 1000, TimeUnit.MILLISECONDS);
+                if (null == timerRequestList || timerRequestList.size() == 0) {
                     continue;
                 }
                 setState(AbstractStateService.RUNNING);
-                for (int i = 0; i < trs.size(); ) {
-                    TimerRequest tr = trs.get(i);
+                for (int i = 0; i < timerRequestList.size(); ) {
+                    TimerRequest timerRequest = timerRequestList.get(i);
                     boolean doRes = false;
                     try {
                         long start = System.currentTimeMillis();
-                        MessageExt msgExt = messageReader.readMessageByCommitOffset(tr.getOffsetPy(), tr.getSizePy());
+                        MessageExt msgExt = messageReader.readMessageByCommitOffset(timerRequest.getOffsetPy(), timerRequest.getSizePy());
                         if (null != msgExt) {
-                            if (timerState.needDelete(tr.getMagic()) && !timerState.needRoll(tr.getMagic())) {
-                                if (msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY) != null && tr.getDeleteList() != null) {
-                                    tr.getDeleteList().add(msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY));
+                            if (timerState.needDelete(timerRequest.getMagic()) && !timerState.needRoll(timerRequest.getMagic())) {
+                                if (msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY) != null && timerRequest.getDeleteList() != null) {
+                                    timerRequest.getDeleteList().add(msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY));
                                 }
-                                tr.idempotentRelease();
+                                timerRequest.idempotentRelease();
                                 doRes = true;
                             } else {
                                 String uniqueKey = MessageClientIDSetter.getUniqID(msgExt);
                                 if (null == uniqueKey) {
                                     LOGGER.warn("No uniqueKey for msg:{}", msgExt);
                                 }
-                                if (null != uniqueKey && tr.getDeleteList() != null && tr.getDeleteList().size() > 0 && tr.getDeleteList().contains(uniqueKey)) {
+                                if (null != uniqueKey && timerRequest.getDeleteList() != null && timerRequest.getDeleteList().size() > 0 && timerRequest.getDeleteList().contains(uniqueKey)) {
                                     doRes = true;
-                                    tr.idempotentRelease();
+                                    timerRequest.idempotentRelease();
                                     perfCounterTicks.getCounter("dequeue_delete").flow(1);
                                 } else {
-                                    tr.setMsg(msgExt);
+                                    timerRequest.setMsg(msgExt);
                                     while (!isStopped() && !doRes) {
-                                        doRes = timerMessageDeliverQueue.offer(tr, 3, TimeUnit.SECONDS);
+                                        doRes = timerMessageDeliverQueue.offer(timerRequest, 3, TimeUnit.SECONDS);
                                     }
                                 }
                             }
                             perfCounterTicks.getCounter("dequeue_get_msg").flow(System.currentTimeMillis() - start);
                         } else {
                             //the tr will never be processed afterwards, so idempotentRelease it
-                            tr.idempotentRelease();
+                            timerRequest.idempotentRelease();
                             doRes = true;
                             perfCounterTicks.getCounter("dequeue_get_msg_miss").flow(System.currentTimeMillis() - start);
                         }
                     } catch (Throwable e) {
                         LOGGER.error("Unknown exception", e);
                         if (storeConfig.isTimerSkipUnknownError()) {
-                            tr.idempotentRelease();
+                            timerRequest.idempotentRelease();
                             doRes = true;
                         } else {
                             ThreadUtils.sleep(50);
@@ -128,13 +120,18 @@ public class TimerMessageQuery extends AbstractStateService {
                         }
                     }
                 }
-                trs.clear();
+                timerRequestList.clear();
             } catch (Throwable e) {
                 LOGGER.error("Error occurred in " + getServiceName(), e);
             }
         }
         LOGGER.info(this.getServiceName() + " service end");
         setState(AbstractStateService.END);
+    }
+
+    @Override
+    public String getServiceName() {
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 }
 

@@ -54,38 +54,31 @@ public class TimerWheelFetcher extends ServiceThread {
     private TimerMessageQuery[] timerMessageQueries;
 
     private long shouldStartTime;
-    private int timerLogFileSize;
-    private int precisionMs;
+    private final int timerLogFileSize;
+    private final int precisionMs;
 
-    public TimerWheelFetcher(MessageStoreConfig storeConfig,
-                             TimerState timerState,
+    public TimerWheelFetcher(TimerState timerState,
+                             MessageStoreConfig storeConfig,
                              TimerWheel timerWheel,
                              TimerLog timerLog,
-                             PerfCounter.Ticks perfCounterTicks,
                              BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                              TimerMessageDeliver[] timerMessageDelivers,
-                             TimerMessageQuery[] timerMessageQueries
-
-    ) {
-        this.storeConfig = storeConfig;
+                             TimerMessageQuery[] timerMessageQueries,
+                             PerfCounter.Ticks perfCounterTicks) {
         this.timerState = timerState;
+        this.storeConfig = storeConfig;
         this.timerWheel = timerWheel;
         this.timerLog = timerLog;
-        this.perfCounterTicks = perfCounterTicks;
         this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageDelivers = timerMessageDelivers;
         this.timerMessageQueries = timerMessageQueries;
+        this.perfCounterTicks = perfCounterTicks;
 
         timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
         precisionMs = storeConfig.getTimerPrecisionMs();
         commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
-    }
-
-    @Override
-    public String getServiceName() {
-        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
     public void start(long shouldStartTime) {
@@ -113,7 +106,13 @@ public class TimerWheelFetcher extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service end");
     }
 
-    public int dequeue() throws Exception {
+
+    @Override
+    public String getServiceName() {
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
+    }
+
+    private int dequeue() throws Exception {
 
         if (storeConfig.isTimerStopDequeue()) {
             return -1;
@@ -165,7 +164,7 @@ public class TimerWheelFetcher extends ServiceThread {
                     int sizePy = timeSbr.getByteBuffer().getInt();
                     TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, enqueueTime, magic);
                     timerRequest.setDeleteList(deleteUniqKeys);
-                    if (needDelete(magic) && !needRoll(magic)) {
+                    if (timerState.needDelete(magic) && !timerState.needRoll(magic)) {
                         deleteMsgStack.add(timerRequest);
                     } else {
                         normalMsgStack.addFirst(timerRequest);
@@ -188,26 +187,10 @@ public class TimerWheelFetcher extends ServiceThread {
             if (!timerState.isRunningDequeue()) {
                 return -1;
             }
-            CountDownLatch deleteLatch = new CountDownLatch(deleteMsgStack.size());
-            //read the delete msg: the msg used to mark another msg is deleted
-            for (List<TimerRequest> deleteList : splitIntoLists(deleteMsgStack)) {
-                for (TimerRequest tr : deleteList) {
-                    tr.setLatch(deleteLatch);
-                }
-                timerMessageQueryQueue.put(deleteList);
-            }
-            //do we need to use loop with tryAcquire
-            timerState.checkDeliverQueueLatch(deleteLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
 
-            CountDownLatch normalLatch = new CountDownLatch(normalMsgStack.size());
-            //read the normal msg
-            for (List<TimerRequest> normalList : splitIntoLists(normalMsgStack)) {
-                for (TimerRequest tr : normalList) {
-                    tr.setLatch(normalLatch);
-                }
-                timerMessageQueryQueue.put(normalList);
-            }
-            timerState.checkDeliverQueueLatch(normalLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
+            putToQuery(deleteMsgStack);
+            putToQuery(normalMsgStack);
+
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (timerState.dequeueStatusChangeFlag) {
                 return -1;
@@ -224,6 +207,26 @@ public class TimerWheelFetcher extends ServiceThread {
             }
         }
         return 1;
+    }
+
+    /**
+     * Put timerRequests to TimerQueryQueue
+     *
+     * @param msgStack
+     * @throws Exception
+     */
+    private void putToQuery(LinkedList<TimerRequest> msgStack) throws Exception {
+        List<List<TimerRequest>> timerRequestListGroup = splitIntoLists(msgStack);
+        CountDownLatch countDownLatch = new CountDownLatch(msgStack.size());
+        //read the delete msg: the msg used to mark another msg is deleted
+        for (List<TimerRequest> timerRequests : timerRequestListGroup) {
+            for (TimerRequest timerRequest : timerRequests) {
+                timerRequest.setLatch(countDownLatch);
+            }
+            timerMessageQueryQueue.put(timerRequests);
+        }
+        //do we need to use loop with tryAcquire
+        timerState.checkDeliverQueueLatch(countDownLatch, this.timerMessageDeliverQueue, this.timerMessageDelivers, this.timerMessageQueries, this.timerState.currReadTimeMs);
     }
 
     private List<List<TimerRequest>> splitIntoLists(List<TimerRequest> origin) {
@@ -258,16 +261,5 @@ public class TimerWheelFetcher extends ServiceThread {
         }
         return lists;
     }
-
-
-    public boolean needRoll(int magic) {
-        return (magic & TimerState.MAGIC_ROLL) != 0;
-    }
-
-    public boolean needDelete(int magic) {
-        return (magic & TimerState.MAGIC_DELETE) != 0;
-    }
-
-
 }
 

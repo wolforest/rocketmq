@@ -40,6 +40,8 @@ import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 
+import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
+
 public class HookUtils {
 
     protected static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
@@ -155,7 +157,7 @@ public class HookUtils {
     }
 
     private static boolean isRolledTimerMessage(MessageExtBrokerInner msg) {
-        return TimerMessageStore.TIMER_TOPIC.equals(msg.getTopic());
+        return TIMER_TOPIC.equals(msg.getTopic());
     }
 
     public static boolean checkIfTimerMessage(MessageExtBrokerInner msg) {
@@ -173,7 +175,7 @@ public class HookUtils {
             //return this.defaultMessageStore.getMessageStoreConfig().isTimerInterceptDelayLevel();
         }
         //double check
-        if (TimerMessageStore.TIMER_TOPIC.equals(msg.getTopic()) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_OUT_MS)) {
+        if (TIMER_TOPIC.equals(msg.getTopic()) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_OUT_MS)) {
             return false;
         }
         return null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELIVER_MS) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_MS) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_SEC);
@@ -214,7 +216,7 @@ public class HookUtils {
             MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_TOPIC, msg.getTopic());
             MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_QUEUE_ID, String.valueOf(msg.getQueueId()));
             msg.setPropertiesString(MessageDecoder.messageProperties2String(msg.getProperties()));
-            msg.setTopic(TimerMessageStore.TIMER_TOPIC);
+            msg.setTopic(TIMER_TOPIC);
             msg.setQueueId(0);
         } else if (null != msg.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY)) {
             return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_MSG_ILLEGAL, null);

@@ -326,7 +326,7 @@ public class PopReviveService extends ServiceThread {
             List<MessageExt> messageExts = getReviveMessage(offset, queueId);
             if (messageExts == null || messageExts.isEmpty()) {
                 long old = endTime;
-                long timerDelay = brokerController.getMessageStore().getTimerMessageStore().timerState.getDequeueBehind();
+                long timerDelay = brokerController.getMessageStore().getTimerMessageStore().getTimerState().getDequeueBehind();
                 long commitLogDelay = brokerController.getMessageStore().getTimerMessageStore().getEnqueueBehind();
                 // move endTime
                 if (endTime != 0 && System.currentTimeMillis() - endTime > 3 * PopAckConstants.SECOND && timerDelay <= 0 && commitLogDelay <= 0) {
