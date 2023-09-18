@@ -57,38 +57,13 @@ public class TimerLog {
         return append(data, 0, data.length);
     }
 
-    private MappedFile getLastMappedFile(int len) {
-        MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
-        if (null == mappedFile || mappedFile.isFull()) {
-            mappedFile = this.mappedFileQueue.getLastMappedFile(0);
-        }
-        if (null == mappedFile) {
-            log.error("Create mapped file1 error for timer log");
-            return null;
-        }
-        if (len + MIN_BLANK_LEN > mappedFile.getFileSize() - mappedFile.getWrotePosition()) {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(MIN_BLANK_LEN);
-            byteBuffer.putInt(mappedFile.getFileSize() - mappedFile.getWrotePosition());
-            byteBuffer.putLong(0);
-            byteBuffer.putInt(BLANK_MAGIC_CODE);
-            if (mappedFile.appendMessage(byteBuffer.array())) {
-                //need to set the wrote position
-                mappedFile.setWrotePosition(mappedFile.getFileSize());
-            } else {
-                log.error("Append blank error for timer log");
-                return null;
-            }
-            mappedFile = this.mappedFileQueue.getLastMappedFile(0);
-            if (null == mappedFile) {
-                log.error("create mapped file2 error for timer log");
-                return null;
-            }
-        }
-        return mappedFile;
+    public long append(Block block,int pos,int len){
+        return append(block.bytes(),pos,len);
     }
 
+
     public long append(byte[] data, int pos, int len) {
-        MappedFile mappedFile = getLastMappedFile(len);
+        MappedFile mappedFile = chooseLastMappedFile(len);
         long currPosition = mappedFile.getFileFromOffset() + mappedFile.getWrotePosition();
         if (!mappedFile.appendMessage(data, pos, len)) {
             log.error("Append error for timer log");
@@ -127,5 +102,36 @@ public class TimerLog {
 
         return fileSize - (fileSize - MIN_BLANK_LEN) % UNIT_SIZE - MIN_BLANK_LEN - UNIT_SIZE;
     }
+
+    private MappedFile chooseLastMappedFile(int len) {
+        MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
+        if (null == mappedFile || mappedFile.isFull()) {
+            mappedFile = this.mappedFileQueue.getLastMappedFile(0);
+        }
+        if (null == mappedFile) {
+            log.error("Create mapped file1 error for timer log");
+            return null;
+        }
+        if (len + MIN_BLANK_LEN > mappedFile.getFileSize() - mappedFile.getWrotePosition()) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(MIN_BLANK_LEN);
+            byteBuffer.putInt(mappedFile.getFileSize() - mappedFile.getWrotePosition());
+            byteBuffer.putLong(0);
+            byteBuffer.putInt(BLANK_MAGIC_CODE);
+            if (mappedFile.appendMessage(byteBuffer.array())) {
+                //need to set the wrote position
+                mappedFile.setWrotePosition(mappedFile.getFileSize());
+            } else {
+                log.error("Append blank error for timer log");
+                return null;
+            }
+            mappedFile = this.mappedFileQueue.getLastMappedFile(0);
+            if (null == mappedFile) {
+                log.error("create mapped file2 error for timer log");
+                return null;
+            }
+        }
+        return mappedFile;
+    }
+
 
 }
