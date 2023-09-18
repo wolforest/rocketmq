@@ -83,6 +83,25 @@ public class ConsumeQueueStore {
         consumeQueue.correctMinOffset(minCommitLogOffset);
     }
 
+    public long getMaxOffset() {
+        long maxOffset = -1L;
+        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
+            maxOffset = getMaxOffset(maxOffset, maps);
+        }
+
+        return maxOffset;
+    }
+
+    private long getMaxOffset(long offset, ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (ConsumeQueueInterface mq : maps.values()) {
+            if (mq.getMaxPhysicOffset() > offset) {
+                offset = mq.getMaxPhysicOffset();
+            }
+        }
+
+        return offset;
+    }
+
     /**
      * Apply the dispatched request and build the consume queue. This function should be idempotent.
      *
