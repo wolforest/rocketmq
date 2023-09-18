@@ -48,7 +48,6 @@ public class TimerFlushService extends ServiceThread {
     private MessageStoreConfig storeConfig;
     private TimerState timerState;
     private TimerMetrics timerMetrics;
-    private TimerCheckpoint timerCheckpoint;
     private TimerLog timerLog;
     private TimerWheel timerWheel;
 
@@ -60,7 +59,6 @@ public class TimerFlushService extends ServiceThread {
                              BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
                              BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
-                             TimerCheckpoint timerCheckpoint,
                              TimerMetrics timerMetrics
 
     ) {
@@ -71,7 +69,6 @@ public class TimerFlushService extends ServiceThread {
         this.storeConfig = storeConfig;
         this.timerState = timerState;
         this.timerMetrics = timerMetrics;
-        this.timerCheckpoint = timerCheckpoint;
         this.timerLog = timerLog;
         this.timerWheel = timerWheel;
     }
@@ -105,7 +102,7 @@ public class TimerFlushService extends ServiceThread {
                                     "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
                             storeConfig.getBrokerRole(),
                             format(timerState.commitReadTimeMs), format(timerState.currReadTimeMs), format(timerState.currWriteTimeMs), timerState.getDequeueBehind(),
-                            tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerCheckpoint.getMasterTimerQueueOffset() - tmpQueueOffset,
+                            tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerState.getMasterTimerQueueOffset() - tmpQueueOffset,
                             fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerState.getAllCongestNum(), format(timerState.lastEnqueueButExpiredStoreTime));
                 }
                 timerMetrics.persist();

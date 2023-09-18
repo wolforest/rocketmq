@@ -472,7 +472,6 @@ public class TimerMessageStore {
                 fetchedTimerMessageQueue,
                 timerMessageQueryQueue,
                 timerMessageDeliverQueue,
-                timerCheckpoint,
                 timerMetrics
                 );
         recover = new TimerMessageRecover(
