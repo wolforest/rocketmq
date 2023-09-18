@@ -198,28 +198,28 @@ public class TimerWheelLocator extends ServiceThread {
 
     private void fetchAndPutTimerRequest() throws Exception {
         long tmpCommitQueueOffset = timerState.currQueueOffset;
-        List<TimerRequest> trs = this.fetchTimerRequests();
-        if (CollectionUtils.isEmpty(trs)) {
+        List<TimerRequest> timerRequests = this.fetchTimerRequests();
+        if (CollectionUtils.isEmpty(timerRequests)) {
             timerState.commitQueueOffset = tmpCommitQueueOffset;
             timerState.maybeMoveWriteTime();
             return;
         }
 
         while (!isStopped()) {
-            CountDownLatch latch = new CountDownLatch(trs.size());
-            for (TimerRequest req : trs) {
+            CountDownLatch latch = new CountDownLatch(timerRequests.size());
+            for (TimerRequest req : timerRequests) {
                 req.setLatch(latch);
                 this.putMessageToTimerWheel(req);
             }
             timerState.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue, timerMessageDelivers, timerMessageQueries, -1);
-            boolean allSuccess = trs.stream().allMatch(TimerRequest::isSucc);
+            boolean allSuccess = timerRequests.stream().allMatch(TimerRequest::isSucc);
             if (allSuccess) {
                 break;
             } else {
                 ThreadUtils.sleep(50);
             }
         }
-        timerState.commitQueueOffset = trs.get(trs.size() - 1).getMsg().getQueueOffset();
+        timerState.commitQueueOffset = timerRequests.get(timerRequests.size() - 1).getMsg().getQueueOffset();
         timerState.maybeMoveWriteTime();
     }
 
