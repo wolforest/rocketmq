@@ -1488,7 +1488,17 @@ public class DefaultMessageStore implements MessageStore {
         return Optional.ofNullable(this.topicConfigTable.get(topic));
     }
 
+    /**
+     * duplicate method of BrokerController.getBrokerIdentity()
+     *
+     * @return BrokerIdentity
+     */
     public BrokerIdentity getBrokerIdentity() {
+        if (null != brokerConfig.getBrokerIdentity()) {
+            return brokerConfig.getBrokerIdentity();
+        }
+
+        //below actions will never execute
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             return new BrokerIdentity(
                 brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(),
