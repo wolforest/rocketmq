@@ -16,14 +16,6 @@
  */
 package org.apache.rocketmq.store.timer.service;
 
-import java.nio.ByteBuffer;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -40,6 +32,14 @@ import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerWheel;
 import org.apache.rocketmq.store.util.PerfCounter;
+
+import java.nio.ByteBuffer;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.rocketmq.store.timer.TimerMessageStore.ENQUEUE_PUT;
 
@@ -173,18 +173,7 @@ public class TimerWheelLocator extends ServiceThread {
         }
         String realTopic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
         Slot slot = timerWheel.getSlot(delayedTime);
-        ByteBuffer tmpBuffer = timerLogBuffer;
-        tmpBuffer.clear();
-        tmpBuffer.putInt(TimerLog.UNIT_SIZE); //size
-        tmpBuffer.putLong(slot.lastPos); //prev pos
-        tmpBuffer.putInt(magic); //magic
-        tmpBuffer.putLong(tmpWriteTimeMs); //currWriteTime
-        tmpBuffer.putInt((int) (delayedTime - tmpWriteTimeMs)); //delayTime
-        tmpBuffer.putLong(offsetPy); //offset
-        tmpBuffer.putInt(sizePy); //size
-        tmpBuffer.putInt(metricManager.hashTopicForMetrics(realTopic)); //hashcode of real topic
-        tmpBuffer.putLong(0); //reserved value, just set to 0 now
-        long ret = timerLog.append(tmpBuffer.array(), 0, TimerLog.UNIT_SIZE);
+        long ret = appendTimerLog(offsetPy, sizePy, delayedTime, tmpWriteTimeMs, magic, realTopic, slot.lastPos);
         if (-1 != ret) {
             // If it's a delete message, then slot's total num -1
             // TODO: check if the delete msg is in the same slot with "the msg to be deleted".
@@ -193,6 +182,22 @@ public class TimerWheelLocator extends ServiceThread {
             metricManager.addMetric(messageExt, isDelete ? -1 : 1);
         }
         return -1 != ret;
+    }
+
+    private long appendTimerLog(long offsetPy, int sizePy, long delayedTime, long tmpWriteTimeMs, int magic, String realTopic,long lastPos) {
+        ByteBuffer tmpBuffer = timerLogBuffer;
+        tmpBuffer.clear();
+        tmpBuffer.putInt(TimerLog.UNIT_SIZE); //size
+        tmpBuffer.putLong(lastPos); //prev pos
+        tmpBuffer.putInt(magic); //magic
+        tmpBuffer.putLong(tmpWriteTimeMs); //currWriteTime
+        tmpBuffer.putInt((int) (delayedTime - tmpWriteTimeMs)); //delayTime
+        tmpBuffer.putLong(offsetPy); //offset
+        tmpBuffer.putInt(sizePy); //size
+        tmpBuffer.putInt(metricManager.hashTopicForMetrics(realTopic)); //hashcode of real topic
+        tmpBuffer.putLong(0); //reserved value, just set to 0 now
+        long ret = timerLog.append(tmpBuffer.array(), 0, TimerLog.UNIT_SIZE);
+        return ret;
     }
 
 
