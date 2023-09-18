@@ -443,6 +443,7 @@ public class TimerMessageStore {
                 storeConfig,
                 timerWheel,
                 timerLog,
+                messageOperator,
                 fetchedTimerMessageQueue,
                 timerMessageDeliverQueue,
                 timerMessageDelivers,

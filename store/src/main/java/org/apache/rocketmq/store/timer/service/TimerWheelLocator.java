@@ -49,8 +49,10 @@ public class TimerWheelLocator extends ServiceThread {
 
     private TimerState timerState;
     private MessageStoreConfig storeConfig;
-    private TimerLog timerLog;
     private TimerWheel timerWheel;
+    private TimerLog timerLog;
+    private MessageOperator messageOperator;
+
 
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
@@ -64,6 +66,7 @@ public class TimerWheelLocator extends ServiceThread {
                              MessageStoreConfig storeConfig,
                              TimerWheel timerWheel,
                              TimerLog timerLog,
+                             MessageOperator messageOperator,
                              BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                              TimerMessageDeliver[] timerMessageDelivers,
@@ -74,6 +77,7 @@ public class TimerWheelLocator extends ServiceThread {
         this.storeConfig = storeConfig;
         this.timerWheel = timerWheel;
         this.timerLog = timerLog;
+        this.messageOperator = messageOperator;
 
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
