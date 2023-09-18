@@ -16,10 +16,6 @@
  */
 package org.apache.rocketmq.broker.util;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.schedule.ScheduleMessageService;
 import org.apache.rocketmq.common.MixAll;
@@ -38,8 +34,11 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.config.BrokerRole;
-import org.apache.rocketmq.store.timer.TimerMessageStore;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
 
 public class HookUtils {

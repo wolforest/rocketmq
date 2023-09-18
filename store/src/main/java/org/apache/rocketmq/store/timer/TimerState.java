@@ -84,7 +84,7 @@ public class TimerState {
     public final int timerRollWindowSlots;
     public final int slotsTotal;
 
-    public TimerState(TimerCheckpoint timerCheckpoint,  MessageStoreConfig storeConfig, TimerLog timerLog, int slotsTotal,TimerWheel timerWheel, MessageStore messageStore) {
+    public TimerState(TimerCheckpoint timerCheckpoint, MessageStoreConfig storeConfig, TimerLog timerLog, int slotsTotal, TimerWheel timerWheel, MessageStore messageStore) {
         this.timerCheckpoint = timerCheckpoint;
         this.storeConfig = storeConfig;
         this.timerLog = timerLog;
@@ -115,11 +115,11 @@ public class TimerState {
         return isRunning();
     }
 
-    public long getMasterTimerQueueOffset(){
+    public long getMasterTimerQueueOffset() {
         return timerCheckpoint.getMasterTimerQueueOffset();
     }
 
-    public void flushCheckpoint(){
+    public void flushCheckpoint() {
         timerCheckpoint.flush();
     }
 

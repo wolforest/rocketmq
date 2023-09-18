@@ -17,6 +17,31 @@
 package org.apache.rocketmq.store.timer;
 
 import com.conversantmedia.util.concurrent.DisruptorBlockingQueue;
+import org.apache.rocketmq.common.ThreadFactoryImpl;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.ThreadUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.PutMessageResult;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.queue.ConsumeQueue;
+import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.timer.service.MessageOperator;
+import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
+import org.apache.rocketmq.store.timer.service.TimerFlushService;
+import org.apache.rocketmq.store.timer.service.TimerMessageDeliver;
+import org.apache.rocketmq.store.timer.service.TimerMessageFetcher;
+import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
+import org.apache.rocketmq.store.timer.service.TimerMessageRecover;
+import org.apache.rocketmq.store.timer.service.TimerMetricManager;
+import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
+import org.apache.rocketmq.store.timer.service.TimerWheelLocator;
+import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,40 +50,11 @@ import java.sql.Timestamp;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-
-import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.TimeUtils;
-import org.apache.rocketmq.common.utils.ThreadUtils;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.queue.ConsumeQueue;
-import org.apache.rocketmq.store.DefaultMessageStore;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.timer.service.MessageOperator;
-import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
-import org.apache.rocketmq.store.timer.service.TimerMessageRecover;
-import org.apache.rocketmq.store.timer.service.TimerMetricManager;
-import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
-import org.apache.rocketmq.store.timer.service.TimerMessageDeliver;
-import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
-import org.apache.rocketmq.store.timer.service.TimerMessageFetcher;
-import org.apache.rocketmq.store.timer.service.TimerWheelLocator;
-import org.apache.rocketmq.store.timer.service.TimerFlushService;
-import org.apache.rocketmq.store.util.PerfCounter;
 
 public class TimerMessageStore {
 
@@ -128,7 +124,7 @@ public class TimerMessageStore {
         this.timerWheel = new TimerWheel(timeWheelFileName, slotsTotal, precisionMs);
         this.timerState = new TimerState(timerCheckpoint, storeConfig, timerLog, slotsTotal, timerWheel, messageStore);
         this.messageOperator = new MessageOperator(messageStore, storeConfig);
-        this.timerMetricManager = new TimerMetricManager(timerState,storeConfig,timerWheel,timerLog,messageOperator,timerMetrics);
+        this.timerMetricManager = new TimerMetricManager(timerState, storeConfig, timerWheel, timerLog, messageOperator, timerMetrics);
     }
 
     public boolean load() {
@@ -473,7 +469,7 @@ public class TimerMessageStore {
                 timerMessageQueryQueue,
                 timerMessageDeliverQueue,
                 timerMetrics
-                );
+        );
         recover = new TimerMessageRecover(
                 timerState,
                 timerWheel,

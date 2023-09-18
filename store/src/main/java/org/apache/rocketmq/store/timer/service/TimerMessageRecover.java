@@ -18,7 +18,6 @@ package org.apache.rocketmq.store.timer.service;
 
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.logfile.MappedFile;
@@ -48,8 +47,8 @@ public class TimerMessageRecover {
 
     public TimerMessageRecover(TimerState timerState,
                                TimerWheel timerWheel,
-                               TimerLog timerLog,MessageOperator messageOperator,
-                               TimerCheckpoint timerCheckpoint){
+                               TimerLog timerLog, MessageOperator messageOperator,
+                               TimerCheckpoint timerCheckpoint) {
         this.timerState = timerState;
         this.timerWheel = timerWheel;
         this.timerLog = timerLog;
@@ -230,6 +229,7 @@ public class TimerMessageRecover {
             selectRes.release();
         }
     }
+
     private long formatTimeMs(long timeMs) {
         return timeMs / precisionMs * precisionMs;
     }
