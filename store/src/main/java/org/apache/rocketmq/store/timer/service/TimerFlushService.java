@@ -35,7 +35,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
-import static org.apache.rocketmq.store.timer.TimerMessageStore.TIMER_TOPIC;
+import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
 
 public class TimerFlushService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);

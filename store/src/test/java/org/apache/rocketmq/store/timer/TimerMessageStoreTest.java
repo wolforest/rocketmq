@@ -59,6 +59,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
@@ -163,7 +164,7 @@ public class TimerMessageStoreTest {
             MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_TOPIC, msg.getTopic());
             MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_QUEUE_ID, String.valueOf(msg.getQueueId()));
             msg.setPropertiesString(MessageDecoder.messageProperties2String(msg.getProperties()));
-            msg.setTopic(TimerMessageStore.TIMER_TOPIC);
+            msg.setTopic(TIMER_TOPIC);
             msg.setQueueId(0);
         } else if (null != msg.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY)) {
             return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_MSG_ILLEGAL, null);

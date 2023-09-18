@@ -25,6 +25,7 @@ import java.sql.Timestamp;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
@@ -63,7 +64,6 @@ public class TimerMessageStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
     public static final int DEFAULT_CAPACITY = 1024;
     public static final String ENQUEUE_PUT = "enqueue_put";
     public static final String DEQUEUE_PUT = "dequeue_put";
@@ -256,7 +256,7 @@ public class TimerMessageStore {
 
     public long getEnqueueBehindMessages() {
         long tmpQueueOffset = timerState.currQueueOffset;
-        ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TIMER_TOPIC, 0);
+        ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TimerState.TIMER_TOPIC, 0);
         long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
         return maxOffsetInQueue - tmpQueueOffset;
     }

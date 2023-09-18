@@ -32,9 +32,10 @@ import org.apache.rocketmq.store.timer.TimerWheel;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
+
 public class TimerMessageRecover {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
 
     private TimerState timerState;
     private TimerCheckpoint timerCheckpoint;
