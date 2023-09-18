@@ -37,7 +37,17 @@ public class Block {
             + 4 //hash code of real topic
             + 8; //reserved value, just in case of;
 
+    public Block(int size,
+                 long prevPos,
+                 int magic,
+                 long currWriteTime,
+                 int delayedTime,
+                 long offsetPy,
+                 int sizePy,
+                 int hashCodeOfRealTopic,
+                 long reservedValue) {
 
+    }
 
 
 }
