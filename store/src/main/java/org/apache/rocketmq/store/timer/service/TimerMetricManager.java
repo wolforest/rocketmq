@@ -41,12 +41,13 @@ public class TimerMetricManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private AtomicInteger frequency = new AtomicInteger(0);
-    private TimerMetrics timerMetrics;
     private TimerState timerState;
+    private MessageStoreConfig storeConfig;
     private TimerWheel timerWheel;
     private TimerLog timerLog;
     private MessageOperator messageReader;
-    private MessageStoreConfig storeConfig;
+    private TimerMetrics timerMetrics;
+
     private final int timerLogFileSize;
     public TimerMetricManager(TimerMetrics timerMetrics, MessageStoreConfig storeConfig,
                               MessageOperator messageReader, TimerWheel timerWheel, TimerLog timerLog, TimerState timerState) {
