@@ -38,7 +38,7 @@ public class TimerRequest {
     private boolean released;
 
     //whether the operation is successful
-    private boolean succ;
+    private boolean success;
 
     private Set<String> deleteList;
 
@@ -99,16 +99,16 @@ public class TimerRequest {
         idempotentRelease(true);
     }
 
-    public void idempotentRelease(boolean succ) {
-        this.succ = succ;
+    public void idempotentRelease(boolean success) {
+        this.success = success;
         if (!released && latch != null) {
             released = true;
             latch.countDown();
         }
     }
 
-    public boolean isSucc() {
-        return succ;
+    public boolean isSuccess() {
+        return success;
     }
 
     @Override
@@ -122,7 +122,7 @@ public class TimerRequest {
             ", msg=" + msg +
             ", latch=" + latch +
             ", released=" + released +
-            ", succ=" + succ +
+            ", succ=" + success +
             ", deleteList=" + deleteList +
             '}';
     }

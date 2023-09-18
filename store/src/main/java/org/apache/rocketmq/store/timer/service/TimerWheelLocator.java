@@ -216,7 +216,7 @@ public class TimerWheelLocator extends ServiceThread {
                 this.putMessageToTimerWheel(req);
             }
             timerState.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue, timerMessageDelivers, timerMessageQueries, -1);
-            boolean allSuccess = timerRequests.stream().allMatch(TimerRequest::isSucc);
+            boolean allSuccess = timerRequests.stream().allMatch(TimerRequest::isSuccess);
             if (allSuccess) {
                 break;
             } else {
