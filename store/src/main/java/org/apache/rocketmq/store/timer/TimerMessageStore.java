@@ -127,8 +127,8 @@ public class TimerMessageStore {
         final String timeWheelFileName = getTimerWheelFileFullName(storeConfig.getStorePathRootDir());
         this.timerWheel = new TimerWheel(timeWheelFileName, slotsTotal, precisionMs);
         this.timerState = new TimerState(timerCheckpoint, storeConfig, timerLog, slotsTotal, timerWheel, messageStore);
-        timerMetricManager = new TimerMetricManager(timerMetrics, storeConfig, messageOperator, timerWheel, timerLog, timerState);
         this.messageOperator = new MessageOperator(messageStore, storeConfig);
+        this.timerMetricManager = new TimerMetricManager(timerState,storeConfig,timerWheel,timerLog,messageOperator,timerMetrics);
     }
 
     public boolean load() {

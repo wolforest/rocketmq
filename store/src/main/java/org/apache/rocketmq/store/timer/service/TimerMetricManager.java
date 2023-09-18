@@ -49,8 +49,12 @@ public class TimerMetricManager {
     private TimerMetrics timerMetrics;
 
     private final int timerLogFileSize;
-    public TimerMetricManager(TimerMetrics timerMetrics, MessageStoreConfig storeConfig,
-                              MessageOperator messageReader, TimerWheel timerWheel, TimerLog timerLog, TimerState timerState) {
+    public TimerMetricManager(TimerState timerState,
+                              MessageStoreConfig storeConfig,
+                              TimerWheel timerWheel,
+                              TimerLog timerLog,
+                              MessageOperator messageReader,
+                              TimerMetrics timerMetrics) {
         this.timerMetrics = timerMetrics;
         this.storeConfig = storeConfig;
         this.messageReader = messageReader;
