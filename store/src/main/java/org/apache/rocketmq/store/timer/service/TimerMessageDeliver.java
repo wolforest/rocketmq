@@ -106,7 +106,7 @@ public class TimerMessageDeliver extends AbstractStateService {
 
                         try {
                             perfCounterTicks.startTick(DEQUEUE_PUT);
-                            DefaultStoreMetricsManager.incTimerDequeueCount(getRealTopic(timerRequest.getMsg()));
+                            DefaultStoreMetricsManager.incTimerDequeueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
                             metricManager.addMetric(timerRequest.getMsg(), -1);
                             MessageExtBrokerInner msg = convert(timerRequest.getMsg(), timerRequest.getEnqueueTime(), timerState.needRoll(timerRequest.getMagic()));
 
@@ -142,13 +142,6 @@ public class TimerMessageDeliver extends AbstractStateService {
         }
         LOGGER.info(this.getServiceName() + " service end");
         setState(AbstractStateService.END);
-    }
-
-    public String getRealTopic(MessageExt msgExt) {
-        if (msgExt == null) {
-            return null;
-        }
-        return msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
     }
 
     public MessageExtBrokerInner convert(MessageExt messageExt, long enqueueTime, boolean needRoll) {

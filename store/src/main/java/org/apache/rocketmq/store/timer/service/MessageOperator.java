@@ -18,6 +18,7 @@ package org.apache.rocketmq.store.timer.service;
 
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
@@ -79,5 +80,12 @@ public class MessageOperator {
     public void clean() {
         UtilAll.cleanBuffer(this.bufferLocal.get());
         this.bufferLocal.remove();
+    }
+
+    public String getRealTopic(MessageExt msgExt) {
+        if (msgExt == null) {
+            return null;
+        }
+        return msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
     }
 }
