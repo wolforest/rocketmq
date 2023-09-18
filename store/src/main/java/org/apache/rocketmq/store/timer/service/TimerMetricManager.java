@@ -40,15 +40,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TimerMetricManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private AtomicInteger frequency = new AtomicInteger(0);
     private TimerState timerState;
     private MessageStoreConfig storeConfig;
     private TimerWheel timerWheel;
     private TimerLog timerLog;
     private MessageOperator messageReader;
     private TimerMetrics timerMetrics;
-
     private final int timerLogFileSize;
+    private AtomicInteger frequency = new AtomicInteger(0);
+
     public TimerMetricManager(TimerState timerState,
                               MessageStoreConfig storeConfig,
                               TimerWheel timerWheel,
