@@ -209,8 +209,14 @@ public class TimerWheelFetcher extends ServiceThread {
         return 1;
     }
 
+    /**
+     * Put timerRequests to TimerQueryQueue
+     *
+     * @param msgStack
+     * @throws Exception
+     */
     private void putToQuery(LinkedList<TimerRequest> msgStack) throws Exception {
-        List<List<TimerRequest>> timerRequestListGroup =  splitIntoLists(msgStack);
+        List<List<TimerRequest>> timerRequestListGroup = splitIntoLists(msgStack);
         CountDownLatch countDownLatch = new CountDownLatch(msgStack.size());
         //read the delete msg: the msg used to mark another msg is deleted
         for (List<TimerRequest> timerRequests : timerRequestListGroup) {
