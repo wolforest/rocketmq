@@ -20,15 +20,14 @@ import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.junit.After;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class TimerLogTest {
 
@@ -49,7 +48,6 @@ public class TimerLogTest {
     @Test
     public void testAppendRollSelectDelete() throws Exception {
         TimerLog timerLog = createTimerLog(null);
-        ByteBuffer byteBuffer = ByteBuffer.allocate(TimerLog.UNIT_SIZE);
         Block block = new Block(
                 Block.SIZE,
                 Long.MAX_VALUE,
@@ -61,22 +59,13 @@ public class TimerLogTest {
                 123,
                 0
         );
-        byteBuffer.putInt(TimerLog.UNIT_SIZE);
-        byteBuffer.putLong(Long.MAX_VALUE);
-        byteBuffer.putInt(0);
-        byteBuffer.putLong(Long.MAX_VALUE);
-        byteBuffer.putInt(0);
-        byteBuffer.putLong(1000);
-        byteBuffer.putInt(10);
-        byteBuffer.putInt(123);
-        byteBuffer.putInt(0);
         long ret = -1;
         for (int i = 0; i < 10; i++) {
             ret = timerLog.append(block, 0, TimerLog.UNIT_SIZE);
             assertEquals(i * TimerLog.UNIT_SIZE, ret);
         }
         for (int i = 0; i < 100; i++) {
-            timerLog.append(byteBuffer.array());
+            timerLog.append(block,0,TimerLog.UNIT_SIZE);
         }
         assertEquals(6, timerLog.getMappedFileQueue().getMappedFiles().size());
         SelectMappedBufferResult sbr = timerLog.getTimerMessage(ret);
