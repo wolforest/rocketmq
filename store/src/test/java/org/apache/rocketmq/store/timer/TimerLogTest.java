@@ -50,6 +50,17 @@ public class TimerLogTest {
     public void testAppendRollSelectDelete() throws Exception {
         TimerLog timerLog = createTimerLog(null);
         ByteBuffer byteBuffer = ByteBuffer.allocate(TimerLog.UNIT_SIZE);
+        Block block = new Block(
+                Block.SIZE,
+                Long.MAX_VALUE,
+                0,
+                Long.MAX_VALUE,
+                0,
+                1000,
+                10,
+                123,
+                0
+        );
         byteBuffer.putInt(TimerLog.UNIT_SIZE);
         byteBuffer.putLong(Long.MAX_VALUE);
         byteBuffer.putInt(0);
@@ -61,7 +72,7 @@ public class TimerLogTest {
         byteBuffer.putInt(0);
         long ret = -1;
         for (int i = 0; i < 10; i++) {
-            ret = timerLog.append(byteBuffer.array(), 0, TimerLog.UNIT_SIZE);
+            ret = timerLog.append(block, 0, TimerLog.UNIT_SIZE);
             assertEquals(i * TimerLog.UNIT_SIZE, ret);
         }
         for (int i = 0; i < 100; i++) {

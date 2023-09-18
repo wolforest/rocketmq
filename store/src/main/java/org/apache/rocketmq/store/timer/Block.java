@@ -38,7 +38,7 @@ public class Block {
             + 4 //sizePy
             + 4 //hash code of real topic
             + 8; //reserved value, just in case of;
-    private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
+    private final ByteBuffer blockBuffer = ByteBuffer.allocate(SIZE);
     public int size;
     public long prevPos;
     public int magic;
@@ -70,7 +70,7 @@ public class Block {
     }
 
     public byte[] bytes(){
-        ByteBuffer tmpBuffer = timerLogBuffer;
+        ByteBuffer tmpBuffer = blockBuffer;
         tmpBuffer.clear();
         tmpBuffer.putInt(TimerLog.UNIT_SIZE); //size
         tmpBuffer.putLong(prevPos); //prev pos ,lastPos
