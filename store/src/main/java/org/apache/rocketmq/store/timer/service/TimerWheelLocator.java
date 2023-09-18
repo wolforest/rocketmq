@@ -34,7 +34,6 @@ import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerWheel;
 import org.apache.rocketmq.store.util.PerfCounter;
 
-import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -151,8 +150,6 @@ public class TimerWheelLocator extends ServiceThread {
         }
     }
 
-    private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
-
     private boolean doEnqueue(long offsetPy, int sizePy, long delayedTime, MessageExt messageExt) {
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
         //copy the value first, avoid concurrent problem
@@ -206,6 +203,7 @@ public class TimerWheelLocator extends ServiceThread {
         long tmpCommitQueueOffset = timerState.currQueueOffset;
         List<TimerRequest> timerRequests = this.fetchTimerRequests();
         if (CollectionUtils.isEmpty(timerRequests)) {
+
             timerState.commitQueueOffset = tmpCommitQueueOffset;
             timerState.maybeMoveWriteTime();
             return;
