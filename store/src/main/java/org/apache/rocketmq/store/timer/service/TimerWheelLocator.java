@@ -133,11 +133,12 @@ public class TimerWheelLocator extends ServiceThread {
         try {
             perfCounterTicks.startTick(ENQUEUE_PUT);
             DefaultStoreMetricsManager.incTimerEnqueueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
-            if (timerState.isShouldRunningDequeue() && timerRequest.getDelayTime() < timerState.currWriteTimeMs) {
+            boolean shouldFire = timerRequest.getDelayTime() < timerState.currWriteTimeMs;
+            if (timerState.isShouldRunningDequeue() && shouldFire) {
                 timerMessageDeliverQueue.put(timerRequest);
             } else {
-                boolean doEnqueueRes = doSave(timerRequest);
-                timerRequest.idempotentRelease(doEnqueueRes || storeConfig.isTimerSkipUnknownError());
+                boolean success = doSave(timerRequest);
+                timerRequest.idempotentRelease(success || storeConfig.isTimerSkipUnknownError());
             }
             perfCounterTicks.endTick(ENQUEUE_PUT);
         } catch (Throwable t) {
