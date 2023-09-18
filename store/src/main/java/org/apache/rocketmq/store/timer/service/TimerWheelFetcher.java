@@ -164,7 +164,7 @@ public class TimerWheelFetcher extends ServiceThread {
                     int sizePy = timeSbr.getByteBuffer().getInt();
                     TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, enqueueTime, magic);
                     timerRequest.setDeleteList(deleteUniqKeys);
-                    if (needDelete(magic) && !needRoll(magic)) {
+                    if (timerState.needDelete(magic) && !timerState.needRoll(magic)) {
                         deleteMsgStack.add(timerRequest);
                     } else {
                         normalMsgStack.addFirst(timerRequest);
@@ -257,16 +257,5 @@ public class TimerWheelFetcher extends ServiceThread {
         }
         return lists;
     }
-
-
-    private boolean needRoll(int magic) {
-        return (magic & TimerState.MAGIC_ROLL) != 0;
-    }
-
-    private boolean needDelete(int magic) {
-        return (magic & TimerState.MAGIC_DELETE) != 0;
-    }
-
-
 }
 
