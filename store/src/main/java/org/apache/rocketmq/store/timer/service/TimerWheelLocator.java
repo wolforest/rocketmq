@@ -129,17 +129,10 @@ public class TimerWheelLocator extends ServiceThread {
         return timerRequestList;
     }
 
-    private String getRealTopic(MessageExt msgExt) {
-        if (msgExt == null) {
-            return null;
-        }
-        return msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
-    }
-
     private void putMessageToTimerWheel(TimerRequest timerRequest) {
         try {
             perfCounterTicks.startTick(ENQUEUE_PUT);
-            DefaultStoreMetricsManager.incTimerEnqueueCount(getRealTopic(timerRequest.getMsg()));
+            DefaultStoreMetricsManager.incTimerEnqueueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
             if (timerState.isShouldRunningDequeue() && timerRequest.getDelayTime() < timerState.currWriteTimeMs) {
                 timerMessageDeliverQueue.put(timerRequest);
             } else {
