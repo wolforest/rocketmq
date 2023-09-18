@@ -189,24 +189,25 @@ public class TimerWheelFetcher extends ServiceThread {
             }
             CountDownLatch deleteLatch = new CountDownLatch(deleteMsgStack.size());
             //read the delete msg: the msg used to mark another msg is deleted
-            for (List<TimerRequest> deleteList : splitIntoLists(deleteMsgStack)) {
-                for (TimerRequest timerRequest : deleteList) {
+            for (List<TimerRequest> timerRequests : splitIntoLists(deleteMsgStack)) {
+                for (TimerRequest timerRequest : timerRequests) {
                     timerRequest.setLatch(deleteLatch);
                 }
-                timerMessageQueryQueue.put(deleteList);
+                timerMessageQueryQueue.put(timerRequests);
             }
             //do we need to use loop with tryAcquire
             timerState.checkDeliverQueueLatch(deleteLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
 
             CountDownLatch normalLatch = new CountDownLatch(normalMsgStack.size());
             //read the normal msg
-            for (List<TimerRequest> normalList : splitIntoLists(normalMsgStack)) {
-                for (TimerRequest timerRequest : normalList) {
+            for (List<TimerRequest> timerRequests : splitIntoLists(normalMsgStack)) {
+                for (TimerRequest timerRequest : timerRequests) {
                     timerRequest.setLatch(normalLatch);
                 }
-                timerMessageQueryQueue.put(normalList);
+                timerMessageQueryQueue.put(timerRequests);
             }
             timerState.checkDeliverQueueLatch(normalLatch, timerMessageDeliverQueue, timerMessageDelivers, timerMessageQueries, timerState.currReadTimeMs);
+
             // if master -> slave -> master, then the read time move forward, and messages will be lossed
             if (timerState.dequeueStatusChangeFlag) {
                 return -1;
