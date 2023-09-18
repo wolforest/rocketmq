@@ -38,10 +38,11 @@ public class TimerMessageRecover {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private TimerState timerState;
-    private TimerCheckpoint timerCheckpoint;
     private TimerLog timerLog;
     private TimerWheel timerWheel;
     private MessageOperator messageOperator;
+    private TimerCheckpoint timerCheckpoint;
+
     private boolean debug = false;
     private int precisionMs;
 
