@@ -16,7 +16,5 @@
  */
 package org.apache.rocketmq.store.timer.service;
 
-public interface Scanner {
-
-    void scan();
+public interface Locator {
 }
