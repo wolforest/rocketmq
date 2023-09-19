@@ -46,7 +46,6 @@ public class TimerMessageScanner extends ServiceThread {
 
     private Persistence persistence;
     private long shouldStartTime;
-    private final int timerLogFileSize;
     private final int precisionMs;
 
     public TimerMessageScanner(TimerState timerState,
@@ -68,7 +67,6 @@ public class TimerMessageScanner extends ServiceThread {
         this.timerMessageQueries = timerMessageQueries;
 
         this.persistence = new TimerWheelPersistence(timerState,timerWheel,timerLog,storeConfig,metricManager,perfCounterTicks);
-        timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
         precisionMs = storeConfig.getTimerPrecisionMs();
         commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
     }
