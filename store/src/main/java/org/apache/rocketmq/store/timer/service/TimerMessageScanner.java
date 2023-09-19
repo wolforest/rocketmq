@@ -191,21 +191,23 @@ public class TimerMessageScanner extends ServiceThread {
             putToQuery(deleteMsgStack);
             putToQuery(normalMsgStack);
 
-            // if master -> slave -> master, then the read time move forward, and messages will be lossed
-            if (timerState.dequeueStatusChangeFlag) {
-                return -1;
-            }
-            if (!timerState.isRunningDequeue()) {
-                return -1;
-            }
 
-            timerState.moveReadTime(precisionMs);
         } catch (Throwable t) {
             LOGGER.error("Unknown error in dequeue process", t);
             if (storeConfig.isTimerSkipUnknownError()) {
                 timerState.moveReadTime(precisionMs);
             }
         }
+
+        // if master -> slave -> master, then the read time move forward, and messages will be lossed
+        if (timerState.dequeueStatusChangeFlag) {
+            return -1;
+        }
+        if (!timerState.isRunningDequeue()) {
+            return -1;
+        }
+
+        timerState.moveReadTime(precisionMs);
         return 1;
     }
 
