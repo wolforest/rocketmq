@@ -124,19 +124,15 @@ public class TimerMessageScanner extends ServiceThread {
         if (timerState.currReadTimeMs >= timerState.currWriteTimeMs) {
             return -1;
         }
-        LinkedList<TimerRequest> normalMsgStack = new LinkedList<>();
-        LinkedList<TimerRequest> deleteMsgStack = new LinkedList<>();
-
 
         Scanner.ScannResult result = scanner.scan();
-        if (result.getCode() == 0) return result.getCode();
-
-
+        if (result.getCode() == 0) {
+            return result.getCode();
+        }
 
         if (!timerState.isRunningDequeue()) {
             return -1;
         }
-
 
         putToQuery(result.getDeleteMsgStack());
         putToQuery(result.getNormalMsgStack());
