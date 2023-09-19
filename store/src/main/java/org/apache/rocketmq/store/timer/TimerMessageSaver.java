@@ -43,8 +43,6 @@ public class TimerMessageSaver extends ServiceThread {
 
     private TimerState timerState;
     private MessageStoreConfig storeConfig;
-    private TimerWheel timerWheel;
-    private TimerLog timerLog;
     private MessageOperator messageOperator;
 
 
@@ -52,8 +50,6 @@ public class TimerMessageSaver extends ServiceThread {
     private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private TimerMessageDeliver[] timerMessageDelivers;
     private TimerMessageQuery[] timerMessageQueries;
-
-    private TimerMetricManager metricManager;
     private PerfCounter.Ticks perfCounterTicks;
 
     private Persistence persistence;
@@ -70,16 +66,12 @@ public class TimerMessageSaver extends ServiceThread {
                              PerfCounter.Ticks perfCounterTicks) {
         this.timerState = timerState;
         this.storeConfig = storeConfig;
-        this.timerWheel = timerWheel;
-        this.timerLog = timerLog;
         this.messageOperator = messageOperator;
 
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageDelivers = timerMessageDelivers;
         this.timerMessageQueries = timerMessageQueries;
-
-        this.metricManager = metricManager;
         this.perfCounterTicks = perfCounterTicks;
 
         this.persistence = new TimerWheelPersistence(timerState,timerWheel,timerLog,storeConfig,metricManager,perfCounterTicks);
