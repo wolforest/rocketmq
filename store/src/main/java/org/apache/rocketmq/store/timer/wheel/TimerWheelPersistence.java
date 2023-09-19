@@ -26,7 +26,7 @@ import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.timer.Persistence;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
-import org.apache.rocketmq.store.timer.service.TimerMetricManager;
+import org.apache.rocketmq.store.timer.TimerMetricManager;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.sql.Timestamp;
