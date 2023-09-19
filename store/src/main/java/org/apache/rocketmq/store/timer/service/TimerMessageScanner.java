@@ -27,6 +27,8 @@ import org.apache.rocketmq.store.timer.TimerLog;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerWheel;
+import org.apache.rocketmq.store.timer.persistence.Persistence;
+import org.apache.rocketmq.store.timer.persistence.TimerWheelPersistence;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.util.ArrayList;
@@ -54,7 +56,7 @@ public class TimerMessageScanner extends ServiceThread {
     private TimerMessageDeliver[] timerMessageDelivers;
     private TimerMessageQuery[] timerMessageQueries;
 
-    private Scanner scanner;
+    private Persistence persistence;
     private long shouldStartTime;
     private final int timerLogFileSize;
     private final int precisionMs;
@@ -79,7 +81,7 @@ public class TimerMessageScanner extends ServiceThread {
         this.timerMessageQueries = timerMessageQueries;
         this.metricManager = metricManager;
         this.perfCounterTicks = perfCounterTicks;
-        this.scanner = new TimerWheelScanner(timerState, timerWheel, timerLog, storeConfig, perfCounterTicks);
+        this.persistence = new TimerWheelPersistence(timerState,timerWheel,timerLog,storeConfig,metricManager,perfCounterTicks);
         timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
         precisionMs = storeConfig.getTimerPrecisionMs();
         commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
@@ -128,7 +130,7 @@ public class TimerMessageScanner extends ServiceThread {
             return -1;
         }
 
-        Scanner.ScannResult result = scanner.scan();
+        Persistence.ScannResult result = persistence.scan();
         if (result.getCode() == 0) {
             return result.getCode();
         }
