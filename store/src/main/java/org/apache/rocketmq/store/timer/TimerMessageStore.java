@@ -383,7 +383,7 @@ public class TimerMessageStore {
             deliver.shutdown();
         }
     }
-    
+
     private void initService() {
         initTimerMessageQuery();
         initTimerMessageDeliver();

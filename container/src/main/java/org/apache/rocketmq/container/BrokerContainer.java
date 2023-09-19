@@ -95,39 +95,6 @@ public class BrokerContainer implements IBrokerContainer {
             this.brokerContainerConfig, this.nettyServerConfig, this.nettyClientConfig);
     }
 
-    @Override
-    public String getBrokerContainerAddr() {
-        return this.brokerContainerConfig.getBrokerContainerIP() + ":" + this.nettyServerConfig.getListenPort();
-    }
-
-    @Override
-    public BrokerContainerConfig getBrokerContainerConfig() {
-        return brokerContainerConfig;
-    }
-
-    @Override
-    public NettyServerConfig getNettyServerConfig() {
-        return nettyServerConfig;
-    }
-
-    @Override
-    public NettyClientConfig getNettyClientConfig() {
-        return nettyClientConfig;
-    }
-
-    @Override
-    public BrokerOuterAPI getBrokerOuterAPI() {
-        return brokerOuterAPI;
-    }
-
-    @Override
-    public RemotingServer getRemotingServer() {
-        return remotingServer;
-    }
-
-    public Configuration getConfiguration() {
-        return this.configuration;
-    }
 
     private void updateNamesrvAddr() {
         if (this.brokerContainerConfig.isFetchNameSrvAddrByDnsLookup()) {
@@ -482,4 +449,39 @@ public class BrokerContainer implements IBrokerContainer {
         }
         return null;
     }
+
+    @Override
+    public String getBrokerContainerAddr() {
+        return this.brokerContainerConfig.getBrokerContainerIP() + ":" + this.nettyServerConfig.getListenPort();
+    }
+
+    @Override
+    public BrokerContainerConfig getBrokerContainerConfig() {
+        return brokerContainerConfig;
+    }
+
+    @Override
+    public NettyServerConfig getNettyServerConfig() {
+        return nettyServerConfig;
+    }
+
+    @Override
+    public NettyClientConfig getNettyClientConfig() {
+        return nettyClientConfig;
+    }
+
+    @Override
+    public BrokerOuterAPI getBrokerOuterAPI() {
+        return brokerOuterAPI;
+    }
+
+    @Override
+    public RemotingServer getRemotingServer() {
+        return remotingServer;
+    }
+
+    public Configuration getConfiguration() {
+        return this.configuration;
+    }
+
 }
