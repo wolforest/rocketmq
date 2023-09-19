@@ -16,6 +16,17 @@
  */
 package org.apache.rocketmq.store.timer.persistence;
 
+import org.apache.rocketmq.store.timer.TimerRequest;
+import org.apache.rocketmq.store.timer.service.Scanner;
 
-public class TimerWheelPersistence{
+public class TimerWheelPersistence implements Persistence{
+    @Override
+    public boolean save(TimerRequest timerRequest) {
+        return false;
+    }
+
+    @Override
+    public Scanner.ScannResult scan() {
+        return null;
+    }
 }
