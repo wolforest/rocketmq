@@ -71,16 +71,39 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         return false;
     }
 
-    private synchronized RemotingCommand addBroker(ChannelHandlerContext ctx,
-        RemotingCommand request) throws Exception {
+    private synchronized RemotingCommand addBroker(ChannelHandlerContext ctx, RemotingCommand request) throws Exception {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final AddBrokerRequestHeader requestHeader = (AddBrokerRequestHeader) request.decodeCommandCustomHeader(AddBrokerRequestHeader.class);
-
         LOGGER.info("addBroker called by {}", RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
 
-        Properties brokerProperties = null;
         String configPath = requestHeader.getConfigPath();
+        Properties brokerProperties = getConfigProperties(request, configPath);
+        if (brokerProperties == null) {
+            LOGGER.error("addBroker properties empty");
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "addBroker properties empty");
+        }
 
+        BrokerConfig brokerConfig = getBrokerConfig(brokerProperties, configPath);
+        MessageStoreConfig messageStoreConfig = getMessageStoreConfig(brokerProperties, brokerConfig);
+
+        RemotingCommand validateResult = validateConfig(brokerConfig, messageStoreConfig, response);
+        if (validateResult != null) {
+            return validateResult;
+        }
+
+        BrokerController brokerController;
+        try {
+            brokerController = this.brokerContainer.addBroker(brokerConfig, messageStoreConfig);
+        } catch (Exception e) {
+            LOGGER.error("addBroker exception {}", e);
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, e.getMessage());
+        }
+
+        return startBroker(brokerController, brokerProperties, brokerConfig, messageStoreConfig, response);
+    }
+
+    private Properties getConfigProperties(RemotingCommand request, String configPath) throws UnsupportedEncodingException {
+        Properties brokerProperties = null;
         if (configPath != null && !configPath.isEmpty()) {
             SystemConfigFileHelper configFileHelper = new SystemConfigFileHelper();
             configFileHelper.setFile(configPath);
@@ -98,97 +121,95 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
             }
         }
 
-        if (brokerProperties == null) {
-            LOGGER.error("addBroker properties empty");
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark("addBroker properties empty");
-            return response;
+        return brokerProperties;
+    }
+
+    private static BrokerConfig getBrokerConfig(Properties brokerProperties, String filePath) {
+        BrokerConfig brokerConfig = new BrokerConfig();
+
+        MixAll.properties2Object(brokerProperties, brokerConfig);
+        if (filePath != null && !filePath.isEmpty()) {
+            brokerConfig.setBrokerConfigPath(filePath);
         }
 
-        BrokerConfig brokerConfig = new BrokerConfig();
-        MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        MixAll.properties2Object(brokerProperties, brokerConfig);
-        MixAll.properties2Object(brokerProperties, messageStoreConfig);
+        return brokerConfig;
+    }
 
+    private static MessageStoreConfig getMessageStoreConfig(Properties brokerProperties, BrokerConfig brokerConfig) {
+        MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
+
+        MixAll.properties2Object(brokerProperties, messageStoreConfig);
         messageStoreConfig.setHaListenPort(brokerConfig.getListenPort() + 1);
 
-        if (configPath != null && !configPath.isEmpty()) {
-            brokerConfig.setBrokerConfigPath(configPath);
+        return messageStoreConfig;
+    }
+
+    private RemotingCommand validateConfig(BrokerConfig brokerConfig, MessageStoreConfig messageStoreConfig, RemotingCommand response) {
+        if (messageStoreConfig.isEnableDLegerCommitLog()) {
+            return null;
         }
 
-        if (!messageStoreConfig.isEnableDLegerCommitLog()) {
-            if (!brokerConfig.isEnableControllerMode()) {
-                switch (messageStoreConfig.getBrokerRole()) {
-                    case ASYNC_MASTER:
-                    case SYNC_MASTER:
-                        brokerConfig.setBrokerId(MixAll.MASTER_ID);
-                        break;
-                    case SLAVE:
-                        if (brokerConfig.getBrokerId() <= 0) {
-                            response.setCode(ResponseCode.SYSTEM_ERROR);
-                            response.setRemark("slave broker id must be > 0");
-                            return response;
-                        }
-                        break;
-                    default:
-                        break;
+        if (!brokerConfig.isEnableControllerMode()) {
+            switch (messageStoreConfig.getBrokerRole()) {
+                case ASYNC_MASTER:
+                case SYNC_MASTER:
+                    brokerConfig.setBrokerId(MixAll.MASTER_ID);
+                    break;
+                case SLAVE:
+                    if (brokerConfig.getBrokerId() <= 0) {
+                        return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "slave broker id must be > 0");
+                    }
+                    break;
+                default:
+                    break;
 
-                }
-            }
-
-            if (messageStoreConfig.getTotalReplicas() < messageStoreConfig.getInSyncReplicas()
-                    || messageStoreConfig.getTotalReplicas() < messageStoreConfig.getMinInSyncReplicas()
-                    || messageStoreConfig.getInSyncReplicas() < messageStoreConfig.getMinInSyncReplicas()) {
-                response.setCode(ResponseCode.SYSTEM_ERROR);
-                response.setRemark("invalid replicas number");
-                return response;
             }
         }
 
-        BrokerController brokerController;
-        try {
-            brokerController = this.brokerContainer.addBroker(brokerConfig, messageStoreConfig);
-        } catch (Exception e) {
-            LOGGER.error("addBroker exception {}", e);
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark(e.getMessage());
-            return response;
+        if (messageStoreConfig.getTotalReplicas() < messageStoreConfig.getInSyncReplicas()
+            || messageStoreConfig.getTotalReplicas() < messageStoreConfig.getMinInSyncReplicas()
+            || messageStoreConfig.getInSyncReplicas() < messageStoreConfig.getMinInSyncReplicas()) {
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "invalid replicas number");
         }
-        if (brokerController != null) {
-            brokerController.getConfiguration().registerConfig(brokerProperties);
-            try {
-                for (BrokerBootHook brokerBootHook : brokerBootHookList) {
-                    brokerBootHook.executeBeforeStart(brokerController, brokerProperties);
-                }
-                brokerController.start();
 
-                for (BrokerBootHook brokerBootHook : brokerBootHookList) {
-                    brokerBootHook.executeAfterStart(brokerController, brokerProperties);
-                }
-            } catch (Exception e) {
-                LOGGER.error("start broker exception {}", e);
-                BrokerIdentity brokerIdentity;
-                if (messageStoreConfig.isEnableDLegerCommitLog()) {
-                    brokerIdentity = new BrokerIdentity(brokerConfig.getBrokerClusterName(),
-                        brokerConfig.getBrokerName(), Integer.parseInt(messageStoreConfig.getdLegerSelfId().substring(1)));
-                } else {
-                    brokerIdentity = new BrokerIdentity(brokerConfig.getBrokerClusterName(),
-                        brokerConfig.getBrokerName(), brokerConfig.getBrokerId());
-                }
-                this.brokerContainer.removeBroker(brokerIdentity);
-                brokerController.shutdown();
-                response.setCode(ResponseCode.SYSTEM_ERROR);
-                response.setRemark("start broker failed, " + e);
-                return response;
-            }
-            response.setCode(ResponseCode.SUCCESS);
-            response.setRemark(null);
+        return null;
+    }
+
+    private RemotingCommand handleStartException(Exception e, BrokerController brokerController, BrokerConfig brokerConfig, MessageStoreConfig messageStoreConfig, RemotingCommand response) throws Exception {
+        LOGGER.error("start broker exception {}", e);
+        BrokerIdentity brokerIdentity;
+        if (messageStoreConfig.isEnableDLegerCommitLog()) {
+            brokerIdentity = new BrokerIdentity(brokerConfig.getBrokerClusterName(),
+                brokerConfig.getBrokerName(), Integer.parseInt(messageStoreConfig.getdLegerSelfId().substring(1)));
         } else {
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark("add broker return null");
+            brokerIdentity = new BrokerIdentity(brokerConfig.getBrokerClusterName(),
+                brokerConfig.getBrokerName(), brokerConfig.getBrokerId());
+        }
+        this.brokerContainer.removeBroker(brokerIdentity);
+        brokerController.shutdown();
+        return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "start broker failed, " + e);
+    }
+
+    private RemotingCommand startBroker(BrokerController brokerController, Properties brokerProperties, BrokerConfig brokerConfig, MessageStoreConfig messageStoreConfig, RemotingCommand response) throws Exception {
+        if (brokerController == null) {
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "add broker return null");
         }
 
-        return response;
+        brokerController.getConfiguration().registerConfig(brokerProperties);
+        try {
+            for (BrokerBootHook brokerBootHook : brokerBootHookList) {
+                brokerBootHook.executeBeforeStart(brokerController, brokerProperties);
+            }
+            brokerController.start();
+
+            for (BrokerBootHook brokerBootHook : brokerBootHookList) {
+                brokerBootHook.executeAfterStart(brokerController, brokerProperties);
+            }
+        } catch (Exception e) {
+            return handleStartException(e, brokerController, brokerConfig, messageStoreConfig, response);
+        }
+
+        return response.setCodeAndRemark(ResponseCode.SUCCESS, null);
     }
 
     private synchronized RemotingCommand removeBroker(ChannelHandlerContext ctx,
