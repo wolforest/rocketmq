@@ -28,6 +28,8 @@ import org.apache.rocketmq.store.timer.TimerLog;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.TimerWheel;
+import org.apache.rocketmq.store.timer.persistence.Persistence;
+import org.apache.rocketmq.store.timer.persistence.TimerWheelPersistence;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.util.ArrayList;
@@ -57,7 +59,7 @@ public class TimerMessageLocator extends ServiceThread {
     private TimerMetricManager metricManager;
     private PerfCounter.Ticks perfCounterTicks;
 
-    private Locator locator;
+    private Persistence persistence;
     public TimerMessageLocator(TimerState timerState,
                                MessageStoreConfig storeConfig,
                                TimerWheel timerWheel,
@@ -83,7 +85,7 @@ public class TimerMessageLocator extends ServiceThread {
         this.metricManager = metricManager;
         this.perfCounterTicks = perfCounterTicks;
 
-        this.locator = new TimerWheelLocator(timerState,timerWheel,timerLog,metricManager);
+        this.persistence = new TimerWheelPersistence(timerState,timerWheel,timerLog,storeConfig,metricManager,perfCounterTicks);
     }
 
     @Override
@@ -135,7 +137,7 @@ public class TimerMessageLocator extends ServiceThread {
             if (timerState.isShouldRunningDequeue() && shouldFire) {
                 timerMessageDeliverQueue.put(timerRequest);
             } else {
-                boolean success = locator.save(timerRequest);
+                boolean success = persistence.save(timerRequest);
                 timerRequest.idempotentRelease(success || storeConfig.isTimerSkipUnknownError());
             }
             perfCounterTicks.endTick(ENQUEUE_PUT);
