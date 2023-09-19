@@ -129,14 +129,14 @@ public class TimerMessageScanner extends ServiceThread {
             timerState.moveReadTime(precisionMs);
             return 0;
         }
+        LinkedList<TimerRequest> normalMsgStack = new LinkedList<>();
+        LinkedList<TimerRequest> deleteMsgStack = new LinkedList<>();
         try {
             //clear the flag
             timerState.dequeueStatusChangeFlag = false;
 
             long currOffsetPy = slot.lastPos;
             Set<String> deleteUniqKeys = new ConcurrentSkipListSet<>();
-            LinkedList<TimerRequest> normalMsgStack = new LinkedList<>();
-            LinkedList<TimerRequest> deleteMsgStack = new LinkedList<>();
             LinkedList<SelectMappedBufferResult> sbrs = new LinkedList<>();
             SelectMappedBufferResult timeSbr = null;
             //read the timer log one by one
@@ -188,16 +188,15 @@ public class TimerMessageScanner extends ServiceThread {
                 return -1;
             }
 
-            putToQuery(deleteMsgStack);
-            putToQuery(normalMsgStack);
-
-
         } catch (Throwable t) {
             LOGGER.error("Unknown error in dequeue process", t);
             if (storeConfig.isTimerSkipUnknownError()) {
                 timerState.moveReadTime(precisionMs);
             }
         }
+
+        putToQuery(deleteMsgStack);
+        putToQuery(normalMsgStack);
 
         // if master -> slave -> master, then the read time move forward, and messages will be lossed
         if (timerState.dequeueStatusChangeFlag) {
