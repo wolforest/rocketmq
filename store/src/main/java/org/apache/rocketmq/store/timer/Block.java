@@ -72,7 +72,7 @@ public class Block {
     public byte[] bytes() {
         ByteBuffer tmpBuffer = blockBuffer;
         tmpBuffer.clear();
-        tmpBuffer.putInt(TimerLog.UNIT_SIZE); //size
+        tmpBuffer.putInt(SIZE); //size
         tmpBuffer.putLong(prevPos); //prev pos ,lastPos
         tmpBuffer.putInt(magic); //magic
         tmpBuffer.putLong(currWriteTime); //currWriteTime,tmpWriteTimeMs
