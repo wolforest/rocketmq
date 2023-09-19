@@ -37,7 +37,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 
-public class TimerWheelFetcher extends ServiceThread {
+public class TimerWheelScanner extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private MessageStoreConfig storeConfig;
@@ -57,7 +57,7 @@ public class TimerWheelFetcher extends ServiceThread {
     private final int timerLogFileSize;
     private final int precisionMs;
 
-    public TimerWheelFetcher(TimerState timerState,
+    public TimerWheelScanner(TimerState timerState,
                              MessageStoreConfig storeConfig,
                              TimerWheel timerWheel,
                              TimerLog timerLog,

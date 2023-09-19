@@ -39,7 +39,7 @@ import org.apache.rocketmq.store.timer.service.TimerMessageFetcher;
 import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
 import org.apache.rocketmq.store.timer.service.TimerMessageRecover;
 import org.apache.rocketmq.store.timer.service.TimerMetricManager;
-import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
+import org.apache.rocketmq.store.timer.service.TimerWheelScanner;
 import org.apache.rocketmq.store.timer.service.TimerWheelLocator;
 import org.apache.rocketmq.store.util.PerfCounter;
 
@@ -87,7 +87,7 @@ public class TimerMessageStore {
     private TimerMessageFetcher timerMessageFetcher;
     private TimerWheelLocator timerWheelLocator;
     private TimerDequeueWarmService dequeueWarmService;
-    private TimerWheelFetcher timerWheelFetcher;
+    private TimerWheelScanner timerWheelFetcher;
     private TimerMessageDeliver[] timerMessageDelivers;
     private TimerMessageQuery[] timerMessageQueries;
     private TimerFlushService timerFlushService;
@@ -448,7 +448,7 @@ public class TimerMessageStore {
                 perfCounterTicks);
         dequeueWarmService = new TimerDequeueWarmService(
                 timerState);
-        timerWheelFetcher = new TimerWheelFetcher(
+        timerWheelFetcher = new TimerWheelScanner(
                 timerState,
                 storeConfig,
                 timerWheel,
