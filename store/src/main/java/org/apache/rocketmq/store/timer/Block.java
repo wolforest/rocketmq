@@ -69,7 +69,7 @@ public class Block {
         this.reservedValue = reservedValue;
     }
 
-    public byte[] bytes(){
+    public byte[] bytes() {
         ByteBuffer tmpBuffer = blockBuffer;
         tmpBuffer.clear();
         tmpBuffer.putInt(TimerLog.UNIT_SIZE); //size

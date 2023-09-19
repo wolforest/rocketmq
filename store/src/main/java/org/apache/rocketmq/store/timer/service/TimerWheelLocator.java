@@ -38,12 +38,15 @@ public class TimerWheelLocator implements Locator {
     private TimerLog timerLog;
     private TimerMetricManager metricManager;
 
-    @Override
-    public boolean save(TimerRequest timerRequest) {
-        return false;
+    public TimerWheelLocator(TimerState timerState, TimerWheel timerWheel, TimerLog timerLog, TimerMetricManager metricManager) {
+        this.timerState = timerState;
+        this.timerWheel = timerWheel;
+        this.timerLog = timerLog;
+        this.metricManager = metricManager;
     }
 
-    private boolean doSave(TimerRequest timerRequest) {
+    @Override
+    public boolean save(TimerRequest timerRequest) {
         long offsetPy = timerRequest.getOffsetPy();
         int sizePy = timerRequest.getSizePy();
         long delayedTime = timerRequest.getDelayTime();
