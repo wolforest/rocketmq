@@ -16,5 +16,8 @@
  */
 package org.apache.rocketmq.store.timer.service;
 
+import org.apache.rocketmq.store.timer.TimerRequest;
+
 public interface Locator {
+    boolean save(TimerRequest timerRequest);
 }
