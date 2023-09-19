@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.timer.persistence;
+package org.apache.rocketmq.store.timer.persistence.rocksdb;
 
 
 import org.apache.rocketmq.store.timer.Persistence;

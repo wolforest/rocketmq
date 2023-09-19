@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.timer.pipeline;
+package org.apache.rocketmq.store.timer.transit;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.rocketmq.common.ServiceThread;
@@ -29,9 +29,9 @@ import org.apache.rocketmq.store.timer.Persistence;
 import org.apache.rocketmq.store.timer.TimerMetricManager;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
-import org.apache.rocketmq.store.timer.wheel.TimerLog;
-import org.apache.rocketmq.store.timer.wheel.TimerWheel;
-import org.apache.rocketmq.store.timer.wheel.TimerWheelPersistence;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheel;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheelPersistence;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.util.ArrayList;

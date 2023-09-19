@@ -24,10 +24,10 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.timer.pipeline.TimerMessageDeliver;
-import org.apache.rocketmq.store.timer.pipeline.TimerMessageQuery;
-import org.apache.rocketmq.store.timer.wheel.TimerLog;
-import org.apache.rocketmq.store.timer.wheel.TimerWheel;
+import org.apache.rocketmq.store.timer.transit.TimerMessageDeliver;
+import org.apache.rocketmq.store.timer.transit.TimerMessageQuery;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheel;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;

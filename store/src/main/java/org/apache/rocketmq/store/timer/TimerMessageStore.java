@@ -31,17 +31,17 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.timer.pipeline.TimerDequeueWarmService;
-import org.apache.rocketmq.store.timer.pipeline.TimerFlushService;
-import org.apache.rocketmq.store.timer.pipeline.TimerMessageDeliver;
-import org.apache.rocketmq.store.timer.pipeline.TimerMessageFetcher;
-import org.apache.rocketmq.store.timer.pipeline.TimerMessageQuery;
-import org.apache.rocketmq.store.timer.pipeline.TimerMessageRecover;
-import org.apache.rocketmq.store.timer.pipeline.TimerMessageSaver;
-import org.apache.rocketmq.store.timer.pipeline.TimerMessageScanner;
-import org.apache.rocketmq.store.timer.wheel.Slot;
-import org.apache.rocketmq.store.timer.wheel.TimerLog;
-import org.apache.rocketmq.store.timer.wheel.TimerWheel;
+import org.apache.rocketmq.store.timer.transit.TimerDequeueWarmService;
+import org.apache.rocketmq.store.timer.transit.TimerFlushService;
+import org.apache.rocketmq.store.timer.transit.TimerMessageDeliver;
+import org.apache.rocketmq.store.timer.transit.TimerMessageAccepter;
+import org.apache.rocketmq.store.timer.transit.TimerMessageQuery;
+import org.apache.rocketmq.store.timer.transit.TimerMessageRecover;
+import org.apache.rocketmq.store.timer.transit.TimerMessageSaver;
+import org.apache.rocketmq.store.timer.transit.TimerMessageScanner;
+import org.apache.rocketmq.store.timer.persistence.wheel.Slot;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheel;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.io.File;
@@ -85,7 +85,7 @@ public class TimerMessageStore {
     private final TimerWheel timerWheel;
     private final TimerLog timerLog;
     private final TimerCheckpoint timerCheckpoint;
-    private TimerMessageFetcher timerMessageFetcher;
+    private TimerMessageAccepter timerMessageFetcher;
     private TimerMessageSaver timerMessageLocator;
     private TimerDequeueWarmService dequeueWarmService;
     private TimerMessageScanner timerMessageScanner;
@@ -428,7 +428,7 @@ public class TimerMessageStore {
                     escapeBridgeHook,
                     perfCounterTicks);
         }
-        timerMessageFetcher = new TimerMessageFetcher(
+        timerMessageFetcher = new TimerMessageAccepter(
                 timerState,
                 storeConfig,
                 messageOperator,
