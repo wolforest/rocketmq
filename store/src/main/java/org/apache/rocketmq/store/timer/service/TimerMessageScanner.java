@@ -37,7 +37,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 
-public class TimerWheelScanner extends ServiceThread {
+public class TimerMessageScanner extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private MessageStoreConfig storeConfig;
@@ -57,15 +57,15 @@ public class TimerWheelScanner extends ServiceThread {
     private final int timerLogFileSize;
     private final int precisionMs;
 
-    public TimerWheelScanner(TimerState timerState,
-                             MessageStoreConfig storeConfig,
-                             TimerWheel timerWheel,
-                             TimerLog timerLog,
-                             BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
-                             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
-                             TimerMessageDeliver[] timerMessageDelivers,
-                             TimerMessageQuery[] timerMessageQueries,
-                             PerfCounter.Ticks perfCounterTicks) {
+    public TimerMessageScanner(TimerState timerState,
+                               MessageStoreConfig storeConfig,
+                               TimerWheel timerWheel,
+                               TimerLog timerLog,
+                               BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
+                               BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+                               TimerMessageDeliver[] timerMessageDelivers,
+                               TimerMessageQuery[] timerMessageQueries,
+                               PerfCounter.Ticks perfCounterTicks) {
         this.timerState = timerState;
         this.storeConfig = storeConfig;
         this.timerWheel = timerWheel;
