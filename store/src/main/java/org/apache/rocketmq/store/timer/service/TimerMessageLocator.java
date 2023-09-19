@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.rocketmq.store.timer.TimerMessageStore.ENQUEUE_PUT;
 
-public class TimerWheelLocator extends ServiceThread {
+public class TimerMessageLocator extends ServiceThread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -62,17 +62,17 @@ public class TimerWheelLocator extends ServiceThread {
     private TimerMetricManager metricManager;
     private PerfCounter.Ticks perfCounterTicks;
 
-    public TimerWheelLocator(TimerState timerState,
-                             MessageStoreConfig storeConfig,
-                             TimerWheel timerWheel,
-                             TimerLog timerLog,
-                             MessageOperator messageOperator,
-                             BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
-                             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
-                             TimerMessageDeliver[] timerMessageDelivers,
-                             TimerMessageQuery[] timerMessageQueries,
-                             TimerMetricManager metricManager,
-                             PerfCounter.Ticks perfCounterTicks) {
+    public TimerMessageLocator(TimerState timerState,
+                               MessageStoreConfig storeConfig,
+                               TimerWheel timerWheel,
+                               TimerLog timerLog,
+                               MessageOperator messageOperator,
+                               BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
+                               BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+                               TimerMessageDeliver[] timerMessageDelivers,
+                               TimerMessageQuery[] timerMessageQueries,
+                               TimerMetricManager metricManager,
+                               PerfCounter.Ticks perfCounterTicks) {
         this.timerState = timerState;
         this.storeConfig = storeConfig;
         this.timerWheel = timerWheel;

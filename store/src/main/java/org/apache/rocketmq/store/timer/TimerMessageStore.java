@@ -40,7 +40,7 @@ import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
 import org.apache.rocketmq.store.timer.service.TimerMessageRecover;
 import org.apache.rocketmq.store.timer.service.TimerMetricManager;
 import org.apache.rocketmq.store.timer.service.TimerWheelScanner;
-import org.apache.rocketmq.store.timer.service.TimerWheelLocator;
+import org.apache.rocketmq.store.timer.service.TimerMessageLocator;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.io.File;
@@ -85,7 +85,7 @@ public class TimerMessageStore {
     private final TimerLog timerLog;
     private final TimerCheckpoint timerCheckpoint;
     private TimerMessageFetcher timerMessageFetcher;
-    private TimerWheelLocator timerWheelLocator;
+    private TimerMessageLocator timerMessageLocator;
     private TimerDequeueWarmService dequeueWarmService;
     private TimerWheelScanner timerWheelScanner;
     private TimerMessageDeliver[] timerMessageDelivers;
@@ -145,7 +145,7 @@ public class TimerMessageStore {
         final long shouldStartTime = storeConfig.getDisappearTimeAfterStart() + System.currentTimeMillis();
         timerState.maybeMoveWriteTime();
         timerMessageFetcher.start();
-        timerWheelLocator.start();
+        timerMessageLocator.start();
         dequeueWarmService.start();
         timerWheelScanner.start(shouldStartTime);
         for (int i = 0; i < timerMessageQueries.length; i++) {
@@ -213,7 +213,7 @@ public class TimerMessageStore {
         timerMessageDeliverQueue.clear(); //avoid blocking
 
         timerMessageFetcher.shutdown();
-        timerWheelLocator.shutdown();
+        timerMessageLocator.shutdown();
         dequeueWarmService.shutdown();
         timerWheelScanner.shutdown();
         for (int i = 0; i < timerMessageQueries.length; i++) {
@@ -434,7 +434,7 @@ public class TimerMessageStore {
                 fetchedTimerMessageQueue,
                 perfCounterTicks
         );
-        timerWheelLocator = new TimerWheelLocator(
+        timerMessageLocator = new TimerMessageLocator(
                 timerState,
                 storeConfig,
                 timerWheel,
