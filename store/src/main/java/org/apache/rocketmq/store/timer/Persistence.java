@@ -32,9 +32,10 @@ public interface Persistence {
             return deleteMsgStack;
         }
 
-        public void setCode(int code){
+        public void setCode(int code) {
             this.code = code;
         }
+
         public int getCode() {
             return code;
         }
