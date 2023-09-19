@@ -457,6 +457,7 @@ public class TimerMessageStore {
                 timerMessageDeliverQueue,
                 timerMessageDelivers,
                 timerMessageQueries,
+                timerMetricManager,
                 perfCounterTicks
         );
         timerFlushService = new TimerFlushService(

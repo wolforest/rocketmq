@@ -44,6 +44,7 @@ public class TimerMessageScanner extends ServiceThread {
     private TimerState timerState;
     private TimerWheel timerWheel;
     private TimerLog timerLog;
+    private TimerMetricManager metricManager;
     private PerfCounter.Ticks perfCounterTicks;
 
     private int commitLogFileSize;
@@ -66,6 +67,7 @@ public class TimerMessageScanner extends ServiceThread {
                                BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                                TimerMessageDeliver[] timerMessageDelivers,
                                TimerMessageQuery[] timerMessageQueries,
+                               TimerMetricManager metricManager,
                                PerfCounter.Ticks perfCounterTicks) {
         this.timerState = timerState;
         this.storeConfig = storeConfig;
@@ -75,6 +77,7 @@ public class TimerMessageScanner extends ServiceThread {
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
         this.timerMessageDelivers = timerMessageDelivers;
         this.timerMessageQueries = timerMessageQueries;
+        this.metricManager = metricManager;
         this.perfCounterTicks = perfCounterTicks;
         this.scanner = new TimerWheelScanner(timerState, timerWheel, timerLog, storeConfig, perfCounterTicks);
         timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
