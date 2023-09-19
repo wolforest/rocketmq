@@ -21,8 +21,6 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.timer.Slot;
 import org.apache.rocketmq.store.timer.TimerLog;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
@@ -34,9 +32,7 @@ import org.apache.rocketmq.store.util.PerfCounter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 
 public class TimerMessageScanner extends ServiceThread {
@@ -152,76 +148,6 @@ public class TimerMessageScanner extends ServiceThread {
 
         timerState.moveReadTime(precisionMs);
         return 1;
-    }
-
-    private Scanner.ScannResult doScan(LinkedList<TimerRequest> normalMsgStack, LinkedList<TimerRequest> deleteMsgStack) {
-        Scanner.ScannResult result = new Scanner.ScannResult();
-        Slot slot = timerWheel.getSlot(timerState.currReadTimeMs);
-        if (-1 == slot.timeMs) {
-            timerState.moveReadTime(precisionMs);
-            return result;
-        }
-        result.code = 1;
-        try {
-            //clear the flag
-            timerState.dequeueStatusChangeFlag = false;
-
-            long currOffsetPy = slot.lastPos;
-            Set<String> deleteUniqKeys = new ConcurrentSkipListSet<>();
-            LinkedList<SelectMappedBufferResult> sbrs = new LinkedList<>();
-            SelectMappedBufferResult timeSbr = null;
-            //read the timer log one by one
-            while (currOffsetPy != -1) {
-                perfCounterTicks.startTick("dequeue_read_timerlog");
-                if (null == timeSbr || timeSbr.getStartOffset() > currOffsetPy) {
-                    timeSbr = timerLog.getWholeBuffer(currOffsetPy);
-                    if (null != timeSbr) {
-                        sbrs.add(timeSbr);
-                    }
-                }
-                if (null == timeSbr) {
-                    break;
-                }
-                long prevPos = -1;
-                try {
-                    int position = (int) (currOffsetPy % timerLogFileSize);
-                    timeSbr.getByteBuffer().position(position);
-                    timeSbr.getByteBuffer().getInt(); //size
-                    prevPos = timeSbr.getByteBuffer().getLong();
-                    int magic = timeSbr.getByteBuffer().getInt();
-                    long enqueueTime = timeSbr.getByteBuffer().getLong();
-                    long delayedTime = timeSbr.getByteBuffer().getInt() + enqueueTime;
-                    long offsetPy = timeSbr.getByteBuffer().getLong();
-                    int sizePy = timeSbr.getByteBuffer().getInt();
-                    TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, enqueueTime, magic);
-                    timerRequest.setDeleteList(deleteUniqKeys);
-                    if (timerState.needDelete(magic) && !timerState.needRoll(magic)) {
-                        deleteMsgStack.add(timerRequest);
-                    } else {
-                        normalMsgStack.addFirst(timerRequest);
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("Error in dequeue_read_timerlog", e);
-                } finally {
-                    currOffsetPy = prevPos;
-                    perfCounterTicks.endTick("dequeue_read_timerlog");
-                }
-            }
-            if (deleteMsgStack.size() == 0 && normalMsgStack.size() == 0) {
-                LOGGER.warn("dequeue time:{} but read nothing from timerLog", timerState.currReadTimeMs);
-            }
-            for (SelectMappedBufferResult sbr : sbrs) {
-                if (null != sbr) {
-                    sbr.release();
-                }
-            }
-        } catch (Throwable t) {
-            LOGGER.error("Unknown error in dequeue process", t);
-            if (storeConfig.isTimerSkipUnknownError()) {
-                timerState.moveReadTime(precisionMs);
-            }
-        }
-        return result;
     }
 
     /**
