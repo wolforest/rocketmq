@@ -40,7 +40,7 @@ import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
 import org.apache.rocketmq.store.timer.service.TimerMessageRecover;
 import org.apache.rocketmq.store.timer.service.TimerMetricManager;
 import org.apache.rocketmq.store.timer.service.TimerMessageScanner;
-import org.apache.rocketmq.store.timer.service.TimerMessageLocator;
+import org.apache.rocketmq.store.timer.service.TimerMessageSaver;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.io.File;
@@ -85,7 +85,7 @@ public class TimerMessageStore {
     private final TimerLog timerLog;
     private final TimerCheckpoint timerCheckpoint;
     private TimerMessageFetcher timerMessageFetcher;
-    private TimerMessageLocator timerMessageLocator;
+    private TimerMessageSaver timerMessageLocator;
     private TimerDequeueWarmService dequeueWarmService;
     private TimerMessageScanner timerMessageScanner;
     private TimerMessageDeliver[] timerMessageDelivers;
@@ -434,7 +434,7 @@ public class TimerMessageStore {
                 fetchedTimerMessageQueue,
                 perfCounterTicks
         );
-        timerMessageLocator = new TimerMessageLocator(
+        timerMessageLocator = new TimerMessageSaver(
                 timerState,
                 storeConfig,
                 timerWheel,
