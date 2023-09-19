@@ -16,7 +16,45 @@
  */
 package org.apache.rocketmq.store.timer.service;
 
+import org.apache.rocketmq.store.timer.TimerRequest;
+
+import java.util.LinkedList;
+
 public interface Scanner {
 
-    void scan();
+    class ScannResult {
+        LinkedList<TimerRequest> normalMsgStack = new LinkedList<>();
+        LinkedList<TimerRequest> deleteMsgStack = new LinkedList<>();
+        int code = 0;
+
+        public LinkedList<TimerRequest> getNormalMsgStack() {
+            return normalMsgStack;
+        }
+
+        public LinkedList<TimerRequest> getDeleteMsgStack() {
+            return deleteMsgStack;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public void addDeleteMsgStack(TimerRequest timerRequest) {
+            deleteMsgStack.add(timerRequest);
+        }
+
+        public void addNormalMsgStack(TimerRequest timerRequest) {
+            normalMsgStack.addFirst(timerRequest);
+        }
+
+        public int sizeOfDeleteMsgStack() {
+            return deleteMsgStack.size();
+        }
+
+        public int sizeOfNormalMsgStack() {
+            return normalMsgStack.size();
+        }
+    }
+
+    ScannResult scan();
 }

@@ -53,6 +53,7 @@ public class TimerMessageScanner extends ServiceThread {
     private TimerMessageDeliver[] timerMessageDelivers;
     private TimerMessageQuery[] timerMessageQueries;
 
+    private Scanner scanner;
     private long shouldStartTime;
     private final int timerLogFileSize;
     private final int precisionMs;
@@ -75,7 +76,7 @@ public class TimerMessageScanner extends ServiceThread {
         this.timerMessageDelivers = timerMessageDelivers;
         this.timerMessageQueries = timerMessageQueries;
         this.perfCounterTicks = perfCounterTicks;
-
+        this.scanner = new TimerWheelScanner(timerState, timerWheel, timerLog, storeConfig, perfCounterTicks);
         timerLogFileSize = storeConfig.getMappedFileSizeTimerLog();
         precisionMs = storeConfig.getTimerPrecisionMs();
         commitLogFileSize = storeConfig.getMappedFileSizeCommitLog();
@@ -123,14 +124,43 @@ public class TimerMessageScanner extends ServiceThread {
         if (timerState.currReadTimeMs >= timerState.currWriteTimeMs) {
             return -1;
         }
+        LinkedList<TimerRequest> normalMsgStack = new LinkedList<>();
+        LinkedList<TimerRequest> deleteMsgStack = new LinkedList<>();
 
+
+        Scanner.ScannResult result = scanner.scan();
+        if (result.getCode() == 0) return result.getCode();
+
+
+
+        if (!timerState.isRunningDequeue()) {
+            return -1;
+        }
+
+
+        putToQuery(result.getDeleteMsgStack());
+        putToQuery(result.getNormalMsgStack());
+
+        // if master -> slave -> master, then the read time move forward, and messages will be lossed
+        if (timerState.dequeueStatusChangeFlag) {
+            return -1;
+        }
+        if (!timerState.isRunningDequeue()) {
+            return -1;
+        }
+
+        timerState.moveReadTime(precisionMs);
+        return 1;
+    }
+
+    private Scanner.ScannResult doScan(LinkedList<TimerRequest> normalMsgStack, LinkedList<TimerRequest> deleteMsgStack) {
+        Scanner.ScannResult result = new Scanner.ScannResult();
         Slot slot = timerWheel.getSlot(timerState.currReadTimeMs);
         if (-1 == slot.timeMs) {
             timerState.moveReadTime(precisionMs);
-            return 0;
+            return result;
         }
-        LinkedList<TimerRequest> normalMsgStack = new LinkedList<>();
-        LinkedList<TimerRequest> deleteMsgStack = new LinkedList<>();
+        result.code = 1;
         try {
             //clear the flag
             timerState.dequeueStatusChangeFlag = false;
@@ -184,30 +214,13 @@ public class TimerMessageScanner extends ServiceThread {
                     sbr.release();
                 }
             }
-            if (!timerState.isRunningDequeue()) {
-                return -1;
-            }
-
         } catch (Throwable t) {
             LOGGER.error("Unknown error in dequeue process", t);
             if (storeConfig.isTimerSkipUnknownError()) {
                 timerState.moveReadTime(precisionMs);
             }
         }
-
-        putToQuery(deleteMsgStack);
-        putToQuery(normalMsgStack);
-
-        // if master -> slave -> master, then the read time move forward, and messages will be lossed
-        if (timerState.dequeueStatusChangeFlag) {
-            return -1;
-        }
-        if (!timerState.isRunningDequeue()) {
-            return -1;
-        }
-
-        timerState.moveReadTime(precisionMs);
-        return 1;
+        return result;
     }
 
     /**
