@@ -87,7 +87,7 @@ public class TimerMessageStore {
     private TimerMessageFetcher timerMessageFetcher;
     private TimerMessageLocator timerMessageLocator;
     private TimerDequeueWarmService dequeueWarmService;
-    private TimerMessageScanner timerWheelScanner;
+    private TimerMessageScanner timerMessageScanner;
     private TimerMessageDeliver[] timerMessageDelivers;
     private TimerMessageQuery[] timerMessageQueries;
     private TimerFlushService timerFlushService;
@@ -147,7 +147,7 @@ public class TimerMessageStore {
         timerMessageFetcher.start();
         timerMessageLocator.start();
         dequeueWarmService.start();
-        timerWheelScanner.start(shouldStartTime);
+        timerMessageScanner.start(shouldStartTime);
         for (int i = 0; i < timerMessageQueries.length; i++) {
             timerMessageQueries[i].start();
         }
@@ -215,7 +215,7 @@ public class TimerMessageStore {
         timerMessageFetcher.shutdown();
         timerMessageLocator.shutdown();
         dequeueWarmService.shutdown();
-        timerWheelScanner.shutdown();
+        timerMessageScanner.shutdown();
         for (int i = 0; i < timerMessageQueries.length; i++) {
             timerMessageQueries[i].shutdown();
         }
@@ -448,7 +448,7 @@ public class TimerMessageStore {
                 perfCounterTicks);
         dequeueWarmService = new TimerDequeueWarmService(
                 timerState);
-        timerWheelScanner = new TimerMessageScanner(
+        timerMessageScanner = new TimerMessageScanner(
                 timerState,
                 storeConfig,
                 timerWheel,
