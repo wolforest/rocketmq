@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.timer.persistence;
-
-import org.apache.rocketmq.store.timer.TimerRequest;
+package org.apache.rocketmq.store.timer;
 
 import java.util.LinkedList;
 
@@ -34,6 +32,9 @@ public interface Persistence {
             return deleteMsgStack;
         }
 
+        public void setCode(int code){
+            this.code = code;
+        }
         public int getCode() {
             return code;
         }

@@ -23,11 +23,11 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
-import org.apache.rocketmq.store.timer.TimerLog;
+import org.apache.rocketmq.store.timer.wheel.TimerLog;
 import org.apache.rocketmq.store.timer.TimerMetrics;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
-import org.apache.rocketmq.store.timer.TimerWheel;
+import org.apache.rocketmq.store.timer.wheel.TimerWheel;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

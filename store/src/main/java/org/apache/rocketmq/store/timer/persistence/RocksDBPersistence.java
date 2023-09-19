@@ -17,6 +17,7 @@
 package org.apache.rocketmq.store.timer.persistence;
 
 
+import org.apache.rocketmq.store.timer.Persistence;
 import org.apache.rocketmq.store.timer.TimerRequest;
 
 public class RocksDBPersistence implements Persistence {

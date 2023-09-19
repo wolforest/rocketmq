@@ -24,9 +24,9 @@ import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.timer.TimerCheckpoint;
-import org.apache.rocketmq.store.timer.TimerLog;
+import org.apache.rocketmq.store.timer.wheel.TimerLog;
 import org.apache.rocketmq.store.timer.TimerState;
-import org.apache.rocketmq.store.timer.TimerWheel;
+import org.apache.rocketmq.store.timer.wheel.TimerWheel;
 
 import java.nio.ByteBuffer;
 import java.util.List;

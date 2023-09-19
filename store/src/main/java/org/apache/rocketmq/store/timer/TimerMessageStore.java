@@ -41,6 +41,9 @@ import org.apache.rocketmq.store.timer.service.TimerMessageRecover;
 import org.apache.rocketmq.store.timer.service.TimerMetricManager;
 import org.apache.rocketmq.store.timer.service.TimerMessageScanner;
 import org.apache.rocketmq.store.timer.service.TimerMessageSaver;
+import org.apache.rocketmq.store.timer.wheel.Slot;
+import org.apache.rocketmq.store.timer.wheel.TimerLog;
+import org.apache.rocketmq.store.timer.wheel.TimerWheel;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.io.File;

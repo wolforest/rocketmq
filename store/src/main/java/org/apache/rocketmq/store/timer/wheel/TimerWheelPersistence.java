@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.timer.persistence;
+package org.apache.rocketmq.store.timer.wheel;
 
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -23,12 +23,9 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.timer.Block;
-import org.apache.rocketmq.store.timer.Slot;
-import org.apache.rocketmq.store.timer.TimerLog;
+import org.apache.rocketmq.store.timer.Persistence;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
-import org.apache.rocketmq.store.timer.TimerWheel;
 import org.apache.rocketmq.store.timer.service.TimerMetricManager;
 import org.apache.rocketmq.store.util.PerfCounter;
 
@@ -108,7 +105,7 @@ public class TimerWheelPersistence implements Persistence {
             timerState.moveReadTime(precisionMs);
             return result;
         }
-        result.code = 1;
+        result.setCode(1);
         try {
             //clear the flag
             timerState.dequeueStatusChangeFlag = false;
