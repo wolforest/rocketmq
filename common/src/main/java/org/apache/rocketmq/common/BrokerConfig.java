@@ -293,7 +293,7 @@ public class BrokerConfig extends BrokerIdentity {
     private long forwardTimeout = 3 * 1000;
 
     /**
-     * Slave will act master when failover. For example, if master down, timer or transaction message which is expire in slave will
+     * Slave will act master when failover. For example, if master down, timer or transaction message which is expired in slave will
      * put to master (master of the same process in broker container mode or other masters in cluster when enableFailoverRemotingActing is true)
      * when enableSlaveActingMaster is true
      */

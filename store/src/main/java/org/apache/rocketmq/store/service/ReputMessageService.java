@@ -145,7 +145,7 @@ public class ReputMessageService extends ServiceThread {
                 }
 
                 if (dispatchRequest.isSuccess()) {
-                    readSize = handleDispatchSuccess(readSize, size, result, dispatchRequest);
+                    readSize = handleSuccessDispatchRequest(readSize, size, result, dispatchRequest);
                 } else if (size > 0) {
                     LOGGER.error("[BUG]read total count not equals msg total size. reputFromOffset={}", reputFromOffset);
                     this.reputFromOffset += size;
@@ -192,7 +192,7 @@ public class ReputMessageService extends ServiceThread {
         notifyMessageArrive4MultiQueue(dispatchRequest);
     }
 
-    private int handleDispatchSuccess(int readSize, int size, SelectMappedBufferResult result, DispatchRequest dispatchRequest) {
+    private int handleSuccessDispatchRequest(int readSize, int size, SelectMappedBufferResult result, DispatchRequest dispatchRequest) {
         if (size < 0) {
             return readSize;
         }

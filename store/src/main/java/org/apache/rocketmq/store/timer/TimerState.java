@@ -48,7 +48,6 @@ public class TimerState {
     public static final String TIMER_ROLL_TIMES = MessageConst.PROPERTY_TIMER_ROLL_TIMES;
     public static final String TIMER_DELETE_UNIQUE_KEY = MessageConst.PROPERTY_TIMER_DEL_UNIQKEY;
 
-
     public static final int TIMER_BLANK_SLOTS = 60;
     public volatile long currReadTimeMs;
     public volatile long currWriteTimeMs;
@@ -61,13 +60,7 @@ public class TimerState {
     public long lastEnqueueButExpiredTime;
     public long lastEnqueueButExpiredStoreTime;
 
-    public boolean isShouldRunningDequeue() {
-        return shouldRunningDequeue;
-    }
 
-    public void setShouldRunningDequeue(boolean shouldRunningDequeue) {
-        this.shouldRunningDequeue = shouldRunningDequeue;
-    }
 
     // True if current store is master or current brokerId is equal to the minimum brokerId of the replica group in slaveActingMaster mode.
     private volatile boolean shouldRunningDequeue;
@@ -77,10 +70,10 @@ public class TimerState {
 
     private volatile int state = INITIAL;
     public TimerCheckpoint timerCheckpoint;
-    private TimerWheel timerWheel;
-    private TimerLog timerLog;
-    private MessageStore messageStore;
-    private MessageStoreConfig storeConfig;
+    private final TimerWheel timerWheel;
+    private final TimerLog timerLog;
+    private final MessageStore messageStore;
+    private final MessageStoreConfig storeConfig;
     public final int precisionMs;
     public final int timerRollWindowSlots;
     public final int slotsTotal;
@@ -149,39 +142,6 @@ public class TimerState {
         }
     }
 
-    private long formatTimeMs(long timeMs) {
-        return timeMs / precisionMs * precisionMs;
-    }
-
-
-    public void flagShutdown() {
-        state = SHUTDOWN;
-    }
-
-    public boolean isShutdown() {
-        return SHUTDOWN == state;
-    }
-
-    public boolean isRunning() {
-        return RUNNING == state;
-    }
-
-    public void flagRunning() {
-        state = RUNNING;
-    }
-
-    public boolean needDelete(int magic) {
-        return (magic & MAGIC_DELETE) != 0;
-    }
-
-    public boolean needRoll(int magic) {
-        return (magic & MAGIC_ROLL) != 0;
-    }
-
-    public static boolean isMagicOK(int magic) {
-        return (magic | 0xF) == 0xF;
-    }
-
     public boolean checkStateForTimerMessageDelivers(TimerMessageDeliver[] timerMessageDelivers, int state) {
         for (AbstractStateService service : timerMessageDelivers) {
             if (!service.isState(state)) {
@@ -225,7 +185,6 @@ public class TimerState {
         }
     }
 
-
     public long getDequeueBehindMillis() {
         return System.currentTimeMillis() - currReadTimeMs;
     }
@@ -247,5 +206,45 @@ public class TimerState {
             }
         }
         return brokerIdentifier;
+    }
+
+    private long formatTimeMs(long timeMs) {
+        return timeMs / precisionMs * precisionMs;
+    }
+
+    public void flagShutdown() {
+        state = SHUTDOWN;
+    }
+
+    public boolean isShutdown() {
+        return SHUTDOWN == state;
+    }
+
+    public boolean isRunning() {
+        return RUNNING == state;
+    }
+
+    public void flagRunning() {
+        state = RUNNING;
+    }
+
+    public boolean needDelete(int magic) {
+        return (magic & MAGIC_DELETE) != 0;
+    }
+
+    public boolean needRoll(int magic) {
+        return (magic & MAGIC_ROLL) != 0;
+    }
+
+    public static boolean isMagicOK(int magic) {
+        return (magic | 0xF) == 0xF;
+    }
+
+    public boolean isShouldRunningDequeue() {
+        return shouldRunningDequeue;
+    }
+
+    public void setShouldRunningDequeue(boolean shouldRunningDequeue) {
+        this.shouldRunningDequeue = shouldRunningDequeue;
     }
 }

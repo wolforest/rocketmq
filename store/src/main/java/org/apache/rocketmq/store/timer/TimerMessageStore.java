@@ -58,7 +58,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class TimerMessageStore {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     public static final int DEFAULT_CAPACITY = 1024;
@@ -210,8 +209,9 @@ public class TimerMessageStore {
     }
 
     public long getEnqueueBehindMillis() {
-        if (System.currentTimeMillis() - timerState.lastEnqueueButExpiredTime < 2000) {
-            return (System.currentTimeMillis() - timerState.lastEnqueueButExpiredStoreTime) / 1000;
+        long ts = System.currentTimeMillis();
+        if (ts - timerState.lastEnqueueButExpiredTime < 2000) {
+            return (ts - timerState.lastEnqueueButExpiredStoreTime) / 1000;
         }
         return 0;
     }
@@ -352,18 +352,21 @@ public class TimerMessageStore {
             @Override
             public void run() {
                 try {
-                    if (storeConfig.isTimerEnableCheckMetrics()) {
-                        String when = storeConfig.getTimerCheckMetricsWhen();
-                        if (!TimeUtils.isItTimeToDo(when)) {
-                            return;
-                        }
-                        long curr = System.currentTimeMillis();
-                        if (curr - lastTimeOfCheckMetrics > 70 * 60 * 1000) {
-                            lastTimeOfCheckMetrics = curr;
-                            timerMetricManager.checkAndReviseMetrics();
-                            LOGGER.info("[CheckAndReviseMetrics]Timer do check timer metrics cost {} ms",
-                                System.currentTimeMillis() - curr);
-                        }
+                    if (!storeConfig.isTimerEnableCheckMetrics()) {
+                        return;
+                    }
+
+                    String when = storeConfig.getTimerCheckMetricsWhen();
+                    if (!TimeUtils.isItTimeToDo(when)) {
+                        return;
+                    }
+
+                    long curr = System.currentTimeMillis();
+                    if (curr - lastTimeOfCheckMetrics > 70 * 60 * 1000) {
+                        lastTimeOfCheckMetrics = curr;
+                        timerMetricManager.checkAndReviseMetrics();
+                        LOGGER.info("[CheckAndReviseMetrics]Timer do check timer metrics cost {} ms",
+                            System.currentTimeMillis() - curr);
                     }
                 } catch (Exception e) {
                     LOGGER.error("Error in cleaning timerLog", e);
