@@ -162,13 +162,7 @@ public class BrokerPreOnlineService extends ServiceThread {
 
             TimerCheckpoint timerCheckpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(brokerAddr);
 
-            if (null != consumerOffsetSerializeWrapper && brokerController.getConsumerOffsetManager().getDataVersion().compare(consumerOffsetSerializeWrapper.getDataVersion()) <= 0) {
-                LOGGER.info("{}'s consumerOffset data version is larger than master broker, {}'s consumerOffset will be used.", brokerAddr, brokerAddr);
-                this.brokerController.getConsumerOffsetManager().getOffsetTable()
-                    .putAll(consumerOffsetSerializeWrapper.getOffsetTable());
-                this.brokerController.getConsumerOffsetManager().getDataVersion().assignNewOne(consumerOffsetSerializeWrapper.getDataVersion());
-                this.brokerController.getConsumerOffsetManager().persist();
-            }
+            syncConsumerOffsetReverse(brokerAddr, consumerOffsetSerializeWrapper);
 
             if (null != delayOffset && brokerController.getScheduleMessageService().getDataVersion().compare(delayOffsetSerializeWrapper.getDataVersion()) <= 0) {
                 LOGGER.info("{}'s scheduleMessageService data version is larger than master broker, {}'s delayOffset will be used.", brokerAddr, brokerAddr);
@@ -203,6 +197,16 @@ public class BrokerPreOnlineService extends ServiceThread {
         }
 
         return true;
+    }
+
+    private void syncConsumerOffsetReverse(String brokerAddr, ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper) {
+        if (null != consumerOffsetSerializeWrapper && brokerController.getConsumerOffsetManager().getDataVersion().compare(consumerOffsetSerializeWrapper.getDataVersion()) <= 0) {
+            LOGGER.info("{}'s consumerOffset data version is larger than master broker, {}'s consumerOffset will be used.", brokerAddr, brokerAddr);
+            this.brokerController.getConsumerOffsetManager().getOffsetTable()
+                .putAll(consumerOffsetSerializeWrapper.getOffsetTable());
+            this.brokerController.getConsumerOffsetManager().getDataVersion().assignNewOne(consumerOffsetSerializeWrapper.getDataVersion());
+            this.brokerController.getConsumerOffsetManager().persist();
+        }
     }
 
     private boolean prepareForSlaveOnline(BrokerMemberGroup brokerMemberGroup) {
