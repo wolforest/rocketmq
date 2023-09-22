@@ -162,12 +162,7 @@ public class BrokerPreOnlineService extends ServiceThread {
             syncConsumerOffsetReverse(brokerAddr);
             syncDelayOffsetReverse(brokerAddr);
             syncTimerCheckPointReverse(brokerAddr);
-
-            for (BrokerAttachedPlugin brokerAttachedPlugin : brokerController.getBrokerServiceManager().getBrokerAttachedPlugins()) {
-                if (brokerAttachedPlugin != null) {
-                    brokerAttachedPlugin.syncMetadataReverse(brokerAddr);
-                }
-            }
+            brokerAttachedPluginSyncMetadataReverse(brokerAddr);
 
         } catch (Exception e) {
             LOGGER.error("GetMetadataReverse Failed", e);
@@ -215,6 +210,14 @@ public class BrokerPreOnlineService extends ServiceThread {
             this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(timerCheckpoint.getMasterTimerQueueOffset());
             this.brokerController.getTimerCheckpoint().getDataVersion().assignNewOne(timerCheckpoint.getDataVersion());
             this.brokerController.getTimerCheckpoint().flush();
+        }
+    }
+
+    private void brokerAttachedPluginSyncMetadataReverse(String brokerAddr) throws Exception {
+        for (BrokerAttachedPlugin brokerAttachedPlugin : brokerController.getBrokerServiceManager().getBrokerAttachedPlugins()) {
+            if (brokerAttachedPlugin != null) {
+                brokerAttachedPlugin.syncMetadataReverse(brokerAddr);
+            }
         }
     }
 
