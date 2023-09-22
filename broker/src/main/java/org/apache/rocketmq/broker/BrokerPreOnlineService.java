@@ -18,6 +18,7 @@
 package org.apache.rocketmq.broker;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.broker.plugin.BrokerAttachedPlugin;
 import org.apache.rocketmq.broker.schedule.DelayOffsetSerializeWrapper;
+import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceThread;
@@ -33,6 +35,9 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.apache.rocketmq.remoting.exception.RemotingConnectException;
+import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
+import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.protocol.BrokerSyncInfo;
 import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerOffsetSerializeWrapper;
@@ -154,28 +159,14 @@ public class BrokerPreOnlineService extends ServiceThread {
         try {
             LOGGER.info("Get metadata reverse from {}", brokerAddr);
 
-            String delayOffset = this.brokerController.getBrokerOuterAPI().getAllDelayOffset(brokerAddr);
-            DelayOffsetSerializeWrapper delayOffsetSerializeWrapper =
-                DelayOffsetSerializeWrapper.fromJson(delayOffset, DelayOffsetSerializeWrapper.class);
+
 
             ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper = this.brokerController.getBrokerOuterAPI().getAllConsumerOffset(brokerAddr);
 
             TimerCheckpoint timerCheckpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(brokerAddr);
 
             syncConsumerOffsetReverse(brokerAddr, consumerOffsetSerializeWrapper);
-
-            if (null != delayOffset && brokerController.getScheduleMessageService().getDataVersion().compare(delayOffsetSerializeWrapper.getDataVersion()) <= 0) {
-                LOGGER.info("{}'s scheduleMessageService data version is larger than master broker, {}'s delayOffset will be used.", brokerAddr, brokerAddr);
-                String fileName =
-                    StorePathConfigHelper.getDelayOffsetStorePath(this.brokerController
-                        .getMessageStoreConfig().getStorePathRootDir());
-                try {
-                    MixAll.string2File(delayOffset, fileName);
-                    this.brokerController.getScheduleMessageService().load();
-                } catch (IOException e) {
-                    LOGGER.error("Persist file Exception, {}", fileName, e);
-                }
-            }
+            syncDelayOffsetReverse(brokerAddr);
 
             if (null != this.brokerController.getTimerCheckpoint() && this.brokerController.getTimerCheckpoint().getDataVersion().compare(timerCheckpoint.getDataVersion()) <= 0) {
                 LOGGER.info("{}'s timerCheckpoint data version is larger than master broker, {}'s timerCheckpoint will be used.", brokerAddr, brokerAddr);
@@ -197,6 +188,25 @@ public class BrokerPreOnlineService extends ServiceThread {
         }
 
         return true;
+    }
+
+    private void syncDelayOffsetReverse(String brokerAddr) throws InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException, MQBrokerException, UnsupportedEncodingException {
+        String delayOffset = this.brokerController.getBrokerOuterAPI().getAllDelayOffset(brokerAddr);
+        DelayOffsetSerializeWrapper delayOffsetSerializeWrapper =
+            DelayOffsetSerializeWrapper.fromJson(delayOffset, DelayOffsetSerializeWrapper.class);
+
+        if (null != delayOffset && brokerController.getScheduleMessageService().getDataVersion().compare(delayOffsetSerializeWrapper.getDataVersion()) <= 0) {
+            LOGGER.info("{}'s scheduleMessageService data version is larger than master broker, {}'s delayOffset will be used.", brokerAddr, brokerAddr);
+            String fileName =
+                StorePathConfigHelper.getDelayOffsetStorePath(this.brokerController
+                    .getMessageStoreConfig().getStorePathRootDir());
+            try {
+                MixAll.string2File(delayOffset, fileName);
+                this.brokerController.getScheduleMessageService().load();
+            } catch (IOException e) {
+                LOGGER.error("Persist file Exception, {}", fileName, e);
+            }
+        }
     }
 
     private void syncConsumerOffsetReverse(String brokerAddr, ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper) {
