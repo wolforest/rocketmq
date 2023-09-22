@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.timer;
+package org.apache.rocketmq.store.timer.persistence.wheel;
 
 
 import java.nio.ByteBuffer;
@@ -38,7 +38,7 @@ public class Block {
             + 4 //sizePy
             + 4 //hash code of real topic
             + 8; //reserved value, just in case of;
-    private final ByteBuffer timerLogBuffer = ByteBuffer.allocate(4 * 1024);
+    private final ByteBuffer blockBuffer = ByteBuffer.allocate(SIZE);
     public int size;
     public long prevPos;
     public int magic;
@@ -69,10 +69,10 @@ public class Block {
         this.reservedValue = reservedValue;
     }
 
-    public byte[] bytes(){
-        ByteBuffer tmpBuffer = timerLogBuffer;
+    public byte[] bytes() {
+        ByteBuffer tmpBuffer = blockBuffer;
         tmpBuffer.clear();
-        tmpBuffer.putInt(TimerLog.UNIT_SIZE); //size
+        tmpBuffer.putInt(SIZE); //size
         tmpBuffer.putLong(prevPos); //prev pos ,lastPos
         tmpBuffer.putInt(magic); //magic
         tmpBuffer.putLong(currWriteTime); //currWriteTime,tmpWriteTimeMs

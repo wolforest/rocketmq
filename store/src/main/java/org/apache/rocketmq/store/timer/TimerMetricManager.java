@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.timer.service;
+package org.apache.rocketmq.store.timer;
 
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -23,10 +23,8 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.timer.TimerLog;
-import org.apache.rocketmq.store.timer.TimerMetrics;
-import org.apache.rocketmq.store.timer.TimerState;
-import org.apache.rocketmq.store.timer.TimerWheel;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheel;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -40,14 +38,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TimerMetricManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private TimerState timerState;
-    private MessageStoreConfig storeConfig;
-    private TimerWheel timerWheel;
-    private TimerLog timerLog;
-    private MessageOperator messageReader;
-    private TimerMetrics timerMetrics;
+    private final TimerState timerState;
+    private final MessageStoreConfig storeConfig;
+    private final TimerWheel timerWheel;
+    private final TimerLog timerLog;
+    private final MessageOperator messageReader;
+    private final TimerMetrics timerMetrics;
     private final int timerLogFileSize;
-    private AtomicInteger frequency = new AtomicInteger(0);
+    private final AtomicInteger frequency = new AtomicInteger(0);
 
     public TimerMetricManager(TimerState timerState,
                               MessageStoreConfig storeConfig,
@@ -88,32 +86,35 @@ public class TimerMetricManager {
         Map<Integer, String> smallHashs = new HashMap<>();
         Set<Integer> smallHashCollisions = new HashSet<>();
         for (Map.Entry<String, TimerMetrics.Metric> entry : timerMetrics.getTimingCount().entrySet()) {
-            if (entry.getValue().getCount().get() < storeConfig.getTimerMetricSmallThreshold()) {
-                smallOnes.put(entry.getKey(), entry.getValue());
-                int hash = hashTopicForMetrics(entry.getKey());
-                if (smallHashs.containsKey(hash)) {
-                    LOGGER.warn("[CheckAndReviseMetrics]Metric hash collision between small-small code:{} small topic:{}{} small topic:{}{}", hash,
-                            entry.getKey(), entry.getValue(),
-                            smallHashs.get(hash), smallOnes.get(smallHashs.get(hash)));
-                    smallHashCollisions.add(hash);
-                }
-                smallHashs.put(hash, entry.getKey());
-            } else {
+            if (entry.getValue().getCount().get() >= storeConfig.getTimerMetricSmallThreshold()) {
                 bigOnes.put(entry.getKey(), entry.getValue());
+                continue;
             }
+
+            smallOnes.put(entry.getKey(), entry.getValue());
+            int hash = hashTopicForMetrics(entry.getKey());
+            if (smallHashs.containsKey(hash)) {
+                LOGGER.warn("[CheckAndReviseMetrics]Metric hash collision between small-small code:{} small topic:{}{} small topic:{}{}", hash,
+                        entry.getKey(), entry.getValue(),
+                        smallHashs.get(hash), smallOnes.get(smallHashs.get(hash)));
+                smallHashCollisions.add(hash);
+            }
+            smallHashs.put(hash, entry.getKey());
         }
         //check the hash collision between small ons and big ons
         for (Map.Entry<String, TimerMetrics.Metric> bjgEntry : bigOnes.entrySet()) {
-            if (smallHashs.containsKey(hashTopicForMetrics(bjgEntry.getKey()))) {
-                Iterator<Map.Entry<String, TimerMetrics.Metric>> smallIt = smallOnes.entrySet().iterator();
-                while (smallIt.hasNext()) {
-                    Map.Entry<String, TimerMetrics.Metric> smallEntry = smallIt.next();
-                    if (hashTopicForMetrics(smallEntry.getKey()) == hashTopicForMetrics(bjgEntry.getKey())) {
-                        LOGGER.warn("[CheckAndReviseMetrics]Metric hash collision between small-big code:{} small topic:{}{} big topic:{}{}", hashTopicForMetrics(smallEntry.getKey()),
-                                smallEntry.getKey(), smallEntry.getValue(),
-                                bjgEntry.getKey(), bjgEntry.getValue());
-                        smallIt.remove();
-                    }
+            if (!smallHashs.containsKey(hashTopicForMetrics(bjgEntry.getKey()))) {
+                continue;
+            }
+
+            Iterator<Map.Entry<String, TimerMetrics.Metric>> smallIt = smallOnes.entrySet().iterator();
+            while (smallIt.hasNext()) {
+                Map.Entry<String, TimerMetrics.Metric> smallEntry = smallIt.next();
+                if (hashTopicForMetrics(smallEntry.getKey()) == hashTopicForMetrics(bjgEntry.getKey())) {
+                    LOGGER.warn("[CheckAndReviseMetrics]Metric hash collision between small-big code:{} small topic:{}{} big topic:{}{}", hashTopicForMetrics(smallEntry.getKey()),
+                            smallEntry.getKey(), smallEntry.getValue(),
+                            bjgEntry.getKey(), bjgEntry.getValue());
+                    smallIt.remove();
                 }
             }
         }

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.timer.service;
+package org.apache.rocketmq.store.timer.transit;
 
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -28,8 +28,9 @@ import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
-import org.apache.rocketmq.store.timer.TimerState;
+import org.apache.rocketmq.store.timer.MessageOperator;
 import org.apache.rocketmq.store.timer.TimerRequest;
+import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.util.concurrent.BlockingQueue;
@@ -38,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Consume the original topic queue,convert message to TimerTask and put it into the in-memory pending queue
  */
-public class TimerMessageFetcher extends ServiceThread {
+public class TimerMessageAccepter extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
     public static final String TIMER_OUT_MS = MessageConst.PROPERTY_TIMER_OUT_MS;
@@ -50,7 +51,7 @@ public class TimerMessageFetcher extends ServiceThread {
     private MessageOperator messageOperator;
     private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
-    public TimerMessageFetcher(
+    public TimerMessageAccepter(
             TimerState timerState,
             MessageStoreConfig storeConfig,
             MessageOperator messageOperator,

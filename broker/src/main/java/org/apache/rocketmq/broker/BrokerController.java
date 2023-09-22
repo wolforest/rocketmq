@@ -69,7 +69,6 @@ public class BrokerController {
     protected final MessageStoreConfig messageStoreConfig;
     private Configuration configuration;
 
-    private BrokerIdentity brokerIdentity = null;
     protected volatile boolean shutdown = false;
     protected volatile long shouldStartTime;
     protected volatile boolean isIsolated = false;
@@ -170,26 +169,21 @@ public class BrokerController {
     }
 
     /**
-     * store BrokerIdentity instance in the object, rather than create everytime
+     * do not store BrokerIdentity instance in the object
+     * because brokerId will change while slaveActingMaster
      *
      * @return BrokerIdentity
      */
     public BrokerIdentity getBrokerIdentity() {
-        if (null != brokerIdentity) {
-            return brokerIdentity;
-        }
-
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
-            brokerIdentity = new BrokerIdentity(
+            return new BrokerIdentity(
                 brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(),
                 Integer.parseInt(messageStoreConfig.getdLegerSelfId().substring(1)), brokerConfig.isInBrokerContainer());
         } else {
-            brokerIdentity = new BrokerIdentity(
+            return new BrokerIdentity(
                 brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(),
                 brokerConfig.getBrokerId(), brokerConfig.isInBrokerContainer());
         }
-
-        return brokerIdentity;
     }
 
     //**************************************** private or protected methods start ****************************************************
@@ -228,8 +222,6 @@ public class BrokerController {
             brokerConfigPath,
             this.brokerConfig, this.nettyServerConfig, this.nettyClientConfig, this.messageStoreConfig
         );
-
-        brokerConfig.setBrokerIdentity(getBrokerIdentity());
     }
 
     protected void shutdownBasicService() {

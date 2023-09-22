@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.timer.service;
+package org.apache.rocketmq.store.timer.transit;
 
 import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -30,8 +30,11 @@ import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.timer.TimerState;
+import org.apache.rocketmq.store.timer.AbstractStateService;
+import org.apache.rocketmq.store.timer.MessageOperator;
+import org.apache.rocketmq.store.timer.TimerMetricManager;
 import org.apache.rocketmq.store.timer.TimerRequest;
+import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.util.concurrent.BlockingQueue;
@@ -46,19 +49,14 @@ import static org.apache.rocketmq.store.timer.TimerState.PUT_OK;
 public class TimerMessageDeliver extends AbstractStateService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    @Override
-    public String getServiceName() {
-        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
-    }
-
-    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
-    private PerfCounter.Ticks perfCounterTicks;
-    private TimerState timerState;
-    private MessageStoreConfig storeConfig;
-    private TimerMetricManager metricManager;
-    private BrokerStatsManager brokerStatsManager;
-    private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
-    private MessageOperator messageOperator;
+    private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private final PerfCounter.Ticks perfCounterTicks;
+    private final TimerState timerState;
+    private final MessageStoreConfig storeConfig;
+    private final TimerMetricManager metricManager;
+    private final BrokerStatsManager brokerStatsManager;
+    private final Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
+    private final MessageOperator messageOperator;
 
     public TimerMessageDeliver(
             TimerState timerState,
@@ -80,11 +78,16 @@ public class TimerMessageDeliver extends AbstractStateService {
         this.messageOperator = messageOperator;
     }
 
+    @Override
+    public String getServiceName() {
+        return timerState.getServiceThreadName() + this.getClass().getSimpleName();
+    }
 
     @Override
     public void run() {
         setState(AbstractStateService.START);
         LOGGER.info(this.getServiceName() + " service start");
+
         while (!this.isStopped() || timerMessageDeliverQueue.size() != 0) {
             try {
                 setState(AbstractStateService.WAITING);
@@ -92,56 +95,60 @@ public class TimerMessageDeliver extends AbstractStateService {
                 if (null == timerRequest) {
                     continue;
                 }
-                setState(AbstractStateService.RUNNING);
-                boolean doRes = false;
-                boolean tmpDequeueChangeFlag = false;
-                try {
 
-                    while (!isStopped() && !doRes) {
-                        if (!timerState.isRunningDequeue()) {
-                            timerState.dequeueStatusChangeFlag = true;
-                            tmpDequeueChangeFlag = true;
-                            break;
-                        }
-
-                        try {
-                            perfCounterTicks.startTick(DEQUEUE_PUT);
-                            DefaultStoreMetricsManager.incTimerDequeueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
-                            metricManager.addMetric(timerRequest.getMsg(), -1);
-                            MessageExtBrokerInner msg = convert(timerRequest.getMsg(), timerRequest.getEnqueueTime(), timerState.needRoll(timerRequest.getMagic()));
-
-                            doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(timerRequest.getMagic()));
-
-                            while (!doRes && !isStopped()) {
-                                if (!timerState.isRunningDequeue()) {
-                                    timerState.dequeueStatusChangeFlag = true;
-                                    tmpDequeueChangeFlag = true;
-                                    break;
-                                }
-
-                                doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(timerRequest.getMagic()));
-                                Thread.sleep(500L * timerState.precisionMs / 1000);
-                            }
-                            perfCounterTicks.endTick(DEQUEUE_PUT);
-                        } catch (Throwable t) {
-                            LOGGER.info("Unknown error", t);
-                            if (storeConfig.isTimerSkipUnknownError()) {
-                                doRes = true;
-                            } else {
-                                ThreadUtils.sleep(50);
-                            }
-                        }
-                    }
-                } finally {
-                    timerRequest.idempotentRelease(!tmpDequeueChangeFlag);
-                }
-
+                run(timerRequest);
             } catch (Throwable e) {
                 LOGGER.error("Error occurred in " + getServiceName(), e);
             }
         }
         LOGGER.info(this.getServiceName() + " service end");
         setState(AbstractStateService.END);
+    }
+
+    private void run(TimerRequest timerRequest) {
+        setState(AbstractStateService.RUNNING);
+        boolean doRes = false;
+        boolean tmpDequeueChangeFlag = false;
+        try {
+
+            while (!isStopped() && !doRes) {
+                if (!timerState.isRunningDequeue()) {
+                    timerState.dequeueStatusChangeFlag = true;
+                    tmpDequeueChangeFlag = true;
+                    break;
+                }
+
+                try {
+                    perfCounterTicks.startTick(DEQUEUE_PUT);
+                    DefaultStoreMetricsManager.incTimerDequeueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
+                    metricManager.addMetric(timerRequest.getMsg(), -1);
+                    MessageExtBrokerInner msg = convert(timerRequest.getMsg(), timerRequest.getEnqueueTime(), timerState.needRoll(timerRequest.getMagic()));
+
+                    doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(timerRequest.getMagic()));
+
+                    while (!doRes && !isStopped()) {
+                        if (!timerState.isRunningDequeue()) {
+                            timerState.dequeueStatusChangeFlag = true;
+                            tmpDequeueChangeFlag = true;
+                            break;
+                        }
+
+                        doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(timerRequest.getMagic()));
+                        Thread.sleep(500L * timerState.precisionMs / 1000);
+                    }
+                    perfCounterTicks.endTick(DEQUEUE_PUT);
+                } catch (Throwable t) {
+                    LOGGER.info("Unknown error", t);
+                    if (storeConfig.isTimerSkipUnknownError()) {
+                        doRes = true;
+                    } else {
+                        ThreadUtils.sleep(50);
+                    }
+                }
+            }
+        } finally {
+            timerRequest.idempotentRelease(!tmpDequeueChangeFlag);
+        }
     }
 
     public MessageExtBrokerInner convert(MessageExt messageExt, long enqueueTime, boolean needRoll) {
@@ -156,8 +163,7 @@ public class TimerMessageDeliver extends AbstractStateService {
             }
         }
         MessageAccessor.putProperty(messageExt, TimerState.TIMER_DEQUEUE_MS, System.currentTimeMillis() + "");
-        MessageExtBrokerInner message = convertMessage(messageExt, needRoll);
-        return message;
+        return convertMessage(messageExt, needRoll);
     }
 
     public MessageExtBrokerInner convertMessage(MessageExt msgExt, boolean needRoll) {
@@ -166,8 +172,7 @@ public class TimerMessageDeliver extends AbstractStateService {
         msgInner.setFlag(msgExt.getFlag());
         MessageAccessor.setProperties(msgInner, msgExt.getProperties());
         TopicFilterType topicFilterType = MessageExt.parseTopicFilterType(msgInner.getSysFlag());
-        long tagsCodeValue =
-                MessageExtBrokerInner.tagsString2tagsCode(topicFilterType, msgInner.getTags());
+        long tagsCodeValue = MessageExtBrokerInner.tagsString2tagsCode(topicFilterType, msgInner.getTags());
         msgInner.setTagsCode(tagsCodeValue);
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgExt.getProperties()));
 
@@ -215,8 +220,7 @@ public class TimerMessageDeliver extends AbstractStateService {
                     case PUT_OK:
                         if (brokerStatsManager != null) {
                             this.brokerStatsManager.incTopicPutNums(message.getTopic(), 1, 1);
-                            this.brokerStatsManager.incTopicPutSize(message.getTopic(),
-                                    putMessageResult.getAppendMessageResult().getWroteBytes());
+                            this.brokerStatsManager.incTopicPutSize(message.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
                             this.brokerStatsManager.incBrokerPutNums(message.getTopic(), 1);
                         }
                         return PUT_OK;

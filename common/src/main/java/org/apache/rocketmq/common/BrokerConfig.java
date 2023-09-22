@@ -27,8 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 public class BrokerConfig extends BrokerIdentity {
 
-
-    private BrokerIdentity brokerIdentity = null;
     private String brokerConfigPath = null;
 
     private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
@@ -295,7 +293,7 @@ public class BrokerConfig extends BrokerIdentity {
     private long forwardTimeout = 3 * 1000;
 
     /**
-     * Slave will act master when failover. For example, if master down, timer or transaction message which is expire in slave will
+     * Slave will act master when failover. For example, if master down, timer or transaction message which is expired in slave will
      * put to master (master of the same process in broker container mode or other masters in cluster when enableFailoverRemotingActing is true)
      * when enableSlaveActingMaster is true
      */
@@ -1756,13 +1754,5 @@ public class BrokerConfig extends BrokerIdentity {
 
     public void setSplitRegistrationSize(int splitRegistrationSize) {
         this.splitRegistrationSize = splitRegistrationSize;
-    }
-
-    public BrokerIdentity getBrokerIdentity() {
-        return brokerIdentity;
-    }
-
-    public void setBrokerIdentity(BrokerIdentity brokerIdentity) {
-        this.brokerIdentity = brokerIdentity;
     }
 }

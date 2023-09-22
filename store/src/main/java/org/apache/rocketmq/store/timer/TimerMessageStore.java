@@ -31,16 +31,17 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.timer.service.MessageOperator;
-import org.apache.rocketmq.store.timer.service.TimerDequeueWarmService;
-import org.apache.rocketmq.store.timer.service.TimerFlushService;
-import org.apache.rocketmq.store.timer.service.TimerMessageDeliver;
-import org.apache.rocketmq.store.timer.service.TimerMessageFetcher;
-import org.apache.rocketmq.store.timer.service.TimerMessageQuery;
-import org.apache.rocketmq.store.timer.service.TimerMessageRecover;
-import org.apache.rocketmq.store.timer.service.TimerMetricManager;
-import org.apache.rocketmq.store.timer.service.TimerWheelFetcher;
-import org.apache.rocketmq.store.timer.service.TimerWheelLocator;
+import org.apache.rocketmq.store.timer.transit.TimerDequeueWarmService;
+import org.apache.rocketmq.store.timer.transit.TimerFlushService;
+import org.apache.rocketmq.store.timer.transit.TimerMessageDeliver;
+import org.apache.rocketmq.store.timer.transit.TimerMessageAccepter;
+import org.apache.rocketmq.store.timer.transit.TimerMessageQuery;
+import org.apache.rocketmq.store.timer.transit.TimerMessageRecover;
+import org.apache.rocketmq.store.timer.transit.TimerMessageSaver;
+import org.apache.rocketmq.store.timer.transit.TimerMessageScanner;
+import org.apache.rocketmq.store.timer.persistence.wheel.Slot;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheel;
 import org.apache.rocketmq.store.util.PerfCounter;
 
 import java.io.File;
@@ -57,7 +58,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class TimerMessageStore {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     public static final int DEFAULT_CAPACITY = 1024;
@@ -68,7 +68,6 @@ public class TimerMessageStore {
     public static final int TIMER_WHEEL_TTL_DAY = 7;
     public static final int DAY_SECS = 24 * 3600;
 
-
     public static final Random RANDOM = new Random();
     public boolean debug = false;
     protected final PerfCounter.Ticks perfCounterTicks = new PerfCounter.Ticks(LOGGER);
@@ -77,17 +76,16 @@ public class TimerMessageStore {
     protected BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     protected BlockingQueue<TimerRequest> timerMessageDeliverQueue;
 
-
     private ScheduledExecutorService scheduler;
     private final TimerState timerState;
     private final MessageStore messageStore;
     private final TimerWheel timerWheel;
     private final TimerLog timerLog;
     private final TimerCheckpoint timerCheckpoint;
-    private TimerMessageFetcher timerMessageFetcher;
-    private TimerWheelLocator timerWheelLocator;
+    private TimerMessageAccepter timerMessageFetcher;
+    private TimerMessageSaver timerMessageLocator;
     private TimerDequeueWarmService dequeueWarmService;
-    private TimerWheelFetcher timerWheelFetcher;
+    private TimerMessageScanner timerMessageScanner;
     private TimerMessageDeliver[] timerMessageDelivers;
     private TimerMessageQuery[] timerMessageQueries;
     private TimerFlushService timerFlushService;
@@ -99,8 +97,8 @@ public class TimerMessageStore {
     protected long lastTimeOfCheckMetrics = System.currentTimeMillis();
     private final BrokerStatsManager brokerStatsManager;
     private Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
-    private MessageOperator messageOperator;
-    private TimerMetricManager timerMetricManager;
+    private final MessageOperator messageOperator;
+    private final TimerMetricManager timerMetricManager;
     private TimerMessageRecover recover;
 
     public TimerMessageStore(final MessageStore messageStore, final MessageStoreConfig storeConfig,
@@ -145,53 +143,15 @@ public class TimerMessageStore {
         final long shouldStartTime = storeConfig.getDisappearTimeAfterStart() + System.currentTimeMillis();
         timerState.maybeMoveWriteTime();
         timerMessageFetcher.start();
-        timerWheelLocator.start();
+        timerMessageLocator.start();
         dequeueWarmService.start();
-        timerWheelFetcher.start(shouldStartTime);
-        for (int i = 0; i < timerMessageQueries.length; i++) {
-            timerMessageQueries[i].start();
-        }
-        for (int i = 0; i < timerMessageDelivers.length; i++) {
-            timerMessageDelivers[i].start();
-        }
+        timerMessageScanner.start(shouldStartTime);
+
+        startTimerMessageQueries();
+        startTimerMessageDelivers();
         timerFlushService.start();
-
-        scheduler.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    long minPy = messageStore.getMinPhyOffset();
-                    int checkOffset = timerLog.getOffsetForLastUnit();
-                    timerLog.getMappedFileQueue()
-                            .deleteExpiredFileByOffsetForTimerLog(minPy, checkOffset, TimerLog.UNIT_SIZE);
-                } catch (Exception e) {
-                    LOGGER.error("Error in cleaning timerLog", e);
-                }
-            }
-        }, 30, 30, TimeUnit.SECONDS);
-
-        scheduler.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (storeConfig.isTimerEnableCheckMetrics()) {
-                        String when = storeConfig.getTimerCheckMetricsWhen();
-                        if (!TimeUtils.isItTimeToDo(when)) {
-                            return;
-                        }
-                        long curr = System.currentTimeMillis();
-                        if (curr - lastTimeOfCheckMetrics > 70 * 60 * 1000) {
-                            lastTimeOfCheckMetrics = curr;
-                            timerMetricManager.checkAndReviseMetrics();
-                            LOGGER.info("[CheckAndReviseMetrics]Timer do check timer metrics cost {} ms",
-                                    System.currentTimeMillis() - curr);
-                        }
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("Error in cleaning timerLog", e);
-                }
-            }
-        }, 45, 45, TimeUnit.MINUTES);
+        scheduleCleanLogService();
+        scheduleCheckAndReviseService();
 
         timerState.flagRunning();
         LOGGER.info("Timer start ok currReadTimerMs:[{}] queueOffset:[{}]", new Timestamp(timerState.currReadTimeMs), timerState.currQueueOffset);
@@ -213,23 +173,14 @@ public class TimerMessageStore {
         timerMessageDeliverQueue.clear(); //avoid blocking
 
         timerMessageFetcher.shutdown();
-        timerWheelLocator.shutdown();
+        timerMessageLocator.shutdown();
         dequeueWarmService.shutdown();
-        timerWheelFetcher.shutdown();
-        for (int i = 0; i < timerMessageQueries.length; i++) {
-            timerMessageQueries[i].shutdown();
-        }
-        for (int i = 0; i < timerMessageDelivers.length; i++) {
-            timerMessageDelivers[i].shutdown();
-        }
+        timerMessageScanner.shutdown();
+        shutdownTimerMessageQueries();
+        shutdownTimerMessageDelivers();
+
         timerWheel.shutdown(false);
-
         this.scheduler.shutdown();
-
-    }
-
-    public TimerState getTimerState() {
-        return this.timerState;
     }
 
     public long getCongestNum(long deliverTimeMs) {
@@ -258,8 +209,9 @@ public class TimerMessageStore {
     }
 
     public long getEnqueueBehindMillis() {
-        if (System.currentTimeMillis() - timerState.lastEnqueueButExpiredTime < 2000) {
-            return (System.currentTimeMillis() - timerState.lastEnqueueButExpiredStoreTime) / 1000;
+        long ts = System.currentTimeMillis();
+        if (ts - timerState.lastEnqueueButExpiredTime < 2000) {
+            return (ts - timerState.lastEnqueueButExpiredStoreTime) / 1000;
         }
         return 0;
     }
@@ -283,40 +235,6 @@ public class TimerMessageStore {
     public void registerEscapeBridgeHook(Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook) {
         this.escapeBridgeHook = escapeBridgeHook;
     }
-
-
-    public long getCurrReadTimeMs() {
-        return this.timerState.currReadTimeMs;
-    }
-
-    public long getQueueOffset() {
-        return timerState.currQueueOffset;
-    }
-
-    public long getCommitQueueOffset() {
-        return this.timerState.commitQueueOffset;
-    }
-
-    public long getCommitReadTimeMs() {
-        return this.timerState.commitReadTimeMs;
-    }
-
-    public MessageStore getMessageStore() {
-        return messageStore;
-    }
-
-    public TimerWheel getTimerWheel() {
-        return timerWheel;
-    }
-
-    public TimerLog getTimerLog() {
-        return timerLog;
-    }
-
-    public TimerMetrics getTimerMetrics() {
-        return this.timerMetrics;
-    }
-
 
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     public int warmDequeue() {
@@ -401,40 +319,82 @@ public class TimerMessageStore {
         return 1;
     }
 
-    private void initService() {
-        int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
-        timerMessageQueries = new TimerMessageQuery[getThreadNum];
-        for (int i = 0; i < timerMessageQueries.length; i++) {
-            timerMessageQueries[i] = new TimerMessageQuery(
-                    timerState,
-                    storeConfig,
-                    messageOperator,
-                    timerMessageDeliverQueue,
-                    timerMessageQueryQueue,
-                    perfCounterTicks);
+    private void startTimerMessageQueries() {
+        for (TimerMessageQuery query : timerMessageQueries) {
+            query.start();
         }
+    }
 
-        int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
-        timerMessageDelivers = new TimerMessageDeliver[putThreadNum];
-        for (int i = 0; i < timerMessageDelivers.length; i++) {
-            timerMessageDelivers[i] = new TimerMessageDeliver(
-                    timerState,
-                    storeConfig,
-                    messageOperator,
-                    timerMessageDeliverQueue,
-                    brokerStatsManager,
-                    timerMetricManager,
-                    escapeBridgeHook,
-                    perfCounterTicks);
+    private void startTimerMessageDelivers() {
+        for (TimerMessageDeliver deliver : timerMessageDelivers) {
+            deliver.start();
         }
-        timerMessageFetcher = new TimerMessageFetcher(
-                timerState,
-                storeConfig,
-                messageOperator,
-                fetchedTimerMessageQueue,
-                perfCounterTicks
-        );
-        timerWheelLocator = new TimerWheelLocator(
+    }
+
+    private void scheduleCleanLogService() {
+        scheduler.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    long minPy = messageStore.getMinPhyOffset();
+                    int checkOffset = timerLog.getOffsetForLastUnit();
+                    timerLog.getMappedFileQueue()
+                        .deleteExpiredFileByOffsetForTimerLog(minPy, checkOffset, TimerLog.UNIT_SIZE);
+                } catch (Exception e) {
+                    LOGGER.error("Error in cleaning timerLog", e);
+                }
+            }
+        }, 30, 30, TimeUnit.SECONDS);
+    }
+
+    private void scheduleCheckAndReviseService() {
+        scheduler.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (!storeConfig.isTimerEnableCheckMetrics()) {
+                        return;
+                    }
+
+                    String when = storeConfig.getTimerCheckMetricsWhen();
+                    if (!TimeUtils.isItTimeToDo(when)) {
+                        return;
+                    }
+
+                    long curr = System.currentTimeMillis();
+                    if (curr - lastTimeOfCheckMetrics > 70 * 60 * 1000) {
+                        lastTimeOfCheckMetrics = curr;
+                        timerMetricManager.checkAndReviseMetrics();
+                        LOGGER.info("[CheckAndReviseMetrics]Timer do check timer metrics cost {} ms",
+                            System.currentTimeMillis() - curr);
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("Error in cleaning timerLog", e);
+                }
+            }
+        }, 45, 45, TimeUnit.MINUTES);
+    }
+
+    private void shutdownTimerMessageQueries() {
+        for (TimerMessageQuery query : timerMessageQueries) {
+            query.shutdown();
+        }
+    }
+
+    private void shutdownTimerMessageDelivers() {
+        for (TimerMessageDeliver deliver : timerMessageDelivers) {
+            deliver.shutdown();
+        }
+    }
+
+    private void initService() {
+        initTimerMessageQuery();
+        initTimerMessageDeliver();
+
+        timerMessageFetcher = new TimerMessageAccepter(timerState, storeConfig, messageOperator,
+            fetchedTimerMessageQueue, perfCounterTicks);
+
+        timerMessageLocator = new TimerMessageSaver(
                 timerState,
                 storeConfig,
                 timerWheel,
@@ -446,9 +406,8 @@ public class TimerMessageStore {
                 timerMessageQueries,
                 timerMetricManager,
                 perfCounterTicks);
-        dequeueWarmService = new TimerDequeueWarmService(
-                timerState);
-        timerWheelFetcher = new TimerWheelFetcher(
+        dequeueWarmService = new TimerDequeueWarmService( timerState);
+        timerMessageScanner = new TimerMessageScanner(
                 timerState,
                 storeConfig,
                 timerWheel,
@@ -457,6 +416,7 @@ public class TimerMessageStore {
                 timerMessageDeliverQueue,
                 timerMessageDelivers,
                 timerMessageQueries,
+                timerMetricManager,
                 perfCounterTicks
         );
         timerFlushService = new TimerFlushService(
@@ -477,6 +437,36 @@ public class TimerMessageStore {
                 messageOperator,
                 timerCheckpoint);
 
+    }
+
+    private void initTimerMessageQuery() {
+        int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
+        timerMessageQueries = new TimerMessageQuery[getThreadNum];
+        for (int i = 0; i < timerMessageQueries.length; i++) {
+            timerMessageQueries[i] = new TimerMessageQuery(
+                timerState,
+                storeConfig,
+                messageOperator,
+                timerMessageDeliverQueue,
+                timerMessageQueryQueue,
+                perfCounterTicks);
+        }
+    }
+
+    private void initTimerMessageDeliver() {
+        int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
+        timerMessageDelivers = new TimerMessageDeliver[putThreadNum];
+        for (int i = 0; i < timerMessageDelivers.length; i++) {
+            timerMessageDelivers[i] = new TimerMessageDeliver(
+                timerState,
+                storeConfig,
+                messageOperator,
+                timerMessageDeliverQueue,
+                brokerStatsManager,
+                timerMetricManager,
+                escapeBridgeHook,
+                perfCounterTicks);
+        }
     }
 
     private void initScheduler(MessageStore messageStore) {
@@ -527,5 +517,41 @@ public class TimerMessageStore {
 
     private String getTimerWheelFileFullName(final String rootDir) {
         return rootDir + File.separator + "timerwheel";
+    }
+
+    public TimerState getTimerState() {
+        return this.timerState;
+    }
+
+    public long getCurrReadTimeMs() {
+        return this.timerState.currReadTimeMs;
+    }
+
+    public long getQueueOffset() {
+        return timerState.currQueueOffset;
+    }
+
+    public long getCommitQueueOffset() {
+        return this.timerState.commitQueueOffset;
+    }
+
+    public long getCommitReadTimeMs() {
+        return this.timerState.commitReadTimeMs;
+    }
+
+    public MessageStore getMessageStore() {
+        return messageStore;
+    }
+
+    public TimerWheel getTimerWheel() {
+        return timerWheel;
+    }
+
+    public TimerLog getTimerLog() {
+        return timerLog;
+    }
+
+    public TimerMetrics getTimerMetrics() {
+        return this.timerMetrics;
     }
 }
