@@ -159,13 +159,7 @@ public class BrokerPreOnlineService extends ServiceThread {
         try {
             LOGGER.info("Get metadata reverse from {}", brokerAddr);
 
-
-
-            ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper = this.brokerController.getBrokerOuterAPI().getAllConsumerOffset(brokerAddr);
-
-
-
-            syncConsumerOffsetReverse(brokerAddr, consumerOffsetSerializeWrapper);
+            syncConsumerOffsetReverse(brokerAddr);
             syncDelayOffsetReverse(brokerAddr);
             syncTimerCheckPointReverse(brokerAddr);
 
@@ -183,14 +177,14 @@ public class BrokerPreOnlineService extends ServiceThread {
         return true;
     }
 
-    private void syncTimerCheckPointReverse(String brokerAddr) throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException {
-        TimerCheckpoint timerCheckpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(brokerAddr);
-        if (null != this.brokerController.getTimerCheckpoint() && this.brokerController.getTimerCheckpoint().getDataVersion().compare(timerCheckpoint.getDataVersion()) <= 0) {
-            LOGGER.info("{}'s timerCheckpoint data version is larger than master broker, {}'s timerCheckpoint will be used.", brokerAddr, brokerAddr);
-            this.brokerController.getTimerCheckpoint().setLastReadTimeMs(timerCheckpoint.getLastReadTimeMs());
-            this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(timerCheckpoint.getMasterTimerQueueOffset());
-            this.brokerController.getTimerCheckpoint().getDataVersion().assignNewOne(timerCheckpoint.getDataVersion());
-            this.brokerController.getTimerCheckpoint().flush();
+    private void syncConsumerOffsetReverse(String brokerAddr) throws RemotingSendRequestException, RemotingConnectException, RemotingTimeoutException, MQBrokerException, InterruptedException {
+        ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper = this.brokerController.getBrokerOuterAPI().getAllConsumerOffset(brokerAddr);
+        if (null != consumerOffsetSerializeWrapper && brokerController.getConsumerOffsetManager().getDataVersion().compare(consumerOffsetSerializeWrapper.getDataVersion()) <= 0) {
+            LOGGER.info("{}'s consumerOffset data version is larger than master broker, {}'s consumerOffset will be used.", brokerAddr, brokerAddr);
+            this.brokerController.getConsumerOffsetManager().getOffsetTable()
+                .putAll(consumerOffsetSerializeWrapper.getOffsetTable());
+            this.brokerController.getConsumerOffsetManager().getDataVersion().assignNewOne(consumerOffsetSerializeWrapper.getDataVersion());
+            this.brokerController.getConsumerOffsetManager().persist();
         }
     }
 
@@ -213,13 +207,14 @@ public class BrokerPreOnlineService extends ServiceThread {
         }
     }
 
-    private void syncConsumerOffsetReverse(String brokerAddr, ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper) {
-        if (null != consumerOffsetSerializeWrapper && brokerController.getConsumerOffsetManager().getDataVersion().compare(consumerOffsetSerializeWrapper.getDataVersion()) <= 0) {
-            LOGGER.info("{}'s consumerOffset data version is larger than master broker, {}'s consumerOffset will be used.", brokerAddr, brokerAddr);
-            this.brokerController.getConsumerOffsetManager().getOffsetTable()
-                .putAll(consumerOffsetSerializeWrapper.getOffsetTable());
-            this.brokerController.getConsumerOffsetManager().getDataVersion().assignNewOne(consumerOffsetSerializeWrapper.getDataVersion());
-            this.brokerController.getConsumerOffsetManager().persist();
+    private void syncTimerCheckPointReverse(String brokerAddr) throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException {
+        TimerCheckpoint timerCheckpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(brokerAddr);
+        if (null != this.brokerController.getTimerCheckpoint() && this.brokerController.getTimerCheckpoint().getDataVersion().compare(timerCheckpoint.getDataVersion()) <= 0) {
+            LOGGER.info("{}'s timerCheckpoint data version is larger than master broker, {}'s timerCheckpoint will be used.", brokerAddr, brokerAddr);
+            this.brokerController.getTimerCheckpoint().setLastReadTimeMs(timerCheckpoint.getLastReadTimeMs());
+            this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(timerCheckpoint.getMasterTimerQueueOffset());
+            this.brokerController.getTimerCheckpoint().getDataVersion().assignNewOne(timerCheckpoint.getDataVersion());
+            this.brokerController.getTimerCheckpoint().flush();
         }
     }
 
