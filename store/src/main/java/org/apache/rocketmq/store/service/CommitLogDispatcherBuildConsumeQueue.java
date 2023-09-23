@@ -24,6 +24,14 @@ import org.apache.rocketmq.store.CommitLogDispatcher;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
 
+/**
+ * Dispatch commitLog with Flag:
+ *  1. TRANSACTION_NOT_TYPE
+ *      1.1 normal message
+ *      1.2 message with DelayLevel
+ *      1.3 message with Timer
+ *  2. TRANSACTION_COMMIT_TYPE
+ */
 public class CommitLogDispatcherBuildConsumeQueue implements CommitLogDispatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 

@@ -32,10 +32,18 @@ public class MessageSysFlag {
      */
     public final static int COMPRESSED_FLAG = 0x1;
     public final static int MULTI_TAGS_FLAG = 0x1 << 1;
+
+    /**
+     * not transaction message flag, include below:
+     *  1. normal message
+     *  2. message with DelayLevel
+     *  3. message with Timer
+     */
     public final static int TRANSACTION_NOT_TYPE = 0;
     public final static int TRANSACTION_PREPARED_TYPE = 0x1 << 2;
     public final static int TRANSACTION_COMMIT_TYPE = 0x2 << 2;
     public final static int TRANSACTION_ROLLBACK_TYPE = 0x3 << 2;
+
     public final static int BORNHOST_V6_FLAG = 0x1 << 4;
     public final static int STOREHOSTADDRESS_V6_FLAG = 0x1 << 5;
     //Mark the flag for batch to avoid conflict
