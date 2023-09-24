@@ -247,48 +247,62 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     }
 
     private void ackOrderly(String topic, String consumeGroup, int qId, long ackOffset, long popTime, long invisibleTime, Channel channel, RemotingCommand response) {
-        String lockKey = topic + PopAckConstants.SPLIT + consumeGroup + PopAckConstants.SPLIT + qId;
+
         long oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(consumeGroup, topic, qId);
         if (ackOffset < oldOffset) {
             return;
         }
 
         PopMessageProcessor popMessageProcessor = this.brokerController.getBrokerNettyServer().getPopMessageProcessor();
+        String lockKey = topic + PopAckConstants.SPLIT + consumeGroup + PopAckConstants.SPLIT + qId;
 
-        while (!popMessageProcessor.getQueueLockManager().tryLock(lockKey)) {
-        }
+        lockQueue(popMessageProcessor, lockKey);
         try {
             oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(consumeGroup, topic, qId);
             if (ackOffset < oldOffset) {
                 return;
             }
-            long nextOffset = brokerController.getConsumerOrderInfoManager().commitAndNext(
-                topic, consumeGroup,
-                qId, ackOffset,
-                popTime);
+
+            long nextOffset = brokerController.getConsumerOrderInfoManager().commitAndNext(topic, consumeGroup, qId, ackOffset, popTime);
             if (nextOffset > -1) {
-                if (!this.brokerController.getConsumerOffsetManager().hasOffsetReset(
-                    topic, consumeGroup, qId)) {
-                    this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(),
-                        consumeGroup, topic, qId, nextOffset);
-                }
-                if (!this.brokerController.getConsumerOrderInfoManager().checkBlock(null, topic,
-                    consumeGroup, qId, invisibleTime)) {
-                    popMessageProcessor.notifyMessageArriving(
-                        topic, consumeGroup, qId);
-                }
+                handleCommitSuccess(topic, consumeGroup, qId, nextOffset, popMessageProcessor, invisibleTime, channel);
             } else if (nextOffset == -1) {
-                String errorInfo = String.format("offset is illegal, key:%s, old:%d, commit:%d, next:%d, %s",
-                    lockKey, oldOffset, ackOffset, nextOffset, channel.remoteAddress());
-                POP_LOGGER.warn(errorInfo);
-                response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-                response.setRemark(errorInfo);
+                handleIllegalCommit(lockKey, oldOffset, ackOffset, nextOffset, channel, response);
                 return;
             }
         } finally {
-            popMessageProcessor.getQueueLockManager().unLock(lockKey);
+            unlockQueue(popMessageProcessor, lockKey);
         }
         brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(topic, consumeGroup, popTime, qId, 1);
+    }
+
+    private void lockQueue(PopMessageProcessor popMessageProcessor, String lockKey) {
+        while (!popMessageProcessor.getQueueLockManager().tryLock(lockKey)) {
+        }
+    }
+
+    private void unlockQueue(PopMessageProcessor popMessageProcessor, String lockKey) {
+        popMessageProcessor.getQueueLockManager().unLock(lockKey);
+    }
+    
+    private void handleCommitSuccess(String topic, String consumeGroup, int qId, long nextOffset, PopMessageProcessor popMessageProcessor, long invisibleTime, Channel channel) {
+        if (!this.brokerController.getConsumerOffsetManager().hasOffsetReset(
+            topic, consumeGroup, qId)) {
+            this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(),
+                consumeGroup, topic, qId, nextOffset);
+        }
+        if (!this.brokerController.getConsumerOrderInfoManager().checkBlock(null, topic,
+            consumeGroup, qId, invisibleTime)) {
+            popMessageProcessor.notifyMessageArriving(
+                topic, consumeGroup, qId);
+        }
+    }
+
+    private void handleIllegalCommit(String lockKey, long oldOffset, long ackOffset, long nextOffset, Channel channel, RemotingCommand response) {
+        String errorInfo = String.format("offset is illegal, key:%s, old:%d, commit:%d, next:%d, %s", lockKey, oldOffset, ackOffset, nextOffset, channel.remoteAddress());
+        POP_LOGGER.warn(errorInfo);
+        response.setCode(ResponseCode.MESSAGE_ILLEGAL);
+        response.setRemark(errorInfo);
     }
 
     private int ackSingleMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, AckMsg ackMsg) {
