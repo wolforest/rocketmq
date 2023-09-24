@@ -406,7 +406,7 @@ public class TimerMessageStore {
                 timerMessageQueries,
                 timerMetricManager,
                 perfCounterTicks);
-        dequeueWarmService = new TimerDequeueWarmService( timerState);
+        dequeueWarmService = new TimerDequeueWarmService(timerState);
         timerMessageScanner = new TimerMessageScanner(
                 timerState,
                 storeConfig,
