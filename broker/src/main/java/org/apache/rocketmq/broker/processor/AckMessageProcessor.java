@@ -215,7 +215,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         BatchAckMsg ackMsg = new BatchAckMsg();
         int rqId = getRqid(requestHeader, batchAck);
 
-        int ackCount = countAckMsg(requestHeader, response, channel, batchAck, brokerName, ackMsg);
+        int ackCount = ackMsg(requestHeader, response, channel, batchAck, brokerName, ackMsg);
         if (ackCount < 1) {
             return;
         }
@@ -291,7 +291,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(topic, consumeGroup, popTime, qId, 1);
     }
 
-    private int countSingleAckMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, AckMsg ackMsg) {
+    private int ackSingleMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, AckMsg ackMsg) {
         // single ack
         String[] extraInfo = ExtraInfoUtil.split(requestHeader.getExtraInfo());
         initAckMsg(requestHeader, extraInfo, ackMsg);
@@ -305,7 +305,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         return -1;
     }
 
-    private int countBatchAckMsg(final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
+    private int ackBatchMsg(final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
         // batch ack
         String topic = ExtraInfoUtil.getRealTopic(batchAck.getTopic(), batchAck.getConsumerGroup(), ExtraInfoUtil.RETRY_TOPIC.equals(batchAck.getRetry()));
 
@@ -316,18 +316,18 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             return -1;
         }
 
-        BatchAckMsg batchAckMsg = initBatchAckMsg(response, channel, batchAck, minOffset, maxOffset);
+        BatchAckMsg batchAckMsg = ackBatchMsgOneByOne(response, channel, batchAck, minOffset, maxOffset);
         if (batchAck.getReviveQueueId() == KeyBuilder.POP_ORDER_REVIVE_QUEUE || batchAckMsg.getAckOffsetList().isEmpty()) {
             return -1;
         }
 
         ackMsg.setAckOffsetList(batchAckMsg.getAckOffsetList());
-        initBatchAckMsg(ackMsg, batchAck, topic, brokerName);
+        initBatchMsg(ackMsg, batchAck, topic, brokerName);
 
         return batchAckMsg.getAckOffsetList().size();
     }
 
-    private BatchAckMsg initBatchAckMsg(final RemotingCommand response, final Channel channel, BatchAck batchAck, long minOffset, long maxOffset) {
+    private BatchAckMsg ackBatchMsgOneByOne(final RemotingCommand response, final Channel channel, BatchAck batchAck, long minOffset, long maxOffset) {
         BatchAckMsg batchAckMsg = new BatchAckMsg();
         BitSet bitSet = batchAck.getBitSet();
         String topic = ExtraInfoUtil.getRealTopic(batchAck.getTopic(), batchAck.getConsumerGroup(), ExtraInfoUtil.RETRY_TOPIC.equals(batchAck.getRetry()));
@@ -351,7 +351,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         return batchAckMsg;
     }
 
-    private void initBatchAckMsg(BatchAckMsg ackMsg, BatchAck batchAck, String topic, String brokerName) {
+    private void initBatchMsg(BatchAckMsg ackMsg, BatchAck batchAck, String topic, String brokerName) {
         ackMsg.setConsumerGroup(batchAck.getConsumerGroup());
         ackMsg.setTopic(topic);
         ackMsg.setQueueId(batchAck.getQueueId());
@@ -361,12 +361,12 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         ackMsg.setBrokerName(brokerName);
     }
 
-    private int countAckMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
+    private int ackMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
         int ackCount = 0;
         if (batchAck == null) {
-            ackCount = countSingleAckMsg(requestHeader, response, channel, ackMsg);
+            ackCount = ackSingleMsg(requestHeader, response, channel, ackMsg);
         } else {
-            ackCount = countBatchAckMsg(response, channel, batchAck, brokerName, ackMsg);
+            ackCount = ackBatchMsg(response, channel, batchAck, brokerName, ackMsg);
         }
 
         return ackCount;
