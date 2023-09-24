@@ -51,49 +51,9 @@ import org.apache.rocketmq.store.pop.BatchAckMsg;
 public class AckMessageProcessor implements NettyRequestProcessor {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
     private final BrokerController brokerController;
-    private final String reviveTopic;
-    private final PopReviveService[] popReviveServices;
 
     public AckMessageProcessor(final BrokerController brokerController) {
         this.brokerController = brokerController;
-        this.reviveTopic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
-        this.popReviveServices = new PopReviveService[this.brokerController.getBrokerConfig().getReviveQueueNum()];
-        for (int i = 0; i < this.brokerController.getBrokerConfig().getReviveQueueNum(); i++) {
-            this.popReviveServices[i] = new PopReviveService(brokerController, reviveTopic, i);
-            this.popReviveServices[i].setShouldRunPopRevive(brokerController.getBrokerConfig().getBrokerId() == 0);
-        }
-    }
-
-    public PopReviveService[] getPopReviveServices() {
-        return popReviveServices;
-    }
-
-    public void startPopReviveService() {
-        for (PopReviveService popReviveService : popReviveServices) {
-            popReviveService.start();
-        }
-    }
-
-    public void shutdownPopReviveService() {
-        for (PopReviveService popReviveService : popReviveServices) {
-            popReviveService.shutdown();
-        }
-    }
-
-    public void setPopReviveServiceStatus(boolean shouldStart) {
-        for (PopReviveService popReviveService : popReviveServices) {
-            popReviveService.setShouldRunPopRevive(shouldStart);
-        }
-    }
-
-    public boolean isPopReviveServiceRunning() {
-        for (PopReviveService popReviveService : popReviveServices) {
-            if (popReviveService.isShouldRunPopRevive()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     @Override
@@ -284,7 +244,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     private void unlockQueue(PopMessageProcessor popMessageProcessor, String lockKey) {
         popMessageProcessor.getQueueLockManager().unLock(lockKey);
     }
-    
+
     private void handleCommitSuccess(String topic, String consumeGroup, int qId, long nextOffset, PopMessageProcessor popMessageProcessor, long invisibleTime, Channel channel) {
         if (!this.brokerController.getConsumerOffsetManager().hasOffsetReset(
             topic, consumeGroup, qId)) {
@@ -406,7 +366,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
 
     private MessageExtBrokerInner initMessageInner(AckMsg ackMsg, AckMessageRequestHeader requestHeader, BatchAck batchAck) {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
-        msgInner.setTopic(reviveTopic);
+        msgInner.setTopic(brokerController.getBrokerNettyServer().getPopReviveManager().getReviveTopic());
         msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.charset));
         msgInner.setQueueId(getRqid(requestHeader, batchAck));
         if (null != batchAck) {
@@ -434,6 +394,4 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             POP_LOGGER.error("put ack msg error:" + putMessageResult);
         }
     }
-
-
 }

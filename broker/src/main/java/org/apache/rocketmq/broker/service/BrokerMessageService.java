@@ -26,6 +26,7 @@ import org.apache.rocketmq.broker.failover.EscapeBridge;
 import org.apache.rocketmq.broker.filter.CommitLogDispatcherCalcBitMap;
 import org.apache.rocketmq.broker.plugin.BrokerAttachedPlugin;
 import org.apache.rocketmq.broker.processor.AckMessageProcessor;
+import org.apache.rocketmq.broker.processor.PopReviveManager;
 import org.apache.rocketmq.broker.schedule.ScheduleMessageService;
 import org.apache.rocketmq.broker.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.transaction.TransactionalMessageCheckService;
@@ -178,8 +179,8 @@ public class BrokerMessageService {
             return true;
         }
 
-        AckMessageProcessor ackMessageProcessor = brokerController.getBrokerNettyServer().getAckMessageProcessor();
-        return ackMessageProcessor != null && ackMessageProcessor.isPopReviveServiceRunning();
+        PopReviveManager popReviveManager = brokerController.getBrokerNettyServer().getPopReviveManager();
+        return popReviveManager != null && popReviveManager.isRunning();
     }
 
     public void changeSpecialServiceStatus(boolean shouldStart) {
@@ -195,7 +196,7 @@ public class BrokerMessageService {
         AckMessageProcessor ackMessageProcessor = brokerController.getBrokerNettyServer().getAckMessageProcessor();
         if (ackMessageProcessor != null) {
             LOG.info("Set PopReviveService Status to {}", shouldStart);
-            ackMessageProcessor.setPopReviveServiceStatus(shouldStart);
+            brokerController.getBrokerNettyServer().getPopReviveManager().setReviveStatus(shouldStart);
         }
     }
 

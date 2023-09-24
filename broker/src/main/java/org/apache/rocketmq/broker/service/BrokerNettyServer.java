@@ -47,6 +47,7 @@ import org.apache.rocketmq.broker.processor.NotificationProcessor;
 import org.apache.rocketmq.broker.processor.PeekMessageProcessor;
 import org.apache.rocketmq.broker.processor.PollingInfoProcessor;
 import org.apache.rocketmq.broker.processor.PopMessageProcessor;
+import org.apache.rocketmq.broker.processor.PopReviveManager;
 import org.apache.rocketmq.broker.processor.PullMessageProcessor;
 import org.apache.rocketmq.broker.processor.QueryAssignmentProcessor;
 import org.apache.rocketmq.broker.processor.QueryMessageProcessor;
@@ -94,7 +95,11 @@ public class BrokerNettyServer {
     private ClientHousekeepingService clientHousekeepingService;
     private PullRequestHoldService pullRequestHoldService;
     private MessageArrivingListener messageArrivingListener;
-    protected FileWatchService fileWatchService;
+    private FileWatchService fileWatchService;
+
+
+
+    private PopReviveManager popReviveManager;
 
     private BlockingQueue<Runnable> sendThreadPoolQueue;
     private BlockingQueue<Runnable> putThreadPoolQueue;
@@ -223,8 +228,12 @@ public class BrokerNettyServer {
             this.popMessageProcessor.getQueueLockManager().start();
         }
 
-        if (this.ackMessageProcessor != null) {
-            this.ackMessageProcessor.startPopReviveService();
+//        if (this.ackMessageProcessor != null) {
+//            this.ackMessageProcessor.startPopReviveService();
+//        }
+
+        if (this.popReviveManager != null) {
+            this.popReviveManager.start();
         }
 
         if (this.notificationProcessor != null) {
@@ -317,7 +326,11 @@ public class BrokerNettyServer {
 
         {
             this.popMessageProcessor.getPopBufferMergeService().shutdown();
-            this.ackMessageProcessor.shutdownPopReviveService();
+            //this.ackMessageProcessor.shutdownPopReviveService();
+        }
+
+        if (this.popReviveManager != null) {
+            this.popReviveManager.shutdown();
         }
 
         if (this.notificationProcessor != null) {
@@ -588,6 +601,7 @@ public class BrokerNettyServer {
     }
 
     private void initServices() {
+        this.popReviveManager = new PopReviveManager(brokerController);
         this.clientHousekeepingService = new ClientHousekeepingService(getBrokerController());
         this.pullRequestHoldService = messageStoreConfig.isEnableLmq() ? new LmqPullRequestHoldService(getBrokerController()) : new PullRequestHoldService(getBrokerController());
         this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService, this.popMessageProcessor, this.notificationProcessor);
@@ -827,6 +841,10 @@ public class BrokerNettyServer {
 
     public void setFastRemotingServer(RemotingServer fastRemotingServer) {
         this.fastRemotingServer = fastRemotingServer;
+    }
+
+    public PopReviveManager getPopReviveManager() {
+        return popReviveManager;
     }
 
     public InetSocketAddress getStoreHost() {

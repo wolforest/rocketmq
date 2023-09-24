@@ -136,7 +136,7 @@ public class PopMetricsManager {
 
     private static void calculatePopReviveLatency(BrokerController brokerController,
         ObservableLongMeasurement measurement) {
-        PopReviveService[] popReviveServices = brokerController.getBrokerNettyServer().getAckMessageProcessor().getPopReviveServices();
+        PopReviveService[] popReviveServices = brokerController.getBrokerNettyServer().getPopReviveManager().getPopReviveServices();
         for (PopReviveService popReviveService : popReviveServices) {
             measurement.record(popReviveService.getReviveBehindMillis(), newAttributesBuilder()
                 .put(LABEL_QUEUE_ID, popReviveService.getQueueId())
@@ -146,7 +146,7 @@ public class PopMetricsManager {
 
     private static void calculatePopReviveLag(BrokerController brokerController,
         ObservableLongMeasurement measurement) {
-        PopReviveService[] popReviveServices = brokerController.getBrokerNettyServer().getAckMessageProcessor().getPopReviveServices();
+        PopReviveService[] popReviveServices = brokerController.getBrokerNettyServer().getPopReviveManager().getPopReviveServices();
         for (PopReviveService popReviveService : popReviveServices) {
             measurement.record(popReviveService.getReviveBehindMessages(), newAttributesBuilder()
                 .put(LABEL_QUEUE_ID, popReviveService.getQueueId())
