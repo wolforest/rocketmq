@@ -22,6 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import java.util.BitSet;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.metrics.PopMetricsManager;
+import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.PopAckConstants;
 import org.apache.rocketmq.common.TopicConfig;
@@ -371,16 +372,16 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         msgInner.setQueueId(getRqid(requestHeader, batchAck));
         if (null != batchAck) {
             msgInner.setTags(PopAckConstants.BATCH_ACK_TAG);
-            msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopMessageProcessor.genBatchAckUniqueId((BatchAckMsg) ackMsg));
+            msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genBatchAckUniqueId((BatchAckMsg) ackMsg));
         } else {
             msgInner.setTags(PopAckConstants.ACK_TAG);
-            msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopMessageProcessor.genAckUniqueId(ackMsg));
+            msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genAckUniqueId(ackMsg));
         }
         msgInner.setBornTimestamp(System.currentTimeMillis());
         msgInner.setBornHost(this.brokerController.getStoreHost());
         msgInner.setStoreHost(this.brokerController.getStoreHost());
         msgInner.setDeliverTimeMs(ackMsg.getPopTime() + getInvisibleTime(requestHeader, batchAck));
-        msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopMessageProcessor.genAckUniqueId(ackMsg));
+        msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genAckUniqueId(ackMsg));
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
 
         return msgInner;

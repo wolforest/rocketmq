@@ -41,6 +41,7 @@ import org.apache.rocketmq.broker.longpolling.PopLongPollingService;
 import org.apache.rocketmq.broker.longpolling.PopRequest;
 import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.pagecache.ManyMessageTransfer;
+import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.PopAckConstants;
@@ -76,8 +77,6 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.GetMessageStatus;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.pop.AckMsg;
-import org.apache.rocketmq.store.pop.BatchAckMsg;
 import org.apache.rocketmq.store.pop.PopCheckPoint;
 
 import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_CONSUMER_GROUP;
@@ -157,35 +156,6 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
     public QueueLockManager getQueueLockManager() {
         return queueLockManager;
-    }
-
-    public static String genAckUniqueId(AckMsg ackMsg) {
-        return ackMsg.getTopic()
-            + PopAckConstants.SPLIT + ackMsg.getQueueId()
-            + PopAckConstants.SPLIT + ackMsg.getAckOffset()
-            + PopAckConstants.SPLIT + ackMsg.getConsumerGroup()
-            + PopAckConstants.SPLIT + ackMsg.getPopTime()
-            + PopAckConstants.SPLIT + ackMsg.getBrokerName()
-            + PopAckConstants.SPLIT + PopAckConstants.ACK_TAG;
-    }
-
-    public static String genBatchAckUniqueId(BatchAckMsg batchAckMsg) {
-        return batchAckMsg.getTopic()
-                + PopAckConstants.SPLIT + batchAckMsg.getQueueId()
-                + PopAckConstants.SPLIT + batchAckMsg.getAckOffsetList().toString()
-                + PopAckConstants.SPLIT + batchAckMsg.getConsumerGroup()
-                + PopAckConstants.SPLIT + batchAckMsg.getPopTime()
-                + PopAckConstants.SPLIT + PopAckConstants.BATCH_ACK_TAG;
-    }
-
-    public static String genCkUniqueId(PopCheckPoint ck) {
-        return ck.getTopic()
-            + PopAckConstants.SPLIT + ck.getQueueId()
-            + PopAckConstants.SPLIT + ck.getStartOffset()
-            + PopAckConstants.SPLIT + ck.getCId()
-            + PopAckConstants.SPLIT + ck.getPopTime()
-            + PopAckConstants.SPLIT + ck.getBrokerName()
-            + PopAckConstants.SPLIT + PopAckConstants.CK_TAG;
     }
 
     @Override
@@ -767,7 +737,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         msgInner.setBornHost(this.brokerController.getStoreHost());
         msgInner.setStoreHost(this.brokerController.getStoreHost());
         msgInner.setDeliverTimeMs(ck.getReviveTime() - PopAckConstants.ackTimeInterval);
-        msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, genCkUniqueId(ck));
+        msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genCkUniqueId(ck));
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
 
         return msgInner;
