@@ -34,6 +34,12 @@ public class MessageSysFlag {
     public final static int MULTI_TAGS_FLAG = 0x1 << 1;
 
     /**
+     * transaction type
+     *  not type: 0000-0000-0000-00-00
+     *  prepare:  0000-0000-0000-01-00
+     *  commit:   0000-0000-0000-10-00
+     *  rollback: 0000-0000-0000-11-00
+     *
      * not transaction message flag, include below:
      *  1. normal message
      *  2. message with DelayLevel
@@ -56,6 +62,18 @@ public class MessageSysFlag {
     public final static int COMPRESSION_ZLIB_TYPE = 0x3 << 8;
     public final static int COMPRESSION_TYPE_COMPARATOR = 0x7 << 8;
 
+    /**
+     * calculate message transaction type
+     *
+     * TRANSACTION_ROLLBACK_TYPE is
+     *    0000-0000-0000-11-00
+     * => flag & TRANSACTION_ROLLBACK_TYPE
+     *  set 0-1 and 3-15 to 0
+     *  then keep the 2-3 to  get the transaction type
+     *
+     * @param flag message flag
+     * @return transaction type
+     */
     public static int getTransactionValue(final int flag) {
         return flag & TRANSACTION_ROLLBACK_TYPE;
     }
