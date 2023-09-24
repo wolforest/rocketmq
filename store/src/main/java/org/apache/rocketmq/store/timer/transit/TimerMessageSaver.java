@@ -129,6 +129,7 @@ public class TimerMessageSaver extends ServiceThread {
             DefaultStoreMetricsManager.incTimerEnqueueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
             boolean shouldFire = timerRequest.getDelayTime() < timerState.currWriteTimeMs;
             if (timerState.isShouldRunningDequeue() && shouldFire) {
+                timerRequest.setEnqueueTime(Long.MAX_VALUE);
                 timerMessageDeliverQueue.put(timerRequest);
             } else {
                 boolean success = persistence.save(timerRequest);

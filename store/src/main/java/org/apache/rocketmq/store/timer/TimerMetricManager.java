@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.store.timer;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -71,7 +72,12 @@ public class TimerMetricManager {
             if (null == msg || null == msg.getProperty(MessageConst.PROPERTY_REAL_TOPIC)) {
                 return;
             }
-            timerMetrics.addAndGet(msg.getProperty(MessageConst.PROPERTY_REAL_TOPIC), value);
+            if (msg.getProperty(TimerState.TIMER_ENQUEUE_MS) != null
+                && NumberUtils.toLong(msg.getProperty(TimerState.TIMER_ENQUEUE_MS)) == Long.MAX_VALUE) {
+                return;
+            }
+            // pass msg into addAndGet, for further more judgement extension.
+            timerMetrics.addAndGet(msg, value);
         } catch (Throwable t) {
             if (frequency.incrementAndGet() % 1000 == 0) {
                 LOGGER.error("error in adding metric", t);

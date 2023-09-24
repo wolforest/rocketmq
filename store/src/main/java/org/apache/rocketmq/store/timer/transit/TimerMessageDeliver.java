@@ -120,9 +120,15 @@ public class TimerMessageDeliver extends AbstractStateService {
 
                 try {
                     perfCounterTicks.startTick(DEQUEUE_PUT);
-                    DefaultStoreMetricsManager.incTimerDequeueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
-                    metricManager.addMetric(timerRequest.getMsg(), -1);
-                    MessageExtBrokerInner msg = convert(timerRequest.getMsg(), timerRequest.getEnqueueTime(), timerState.needRoll(timerRequest.getMagic()));
+                    MessageExt msgExt = timerRequest.getMsg();
+                    DefaultStoreMetricsManager.incTimerDequeueCount(messageOperator.getRealTopic(msgExt));
+                    if (timerRequest.getEnqueueTime() == Long.MAX_VALUE) {
+                        // never enqueue, mark it.
+                        MessageAccessor.putProperty(msgExt, TimerState.TIMER_ENQUEUE_MS, String.valueOf(Long.MAX_VALUE));
+                    }
+
+                    metricManager.addMetric(msgExt, -1);
+                    MessageExtBrokerInner msg = convert(msgExt, timerRequest.getEnqueueTime(), timerState.needRoll(timerRequest.getMagic()));
 
                     doRes = PUT_NEED_RETRY != doPut(msg, timerState.needRoll(timerRequest.getMagic()));
 
