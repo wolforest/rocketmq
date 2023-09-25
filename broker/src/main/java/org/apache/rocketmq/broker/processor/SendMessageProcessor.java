@@ -275,11 +275,13 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
     private boolean checkCleanupPolicy(MessageExtBrokerInner msgInner, TopicConfig topicConfig, RemotingCommand response) {
         CleanupPolicy cleanupPolicy = CleanupPolicyUtils.getDeletePolicy(Optional.of(topicConfig));
-        if (Objects.equals(cleanupPolicy, CleanupPolicy.COMPACTION)) {
-            if (StringUtils.isBlank(msgInner.getKeys())) {
-                response.setCodeAndRemark(ResponseCode.MESSAGE_ILLEGAL, "Required message key is missing");
-                return false;
-            }
+        if (!Objects.equals(cleanupPolicy, CleanupPolicy.COMPACTION)) {
+            return true;
+        }
+
+        if (StringUtils.isBlank(msgInner.getKeys())) {
+            response.setCodeAndRemark(ResponseCode.MESSAGE_ILLEGAL, "Required message key is missing");
+            return false;
         }
 
         return true;
