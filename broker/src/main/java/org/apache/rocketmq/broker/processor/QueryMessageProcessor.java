@@ -73,15 +73,10 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
         return false;
     }
 
-    public RemotingCommand queryMessage(ChannelHandlerContext ctx, RemotingCommand request)
-        throws RemotingCommandException {
-        final RemotingCommand response =
-            RemotingCommand.createResponseCommand(QueryMessageResponseHeader.class);
-        final QueryMessageResponseHeader responseHeader =
-            (QueryMessageResponseHeader) response.readCustomHeader();
-        final QueryMessageRequestHeader requestHeader =
-            (QueryMessageRequestHeader) request
-                .decodeCommandCustomHeader(QueryMessageRequestHeader.class);
+    private RemotingCommand queryMessage(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
+        final RemotingCommand response = RemotingCommand.createResponseCommand(QueryMessageResponseHeader.class);
+        final QueryMessageResponseHeader responseHeader = (QueryMessageResponseHeader) response.readCustomHeader();
+        final QueryMessageRequestHeader requestHeader = (QueryMessageRequestHeader) request.decodeCommandCustomHeader(QueryMessageRequestHeader.class);
 
         response.setOpaque(request.getOpaque());
 
@@ -90,51 +85,51 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
             requestHeader.setMaxNum(this.brokerController.getMessageStoreConfig().getDefaultQueryMaxNum());
         }
 
-        final QueryMessageResult queryMessageResult =
-            this.brokerController.getMessageStore().queryMessage(requestHeader.getTopic(),
-                requestHeader.getKey(), requestHeader.getMaxNum(), requestHeader.getBeginTimestamp(),
-                requestHeader.getEndTimestamp());
+        final QueryMessageResult queryMessageResult = this.brokerController.getMessageStore().queryMessage(requestHeader.getTopic(),
+                requestHeader.getKey(), requestHeader.getMaxNum(), requestHeader.getBeginTimestamp(), requestHeader.getEndTimestamp());
         assert queryMessageResult != null;
 
         responseHeader.setIndexLastUpdatePhyoffset(queryMessageResult.getIndexLastUpdatePhyoffset());
         responseHeader.setIndexLastUpdateTimestamp(queryMessageResult.getIndexLastUpdateTimestamp());
-
-        if (queryMessageResult.getBufferTotalSize() > 0) {
-            response.setCode(ResponseCode.SUCCESS);
-            response.setRemark(null);
-
-            try {
-                FileRegion fileRegion =
-                    new QueryMessageTransfer(response.encodeHeader(queryMessageResult
-                        .getBufferTotalSize()), queryMessageResult);
-                ctx.channel()
-                    .writeAndFlush(fileRegion)
-                    .addListener((ChannelFutureListener) future -> {
-                        queryMessageResult.release();
-                        Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
-                            .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
-                            .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(response.getCode()))
-                            .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
-                            .build();
-                        RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
-                        if (!future.isSuccess()) {
-                            LOGGER.error("transfer query message by page cache failed, ", future.cause());
-                        }
-                    });
-            } catch (Throwable e) {
-                LOGGER.error("", e);
-                queryMessageResult.release();
-            }
-
-            return null;
+        if (queryMessageResult.getBufferTotalSize() <= 0) {
+            return response.setCodeAndRemark(ResponseCode.QUERY_NOT_FOUND, "can not find message, maybe time range not correct");
         }
 
-        response.setCode(ResponseCode.QUERY_NOT_FOUND);
-        response.setRemark("can not find message, maybe time range not correct");
-        return response;
+        return handleQueryResult(queryMessageResult, request, response, ctx);
     }
 
-    public RemotingCommand viewMessageById(ChannelHandlerContext ctx, RemotingCommand request)
+    private RemotingCommand handleQueryResult(QueryMessageResult queryMessageResult, RemotingCommand request, RemotingCommand response, ChannelHandlerContext ctx) {
+        response.setCodeAndRemark(ResponseCode.SUCCESS, null);
+
+        try {
+            FileRegion fileRegion = new QueryMessageTransfer(response.encodeHeader(queryMessageResult.getBufferTotalSize()), queryMessageResult);
+            ctx.channel()
+                .writeAndFlush(fileRegion)
+                .addListener(createQueryListener(queryMessageResult, request, response));
+        } catch (Throwable e) {
+            LOGGER.error("", e);
+            queryMessageResult.release();
+        }
+
+        return null;
+    }
+
+    private ChannelFutureListener createQueryListener(QueryMessageResult queryMessageResult, RemotingCommand request, RemotingCommand response) {
+        return future -> {
+            queryMessageResult.release();
+            Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
+                .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
+                .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(response.getCode()))
+                .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
+                .build();
+            RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
+            if (!future.isSuccess()) {
+                LOGGER.error("transfer query message by page cache failed, ", future.cause());
+            }
+        };
+    }
+
+    private RemotingCommand viewMessageById(ChannelHandlerContext ctx, RemotingCommand request)
         throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final ViewMessageRequestHeader requestHeader =

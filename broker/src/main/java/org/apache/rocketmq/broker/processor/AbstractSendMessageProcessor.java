@@ -541,7 +541,6 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         NettyRemotingAbstract.writeResponse(ctx.channel(), request, response);
     }
 
-
     public void executeSendMessageHookBefore(SendMessageContext context) {
         if (!hasSendMessageHook()) {
             return;
