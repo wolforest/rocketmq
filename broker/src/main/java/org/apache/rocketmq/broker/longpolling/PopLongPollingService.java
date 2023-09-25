@@ -76,47 +76,11 @@ public class PopLongPollingService extends ServiceThread {
                 if (pollingMap.isEmpty()) {
                     continue;
                 }
-                long tmpTotalPollingNum = 0;
-                for (Map.Entry<String, ConcurrentSkipListSet<PopRequest>> entry : pollingMap.entrySet()) {
-                    String key = entry.getKey();
-                    ConcurrentSkipListSet<PopRequest> popQ = entry.getValue();
-                    if (popQ == null) {
-                        continue;
-                    }
-                    PopRequest first;
-                    do {
-                        first = popQ.pollFirst();
-                        if (first == null) {
-                            break;
-                        }
-                        if (!first.isTimeout()) {
-                            if (popQ.add(first)) {
-                                break;
-                            } else {
-                                POP_LOGGER.info("polling, add fail again: {}", first);
-                            }
-                        }
-                        if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                            POP_LOGGER.info("timeout , wakeUp polling : {}", first);
-                        }
-                        totalPollingNum.decrementAndGet();
-                        wakeUp(first);
-                    }
-                    while (true);
-                    if (i >= 100) {
-                        long tmpPollingNum = popQ.size();
-                        tmpTotalPollingNum = tmpTotalPollingNum + tmpPollingNum;
-                        if (tmpPollingNum > 100) {
-                            POP_LOGGER.info("polling queue {} , size={} ", key, tmpPollingNum);
-                        }
-                    }
-                }
+
+                long tmpTotalPollingNum = run(i);
 
                 if (i >= 100) {
-                    POP_LOGGER.info("pollingMapSize={},tmpTotalSize={},atomicTotalSize={},diffSize={}",
-                        pollingMap.size(), tmpTotalPollingNum, totalPollingNum.get(),
-                        Math.abs(totalPollingNum.get() - tmpTotalPollingNum));
-                    totalPollingNum.set(tmpTotalPollingNum);
+                    setPollingNum(tmpTotalPollingNum);
                     i = 0;
                 }
 
@@ -128,6 +92,58 @@ public class PopLongPollingService extends ServiceThread {
                 POP_LOGGER.error("checkPolling error", e);
             }
         }
+
+        wakeUpAll();
+    }
+
+    private long run(int i) {
+        long tmpTotalPollingNum = 0;
+        for (Map.Entry<String, ConcurrentSkipListSet<PopRequest>> entry : pollingMap.entrySet()) {
+            String key = entry.getKey();
+            ConcurrentSkipListSet<PopRequest> popQ = entry.getValue();
+            if (popQ == null) {
+                continue;
+            }
+            PopRequest first;
+            do {
+                first = popQ.pollFirst();
+                if (first == null) {
+                    break;
+                }
+                if (!first.isTimeout()) {
+                    if (popQ.add(first)) {
+                        break;
+                    } else {
+                        POP_LOGGER.info("polling, add fail again: {}", first);
+                    }
+                }
+                if (brokerController.getBrokerConfig().isEnablePopLog()) {
+                    POP_LOGGER.info("timeout , wakeUp polling : {}", first);
+                }
+                totalPollingNum.decrementAndGet();
+                wakeUp(first);
+            } while (true);
+
+
+            if (i >= 100) {
+                long tmpPollingNum = popQ.size();
+                tmpTotalPollingNum = tmpTotalPollingNum + tmpPollingNum;
+                if (tmpPollingNum > 100) {
+                    POP_LOGGER.info("polling queue {} , size={} ", key, tmpPollingNum);
+                }
+            }
+        }
+
+        return tmpTotalPollingNum;
+    }
+
+    private void setPollingNum(long tmpTotalPollingNum) {
+        POP_LOGGER.info("pollingMapSize={},tmpTotalSize={},atomicTotalSize={},diffSize={}",
+            pollingMap.size(), tmpTotalPollingNum, totalPollingNum.get(), Math.abs(totalPollingNum.get() - tmpTotalPollingNum));
+        totalPollingNum.set(tmpTotalPollingNum);
+    }
+
+    private void wakeUpAll() {
         // clean all;
         try {
             for (Map.Entry<String, ConcurrentSkipListSet<PopRequest>> entry : pollingMap.entrySet()) {
@@ -275,56 +291,60 @@ public class PopLongPollingService extends ServiceThread {
 
     private void cleanUnusedResource() {
         try {
-            {
-                Iterator<Map.Entry<String, ConcurrentHashMap<String, Byte>>> topicCidMapIter = topicCidMap.entrySet().iterator();
-                while (topicCidMapIter.hasNext()) {
-                    Map.Entry<String, ConcurrentHashMap<String, Byte>> entry = topicCidMapIter.next();
-                    String topic = entry.getKey();
-                    if (brokerController.getTopicConfigManager().selectTopicConfig(topic) == null) {
-                        POP_LOGGER.info("remove not exit topic {} in topicCidMap!", topic);
-                        topicCidMapIter.remove();
-                        continue;
-                    }
-                    Iterator<Map.Entry<String, Byte>> cidMapIter = entry.getValue().entrySet().iterator();
-                    while (cidMapIter.hasNext()) {
-                        Map.Entry<String, Byte> cidEntry = cidMapIter.next();
-                        String cid = cidEntry.getKey();
-                        if (!brokerController.getSubscriptionGroupManager().getSubscriptionGroupTable().containsKey(cid)) {
-                            POP_LOGGER.info("remove not exit sub {} of topic {} in topicCidMap!", cid, topic);
-                            cidMapIter.remove();
-                        }
-                    }
-                }
-            }
-
-            {
-                Iterator<Map.Entry<String, ConcurrentSkipListSet<PopRequest>>> pollingMapIter = pollingMap.entrySet().iterator();
-                while (pollingMapIter.hasNext()) {
-                    Map.Entry<String, ConcurrentSkipListSet<PopRequest>> entry = pollingMapIter.next();
-                    if (entry.getKey() == null) {
-                        continue;
-                    }
-                    String[] keyArray = entry.getKey().split(PopAckConstants.SPLIT);
-                    if (keyArray.length != 3) {
-                        continue;
-                    }
-                    String topic = keyArray[0];
-                    String cid = keyArray[1];
-                    if (brokerController.getTopicConfigManager().selectTopicConfig(topic) == null) {
-                        POP_LOGGER.info("remove not exit topic {} in pollingMap!", topic);
-                        pollingMapIter.remove();
-                        continue;
-                    }
-                    if (!brokerController.getSubscriptionGroupManager().getSubscriptionGroupTable().containsKey(cid)) {
-                        POP_LOGGER.info("remove not exit sub {} of topic {} in pollingMap!", cid, topic);
-                        pollingMapIter.remove();
-                    }
-                }
-            }
+            cleanTopicCidMap();
+            cleanPollingMap();
         } catch (Throwable e) {
             POP_LOGGER.error("cleanUnusedResource", e);
         }
 
         lastCleanTime = System.currentTimeMillis();
     }
+
+    private void cleanTopicCidMap() {
+        Iterator<Map.Entry<String, ConcurrentHashMap<String, Byte>>> topicCidMapIter = topicCidMap.entrySet().iterator();
+        while (topicCidMapIter.hasNext()) {
+            Map.Entry<String, ConcurrentHashMap<String, Byte>> entry = topicCidMapIter.next();
+            String topic = entry.getKey();
+            if (brokerController.getTopicConfigManager().selectTopicConfig(topic) == null) {
+                POP_LOGGER.info("remove not exit topic {} in topicCidMap!", topic);
+                topicCidMapIter.remove();
+                continue;
+            }
+            Iterator<Map.Entry<String, Byte>> cidMapIter = entry.getValue().entrySet().iterator();
+            while (cidMapIter.hasNext()) {
+                Map.Entry<String, Byte> cidEntry = cidMapIter.next();
+                String cid = cidEntry.getKey();
+                if (!brokerController.getSubscriptionGroupManager().getSubscriptionGroupTable().containsKey(cid)) {
+                    POP_LOGGER.info("remove not exit sub {} of topic {} in topicCidMap!", cid, topic);
+                    cidMapIter.remove();
+                }
+            }
+        }
+    }
+
+    private void cleanPollingMap() {
+        Iterator<Map.Entry<String, ConcurrentSkipListSet<PopRequest>>> pollingMapIter = pollingMap.entrySet().iterator();
+        while (pollingMapIter.hasNext()) {
+            Map.Entry<String, ConcurrentSkipListSet<PopRequest>> entry = pollingMapIter.next();
+            if (entry.getKey() == null) {
+                continue;
+            }
+            String[] keyArray = entry.getKey().split(PopAckConstants.SPLIT);
+            if (keyArray.length != 3) {
+                continue;
+            }
+            String topic = keyArray[0];
+            String cid = keyArray[1];
+            if (brokerController.getTopicConfigManager().selectTopicConfig(topic) == null) {
+                POP_LOGGER.info("remove not exit topic {} in pollingMap!", topic);
+                pollingMapIter.remove();
+                continue;
+            }
+            if (!brokerController.getSubscriptionGroupManager().getSubscriptionGroupTable().containsKey(cid)) {
+                POP_LOGGER.info("remove not exit sub {} of topic {} in pollingMap!", cid, topic);
+                pollingMapIter.remove();
+            }
+        }
+    }
+
 }
