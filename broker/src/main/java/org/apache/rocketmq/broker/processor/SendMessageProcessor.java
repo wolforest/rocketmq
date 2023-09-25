@@ -82,12 +82,11 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
     @Override
     public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
-        switch (request.getCode()) {
-            case RequestCode.CONSUMER_SEND_MSG_BACK:
-                return this.consumerSendMsgBack(ctx, request);
-            default:
-                return processSendRequest(ctx, request);
+        if (request.getCode() == RequestCode.CONSUMER_SEND_MSG_BACK) {
+            return this.consumerSendMsgBack(ctx, request);
         }
+
+        return processSendRequest(ctx, request);
     }
 
     @Override
@@ -325,9 +324,8 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         long beginTimeMillis = this.brokerController.getMessageStore().now();
         if (brokerController.getBrokerConfig().isAsyncSendEnable()) {
             return asyncSendMessage(msgInner, response, request, requestHeader, responseHeader, sendMessageContext, sendMessageCallback, ctx, queueIdInt, beginTimeMillis, sendTransactionPrepareMessage, mappingContext);
-        } else {
-            return sendMessage(msgInner, response, request, requestHeader, responseHeader, sendMessageContext, sendMessageCallback, ctx, queueIdInt, beginTimeMillis, sendTransactionPrepareMessage, mappingContext);
         }
+        return sendMessage(msgInner, response, request, requestHeader, responseHeader, sendMessageContext, sendMessageCallback, ctx, queueIdInt, beginTimeMillis, sendTransactionPrepareMessage, mappingContext);
     }
 
     private boolean isRejectTransactionMessage(RemotingCommand response) {
@@ -368,7 +366,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         SendMessageResponseHeader responseHeader, SendMessageContext sendMessageContext, SendMessageCallback sendMessageCallback, ChannelHandlerContext ctx,
         int queueIdInt, long beginTimeMillis, boolean sendTransactionPrepareMessage, TopicQueueMappingContext mappingContext) {
 
-        PutMessageResult putMessageResult = null;
+        PutMessageResult putMessageResult;
         if (sendTransactionPrepareMessage) {
             putMessageResult = this.brokerController.getBrokerMessageService().getTransactionalMessageService().prepareMessage(msgInner);
         } else {
@@ -567,37 +565,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         sendMessageContext.setSendMsgNum(msgNum);
     }
 
-    private RemotingCommand sendBatchMessage(final ChannelHandlerContext ctx,
-        final RemotingCommand request,
-        final SendMessageContext sendMessageContext,
-        final SendMessageRequestHeader requestHeader,
-        TopicQueueMappingContext mappingContext,
-        final SendMessageCallback sendMessageCallback) {
-        final RemotingCommand response = preSend(ctx, request, requestHeader);
-        final SendMessageResponseHeader responseHeader = (SendMessageResponseHeader) response.readCustomHeader();
-
-        if (response.getCode() != -1) {
-            return response;
-        }
-
-        int queueIdInt = requestHeader.getQueueId();
-        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
-
-        if (queueIdInt < 0) {
-            queueIdInt = randomQueueId(topicConfig.getWriteQueueNums());
-        }
-
-        if (requestHeader.getTopic().length() > Byte.MAX_VALUE) {
-            response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-            response.setRemark("message topic length too long " + requestHeader.getTopic().length());
-            return response;
-        }
-
-        if (requestHeader.getTopic() != null && requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-            response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-            response.setRemark("batch request does not support retry group " + requestHeader.getTopic());
-            return response;
-        }
+    private MessageExtBatch createMessageExtBatch(ChannelHandlerContext ctx, RemotingCommand request, SendMessageRequestHeader requestHeader, TopicConfig topicConfig, int queueIdInt) {
         MessageExtBatch messageExtBatch = new MessageExtBatch();
         messageExtBatch.setTopic(requestHeader.getTopic());
         messageExtBatch.setQueueId(queueIdInt);
@@ -618,8 +586,6 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         String clusterName = this.brokerController.getBrokerConfig().getBrokerClusterName();
         MessageAccessor.putProperty(messageExtBatch, MessageConst.PROPERTY_CLUSTER, clusterName);
 
-        boolean isInnerBatch = false;
-
         if (QueueTypeUtils.isBatchCq(Optional.of(topicConfig)) && MessageClientIDSetter.getUniqID(messageExtBatch) != null) {
             // newly introduced inner-batch message
             messageExtBatch.setSysFlag(messageExtBatch.getSysFlag() | MessageSysFlag.NEED_UNWRAP_FLAG);
@@ -627,49 +593,99 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             messageExtBatch.setInnerBatch(true);
 
             int innerNum = MessageDecoder.countInnerMsgNum(ByteBuffer.wrap(messageExtBatch.getBody()));
-
             MessageAccessor.putProperty(messageExtBatch, MessageConst.PROPERTY_INNER_NUM, String.valueOf(innerNum));
             messageExtBatch.setPropertiesString(MessageDecoder.messageProperties2String(messageExtBatch.getProperties()));
+        }
 
+        return messageExtBatch;
+    }
+
+    private boolean validateBatchRequest(SendMessageRequestHeader requestHeader, RemotingCommand response) {
+        if (response.getCode() != -1) {
+            return false;
+        }
+
+        if (requestHeader.getTopic().length() > Byte.MAX_VALUE) {
+            response.setCodeAndRemark(ResponseCode.MESSAGE_ILLEGAL, "message topic length too long " + requestHeader.getTopic().length());
+            return false;
+        }
+
+        if (requestHeader.getTopic() != null && requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            response.setCodeAndRemark(ResponseCode.MESSAGE_ILLEGAL, "batch request does not support retry group " + requestHeader.getTopic());
+            return false;
+        }
+
+        return true;
+    }
+
+    private RemotingCommand sendBatchMessage(final ChannelHandlerContext ctx, final RemotingCommand request, final SendMessageContext sendMessageContext,
+        final SendMessageRequestHeader requestHeader, TopicQueueMappingContext mappingContext, final SendMessageCallback sendMessageCallback) {
+
+        final RemotingCommand response = preSend(ctx, request, requestHeader);
+        final SendMessageResponseHeader responseHeader = (SendMessageResponseHeader) response.readCustomHeader();
+        if (!validateBatchRequest(requestHeader, response)) {
+            return response;
+        }
+
+        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+        int queueIdInt = getQueueId(requestHeader, topicConfig);
+        MessageExtBatch messageExtBatch = createMessageExtBatch(ctx, request, requestHeader, topicConfig, queueIdInt);
+
+        boolean isInnerBatch = false;
+        if (QueueTypeUtils.isBatchCq(Optional.of(topicConfig)) && MessageClientIDSetter.getUniqID(messageExtBatch) != null) {
             // tell the producer that it's an inner-batch message response.
             responseHeader.setBatchUniqId(MessageClientIDSetter.getUniqID(messageExtBatch));
-
             isInnerBatch = true;
         }
 
         long beginTimeMillis = this.brokerController.getMessageStore().now();
-
         if (this.brokerController.getBrokerConfig().isAsyncSendEnable()) {
-            CompletableFuture<PutMessageResult> asyncPutMessageFuture;
-            if (isInnerBatch) {
-                asyncPutMessageFuture = this.brokerController.getMessageStore().asyncPutMessage(messageExtBatch);
-            } else {
-                asyncPutMessageFuture = this.brokerController.getMessageStore().asyncPutMessages(messageExtBatch);
-            }
-            final int finalQueueIdInt = queueIdInt;
-            asyncPutMessageFuture.thenAcceptAsync(putMessageResult -> {
-                RemotingCommand responseFuture =
-                    handlePutMessageResult(putMessageResult, response, request, messageExtBatch, responseHeader,
-                        sendMessageContext, ctx, finalQueueIdInt, beginTimeMillis, mappingContext, BrokerMetricsManager.getMessageType(requestHeader));
-                if (responseFuture != null) {
-                    doResponse(ctx, request, responseFuture);
-                }
-                sendMessageCallback.onComplete(sendMessageContext, response);
-            }, this.brokerController.getBrokerNettyServer().getSendMessageExecutor());
-            // Returns null to release the send message thread
-            return null;
-        } else {
-            PutMessageResult putMessageResult;
-            if (isInnerBatch) {
-                putMessageResult = this.brokerController.getMessageStore().putMessage(messageExtBatch);
-            } else {
-                putMessageResult = this.brokerController.getMessageStore().putMessages(messageExtBatch);
-            }
-            handlePutMessageResult(putMessageResult, response, request, messageExtBatch, responseHeader,
-                sendMessageContext, ctx, queueIdInt, beginTimeMillis, mappingContext, BrokerMetricsManager.getMessageType(requestHeader));
-            sendMessageCallback.onComplete(sendMessageContext, response);
-            return response;
+            return asyncSendBatchMessage(response, request, messageExtBatch, responseHeader, sendMessageContext, ctx, queueIdInt, beginTimeMillis, mappingContext, isInnerBatch, requestHeader, sendMessageCallback);
         }
+        return sendBatchMessage(response, request, messageExtBatch, responseHeader, sendMessageContext, ctx, queueIdInt, beginTimeMillis, mappingContext, isInnerBatch, requestHeader, sendMessageCallback);
+    }
+
+    private RemotingCommand asyncSendBatchMessage(RemotingCommand response,
+        RemotingCommand request, MessageExtBatch messageExtBatch, SendMessageResponseHeader responseHeader,
+        SendMessageContext sendMessageContext, ChannelHandlerContext ctx, int queueIdInt, long beginTimeMillis,
+        TopicQueueMappingContext mappingContext, boolean isInnerBatch, SendMessageRequestHeader requestHeader,
+        SendMessageCallback sendMessageCallback) {
+        CompletableFuture<PutMessageResult> asyncPutMessageFuture;
+        if (isInnerBatch) {
+            asyncPutMessageFuture = this.brokerController.getMessageStore().asyncPutMessage(messageExtBatch);
+        } else {
+            asyncPutMessageFuture = this.brokerController.getMessageStore().asyncPutMessages(messageExtBatch);
+        }
+        final int finalQueueIdInt = queueIdInt;
+        asyncPutMessageFuture.thenAcceptAsync(putMessageResult -> {
+            RemotingCommand responseFuture = handlePutMessageResult(putMessageResult, response, request, messageExtBatch, responseHeader,
+                    sendMessageContext, ctx, finalQueueIdInt, beginTimeMillis, mappingContext, BrokerMetricsManager.getMessageType(requestHeader));
+            if (responseFuture != null) {
+                doResponse(ctx, request, responseFuture);
+            }
+            sendMessageCallback.onComplete(sendMessageContext, response);
+        }, this.brokerController.getBrokerNettyServer().getSendMessageExecutor());
+        // Returns null to release send message thread
+        return null;
+    }
+
+    private RemotingCommand sendBatchMessage(RemotingCommand response,
+        RemotingCommand request, MessageExtBatch messageExtBatch, SendMessageResponseHeader responseHeader,
+        SendMessageContext sendMessageContext, ChannelHandlerContext ctx, int queueIdInt, long beginTimeMillis,
+        TopicQueueMappingContext mappingContext, boolean isInnerBatch, SendMessageRequestHeader requestHeader, SendMessageCallback sendMessageCallback) {
+
+        PutMessageResult putMessageResult;
+        if (isInnerBatch) {
+            putMessageResult = this.brokerController.getMessageStore().putMessage(messageExtBatch);
+        } else {
+            putMessageResult = this.brokerController.getMessageStore().putMessages(messageExtBatch);
+        }
+
+        handlePutMessageResult(putMessageResult, response, request, messageExtBatch, responseHeader,
+            sendMessageContext, ctx, queueIdInt, beginTimeMillis, mappingContext, BrokerMetricsManager.getMessageType(requestHeader));
+        sendMessageCallback.onComplete(sendMessageContext, response);
+        return response;
+
     }
 
     private String diskUtil() {
