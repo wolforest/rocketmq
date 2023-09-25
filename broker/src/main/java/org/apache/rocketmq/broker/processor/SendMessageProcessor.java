@@ -379,6 +379,33 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         return response;
     }
 
+
+    private RemotingCommand handlePutMessageResult(PutMessageResult putMessageResult, RemotingCommand response,
+        RemotingCommand request, MessageExt msg, SendMessageResponseHeader responseHeader,
+        SendMessageContext sendMessageContext, ChannelHandlerContext ctx, int queueIdInt, long beginTimeMillis,
+        TopicQueueMappingContext mappingContext, TopicMessageType messageType) {
+        if (putMessageResult == null) {
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "store putMessage return null");
+        }
+
+        if (!isSendOk(putMessageResult, response)) {
+            executeSendMessageHook(putMessageResult, request, sendMessageContext, responseHeader, false);
+            return response;
+        }
+
+        saveStatInfo(putMessageResult, msg, messageType, queueIdInt, beginTimeMillis);
+        formatResponse(response, responseHeader, putMessageResult, queueIdInt, msg);
+
+        RemotingCommand rewriteResult = rewriteResponseForStaticTopic(responseHeader, mappingContext);
+        if (rewriteResult != null) {
+            return rewriteResult;
+        }
+
+        doResponse(ctx, request, response);
+        executeSendMessageHook(putMessageResult, request, sendMessageContext, responseHeader, true);
+        return null;
+    }
+
     private boolean isSendOk(PutMessageResult putMessageResult, RemotingCommand response) {
         boolean sendOK = false;
 
@@ -458,58 +485,37 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         return sendOK;
     }
 
-    private RemotingCommand handlePutMessageResult(PutMessageResult putMessageResult, RemotingCommand response,
-        RemotingCommand request, MessageExt msg, SendMessageResponseHeader responseHeader,
-        SendMessageContext sendMessageContext, ChannelHandlerContext ctx, int queueIdInt, long beginTimeMillis,
-        TopicQueueMappingContext mappingContext, TopicMessageType messageType) {
-        if (putMessageResult == null) {
-            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "store putMessage return null");
-        }
-
-        if (!isSendOk(putMessageResult, response)) {
-            executeSendMessageHook(putMessageResult, request, sendMessageContext, responseHeader, false);
-            return response;
-        }
-
+    private void saveStatInfo(PutMessageResult putMessageResult, MessageExt msg, TopicMessageType messageType, int queueIdInt, long beginTimeMillis) {
         if (TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(msg.getTopic())) {
             this.brokerController.getBrokerStatsManager().incQueuePutNums(msg.getTopic(), msg.getQueueId(), putMessageResult.getAppendMessageResult().getMsgNum(), 1);
             this.brokerController.getBrokerStatsManager().incQueuePutSize(msg.getTopic(), msg.getQueueId(), putMessageResult.getAppendMessageResult().getWroteBytes());
         }
 
         this.brokerController.getBrokerStatsManager().incTopicPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum(), 1);
-        this.brokerController.getBrokerStatsManager().incTopicPutSize(msg.getTopic(),
-            putMessageResult.getAppendMessageResult().getWroteBytes());
+        this.brokerController.getBrokerStatsManager().incTopicPutSize(msg.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
         this.brokerController.getBrokerStatsManager().incBrokerPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum());
-        this.brokerController.getBrokerStatsManager().incTopicPutLatency(msg.getTopic(), queueIdInt,
-            (int) (this.brokerController.getMessageStore().now() - beginTimeMillis));
+        this.brokerController.getBrokerStatsManager().incTopicPutLatency(msg.getTopic(), queueIdInt, (int) (this.brokerController.getMessageStore().now() - beginTimeMillis));
 
-        if (!BrokerMetricsManager.isRetryOrDlqTopic(msg.getTopic())) {
-            Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
-                .put(LABEL_TOPIC, msg.getTopic())
-                .put(LABEL_MESSAGE_TYPE, messageType.getMetricsValue())
-                .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(msg.getTopic()))
-                .build();
-            BrokerMetricsManager.messagesInTotal.add(putMessageResult.getAppendMessageResult().getMsgNum(), attributes);
-            BrokerMetricsManager.throughputInTotal.add(putMessageResult.getAppendMessageResult().getWroteBytes(), attributes);
-            BrokerMetricsManager.messageSize.record(putMessageResult.getAppendMessageResult().getWroteBytes() / putMessageResult.getAppendMessageResult().getMsgNum(), attributes);
+        if (BrokerMetricsManager.isRetryOrDlqTopic(msg.getTopic())) {
+            return;
         }
 
-        response.setRemark(null);
+        Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
+            .put(LABEL_TOPIC, msg.getTopic())
+            .put(LABEL_MESSAGE_TYPE, messageType.getMetricsValue())
+            .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(msg.getTopic()))
+            .build();
+        BrokerMetricsManager.messagesInTotal.add(putMessageResult.getAppendMessageResult().getMsgNum(), attributes);
+        BrokerMetricsManager.throughputInTotal.add(putMessageResult.getAppendMessageResult().getWroteBytes(), attributes);
+        BrokerMetricsManager.messageSize.record(putMessageResult.getAppendMessageResult().getWroteBytes() / putMessageResult.getAppendMessageResult().getMsgNum(), attributes);
+    }
 
+    private void formatResponse(RemotingCommand response, SendMessageResponseHeader responseHeader, PutMessageResult putMessageResult, int queueIdInt, MessageExt msg) {
+        response.setRemark(null);
         responseHeader.setMsgId(putMessageResult.getAppendMessageResult().getMsgId());
         responseHeader.setQueueId(queueIdInt);
         responseHeader.setQueueOffset(putMessageResult.getAppendMessageResult().getLogicsOffset());
         responseHeader.setTransactionId(MessageClientIDSetter.getUniqID(msg));
-
-        RemotingCommand rewriteResult = rewriteResponseForStaticTopic(responseHeader, mappingContext);
-        if (rewriteResult != null) {
-            return rewriteResult;
-        }
-
-        doResponse(ctx, request, response);
-
-        executeSendMessageHook(putMessageResult, request, sendMessageContext, responseHeader, true);
-        return null;
     }
 
     private void executeSendMessageHook(PutMessageResult putMessageResult, RemotingCommand request, SendMessageContext sendMessageContext,
