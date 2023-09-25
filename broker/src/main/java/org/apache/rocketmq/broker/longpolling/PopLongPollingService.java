@@ -45,16 +45,14 @@ public class PopLongPollingService extends ServiceThread {
     private static final Logger POP_LOGGER =
         LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
     private final BrokerController brokerController;
-    private final NettyRequestProcessor processor;
     private final ConcurrentHashMap<String, ConcurrentHashMap<String, Byte>> topicCidMap;
     private final ConcurrentLinkedHashMap<String, ConcurrentSkipListSet<PopRequest>> pollingMap;
     private long lastCleanTime = 0;
 
     private final AtomicLong totalPollingNum = new AtomicLong(0);
 
-    public PopLongPollingService(BrokerController brokerController, NettyRequestProcessor processor) {
+    public PopLongPollingService(BrokerController brokerController) {
         this.brokerController = brokerController;
-        this.processor = processor;
         // 100000 topic default,  100000 lru topic + cid + qid
         this.topicCidMap = new ConcurrentHashMap<>(brokerController.getBrokerConfig().getPopPollingMapSize());
         this.pollingMap = new ConcurrentLinkedHashMap.Builder<String, ConcurrentSkipListSet<PopRequest>>()
@@ -188,7 +186,7 @@ public class PopLongPollingService extends ServiceThread {
         }
         Runnable run = () -> {
             try {
-                final RemotingCommand response = processor.processRequest(request.getCtx(), request.getRemotingCommand());
+                final RemotingCommand response = brokerController.getBrokerNettyServer().getPopMessageProcessor().processRequest(request.getCtx(), request.getRemotingCommand());
                 if (response != null) {
                     response.setOpaque(request.getRemotingCommand().getOpaque());
                     response.markResponseType();
