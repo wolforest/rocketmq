@@ -219,7 +219,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         newTopic = MixAll.getDLQTopic(groupName);
         setMsgInfo(msg, newTopic);
 
-        topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic, DLQ_NUMS_PER_GROUP, PermName.PERM_WRITE | PermName.PERM_READ, 0 );
+        topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic, DLQ_NUMS_PER_GROUP, PermName.PERM_WRITE | PermName.PERM_READ, 0);
         if (null == topicConfig) {
             response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "topic[" + newTopic + "] not exist");
             return false;
