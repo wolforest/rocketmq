@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.broker.service;
 
+import io.netty.channel.Channel;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ClientHousekeepingService;
 import org.apache.rocketmq.broker.client.ConsumerIdsChangeListener;
 import org.apache.rocketmq.broker.client.DefaultConsumerIdsChangeListener;
+import org.apache.rocketmq.broker.coldctr.ColdDataPullRequestHoldService;
 import org.apache.rocketmq.broker.latency.BrokerFastFailure;
 import org.apache.rocketmq.broker.longpolling.LmqPullRequestHoldService;
 import org.apache.rocketmq.broker.longpolling.NotifyMessageArrivingListener;
@@ -63,6 +65,8 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.RemotingServer;
 import org.apache.rocketmq.remoting.common.TlsMode;
+import org.apache.rocketmq.remoting.exception.RemotingCommandException;
+import org.apache.rocketmq.remoting.netty.NettyRemotingAbstract;
 import org.apache.rocketmq.remoting.netty.NettyRemotingServer;
 import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
@@ -96,9 +100,6 @@ public class BrokerNettyServer {
     private PullRequestHoldService pullRequestHoldService;
     private MessageArrivingListener messageArrivingListener;
     private FileWatchService fileWatchService;
-
-
-
     private PopServiceManager popServiceManager;
 
     private BlockingQueue<Runnable> sendThreadPoolQueue;
@@ -222,16 +223,6 @@ public class BrokerNettyServer {
     }
 
     public void start() {
-//        if (this.popMessageProcessor != null) {
-//            this.popMessageProcessor.getPopLongPollingService().start();
-//            this.popMessageProcessor.getPopBufferMergeService().start();
-//            this.popMessageProcessor.getQueueLockManager().start();
-//        }
-
-//        if (this.ackMessageProcessor != null) {
-//            this.ackMessageProcessor.startPopReviveService();
-//        }
-
         if (this.popServiceManager != null) {
             this.popServiceManager.start();
         }
@@ -319,16 +310,6 @@ public class BrokerNettyServer {
             this.pullRequestHoldService.shutdown();
         }
 
-        {
-            //this.popMessageProcessor.getPopLongPollingService().shutdown();
-            //this.popMessageProcessor.getQueueLockManager().shutdown();
-        }
-
-        {
-            //this.popMessageProcessor.getPopBufferMergeService().shutdown();
-            //this.ackMessageProcessor.shutdownPopReviveService();
-        }
-
         if (this.popServiceManager != null) {
             this.popServiceManager.shutdown();
         }
@@ -358,6 +339,45 @@ public class BrokerNettyServer {
         }
 
     }
+
+    public void executePullRequest(final Channel channel, final RemotingCommand request) {
+        Runnable run = () -> {
+            try {
+                boolean brokerAllowFlowCtrSuspend = !(request.getExtFields() != null && request.getExtFields().containsKey(ColdDataPullRequestHoldService.NO_SUSPEND_KEY));
+                final RemotingCommand response = BrokerNettyServer.this.getPullMessageProcessor().processRequest(channel, request, false, brokerAllowFlowCtrSuspend);
+                writeResponse(channel, request, response);
+            } catch (RemotingCommandException e1) {
+                LOG.error("excuteRequestWhenWakeup run", e1);
+            }
+        };
+        this.brokerController.getBrokerNettyServer().getPullMessageExecutor().submit(new RequestTask(run, channel, request));
+    }
+
+    private void writeResponse(final Channel channel, final RemotingCommand request, RemotingCommand response) {
+        if (response == null) {
+            return;
+        }
+
+        response.setOpaque(request.getOpaque());
+        response.markResponseType();
+        try {
+            NettyRemotingAbstract.writeResponse(channel, request, response, future -> {
+                if (future.isSuccess()) {
+                    return;
+                }
+
+                LOG.error("processRequestWrapper response to {} failed", channel.remoteAddress(), future.cause());
+                LOG.error(request.toString());
+                LOG.error(response.toString());
+            });
+        } catch (Throwable e) {
+            LOG.error("processRequestWrapper process request over, but response failed", e);
+            LOG.error(request.toString());
+            LOG.error(response.toString());
+        }
+    }
+
+
 
     private void registerProcessor() {
         /*

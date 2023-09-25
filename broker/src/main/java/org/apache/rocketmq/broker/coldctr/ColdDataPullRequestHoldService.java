@@ -87,8 +87,7 @@ public class ColdDataPullRequestHoldService extends ServiceThread {
             if (System.currentTimeMillis() >= pullRequest.getSuspendTimestamp() + coldHoldTimeoutMillis) {
                 try {
                     pullRequest.getRequestCommand().addExtField(NO_SUSPEND_KEY, "1");
-                    this.brokerController.getBrokerNettyServer().getPullMessageProcessor().executeRequestWhenWakeup(
-                        pullRequest.getClientChannel(), pullRequest.getRequestCommand());
+                    this.brokerController.getBrokerNettyServer().executePullRequest(pullRequest.getClientChannel(), pullRequest.getRequestCommand());
                     succTotal++;
                 } catch (Exception e) {
                     log.error("PullRequestColdHoldService checkColdDataPullRequest error", e);

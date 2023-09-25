@@ -149,7 +149,7 @@ public class PullRequestHoldService extends ServiceThread {
 
                 if (match) {
                     try {
-                        this.brokerController.getBrokerNettyServer().getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
+                        this.brokerController.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
                             request.getRequestCommand());
                     } catch (Throwable e) {
                         log.error(
@@ -162,7 +162,7 @@ public class PullRequestHoldService extends ServiceThread {
 
             if (System.currentTimeMillis() >= (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
                 try {
-                    this.brokerController.getBrokerNettyServer().getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
+                    this.brokerController.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
                         request.getRequestCommand());
                 } catch (Throwable e) {
                     log.error(
@@ -189,7 +189,7 @@ public class PullRequestHoldService extends ServiceThread {
             for (PullRequest request : mpr.cloneListAndClear()) {
                 try {
                     log.info("notify master online, wakeup {} {}", request.getClientChannel(), request.getRequestCommand());
-                    this.brokerController.getBrokerNettyServer().getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
+                    this.brokerController.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
                         request.getRequestCommand());
                 } catch (Throwable e) {
                     log.error("execute request when master online failed.", e);

@@ -89,6 +89,24 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         this.pullMessageResultHandler = new DefaultPullMessageResultHandler(brokerController);
     }
 
+    @Override
+    public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
+        return this.processRequest(ctx.channel(), request, true, true);
+    }
+
+    @Override
+    public boolean rejectRequest() {
+        return !this.brokerController.getBrokerConfig().isSlaveReadEnable() && this.brokerController.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE;
+    }
+
+    public void registerConsumeMessageHook(List<ConsumeMessageHook> consumeMessageHookList) {
+        this.consumeMessageHookList = consumeMessageHookList;
+    }
+
+    public void setPullMessageResultHandler(PullMessageResultHandler pullMessageResultHandler) {
+        this.pullMessageResultHandler = pullMessageResultHandler;
+    }
+
     private void prepareRequestHeader(PullMessageRequestHeader requestHeader, LogicQueueMappingItem mappingItem) {
         Integer phyQueueId = mappingItem.getQueueId();
         Long phyQueueOffset = mappingItem.computePhysicalQueueOffset(requestHeader.getQueueOffset());
@@ -325,15 +343,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         return offsetMap;
     }
 
-    @Override
-    public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
-        return this.processRequest(ctx.channel(), request, true, true);
-    }
 
-    @Override
-    public boolean rejectRequest() {
-        return !this.brokerController.getBrokerConfig().isSlaveReadEnable() && this.brokerController.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE;
-    }
 
     private boolean allowAccess(RemotingCommand response, PullMessageResponseHeader responseHeader, Channel channel, RemotingCommand request, PullMessageRequestHeader requestHeader) {
         if (!PermName.isReadable(this.brokerController.getBrokerConfig().getBrokerPermission())) {
@@ -548,7 +558,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         return consumerFilterData;
     }
 
-    private RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend, boolean brokerAllowFlowCtrSuspend) throws RemotingCommandException {
+    public RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend, boolean brokerAllowFlowCtrSuspend) throws RemotingCommandException {
         RemotingCommand response = RemotingCommand.createResponseCommand(PullMessageResponseHeader.class);
         final PullMessageResponseHeader responseHeader = (PullMessageResponseHeader) response.readCustomHeader();
         final PullMessageRequestHeader requestHeader = (PullMessageRequestHeader) request.decodeCommandCustomHeader(PullMessageRequestHeader.class);
@@ -639,7 +649,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         return this.pullMessageResultHandler.handle(getMessageResult, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
     }
 
-    public boolean hasConsumeMessageHook() {
+    protected boolean hasConsumeMessageHook() {
         return consumeMessageHookList != null && !this.consumeMessageHookList.isEmpty();
     }
 
@@ -858,51 +868,6 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         if (storeOffsetEnable) {
             this.brokerController.getConsumerOffsetManager().commitOffset(clientAddress, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getCommitOffset());
         }
-    }
-
-    public void executeRequestWhenWakeup(final Channel channel, final RemotingCommand request) {
-        Runnable run = () -> {
-            try {
-                boolean brokerAllowFlowCtrSuspend = !(request.getExtFields() != null && request.getExtFields().containsKey(ColdDataPullRequestHoldService.NO_SUSPEND_KEY));
-                final RemotingCommand response = PullMessageProcessor.this.processRequest(channel, request, false, brokerAllowFlowCtrSuspend);
-                writeResponse(channel, request, response);
-            } catch (RemotingCommandException e1) {
-                LOGGER.error("excuteRequestWhenWakeup run", e1);
-            }
-        };
-        this.brokerController.getBrokerNettyServer().getPullMessageExecutor().submit(new RequestTask(run, channel, request));
-    }
-
-    private void writeResponse(final Channel channel, final RemotingCommand request, RemotingCommand response) {
-        if (response == null) {
-            return;
-        }
-
-        response.setOpaque(request.getOpaque());
-        response.markResponseType();
-        try {
-            NettyRemotingAbstract.writeResponse(channel, request, response, future -> {
-                if (future.isSuccess()) {
-                    return;
-                }
-
-                LOGGER.error("processRequestWrapper response to {} failed", channel.remoteAddress(), future.cause());
-                LOGGER.error(request.toString());
-                LOGGER.error(response.toString());
-            });
-        } catch (Throwable e) {
-            LOGGER.error("processRequestWrapper process request over, but response failed", e);
-            LOGGER.error(request.toString());
-            LOGGER.error(response.toString());
-        }
-    }
-
-    public void registerConsumeMessageHook(List<ConsumeMessageHook> consumeMessageHookList) {
-        this.consumeMessageHookList = consumeMessageHookList;
-    }
-
-    public void setPullMessageResultHandler(PullMessageResultHandler pullMessageResultHandler) {
-        this.pullMessageResultHandler = pullMessageResultHandler;
     }
 
     private boolean isBroadcast(boolean proxyPullBroadcast, ConsumerGroupInfo consumerGroupInfo) {
