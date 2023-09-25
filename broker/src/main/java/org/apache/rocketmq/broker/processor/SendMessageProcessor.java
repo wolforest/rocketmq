@@ -342,13 +342,13 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
     }
 
     private boolean isRejectTransactionMessage(RemotingCommand response) {
-        if (this.brokerController.getBrokerConfig().isRejectTransactionMessage()) {
-            response.setCode(ResponseCode.NO_PERMISSION);
-            response.setRemark("the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1() + "] sending transaction message is forbidden");
-            return true;
+        if (!this.brokerController.getBrokerConfig().isRejectTransactionMessage()) {
+            return false;
         }
 
-        return false;
+        response.setCode(ResponseCode.NO_PERMISSION);
+        response.setRemark("the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1() + "] sending transaction message is forbidden");
+        return true;
     }
 
     private RemotingCommand asyncSendMessage(MessageExtBrokerInner msgInner, RemotingCommand response, RemotingCommand request, SendMessageRequestHeader requestHeader,
