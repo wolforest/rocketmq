@@ -379,7 +379,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         return response;
     }
 
-    private boolean getSendOk(PutMessageResult putMessageResult, RemotingCommand response) {
+    private boolean isSendOk(PutMessageResult putMessageResult, RemotingCommand response) {
         boolean sendOK = false;
 
         switch (putMessageResult.getPutMessageStatus()) {
@@ -466,100 +466,99 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "store putMessage return null");
         }
 
-        boolean sendOK = getSendOk(putMessageResult, response);
+        if (!isSendOk(putMessageResult, response)) {
+            executeSendMessageHook(putMessageResult, request, sendMessageContext, responseHeader, false);
+            return response;
+        }
+
+        if (TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(msg.getTopic())) {
+            this.brokerController.getBrokerStatsManager().incQueuePutNums(msg.getTopic(), msg.getQueueId(), putMessageResult.getAppendMessageResult().getMsgNum(), 1);
+            this.brokerController.getBrokerStatsManager().incQueuePutSize(msg.getTopic(), msg.getQueueId(), putMessageResult.getAppendMessageResult().getWroteBytes());
+        }
+
+        this.brokerController.getBrokerStatsManager().incTopicPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum(), 1);
+        this.brokerController.getBrokerStatsManager().incTopicPutSize(msg.getTopic(),
+            putMessageResult.getAppendMessageResult().getWroteBytes());
+        this.brokerController.getBrokerStatsManager().incBrokerPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum());
+        this.brokerController.getBrokerStatsManager().incTopicPutLatency(msg.getTopic(), queueIdInt,
+            (int) (this.brokerController.getMessageStore().now() - beginTimeMillis));
+
+        if (!BrokerMetricsManager.isRetryOrDlqTopic(msg.getTopic())) {
+            Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
+                .put(LABEL_TOPIC, msg.getTopic())
+                .put(LABEL_MESSAGE_TYPE, messageType.getMetricsValue())
+                .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(msg.getTopic()))
+                .build();
+            BrokerMetricsManager.messagesInTotal.add(putMessageResult.getAppendMessageResult().getMsgNum(), attributes);
+            BrokerMetricsManager.throughputInTotal.add(putMessageResult.getAppendMessageResult().getWroteBytes(), attributes);
+            BrokerMetricsManager.messageSize.record(putMessageResult.getAppendMessageResult().getWroteBytes() / putMessageResult.getAppendMessageResult().getMsgNum(), attributes);
+        }
+
+        response.setRemark(null);
+
+        responseHeader.setMsgId(putMessageResult.getAppendMessageResult().getMsgId());
+        responseHeader.setQueueId(queueIdInt);
+        responseHeader.setQueueOffset(putMessageResult.getAppendMessageResult().getLogicsOffset());
+        responseHeader.setTransactionId(MessageClientIDSetter.getUniqID(msg));
+
+        RemotingCommand rewriteResult = rewriteResponseForStaticTopic(responseHeader, mappingContext);
+        if (rewriteResult != null) {
+            return rewriteResult;
+        }
+
+        doResponse(ctx, request, response);
+
+        executeSendMessageHook(putMessageResult, request, sendMessageContext, responseHeader, true);
+        return null;
+    }
+
+    private void executeSendMessageHook(PutMessageResult putMessageResult, RemotingCommand request, SendMessageContext sendMessageContext,
+        SendMessageResponseHeader responseHeader, boolean sendOk) {
+        if (!hasSendMessageHook()) {
+            return;
+        }
+
         String owner = request.getExtFields().get(BrokerStatsManager.COMMERCIAL_OWNER);
         String authType = request.getExtFields().get(BrokerStatsManager.ACCOUNT_AUTH_TYPE);
         String ownerParent = request.getExtFields().get(BrokerStatsManager.ACCOUNT_OWNER_PARENT);
         String ownerSelf = request.getExtFields().get(BrokerStatsManager.ACCOUNT_OWNER_SELF);
         int commercialSizePerMsg = brokerController.getBrokerConfig().getCommercialSizePerMsg();
-        if (sendOK) {
 
-            if (TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(msg.getTopic())) {
-                this.brokerController.getBrokerStatsManager().incQueuePutNums(msg.getTopic(), msg.getQueueId(), putMessageResult.getAppendMessageResult().getMsgNum(), 1);
-                this.brokerController.getBrokerStatsManager().incQueuePutSize(msg.getTopic(), msg.getQueueId(), putMessageResult.getAppendMessageResult().getWroteBytes());
-            }
+        int wroteSize, msgNum, commercialMsgNum, commercialSendTimes;
+        BrokerStatsManager.StatsType state;
+        if (sendOk) {
+            state = BrokerStatsManager.StatsType.SEND_SUCCESS;
+            sendMessageContext.setMsgId(responseHeader.getMsgId());
+            sendMessageContext.setQueueId(responseHeader.getQueueId());
+            sendMessageContext.setQueueOffset(responseHeader.getQueueOffset());
 
-            this.brokerController.getBrokerStatsManager().incTopicPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum(), 1);
-            this.brokerController.getBrokerStatsManager().incTopicPutSize(msg.getTopic(),
-                putMessageResult.getAppendMessageResult().getWroteBytes());
-            this.brokerController.getBrokerStatsManager().incBrokerPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum());
-            this.brokerController.getBrokerStatsManager().incTopicPutLatency(msg.getTopic(), queueIdInt,
-                (int) (this.brokerController.getMessageStore().now() - beginTimeMillis));
-
-            if (!BrokerMetricsManager.isRetryOrDlqTopic(msg.getTopic())) {
-                Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
-                    .put(LABEL_TOPIC, msg.getTopic())
-                    .put(LABEL_MESSAGE_TYPE, messageType.getMetricsValue())
-                    .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(msg.getTopic()))
-                    .build();
-                BrokerMetricsManager.messagesInTotal.add(putMessageResult.getAppendMessageResult().getMsgNum(), attributes);
-                BrokerMetricsManager.throughputInTotal.add(putMessageResult.getAppendMessageResult().getWroteBytes(), attributes);
-                BrokerMetricsManager.messageSize.record(putMessageResult.getAppendMessageResult().getWroteBytes() / putMessageResult.getAppendMessageResult().getMsgNum(), attributes);
-            }
-
-            response.setRemark(null);
-
-            responseHeader.setMsgId(putMessageResult.getAppendMessageResult().getMsgId());
-            responseHeader.setQueueId(queueIdInt);
-            responseHeader.setQueueOffset(putMessageResult.getAppendMessageResult().getLogicsOffset());
-            responseHeader.setTransactionId(MessageClientIDSetter.getUniqID(msg));
-
-            RemotingCommand rewriteResult = rewriteResponseForStaticTopic(responseHeader, mappingContext);
-            if (rewriteResult != null) {
-                return rewriteResult;
-            }
-
-            doResponse(ctx, request, response);
-
-            if (hasSendMessageHook()) {
-                sendMessageContext.setMsgId(responseHeader.getMsgId());
-                sendMessageContext.setQueueId(responseHeader.getQueueId());
-                sendMessageContext.setQueueOffset(responseHeader.getQueueOffset());
-
-                int commercialBaseCount = brokerController.getBrokerConfig().getCommercialBaseCount();
-                int wroteSize = putMessageResult.getAppendMessageResult().getWroteBytes();
-                int msgNum = putMessageResult.getAppendMessageResult().getMsgNum();
-                int commercialMsgNum = (int) Math.ceil(wroteSize / (double) commercialSizePerMsg);
-                int incValue = commercialMsgNum * commercialBaseCount;
-
-                sendMessageContext.setCommercialSendStats(BrokerStatsManager.StatsType.SEND_SUCCESS);
-                sendMessageContext.setCommercialSendTimes(incValue);
-                sendMessageContext.setCommercialSendSize(wroteSize);
-                sendMessageContext.setCommercialOwner(owner);
-
-                sendMessageContext.setSendStat(BrokerStatsManager.StatsType.SEND_SUCCESS);
-                sendMessageContext.setCommercialSendMsgNum(commercialMsgNum);
-                sendMessageContext.setAccountAuthType(authType);
-                sendMessageContext.setAccountOwnerParent(ownerParent);
-                sendMessageContext.setAccountOwnerSelf(ownerSelf);
-                sendMessageContext.setSendMsgSize(wroteSize);
-                sendMessageContext.setSendMsgNum(msgNum);
-            }
-            return null;
+            int commercialBaseCount = brokerController.getBrokerConfig().getCommercialBaseCount();
+            wroteSize = putMessageResult.getAppendMessageResult().getWroteBytes();
+            msgNum = putMessageResult.getAppendMessageResult().getMsgNum();
+            commercialMsgNum = (int) Math.ceil(wroteSize / (double) commercialSizePerMsg);
+            commercialSendTimes = commercialMsgNum * commercialBaseCount;
         } else {
-            if (hasSendMessageHook()) {
-                AppendMessageResult appendMessageResult = putMessageResult.getAppendMessageResult();
-
-                // TODO process partial failures of batch message
-                int wroteSize = request.getBody().length;
-                int msgNum = Math.max(appendMessageResult != null ? appendMessageResult.getMsgNum() : 1, 1);
-                int commercialMsgNum = (int) Math.ceil(wroteSize / (double) commercialSizePerMsg);
-
-                sendMessageContext.setCommercialSendStats(BrokerStatsManager.StatsType.SEND_FAILURE);
-                sendMessageContext.setCommercialSendTimes(commercialMsgNum);
-                sendMessageContext.setCommercialSendSize(wroteSize);
-                sendMessageContext.setCommercialOwner(owner);
-
-                sendMessageContext.setSendStat(BrokerStatsManager.StatsType.SEND_FAILURE);
-                sendMessageContext.setCommercialSendMsgNum(commercialMsgNum);
-                sendMessageContext.setAccountAuthType(authType);
-                sendMessageContext.setAccountOwnerParent(ownerParent);
-                sendMessageContext.setAccountOwnerSelf(ownerSelf);
-                sendMessageContext.setSendMsgSize(wroteSize);
-                sendMessageContext.setSendMsgNum(msgNum);
-            }
+            state = BrokerStatsManager.StatsType.SEND_FAILURE;
+            AppendMessageResult appendMessageResult = putMessageResult.getAppendMessageResult();
+            // TODO process partial failures of batch message
+            wroteSize = request.getBody().length;
+            msgNum = Math.max(appendMessageResult != null ? appendMessageResult.getMsgNum() : 1, 1);
+            commercialMsgNum = (int) Math.ceil(wroteSize / (double) commercialSizePerMsg);
+            commercialSendTimes = commercialMsgNum;
         }
-        return response;
+
+        sendMessageContext.setCommercialSendStats(state);
+        sendMessageContext.setCommercialSendTimes(commercialSendTimes);
+        sendMessageContext.setCommercialSendSize(wroteSize);
+        sendMessageContext.setCommercialOwner(owner);
+
+        sendMessageContext.setSendStat(state);
+        sendMessageContext.setCommercialSendMsgNum(commercialMsgNum);
+        sendMessageContext.setAccountAuthType(authType);
+        sendMessageContext.setAccountOwnerParent(ownerParent);
+        sendMessageContext.setAccountOwnerSelf(ownerSelf);
+        sendMessageContext.setSendMsgSize(wroteSize);
+        sendMessageContext.setSendMsgNum(msgNum);
     }
 
     private RemotingCommand sendBatchMessage(final ChannelHandlerContext ctx,
