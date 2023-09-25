@@ -93,13 +93,15 @@ public class PopInflightMessageCounter {
     public void clearInFlightMessageNumByGroupName(String group) {
         Set<String> topicGroupKey = this.topicInFlightMessageNum.keySet();
         for (String key : topicGroupKey) {
-            if (key.contains(group)) {
-                Pair<String, String> topicAndGroup = splitKey(key);
-                if (topicAndGroup != null && topicAndGroup.getObject2().equals(group)) {
-                    this.topicInFlightMessageNum.remove(key);
-                    log.info("PopInflightMessageCounter#clearInFlightMessageNumByGroupName: clean by group, topic={}, group={}",
-                        topicAndGroup.getObject1(), topicAndGroup.getObject2());
-                }
+            if (!key.contains(group)) {
+                continue;
+            }
+
+            Pair<String, String> topicAndGroup = splitKey(key);
+            if (topicAndGroup != null && topicAndGroup.getObject2().equals(group)) {
+                this.topicInFlightMessageNum.remove(key);
+                log.info("PopInflightMessageCounter#clearInFlightMessageNumByGroupName: clean by group, topic={}, group={}",
+                    topicAndGroup.getObject1(), topicAndGroup.getObject2());
             }
         }
     }
@@ -107,13 +109,15 @@ public class PopInflightMessageCounter {
     public void clearInFlightMessageNumByTopicName(String topic) {
         Set<String> topicGroupKey = this.topicInFlightMessageNum.keySet();
         for (String key : topicGroupKey) {
-            if (key.contains(topic)) {
-                Pair<String, String> topicAndGroup = splitKey(key);
-                if (topicAndGroup != null && topicAndGroup.getObject1().equals(topic)) {
-                    this.topicInFlightMessageNum.remove(key);
-                    log.info("PopInflightMessageCounter#clearInFlightMessageNumByTopicName: clean by topic, topic={}, group={}",
-                        topicAndGroup.getObject1(), topicAndGroup.getObject2());
-                }
+            if (!key.contains(topic)) {
+                continue;
+            }
+
+            Pair<String, String> topicAndGroup = splitKey(key);
+            if (topicAndGroup != null && topicAndGroup.getObject1().equals(topic)) {
+                this.topicInFlightMessageNum.remove(key);
+                log.info("PopInflightMessageCounter#clearInFlightMessageNumByTopicName: clean by topic, topic={}, group={}",
+                    topicAndGroup.getObject1(), topicAndGroup.getObject2());
             }
         }
     }
