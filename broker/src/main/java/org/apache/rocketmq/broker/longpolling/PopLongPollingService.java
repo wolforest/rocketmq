@@ -153,7 +153,7 @@ public class PopLongPollingService extends ServiceThread {
                     wakeUp(first);
                 }
             }
-        } catch (Throwable e) {
+        } catch (Throwable ignored) {
         }
     }
 
@@ -222,10 +222,10 @@ public class PopLongPollingService extends ServiceThread {
     }
 
     /**
-     * @param ctx
-     * @param remotingCommand
-     * @param requestHeader
-     * @return
+     * @param ctx ctx
+     * @param remotingCommand request
+     * @param requestHeader requestHeader
+     * @return PollingResult
      */
     public PollingResult polling(final ChannelHandlerContext ctx, RemotingCommand remotingCommand,
         final PollingHeader requestHeader) {
