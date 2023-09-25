@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.processor.PopBufferMergeService;
+import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.processor.PopReviveService;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.metrics.NopLongCounter;

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.processor;
+package org.apache.rocketmq.broker.service.pop;
 
 import com.alibaba.fastjson.JSON;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.longpolling.PopLongPollingService;
 import org.apache.rocketmq.broker.longpolling.PopRequest;
+import org.apache.rocketmq.broker.processor.PopReviveService;
 import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.PopAckConstants;
 import org.apache.rocketmq.common.constant.LoggerName;

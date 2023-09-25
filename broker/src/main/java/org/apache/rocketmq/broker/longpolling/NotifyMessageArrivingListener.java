@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.longpolling;
 
 import java.util.Map;
 import org.apache.rocketmq.broker.processor.NotificationProcessor;
-import org.apache.rocketmq.broker.processor.PopServiceManager;
+import org.apache.rocketmq.broker.service.pop.PopServiceManager;
 import org.apache.rocketmq.store.MessageArrivingListener;
 
 public class NotifyMessageArrivingListener implements MessageArrivingListener {

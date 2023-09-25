@@ -20,7 +20,7 @@ package org.apache.rocketmq.broker.offset;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.processor.PopServiceManager;
+import org.apache.rocketmq.broker.service.pop.PopServiceManager;
 import org.apache.rocketmq.broker.service.BrokerNettyServer;
 import org.apache.rocketmq.broker.processor.PopMessageProcessor;
 import org.apache.rocketmq.common.BrokerConfig;
