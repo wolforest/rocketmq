@@ -20,6 +20,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.FileRegion;
+import io.netty.util.concurrent.Future;
 import io.opentelemetry.api.common.Attributes;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -229,35 +230,28 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     private ExpressionMessageFilter initExpressionMessageFilter(PopMessageRequestHeader requestHeader, RemotingCommand response) {
         try {
             SubscriptionData subscriptionData = FilterAPI.build(requestHeader.getTopic(), requestHeader.getExp(), requestHeader.getExpType());
-            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
-                requestHeader.getTopic(), subscriptionData);
+            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(), requestHeader.getTopic(), subscriptionData);
 
             String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup());
             SubscriptionData retrySubscriptionData = FilterAPI.build(retryTopic, SubscriptionData.SUB_ALL, requestHeader.getExpType());
-            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
-                retryTopic, retrySubscriptionData);
+            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(), retryTopic, retrySubscriptionData);
 
             ConsumerFilterData consumerFilterData = null;
-            if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
-                consumerFilterData = ConsumerFilterManager.build(
-                    requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getExp(),
-                    requestHeader.getExpType(), System.currentTimeMillis()
-                );
-                if (consumerFilterData == null) {
-                    POP_LOGGER.warn("Parse the consumer's subscription[{}] failed, group: {}",
-                        requestHeader.getExp(), requestHeader.getConsumerGroup());
-                    response.setCode(ResponseCode.SUBSCRIPTION_PARSE_FAILED);
-                    response.setRemark("parse the consumer's subscription failed");
-                    return null;
-                }
+            if (ExpressionType.isTagType(subscriptionData.getExpressionType())) {
+                return new ExpressionMessageFilter(subscriptionData, consumerFilterData, brokerController.getConsumerFilterManager());
             }
-            return new ExpressionMessageFilter(subscriptionData, consumerFilterData,
-                brokerController.getConsumerFilterManager());
+
+            consumerFilterData = ConsumerFilterManager.build(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getExp(), requestHeader.getExpType(), System.currentTimeMillis());
+            if (consumerFilterData != null) {
+                return new ExpressionMessageFilter(subscriptionData, consumerFilterData, brokerController.getConsumerFilterManager());
+            }
+
+            POP_LOGGER.warn("Parse the consumer's subscription[{}] failed, group: {}", requestHeader.getExp(), requestHeader.getConsumerGroup());
+            response.setCodeAndRemark(ResponseCode.SUBSCRIPTION_PARSE_FAILED, "parse the consumer's subscription failed");
+            return null;
         } catch (Exception e) {
-            POP_LOGGER.warn("Parse the consumer's subscription[{}] error, group: {}", requestHeader.getExp(),
-                requestHeader.getConsumerGroup());
-            response.setCode(ResponseCode.SUBSCRIPTION_PARSE_FAILED);
-            response.setRemark("parse the consumer's subscription failed");
+            POP_LOGGER.warn("Parse the consumer's subscription[{}] error, group: {}", requestHeader.getExp(), requestHeader.getConsumerGroup());
+            response.setCodeAndRemark(ResponseCode.SUBSCRIPTION_PARSE_FAILED, "parse the consumer's subscription failed");
             return null;
         }
     }
@@ -268,13 +262,11 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
         try {
             SubscriptionData subscriptionData = FilterAPI.build(requestHeader.getTopic(), "*", ExpressionType.TAG);
-            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
-                requestHeader.getTopic(), subscriptionData);
+            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(), requestHeader.getTopic(), subscriptionData);
 
             String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup());
             SubscriptionData retrySubscriptionData = FilterAPI.build(retryTopic, "*", ExpressionType.TAG);
-            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(),
-                retryTopic, retrySubscriptionData);
+            brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(), retryTopic, retrySubscriptionData);
         } catch (Exception e) {
             POP_LOGGER.warn("Build default subscription error, group: {}", requestHeader.getConsumerGroup());
         }
@@ -303,41 +295,48 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         CompletableFuture<Long> getMessageFuture = CompletableFuture.completedFuture(0L);
         if (needRetry && !requestHeader.isOrder()) {
-            TopicConfig retryTopicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup()));
-            if (retryTopicConfig != null) {
-                for (int i = 0; i < retryTopicConfig.getReadQueueNums(); i++) {
-                    int queueId = (randomQ + i) % retryTopicConfig.getReadQueueNums();
-                    getMessageFuture = getMessageFuture.thenCompose(restNum -> popMsgFromQueue(requestHeader.getAttemptId(), true, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter,
-                        startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
-                }
-            }
-        }
-        if (requestHeader.getQueueId() < 0) {
-            TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
-            // read all queue
-            for (int i = 0; i < topicConfig.getReadQueueNums(); i++) {
-                int queueId = (randomQ + i) % topicConfig.getReadQueueNums();
-                getMessageFuture = getMessageFuture.thenCompose(restNum -> popMsgFromQueue(requestHeader.getAttemptId(), false, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter,
-                    startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
-            }
-        } else {
-            int queueId = requestHeader.getQueueId();
-            getMessageFuture = getMessageFuture.thenCompose(restNum -> popMsgFromQueue(requestHeader.getAttemptId(), false, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter,
-                startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
-        }
-        // if not full , fetch retry again
-        if (!needRetry && getMessageResult.getMessageMapedList().size() < requestHeader.getMaxMsgNums() && !requestHeader.isOrder()) {
-            TopicConfig retryTopicConfig =
-                this.brokerController.getTopicConfigManager().selectTopicConfig(KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup()));
-            if (retryTopicConfig != null) {
-                for (int i = 0; i < retryTopicConfig.getReadQueueNums(); i++) {
-                    int queueId = (randomQ + i) % retryTopicConfig.getReadQueueNums();
-                    getMessageFuture = getMessageFuture.thenCompose(restNum -> popMsgFromQueue(requestHeader.getAttemptId(), true, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter,
-                        startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
-                }
-            }
+            getMessageFuture = popRetryMessage(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo, reviveQid, popTime, randomQ, getMessageFuture);
         }
 
+        getMessageFuture = popMessage(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo, reviveQid, popTime, randomQ, getMessageFuture);
+
+        // if not full , fetch retry again
+        if (!needRetry && getMessageResult.getMessageMapedList().size() < requestHeader.getMaxMsgNums() && !requestHeader.isOrder()) {
+            getMessageFuture = popRetryMessage(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo, reviveQid, popTime, randomQ, getMessageFuture);
+        }
+
+        return getMessageFuture;
+    }
+
+    private CompletableFuture<Long> popMessage(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
+        StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, int randomQ, CompletableFuture<Long> getMessageFuture) {
+
+        if (requestHeader.getQueueId() >= 0) {
+            return getMessageFuture.thenCompose(restNum -> popMsgFromQueue(requestHeader.getAttemptId(), false, getMessageResult, requestHeader, requestHeader.getQueueId(), restNum, reviveQid, ctx.channel(), popTime, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
+        }
+
+        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+        // read all queue
+        for (int i = 0; i < topicConfig.getReadQueueNums(); i++) {
+            int queueId = (randomQ + i) % topicConfig.getReadQueueNums();
+            getMessageFuture = getMessageFuture.thenCompose(restNum -> popMsgFromQueue(requestHeader.getAttemptId(), false, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
+        }
+
+        return getMessageFuture;
+    }
+
+    private CompletableFuture<Long> popRetryMessage(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
+        StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, int randomQ, CompletableFuture<Long> getMessageFuture) {
+        TopicConfig retryTopicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup()));
+        if (retryTopicConfig == null) {
+            return getMessageFuture;
+        }
+
+        for (int i = 0; i < retryTopicConfig.getReadQueueNums(); i++) {
+            int queueId = (randomQ + i) % retryTopicConfig.getReadQueueNums();
+            getMessageFuture = getMessageFuture.thenCompose(restNum -> popMsgFromQueue(requestHeader.getAttemptId(), true, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter,
+                startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
+        }
 
         return getMessageFuture;
     }
@@ -349,8 +348,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             getMessageResult.setStatus(GetMessageStatus.FOUND);
             if (restNum > 0) {
                 // all queue pop can not notify specified queue pop, and vice versa
-                popLongPollingService.notifyMessageArriving(requestHeader.getTopic(), requestHeader.getConsumerGroup(),
-                    requestHeader.getQueueId());
+                popLongPollingService.notifyMessageArriving(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
             }
         } else {
             PollingResult pollingResult = popLongPollingService.polling(ctx, request, new PollingHeader(requestHeader));
@@ -382,11 +380,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     private boolean handleSuccessResponse(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse) {
         if (this.brokerController.getBrokerConfig().isTransferMsgByHeap()) {
             final long beginTimeMills = this.brokerController.getMessageStore().now();
-            final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(),
-                requestHeader.getTopic(), requestHeader.getQueueId());
-            this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
-                requestHeader.getTopic(), requestHeader.getQueueId(),
-                (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
+            final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
+            this.brokerController.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), (int) (this.brokerController.getMessageStore().now() - beginTimeMills));
             finalResponse.setBody(r);
             return true;
         }
@@ -395,15 +390,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         try {
             FileRegion fileRegion = new ManyMessageTransfer(finalResponse.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
             ctx.channel().writeAndFlush(fileRegion).addListener((ChannelFutureListener) future -> {
-
                 tmpGetMessageResult.release();
-                Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
-                    .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
-                    .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
-                    .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
-                    .build();
-
-                RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
+                recordRpcLatency(request, finalResponse, future);
                 if (!future.isSuccess()) {
                     POP_LOGGER.error("Fail to transfer messages from page cache to {}", ctx.channel().remoteAddress(), future.cause());
                 }
@@ -416,15 +404,23 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return false;
     }
 
+    private void recordRpcLatency(RemotingCommand request, RemotingCommand finalResponse, Future<?> future) {
+        Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
+            .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
+            .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(finalResponse.getCode()))
+            .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
+            .build();
+
+        RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
+    }
+
     private RemotingCommand handleFutureResponse(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse) {
-        switch (finalResponse.getCode()) {
-            case ResponseCode.SUCCESS:
-                if (!handleSuccessResponse(ctx, request, requestHeader, getMessageResult, finalResponse)) {
-                    return null;
-                }
-                break;
-            default:
-                return finalResponse;
+        if (finalResponse.getCode() == ResponseCode.SUCCESS) {
+            return finalResponse;
+        }
+
+        if (!handleSuccessResponse(ctx, request, requestHeader, getMessageResult, finalResponse)) {
+            return null;
         }
         return finalResponse;
     }

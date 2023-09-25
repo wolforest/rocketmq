@@ -107,6 +107,62 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         this.pullMessageResultHandler = pullMessageResultHandler;
     }
 
+    public RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend, boolean brokerAllowFlowCtrSuspend) throws RemotingCommandException {
+        RemotingCommand response = RemotingCommand.createResponseCommand(PullMessageResponseHeader.class);
+        final PullMessageResponseHeader responseHeader = (PullMessageResponseHeader) response.readCustomHeader();
+        final PullMessageRequestHeader requestHeader = (PullMessageRequestHeader) request.decodeCommandCustomHeader(PullMessageRequestHeader.class);
+        response.setOpaque(request.getOpaque());
+        LOGGER.debug("receive PullMessage request command, {}", request);
+
+        if (!allowAccess(response, responseHeader, channel, request, requestHeader)) {
+            return response;
+        }
+
+        SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
+        TopicQueueMappingContext mappingContext = this.brokerController.getTopicQueueMappingManager().buildTopicQueueMappingContext(requestHeader, false);
+
+        RemotingCommand rewriteResult = rewriteRequestForStaticTopic(requestHeader, mappingContext);
+        if (rewriteResult != null) {
+            return rewriteResult;
+        }
+
+        compensateBasicConsumerInfo(brokerController.getConsumerManager(), requestHeader);
+        SubscriptionData subscriptionData = buildSubscriptionData(subscriptionGroupConfig, requestHeader, response, responseHeader);
+        if (null == subscriptionData) {
+            return response;
+        }
+
+        ConsumerFilterData consumerFilterData = null;
+        if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
+            consumerFilterData = buildConsumerFilterData(requestHeader, response);
+            if (consumerFilterData == null) {
+                return response;
+            }
+        }
+
+        if (!ExpressionType.isTagType(subscriptionData.getExpressionType()) && !this.brokerController.getBrokerConfig().isEnablePropertyFilter()) {
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "The broker does not support consumer to filter message by " + subscriptionData.getExpressionType());
+        }
+
+        MessageFilter messageFilter = initMessageFilter(subscriptionData, consumerFilterData);
+        if (!checkStoreRules(request, requestHeader, channel, response, brokerAllowFlowCtrSuspend, subscriptionData, messageFilter)) {
+            return response;
+        }
+
+        final boolean useResetOffsetFeature = brokerController.getBrokerConfig().isUseServerSideResetOffset();
+        Long resetOffset = brokerController.getConsumerOffsetManager().queryThenEraseResetOffset(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
+        if (useResetOffsetFeature && null != resetOffset) {
+            return handlePullResult(resetOffset, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
+        }
+
+        long broadcastInitOffset = queryBroadcastPullInitOffset(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId(), requestHeader, channel);
+        if (broadcastInitOffset >= 0) {
+            return handleBroadcastResult(broadcastInitOffset, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
+        }
+
+        return handleAsyncResult(request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
+    }
+
     private void prepareRequestHeader(PullMessageRequestHeader requestHeader, LogicQueueMappingItem mappingItem) {
         Integer phyQueueId = mappingItem.getQueueId();
         Long phyQueueOffset = mappingItem.computePhysicalQueueOffset(requestHeader.getQueueOffset());
@@ -558,61 +614,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         return consumerFilterData;
     }
 
-    public RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend, boolean brokerAllowFlowCtrSuspend) throws RemotingCommandException {
-        RemotingCommand response = RemotingCommand.createResponseCommand(PullMessageResponseHeader.class);
-        final PullMessageResponseHeader responseHeader = (PullMessageResponseHeader) response.readCustomHeader();
-        final PullMessageRequestHeader requestHeader = (PullMessageRequestHeader) request.decodeCommandCustomHeader(PullMessageRequestHeader.class);
-        response.setOpaque(request.getOpaque());
-        LOGGER.debug("receive PullMessage request command, {}", request);
 
-        if (!allowAccess(response, responseHeader, channel, request, requestHeader)) {
-            return response;
-        }
-
-        SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
-        TopicQueueMappingContext mappingContext = this.brokerController.getTopicQueueMappingManager().buildTopicQueueMappingContext(requestHeader, false);
-
-        RemotingCommand rewriteResult = rewriteRequestForStaticTopic(requestHeader, mappingContext);
-        if (rewriteResult != null) {
-            return rewriteResult;
-        }
-
-        compensateBasicConsumerInfo(brokerController.getConsumerManager(), requestHeader);
-        SubscriptionData subscriptionData = buildSubscriptionData(subscriptionGroupConfig, requestHeader, response, responseHeader);
-        if (null == subscriptionData) {
-            return response;
-        }
-
-        ConsumerFilterData consumerFilterData = null;
-        if (!ExpressionType.isTagType(subscriptionData.getExpressionType())) {
-            consumerFilterData = buildConsumerFilterData(requestHeader, response);
-            if (consumerFilterData == null) {
-                return response;
-            }
-        }
-
-        if (!ExpressionType.isTagType(subscriptionData.getExpressionType()) && !this.brokerController.getBrokerConfig().isEnablePropertyFilter()) {
-            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "The broker does not support consumer to filter message by " + subscriptionData.getExpressionType());
-        }
-
-        MessageFilter messageFilter = initMessageFilter(subscriptionData, consumerFilterData);
-        if (!checkStoreRules(request, requestHeader, channel, response, brokerAllowFlowCtrSuspend, subscriptionData, messageFilter)) {
-            return response;
-        }
-
-        final boolean useResetOffsetFeature = brokerController.getBrokerConfig().isUseServerSideResetOffset();
-        Long resetOffset = brokerController.getConsumerOffsetManager().queryThenEraseResetOffset(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
-        if (useResetOffsetFeature && null != resetOffset) {
-            return handlePullResult(resetOffset, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
-        }
-
-        long broadcastInitOffset = queryBroadcastPullInitOffset(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId(), requestHeader, channel);
-        if (broadcastInitOffset >= 0) {
-            return handleBroadcastResult(broadcastInitOffset, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
-        }
-
-        return handleAsyncResult(request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
-    }
 
     private RemotingCommand handleAsyncResult(RemotingCommand request, PullMessageRequestHeader requestHeader, Channel channel, SubscriptionData subscriptionData,
                                               SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext) {
