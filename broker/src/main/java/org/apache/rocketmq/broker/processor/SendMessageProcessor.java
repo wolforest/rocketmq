@@ -173,64 +173,75 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         return null;
     }
 
-    private boolean handleRetryAndDLQ(SendMessageRequestHeader requestHeader, RemotingCommand response,
-        RemotingCommand request, MessageExt msg, TopicConfig topicConfig, Map<String, String> properties) {
-        String newTopic = requestHeader.getTopic();
-        if (null != newTopic && newTopic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-            String groupName = newTopic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
-            SubscriptionGroupConfig subscriptionGroupConfig =
-                this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(groupName);
-            if (null == subscriptionGroupConfig) {
-                response.setCode(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST);
-                response.setRemark(
-                    "subscription group not exist, " + groupName + " " + FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST));
-                return false;
-            }
-
-            int maxReconsumeTimes = subscriptionGroupConfig.getRetryMaxTimes();
-            if (request.getVersion() >= MQVersion.Version.V3_4_9.ordinal() && requestHeader.getMaxReconsumeTimes() != null) {
-                maxReconsumeTimes = requestHeader.getMaxReconsumeTimes();
-            }
-            int reconsumeTimes = requestHeader.getReconsumeTimes() == null ? 0 : requestHeader.getReconsumeTimes();
-
-            boolean sendRetryMessageToDeadLetterQueueDirectly = false;
-            if (!brokerController.getBrokerClusterService().getRebalanceLockManager().isLockAllExpired(groupName)) {
-                LOGGER.info("Group has unexpired lock record, which show it is ordered message, send it to DLQ "
-                        + "right now group={}, topic={}, reconsumeTimes={}, maxReconsumeTimes={}.", groupName,
-                    newTopic, reconsumeTimes, maxReconsumeTimes);
-                sendRetryMessageToDeadLetterQueueDirectly = true;
-            }
-
-            if (reconsumeTimes > maxReconsumeTimes || sendRetryMessageToDeadLetterQueueDirectly) {
-                Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
-                    .put(LABEL_CONSUMER_GROUP, requestHeader.getProducerGroup())
-                    .put(LABEL_TOPIC, requestHeader.getTopic())
-                    .put(LABEL_IS_SYSTEM, BrokerMetricsManager.isSystem(requestHeader.getTopic(), requestHeader.getProducerGroup()))
-                    .build();
-                BrokerMetricsManager.sendToDlqMessages.add(1, attributes);
-
-                properties.put(MessageConst.PROPERTY_DELAY_TIME_LEVEL, "-1");
-                newTopic = MixAll.getDLQTopic(groupName);
-                int queueIdInt = randomQueueId(DLQ_NUMS_PER_GROUP);
-                topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic,
-                    DLQ_NUMS_PER_GROUP, PermName.PERM_WRITE | PermName.PERM_READ, 0
-                );
-                msg.setTopic(newTopic);
-                msg.setQueueId(queueIdInt);
-                msg.setDelayTimeLevel(0);
-                if (null == topicConfig) {
-                    response.setCode(ResponseCode.SYSTEM_ERROR);
-                    response.setRemark("topic[" + newTopic + "] not exist");
-                    return false;
-                }
-            }
-        }
+    private void setMsgFlag(MessageExt msg, SendMessageRequestHeader requestHeader, TopicConfig topicConfig) {
         int sysFlag = requestHeader.getSysFlag();
         if (TopicFilterType.MULTI_TAG == topicConfig.getTopicFilterType()) {
             sysFlag |= MessageSysFlag.MULTI_TAGS_FLAG;
         }
         msg.setSysFlag(sysFlag);
+    }
+
+    private boolean handleRetryAndDLQ(SendMessageRequestHeader requestHeader, RemotingCommand response,
+        RemotingCommand request, MessageExt msg, TopicConfig topicConfig, Map<String, String> properties) {
+        setMsgFlag(msg, requestHeader, topicConfig);
+        String newTopic = requestHeader.getTopic();
+        if (null == newTopic || !newTopic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            return true;
+        }
+
+        String groupName = newTopic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+        SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(groupName);
+        if (null == subscriptionGroupConfig) {
+            response.setCodeAndRemark(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST, "subscription group not exist, " + groupName + " " + FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST));
+            return false;
+        }
+
+        int maxReconsumeTimes = subscriptionGroupConfig.getRetryMaxTimes();
+        if (request.getVersion() >= MQVersion.Version.V3_4_9.ordinal() && requestHeader.getMaxReconsumeTimes() != null) {
+            maxReconsumeTimes = requestHeader.getMaxReconsumeTimes();
+        }
+
+        int reconsumeTimes = requestHeader.getReconsumeTimes() == null ? 0 : requestHeader.getReconsumeTimes();
+        boolean sendRetryMessageToDeadLetterQueueDirectly = false;
+
+        if (!brokerController.getBrokerClusterService().getRebalanceLockManager().isLockAllExpired(groupName)) {
+            LOGGER.info("Group has unexpired lock record, which show it is ordered message, send it to DLQ "
+                    + "right now group={}, topic={}, reconsumeTimes={}, maxReconsumeTimes={}.", groupName, newTopic, reconsumeTimes, maxReconsumeTimes);
+            sendRetryMessageToDeadLetterQueueDirectly = true;
+        }
+
+        if (reconsumeTimes <= maxReconsumeTimes && !sendRetryMessageToDeadLetterQueueDirectly) {
+            return true;
+        }
+
+        setDlqMatrix(requestHeader);
+        properties.put(MessageConst.PROPERTY_DELAY_TIME_LEVEL, "-1");
+        newTopic = MixAll.getDLQTopic(groupName);
+        setMsgInfo(msg, newTopic);
+
+        topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic, DLQ_NUMS_PER_GROUP, PermName.PERM_WRITE | PermName.PERM_READ, 0 );
+        if (null == topicConfig) {
+            response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "topic[" + newTopic + "] not exist");
+            return false;
+        }
+
         return true;
+    }
+
+    private void setMsgInfo(MessageExt msg, String newTopic) {
+        int queueIdInt = randomQueueId(DLQ_NUMS_PER_GROUP);
+        msg.setTopic(newTopic);
+        msg.setQueueId(queueIdInt);
+        msg.setDelayTimeLevel(0);
+    }
+
+    private void setDlqMatrix(SendMessageRequestHeader requestHeader) {
+        Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
+            .put(LABEL_CONSUMER_GROUP, requestHeader.getProducerGroup())
+            .put(LABEL_TOPIC, requestHeader.getTopic())
+            .put(LABEL_IS_SYSTEM, BrokerMetricsManager.isSystem(requestHeader.getTopic(), requestHeader.getProducerGroup()))
+            .build();
+        BrokerMetricsManager.sendToDlqMessages.add(1, attributes);
     }
 
     private int getQueueId(SendMessageRequestHeader requestHeader, TopicConfig topicConfig) {
