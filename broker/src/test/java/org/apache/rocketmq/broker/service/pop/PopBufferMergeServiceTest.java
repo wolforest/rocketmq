@@ -14,15 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.processor;
+package org.apache.rocketmq.broker.service.pop;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.schedule.ScheduleMessageService;
-import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
@@ -50,10 +48,6 @@ public class PopBufferMergeServiceTest {
     @Spy
     private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
     @Mock
-    private PopMessageProcessor popMessageProcessor;
-    @Mock
-    private ChannelHandlerContext handlerContext;
-    @Mock
     private DefaultMessageStore messageStore;
     private ScheduleMessageService scheduleMessageService;
     private ClientChannelInfo clientChannelInfo;
@@ -64,7 +58,6 @@ public class PopBufferMergeServiceTest {
     public void init() throws Exception {
         FieldUtils.writeField(brokerController.getBrokerConfig(), "enablePopBufferMerge", true, true);
         brokerController.setMessageStore(messageStore);
-        popMessageProcessor = new PopMessageProcessor(brokerController);
         scheduleMessageService = new ScheduleMessageService(brokerController);
         scheduleMessageService.parseDelayLevel();
         Channel mockChannel = mock(Channel.class);

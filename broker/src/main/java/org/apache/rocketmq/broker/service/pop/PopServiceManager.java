@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.longpolling.PopLongPollingService;
 import org.apache.rocketmq.broker.longpolling.PopRequest;
-import org.apache.rocketmq.broker.processor.PopReviveService;
 import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.PopAckConstants;
 import org.apache.rocketmq.common.constant.LoggerName;
