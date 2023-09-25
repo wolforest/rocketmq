@@ -91,20 +91,21 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
             return response;
         }
         RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
-        if (res.getCode() == ResponseCode.SUCCESS) {
-            MessageExtBrokerInner msgInner = endMessageTransaction(result.getPrepareMessage());
-            msgInner.setSysFlag(MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), requestHeader.getCommitOrRollback()));
-            msgInner.setQueueOffset(requestHeader.getTranStateTableOffset());
-            msgInner.setPreparedTransactionOffset(requestHeader.getCommitLogOffset());
-            msgInner.setStoreTimestamp(result.getPrepareMessage().getStoreTimestamp());
-            MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED);
-            RemotingCommand sendResult = sendFinalMessage(msgInner);
-            if (sendResult.getCode() == ResponseCode.SUCCESS) {
-                this.brokerController.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
-            }
-            return sendResult;
+        if (res.getCode() != ResponseCode.SUCCESS) {
+            return res;
         }
-        return res;
+
+        MessageExtBrokerInner msgInner = endMessageTransaction(result.getPrepareMessage());
+        msgInner.setSysFlag(MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), requestHeader.getCommitOrRollback()));
+        msgInner.setQueueOffset(requestHeader.getTranStateTableOffset());
+        msgInner.setPreparedTransactionOffset(requestHeader.getCommitLogOffset());
+        msgInner.setStoreTimestamp(result.getPrepareMessage().getStoreTimestamp());
+        MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED);
+        RemotingCommand sendResult = sendFinalMessage(msgInner);
+        if (sendResult.getCode() == ResponseCode.SUCCESS) {
+            this.brokerController.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
+        }
+        return sendResult;
     }
 
     private RemotingCommand processRollbackRequest(EndTransactionRequestHeader requestHeader, RemotingCommand response) {
