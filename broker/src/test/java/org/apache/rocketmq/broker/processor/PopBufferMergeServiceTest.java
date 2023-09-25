@@ -85,7 +85,7 @@ public class PopBufferMergeServiceTest {
         // This test case fails on Windows in CI pipeline
         // Disable it for later fix
         Assume.assumeFalse(MixAll.isWindows());
-        PopBufferMergeService popBufferMergeService = new PopBufferMergeService(brokerController, popMessageProcessor);
+        PopBufferMergeService popBufferMergeService = new PopBufferMergeService(brokerController);
         popBufferMergeService.start();
         PopCheckPoint ck = new PopCheckPoint();
         ck.setBitMap(0);

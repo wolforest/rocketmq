@@ -109,7 +109,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         this.reviveTopic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
         this.popLongPollingService = new PopLongPollingService(brokerController);
         this.queueLockManager = new QueueLockManager(this);
-        this.popBufferMergeService = new PopBufferMergeService(this.brokerController, this);
+        this.popBufferMergeService = new PopBufferMergeService(this.brokerController);
         this.ckMessageNumber = new AtomicLong();
     }
 

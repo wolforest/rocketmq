@@ -66,10 +66,10 @@ public class PopBufferMergeService extends ServiceThread {
     private final List<Byte> batchAckIndexList = new ArrayList(32);
     private volatile boolean master = false;
 
-    public PopBufferMergeService(BrokerController brokerController, PopMessageProcessor popMessageProcessor) {
+    public PopBufferMergeService(BrokerController brokerController) {
         this.brokerController = brokerController;
-        this.popMessageProcessor = popMessageProcessor;
-        this.queueLockManager = popMessageProcessor.getQueueLockManager();
+        this.popMessageProcessor = brokerController.getBrokerNettyServer().getPopMessageProcessor();
+        this.queueLockManager = this.popMessageProcessor.getQueueLockManager();
     }
 
     private boolean isShouldRunning() {
