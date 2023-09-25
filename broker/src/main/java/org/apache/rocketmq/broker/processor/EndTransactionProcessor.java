@@ -70,49 +70,60 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
 
         OperationResult result = new OperationResult();
         if (MessageSysFlag.TRANSACTION_COMMIT_TYPE == requestHeader.getCommitOrRollback()) {
-            result = this.brokerController.getBrokerMessageService().getTransactionalMessageService().commitMessage(requestHeader);
-            if (result.getResponseCode() == ResponseCode.SUCCESS) {
-                if (rejectCommitOrRollback(requestHeader, result.getPrepareMessage())) {
-                    response.setCode(ResponseCode.ILLEGAL_OPERATION);
-                    LOGGER.warn("Message commit fail [producer end]. currentTimeMillis - bornTime > checkImmunityTime, msgId={},commitLogOffset={}, wait check",
-                            requestHeader.getMsgId(), requestHeader.getCommitLogOffset());
-                    return response;
-                }
-                RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
-                if (res.getCode() == ResponseCode.SUCCESS) {
-                    MessageExtBrokerInner msgInner = endMessageTransaction(result.getPrepareMessage());
-                    msgInner.setSysFlag(MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), requestHeader.getCommitOrRollback()));
-                    msgInner.setQueueOffset(requestHeader.getTranStateTableOffset());
-                    msgInner.setPreparedTransactionOffset(requestHeader.getCommitLogOffset());
-                    msgInner.setStoreTimestamp(result.getPrepareMessage().getStoreTimestamp());
-                    MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED);
-                    RemotingCommand sendResult = sendFinalMessage(msgInner);
-                    if (sendResult.getCode() == ResponseCode.SUCCESS) {
-                        this.brokerController.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
-                    }
-                    return sendResult;
-                }
-                return res;
-            }
+            return processCommitRequest(requestHeader, response);
         } else if (MessageSysFlag.TRANSACTION_ROLLBACK_TYPE == requestHeader.getCommitOrRollback()) {
-            result = this.brokerController.getBrokerMessageService().getTransactionalMessageService().rollbackMessage(requestHeader);
-            if (result.getResponseCode() == ResponseCode.SUCCESS) {
-                if (rejectCommitOrRollback(requestHeader, result.getPrepareMessage())) {
-                    response.setCode(ResponseCode.ILLEGAL_OPERATION);
-                    LOGGER.warn("Message rollback fail [producer end]. currentTimeMillis - bornTime > checkImmunityTime, msgId={},commitLogOffset={}, wait check",
-                            requestHeader.getMsgId(), requestHeader.getCommitLogOffset());
-                    return response;
-                }
-                RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
-                if (res.getCode() == ResponseCode.SUCCESS) {
-                    this.brokerController.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
-                }
-                return res;
-            }
+            return processRollbackRequest(requestHeader, response);
         }
-        response.setCode(result.getResponseCode());
-        response.setRemark(result.getResponseRemark());
-        return response;
+
+        return response.setCodeAndRemark(result.getResponseCode(), result.getResponseRemark());
+    }
+
+    private RemotingCommand processCommitRequest(EndTransactionRequestHeader requestHeader, RemotingCommand response) {
+        OperationResult result = this.brokerController.getBrokerMessageService().getTransactionalMessageService().commitMessage(requestHeader);
+        if (result.getResponseCode() != ResponseCode.SUCCESS) {
+            return response.setCodeAndRemark(result.getResponseCode(), result.getResponseRemark());
+        }
+
+        if (rejectCommitOrRollback(requestHeader, result.getPrepareMessage())) {
+            response.setCode(ResponseCode.ILLEGAL_OPERATION);
+            LOGGER.warn("Message commit fail [producer end]. currentTimeMillis - bornTime > checkImmunityTime, msgId={},commitLogOffset={}, wait check",
+                requestHeader.getMsgId(), requestHeader.getCommitLogOffset());
+            return response;
+        }
+        RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
+        if (res.getCode() == ResponseCode.SUCCESS) {
+            MessageExtBrokerInner msgInner = endMessageTransaction(result.getPrepareMessage());
+            msgInner.setSysFlag(MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), requestHeader.getCommitOrRollback()));
+            msgInner.setQueueOffset(requestHeader.getTranStateTableOffset());
+            msgInner.setPreparedTransactionOffset(requestHeader.getCommitLogOffset());
+            msgInner.setStoreTimestamp(result.getPrepareMessage().getStoreTimestamp());
+            MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED);
+            RemotingCommand sendResult = sendFinalMessage(msgInner);
+            if (sendResult.getCode() == ResponseCode.SUCCESS) {
+                this.brokerController.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
+            }
+            return sendResult;
+        }
+        return res;
+    }
+
+    private RemotingCommand processRollbackRequest(EndTransactionRequestHeader requestHeader, RemotingCommand response) {
+        OperationResult result = this.brokerController.getBrokerMessageService().getTransactionalMessageService().rollbackMessage(requestHeader);
+        if (result.getResponseCode() != ResponseCode.SUCCESS) {
+            return response.setCodeAndRemark(result.getResponseCode(), result.getResponseRemark());
+        }
+
+        if (rejectCommitOrRollback(requestHeader, result.getPrepareMessage())) {
+            response.setCode(ResponseCode.ILLEGAL_OPERATION);
+            LOGGER.warn("Message rollback fail [producer end]. currentTimeMillis - bornTime > checkImmunityTime, msgId={},commitLogOffset={}, wait check",
+                requestHeader.getMsgId(), requestHeader.getCommitLogOffset());
+            return response;
+        }
+        RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
+        if (res.getCode() == ResponseCode.SUCCESS) {
+            this.brokerController.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
+        }
+        return res;
     }
 
     /**
