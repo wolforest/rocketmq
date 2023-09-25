@@ -51,78 +51,23 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         this.brokerController = brokerController;
     }
 
+
     @Override
-    public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) throws
-        RemotingCommandException {
+    public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        final EndTransactionRequestHeader requestHeader =
-            (EndTransactionRequestHeader) request.decodeCommandCustomHeader(EndTransactionRequestHeader.class);
+        final EndTransactionRequestHeader requestHeader = (EndTransactionRequestHeader) request.decodeCommandCustomHeader(EndTransactionRequestHeader.class);
         LOGGER.debug("Transaction request:{}", requestHeader);
+
         if (BrokerRole.SLAVE == brokerController.getMessageStoreConfig().getBrokerRole()) {
             response.setCode(ResponseCode.SLAVE_NOT_AVAILABLE);
             LOGGER.warn("Message store is slave mode, so end transaction is forbidden. ");
             return response;
         }
 
-        if (requestHeader.getFromTransactionCheck()) {
-            switch (requestHeader.getCommitOrRollback()) {
-                case MessageSysFlag.TRANSACTION_NOT_TYPE: {
-                    LOGGER.warn("Check producer[{}] transaction state, but it's pending status."
-                            + "RequestHeader: {} Remark: {}",
-                        RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
-                        requestHeader.toString(),
-                        request.getRemark());
-                    return null;
-                }
-
-                case MessageSysFlag.TRANSACTION_COMMIT_TYPE: {
-                    LOGGER.warn("Check producer[{}] transaction state, the producer commit the message."
-                            + "RequestHeader: {} Remark: {}",
-                        RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
-                        requestHeader.toString(),
-                        request.getRemark());
-
-                    break;
-                }
-
-                case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE: {
-                    LOGGER.warn("Check producer[{}] transaction state, the producer rollback the message."
-                            + "RequestHeader: {} Remark: {}",
-                        RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
-                        requestHeader.toString(),
-                        request.getRemark());
-                    break;
-                }
-                default:
-                    return null;
-            }
-        } else {
-            switch (requestHeader.getCommitOrRollback()) {
-                case MessageSysFlag.TRANSACTION_NOT_TYPE: {
-                    LOGGER.warn("The producer[{}] end transaction in sending message,  and it's pending status."
-                            + "RequestHeader: {} Remark: {}",
-                        RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
-                        requestHeader.toString(),
-                        request.getRemark());
-                    return null;
-                }
-
-                case MessageSysFlag.TRANSACTION_COMMIT_TYPE: {
-                    break;
-                }
-
-                case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE: {
-                    LOGGER.warn("The producer[{}] end transaction in sending message, rollback the message."
-                            + "RequestHeader: {} Remark: {}",
-                        RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
-                        requestHeader.toString(),
-                        request.getRemark());
-                    break;
-                }
-                default:
-                    return null;
-            }
+        if (!checkTransactionState(ctx, request, requestHeader)) {
+            return null;
         }
+
         OperationResult result = new OperationResult();
         if (MessageSysFlag.TRANSACTION_COMMIT_TYPE == requestHeader.getCommitOrRollback()) {
             result = this.brokerController.getBrokerMessageService().getTransactionalMessageService().commitMessage(requestHeader);
@@ -174,9 +119,9 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
      * If you specify a custom first check time CheckImmunityTimeInSeconds,
      * And the commit/rollback request whose validity period exceeds CheckImmunityTimeInSeconds and is not checked back will be processed and failed
      * returns ILLEGAL_OPERATION 604 error
-     * @param requestHeader
-     * @param messageExt
-     * @return
+     * @param requestHeader requestHeader
+     * @param messageExt messageExt
+     * @return boolean
      */
     public boolean rejectCommitOrRollback(EndTransactionRequestHeader requestHeader, MessageExt messageExt) {
         if (requestHeader.getFromTransactionCheck()) {
@@ -197,6 +142,80 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
     @Override
     public boolean rejectRequest() {
         return false;
+    }
+
+    private boolean checkTransactionState(ChannelHandlerContext ctx, RemotingCommand request, EndTransactionRequestHeader requestHeader) {
+        if (requestHeader.getFromTransactionCheck()) {
+            return checkStateFromTransaction(ctx, request, requestHeader);
+        } else {
+            return checkState(ctx, request, requestHeader);
+        }
+    }
+
+    private boolean checkStateFromTransaction(ChannelHandlerContext ctx, RemotingCommand request, EndTransactionRequestHeader requestHeader) {
+        switch (requestHeader.getCommitOrRollback()) {
+            case MessageSysFlag.TRANSACTION_NOT_TYPE: {
+                LOGGER.warn("Check producer[{}] transaction state, but it's pending status."
+                        + "RequestHeader: {} Remark: {}",
+                    RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
+                    requestHeader.toString(),
+                    request.getRemark());
+                return false;
+            }
+
+            case MessageSysFlag.TRANSACTION_COMMIT_TYPE: {
+                LOGGER.warn("Check producer[{}] transaction state, the producer commit the message."
+                        + "RequestHeader: {} Remark: {}",
+                    RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
+                    requestHeader.toString(),
+                    request.getRemark());
+
+                break;
+            }
+
+            case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE: {
+                LOGGER.warn("Check producer[{}] transaction state, the producer rollback the message."
+                        + "RequestHeader: {} Remark: {}",
+                    RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
+                    requestHeader.toString(),
+                    request.getRemark());
+                break;
+            }
+            default:
+                return false;
+        }
+
+        return true;
+    }
+
+    private boolean checkState(ChannelHandlerContext ctx, RemotingCommand request, EndTransactionRequestHeader requestHeader) {
+        switch (requestHeader.getCommitOrRollback()) {
+            case MessageSysFlag.TRANSACTION_NOT_TYPE: {
+                LOGGER.warn("The producer[{}] end transaction in sending message,  and it's pending status."
+                        + "RequestHeader: {} Remark: {}",
+                    RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
+                    requestHeader.toString(),
+                    request.getRemark());
+                return false;
+            }
+
+            case MessageSysFlag.TRANSACTION_COMMIT_TYPE: {
+                break;
+            }
+
+            case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE: {
+                LOGGER.warn("The producer[{}] end transaction in sending message, rollback the message."
+                        + "RequestHeader: {} Remark: {}",
+                    RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
+                    requestHeader.toString(),
+                    request.getRemark());
+                break;
+            }
+            default:
+                return false;
+        }
+
+        return true;
     }
 
     private RemotingCommand checkPrepareMessage(MessageExt msgExt, EndTransactionRequestHeader requestHeader) {
