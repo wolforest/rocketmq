@@ -179,8 +179,8 @@ public class BrokerMessageService {
             return true;
         }
 
-        PopServiceManager popServiceManager = brokerController.getBrokerNettyServer().getPopReviveManager();
-        return popServiceManager != null && popServiceManager.isRunning();
+        PopServiceManager popServiceManager = brokerController.getBrokerNettyServer().getPopServiceManager();
+        return popServiceManager != null && popServiceManager.isReviveRunning();
     }
 
     public void changeSpecialServiceStatus(boolean shouldStart) {
@@ -196,7 +196,7 @@ public class BrokerMessageService {
         AckMessageProcessor ackMessageProcessor = brokerController.getBrokerNettyServer().getAckMessageProcessor();
         if (ackMessageProcessor != null) {
             LOG.info("Set PopReviveService Status to {}", shouldStart);
-            brokerController.getBrokerNettyServer().getPopReviveManager().setReviveStatus(shouldStart);
+            brokerController.getBrokerNettyServer().getPopServiceManager().setReviveStatus(shouldStart);
         }
     }
 

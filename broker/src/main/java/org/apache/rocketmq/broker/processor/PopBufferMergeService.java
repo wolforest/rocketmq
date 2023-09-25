@@ -54,8 +54,7 @@ public class PopBufferMergeService extends ServiceThread {
     private final AtomicInteger counter = new AtomicInteger(0);
     private int scanTimes = 0;
     private final BrokerController brokerController;
-    private final PopMessageProcessor popMessageProcessor;
-    private final QueueLockManager queueLockManager;
+    private final String reviveTopic;
 
     private final long interval = 5;
     private final long minute5 = 5 * 60 * 1000;
@@ -68,8 +67,7 @@ public class PopBufferMergeService extends ServiceThread {
 
     public PopBufferMergeService(BrokerController brokerController) {
         this.brokerController = brokerController;
-        this.popMessageProcessor = brokerController.getBrokerNettyServer().getPopMessageProcessor();
-        this.queueLockManager = this.popMessageProcessor.getQueueLockManager();
+        this.reviveTopic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
     }
 
     private boolean isShouldRunning() {
@@ -421,7 +419,7 @@ public class PopBufferMergeService extends ServiceThread {
 
         final PopCheckPoint popCheckPoint = wrapper.getCk();
         final String lockKey = wrapper.getLockKey();
-
+        QueueLockManager queueLockManager = this.brokerController.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
         if (!queueLockManager.tryLock(lockKey)) {
             return false;
         }
@@ -663,7 +661,7 @@ public class PopBufferMergeService extends ServiceThread {
         if (pointWrapper.getReviveQueueOffset() >= 0) {
             return;
         }
-        MessageExtBrokerInner msgInner = popMessageProcessor.buildCkMsg(pointWrapper.getCk(), pointWrapper.getReviveQueueId());
+        MessageExtBrokerInner msgInner = brokerController.getBrokerNettyServer().getPopServiceManager().buildCkMsg(pointWrapper.getCk(), pointWrapper.getReviveQueueId());
         PutMessageResult putMessageResult = brokerController.getEscapeBridge().putMessageToSpecificQueue(msgInner);
         PopMetricsManager.incPopReviveCkPutCount(pointWrapper.getCk(), putMessageResult.getPutMessageStatus());
         if (putMessageResult.getPutMessageStatus() != PutMessageStatus.PUT_OK
@@ -698,7 +696,7 @@ public class PopBufferMergeService extends ServiceThread {
         ackMsg.setTopic(point.getTopic());
         ackMsg.setQueueId(point.getQueueId());
         ackMsg.setPopTime(point.getPopTime());
-        msgInner.setTopic(popMessageProcessor.reviveTopic);
+        msgInner.setTopic(this.reviveTopic);
         msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.charset));
         msgInner.setQueueId(pointWrapper.getReviveQueueId());
         msgInner.setTags(PopAckConstants.ACK_TAG);
@@ -738,7 +736,7 @@ public class PopBufferMergeService extends ServiceThread {
         batchAckMsg.setTopic(point.getTopic());
         batchAckMsg.setQueueId(point.getQueueId());
         batchAckMsg.setPopTime(point.getPopTime());
-        msgInner.setTopic(popMessageProcessor.reviveTopic);
+        msgInner.setTopic(this.reviveTopic);
         msgInner.setBody(JSON.toJSONString(batchAckMsg).getBytes(DataConverter.charset));
         msgInner.setQueueId(pointWrapper.getReviveQueueId());
         msgInner.setTags(PopAckConstants.BATCH_ACK_TAG);
@@ -771,7 +769,7 @@ public class PopBufferMergeService extends ServiceThread {
         }
         PopCheckPoint point = pointWrapper.getCk();
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
-        msgInner.setTopic(popMessageProcessor.reviveTopic);
+        msgInner.setTopic(this.reviveTopic);
         msgInner.setBody((pointWrapper.getReviveQueueId() + "-" + pointWrapper.getReviveQueueOffset()).getBytes(StandardCharsets.UTF_8));
         msgInner.setQueueId(pointWrapper.getReviveQueueId());
         msgInner.setTags(PopAckConstants.CK_TAG);

@@ -20,6 +20,7 @@ package org.apache.rocketmq.broker.offset;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.processor.PopServiceManager;
 import org.apache.rocketmq.broker.service.BrokerNettyServer;
 import org.apache.rocketmq.broker.processor.PopMessageProcessor;
 import org.apache.rocketmq.common.BrokerConfig;
@@ -50,6 +51,7 @@ public class ConsumerOrderInfoManagerLockFreeNotifyTest {
     private final PopMessageProcessor popMessageProcessor = mock(PopMessageProcessor.class);
     private final BrokerController brokerController = mock(BrokerController.class);
     private final BrokerNettyServer brokerNettyServer = mock(BrokerNettyServer.class);
+    private final PopServiceManager popServiceManager = mock(PopServiceManager.class);
     @Before
     public void before() {
         notified = new AtomicBoolean(false);
@@ -57,10 +59,11 @@ public class ConsumerOrderInfoManagerLockFreeNotifyTest {
         when(brokerController.getBrokerNettyServer()).thenReturn(brokerNettyServer);
         when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
         when(brokerController.getBrokerNettyServer().getPopMessageProcessor()).thenReturn(popMessageProcessor);
+        when(brokerController.getBrokerNettyServer().getPopServiceManager()).thenReturn(popServiceManager);
         doAnswer((Answer<Void>) mock -> {
             notified.set(true);
             return null;
-        }).when(popMessageProcessor).notifyLongPollingRequestIfNeed(anyString(), anyString(), anyInt());
+        }).when(popServiceManager).notifyLongPollingRequestIfNeed(anyString(), anyString(), anyInt());
 
         consumerOrderInfoManager = new ConsumerOrderInfoManager(brokerController);
         popTime = System.currentTimeMillis();

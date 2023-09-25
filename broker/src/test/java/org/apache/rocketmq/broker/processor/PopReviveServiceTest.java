@@ -40,6 +40,7 @@ import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.pop.AckMsg;
 import org.apache.rocketmq.store.pop.PopCheckPoint;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
+import org.apache.rocketmq.store.timer.TimerState;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -77,6 +78,8 @@ public class PopReviveServiceTest {
     private SubscriptionGroupManager subscriptionGroupManager;
     @Mock
     private BrokerController brokerController;
+    @Mock
+    private TimerState timerState;
 
     private BrokerConfig brokerConfig;
     private PopReviveService popReviveService;
@@ -91,6 +94,7 @@ public class PopReviveServiceTest {
         when(brokerController.getTopicConfigManager()).thenReturn(topicConfigManager);
         when(brokerController.getSubscriptionGroupManager()).thenReturn(subscriptionGroupManager);
         when(messageStore.getTimerMessageStore()).thenReturn(timerMessageStore);
+        when(timerMessageStore.getTimerState()).thenReturn(timerState);
         when(timerMessageStore.getTimerState().getDequeueBehind()).thenReturn(0L);
         when(timerMessageStore.getEnqueueBehind()).thenReturn(0L);
 

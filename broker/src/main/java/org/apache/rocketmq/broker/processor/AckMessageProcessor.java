@@ -183,7 +183,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
 
         this.brokerController.getBrokerStatsManager().incBrokerAckNums(ackCount);
         this.brokerController.getBrokerStatsManager().incGroupAckNums(ackMsg.getConsumerGroup(), ackMsg.getTopic(), ackCount);
-        if (this.brokerController.getBrokerNettyServer().getPopMessageProcessor().getPopBufferMergeService().addAckMsg(rqId, ackMsg)) {
+        if (this.brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService().addAckMsg(rqId, ackMsg)) {
             brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(ackMsg.getTopic(), ackMsg.getConsumerGroup(), ackMsg.getPopTime(), ackMsg.getQueueId(), ackCount);
             return;
         }
@@ -214,10 +214,10 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             return;
         }
 
-        PopMessageProcessor popMessageProcessor = this.brokerController.getBrokerNettyServer().getPopMessageProcessor();
+        QueueLockManager queueLockManager = this.brokerController.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
         String lockKey = topic + PopAckConstants.SPLIT + consumeGroup + PopAckConstants.SPLIT + qId;
 
-        lockQueue(popMessageProcessor, lockKey);
+        lockQueue(queueLockManager, lockKey);
         try {
             oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(consumeGroup, topic, qId);
             if (ackOffset < oldOffset) {
@@ -226,27 +226,28 @@ public class AckMessageProcessor implements NettyRequestProcessor {
 
             long nextOffset = brokerController.getConsumerOrderInfoManager().commitAndNext(topic, consumeGroup, qId, ackOffset, popTime);
             if (nextOffset > -1) {
-                handleCommitSuccess(topic, consumeGroup, qId, nextOffset, popMessageProcessor, invisibleTime, channel);
+                handleCommitSuccess(topic, consumeGroup, qId, nextOffset, invisibleTime, channel);
             } else if (nextOffset == -1) {
                 handleIllegalCommit(lockKey, oldOffset, ackOffset, nextOffset, channel, response);
                 return;
             }
         } finally {
-            unlockQueue(popMessageProcessor, lockKey);
+            unlockQueue(queueLockManager, lockKey);
         }
         brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(topic, consumeGroup, popTime, qId, 1);
     }
 
-    private void lockQueue(PopMessageProcessor popMessageProcessor, String lockKey) {
-        while (!popMessageProcessor.getQueueLockManager().tryLock(lockKey)) {
+    private void lockQueue(QueueLockManager queueLockManager, String lockKey) {
+        while (!queueLockManager.tryLock(lockKey)) {
         }
     }
 
-    private void unlockQueue(PopMessageProcessor popMessageProcessor, String lockKey) {
-        popMessageProcessor.getQueueLockManager().unLock(lockKey);
+    private void unlockQueue(QueueLockManager queueLockManager, String lockKey) {
+        queueLockManager.unLock(lockKey);
     }
 
-    private void handleCommitSuccess(String topic, String consumeGroup, int qId, long nextOffset, PopMessageProcessor popMessageProcessor, long invisibleTime, Channel channel) {
+    private void handleCommitSuccess(String topic, String consumeGroup, int qId, long nextOffset,
+        long invisibleTime, Channel channel) {
         if (!this.brokerController.getConsumerOffsetManager().hasOffsetReset(
             topic, consumeGroup, qId)) {
             this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(),
@@ -254,7 +255,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         }
         if (!this.brokerController.getConsumerOrderInfoManager().checkBlock(null, topic,
             consumeGroup, qId, invisibleTime)) {
-            popMessageProcessor.notifyMessageArriving(
+            brokerController.getBrokerNettyServer().getPopServiceManager().notifyMessageArriving(
                 topic, consumeGroup, qId);
         }
     }
@@ -367,7 +368,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
 
     private MessageExtBrokerInner initMessageInner(AckMsg ackMsg, AckMessageRequestHeader requestHeader, BatchAck batchAck) {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
-        msgInner.setTopic(brokerController.getBrokerNettyServer().getPopReviveManager().getReviveTopic());
+        msgInner.setTopic(brokerController.getBrokerNettyServer().getPopServiceManager().getReviveTopic());
         msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.charset));
         msgInner.setQueueId(getRqid(requestHeader, batchAck));
         if (null != batchAck) {

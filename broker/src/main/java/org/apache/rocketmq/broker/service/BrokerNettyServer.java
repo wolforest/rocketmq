@@ -222,11 +222,11 @@ public class BrokerNettyServer {
     }
 
     public void start() {
-        if (this.popMessageProcessor != null) {
-            this.popMessageProcessor.getPopLongPollingService().start();
-            this.popMessageProcessor.getPopBufferMergeService().start();
-            this.popMessageProcessor.getQueueLockManager().start();
-        }
+//        if (this.popMessageProcessor != null) {
+//            this.popMessageProcessor.getPopLongPollingService().start();
+//            this.popMessageProcessor.getPopBufferMergeService().start();
+//            this.popMessageProcessor.getQueueLockManager().start();
+//        }
 
 //        if (this.ackMessageProcessor != null) {
 //            this.ackMessageProcessor.startPopReviveService();
@@ -320,12 +320,12 @@ public class BrokerNettyServer {
         }
 
         {
-            this.popMessageProcessor.getPopLongPollingService().shutdown();
-            this.popMessageProcessor.getQueueLockManager().shutdown();
+            //this.popMessageProcessor.getPopLongPollingService().shutdown();
+            //this.popMessageProcessor.getQueueLockManager().shutdown();
         }
 
         {
-            this.popMessageProcessor.getPopBufferMergeService().shutdown();
+            //this.popMessageProcessor.getPopBufferMergeService().shutdown();
             //this.ackMessageProcessor.shutdownPopReviveService();
         }
 
@@ -604,7 +604,7 @@ public class BrokerNettyServer {
         this.popServiceManager = new PopServiceManager(brokerController);
         this.clientHousekeepingService = new ClientHousekeepingService(getBrokerController());
         this.pullRequestHoldService = messageStoreConfig.isEnableLmq() ? new LmqPullRequestHoldService(getBrokerController()) : new PullRequestHoldService(getBrokerController());
-        this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService, this.popMessageProcessor, this.notificationProcessor);
+        this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService, this.popServiceManager, this.notificationProcessor);
         this.consumerIdsChangeListener = new DefaultConsumerIdsChangeListener(getBrokerController());
     }
 
@@ -843,7 +843,7 @@ public class BrokerNettyServer {
         this.fastRemotingServer = fastRemotingServer;
     }
 
-    public PopServiceManager getPopReviveManager() {
+    public PopServiceManager getPopServiceManager() {
         return popServiceManager;
     }
 

@@ -16,8 +16,6 @@
  */
 package org.apache.rocketmq.broker.processor;
 
-import com.alibaba.fastjson.JSON;
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -28,7 +26,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.broker.BrokerController;
@@ -38,10 +35,8 @@ import org.apache.rocketmq.broker.filter.ExpressionMessageFilter;
 import org.apache.rocketmq.broker.longpolling.PollingHeader;
 import org.apache.rocketmq.broker.longpolling.PollingResult;
 import org.apache.rocketmq.broker.longpolling.PopLongPollingService;
-import org.apache.rocketmq.broker.longpolling.PopRequest;
 import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.pagecache.ManyMessageTransfer;
-import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.PopAckConstants;
@@ -54,9 +49,7 @@ import org.apache.rocketmq.common.help.FAQUrl;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.DataConverter;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -96,20 +89,12 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
     private final BrokerController brokerController;
     private final Random random = new Random(System.currentTimeMillis());
-    String reviveTopic;
     private static final String BORN_TIME = "bornTime";
 
-    private final PopLongPollingService popLongPollingService;
-    private final PopBufferMergeService popBufferMergeService;
-    private final QueueLockManager queueLockManager;
     private final AtomicLong ckMessageNumber;
 
     public PopMessageProcessor(final BrokerController brokerController) {
         this.brokerController = brokerController;
-        this.reviveTopic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
-        this.popLongPollingService = new PopLongPollingService(brokerController);
-        this.queueLockManager = new QueueLockManager(brokerController);
-        this.popBufferMergeService = new PopBufferMergeService(this.brokerController);
         this.ckMessageNumber = new AtomicLong();
     }
 
@@ -146,55 +131,9 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return null;
     }
 
-    public PopLongPollingService getPopLongPollingService() {
-        return popLongPollingService;
-    }
-
-    public PopBufferMergeService getPopBufferMergeService() {
-        return this.popBufferMergeService;
-    }
-
-    public QueueLockManager getQueueLockManager() {
-        return queueLockManager;
-    }
-
     @Override
     public boolean rejectRequest() {
         return false;
-    }
-
-    public ConcurrentLinkedHashMap<String, ConcurrentSkipListSet<PopRequest>> getPollingMap() {
-        return popLongPollingService.getPollingMap();
-    }
-
-    public void notifyLongPollingRequestIfNeed(String topic, String group, int queueId) {
-        long popBufferOffset = this.brokerController.getBrokerNettyServer().getPopMessageProcessor().getPopBufferMergeService().getLatestOffset(topic, group, queueId);
-        long consumerOffset = this.brokerController.getConsumerOffsetManager().queryOffset(group, topic, queueId);
-        long maxOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
-        long offset = Math.max(popBufferOffset, consumerOffset);
-        if (maxOffset <= offset) {
-            return;
-        }
-
-        boolean notifySuccess = popLongPollingService.notifyMessageArriving(topic, group, -1);
-        if (!notifySuccess) {
-            // notify pop queue
-            notifySuccess = popLongPollingService.notifyMessageArriving(topic, group, queueId);
-        }
-
-        this.brokerController.getBrokerNettyServer().getNotificationProcessor().notifyMessageArriving(topic, queueId);
-        if (this.brokerController.getBrokerConfig().isEnablePopLog()) {
-            POP_LOGGER.info("notify long polling request. topic:{}, group:{}, queueId:{}, success:{}",
-                topic, group, queueId, notifySuccess);
-        }
-    }
-
-    public void notifyMessageArriving(final String topic, final int queueId) {
-        popLongPollingService.notifyMessageArriving(topic, queueId);
-    }
-
-    public boolean notifyMessageArriving(final String topic, final String cid, final int queueId) {
-        return popLongPollingService.notifyMessageArriving(topic, cid, queueId);
     }
 
     private boolean allowAccess(PopMessageRequestHeader requestHeader, Channel channel, RemotingCommand response) {
@@ -402,6 +341,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private boolean handlePollingAction(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse, long restNum) {
+        PopLongPollingService popLongPollingService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopLongPollingService();
         if (!getMessageResult.getMessageBufferList().isEmpty()) {
             finalResponse.setCode(ResponseCode.SUCCESS);
             getMessageResult.setStatus(GetMessageStatus.FOUND);
@@ -527,6 +467,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         long offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), false, lockKey, false);
         CompletableFuture<Long> future = new CompletableFuture<>();
 
+        QueueLockManager queueLockManager = brokerController.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
         if (!queueLockManager.tryLock(lockKey)) {
             restNum = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
             future.complete(restNum);
@@ -620,6 +561,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
                     || GetMessageStatus.MESSAGE_WAS_REMOVING.equals(result.getStatus())
                     || GetMessageStatus.NO_MATCHED_LOGIC_QUEUE.equals(result.getStatus()))
                     && result.getNextBeginOffset() > -1) {
+                    PopBufferMergeService popBufferMergeService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
                     popBufferMergeService.addCkMock(requestHeader.getConsumerGroup(), topic, queueId, finalOffset,
                         requestHeader.getInvisibleTime(), popTime, reviveQid, result.getNextBeginOffset(), brokerController.getBrokerConfig().getBrokerName());
 //                this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic,
@@ -687,7 +629,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             }
         }
 
-        long bufferOffset = this.popBufferMergeService.getLatestOffset(lockKey);
+        PopBufferMergeService popBufferMergeService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        long bufferOffset = popBufferMergeService.getLatestOffset(lockKey);
         if (bufferOffset < 0) {
             return offset;
         } else {
@@ -726,23 +669,6 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return offset;
     }
 
-    public final MessageExtBrokerInner buildCkMsg(final PopCheckPoint ck, final int reviveQid) {
-        MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
-
-        msgInner.setTopic(reviveTopic);
-        msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.charset));
-        msgInner.setQueueId(reviveQid);
-        msgInner.setTags(PopAckConstants.CK_TAG);
-        msgInner.setBornTimestamp(System.currentTimeMillis());
-        msgInner.setBornHost(this.brokerController.getStoreHost());
-        msgInner.setStoreHost(this.brokerController.getStoreHost());
-        msgInner.setDeliverTimeMs(ck.getReviveTime() - PopAckConstants.ackTimeInterval);
-        msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genCkUniqueId(ck));
-        msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
-
-        return msgInner;
-    }
-
     private boolean appendCheckPoint(final PopMessageRequestHeader requestHeader,
         final String topic, final int reviveQid, final int queueId, final long offset,
         final GetMessageResult getMessageTmpResult, final long popTime, final String brokerName) {
@@ -761,14 +687,15 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             ck.addDiff((int) (msgQueueOffset - offset));
         }
 
-        final boolean addBufferSuc = this.popBufferMergeService.addCheckPoint(
+        PopBufferMergeService popBufferMergeService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        final boolean addBufferSuc = popBufferMergeService.addCheckPoint(
             ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset()
         );
 
         if (addBufferSuc) {
             return true;
         }
-        return this.popBufferMergeService.addCkJustOffset(
+        return popBufferMergeService.addCkJustOffset(
             ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset()
         );
     }
@@ -782,7 +709,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
 
         this.brokerController.getConsumerOrderInfoManager().clearBlock(topic, group, queueId);
-        this.getPopBufferMergeService().clearOffsetQueue(lockKey);
+        this.brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService().clearOffsetQueue(lockKey);
         this.brokerController.getConsumerOffsetManager().commitOffset("ResetPopOffset", group, topic, queueId, resetOffset);
         return resetOffset;
     }
