@@ -94,7 +94,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         final ConsumerSendMsgBackRequestHeader requestHeader =
             (ConsumerSendMsgBackRequestHeader) request.decodeCommandCustomHeader(ConsumerSendMsgBackRequestHeader.class);
 
-        // The send back requests sent to SlaveBroker will be forwarded to the master broker beside
+        // send back requests sent to SlaveBroker will be forwarded to the master broker beside
         final BrokerController masterBroker = this.brokerController.peekMasterBroker();
         if (null == masterBroker) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
@@ -337,14 +337,20 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
     }
 
     public void executeConsumeMessageHookAfter(final ConsumeMessageContext context) {
-        if (hasConsumeMessageHook()) {
-            for (ConsumeMessageHook hook : this.consumeMessageHookList) {
-                try {
-                    hook.consumeMessageAfter(context);
-                } catch (Throwable e) {
-                    // Ignore
-                }
-            }
+        if (!hasConsumeMessageHook()) {
+            return;
+        }
+
+        for (ConsumeMessageHook hook : this.consumeMessageHookList) {
+            executeConsumeMessageHookAfter(context, hook);
+        }
+    }
+
+    private void executeConsumeMessageHookAfter(final ConsumeMessageContext context, ConsumeMessageHook hook) {
+        try {
+            hook.consumeMessageAfter(context);
+        } catch (Throwable e) {
+            // Ignore
         }
     }
 
