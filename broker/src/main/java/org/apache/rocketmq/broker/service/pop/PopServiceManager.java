@@ -40,7 +40,11 @@ public class PopServiceManager {
     private final String reviveTopic;
 
     private final PopReviveService[] popReviveServices;
-    private final PopLongPollingService popLongPollingService;
+    private final PopLongPollingService popPollingService;
+
+
+
+    private final PopLongPollingService notificationPollingService;
     private final PopBufferMergeService popBufferMergeService;
     private final QueueLockManager queueLockManager;
 
@@ -48,7 +52,9 @@ public class PopServiceManager {
         this.brokerController = brokerController;
         this.reviveTopic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
 
-        this.popLongPollingService = new PopLongPollingService(brokerController);
+        this.popPollingService = new PopLongPollingService(brokerController, brokerController.getBrokerNettyServer().getPopMessageProcessor());
+        this.notificationPollingService = new PopLongPollingService(brokerController, brokerController.getBrokerNettyServer().getNotificationProcessor());
+
         this.queueLockManager = new QueueLockManager(brokerController);
         this.popBufferMergeService = new PopBufferMergeService(this.brokerController);
 
@@ -60,7 +66,8 @@ public class PopServiceManager {
     }
 
     public void start() {
-        this.popLongPollingService.start();
+        this.popPollingService.start();
+        this.notificationPollingService.start();
         this.popBufferMergeService.start();
         this.queueLockManager.start();
 
@@ -70,7 +77,8 @@ public class PopServiceManager {
     }
 
     public void shutdown() {
-        this.popLongPollingService.shutdown();
+        this.popPollingService.shutdown();
+        this.notificationPollingService.shutdown();
         this.popBufferMergeService.shutdown();
         this.queueLockManager.shutdown();
 
@@ -112,8 +120,8 @@ public class PopServiceManager {
         return false;
     }
 
-    public ConcurrentLinkedHashMap<String, ConcurrentSkipListSet<PopRequest>> getPollingMap() {
-        return popLongPollingService.getPollingMap();
+    public ConcurrentLinkedHashMap<String, ConcurrentSkipListSet<PopRequest>> getPopPollingMap() {
+        return popPollingService.getPollingMap();
     }
 
     public void notifyLongPollingRequestIfNeed(String topic, String group, int queueId) {
@@ -125,25 +133,29 @@ public class PopServiceManager {
             return;
         }
 
-        boolean notifySuccess = popLongPollingService.notifyMessageArriving(topic, group, -1);
+        boolean notifySuccess = popPollingService.notifyMessageArriving(topic, group, -1);
         if (!notifySuccess) {
             // notify pop queue
-            notifySuccess = popLongPollingService.notifyMessageArriving(topic, group, queueId);
+            notifySuccess = popPollingService.notifyMessageArriving(topic, group, queueId);
         }
 
-        this.brokerController.getBrokerNettyServer().getNotificationProcessor().notifyMessageArriving(topic, queueId);
+        notificationPollingService.notifyMessageArriving(topic, queueId);
         if (this.brokerController.getBrokerConfig().isEnablePopLog()) {
             POP_LOGGER.info("notify long polling request. topic:{}, group:{}, queueId:{}, success:{}",
                 topic, group, queueId, notifySuccess);
         }
     }
 
-    public void notifyMessageArriving(final String topic, final int queueId) {
-        popLongPollingService.notifyMessageArriving(topic, queueId);
+    public void notificationArriving(final String topic, final int queueId) {
+        notificationPollingService.notifyMessageArriving(topic, queueId);
     }
 
-    public boolean notifyMessageArriving(final String topic, final String cid, final int queueId) {
-        return popLongPollingService.notifyMessageArriving(topic, cid, queueId);
+    public void popArriving(final String topic, final int queueId) {
+        popPollingService.notifyMessageArriving(topic, queueId);
+    }
+
+    public boolean popArriving(final String topic, final String cid, final int queueId) {
+        return popPollingService.notifyMessageArriving(topic, cid, queueId);
     }
 
     public String getReviveTopic() {
@@ -154,8 +166,8 @@ public class PopServiceManager {
         return popReviveServices;
     }
 
-    public PopLongPollingService getPopLongPollingService() {
-        return popLongPollingService;
+    public PopLongPollingService getPopPollingService() {
+        return popPollingService;
     }
 
     public PopBufferMergeService getPopBufferMergeService() {
@@ -166,5 +178,7 @@ public class PopServiceManager {
         return queueLockManager;
     }
 
-
+    public PopLongPollingService getNotificationPollingService() {
+        return notificationPollingService;
+    }
 }

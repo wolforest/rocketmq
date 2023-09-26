@@ -342,7 +342,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private boolean handlePollingAction(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse, long restNum) {
-        PopLongPollingService popLongPollingService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopLongPollingService();
+        PopLongPollingService popLongPollingService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopPollingService();
         if (!getMessageResult.getMessageBufferList().isEmpty()) {
             finalResponse.setCode(ResponseCode.SUCCESS);
             getMessageResult.setStatus(GetMessageStatus.FOUND);

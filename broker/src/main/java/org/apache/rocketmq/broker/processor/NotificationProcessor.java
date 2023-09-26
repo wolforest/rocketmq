@@ -23,7 +23,6 @@ import java.util.Random;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.longpolling.PollingHeader;
 import org.apache.rocketmq.broker.longpolling.PollingResult;
-import org.apache.rocketmq.broker.longpolling.PopLongPollingService;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -44,21 +43,15 @@ public class NotificationProcessor implements NettyRequestProcessor {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
     private final BrokerController brokerController;
     private final Random random = new Random(System.currentTimeMillis());
-    private final PopLongPollingService popLongPollingService;
     private static final String BORN_TIME = "bornTime";
 
     public NotificationProcessor(final BrokerController brokerController) {
         this.brokerController = brokerController;
-        this.popLongPollingService = new PopLongPollingService(brokerController);
     }
 
     @Override
     public boolean rejectRequest() {
         return false;
-    }
-
-    public void notifyMessageArriving(final String topic, final int queueId) {
-        popLongPollingService.notifyMessageArriving(topic, queueId);
     }
 
     @Override
@@ -164,7 +157,7 @@ public class NotificationProcessor implements NettyRequestProcessor {
         }
 
         if (!hasMsg) {
-            if (popLongPollingService.polling(ctx, request, new PollingHeader(requestHeader)) == PollingResult.POLLING_SUC) {
+            if (brokerController.getBrokerNettyServer().getPopServiceManager().getNotificationPollingService().polling(ctx, request, new PollingHeader(requestHeader)) == PollingResult.POLLING_SUC) {
                 return null;
             }
         }
@@ -197,9 +190,5 @@ public class NotificationProcessor implements NettyRequestProcessor {
         } else {
             return bufferOffset > offset ? bufferOffset : offset;
         }
-    }
-
-    public PopLongPollingService getPopLongPollingService() {
-        return popLongPollingService;
     }
 }

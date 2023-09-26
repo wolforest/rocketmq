@@ -227,9 +227,9 @@ public class BrokerNettyServer {
             this.popServiceManager.start();
         }
 
-        if (this.notificationProcessor != null) {
-            this.notificationProcessor.getPopLongPollingService().start();
-        }
+//        if (this.notificationProcessor != null) {
+//            this.notificationProcessor.getPopLongPollingService().start();
+//        }
 
         if (this.pullRequestHoldService != null) {
             this.pullRequestHoldService.start();
@@ -314,9 +314,9 @@ public class BrokerNettyServer {
             this.popServiceManager.shutdown();
         }
 
-        if (this.notificationProcessor != null) {
-            this.notificationProcessor.getPopLongPollingService().shutdown();
-        }
+//        if (this.notificationProcessor != null) {
+//            this.notificationProcessor.getPopLongPollingService().shutdown();
+//        }
 
         if (this.consumerIdsChangeListener != null) {
             this.consumerIdsChangeListener.shutdown();
@@ -624,7 +624,7 @@ public class BrokerNettyServer {
         this.popServiceManager = new PopServiceManager(brokerController);
         this.clientHousekeepingService = new ClientHousekeepingService(getBrokerController());
         this.pullRequestHoldService = messageStoreConfig.isEnableLmq() ? new LmqPullRequestHoldService(getBrokerController()) : new PullRequestHoldService(getBrokerController());
-        this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService, this.popServiceManager, this.notificationProcessor);
+        this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService, this.popServiceManager);
         this.consumerIdsChangeListener = new DefaultConsumerIdsChangeListener(getBrokerController());
     }
 

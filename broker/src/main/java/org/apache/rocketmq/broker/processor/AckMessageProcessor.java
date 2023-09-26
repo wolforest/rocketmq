@@ -256,7 +256,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         }
         if (!this.brokerController.getConsumerOrderInfoManager().checkBlock(null, topic,
             consumeGroup, qId, invisibleTime)) {
-            brokerController.getBrokerNettyServer().getPopServiceManager().notifyMessageArriving(
+            brokerController.getBrokerNettyServer().getPopServiceManager().popArriving(
                 topic, consumeGroup, qId);
         }
     }
