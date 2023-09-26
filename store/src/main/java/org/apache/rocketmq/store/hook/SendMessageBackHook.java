@@ -24,10 +24,10 @@ public interface SendMessageBackHook {
     /**
      * Slave send message back to master at certain offset when HA handshake
      *
-     * @param msgList
-     * @param brokerName
-     * @param brokerAddr
-     * @return
+     * @param msgList msgList
+     * @param brokerName brokerName
+     * @param brokerAddr brokerAddr
+     * @return hook execute status
      */
     boolean executeSendMessageBack(List<MessageExt> msgList, String brokerName, String brokerAddr);
 }

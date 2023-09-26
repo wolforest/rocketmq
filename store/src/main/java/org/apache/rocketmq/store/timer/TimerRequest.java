@@ -32,7 +32,6 @@ public class TimerRequest {
     private long enqueueTime;
     private MessageExt msg;
 
-
     //optional would be a good choice, but it relies on JDK 8
     private CountDownLatch latch;
 

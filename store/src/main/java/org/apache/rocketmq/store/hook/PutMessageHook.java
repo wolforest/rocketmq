@@ -30,8 +30,8 @@ public interface PutMessageHook {
 
     /**
      *  Execute before put message. For example, Message verification or special message transform
-     * @param msg
-     * @return
+     * @param msg msg
+     * @return PutMessageResult
      */
     PutMessageResult executeBeforePutMessage(MessageExt msg);
 }

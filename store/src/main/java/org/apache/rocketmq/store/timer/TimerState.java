@@ -60,8 +60,6 @@ public class TimerState {
     public long lastEnqueueButExpiredTime;
     public long lastEnqueueButExpiredStoreTime;
 
-
-
     // True if current store is master or current brokerId is equal to the minimum brokerId of the replica group in slaveActingMaster mode.
     private volatile boolean shouldRunningDequeue;
 

@@ -395,8 +395,6 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         return offsetMap;
     }
 
-
-
     private boolean allowAccess(RemotingCommand response, PullMessageResponseHeader responseHeader, Channel channel, RemotingCommand request, PullMessageRequestHeader requestHeader) {
         if (!PermName.isReadable(this.brokerController.getBrokerConfig().getBrokerPermission())) {
             responseHeader.setForbiddenType(ForbiddenType.BROKER_FORBIDDEN);
@@ -609,8 +607,6 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
         return consumerFilterData;
     }
-
-
 
     private RemotingCommand handleAsyncResult(RemotingCommand request, PullMessageRequestHeader requestHeader, Channel channel, SubscriptionData subscriptionData,
                                               SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext) {
