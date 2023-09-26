@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.processor;
+package org.apache.rocketmq.broker.service.pop;
 
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.Pair;
