@@ -18,6 +18,18 @@ package org.apache.rocketmq.store;
 
 import java.util.Map;
 
+/**
+ * Async CommitLog dispatching core object
+ *
+ * created By ReputMessageService
+ * dispatch to :
+ *     1. CommitLogDispatcherBuildConsumeQueue
+ *          -> ConsumeQueueStore.putMessagePositionInfoWrapper()
+ *     2. CommitLogDispatcherBuildIndex
+ *          -> IndexService.buildIndex()
+ *     3. CommitLogDispatcherCompaction
+ *          -> CompactionService.putRequest()
+ */
 public class DispatchRequest {
     private final String topic;
     private final int queueId;
