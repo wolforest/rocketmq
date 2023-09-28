@@ -70,8 +70,25 @@ public class ConsumeQueueStore {
         this.consumeQueueTable = new ConcurrentHashMap<>(32);
     }
 
-    private FileQueueLifeCycle getLifeCycle(String topic, int queueId) {
-        return findOrCreateConsumeQueue(topic, queueId);
+    /**
+     * consume queue api from commitLog dispatching, the process is below:
+     * ReputMessageService -> messageStore.doDispatch() -> CommitLogDispatcherBuildConsumeQueue.dispatch()
+     *
+     * @param dispatchRequest DispatchRequest create by ReputMessageService
+     */
+    public void putMessagePositionInfoWrapper(DispatchRequest dispatchRequest) {
+        ConsumeQueueInterface cq = this.findOrCreateConsumeQueue(dispatchRequest.getTopic(), dispatchRequest.getQueueId());
+        this.putMessagePositionInfoWrapper(cq, dispatchRequest);
+    }
+
+    /**
+     * Apply the dispatched request and build the consume queue. This function should be idempotent.
+     *
+     * @param consumeQueue consume queue
+     * @param request dispatch request
+     */
+    public void putMessagePositionInfoWrapper(ConsumeQueueInterface consumeQueue, DispatchRequest request) {
+        consumeQueue.putMessagePositionInfoWrapper(request);
     }
 
     public long rollNextFile(ConsumeQueueInterface consumeQueue, final long offset) {
@@ -92,35 +109,7 @@ public class ConsumeQueueStore {
         return maxOffset;
     }
 
-    private long getMaxOffset(long offset, ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
-        for (ConsumeQueueInterface mq : maps.values()) {
-            if (mq.getMaxPhysicOffset() > offset) {
-                offset = mq.getMaxPhysicOffset();
-            }
-        }
 
-        return offset;
-    }
-
-    /**
-     * Apply the dispatched request and build the consume queue. This function should be idempotent.
-     *
-     * @param consumeQueue consume queue
-     * @param request dispatch request
-     */
-    public void putMessagePositionInfoWrapper(ConsumeQueueInterface consumeQueue, DispatchRequest request) {
-        consumeQueue.putMessagePositionInfoWrapper(request);
-    }
-
-    public void putMessagePositionInfoWrapper(DispatchRequest dispatchRequest) {
-        ConsumeQueueInterface cq = this.findOrCreateConsumeQueue(dispatchRequest.getTopic(), dispatchRequest.getQueueId());
-        this.putMessagePositionInfoWrapper(cq, dispatchRequest);
-    }
-
-    public boolean load(ConsumeQueueInterface consumeQueue) {
-        FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
-        return fileQueueLifeCycle.load();
-    }
 
     public boolean load() {
         boolean cqLoadResult = loadConsumeQueues(getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()), CQType.SimpleCQ);
@@ -128,106 +117,9 @@ public class ConsumeQueueStore {
         return cqLoadResult && bcqLoadResult;
     }
 
-    private boolean loadConsumeQueues(String storePath, CQType cqType) {
-        File dirLogic = new File(storePath);
-        File[] fileTopicList = dirLogic.listFiles();
-        if (fileTopicList == null) {
-            return true;
-        }
-
-
-        for (File fileTopic : fileTopicList) {
-            String topic = fileTopic.getName();
-
-            File[] fileQueueIdList = fileTopic.listFiles();
-            if (null == fileQueueIdList) {
-                continue;
-            }
-
-            if (!loadConsumeQueues(storePath, cqType, topic, fileQueueIdList)) {
-                return false;
-            }
-        }
-
-        log.info("load {} all over, OK", cqType);
-        return true;
-    }
-
-    private boolean loadConsumeQueues(String storePath, CQType cqType, String topic, File[] fileQueueIdList) {
-        for (File fileQueueId : fileQueueIdList) {
-            int queueId;
-            try {
-                queueId = Integer.parseInt(fileQueueId.getName());
-            } catch (NumberFormatException e) {
-                continue;
-            }
-
-            queueTypeShouldBe(topic, cqType);
-
-            ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
-            this.putConsumeQueue(topic, queueId, logic);
-            if (!this.load(logic)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private ConsumeQueueInterface createConsumeQueueByType(CQType cqType, String topic, int queueId, String storePath) {
-        if (Objects.equals(CQType.SimpleCQ, cqType)) {
-            return new ConsumeQueue(
-                topic,
-                queueId,
-                storePath,
-                this.messageStoreConfig.getMappedFileSizeConsumeQueue(),
-                this.messageStore);
-        } else if (Objects.equals(CQType.BatchCQ, cqType)) {
-            return new BatchConsumeQueue(
-                topic,
-                queueId,
-                storePath,
-                this.messageStoreConfig.getMapperFileSizeBatchConsumeQueue(),
-                this.messageStore);
-        } else {
-            throw new RuntimeException(format("queue type %s is not supported.", cqType.toString()));
-        }
-    }
-
-    private void queueTypeShouldBe(String topic, CQType cqTypeExpected) {
-        Optional<TopicConfig> topicConfig = this.messageStore.getTopicConfig(topic);
-
-        CQType cqTypeActual = QueueTypeUtils.getCQType(topicConfig);
-
-        if (!Objects.equals(cqTypeExpected, cqTypeActual)) {
-            throw new RuntimeException(format("The queue type of topic: %s should be %s, but is %s", topic, cqTypeExpected, cqTypeActual));
-        }
-    }
-
-    private ExecutorService buildExecutorService(BlockingQueue<Runnable> blockingQueue, String threadNamePrefix) {
-        return ThreadUtils.newThreadPoolExecutor(
-            this.messageStore.getBrokerConfig().getRecoverThreadPoolNums(),
-            this.messageStore.getBrokerConfig().getRecoverThreadPoolNums(),
-            1000 * 60,
-            TimeUnit.MILLISECONDS,
-            blockingQueue,
-            new ThreadFactoryImpl(threadNamePrefix));
-    }
-
-    public void recover(ConsumeQueueInterface consumeQueue) {
-        FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
-        fileQueueLifeCycle.recover();
-    }
-
     public void recover() {
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
             recover(maps);
-        }
-    }
-
-    private void recover(ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
-        for (ConsumeQueueInterface logic : maps.values()) {
-            this.recover(logic);
         }
     }
 
@@ -253,77 +145,12 @@ public class ConsumeQueueStore {
         }
     }
 
-    private int countConsumeQueue() {
-        int count = 0;
-        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-            count += maps.values().size();
-        }
-
-        return count;
-    }
-
-    private void recoverConcurrently(ConcurrentMap<Integer, ConsumeQueueInterface> maps, ExecutorService executor, List<FutureTask<Boolean>> result, CountDownLatch countDownLatch) {
-        for (final ConsumeQueueInterface logic : maps.values()) {
-            FutureTask<Boolean> futureTask = createFutureTask(logic, countDownLatch);
-
-            result.add(futureTask);
-            executor.submit(futureTask);
-        }
-    }
-
-    private boolean getFutureResult(List<FutureTask<Boolean>> result) throws ExecutionException, InterruptedException {
-        for (FutureTask<Boolean> task : result) {
-            if (task == null || !task.isDone()) {
-                continue;
-            }
-
-            if (!task.get()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private FutureTask<Boolean> createFutureTask(ConsumeQueueInterface logic, CountDownLatch countDownLatch) {
-        return new FutureTask<>(() -> {
-            boolean ret = true;
-            try {
-                logic.recover();
-            } catch (Throwable e) {
-                ret = false;
-                log.error("Exception occurs while recover consume queue concurrently, " +
-                    "topic={}, queueId={}", logic.getTopic(), logic.getQueueId(), e);
-            } finally {
-                countDownLatch.countDown();
-            }
-            return ret;
-        });
-    }
-
-    private long getMaxOffsetInConsumeQueue(long maxPhysicOffset, ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
-        for (ConsumeQueueInterface logic : maps.values()) {
-            if (logic.getMaxPhysicOffset() <= maxPhysicOffset) {
-                continue;
-            }
-
-            maxPhysicOffset = logic.getMaxPhysicOffset();
-        }
-
-        return maxPhysicOffset;
-    }
-
     public long getMaxOffsetInConsumeQueue() {
         long maxPhysicOffset = -1L;
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
             maxPhysicOffset = getMaxOffsetInConsumeQueue(maxPhysicOffset, maps);
         }
         return maxPhysicOffset;
-    }
-
-    public void checkSelf(ConsumeQueueInterface consumeQueue) {
-        FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
-        fileQueueLifeCycle.checkSelf();
     }
 
     public void checkSelf() {
@@ -377,104 +204,6 @@ public class ConsumeQueueStore {
 
     public ConsumeQueueInterface findOrCreateConsumeQueue(String topic, int queueId) {
         return doFindOrCreateConsumeQueue(topic, queueId);
-    }
-
-    private ConsumeQueueInterface doFindOrCreateConsumeQueue(String topic, int queueId) {
-        ConcurrentMap<Integer, ConsumeQueueInterface> map = consumeQueueTable.get(topic);
-        if (null == map) {
-            ConcurrentMap<Integer, ConsumeQueueInterface> newMap = new ConcurrentHashMap<>(128);
-            ConcurrentMap<Integer, ConsumeQueueInterface> oldMap = consumeQueueTable.putIfAbsent(topic, newMap);
-            if (oldMap != null) {
-                map = oldMap;
-            } else {
-                map = newMap;
-            }
-        }
-
-        ConsumeQueueInterface logic = map.get(queueId);
-        if (logic != null) {
-            return logic;
-        }
-
-        ConsumeQueueInterface newLogic;
-
-        Optional<TopicConfig> topicConfig = this.messageStore.getTopicConfig(topic);
-        // TODO maybe the topic has been deleted.
-        if (Objects.equals(CQType.BatchCQ, QueueTypeUtils.getCQType(topicConfig))) {
-            newLogic = new BatchConsumeQueue(
-                topic,
-                queueId,
-                getStorePathBatchConsumeQueue(this.messageStoreConfig.getStorePathRootDir()),
-                this.messageStoreConfig.getMapperFileSizeBatchConsumeQueue(),
-                this.messageStore);
-        } else {
-            newLogic = new ConsumeQueue(
-                topic,
-                queueId,
-                getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()),
-                this.messageStoreConfig.getMappedFileSizeConsumeQueue(),
-                this.messageStore);
-        }
-
-        ConsumeQueueInterface oldLogic = map.putIfAbsent(queueId, newLogic);
-        if (oldLogic != null) {
-            logic = oldLogic;
-        } else {
-            logic = newLogic;
-        }
-
-        return logic;
-    }
-
-    public Long getMaxOffset(String topic, int queueId) {
-        return this.queueOffsetOperator.currentQueueOffset(topic + "-" + queueId);
-    }
-
-    public void setTopicQueueTable(ConcurrentMap<String, Long> topicQueueTable) {
-        this.queueOffsetOperator.setTopicQueueTable(topicQueueTable);
-        this.queueOffsetOperator.setLmqTopicQueueTable(topicQueueTable);
-    }
-
-    public ConcurrentMap getTopicQueueTable() {
-        return this.queueOffsetOperator.getTopicQueueTable();
-    }
-
-    public void setBatchTopicQueueTable(ConcurrentMap<String, Long> batchTopicQueueTable) {
-        this.queueOffsetOperator.setBatchTopicQueueTable(batchTopicQueueTable);
-    }
-
-    public void assignQueueOffset(MessageExtBrokerInner msg) {
-        ConsumeQueueInterface consumeQueue = findOrCreateConsumeQueue(msg.getTopic(), msg.getQueueId());
-        consumeQueue.assignQueueOffset(this.queueOffsetOperator, msg);
-    }
-
-    public void increaseQueueOffset(MessageExtBrokerInner msg, short messageNum) {
-        ConsumeQueueInterface consumeQueue = findOrCreateConsumeQueue(msg.getTopic(), msg.getQueueId());
-        consumeQueue.increaseQueueOffset(this.queueOffsetOperator, msg, messageNum);
-    }
-
-    public void updateQueueOffset(String topic, int queueId, long offset) {
-        String topicQueueKey = topic + "-" + queueId;
-        this.queueOffsetOperator.updateQueueOffset(topicQueueKey, offset);
-    }
-
-    public void removeTopicQueueTable(String topic, Integer queueId) {
-        this.queueOffsetOperator.remove(topic, queueId);
-    }
-
-    public ConcurrentMap<String, ConcurrentMap<Integer, ConsumeQueueInterface>> getConsumeQueueTable() {
-        return consumeQueueTable;
-    }
-
-    private void putConsumeQueue(final String topic, final int queueId, final ConsumeQueueInterface consumeQueue) {
-        ConcurrentMap<Integer/* queueId */, ConsumeQueueInterface> map = this.consumeQueueTable.get(topic);
-        if (null == map) {
-            map = new ConcurrentHashMap<>();
-            map.put(queueId, consumeQueue);
-            this.consumeQueueTable.put(topic, map);
-        } else {
-            map.put(queueId, consumeQueue);
-        }
     }
 
     public void recoverOffsetTable(long minPhyOffset) {
@@ -609,5 +338,287 @@ public class ConsumeQueueStore {
             }
         }
         return totalSize;
+    }
+
+    public Long getMaxOffset(String topic, int queueId) {
+        return this.queueOffsetOperator.currentQueueOffset(topic + "-" + queueId);
+    }
+
+    public void setTopicQueueTable(ConcurrentMap<String, Long> topicQueueTable) {
+        this.queueOffsetOperator.setTopicQueueTable(topicQueueTable);
+        this.queueOffsetOperator.setLmqTopicQueueTable(topicQueueTable);
+    }
+
+    public ConcurrentMap getTopicQueueTable() {
+        return this.queueOffsetOperator.getTopicQueueTable();
+    }
+
+    public void setBatchTopicQueueTable(ConcurrentMap<String, Long> batchTopicQueueTable) {
+        this.queueOffsetOperator.setBatchTopicQueueTable(batchTopicQueueTable);
+    }
+
+    public void assignQueueOffset(MessageExtBrokerInner msg) {
+        ConsumeQueueInterface consumeQueue = findOrCreateConsumeQueue(msg.getTopic(), msg.getQueueId());
+        consumeQueue.assignQueueOffset(this.queueOffsetOperator, msg);
+    }
+
+    public void increaseQueueOffset(MessageExtBrokerInner msg, short messageNum) {
+        ConsumeQueueInterface consumeQueue = findOrCreateConsumeQueue(msg.getTopic(), msg.getQueueId());
+        consumeQueue.increaseQueueOffset(this.queueOffsetOperator, msg, messageNum);
+    }
+
+    public void updateQueueOffset(String topic, int queueId, long offset) {
+        String topicQueueKey = topic + "-" + queueId;
+        this.queueOffsetOperator.updateQueueOffset(topicQueueKey, offset);
+    }
+
+    public void removeTopicQueueTable(String topic, Integer queueId) {
+        this.queueOffsetOperator.remove(topic, queueId);
+    }
+
+    /************************** private method start ***********************************************/
+    private boolean load(ConsumeQueueInterface consumeQueue) {
+        FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
+        return fileQueueLifeCycle.load();
+    }
+
+    private void checkSelf(ConsumeQueueInterface consumeQueue) {
+        FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
+        fileQueueLifeCycle.checkSelf();
+    }
+
+    private FileQueueLifeCycle getLifeCycle(String topic, int queueId) {
+        return findOrCreateConsumeQueue(topic, queueId);
+    }
+
+    private long getMaxOffset(long offset, ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (ConsumeQueueInterface mq : maps.values()) {
+            if (mq.getMaxPhysicOffset() > offset) {
+                offset = mq.getMaxPhysicOffset();
+            }
+        }
+
+        return offset;
+    }
+
+    private void recover(ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (ConsumeQueueInterface logic : maps.values()) {
+            this.recover(logic);
+        }
+    }
+
+    private void recover(ConsumeQueueInterface consumeQueue) {
+        FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
+        fileQueueLifeCycle.recover();
+    }
+
+    private int countConsumeQueue() {
+        int count = 0;
+        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
+            count += maps.values().size();
+        }
+
+        return count;
+    }
+
+    private void recoverConcurrently(ConcurrentMap<Integer, ConsumeQueueInterface> maps, ExecutorService executor, List<FutureTask<Boolean>> result, CountDownLatch countDownLatch) {
+        for (final ConsumeQueueInterface logic : maps.values()) {
+            FutureTask<Boolean> futureTask = createFutureTask(logic, countDownLatch);
+
+            result.add(futureTask);
+            executor.submit(futureTask);
+        }
+    }
+
+    private boolean getFutureResult(List<FutureTask<Boolean>> result) throws ExecutionException, InterruptedException {
+        for (FutureTask<Boolean> task : result) {
+            if (task == null || !task.isDone()) {
+                continue;
+            }
+
+            if (!task.get()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private FutureTask<Boolean> createFutureTask(ConsumeQueueInterface logic, CountDownLatch countDownLatch) {
+        return new FutureTask<>(() -> {
+            boolean ret = true;
+            try {
+                logic.recover();
+            } catch (Throwable e) {
+                ret = false;
+                log.error("Exception occurs while recover consume queue concurrently, " +
+                    "topic={}, queueId={}", logic.getTopic(), logic.getQueueId(), e);
+            } finally {
+                countDownLatch.countDown();
+            }
+            return ret;
+        });
+    }
+
+    private long getMaxOffsetInConsumeQueue(long maxPhysicOffset, ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (ConsumeQueueInterface logic : maps.values()) {
+            if (logic.getMaxPhysicOffset() <= maxPhysicOffset) {
+                continue;
+            }
+
+            maxPhysicOffset = logic.getMaxPhysicOffset();
+        }
+
+        return maxPhysicOffset;
+    }
+
+    private boolean loadConsumeQueues(String storePath, CQType cqType) {
+        File dirLogic = new File(storePath);
+        File[] fileTopicList = dirLogic.listFiles();
+        if (fileTopicList == null) {
+            return true;
+        }
+
+
+        for (File fileTopic : fileTopicList) {
+            String topic = fileTopic.getName();
+
+            File[] fileQueueIdList = fileTopic.listFiles();
+            if (null == fileQueueIdList) {
+                continue;
+            }
+
+            if (!loadConsumeQueues(storePath, cqType, topic, fileQueueIdList)) {
+                return false;
+            }
+        }
+
+        log.info("load {} all over, OK", cqType);
+        return true;
+    }
+
+    private boolean loadConsumeQueues(String storePath, CQType cqType, String topic, File[] fileQueueIdList) {
+        for (File fileQueueId : fileQueueIdList) {
+            int queueId;
+            try {
+                queueId = Integer.parseInt(fileQueueId.getName());
+            } catch (NumberFormatException e) {
+                continue;
+            }
+
+            queueTypeShouldBe(topic, cqType);
+
+            ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
+            this.putConsumeQueue(topic, queueId, logic);
+            if (!this.load(logic)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private ConsumeQueueInterface createConsumeQueueByType(CQType cqType, String topic, int queueId, String storePath) {
+        if (Objects.equals(CQType.SimpleCQ, cqType)) {
+            return new ConsumeQueue(
+                topic,
+                queueId,
+                storePath,
+                this.messageStoreConfig.getMappedFileSizeConsumeQueue(),
+                this.messageStore);
+        } else if (Objects.equals(CQType.BatchCQ, cqType)) {
+            return new BatchConsumeQueue(
+                topic,
+                queueId,
+                storePath,
+                this.messageStoreConfig.getMapperFileSizeBatchConsumeQueue(),
+                this.messageStore);
+        } else {
+            throw new RuntimeException(format("queue type %s is not supported.", cqType.toString()));
+        }
+    }
+
+    private void queueTypeShouldBe(String topic, CQType cqTypeExpected) {
+        Optional<TopicConfig> topicConfig = this.messageStore.getTopicConfig(topic);
+
+        CQType cqTypeActual = QueueTypeUtils.getCQType(topicConfig);
+
+        if (!Objects.equals(cqTypeExpected, cqTypeActual)) {
+            throw new RuntimeException(format("The queue type of topic: %s should be %s, but is %s", topic, cqTypeExpected, cqTypeActual));
+        }
+    }
+
+    private ExecutorService buildExecutorService(BlockingQueue<Runnable> blockingQueue, String threadNamePrefix) {
+        return ThreadUtils.newThreadPoolExecutor(
+            this.messageStore.getBrokerConfig().getRecoverThreadPoolNums(),
+            this.messageStore.getBrokerConfig().getRecoverThreadPoolNums(),
+            1000 * 60,
+            TimeUnit.MILLISECONDS,
+            blockingQueue,
+            new ThreadFactoryImpl(threadNamePrefix));
+    }
+
+    private ConsumeQueueInterface doFindOrCreateConsumeQueue(String topic, int queueId) {
+        ConcurrentMap<Integer, ConsumeQueueInterface> map = consumeQueueTable.get(topic);
+        if (null == map) {
+            ConcurrentMap<Integer, ConsumeQueueInterface> newMap = new ConcurrentHashMap<>(128);
+            ConcurrentMap<Integer, ConsumeQueueInterface> oldMap = consumeQueueTable.putIfAbsent(topic, newMap);
+            if (oldMap != null) {
+                map = oldMap;
+            } else {
+                map = newMap;
+            }
+        }
+
+        ConsumeQueueInterface logic = map.get(queueId);
+        if (logic != null) {
+            return logic;
+        }
+
+        ConsumeQueueInterface newLogic;
+
+        Optional<TopicConfig> topicConfig = this.messageStore.getTopicConfig(topic);
+        // TODO maybe the topic has been deleted.
+        if (Objects.equals(CQType.BatchCQ, QueueTypeUtils.getCQType(topicConfig))) {
+            newLogic = new BatchConsumeQueue(
+                topic,
+                queueId,
+                getStorePathBatchConsumeQueue(this.messageStoreConfig.getStorePathRootDir()),
+                this.messageStoreConfig.getMapperFileSizeBatchConsumeQueue(),
+                this.messageStore);
+        } else {
+            newLogic = new ConsumeQueue(
+                topic,
+                queueId,
+                getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()),
+                this.messageStoreConfig.getMappedFileSizeConsumeQueue(),
+                this.messageStore);
+        }
+
+        ConsumeQueueInterface oldLogic = map.putIfAbsent(queueId, newLogic);
+        if (oldLogic != null) {
+            logic = oldLogic;
+        } else {
+            logic = newLogic;
+        }
+
+        return logic;
+    }
+
+
+
+    public ConcurrentMap<String, ConcurrentMap<Integer, ConsumeQueueInterface>> getConsumeQueueTable() {
+        return consumeQueueTable;
+    }
+
+    private void putConsumeQueue(final String topic, final int queueId, final ConsumeQueueInterface consumeQueue) {
+        ConcurrentMap<Integer/* queueId */, ConsumeQueueInterface> map = this.consumeQueueTable.get(topic);
+        if (null == map) {
+            map = new ConcurrentHashMap<>();
+            map.put(queueId, consumeQueue);
+            this.consumeQueueTable.put(topic, map);
+        } else {
+            map.put(queueId, consumeQueue);
+        }
     }
 }

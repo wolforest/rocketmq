@@ -23,6 +23,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.CommitLogDispatcher;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
+import org.apache.rocketmq.store.queue.ConsumeQueueStore;
 
 /**
  * Dispatch commitLog with Flag:
@@ -35,10 +36,10 @@ import org.apache.rocketmq.store.DispatchRequest;
 public class CommitLogDispatcherBuildConsumeQueue implements CommitLogDispatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private final DefaultMessageStore messageStore;
+    private final ConsumeQueueStore consumeQueueStore;
 
     public CommitLogDispatcherBuildConsumeQueue(DefaultMessageStore messageStore) {
-        this.messageStore = messageStore;
+        this.consumeQueueStore = messageStore.getConsumeQueueStore();
     }
 
     @Override
@@ -47,7 +48,7 @@ public class CommitLogDispatcherBuildConsumeQueue implements CommitLogDispatcher
         switch (tranType) {
             case MessageSysFlag.TRANSACTION_NOT_TYPE:
             case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
-                messageStore.putMessagePositionInfo(request);
+                consumeQueueStore.putMessagePositionInfoWrapper(request);
                 break;
             case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
             case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE:
