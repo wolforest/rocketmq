@@ -69,9 +69,14 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     private final MappedFileQueue mappedFileQueue;
     private final String topic;
     private final int queueId;
+
+    /**
+     * consume queue item write cache
+     * size = ConsumeQueue's store unit (CQ_STORE_UNIT_SIZE)
+     * @renamed from byteBufferIndex to writeCache
+     */
     private final ByteBuffer byteBufferIndex;
 
-    private final String storePath;
     private final int mappedFileSize;
     private long maxPhysicOffset = -1;
 
@@ -87,14 +92,13 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             final String storePath,
             final int mappedFileSize,
             final MessageStore messageStore) {
-        this.storePath = storePath;
         this.mappedFileSize = mappedFileSize;
         this.messageStore = messageStore;
 
         this.topic = topic;
         this.queueId = queueId;
 
-        String queueDir = this.storePath
+        String queueDir = storePath
                 + File.separator + topic
                 + File.separator + queueId;
 
@@ -917,7 +921,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             return true;
         }
 
-        putCommitLogOffsetInfoToIndex(offset, size, tagsCode);
+        setWriteCache(offset, size, tagsCode);
 
         final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
@@ -934,7 +938,13 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         return mappedFile.appendMessage(this.byteBufferIndex.array());
     }
 
-    private void putCommitLogOffsetInfoToIndex(final long offset, final int size, final long tagsCode) {
+    /**
+     * set write cache while enqueue the message
+     * @param offset commitLog offset
+     * @param size msg size
+     * @param tagsCode tags hashCode
+     */
+    private void setWriteCache(final long offset, final int size, final long tagsCode) {
         this.byteBufferIndex.flip();
         this.byteBufferIndex.limit(CQ_STORE_UNIT_SIZE);
         this.byteBufferIndex.putLong(offset);
@@ -942,6 +952,12 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         this.byteBufferIndex.putLong(tagsCode);
     }
 
+    /**
+     * warm MappedFile if it's new
+     * @param mappedFile mappedFile
+     * @param cqOffset consume queue offset
+     * @param expectLogicOffset expectOffset
+     */
     private void warmMappedFile(MappedFile mappedFile, long cqOffset, long expectLogicOffset) {
         if (!mappedFile.isFirstCreateInQueue() || cqOffset == 0 && mappedFile.getWrotePosition() != 0) {
             return;
