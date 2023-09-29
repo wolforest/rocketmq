@@ -175,8 +175,7 @@ public class TimerMessageAccepter extends ServiceThread {
                     timerState.currQueueOffset, cq.getMinOffsetInQueue());
             timerState.currQueueOffset = cq.getMinOffsetInQueue();
         }
-        SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(timerState.currQueueOffset);
-        return bufferCQ;
+        return cq.getIndexBuffer(timerState.currQueueOffset);
     }
 
     @Override

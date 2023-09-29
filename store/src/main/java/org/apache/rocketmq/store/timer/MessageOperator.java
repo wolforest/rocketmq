@@ -31,12 +31,30 @@ import org.apache.rocketmq.store.queue.ConsumeQueue;
 
 import java.nio.ByteBuffer;
 
+/**
+ * raw message related service, this is the source and sink of timer package
+ *
+ * working flow:
+ * -> load data from consume queue
+ * -> time wheel/time level schedule
+ * -> put due message back to commitLog
+ *
+ * class functionality:
+ * 1. load data from consume queue <- getConsumeQueue()
+ * 2. put due message back to commitLog -> putMessage()
+ * 3. readMessageByCommitOffset ?
+ */
 public class MessageOperator {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final ThreadLocal<ByteBuffer> bufferLocal;
-    private MessageStore messageStore;
-    private MessageStoreConfig storeConfig;
+    private final MessageStore messageStore;
+    private final MessageStoreConfig storeConfig;
 
+    /**
+     * Just need commitLog and consumeQueue
+     * @param messageStore No
+     * @param storeConfig No
+     */
     public MessageOperator(MessageStore messageStore, MessageStoreConfig storeConfig) {
         this.messageStore = messageStore;
         this.storeConfig = storeConfig;
@@ -52,7 +70,6 @@ public class MessageOperator {
     public ConsumeQueue getConsumeQueue(String topic, int queueId) {
         return (ConsumeQueue) this.messageStore.getConsumeQueue(topic, queueId);
     }
-
 
     public PutMessageResult putMessage(MessageExtBrokerInner message) {
         return messageStore.putMessage(message);
