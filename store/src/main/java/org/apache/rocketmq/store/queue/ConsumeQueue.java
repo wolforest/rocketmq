@@ -680,7 +680,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     /**
      * consume queue api from commitLog dispatching, the process is below:
      * ReputMessageService -> messageStore.doDispatch() -> CommitLogDispatcherBuildConsumeQueue.dispatch()
-     * 
+     *
      * @param request the request containing dispatch information.
      */
     @Override
@@ -689,48 +689,64 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         boolean canWrite = this.messageStore.getRunningFlags().isCQWriteable();
         for (int i = 0; i < maxRetries && canWrite; i++) {
             long tagsCode = request.getTagsCode();
-            if (isExtWriteEnable()) {
-                CqExtUnit cqExtUnit = new CqExtUnit();
-                cqExtUnit.setFilterBitMap(request.getBitMap());
-                cqExtUnit.setMsgStoreTime(request.getStoreTimestamp());
-                cqExtUnit.setTagsCode(request.getTagsCode());
+            tagsCode = putMessageToExt(tagsCode, request);
 
-                long extAddr = this.consumeQueueExt.put(cqExtUnit);
-                if (isExtAddr(extAddr)) {
-                    tagsCode = extAddr;
-                } else {
-                    log.warn("Save consume queue extend fail, So just save tagsCode! {}, topic:{}, queueId:{}, offset:{}", cqExtUnit,
-                            topic, queueId, request.getCommitLogOffset());
-                }
-            }
-            boolean result = this.putMessagePositionInfo(request.getCommitLogOffset(),
-                    request.getMsgSize(), tagsCode, request.getConsumeQueueOffset());
+            boolean result = this.putMessagePositionInfo(request.getCommitLogOffset(), request.getMsgSize(), tagsCode, request.getConsumeQueueOffset());
             if (result) {
-                if (this.messageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE ||
-                        this.messageStore.getMessageStoreConfig().isEnableDLegerCommitLog()) {
-                    this.messageStore.getStoreCheckpoint().setPhysicMsgTimestamp(request.getStoreTimestamp());
-                }
-                this.messageStore.getStoreCheckpoint().setLogicsMsgTimestamp(request.getStoreTimestamp());
-                if (checkMultiDispatchQueue(request)) {
-                    multiDispatchLmqQueue(request, maxRetries);
-                }
+                handleSuccessResult(request, maxRetries);
                 return;
-            } else {
-                // XXX: warn and notify me
-                log.warn("[BUG]put commit log position info to " + topic + ":" + queueId + " " + request.getCommitLogOffset()
-                        + " failed, retry " + i + " times");
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    log.warn("", e);
-                }
             }
+
+            handleFailureResult(request, i);
         }
 
         // XXX: warn and notify me
         log.error("[BUG]consume queue can not write, {} {}", this.topic, this.queueId);
         this.messageStore.getRunningFlags().makeLogicsQueueError();
+    }
+
+    private long putMessageToExt(long tagsCode, DispatchRequest request) {
+        if (!isExtWriteEnable()) {
+            return tagsCode;
+        }
+
+        CqExtUnit cqExtUnit = new CqExtUnit();
+        cqExtUnit.setFilterBitMap(request.getBitMap());
+        cqExtUnit.setMsgStoreTime(request.getStoreTimestamp());
+        cqExtUnit.setTagsCode(request.getTagsCode());
+
+        long extAddr = this.consumeQueueExt.put(cqExtUnit);
+        if (isExtAddr(extAddr)) {
+            tagsCode = extAddr;
+        } else {
+            log.warn("Save consume queue extend fail, So just save tagsCode! {}, topic:{}, queueId:{}, offset:{}", cqExtUnit,
+                topic, queueId, request.getCommitLogOffset());
+        }
+
+        return tagsCode;
+    }
+
+    private void handleSuccessResult(DispatchRequest request, int maxRetries) {
+        if (this.messageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE ||
+            this.messageStore.getMessageStoreConfig().isEnableDLegerCommitLog()) {
+            this.messageStore.getStoreCheckpoint().setPhysicMsgTimestamp(request.getStoreTimestamp());
+        }
+        this.messageStore.getStoreCheckpoint().setLogicsMsgTimestamp(request.getStoreTimestamp());
+        if (checkMultiDispatchQueue(request)) {
+            multiDispatchLmqQueue(request, maxRetries);
+        }
+    }
+
+    private void handleFailureResult(DispatchRequest request, int i) {
+        // XXX: warn and notify me
+        log.warn("[BUG]put commit log position info to " + topic + ":" + queueId + " " + request.getCommitLogOffset()
+            + " failed, retry " + i + " times");
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            log.warn("", e);
+        }
     }
 
     private boolean checkMultiDispatchQueue(DispatchRequest dispatchRequest) {
@@ -886,8 +902,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         }
     }
 
-    private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode,
-                                           final long cqOffset) {
+    private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode, final long cqOffset) {
 
         if (offset + size <= this.getMaxPhysicOffset()) {
             log.warn("Maybe try to build consume queue repeatedly maxPhysicOffset={} phyOffset={}", maxPhysicOffset, offset);
