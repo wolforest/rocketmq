@@ -902,6 +902,15 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         }
     }
 
+    /**
+     * load message from commitLog and add messages to consume queue
+     *
+     * @param offset CommitLog offset
+     * @param size   size of the message in the CommitLog with the offset
+     * @param tagsCode DispatchRequest.tagsCode, from message.propertiesMap
+     * @param cqOffset consumeQueue offset
+     * @return put status
+     */
     private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode, final long cqOffset) {
 
         if (offset + size <= this.getMaxPhysicOffset()) {

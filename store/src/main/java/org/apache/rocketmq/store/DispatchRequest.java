@@ -35,6 +35,11 @@ public class DispatchRequest {
     private final int queueId;
     private final long commitLogOffset;
     private int msgSize;
+    /**
+     * from message.propertiesMap, possible key are below:
+     *    1. MessageConst.PROPERTY_TAGS
+     *    2. MessageConst.PROPERTY_DELAY_TIME_LEVEL
+     */
     private final long tagsCode;
     private final long storeTimestamp;
     private final long consumeQueueOffset;
