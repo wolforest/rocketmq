@@ -677,6 +677,12 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         return this.minLogicOffset / CQ_STORE_UNIT_SIZE;
     }
 
+    /**
+     * consume queue api from commitLog dispatching, the process is below:
+     * ReputMessageService -> messageStore.doDispatch() -> CommitLogDispatcherBuildConsumeQueue.dispatch()
+     * 
+     * @param request the request containing dispatch information.
+     */
     @Override
     public void putMessagePositionInfoWrapper(DispatchRequest request) {
         final int maxRetries = 30;

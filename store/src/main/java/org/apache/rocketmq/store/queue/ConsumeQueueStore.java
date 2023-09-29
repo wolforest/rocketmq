@@ -74,6 +74,8 @@ public class ConsumeQueueStore {
      * consume queue api from commitLog dispatching, the process is below:
      * ReputMessageService -> messageStore.doDispatch() -> CommitLogDispatcherBuildConsumeQueue.dispatch()
      *
+     * TODO: enqueue may be a better name
+     *
      * @param dispatchRequest DispatchRequest create by ReputMessageService
      */
     public void putMessagePositionInfoWrapper(DispatchRequest dispatchRequest) {
@@ -108,8 +110,6 @@ public class ConsumeQueueStore {
 
         return maxOffset;
     }
-
-
 
     public boolean load() {
         boolean cqLoadResult = loadConsumeQueues(getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()), CQType.SimpleCQ);
