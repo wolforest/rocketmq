@@ -912,59 +912,77 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
      * @return put status
      */
     private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode, final long cqOffset) {
-
         if (offset + size <= this.getMaxPhysicOffset()) {
             log.warn("Maybe try to build consume queue repeatedly maxPhysicOffset={} phyOffset={}", maxPhysicOffset, offset);
             return true;
         }
 
-        this.byteBufferIndex.flip();
-        this.byteBufferIndex.limit(CQ_STORE_UNIT_SIZE);
-        this.byteBufferIndex.putLong(offset);
-        this.byteBufferIndex.putInt(size);
-        this.byteBufferIndex.putLong(tagsCode);
+        putCommitLogOffsetInfoToIndex(offset, size, tagsCode);
 
         final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
-
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
         if (null == mappedFile) {
             return false;
         }
+        warmMappedFile(mappedFile, cqOffset, expectLogicOffset);
 
-        if (mappedFile.isFirstCreateInQueue() && cqOffset != 0 && mappedFile.getWrotePosition() == 0) {
-            this.minLogicOffset = expectLogicOffset;
-            this.mappedFileQueue.setFlushedWhere(expectLogicOffset);
-            this.mappedFileQueue.setCommittedWhere(expectLogicOffset);
-            this.fillPreBlank(mappedFile, expectLogicOffset);
-            log.info("fill pre blank space " + mappedFile.getFileName() + " " + expectLogicOffset + " "
-                    + mappedFile.getWrotePosition());
-        }
-
-        if (cqOffset != 0) {
-            long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();
-
-            if (expectLogicOffset < currentLogicOffset) {
-                log.warn("Build  consume queue repeatedly, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
-                        expectLogicOffset, currentLogicOffset, this.topic, this.queueId, expectLogicOffset - currentLogicOffset);
-                return true;
-            }
-
-            if (expectLogicOffset != currentLogicOffset) {
-                LOG_ERROR.warn(
-                        "[BUG]logic queue order maybe wrong, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
-                        expectLogicOffset,
-                        currentLogicOffset,
-                        this.topic,
-                        this.queueId,
-                        expectLogicOffset - currentLogicOffset
-                );
-            }
+        if (isOffsetInvalid(mappedFile, cqOffset, expectLogicOffset)) {
+            return true;
         }
 
         this.setMaxPhysicOffset(offset + size);
         return mappedFile.appendMessage(this.byteBufferIndex.array());
     }
 
+    private void putCommitLogOffsetInfoToIndex(final long offset, final int size, final long tagsCode) {
+        this.byteBufferIndex.flip();
+        this.byteBufferIndex.limit(CQ_STORE_UNIT_SIZE);
+        this.byteBufferIndex.putLong(offset);
+        this.byteBufferIndex.putInt(size);
+        this.byteBufferIndex.putLong(tagsCode);
+    }
+
+    private void warmMappedFile(MappedFile mappedFile, long cqOffset, long expectLogicOffset) {
+        if (!mappedFile.isFirstCreateInQueue() || cqOffset == 0 && mappedFile.getWrotePosition() != 0) {
+            return;
+        }
+
+        this.minLogicOffset = expectLogicOffset;
+        this.mappedFileQueue.setFlushedWhere(expectLogicOffset);
+        this.mappedFileQueue.setCommittedWhere(expectLogicOffset);
+        this.fillPreBlank(mappedFile, expectLogicOffset);
+        log.info("fill pre blank space " + mappedFile.getFileName() + " " + expectLogicOffset + " " + mappedFile.getWrotePosition());
+    }
+
+    private boolean isOffsetInvalid(MappedFile mappedFile, long cqOffset, long expectLogicOffset) {
+        if (cqOffset == 0) {
+            return false;
+        }
+
+        long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();
+
+        if (expectLogicOffset < currentLogicOffset) {
+            log.warn("Build  consume queue repeatedly, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
+                expectLogicOffset, currentLogicOffset, this.topic, this.queueId, expectLogicOffset - currentLogicOffset);
+            return true;
+        }
+
+        if (expectLogicOffset != currentLogicOffset) {
+            LOG_ERROR.warn("[BUG]logic queue order maybe wrong, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
+                expectLogicOffset, currentLogicOffset, this.topic, this.queueId, expectLogicOffset - currentLogicOffset
+            );
+        }
+
+        return false;
+    }
+
+    /**
+     * zero filling the MappedFile to offset
+     * @renamed from fillPreBlank to zeroFill
+     *
+     * @param mappedFile mapped file
+     * @param untilWhere the max offset
+     */
     private void fillPreBlank(final MappedFile mappedFile, final long untilWhere) {
         ByteBuffer byteBuffer = ByteBuffer.allocate(CQ_STORE_UNIT_SIZE);
         byteBuffer.putLong(0L);
