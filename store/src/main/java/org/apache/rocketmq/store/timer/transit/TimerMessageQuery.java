@@ -38,12 +38,12 @@ public class TimerMessageQuery extends AbstractStateService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private TimerState timerState;
-    private MessageStoreConfig storeConfig;
-    private MessageOperator messageReader;
-    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
-    private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
-    private PerfCounter.Ticks perfCounterTicks;
+    private final TimerState timerState;
+    private final MessageStoreConfig storeConfig;
+    private final MessageOperator messageReader;
+    private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    private final PerfCounter.Ticks perfCounterTicks;
 
     public TimerMessageQuery(
             TimerState timerState,

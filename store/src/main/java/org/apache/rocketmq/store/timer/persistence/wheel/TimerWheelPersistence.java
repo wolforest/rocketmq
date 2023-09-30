@@ -37,12 +37,12 @@ import java.util.concurrent.ConcurrentSkipListSet;
 public class TimerWheelPersistence implements Persistence {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private TimerState timerState;
-    private TimerWheel timerWheel;
-    private TimerLog timerLog;
-    private TimerMetricManager metricManager;
-    private MessageStoreConfig storeConfig;
-    private PerfCounter.Ticks perfCounterTicks;
+    private final TimerState timerState;
+    private final TimerWheel timerWheel;
+    private final TimerLog timerLog;
+    private final TimerMetricManager metricManager;
+    private final MessageStoreConfig storeConfig;
+    private final PerfCounter.Ticks perfCounterTicks;
 
     private final int precisionMs;
     private final int timerLogFileSize;
@@ -181,8 +181,7 @@ public class TimerWheelPersistence implements Persistence {
                 metricManager.hashTopicForMetrics(realTopic),
                 0);
 
-        long ret = timerLog.append(block, 0, Block.SIZE);
-        return ret;
+        return timerLog.append(block, 0, Block.SIZE);
     }
 
 }

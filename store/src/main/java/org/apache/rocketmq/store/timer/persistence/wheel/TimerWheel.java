@@ -35,7 +35,7 @@ public class TimerWheel {
     public static final int BLANK = -1, IGNORE = -2;
     public final int slotsTotal;
     public final int precisionMs;
-    private String fileName;
+    private final String fileName;
     private final RandomAccessFile randomAccessFile;
     private final FileChannel fileChannel;
     private final MappedByteBuffer mappedByteBuffer;

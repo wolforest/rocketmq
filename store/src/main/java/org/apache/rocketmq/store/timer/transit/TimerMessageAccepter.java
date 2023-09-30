@@ -44,12 +44,12 @@ public class TimerMessageAccepter extends ServiceThread {
     public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
     public static final String TIMER_OUT_MS = MessageConst.PROPERTY_TIMER_OUT_MS;
     public static final int MAGIC_DEFAULT = 1;
-    private MessageStoreConfig storeConfig;
+    private final MessageStoreConfig storeConfig;
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
-    private TimerState timerState;
-    private PerfCounter.Ticks perfCounterTicks;
-    private MessageOperator messageOperator;
-    private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
+    private final TimerState timerState;
+    private final PerfCounter.Ticks perfCounterTicks;
+    private final MessageOperator messageOperator;
+    private final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
     public TimerMessageAccepter(
             TimerState timerState,

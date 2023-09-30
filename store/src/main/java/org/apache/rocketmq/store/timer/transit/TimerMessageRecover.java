@@ -37,14 +37,14 @@ import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
 public class TimerMessageRecover {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private TimerState timerState;
-    private TimerWheel timerWheel;
-    private TimerLog timerLog;
-    private MessageOperator messageOperator;
-    private TimerCheckpoint timerCheckpoint;
+    private final TimerState timerState;
+    private final TimerWheel timerWheel;
+    private final TimerLog timerLog;
+    private final MessageOperator messageOperator;
+    private final TimerCheckpoint timerCheckpoint;
 
-    private boolean debug = false;
-    private int precisionMs;
+    private final boolean debug = false;
+    private final int precisionMs;
 
     public TimerMessageRecover(TimerState timerState,
                                TimerWheel timerWheel,
@@ -189,7 +189,7 @@ public class TimerMessageRecover {
             // if not, use cq offset.
             long msgQueueOffset = messageExt.getQueueOffset();
             int queueId = messageExt.getQueueId();
-            ConsumeQueue cq = (ConsumeQueue) messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
+            ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
             if (null == cq) {
                 return msgQueueOffset;
             }

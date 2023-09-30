@@ -46,18 +46,17 @@ public class TimerMessageSaver extends ServiceThread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private TimerState timerState;
-    private MessageStoreConfig storeConfig;
-    private MessageOperator messageOperator;
+    private final TimerState timerState;
+    private final MessageStoreConfig storeConfig;
+    private final MessageOperator messageOperator;
 
+    private final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
+    private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private final TimerMessageDeliver[] timerMessageDelivers;
+    private final TimerMessageQuery[] timerMessageQueries;
+    private final PerfCounter.Ticks perfCounterTicks;
 
-    private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
-    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
-    private TimerMessageDeliver[] timerMessageDelivers;
-    private TimerMessageQuery[] timerMessageQueries;
-    private PerfCounter.Ticks perfCounterTicks;
-
-    private Persistence persistence;
+    private final Persistence persistence;
     public TimerMessageSaver(TimerState timerState,
                              MessageStoreConfig storeConfig,
                              TimerWheel timerWheel,

@@ -40,15 +40,15 @@ public class TimerFlushService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm:ss");
-    private MessageStore messageStore;
-    private BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
-    private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
-    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
-    private MessageStoreConfig storeConfig;
-    private TimerState timerState;
-    private TimerMetrics timerMetrics;
-    private TimerLog timerLog;
-    private TimerWheel timerWheel;
+    private final MessageStore messageStore;
+    private final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
+    private final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private final MessageStoreConfig storeConfig;
+    private final TimerState timerState;
+    private final TimerMetrics timerMetrics;
+    private final TimerLog timerLog;
+    private final TimerWheel timerWheel;
 
     public TimerFlushService(TimerState timerState,
                              MessageStoreConfig storeConfig,

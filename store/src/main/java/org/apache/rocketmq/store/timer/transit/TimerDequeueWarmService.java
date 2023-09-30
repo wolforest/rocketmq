@@ -24,7 +24,7 @@ import org.apache.rocketmq.store.timer.TimerState;
 
 public class TimerDequeueWarmService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private TimerState timerState;
+    private final TimerState timerState;
 
     public TimerDequeueWarmService(TimerState timerState) {
         this.timerState = timerState;

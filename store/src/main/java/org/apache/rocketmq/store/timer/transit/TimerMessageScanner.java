@@ -39,16 +39,16 @@ import java.util.concurrent.CountDownLatch;
 public class TimerMessageScanner extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private MessageStoreConfig storeConfig;
-    private TimerState timerState;
-    private int commitLogFileSize;
+    private final MessageStoreConfig storeConfig;
+    private final TimerState timerState;
+    private final int commitLogFileSize;
 
-    private BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
-    private BlockingQueue<TimerRequest> timerMessageDeliverQueue;
-    private TimerMessageDeliver[] timerMessageDelivers;
-    private TimerMessageQuery[] timerMessageQueries;
+    private final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private final TimerMessageDeliver[] timerMessageDelivers;
+    private final TimerMessageQuery[] timerMessageQueries;
 
-    private Persistence persistence;
+    private final Persistence persistence;
     private long shouldStartTime;
     private final int precisionMs;
 
