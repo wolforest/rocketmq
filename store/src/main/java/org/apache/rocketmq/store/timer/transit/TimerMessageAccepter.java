@@ -47,6 +47,8 @@ public class TimerMessageAccepter extends ServiceThread {
     public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
     public static final String TIMER_OUT_MS = MessageConst.PROPERTY_TIMER_OUT_MS;
     public static final int MAGIC_DEFAULT = 1;
+    private static final int TIMER_QUEUE_ID = 0;
+
     private final MessageStoreConfig storeConfig;
     private volatile BrokerRole lastBrokerRole = BrokerRole.SLAVE;
     private final TimerState timerState;
@@ -73,7 +75,7 @@ public class TimerMessageAccepter extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service start");
         while (!this.isStopped()) {
             try {
-                if (!fetch(0)) {
+                if (!fetch()) {
                     waitForRunning(100L * storeConfig.getTimerPrecisionMs() / 1000);
                 }
             } catch (Throwable e) {
@@ -83,14 +85,14 @@ public class TimerMessageAccepter extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service end");
     }
 
-    private boolean fetch(int queueId) {
+    private boolean fetch() {
         if (storeConfig.isTimerStopEnqueue()) {
             return false;
         }
         if (!isRunningEnqueue()) {
             return false;
         }
-        SelectMappedBufferResult queueItem = getIndexBuffer(queueId);
+        SelectMappedBufferResult queueItem = getIndexBuffer();
         if (null ==  queueItem) {
             return false;
         }
@@ -186,11 +188,10 @@ public class TimerMessageAccepter extends ServiceThread {
      * get consume queue item ByteBuffer
      * facade of ConsumeQueue.getIndexBuffer
      *
-     * @param queueId queueId
      * @return SelectMappedBufferResult
      */
-    private SelectMappedBufferResult getIndexBuffer(int queueId) {
-        ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
+    private SelectMappedBufferResult getIndexBuffer() {
+        ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, TIMER_QUEUE_ID);
         if (null == cq) {
             return null;
         }
