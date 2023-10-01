@@ -80,6 +80,9 @@ public class TimerMessageStore {
     public boolean debug = false;
     protected final PerfCounter.Ticks perfCounterTicks = new PerfCounter.Ticks(LOGGER);
 
+    /**
+     *
+     */
     protected BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     protected BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     protected BlockingQueue<TimerRequest> timerMessageDeliverQueue;

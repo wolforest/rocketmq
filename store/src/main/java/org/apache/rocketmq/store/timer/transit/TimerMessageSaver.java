@@ -43,8 +43,8 @@ import java.util.concurrent.TimeUnit;
 import static org.apache.rocketmq.store.timer.TimerMessageStore.ENQUEUE_PUT;
 
 public class TimerMessageSaver extends ServiceThread {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+    private static final int BATCH_SIZE = 10;
 
     private final TimerState timerState;
     private final MessageStoreConfig storeConfig;
@@ -99,59 +99,10 @@ public class TimerMessageSaver extends ServiceThread {
         return timerState.getServiceThreadName() + this.getClass().getSimpleName();
     }
 
-    /**
-     * collect the requests
-     */
-    private List<TimerRequest> fetchTimerRequests() throws InterruptedException {
-        List<TimerRequest> timerRequestList = null;
-        TimerRequest firstReq = fetchedTimerMessageQueue.poll(10, TimeUnit.MILLISECONDS);
-        if (null != firstReq) {
-            timerRequestList = new ArrayList<>(16);
-            timerRequestList.add(firstReq);
-            while (true) {
-                TimerRequest tmpReq = fetchedTimerMessageQueue.poll(3, TimeUnit.MILLISECONDS);
-                if (null == tmpReq) {
-                    break;
-                }
-                timerRequestList.add(tmpReq);
-                if (timerRequestList.size() > 10) {
-                    break;
-                }
-            }
-        }
-        return timerRequestList;
-    }
-
-    private void putMessageToTimerWheel(TimerRequest timerRequest) {
-        try {
-            perfCounterTicks.startTick(ENQUEUE_PUT);
-            DefaultStoreMetricsManager.incTimerEnqueueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
-            boolean shouldFire = timerRequest.getDelayTime() < timerState.currWriteTimeMs;
-            if (timerState.isShouldRunningDequeue() && shouldFire) {
-                timerRequest.setEnqueueTime(Long.MAX_VALUE);
-                timerMessageDeliverQueue.put(timerRequest);
-            } else {
-                boolean success = persistence.save(timerRequest);
-                timerRequest.idempotentRelease(success || storeConfig.isTimerSkipUnknownError());
-            }
-            perfCounterTicks.endTick(ENQUEUE_PUT);
-        } catch (Throwable t) {
-            LOGGER.error("Unknown error", t);
-            if (storeConfig.isTimerSkipUnknownError()) {
-                timerRequest.idempotentRelease(true);
-            } else {
-                ThreadUtils.sleep(50);
-            }
-        }
-    }
-
-
-
     private void fetchAndPutTimerRequest() throws Exception {
         long tmpCommitQueueOffset = timerState.currQueueOffset;
         List<TimerRequest> timerRequests = this.fetchTimerRequests();
         if (CollectionUtils.isEmpty(timerRequests)) {
-
             timerState.commitQueueOffset = tmpCommitQueueOffset;
             timerState.maybeMoveWriteTime();
             return;
@@ -163,18 +114,80 @@ public class TimerMessageSaver extends ServiceThread {
                 req.setLatch(latch);
                 this.putMessageToTimerWheel(req);
             }
+
             timerState.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue, timerMessageDelivers, timerMessageQueries, -1);
+
             boolean allSuccess = timerRequests.stream().allMatch(TimerRequest::isSuccess);
             if (allSuccess) {
                 break;
-            } else {
-                ThreadUtils.sleep(50);
             }
+
+            ThreadUtils.sleep(50);
         }
+
         timerState.commitQueueOffset = timerRequests.get(timerRequests.size() - 1).getMsg().getQueueOffset();
         timerState.maybeMoveWriteTime();
     }
 
+    /**
+     * collect the requests
+     */
+    private List<TimerRequest> fetchTimerRequests() throws InterruptedException {
+        List<TimerRequest> timerRequestList = null;
+        TimerRequest firstReq = fetchedTimerMessageQueue.poll(10, TimeUnit.MILLISECONDS);
+        if (null == firstReq) {
+            return null;
+        }
 
+        timerRequestList = new ArrayList<>(16);
+        timerRequestList.add(firstReq);
+        fetchMoreTimerRequests(timerRequestList);
+
+        return timerRequestList;
+    }
+
+    private void fetchMoreTimerRequests(List<TimerRequest> timerRequestList) throws InterruptedException {
+        while (true) {
+            TimerRequest tmpReq = fetchedTimerMessageQueue.poll(3, TimeUnit.MILLISECONDS);
+            if (null == tmpReq) {
+                break;
+            }
+
+            timerRequestList.add(tmpReq);
+
+            if (timerRequestList.size() > BATCH_SIZE) {
+                break;
+            }
+        }
+    }
+
+    private void putMessageToTimerWheel(TimerRequest timerRequest) {
+        try {
+            perfCounterTicks.startTick(ENQUEUE_PUT);
+
+            DefaultStoreMetricsManager.incTimerEnqueueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
+            boolean shouldFire = timerRequest.getDelayTime() < timerState.currWriteTimeMs;
+            if (timerState.isShouldRunningDequeue() && shouldFire) {
+                timerRequest.setEnqueueTime(Long.MAX_VALUE);
+                timerMessageDeliverQueue.put(timerRequest);
+            } else {
+                boolean success = persistence.save(timerRequest);
+                timerRequest.idempotentRelease(success || storeConfig.isTimerSkipUnknownError());
+            }
+
+            perfCounterTicks.endTick(ENQUEUE_PUT);
+        } catch (Throwable t) {
+            handleTimerWheelAddingException(t, timerRequest);
+        }
+    }
+
+    private void handleTimerWheelAddingException(Throwable t, TimerRequest timerRequest) {
+        LOGGER.error("Unknown error", t);
+        if (storeConfig.isTimerSkipUnknownError()) {
+            timerRequest.idempotentRelease(true);
+        } else {
+            ThreadUtils.sleep(50);
+        }
+    }
 }
 
