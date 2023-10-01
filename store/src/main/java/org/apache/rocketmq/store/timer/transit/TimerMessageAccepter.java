@@ -105,8 +105,7 @@ public class TimerMessageAccepter extends ServiceThread {
         try {
             int i = 0;
             for (; i <  queueItem.getSize(); i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
-                boolean status = enqueueTimerTask(queueItem, currQueueOffset, i);
-                if (!status) {
+                if (!enqueueTimerTask(queueItem, currQueueOffset, i)) {
                     return false;
                 }
 
@@ -131,7 +130,7 @@ public class TimerMessageAccepter extends ServiceThread {
         try {
             long offsetPy =  queueItem.getByteBuffer().getLong();
             int sizePy =  queueItem.getByteBuffer().getInt();
-            discard( queueItem);
+            discard(queueItem);
             MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
             if (null == msgExt) {
                 perfCounterTicks.getCounter("enqueue_get_miss");

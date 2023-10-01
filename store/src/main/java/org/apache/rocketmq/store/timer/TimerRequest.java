@@ -21,15 +21,35 @@ import org.apache.rocketmq.common.message.MessageExt;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+/**
+ * timer task to be scheduled, build from ConsumeQueue and CommitLog
+ */
 public class TimerRequest {
 
+    /**
+     * commitLog offset
+     */
     private final long offsetPy;
+    /**
+     * size of message in the commitLog
+     */
     private final int sizePy;
+    /**
+     * delayTime of message, stored in message property map
+     */
     private final long delayTime;
-
+    /**
+     * magic code, always equals TimerMessageAccepter.MAGIC_DEFAULT (1)
+     */
     private final int magic;
 
+    /**
+     * enqueue timestamp (ms)
+     */
     private long enqueueTime;
+    /**
+     * timer task related msg
+     */
     private MessageExt msg;
 
     //optional would be a good choice, but it relies on JDK 8
