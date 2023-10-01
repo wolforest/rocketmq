@@ -81,13 +81,19 @@ public class TimerMessageStore {
     protected final PerfCounter.Ticks perfCounterTicks = new PerfCounter.Ticks(LOGGER);
 
     /**
-     *
+     * wait to schedule task queue
+     * the task will schedule by timer wheel
+     * or put into timerMessageDeliverQueue
      */
     protected BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     /**
-     *
+     * wait to execute message queue
+     * the message in queue will put back to commitLog
      */
     protected BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    /**
+     *
+     */
     protected BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
 
     private ScheduledExecutorService scheduler;

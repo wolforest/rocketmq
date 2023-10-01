@@ -97,6 +97,7 @@ public class TimerMessageDeliver extends AbstractStateService {
                 }
 
                 run(timerRequest);
+
             } catch (Throwable e) {
                 LOGGER.error("Error occurred in " + getServiceName(), e);
             }
