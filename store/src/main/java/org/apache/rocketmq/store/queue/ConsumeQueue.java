@@ -1011,6 +1011,13 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         }
     }
 
+    /**
+     * get consume queue item by index, and return ByteBuffer format item
+     * @renamed from getIndexBuffer to getItemBufferByIndex or getItemBuffer
+     *
+     * @param startIndex consume queue item index
+     * @return consume queue item related MappedFile part
+     */
     public SelectMappedBufferResult getIndexBuffer(final long startIndex) {
         int mappedFileSize = this.mappedFileSize;
         long offset = startIndex * CQ_STORE_UNIT_SIZE;

@@ -18,6 +18,9 @@ package org.apache.rocketmq.store.logfile;
 
 import java.nio.ByteBuffer;
 
+/**
+ * part of MappedFile with special size and start at special offset
+ */
 public class SelectMappedBufferResult {
 
     private final long startOffset;

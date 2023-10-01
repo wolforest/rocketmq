@@ -57,6 +57,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+/**
+ * timer server
+ * 1. manager timer server start/shutdown
+ * 2. timer context <- to move to TimerContext
+ * 3. timer matrix gateway <- used by external services
+ *
+ * @renamed from TimerMessageStore to TimerServer
+ */
 public class TimerMessageStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 

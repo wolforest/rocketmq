@@ -37,7 +37,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Consume the original topic queue,convert message to TimerTask and put it into the in-memory pending queue
+ * Consume the original topic queue, convert message to TimerTask and put it into the in-memory pending queue
+ *
+ * pull message directly from consume queue with predefined queueId
+ *
  */
 public class TimerMessageAccepter extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -80,7 +83,6 @@ public class TimerMessageAccepter extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service end");
     }
 
-
     private boolean fetch(int queueId) {
         if (storeConfig.isTimerStopEnqueue()) {
             return false;
@@ -88,40 +90,24 @@ public class TimerMessageAccepter extends ServiceThread {
         if (!isRunningEnqueue()) {
             return false;
         }
-        SelectMappedBufferResult bufferCQ = getIndexBuffer(queueId);
-        long currQueueOffset = timerState.currQueueOffset;
-        if (null == bufferCQ) {
+        SelectMappedBufferResult queueItem = getIndexBuffer(queueId);
+        if (null ==  queueItem) {
             return false;
         }
+
+        long currQueueOffset = timerState.currQueueOffset;
+        return fetch(queueItem, currQueueOffset);
+    }
+
+    private boolean fetch(SelectMappedBufferResult queueItem, long currQueueOffset) {
         try {
             int i = 0;
-            for (; i < bufferCQ.getSize(); i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
-                perfCounterTicks.startTick("enqueue_get");
-                try {
-                    long offsetPy = bufferCQ.getByteBuffer().getLong();
-                    int sizePy = bufferCQ.getByteBuffer().getInt();
-                    discard(bufferCQ);
-                    MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
-                    if (null == msgExt) {
-                        perfCounterTicks.getCounter("enqueue_get_miss");
-                        continue;
-                    }
-                    timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
-                    timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
-                    long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
-                    // use CQ offset, not offset in Message
-                    msgExt.setQueueOffset(forwardOffset(currQueueOffset, i));
-                    TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
-
-                    if (!loopOffer(timerRequest)) {
-                        return false;
-                    }
-
-                } catch (Exception e) {
-                    deferThrow(e);
-                } finally {
-                    perfCounterTicks.endTick("enqueue_get");
+            for (; i <  queueItem.getSize(); i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
+                boolean status = enqueueTimerTask(queueItem, currQueueOffset, i);
+                if (!status) {
+                    return false;
                 }
+
                 // if broker role changes, ignore last enqueue
                 if (!isRunningEnqueue()) {
                     return false;
@@ -133,9 +119,40 @@ public class TimerMessageAccepter extends ServiceThread {
         } catch (Exception e) {
             LOGGER.error("Unknown exception in enqueuing", e);
         } finally {
-            bufferCQ.release();
+            queueItem.release();
         }
         return false;
+    }
+
+    private boolean enqueueTimerTask(SelectMappedBufferResult queueItem, long currQueueOffset, int i) throws Exception {
+        perfCounterTicks.startTick("enqueue_get");
+        try {
+            long offsetPy =  queueItem.getByteBuffer().getLong();
+            int sizePy =  queueItem.getByteBuffer().getInt();
+            discard( queueItem);
+            MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
+            if (null == msgExt) {
+                perfCounterTicks.getCounter("enqueue_get_miss");
+                return true;
+            }
+            timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
+            timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
+            long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
+            // use CQ offset, not offset in Message
+            msgExt.setQueueOffset(forwardOffset(currQueueOffset, i));
+            TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
+
+            if (!loopOffer(timerRequest)) {
+                return false;
+            }
+
+        } catch (Exception e) {
+            deferThrow(e);
+        } finally {
+            perfCounterTicks.endTick("enqueue_get");
+        }
+
+        return true;
     }
 
     private long forwardOffset(long currQueueOffset, int i) {
@@ -165,6 +182,13 @@ public class TimerMessageAccepter extends ServiceThread {
         return true;
     }
 
+    /**
+     * get consume queue item ByteBuffer
+     * facade of ConsumeQueue.getIndexBuffer
+     *
+     * @param queueId queueId
+     * @return SelectMappedBufferResult
+     */
     private SelectMappedBufferResult getIndexBuffer(int queueId) {
         ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
         if (null == cq) {
