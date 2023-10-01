@@ -84,8 +84,11 @@ public class TimerMessageStore {
      *
      */
     protected BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
-    protected BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    /**
+     *
+     */
     protected BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    protected BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
 
     private ScheduledExecutorService scheduler;
     private final TimerState timerState;

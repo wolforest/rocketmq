@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
  * Consume the original topic queue, convert message to TimerTask and put it into the in-memory pending queue
  *
  * pull message directly from consume queue with predefined queueId
+ * and put message to TimerMessageStore.fetchedTimerMessageQueue
  *
  */
 public class TimerMessageAccepter extends ServiceThread {

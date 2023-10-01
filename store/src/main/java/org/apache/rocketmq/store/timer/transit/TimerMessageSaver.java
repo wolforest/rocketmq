@@ -42,6 +42,12 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.rocketmq.store.timer.TimerMessageStore.ENQUEUE_PUT;
 
+/**
+ * poll message from fetchedTimerMessageQueue
+ *      put message to timerWheel
+ *      or enqueue TimerMessageStore.timerMessageDeliverQueue
+ *
+ */
 public class TimerMessageSaver extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private static final int BATCH_SIZE = 10;
