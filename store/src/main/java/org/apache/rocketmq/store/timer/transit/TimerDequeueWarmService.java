@@ -22,6 +22,9 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.timer.TimerState;
 
+/**
+ * useless, do nothing in method run
+ */
 public class TimerDequeueWarmService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final TimerState timerState;
