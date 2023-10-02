@@ -91,14 +91,16 @@ public class TransactionalMessageBridge {
     public Set<MessageQueue> fetchMessageQueues(String topic) {
         Set<MessageQueue> mqSet = new HashSet<>();
         TopicConfig topicConfig = selectTopicConfig(topic);
-        if (topicConfig != null && topicConfig.getReadQueueNums() > 0) {
-            for (int i = 0; i < topicConfig.getReadQueueNums(); i++) {
-                MessageQueue mq = new MessageQueue();
-                mq.setTopic(topic);
-                mq.setBrokerName(brokerController.getBrokerConfig().getBrokerName());
-                mq.setQueueId(i);
-                mqSet.add(mq);
-            }
+        if (topicConfig == null || topicConfig.getReadQueueNums() <= 0) {
+            return mqSet;
+        }
+
+        for (int i = 0; i < topicConfig.getReadQueueNums(); i++) {
+            MessageQueue mq = new MessageQueue();
+            mq.setTopic(topic);
+            mq.setBrokerName(brokerController.getBrokerConfig().getBrokerName());
+            mq.setQueueId(i);
+            mqSet.add(mq);
         }
         return mqSet;
     }
