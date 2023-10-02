@@ -43,7 +43,7 @@ public interface TransactionalMessageService {
     /**
      * Delete prepare message when this message has been committed or rolled back.
      *
-     * @param messageExt
+     * @param messageExt msg
      */
     boolean deletePrepareMessage(MessageExt messageExt);
 

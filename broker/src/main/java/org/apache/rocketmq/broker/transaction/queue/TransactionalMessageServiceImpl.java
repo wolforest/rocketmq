@@ -52,24 +52,17 @@ import org.apache.rocketmq.store.config.BrokerRole;
 public class TransactionalMessageServiceImpl implements TransactionalMessageService {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
 
-    private TransactionalMessageBridge transactionalMessageBridge;
-
     private static final int PULL_MSG_RETRY_NUMBER = 1;
-
     private static final int MAX_PROCESS_TIME_LIMIT = 60000;
     private static final int MAX_RETRY_TIMES_FOR_ESCAPE = 10;
-
     private static final int MAX_RETRY_COUNT_WHEN_HALF_NULL = 1;
-
     private static final int OP_MSG_PULL_NUMS = 32;
-
     private static final int SLEEP_WHILE_NO_OP = 1000;
 
     private final ConcurrentHashMap<Integer, MessageQueueOpContext> deleteContext = new ConcurrentHashMap<>();
-
-    private ServiceThread transactionalOpBatchService;
-
-    private ConcurrentHashMap<MessageQueue, MessageQueue> opQueueMap = new ConcurrentHashMap<>();
+    private final TransactionalMessageBridge transactionalMessageBridge;
+    private final ServiceThread transactionalOpBatchService;
+    private final ConcurrentHashMap<MessageQueue, MessageQueue> opQueueMap = new ConcurrentHashMap<>();
 
     public TransactionalMessageServiceImpl(TransactionalMessageBridge transactionBridge) {
         this.transactionalMessageBridge = transactionBridge;
