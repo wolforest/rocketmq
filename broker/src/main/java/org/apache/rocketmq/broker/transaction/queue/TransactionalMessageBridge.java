@@ -202,18 +202,21 @@ public class TransactionalMessageBridge {
         List<MessageExt> foundList = new ArrayList<>();
         try {
             List<ByteBuffer> messageBufferList = getMessageResult.getMessageBufferList();
-            for (ByteBuffer bb : messageBufferList) {
-                MessageExt msgExt = MessageDecoder.decode(bb, true, false);
-                if (msgExt != null) {
-                    foundList.add(msgExt);
-                }
-            }
-
+            addFoundList(foundList, messageBufferList);
         } finally {
             getMessageResult.release();
         }
 
         return foundList;
+    }
+
+    private void addFoundList(List<MessageExt> foundList, List<ByteBuffer> messageBufferList) {
+        for (ByteBuffer bb : messageBufferList) {
+            MessageExt msgExt = MessageDecoder.decode(bb, true, false);
+            if (msgExt != null) {
+                foundList.add(msgExt);
+            }
+        }
     }
 
     public PutMessageResult putHalfMessage(MessageExtBrokerInner messageInner) {
