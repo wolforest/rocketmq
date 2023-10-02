@@ -36,6 +36,9 @@ import java.util.concurrent.BlockingQueue;
 
 import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
 
+/**
+ * periodically flush timerWheel thread
+ */
 public class TimerFlushService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -78,30 +81,36 @@ public class TimerFlushService extends ServiceThread {
         long start = System.currentTimeMillis();
 
         while (!this.isStopped()) {
-            try {
-                timerState.prepareTimerCheckPoint();
-                timerLog.getMappedFileQueue().flush(0);
-                timerWheel.flush();
-                timerState.flushCheckpoint();
-                if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
-                    start = System.currentTimeMillis();
-                    long tmpQueueOffset = timerState.currQueueOffset;
-                    ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TIMER_TOPIC, 0);
-                    long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
-                    LOGGER.info("[{}]Timer progress-check commitRead:[{}] currRead:[{}] currWrite:[{}] readBehind:{} currReadOffset:{} offsetBehind:{} behindMaster:{} " +
-                                    "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
-                            storeConfig.getBrokerRole(),
-                            format(timerState.commitReadTimeMs), format(timerState.currReadTimeMs), format(timerState.currWriteTimeMs), timerState.getDequeueBehind(),
-                            tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerState.getMasterTimerQueueOffset() - tmpQueueOffset,
-                            fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerState.getAllCongestNum(), format(timerState.lastEnqueueButExpiredStoreTime));
-                }
-                timerMetrics.persist();
-                waitForRunning(storeConfig.getTimerFlushIntervalMs());
-            } catch (Throwable e) {
-                LOGGER.error("Error occurred in " + getServiceName(), e);
-            }
+            start = flushTimerWheel(start);
         }
         LOGGER.info(this.getServiceName() + " service end");
+    }
+
+    private long flushTimerWheel(long start) {
+        try {
+            timerState.prepareTimerCheckPoint();
+            timerLog.getMappedFileQueue().flush(0);
+            timerWheel.flush();
+            timerState.flushCheckpoint();
+            if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
+                start = System.currentTimeMillis();
+                long tmpQueueOffset = timerState.currQueueOffset;
+                ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TIMER_TOPIC, 0);
+                long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
+                LOGGER.info("[{}]Timer progress-check commitRead:[{}] currRead:[{}] currWrite:[{}] readBehind:{} currReadOffset:{} offsetBehind:{} behindMaster:{} " +
+                        "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
+                    storeConfig.getBrokerRole(),
+                    format(timerState.commitReadTimeMs), format(timerState.currReadTimeMs), format(timerState.currWriteTimeMs), timerState.getDequeueBehind(),
+                    tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerState.getMasterTimerQueueOffset() - tmpQueueOffset,
+                    fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerState.getAllCongestNum(), format(timerState.lastEnqueueButExpiredStoreTime));
+            }
+            timerMetrics.persist();
+            waitForRunning(storeConfig.getTimerFlushIntervalMs());
+        } catch (Throwable e) {
+            LOGGER.error("Error occurred in " + getServiceName(), e);
+        }
+
+        return start;
     }
 
     private String format(long time) {
