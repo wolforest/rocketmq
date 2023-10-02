@@ -46,6 +46,9 @@ import static org.apache.rocketmq.store.timer.TimerState.PUT_NEED_RETRY;
 import static org.apache.rocketmq.store.timer.TimerState.PUT_NO_RETRY;
 import static org.apache.rocketmq.store.timer.TimerState.PUT_OK;
 
+/**
+ * put timer message back to commitLog
+ */
 public class TimerMessageDeliver extends AbstractStateService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 

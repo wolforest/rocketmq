@@ -36,6 +36,11 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
+/**
+ * scan persistence and put message to:
+ *  1. timerMessageQueries
+ *  2. timerMessageDeliverQueue -> then timerState.checkDeliverQueueLatch()
+ */
 public class TimerMessageScanner extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -107,7 +112,6 @@ public class TimerMessageScanner extends ServiceThread {
     }
 
     private int dequeue() throws Exception {
-
         if (storeConfig.isTimerStopDequeue()) {
             return -1;
         }
@@ -145,13 +149,13 @@ public class TimerMessageScanner extends ServiceThread {
     /**
      * Put timerRequests to TimerQueryQueue
      *
-     * @param msgStack
-     * @throws Exception
+     * @param msgStack msg scan from persistence
+     * @throws Exception exception
      */
     private void putToQuery(LinkedList<TimerRequest> msgStack) throws Exception {
         List<List<TimerRequest>> timerRequestListGroup = splitIntoLists(msgStack);
         CountDownLatch countDownLatch = new CountDownLatch(msgStack.size());
-        //read the delete msg: the msg used to mark another msg is deleted
+        //read the deleted msg: the msg used to mark another msg is deleted
         for (List<TimerRequest> timerRequests : timerRequestListGroup) {
             for (TimerRequest timerRequest : timerRequests) {
                 timerRequest.setLatch(countDownLatch);

@@ -49,7 +49,15 @@ public class TimerState {
     public static final String TIMER_DELETE_UNIQUE_KEY = MessageConst.PROPERTY_TIMER_DEL_UNIQKEY;
 
     public static final int TIMER_BLANK_SLOTS = 60;
+    /**
+     * last read timestamp of persistence.scan()
+     * may be updated by TimerMessageScanner
+     */
     public volatile long currReadTimeMs;
+    /**
+     * last write timestamp of timer message
+     * may be updated by TimerMessageDeliver
+     */
     public volatile long currWriteTimeMs;
     public volatile long preReadTimeMs;
     public volatile long commitReadTimeMs;

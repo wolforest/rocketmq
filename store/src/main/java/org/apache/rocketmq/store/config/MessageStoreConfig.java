@@ -97,6 +97,9 @@ public class MessageStoreConfig {
 
     private boolean timerSkipUnknownError = false;
     private boolean timerWarmEnable = false;
+    /**
+     *
+     */
     private boolean timerStopDequeue = false;
     private int timerCongestNumEachSlot = Integer.MAX_VALUE;
 
