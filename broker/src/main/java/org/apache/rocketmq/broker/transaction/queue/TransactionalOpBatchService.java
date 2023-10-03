@@ -25,14 +25,13 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 public class TransactionalOpBatchService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
 
-    private BrokerController brokerController;
-    private TransactionalMessageServiceImpl transactionalMessageService;
+    private final BrokerController brokerController;
+    private final TransactionalMessageServiceImpl transactionalMessageService;
 
     private long wakeupTimestamp = 0;
 
 
-    public TransactionalOpBatchService(BrokerController brokerController,
-                                       TransactionalMessageServiceImpl transactionalMessageService) {
+    public TransactionalOpBatchService(BrokerController brokerController, TransactionalMessageServiceImpl transactionalMessageService) {
         this.brokerController = brokerController;
         this.transactionalMessageService = transactionalMessageService;
     }
@@ -53,6 +52,8 @@ public class TransactionalOpBatchService extends ServiceThread {
                 interval = 0;
                 wakeup();
             }
+
+            // execute this.onWaitEnd()
             this.waitForRunning(interval);
         }
         LOGGER.info("End transaction op batch thread!");

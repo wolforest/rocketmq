@@ -31,6 +31,7 @@ import org.apache.rocketmq.store.queue.ConsumeQueueStore;
  *      1.1 normal message
  *      1.2 message with DelayLevel
  *      1.3 message with Timer
+ *      1.4 transaction prepare message
  *  2. TRANSACTION_COMMIT_TYPE
  */
 public class CommitLogDispatcherBuildConsumeQueue implements CommitLogDispatcher {

@@ -78,6 +78,12 @@ public class MessageSysFlag {
         return flag & TRANSACTION_ROLLBACK_TYPE;
     }
 
+    /**
+     *
+     * @param flag source transaction type
+     * @param type target transaction type
+     * @return new transaction type
+     */
     public static int resetTransactionValue(final int flag, final int type) {
         return (flag & (~TRANSACTION_ROLLBACK_TYPE)) | type;
     }

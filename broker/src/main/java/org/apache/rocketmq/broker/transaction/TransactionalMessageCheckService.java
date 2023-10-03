@@ -25,7 +25,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 public class TransactionalMessageCheckService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
 
-    private BrokerController brokerController;
+    private final BrokerController brokerController;
 
     public TransactionalMessageCheckService(BrokerController brokerController) {
         this.brokerController = brokerController;
@@ -44,6 +44,9 @@ public class TransactionalMessageCheckService extends ServiceThread {
         log.info("Start transaction check service thread!");
         while (!this.isStopped()) {
             long checkInterval = brokerController.getBrokerConfig().getTransactionCheckInterval();
+
+            // execute this.onWaitEnd()
+            // then execute TransactionalMessageService.check()
             this.waitForRunning(checkInterval);
         }
         log.info("End transaction check service thread!");

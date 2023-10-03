@@ -70,7 +70,6 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
         transactionalOpBatchService.start();
     }
 
-
     @Override
     public CompletableFuture<PutMessageResult> asyncPrepareMessage(MessageExtBrokerInner messageInner) {
         return transactionalMessageBridge.asyncPutHalfMessage(messageInner);
