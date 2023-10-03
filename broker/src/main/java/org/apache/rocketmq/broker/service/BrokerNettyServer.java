@@ -621,7 +621,7 @@ public class BrokerNettyServer {
     }
 
     private void initServices() {
-        this.popServiceManager = new PopServiceManager(brokerController);
+        this.popServiceManager = new PopServiceManager(brokerController, popMessageProcessor, notificationProcessor);
         this.clientHousekeepingService = new ClientHousekeepingService(getBrokerController());
         this.pullRequestHoldService = messageStoreConfig.isEnableLmq() ? new LmqPullRequestHoldService(getBrokerController()) : new PullRequestHoldService(getBrokerController());
         this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService, this.popServiceManager);

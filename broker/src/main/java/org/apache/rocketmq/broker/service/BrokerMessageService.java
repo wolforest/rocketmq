@@ -285,10 +285,10 @@ public class BrokerMessageService {
     }
 
     private void initTransaction() {
+        TransactionalMessageBridge transactionalMessageBridge = new TransactionalMessageBridge(brokerController, this.getMessageStore());
         this.transactionalMessageService = ServiceProvider.loadClass(TransactionalMessageService.class);
         if (null == this.transactionalMessageService) {
-            this.transactionalMessageService = new TransactionalMessageServiceImpl(
-                new TransactionalMessageBridge(brokerController, this.getMessageStore()));
+            this.transactionalMessageService = new TransactionalMessageServiceImpl(transactionalMessageBridge);
             LOG.warn("Load default transaction message hook service: {}",
                 TransactionalMessageServiceImpl.class.getSimpleName());
         }
@@ -299,7 +299,7 @@ public class BrokerMessageService {
                 DefaultTransactionalMessageCheckListener.class.getSimpleName());
         }
         this.transactionalMessageCheckListener.setBrokerController(brokerController);
-        this.transactionalMessageCheckService = new TransactionalMessageCheckService(brokerController);
+        this.transactionalMessageCheckService = new TransactionalMessageCheckService(brokerController, transactionalMessageBridge, this.transactionalMessageCheckListener);
     }
 
     private void addCheckBeforePutMessageHook() {
@@ -413,11 +413,6 @@ public class BrokerMessageService {
 
     public AbstractTransactionalMessageCheckListener getTransactionalMessageCheckListener() {
         return transactionalMessageCheckListener;
-    }
-
-    public void setTransactionalMessageCheckListener(
-        AbstractTransactionalMessageCheckListener transactionalMessageCheckListener) {
-        this.transactionalMessageCheckListener = transactionalMessageCheckListener;
     }
 
     public boolean isTransactionCheckServiceStart() {

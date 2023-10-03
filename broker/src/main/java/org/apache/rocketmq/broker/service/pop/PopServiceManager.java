@@ -22,6 +22,8 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.longpolling.PopLongPollingService;
 import org.apache.rocketmq.broker.longpolling.PopRequest;
+import org.apache.rocketmq.broker.processor.NotificationProcessor;
+import org.apache.rocketmq.broker.processor.PopMessageProcessor;
 import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.PopAckConstants;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -42,18 +44,16 @@ public class PopServiceManager {
     private final PopReviveService[] popReviveServices;
     private final PopLongPollingService popPollingService;
 
-
-
     private final PopLongPollingService notificationPollingService;
     private final PopBufferMergeService popBufferMergeService;
     private final QueueLockManager queueLockManager;
 
-    public PopServiceManager(final BrokerController brokerController) {
+    public PopServiceManager(final BrokerController brokerController, PopMessageProcessor popMessageProcessor, NotificationProcessor notificationProcessor) {
         this.brokerController = brokerController;
         this.reviveTopic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
 
-        this.popPollingService = new PopLongPollingService(brokerController, brokerController.getBrokerNettyServer().getPopMessageProcessor());
-        this.notificationPollingService = new PopLongPollingService(brokerController, brokerController.getBrokerNettyServer().getNotificationProcessor());
+        this.popPollingService = new PopLongPollingService(brokerController, popMessageProcessor);
+        this.notificationPollingService = new PopLongPollingService(brokerController, notificationProcessor);
 
         this.queueLockManager = new QueueLockManager(brokerController);
         this.popBufferMergeService = new PopBufferMergeService(this.brokerController);

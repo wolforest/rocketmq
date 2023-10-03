@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.broker.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.transaction.OperationResult;
 import org.apache.rocketmq.broker.transaction.TransactionalMessageService;
+import org.apache.rocketmq.broker.transaction.queue.TransactionalMessageBridge;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
@@ -70,4 +71,9 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
     public void close() {
 
     }
+
+    public TransactionalMessageBridge getTransactionalMessageBridge() {
+        return null;
+    }
+
 }

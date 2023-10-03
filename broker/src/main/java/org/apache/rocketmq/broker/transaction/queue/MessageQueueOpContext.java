@@ -20,9 +20,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MessageQueueOpContext {
-    private AtomicInteger totalSize = new AtomicInteger(0);
+    private final AtomicInteger totalSize = new AtomicInteger(0);
     private volatile long lastWriteTimestamp;
-    private LinkedBlockingQueue<String> contextQueue;
+    private final LinkedBlockingQueue<String> contextQueue;
 
     public MessageQueueOpContext(long timestamp, int queueLength) {
         this.lastWriteTimestamp = timestamp;

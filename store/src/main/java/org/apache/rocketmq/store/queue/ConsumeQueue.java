@@ -959,7 +959,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
      * @param expectLogicOffset expectOffset
      */
     private void warmMappedFile(MappedFile mappedFile, long cqOffset, long expectLogicOffset) {
-        if (!mappedFile.isFirstCreateInQueue() || cqOffset == 0 && mappedFile.getWrotePosition() != 0) {
+        if (!mappedFile.isFirstCreateInQueue() || cqOffset == 0 || mappedFile.getWrotePosition() != 0) {
             return;
         }
 

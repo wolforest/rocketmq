@@ -22,7 +22,9 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.rocketmq.broker.BrokerPreOnlineService;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
+import org.apache.rocketmq.broker.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.transaction.TransactionalMessageCheckService;
+import org.apache.rocketmq.broker.transaction.queue.TransactionalMessageBridge;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -42,6 +44,11 @@ public class BrokerPreOnlineTest {
     private BrokerContainer brokerContainer;
 
     private InnerBrokerController innerBrokerController;
+
+    @Mock
+    private TransactionalMessageBridge bridge;
+    @Mock
+    private AbstractTransactionalMessageCheckListener listener;
 
     @Mock
     private BrokerOuterAPI brokerOuterAPI;
@@ -65,7 +72,8 @@ public class BrokerPreOnlineTest {
             defaultMessageStore.getBrokerConfig(),
             defaultMessageStore.getMessageStoreConfig());
 
-        innerBrokerController.getBrokerMessageService().setTransactionalMessageCheckService(new TransactionalMessageCheckService(innerBrokerController));
+        listener.setBrokerController(innerBrokerController);
+        innerBrokerController.getBrokerMessageService().setTransactionalMessageCheckService(new TransactionalMessageCheckService(innerBrokerController, bridge, listener));
         innerBrokerController.setIsolated(true);
         innerBrokerController.setMessageStore(defaultMessageStore);
     }

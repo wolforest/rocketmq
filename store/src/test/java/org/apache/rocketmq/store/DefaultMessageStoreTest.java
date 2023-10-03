@@ -613,7 +613,7 @@ public class DefaultMessageStoreTest {
             messageStore.putMessage(messageExtBrokerInner);
         }
         // wait for consume queue build
-        // the sleep time should be great than consume queue flush interval
+        // the sleep time should be greater than consume queue flush interval
         //Thread.sleep(100);
         StoreTestUtil.waitCommitLogReput((DefaultMessageStore) messageStore);
         String group = "simple";

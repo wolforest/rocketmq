@@ -1008,23 +1008,6 @@ public class DefaultMessageStore implements MessageStore {
 
         long maxPhysicalPosInLogicQueue = getConsumeQueueMaxOffset();
 
-        // If maxPhyPos(CQs) < minPhyPos(CommitLog), some newly deleted topics may be re-dispatched into cqs mistakenly.
-        if (maxPhysicalPosInLogicQueue < 0) {
-            maxPhysicalPosInLogicQueue = 0;
-        }
-        if (maxPhysicalPosInLogicQueue < this.commitLog.getMinOffset()) {
-            maxPhysicalPosInLogicQueue = this.commitLog.getMinOffset();
-            /*
-             * This happens in following conditions:
-             * 1. If someone removes all the consumeQueue files or the disk get damaged.
-             * 2. Launch a new broker, and copy the commitLog from other brokers.
-             *
-             * All the conditions has the same in common that the maxPhysicalPosInLogicQueue should be 0.
-             * If the maxPhysicalPosInLogicQueue is gt 0, there maybe something wrong.
-             */
-            LOGGER.warn("[TooSmallCqOffset] maxPhysicalPosInLogicQueue={} clMinOffset={}", maxPhysicalPosInLogicQueue, this.commitLog.getMinOffset());
-        }
-
         LOGGER.info("[SetReputOffset] maxPhysicalPosInLogicQueue={} clMinOffset={} clMaxOffset={} clConfirmedOffset={}", maxPhysicalPosInLogicQueue, this.commitLog.getMinOffset(), this.commitLog.getMaxOffset(), this.commitLog.getConfirmOffset());
         this.reputMessageService.setReputFromOffset(maxPhysicalPosInLogicQueue);
         waitForReputing();
@@ -1033,12 +1016,38 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     private long getConsumeQueueMaxOffset() {
-        long maxPhysicalPosInLogicQueue = getConsumeQueueStore().getMaxOffset();
-        if (maxPhysicalPosInLogicQueue > 0) {
-            return maxPhysicalPosInLogicQueue;
+        /**
+         * 1. Make sure the fast-forward messages to be truncated during the recovering according to the max physical offset of the commitlog;
+         * 2. DLedger committedPos may be missing, so the maxPhysicalPosInLogicQueue maybe bigger that maxOffset returned by DLedgerCommitLog, just let it go;
+         * 3. Calculate the reput offset according to the consume queue;
+         * 4. Make sure the fall-behind messages to be dispatched before starting the commitlog, especially when the broker role are automatically changed.
+         */
+        long maxPhysicalPosInLogicQueue = commitLog.getMinOffset();
+        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.getConsumeQueueTable().values()) {
+            for (ConsumeQueueInterface logic : maps.values()) {
+                if (logic.getMaxPhysicOffset() > maxPhysicalPosInLogicQueue) {
+                    maxPhysicalPosInLogicQueue = logic.getMaxPhysicOffset();
+                }
+            }
+        }
+        // If maxPhyPos(CQs) < minPhyPos(CommitLog), some newly deleted topics may be re-dispatched into cqs mistakenly.
+        if (maxPhysicalPosInLogicQueue < 0) {
+            maxPhysicalPosInLogicQueue = 0;
+        }
+        if (maxPhysicalPosInLogicQueue < this.commitLog.getMinOffset()) {
+            maxPhysicalPosInLogicQueue = this.commitLog.getMinOffset();
+            /**
+             * This happens in following conditions:
+             * 1. If someone removes all the consumequeue files or the disk get damaged.
+             * 2. Launch a new broker, and copy the commitlog from other brokers.
+             *
+             * All the conditions has the same in common that the maxPhysicalPosInLogicQueue should be 0.
+             * If the maxPhysicalPosInLogicQueue is gt 0, there maybe something wrong.
+             */
+            LOGGER.warn("[TooSmallCqOffset] maxPhysicalPosInLogicQueue={} clMinOffset={}", maxPhysicalPosInLogicQueue, this.commitLog.getMinOffset());
         }
 
-        return commitLog.getMinOffset();
+        return maxPhysicalPosInLogicQueue;
     }
 
     /**
