@@ -26,7 +26,7 @@ public class MessageQueueOpContext {
 
     public MessageQueueOpContext(long timestamp, int queueLength) {
         this.lastWriteTimestamp = timestamp;
-        contextQueue = new LinkedBlockingQueue<String>(queueLength);
+        contextQueue = new LinkedBlockingQueue<>(queueLength);
     }
 
     public LinkedBlockingQueue<String> getContextQueue() {

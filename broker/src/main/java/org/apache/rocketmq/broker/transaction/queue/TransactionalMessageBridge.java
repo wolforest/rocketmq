@@ -57,6 +57,9 @@ import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_CON
 import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_IS_SYSTEM;
 import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_TOPIC;
 
+/**
+ * Facade of BrokerController for Transactional message
+ */
 public class TransactionalMessageBridge {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
 
@@ -76,7 +79,6 @@ public class TransactionalMessageBridge {
             LOGGER.error("Init TransactionBridge error", e);
             throw new RuntimeException(e);
         }
-
     }
 
     public long fetchConsumeOffset(MessageQueue mq) {
@@ -123,6 +125,109 @@ public class TransactionalMessageBridge {
         String topic = TransactionalMessageUtil.buildOpTopic();
         SubscriptionData sub = new SubscriptionData(topic, "*");
         return getMessage(group, topic, queueId, offset, nums, sub);
+    }
+
+    public PutMessageResult putHalfMessage(MessageExtBrokerInner messageInner) {
+        return store.putMessage(parseHalfMessageInner(messageInner));
+    }
+
+    public CompletableFuture<PutMessageResult> asyncPutHalfMessage(MessageExtBrokerInner messageInner) {
+        return store.asyncPutMessage(parseHalfMessageInner(messageInner));
+    }
+
+    public PutMessageResult putMessageReturnResult(MessageExtBrokerInner messageInner) {
+        LOGGER.debug("[BUG-TO-FIX] Thread:{} msgID:{}", Thread.currentThread().getName(), messageInner.getMsgId());
+        PutMessageResult result = store.putMessage(messageInner);
+        if (result != null && result.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
+            this.brokerController.getBrokerStatsManager().incTopicPutNums(messageInner.getTopic());
+            this.brokerController.getBrokerStatsManager().incTopicPutSize(messageInner.getTopic(),
+                result.getAppendMessageResult().getWroteBytes());
+            this.brokerController.getBrokerStatsManager().incBrokerPutNums();
+        }
+        return result;
+    }
+
+    public boolean putMessage(MessageExtBrokerInner messageInner) {
+        PutMessageResult putMessageResult = store.putMessage(messageInner);
+        if (putMessageResult != null
+            && putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
+            return true;
+        } else {
+            LOGGER.error("Put message failed, topic: {}, queueId: {}, msgId: {}",
+                messageInner.getTopic(), messageInner.getQueueId(), messageInner.getMsgId());
+            return false;
+        }
+    }
+
+    public MessageExtBrokerInner renewImmunityHalfMessageInner(MessageExt msgExt) {
+        MessageExtBrokerInner msgInner = renewHalfMessageInner(msgExt);
+        String queueOffsetFromPrepare = msgExt.getUserProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET);
+        if (null != queueOffsetFromPrepare) {
+            MessageAccessor.putProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET,
+                queueOffsetFromPrepare);
+        } else {
+            MessageAccessor.putProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET,
+                String.valueOf(msgExt.getQueueOffset()));
+        }
+
+        msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
+
+        return msgInner;
+    }
+
+    public MessageExtBrokerInner renewHalfMessageInner(MessageExt msgExt) {
+        MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
+        msgInner.setTopic(msgExt.getTopic());
+        msgInner.setBody(msgExt.getBody());
+        msgInner.setQueueId(msgExt.getQueueId());
+        msgInner.setMsgId(msgExt.getMsgId());
+        msgInner.setSysFlag(msgExt.getSysFlag());
+        msgInner.setTags(msgExt.getTags());
+        msgInner.setTagsCode(MessageExtBrokerInner.tagsString2tagsCode(msgInner.getTags()));
+        MessageAccessor.setProperties(msgInner, msgExt.getProperties());
+        msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgExt.getProperties()));
+        msgInner.setBornTimestamp(msgExt.getBornTimestamp());
+        msgInner.setBornHost(msgExt.getBornHost());
+        msgInner.setStoreHost(msgExt.getStoreHost());
+        msgInner.setWaitStoreMsgOK(false);
+        return msgInner;
+    }
+
+    public boolean writeOp(Integer queueId,Message message) {
+        MessageQueue opQueue = opQueueMap.get(queueId);
+        if (opQueue == null) {
+            opQueue = getOpQueueByHalf(queueId, this.brokerController.getBrokerConfig().getBrokerName());
+            MessageQueue oldQueue = opQueueMap.putIfAbsent(queueId, opQueue);
+            if (oldQueue != null) {
+                opQueue = oldQueue;
+            }
+        }
+
+        PutMessageResult result = putMessageReturnResult(makeOpMessageInner(message, opQueue));
+        if (result == null) {
+            return false;
+        }
+
+        return result.getPutMessageStatus() == PutMessageStatus.PUT_OK;
+    }
+
+    public MessageExt lookMessageByOffset(final long commitLogOffset) {
+        return this.store.lookMessageByOffset(commitLogOffset);
+    }
+
+    public BrokerController getBrokerController() {
+        return brokerController;
+    }
+
+    public boolean escapeMessage(MessageExtBrokerInner messageInner) {
+        PutMessageResult putMessageResult = this.brokerController.getEscapeBridge().putMessage(messageInner);
+        if (putMessageResult != null && putMessageResult.isOk()) {
+            return true;
+        } else {
+            LOGGER.error("Escaping message failed, topic: {}, queueId: {}, msgId: {}",
+                messageInner.getTopic(), messageInner.getQueueId(), messageInner.getMsgId());
+            return false;
+        }
     }
 
     private PullResult getMessage(String group, String topic, int queueId, long offset, int nums, SubscriptionData sub) {
@@ -221,14 +326,6 @@ public class TransactionalMessageBridge {
         }
     }
 
-    public PutMessageResult putHalfMessage(MessageExtBrokerInner messageInner) {
-        return store.putMessage(parseHalfMessageInner(messageInner));
-    }
-
-    public CompletableFuture<PutMessageResult> asyncPutHalfMessage(MessageExtBrokerInner messageInner) {
-        return store.asyncPutMessage(parseHalfMessageInner(messageInner));
-    }
-
     private MessageExtBrokerInner parseHalfMessageInner(MessageExtBrokerInner msgInner) {
         String uniqId = msgInner.getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
         if (uniqId != null && !uniqId.isEmpty()) {
@@ -242,64 +339,6 @@ public class TransactionalMessageBridge {
         msgInner.setTopic(TransactionalMessageUtil.buildHalfTopic());
         msgInner.setQueueId(0);
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
-        return msgInner;
-    }
-
-    public PutMessageResult putMessageReturnResult(MessageExtBrokerInner messageInner) {
-        LOGGER.debug("[BUG-TO-FIX] Thread:{} msgID:{}", Thread.currentThread().getName(), messageInner.getMsgId());
-        PutMessageResult result = store.putMessage(messageInner);
-        if (result != null && result.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
-            this.brokerController.getBrokerStatsManager().incTopicPutNums(messageInner.getTopic());
-            this.brokerController.getBrokerStatsManager().incTopicPutSize(messageInner.getTopic(),
-                    result.getAppendMessageResult().getWroteBytes());
-            this.brokerController.getBrokerStatsManager().incBrokerPutNums();
-        }
-        return result;
-    }
-
-    public boolean putMessage(MessageExtBrokerInner messageInner) {
-        PutMessageResult putMessageResult = store.putMessage(messageInner);
-        if (putMessageResult != null
-            && putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
-            return true;
-        } else {
-            LOGGER.error("Put message failed, topic: {}, queueId: {}, msgId: {}",
-                messageInner.getTopic(), messageInner.getQueueId(), messageInner.getMsgId());
-            return false;
-        }
-    }
-
-    public MessageExtBrokerInner renewImmunityHalfMessageInner(MessageExt msgExt) {
-        MessageExtBrokerInner msgInner = renewHalfMessageInner(msgExt);
-        String queueOffsetFromPrepare = msgExt.getUserProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET);
-        if (null != queueOffsetFromPrepare) {
-            MessageAccessor.putProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET,
-                    queueOffsetFromPrepare);
-        } else {
-            MessageAccessor.putProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET,
-                String.valueOf(msgExt.getQueueOffset()));
-        }
-
-        msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
-
-        return msgInner;
-    }
-
-    public MessageExtBrokerInner renewHalfMessageInner(MessageExt msgExt) {
-        MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
-        msgInner.setTopic(msgExt.getTopic());
-        msgInner.setBody(msgExt.getBody());
-        msgInner.setQueueId(msgExt.getQueueId());
-        msgInner.setMsgId(msgExt.getMsgId());
-        msgInner.setSysFlag(msgExt.getSysFlag());
-        msgInner.setTags(msgExt.getTags());
-        msgInner.setTagsCode(MessageExtBrokerInner.tagsString2tagsCode(msgInner.getTags()));
-        MessageAccessor.setProperties(msgInner, msgExt.getProperties());
-        msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgExt.getProperties()));
-        msgInner.setBornTimestamp(msgExt.getBornTimestamp());
-        msgInner.setBornHost(msgExt.getBornHost());
-        msgInner.setStoreHost(msgExt.getStoreHost());
-        msgInner.setWaitStoreMsgOK(false);
         return msgInner;
     }
 
@@ -330,24 +369,6 @@ public class TransactionalMessageBridge {
         return topicConfig;
     }
 
-    public boolean writeOp(Integer queueId,Message message) {
-        MessageQueue opQueue = opQueueMap.get(queueId);
-        if (opQueue == null) {
-            opQueue = getOpQueueByHalf(queueId, this.brokerController.getBrokerConfig().getBrokerName());
-            MessageQueue oldQueue = opQueueMap.putIfAbsent(queueId, opQueue);
-            if (oldQueue != null) {
-                opQueue = oldQueue;
-            }
-        }
-
-        PutMessageResult result = putMessageReturnResult(makeOpMessageInner(message, opQueue));
-        if (result != null && result.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
-            return true;
-        }
-
-        return false;
-    }
-
     private MessageQueue getOpQueueByHalf(Integer queueId, String brokerName) {
         MessageQueue opQueue = new MessageQueue();
         opQueue.setTopic(TransactionalMessageUtil.buildOpTopic());
@@ -356,22 +377,5 @@ public class TransactionalMessageBridge {
         return opQueue;
     }
 
-    public MessageExt lookMessageByOffset(final long commitLogOffset) {
-        return this.store.lookMessageByOffset(commitLogOffset);
-    }
 
-    public BrokerController getBrokerController() {
-        return brokerController;
-    }
-
-    public boolean escapeMessage(MessageExtBrokerInner messageInner) {
-        PutMessageResult putMessageResult = this.brokerController.getEscapeBridge().putMessage(messageInner);
-        if (putMessageResult != null && putMessageResult.isOk()) {
-            return true;
-        } else {
-            LOGGER.error("Escaping message failed, topic: {}, queueId: {}, msgId: {}",
-                messageInner.getTopic(), messageInner.getQueueId(), messageInner.getMsgId());
-            return false;
-        }
-    }
 }
