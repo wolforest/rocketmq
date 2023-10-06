@@ -49,20 +49,22 @@ public abstract class AbstractTransactionalMessageCheckListener {
     }
 
     public void sendCheckMessage(MessageExt msgExt) throws Exception {
-        CheckTransactionStateRequestHeader checkTransactionStateRequestHeader = new CheckTransactionStateRequestHeader();
-        checkTransactionStateRequestHeader.setCommitLogOffset(msgExt.getCommitLogOffset());
-        checkTransactionStateRequestHeader.setOffsetMsgId(msgExt.getMsgId());
-        checkTransactionStateRequestHeader.setMsgId(msgExt.getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX));
-        checkTransactionStateRequestHeader.setTransactionId(checkTransactionStateRequestHeader.getMsgId());
-        checkTransactionStateRequestHeader.setTranStateTableOffset(msgExt.getQueueOffset());
-        checkTransactionStateRequestHeader.setBname(brokerController.getBrokerConfig().getBrokerName());
+        CheckTransactionStateRequestHeader header = new CheckTransactionStateRequestHeader();
+        header.setCommitLogOffset(msgExt.getCommitLogOffset());
+        header.setOffsetMsgId(msgExt.getMsgId());
+        header.setMsgId(msgExt.getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX));
+        header.setTransactionId(header.getMsgId());
+        header.setTranStateTableOffset(msgExt.getQueueOffset());
+        header.setBname(brokerController.getBrokerConfig().getBrokerName());
+
         msgExt.setTopic(msgExt.getUserProperty(MessageConst.PROPERTY_REAL_TOPIC));
         msgExt.setQueueId(Integer.parseInt(msgExt.getUserProperty(MessageConst.PROPERTY_REAL_QUEUE_ID)));
         msgExt.setStoreSize(0);
+
         String groupId = msgExt.getProperty(MessageConst.PROPERTY_PRODUCER_GROUP);
         Channel channel = brokerController.getProducerManager().getAvailableChannel(groupId);
         if (channel != null) {
-            brokerController.getBroker2Client().checkProducerTransactionState(groupId, channel, checkTransactionStateRequestHeader, msgExt);
+            brokerController.getBroker2Client().checkProducerTransactionState(groupId, channel, header, msgExt);
         } else {
             LOGGER.warn("Check transaction failed, channel is null. groupId={}", groupId);
         }
