@@ -73,7 +73,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     /**
      * consume queue item write cache
      * size = ConsumeQueue's store unit (CQ_STORE_UNIT_SIZE)
-     * @renamed from byteBufferIndex to writeCache
+     * @renamed from byteBufferIndex to writeBuffer
      */
     private final ByteBuffer byteBufferIndex;
 
@@ -866,8 +866,8 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             return;
         }
         String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
-        for (int i = 0; i < queues.length; i++) {
-            String key = queueKey(queues[i], msg);
+        for (String queue : queues) {
+            String key = queueKey(queue, msg);
             if (messageStore.getMessageStoreConfig().isEnableLmq() && MixAll.isLmq(key)) {
                 queueOffsetOperator.increaseLmqOffset(key, (short) 1);
             }
@@ -921,7 +921,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             return true;
         }
 
-        setWriteCache(offset, size, tagsCode);
+        setWriteBuffer(offset, size, tagsCode);
 
         final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
@@ -944,7 +944,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
      * @param size msg size
      * @param tagsCode tags hashCode
      */
-    private void setWriteCache(final long offset, final int size, final long tagsCode) {
+    private void setWriteBuffer(final long offset, final int size, final long tagsCode) {
         this.byteBufferIndex.flip();
         this.byteBufferIndex.limit(CQ_STORE_UNIT_SIZE);
         this.byteBufferIndex.putLong(offset);
