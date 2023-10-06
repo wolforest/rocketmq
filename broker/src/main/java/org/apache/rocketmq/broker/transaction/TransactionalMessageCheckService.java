@@ -472,9 +472,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
             }
         }
 
-        log.debug("Remove map: {}", removeMap);
-        log.debug("Done op list: {}", doneOpOffset);
-        log.debug("opMsg map: {}", opMsgMap);
+        log.debug("Remove map: {}, Done op list: {}, opMsg map: {}", removeMap, doneOpOffset, opMsgMap);
         return pullResult;
     }
 
