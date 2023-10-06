@@ -119,85 +119,14 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
             // By default, there is only one transactional message queue
             for (MessageQueue messageQueue : msgQueues) {
-                check(messageQueue, transactionTimeout, transactionCheckMax, listener);
+                checkMessageQueue(messageQueue, transactionTimeout, transactionCheckMax, listener);
             }
         } catch (Throwable e) {
             log.error("Check error", e);
         }
-
     }
 
-    private void removeOffset(CheckContext context) {
-        log.debug("Half offset {} has been committed/rolled back", context.getI());
-        Long removedOpOffset = context.getRemoveMap().remove(context.getI());
-        context.getOpMsgMap().get(removedOpOffset).remove(context.getI());
-        if (context.getOpMsgMap().get(removedOpOffset).size() == 0) {
-            context.getOpMsgMap().remove(removedOpOffset);
-            context.getDoneOpOffset().add(removedOpOffset);
-        }
-    }
-
-    private boolean handleNullHalfMsg(CheckContext context, GetResult getResult) {
-        context.incGetMessageNullCount();
-        if (context.getGetMessageNullCount() > MAX_RETRY_COUNT_WHEN_HALF_NULL) {
-            return false;
-        }
-        if (getResult.getPullResult().getPullStatus() == PullStatus.NO_NEW_MSG) {
-            log.debug("No new msg, the miss offset={} in={}, continue check={}, pull result={}", context.getI(),
-                context.getMessageQueue(), context.getGetMessageNullCount(), getResult.getPullResult());
-            return false;
-        }
-
-        log.info("Illegal offset, the miss offset={} in={}, continue check={}, pull result={}",
-            context.getI(), context.getMessageQueue(), context.getGetMessageNullCount(), getResult.getPullResult());
-        context.setI(getResult.getPullResult().getNextBeginOffset());
-        context.setNewOffset(context.getI());
-
-        return true;
-    }
-
-    private void handleSlaveMode(CheckContext context) throws InterruptedException {
-        final MessageExtBrokerInner msgInner = this.transactionalMessageBridge.renewHalfMessageInner(context.getMsgExt());
-        final boolean isSuccess = this.transactionalMessageBridge.escapeMessage(msgInner);
-
-        if (isSuccess) {
-            context.setEscapeFailCnt(0);
-            context.setNewOffset(context.getI() + 1);
-            context.incI();
-
-            return;
-        }
-
-        log.warn("Escaping transactional message failed {} times! msgId(offsetId)={}, UNIQ_KEY(transactionId)={}",
-            context.getEscapeFailCnt() + 1,
-            context.getMsgExt().getMsgId(),
-            context.getMsgExt().getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX));
-        if (context.getEscapeFailCnt() < MAX_RETRY_TIMES_FOR_ESCAPE) {
-            context.incEscapeFailCnt();
-            Thread.sleep(100L * (2 ^ context.getEscapeFailCnt()));
-        } else {
-            context.setEscapeFailCnt(0);
-            context.setNewOffset(context.getI() + 1);
-            context.incI();
-        }
-    }
-
-    private boolean isSlaveMode() {
-        BrokerController brokerController = this.transactionalMessageBridge.getBrokerController();
-        BrokerConfig brokerConfig = brokerController.getBrokerConfig();
-        MessageStoreConfig storeConfig = brokerController.getMessageStoreConfig();
-
-        if (!brokerConfig.isEnableSlaveActingMaster()) {
-            return false;
-        }
-
-        if (!BrokerRole.SLAVE.equals(storeConfig.getBrokerRole())) {
-            return false;
-        }
-        return brokerController.getMinBrokerIdInGroup() == brokerController.getBrokerIdentity().getBrokerId();
-    }
-
-    private void check(MessageQueue messageQueue, long transactionTimeout, int transactionCheckMax, AbstractTransactionalMessageCheckListener listener) throws InterruptedException {
+    private void checkMessageQueue(MessageQueue messageQueue, long transactionTimeout, int transactionCheckMax, AbstractTransactionalMessageCheckListener listener) throws InterruptedException {
         CheckContext context = new CheckContext(messageQueue, transactionTimeout, transactionCheckMax, listener);
 
         context.setOpQueue(getOpQueue(messageQueue));
@@ -278,6 +207,76 @@ public class TransactionalMessageCheckService extends ServiceThread {
         }
 
         updateOffset(context);
+    }
+
+    private void removeOffset(CheckContext context) {
+        log.debug("Half offset {} has been committed/rolled back", context.getI());
+        Long removedOpOffset = context.getRemoveMap().remove(context.getI());
+        context.getOpMsgMap().get(removedOpOffset).remove(context.getI());
+        if (context.getOpMsgMap().get(removedOpOffset).size() == 0) {
+            context.getOpMsgMap().remove(removedOpOffset);
+            context.getDoneOpOffset().add(removedOpOffset);
+        }
+    }
+
+    private boolean handleNullHalfMsg(CheckContext context, GetResult getResult) {
+        context.incGetMessageNullCount();
+        if (context.getGetMessageNullCount() > MAX_RETRY_COUNT_WHEN_HALF_NULL) {
+            return false;
+        }
+        if (getResult.getPullResult().getPullStatus() == PullStatus.NO_NEW_MSG) {
+            log.debug("No new msg, the miss offset={} in={}, continue check={}, pull result={}", context.getI(),
+                context.getMessageQueue(), context.getGetMessageNullCount(), getResult.getPullResult());
+            return false;
+        }
+
+        log.info("Illegal offset, the miss offset={} in={}, continue check={}, pull result={}",
+            context.getI(), context.getMessageQueue(), context.getGetMessageNullCount(), getResult.getPullResult());
+        context.setI(getResult.getPullResult().getNextBeginOffset());
+        context.setNewOffset(context.getI());
+
+        return true;
+    }
+
+    private boolean isSlaveMode() {
+        BrokerController brokerController = this.transactionalMessageBridge.getBrokerController();
+        BrokerConfig brokerConfig = brokerController.getBrokerConfig();
+        MessageStoreConfig storeConfig = brokerController.getMessageStoreConfig();
+
+        if (!brokerConfig.isEnableSlaveActingMaster()) {
+            return false;
+        }
+
+        if (!BrokerRole.SLAVE.equals(storeConfig.getBrokerRole())) {
+            return false;
+        }
+        return brokerController.getMinBrokerIdInGroup() == brokerController.getBrokerIdentity().getBrokerId();
+    }
+
+    private void handleSlaveMode(CheckContext context) throws InterruptedException {
+        final MessageExtBrokerInner msgInner = this.transactionalMessageBridge.renewHalfMessageInner(context.getMsgExt());
+        final boolean isSuccess = this.transactionalMessageBridge.escapeMessage(msgInner);
+
+        if (isSuccess) {
+            context.setEscapeFailCnt(0);
+            context.setNewOffset(context.getI() + 1);
+            context.incI();
+
+            return;
+        }
+
+        log.warn("Escaping transactional message failed {} times! msgId(offsetId)={}, UNIQ_KEY(transactionId)={}",
+            context.getEscapeFailCnt() + 1,
+            context.getMsgExt().getMsgId(),
+            context.getMsgExt().getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX));
+        if (context.getEscapeFailCnt() < MAX_RETRY_TIMES_FOR_ESCAPE) {
+            context.incEscapeFailCnt();
+            Thread.sleep(100L * (2 ^ context.getEscapeFailCnt()));
+        } else {
+            context.setEscapeFailCnt(0);
+            context.setNewOffset(context.getI() + 1);
+            context.incI();
+        }
     }
 
     private void skipOrDiscard(CheckContext context) {
