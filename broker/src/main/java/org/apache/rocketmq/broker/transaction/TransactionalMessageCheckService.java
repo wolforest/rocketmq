@@ -16,7 +16,6 @@
  */
 package org.apache.rocketmq.broker.transaction;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,11 +25,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.transaction.queue.CheckContext;
 import org.apache.rocketmq.broker.transaction.queue.GetResult;
 import org.apache.rocketmq.broker.transaction.queue.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.transaction.queue.TransactionalMessageUtil;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
+import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -44,6 +45,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.config.BrokerRole;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 /**
  * Transaction check service
@@ -114,6 +116,8 @@ public class TransactionalMessageCheckService extends ServiceThread {
                 return;
             }
             log.debug("Check topic={}, queues={}", topic, msgQueues);
+
+            // By default, there is only one transactional message queue
             for (MessageQueue messageQueue : msgQueues) {
                 check(messageQueue, transactionTimeout, transactionCheckMax, listener);
             }
@@ -123,178 +127,251 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
     }
 
-    private void check(MessageQueue messageQueue, long transactionTimeout, int transactionCheckMax, AbstractTransactionalMessageCheckListener listener) throws InterruptedException {
-        long startTime = System.currentTimeMillis();
-        MessageQueue opQueue = getOpQueue(messageQueue);
-        long halfOffset = transactionalMessageBridge.fetchConsumeOffset(messageQueue);
-        long opOffset = transactionalMessageBridge.fetchConsumeOffset(opQueue);
-        log.info("Before check, the queue={} msgOffset={} opOffset={}", messageQueue, halfOffset, opOffset);
-        if (halfOffset < 0 || opOffset < 0) {
-            log.error("MessageQueue: {} illegal offset read: {}, op offset: {},skip this queue", messageQueue, halfOffset, opOffset);
+    private void removeOffset(CheckContext context) {
+        log.debug("Half offset {} has been committed/rolled back", context.getI());
+        Long removedOpOffset = context.getRemoveMap().remove(context.getI());
+        context.getOpMsgMap().get(removedOpOffset).remove(context.getI());
+        if (context.getOpMsgMap().get(removedOpOffset).size() == 0) {
+            context.getOpMsgMap().remove(removedOpOffset);
+            context.getDoneOpOffset().add(removedOpOffset);
+        }
+    }
+
+    private boolean handleNullHalfMsg(CheckContext context, GetResult getResult) {
+        context.incGetMessageNullCount();
+        if (context.getGetMessageNullCount() > MAX_RETRY_COUNT_WHEN_HALF_NULL) {
+            return false;
+        }
+        if (getResult.getPullResult().getPullStatus() == PullStatus.NO_NEW_MSG) {
+            log.debug("No new msg, the miss offset={} in={}, continue check={}, pull result={}", context.getI(),
+                context.getMessageQueue(), context.getGetMessageNullCount(), getResult.getPullResult());
+            return false;
+        }
+
+        log.info("Illegal offset, the miss offset={} in={}, continue check={}, pull result={}",
+            context.getI(), context.getMessageQueue(), context.getGetMessageNullCount(), getResult.getPullResult());
+        context.setI(getResult.getPullResult().getNextBeginOffset());
+        context.setNewOffset(context.getI());
+
+        return true;
+    }
+
+    private void handleSlaveMode(CheckContext context) throws InterruptedException {
+        final MessageExtBrokerInner msgInner = this.transactionalMessageBridge.renewHalfMessageInner(context.getMsgExt());
+        final boolean isSuccess = this.transactionalMessageBridge.escapeMessage(msgInner);
+
+        if (isSuccess) {
+            context.setEscapeFailCnt(0);
+            context.setNewOffset(context.getI() + 1);
+            context.incI();
+
             return;
         }
 
-        List<Long> doneOpOffset = new ArrayList<>();
-        HashMap<Long, Long> removeMap = new HashMap<>();
-        HashMap<Long, HashSet<Long>> opMsgMap = new HashMap<>();
-        PullResult pullResult = fillOpRemoveMap(removeMap, opQueue, opOffset, halfOffset, opMsgMap, doneOpOffset);
-        if (null == pullResult) {
-            log.error("The queue={} check msgOffset={} with opOffset={} failed, pullResult is null", messageQueue, halfOffset, opOffset);
+        log.warn("Escaping transactional message failed {} times! msgId(offsetId)={}, UNIQ_KEY(transactionId)={}",
+            context.getEscapeFailCnt() + 1,
+            context.getMsgExt().getMsgId(),
+            context.getMsgExt().getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX));
+        if (context.getEscapeFailCnt() < MAX_RETRY_TIMES_FOR_ESCAPE) {
+            context.incEscapeFailCnt();
+            Thread.sleep(100L * (2 ^ context.getEscapeFailCnt()));
+        } else {
+            context.setEscapeFailCnt(0);
+            context.setNewOffset(context.getI() + 1);
+            context.incI();
+        }
+    }
+
+    private boolean isSlaveMode() {
+        BrokerController brokerController = this.transactionalMessageBridge.getBrokerController();
+        BrokerConfig brokerConfig = brokerController.getBrokerConfig();
+        MessageStoreConfig storeConfig = brokerController.getMessageStoreConfig();
+
+        if (!brokerConfig.isEnableSlaveActingMaster()) {
+            return false;
+        }
+
+        if (!BrokerRole.SLAVE.equals(storeConfig.getBrokerRole())) {
+            return false;
+        }
+        return brokerController.getMinBrokerIdInGroup() == brokerController.getBrokerIdentity().getBrokerId();
+    }
+
+    private void check(MessageQueue messageQueue, long transactionTimeout, int transactionCheckMax, AbstractTransactionalMessageCheckListener listener) throws InterruptedException {
+        CheckContext context = new CheckContext(messageQueue, transactionTimeout, transactionCheckMax, listener);
+
+        context.setOpQueue(getOpQueue(messageQueue));
+        context.setHalfOffset(transactionalMessageBridge.fetchConsumeOffset(messageQueue));
+        context.setOpOffset(transactionalMessageBridge.fetchConsumeOffset(context.getOpQueue()));
+        log.info("Before check, the queue={} msgOffset={} opOffset={}", messageQueue, context.getHalfOffset(), context.getOpOffset());
+        if (context.getHalfOffset() < 0 || context.getOpOffset() < 0) {
+            log.error("MessageQueue: {} illegal offset read: {}, op offset: {},skip this queue", messageQueue, context.getHalfOffset(), context.getOpOffset());
             return;
         }
+
+        PullResult removeResult = fillOpRemoveMap(context.getRemoveMap(), context.getOpQueue(), context.getOpOffset(), context.getHalfOffset(), context.getOpMsgMap(), context.getDoneOpOffset());
+        if (null == removeResult) {
+            log.error("The queue={} check msgOffset={} with opOffset={} failed, pullResult is null", messageQueue, context.getHalfOffset(), context.getOpOffset());
+            return;
+        }
+
         // single thread
-        int getMessageNullCount = 1;
-        long newOffset = halfOffset;
-        long i = halfOffset;
-        long nextOpOffset = pullResult.getNextBeginOffset();
-        int putInQueueCount = 0;
-        int escapeFailCnt = 0;
+        context.setPullResult(removeResult);
+        context.initOffset();
 
         while (true) {
-            if (System.currentTimeMillis() - startTime > MAX_PROCESS_TIME_LIMIT) {
+            if (System.currentTimeMillis() - context.getStartTime() > MAX_PROCESS_TIME_LIMIT) {
                 log.info("Queue={} process time reach max={}", messageQueue, MAX_PROCESS_TIME_LIMIT);
                 break;
             }
-            if (removeMap.containsKey(i)) {
-                log.debug("Half offset {} has been committed/rolled back", i);
-                Long removedOpOffset = removeMap.remove(i);
-                opMsgMap.get(removedOpOffset).remove(i);
-                if (opMsgMap.get(removedOpOffset).size() == 0) {
-                    opMsgMap.remove(removedOpOffset);
-                    doneOpOffset.add(removedOpOffset);
-                }
-            } else {
-                GetResult getResult = getHalfMsg(messageQueue, i);
-                MessageExt msgExt = getResult.getMsg();
-                if (msgExt == null) {
-                    if (getMessageNullCount++ > MAX_RETRY_COUNT_WHEN_HALF_NULL) {
-                        break;
-                    }
-                    if (getResult.getPullResult().getPullStatus() == PullStatus.NO_NEW_MSG) {
-                        log.debug("No new msg, the miss offset={} in={}, continue check={}, pull result={}", i,
-                            messageQueue, getMessageNullCount, getResult.getPullResult());
-                        break;
-                    } else {
-                        log.info("Illegal offset, the miss offset={} in={}, continue check={}, pull result={}",
-                            i, messageQueue, getMessageNullCount, getResult.getPullResult());
-                        i = getResult.getPullResult().getNextBeginOffset();
-                        newOffset = i;
-                        continue;
-                    }
-                }
+            if (context.getRemoveMap().containsKey(context.getI())) {
+                removeOffset(context);
+                continue;
+            }
 
-                if (this.transactionalMessageBridge.getBrokerController().getBrokerConfig().isEnableSlaveActingMaster()
-                    && this.transactionalMessageBridge.getBrokerController().getMinBrokerIdInGroup()
-                    == this.transactionalMessageBridge.getBrokerController().getBrokerIdentity().getBrokerId()
-                    && BrokerRole.SLAVE.equals(this.transactionalMessageBridge.getBrokerController().getMessageStoreConfig().getBrokerRole())
-                ) {
-                    final MessageExtBrokerInner msgInner = this.transactionalMessageBridge.renewHalfMessageInner(msgExt);
-                    final boolean isSuccess = this.transactionalMessageBridge.escapeMessage(msgInner);
-
-                    if (isSuccess) {
-                        escapeFailCnt = 0;
-                        newOffset = i + 1;
-                        i++;
-                    } else {
-                        log.warn("Escaping transactional message failed {} times! msgId(offsetId)={}, UNIQ_KEY(transactionId)={}",
-                            escapeFailCnt + 1,
-                            msgExt.getMsgId(),
-                            msgExt.getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX));
-                        if (escapeFailCnt < MAX_RETRY_TIMES_FOR_ESCAPE) {
-                            escapeFailCnt++;
-                            Thread.sleep(100L * (2 ^ escapeFailCnt));
-                        } else {
-                            escapeFailCnt = 0;
-                            newOffset = i + 1;
-                            i++;
-                        }
-                    }
-                    continue;
-                }
-
-                if (needDiscard(msgExt, transactionCheckMax) || needSkip(msgExt)) {
-                    listener.resolveDiscardMsg(msgExt);
-                    newOffset = i + 1;
-                    i++;
-                    continue;
-                }
-                if (msgExt.getStoreTimestamp() >= startTime) {
-                    log.debug("Fresh stored. the miss offset={}, check it later, store={}", i,
-                        new Date(msgExt.getStoreTimestamp()));
+            GetResult getResult = getHalfMsg(messageQueue, context.getI());
+            context.setMsgExt(getResult.getMsg());
+            if (context.getMsgExt() == null) {
+                if (!handleNullHalfMsg(context, getResult)) {
                     break;
                 }
-
-                long valueOfCurrentMinusBorn = System.currentTimeMillis() - msgExt.getBornTimestamp();
-                long checkImmunityTime = transactionTimeout;
-                String checkImmunityTimeStr = msgExt.getUserProperty(MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS);
-                if (null != checkImmunityTimeStr) {
-                    checkImmunityTime = getImmunityTime(checkImmunityTimeStr, transactionTimeout);
-                    if (valueOfCurrentMinusBorn < checkImmunityTime) {
-                        if (checkPrepareQueueOffset(removeMap, doneOpOffset, msgExt, checkImmunityTimeStr)) {
-                            newOffset = i + 1;
-                            i++;
-                            continue;
-                        }
-                    }
-                } else {
-                    if (0 <= valueOfCurrentMinusBorn && valueOfCurrentMinusBorn < checkImmunityTime) {
-                        log.debug("New arrived, the miss offset={}, check it later checkImmunity={}, born={}", i,
-                            checkImmunityTime, new Date(msgExt.getBornTimestamp()));
-                        break;
-                    }
-                }
-                List<MessageExt> opMsg = pullResult == null ? null : pullResult.getMsgFoundList();
-                boolean isNeedCheck = opMsg == null && valueOfCurrentMinusBorn > checkImmunityTime
-                    || opMsg != null && opMsg.get(opMsg.size() - 1).getBornTimestamp() - startTime > transactionTimeout
-                    || valueOfCurrentMinusBorn <= -1;
-
-                if (isNeedCheck) {
-
-                    if (!putBackHalfMsgQueue(msgExt, i)) {
-                        continue;
-                    }
-                    putInQueueCount++;
-                    log.info("Check transaction. real_topic={},uniqKey={},offset={},commitLogOffset={}",
-                        msgExt.getUserProperty(MessageConst.PROPERTY_REAL_TOPIC),
-                        msgExt.getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX),
-                        msgExt.getQueueOffset(), msgExt.getCommitLogOffset());
-                    listener.resolveHalfMsg(msgExt);
-                } else {
-                    nextOpOffset = pullResult != null ? pullResult.getNextBeginOffset() : nextOpOffset;
-                    pullResult = fillOpRemoveMap(removeMap, opQueue, nextOpOffset,
-                        halfOffset, opMsgMap, doneOpOffset);
-                    if (pullResult == null || pullResult.getPullStatus() == PullStatus.NO_NEW_MSG
-                        || pullResult.getPullStatus() == PullStatus.OFFSET_ILLEGAL
-                        || pullResult.getPullStatus() == PullStatus.NO_MATCHED_MSG) {
-
-                        ThreadUtils.sleep(SLEEP_WHILE_NO_OP);
-
-                    } else {
-                        log.info("The miss message offset:{}, pullOffsetOfOp:{}, miniOffset:{} get more opMsg.", i, nextOpOffset, halfOffset);
-                    }
-
-                    continue;
-                }
+                continue;
             }
-            newOffset = i + 1;
-            i++;
+
+            if (isSlaveMode()) {
+                handleSlaveMode(context);
+                continue;
+            }
+
+            if (needDiscard(context.getMsgExt(), transactionCheckMax) || needSkip(context.getMsgExt())) {
+                skipOrDiscard(context);
+                continue;
+            }
+
+            if (context.getMsgExt().getStoreTimestamp() >= context.getStartTime()) {
+                log.debug("Fresh stored. the miss offset={}, check it later, store={}", context.getI(), new Date(context.getMsgExt().getStoreTimestamp()));
+                break;
+            }
+
+            long valueOfCurrentMinusBorn = System.currentTimeMillis() - context.getMsgExt().getBornTimestamp();
+            String checkImmunityTimeStr = context.getMsgExt().getUserProperty(MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS);
+            if (null == checkImmunityTimeStr && 0 <= valueOfCurrentMinusBorn && valueOfCurrentMinusBorn < transactionTimeout) {
+                log.debug("New arrived, the miss offset={}, check it later checkImmunity={}, born={}", context.getI(), transactionTimeout, new Date(context.getMsgExt().getBornTimestamp()));
+                break;
+            }
+
+            Long checkImmunityTime = checkImmunityTime(context, checkImmunityTimeStr, valueOfCurrentMinusBorn);
+            if (checkImmunityTime == null) {
+                break;
+            }
+
+            if (!isNeedCheck(context, valueOfCurrentMinusBorn, checkImmunityTime)) {
+                noNeedCheck(context);
+                continue;
+            }
+
+            if (!putBackHalfMsgQueue(context.getMsgExt(), context.getI())) {
+                continue;
+            }
+
+            afterPutBackMsg(context);
         }
-        if (newOffset != halfOffset) {
-            transactionalMessageBridge.updateConsumeOffset(messageQueue, newOffset);
+
+        updateOffset(context);
+    }
+
+    private void skipOrDiscard(CheckContext context) {
+        context.getListener().resolveDiscardMsg(context.getMsgExt());
+        context.setNewOffset(context.getI() + 1);
+        context.incI();
+    }
+
+    private Long checkImmunityTime(CheckContext context, String checkImmunityTimeStr, long valueOfCurrentMinusBorn) {
+        long checkImmunityTime = context.getTransactionTimeout();
+        if (null == checkImmunityTimeStr) {
+            return checkImmunityTime;
         }
-        long newOpOffset = calculateOpOffset(doneOpOffset, opOffset);
-        if (newOpOffset != opOffset) {
-            transactionalMessageBridge.updateConsumeOffset(opQueue, newOpOffset);
+
+        checkImmunityTime = getImmunityTime(checkImmunityTimeStr, context.getTransactionTimeout());
+        if (valueOfCurrentMinusBorn >= checkImmunityTime) {
+            return checkImmunityTime;
         }
-        GetResult getResult = getHalfMsg(messageQueue, newOffset);
-        pullResult = pullOpMsg(opQueue, newOpOffset, 1);
-        long maxMsgOffset = getResult.getPullResult() == null ? newOffset : getResult.getPullResult().getMaxOffset();
-        long maxOpOffset = pullResult == null ? newOpOffset : pullResult.getMaxOffset();
+
+        if (!checkPrepareQueueOffset(context.getRemoveMap(), context.getDoneOpOffset(), context.getMsgExt(), checkImmunityTimeStr)) {
+            return checkImmunityTime;
+        }
+
+        context.setNewOffset(context.getI() + 1);
+        context.incI();
+        return null;
+    }
+
+    private boolean isNeedCheck(CheckContext context, long valueOfCurrentMinusBorn, long checkImmunityTime) {
+        if (valueOfCurrentMinusBorn <= -1) {
+            return true;
+        }
+
+        List<MessageExt> opMsg = context.getPullResult() == null ? null : context.getPullResult().getMsgFoundList();
+        if (opMsg == null && valueOfCurrentMinusBorn > checkImmunityTime) {
+            return true;
+        }
+
+        if (opMsg == null) {
+            return false;
+        }
+
+        MessageExt lastMsg = opMsg.get(opMsg.size() - 1);
+        return lastMsg.getBornTimestamp() - context.getStartTime() > context.getTransactionTimeout();
+    }
+
+    private void afterPutBackMsg(CheckContext context) {
+        context.incPutInQueueCount();
+        log.info("Check transaction. real_topic={},uniqKey={},offset={},commitLogOffset={}",
+            context.getMsgExt().getUserProperty(MessageConst.PROPERTY_REAL_TOPIC),
+            context.getMsgExt().getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX),
+            context.getMsgExt().getQueueOffset(), context.getMsgExt().getCommitLogOffset());
+        context.getListener().resolveHalfMsg(context.getMsgExt());
+
+        context.setNewOffset(context.getI() + 1);
+        context.incI();
+    }
+
+    private void noNeedCheck(CheckContext context) {
+        long tmpOffset = context.getPullResult() != null ? context.getPullResult().getNextBeginOffset() : context.getNextOpOffset();
+        context.setNextOpOffset(tmpOffset);
+
+        PullResult tmpPullResult = fillOpRemoveMap(context.getRemoveMap(), context.getOpQueue(), context.getNextOpOffset(),
+            context.getHalfOffset(), context.getOpMsgMap(), context.getDoneOpOffset());
+        context.setPullResult(tmpPullResult);
+
+        if (context.getPullResult() == null || context.getPullResult().getPullStatus() == PullStatus.NO_NEW_MSG
+            || context.getPullResult().getPullStatus() == PullStatus.OFFSET_ILLEGAL
+            || context.getPullResult().getPullStatus() == PullStatus.NO_MATCHED_MSG) {
+
+            ThreadUtils.sleep(SLEEP_WHILE_NO_OP);
+
+        } else {
+            log.info("The miss message offset:{}, pullOffsetOfOp:{}, miniOffset:{} get more opMsg.", context.getI(), context.getNextOpOffset(), context.getHalfOffset());
+        }
+    }
+
+    private void updateOffset(CheckContext context) {
+        if (context.getNewOffset() != context.getHalfOffset()) {
+            transactionalMessageBridge.updateConsumeOffset(context.getMessageQueue(), context.getNewOffset());
+        }
+        long newOpOffset = calculateOpOffset(context.getDoneOpOffset(), context.getOpOffset());
+        if (newOpOffset != context.getOpOffset()) {
+            transactionalMessageBridge.updateConsumeOffset(context.getOpQueue(), newOpOffset);
+        }
+        GetResult getResult = getHalfMsg(context.getMessageQueue(), context.getNewOffset());
+        context.setPullResult(pullOpMsg(context.getOpQueue(), newOpOffset, 1));
+        long maxMsgOffset = getResult.getPullResult() == null ? context.getNewOffset() : getResult.getPullResult().getMaxOffset();
+        long maxOpOffset = context.getPullResult() == null ? newOpOffset : context.getPullResult().getMaxOffset();
         long msgTime = getResult.getMsg() == null ? System.currentTimeMillis() : getResult.getMsg().getStoreTimestamp();
 
         log.info("After check, {} opOffset={} opOffsetDiff={} msgOffset={} msgOffsetDiff={} msgTime={} msgTimeDelayInMs={} putInQueueCount={}",
-            messageQueue, newOpOffset, maxOpOffset - newOpOffset, newOffset, maxMsgOffset - newOffset, new Date(msgTime),
-            System.currentTimeMillis() - msgTime, putInQueueCount);
+            context.getMessageQueue(), newOpOffset, maxOpOffset - newOpOffset, context.getNewOffset(), maxMsgOffset - context.getNewOffset(), new Date(msgTime),
+            System.currentTimeMillis() - msgTime, context.getPutInQueueCount());
     }
 
     private boolean needDiscard(MessageExt msgExt, int transactionCheckMax) {
@@ -533,6 +610,12 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
     }
 
+    /**
+     * create op queue map and return the op queue
+     *
+     * @param messageQueue mq
+     * @return op queue
+     */
     private MessageQueue getOpQueue(MessageQueue messageQueue) {
         MessageQueue opQueue = opQueueMap.get(messageQueue);
         if (opQueue == null) {
