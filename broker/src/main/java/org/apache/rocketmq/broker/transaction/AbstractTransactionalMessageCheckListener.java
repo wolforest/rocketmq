@@ -69,20 +69,21 @@ public abstract class AbstractTransactionalMessageCheckListener {
     }
 
     public void resolveHalfMsg(final MessageExt msgExt) {
-        if (executorService != null) {
-            executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        sendCheckMessage(msgExt);
-                    } catch (Exception e) {
-                        LOGGER.error("Send check message error!", e);
-                    }
-                }
-            });
-        } else {
+        if (executorService == null) {
             LOGGER.error("TransactionalMessageCheckListener not init");
+            return;
         }
+
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    sendCheckMessage(msgExt);
+                } catch (Exception e) {
+                    LOGGER.error("Send check message error!", e);
+                }
+            }
+        });
     }
 
     public BrokerController getBrokerController() {
