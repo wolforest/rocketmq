@@ -49,8 +49,6 @@ public class CheckContext {
     private int putInQueueCount = 0;
     private int escapeFailCnt = 0;
 
-
-
     private MessageExt msgExt;
 
     public CheckContext(MessageQueue messageQueue, long transactionTimeout, int transactionCheckMax, AbstractTransactionalMessageCheckListener listener) {

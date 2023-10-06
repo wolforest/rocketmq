@@ -48,6 +48,31 @@ public abstract class AbstractTransactionalMessageCheckListener {
         this.brokerController = brokerController;
     }
 
+    public void resolveHalfMsg(final MessageExt msgExt) {
+        if (executorService == null) {
+            LOGGER.error("TransactionalMessageCheckListener not init");
+            return;
+        }
+
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    sendCheckMessage(msgExt);
+                } catch (Exception e) {
+                    LOGGER.error("Send check message error!", e);
+                }
+            }
+        });
+    }
+
+    /**
+     * public only for test env, called by this.resolveHalfMsg
+     * should be private
+     *
+     * @param msgExt msg
+     * @throws Exception e
+     */
     public void sendCheckMessage(MessageExt msgExt) throws Exception {
         CheckTransactionStateRequestHeader header = new CheckTransactionStateRequestHeader();
         header.setCommitLogOffset(msgExt.getCommitLogOffset());
@@ -70,24 +95,6 @@ public abstract class AbstractTransactionalMessageCheckListener {
         }
     }
 
-    public void resolveHalfMsg(final MessageExt msgExt) {
-        if (executorService == null) {
-            LOGGER.error("TransactionalMessageCheckListener not init");
-            return;
-        }
-
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    sendCheckMessage(msgExt);
-                } catch (Exception e) {
-                    LOGGER.error("Send check message error!", e);
-                }
-            }
-        });
-    }
-
     public BrokerController getBrokerController() {
         return brokerController;
     }
@@ -108,7 +115,7 @@ public abstract class AbstractTransactionalMessageCheckListener {
     /**
      * Inject brokerController for this listener
      *
-     * @param brokerController
+     * @param brokerController brokerController
      */
     public void setBrokerController(BrokerController brokerController) {
         this.brokerController = brokerController;

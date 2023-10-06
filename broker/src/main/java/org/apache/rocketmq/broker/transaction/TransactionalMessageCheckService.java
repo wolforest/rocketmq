@@ -446,51 +446,24 @@ public class TransactionalMessageCheckService extends ServiceThread {
     private PullResult fillOpRemoveMap(HashMap<Long, Long> removeMap, MessageQueue opQueue,
         long pullOffsetOfOp, long miniOffset, Map<Long, HashSet<Long>> opMsgMap, List<Long> doneOpOffset) {
         PullResult pullResult = pullOpMsg(opQueue, pullOffsetOfOp, OP_MSG_PULL_NUMS);
-        if (null == pullResult) {
-            return null;
-        }
-        if (pullResult.getPullStatus() == PullStatus.OFFSET_ILLEGAL
-            || pullResult.getPullStatus() == PullStatus.NO_MATCHED_MSG) {
-            log.warn("The miss op offset={} in queue={} is illegal, pullResult={}", pullOffsetOfOp, opQueue,
-                pullResult);
-            transactionalMessageBridge.updateConsumeOffset(opQueue, pullResult.getNextBeginOffset());
-            return pullResult;
-        } else if (pullResult.getPullStatus() == PullStatus.NO_NEW_MSG) {
-            log.warn("The miss op offset={} in queue={} is NO_NEW_MSG, pullResult={}", pullOffsetOfOp, opQueue,
-                pullResult);
+        if (!handleIllegalOpMsg(pullResult, opQueue, pullOffsetOfOp)) {
             return pullResult;
         }
+
         List<MessageExt> opMsg = pullResult.getMsgFoundList();
         if (opMsg == null) {
             log.warn("The miss op offset={} in queue={} is empty, pullResult={}", pullOffsetOfOp, opQueue, pullResult);
             return pullResult;
         }
+
         for (MessageExt opMessageExt : opMsg) {
             if (opMessageExt.getBody() == null) {
-                log.error("op message body is null. queueId={}, offset={}", opMessageExt.getQueueId(),
-                    opMessageExt.getQueueOffset());
+                log.error("op message body is null. queueId={}, offset={}", opMessageExt.getQueueId(), opMessageExt.getQueueOffset());
                 doneOpOffset.add(opMessageExt.getQueueOffset());
                 continue;
             }
-            HashSet<Long> set = new HashSet<>();
-            String queueOffsetBody = new String(opMessageExt.getBody(), TransactionalMessageUtil.CHARSET);
 
-            log.debug("Topic: {} tags: {}, OpOffset: {}, HalfOffset: {}", opMessageExt.getTopic(),
-                opMessageExt.getTags(), opMessageExt.getQueueOffset(), queueOffsetBody);
-            if (TransactionalMessageUtil.REMOVE_TAG.equals(opMessageExt.getTags())) {
-                String[] offsetArray = queueOffsetBody.split(TransactionalMessageUtil.OFFSET_SEPARATOR);
-                for (String offset : offsetArray) {
-                    Long offsetValue = getLong(offset);
-                    if (offsetValue < miniOffset) {
-                        continue;
-                    }
-
-                    removeMap.put(offsetValue, opMessageExt.getQueueOffset());
-                    set.add(offsetValue);
-                }
-            } else {
-                log.error("Found a illegal tag in opMessageExt= {} ", opMessageExt);
-            }
+            HashSet<Long> set = handleMsgWithRemoveTag(opMessageExt, miniOffset, removeMap);
 
             if (set.size() > 0) {
                 opMsgMap.put(opMessageExt.getQueueOffset(), set);
@@ -503,6 +476,50 @@ public class TransactionalMessageCheckService extends ServiceThread {
         log.debug("Done op list: {}", doneOpOffset);
         log.debug("opMsg map: {}", opMsgMap);
         return pullResult;
+    }
+
+    private boolean handleIllegalOpMsg(PullResult pullResult, MessageQueue opQueue, long pullOffsetOfOp) {
+        if (null == pullResult) {
+            return false;
+        }
+
+        if (pullResult.getPullStatus() == PullStatus.OFFSET_ILLEGAL || pullResult.getPullStatus() == PullStatus.NO_MATCHED_MSG) {
+            log.warn("The miss op offset={} in queue={} is illegal, pullResult={}", pullOffsetOfOp, opQueue, pullResult);
+            transactionalMessageBridge.updateConsumeOffset(opQueue, pullResult.getNextBeginOffset());
+            return false;
+        }
+
+        if (pullResult.getPullStatus() == PullStatus.NO_NEW_MSG) {
+            log.warn("The miss op offset={} in queue={} is NO_NEW_MSG, pullResult={}", pullOffsetOfOp, opQueue, pullResult);
+            return false;
+        }
+
+        return true;
+    }
+
+    private HashSet<Long> handleMsgWithRemoveTag(MessageExt opMessageExt, long miniOffset, HashMap<Long, Long> removeMap) {
+        HashSet<Long> set = new HashSet<>();
+        String queueOffsetBody = new String(opMessageExt.getBody(), TransactionalMessageUtil.CHARSET);
+        log.debug("Topic: {} tags: {}, OpOffset: {}, HalfOffset: {}", opMessageExt.getTopic(),
+            opMessageExt.getTags(), opMessageExt.getQueueOffset(), queueOffsetBody);
+
+        if (!TransactionalMessageUtil.REMOVE_TAG.equals(opMessageExt.getTags())) {
+            log.error("Found a illegal tag in opMessageExt= {} ", opMessageExt);
+            return set;
+        }
+
+        String[] offsetArray = queueOffsetBody.split(TransactionalMessageUtil.OFFSET_SEPARATOR);
+        for (String offset : offsetArray) {
+            Long offsetValue = getLong(offset);
+            if (offsetValue < miniOffset) {
+                continue;
+            }
+
+            removeMap.put(offsetValue, opMessageExt.getQueueOffset());
+            set.add(offsetValue);
+        }
+
+        return set;
     }
 
     /**

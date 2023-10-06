@@ -394,10 +394,6 @@ public class BrokerMessageService {
         return timerMessageStore;
     }
 
-    public TransactionalMessageCheckService getTransactionalMessageCheckService() {
-        return transactionalMessageCheckService;
-    }
-
     public void setTransactionalMessageCheckService(
         TransactionalMessageCheckService transactionalMessageCheckService) {
         this.transactionalMessageCheckService = transactionalMessageCheckService;
@@ -409,10 +405,6 @@ public class BrokerMessageService {
 
     public void setTransactionalMessageService(TransactionalMessageService transactionalMessageService) {
         this.transactionalMessageService = transactionalMessageService;
-    }
-
-    public AbstractTransactionalMessageCheckListener getTransactionalMessageCheckListener() {
-        return transactionalMessageCheckListener;
     }
 
     public boolean isTransactionCheckServiceStart() {
