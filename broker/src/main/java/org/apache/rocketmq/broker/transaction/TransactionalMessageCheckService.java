@@ -39,6 +39,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -377,7 +378,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         String checkTimes = msgExt.getProperty(MessageConst.PROPERTY_TRANSACTION_CHECK_TIMES);
         int checkTime = 1;
         if (null != checkTimes) {
-            checkTime = getInt(checkTimes);
+            checkTime = StringUtils.getInt(checkTimes, -1);
             if (checkTime >= transactionCheckMax) {
                 return true;
             } else {
@@ -423,7 +424,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
     private long getImmunityTime(String checkImmunityTimeStr, long transactionTimeout) {
         long checkImmunityTime;
 
-        checkImmunityTime = getLong(checkImmunityTimeStr);
+        checkImmunityTime = StringUtils.getLong(checkImmunityTimeStr, -1);
         if (-1 == checkImmunityTime) {
             checkImmunityTime = transactionTimeout;
         } else {
@@ -508,7 +509,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
         String[] offsetArray = queueOffsetBody.split(TransactionalMessageUtil.OFFSET_SEPARATOR);
         for (String offset : offsetArray) {
-            Long offsetValue = getLong(offset);
+            Long offsetValue = StringUtils.getLong(offset, -1);
             if (offsetValue < miniOffset) {
                 continue;
             }
@@ -535,7 +536,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
             return putImmunityMsgBackToHalfQueue(msgExt);
         }
 
-        long prepareQueueOffset = getLong(prepareQueueOffsetStr);
+        long prepareQueueOffset = StringUtils.getLong(prepareQueueOffsetStr, -1);
         if (-1 == prepareQueueOffset) {
             return false;
         }
@@ -586,28 +587,6 @@ public class TransactionalMessageCheckService extends ServiceThread {
      */
     private PullResult pullOpMsg(MessageQueue mq, long offset, int nums) {
         return transactionalMessageBridge.getOpMessage(mq.getQueueId(), offset, nums);
-    }
-
-    private Long getLong(String s) {
-        long v = -1;
-        try {
-            v = Long.parseLong(s);
-        } catch (Exception e) {
-            log.error("GetLong error", e);
-        }
-        return v;
-
-    }
-
-    private Integer getInt(String s) {
-        int v = -1;
-        try {
-            v = Integer.parseInt(s);
-        } catch (Exception e) {
-            log.error("GetInt error", e);
-        }
-        return v;
-
     }
 
     private long calculateOpOffset(List<Long> doneOffset, long oldOffset) {

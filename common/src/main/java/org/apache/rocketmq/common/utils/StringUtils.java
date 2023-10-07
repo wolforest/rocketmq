@@ -20,8 +20,12 @@ import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 public class StringUtils {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.TOOLS_LOGGER_NAME);
 
     private final static char[] HEX_ARRAY;
     private final static int PID;
@@ -78,6 +82,35 @@ public class StringUtils {
         return (byte) "0123456789ABCDEF".indexOf(c);
     }
 
+
+    public static Long getLong(String s) {
+        return getLong(s, 0);
+    }
+
+    public static Long getLong(String s, long defaultValue) {
+        long v = defaultValue;
+        try {
+            v = Long.parseLong(s);
+        } catch (Exception e) {
+            LOGGER.error("GetLong error", e);
+        }
+        return v;
+
+    }
+
+    public static Integer getInt(String s) {
+        return getInt(s, 0);
+    }
+
+    public static Integer getInt(String s, int defaultValue) {
+        int v = defaultValue;
+        try {
+            v = Integer.parseInt(s);
+        } catch (Exception e) {
+            LOGGER.error("GetInt error", e);
+        }
+        return v;
+    }
 
 
 }
