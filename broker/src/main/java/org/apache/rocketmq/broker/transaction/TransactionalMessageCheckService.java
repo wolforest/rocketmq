@@ -645,14 +645,16 @@ public class TransactionalMessageCheckService extends ServiceThread {
         GetResult getResult = new GetResult();
 
         PullResult result = pullHalfMsg(messageQueue, offset, PULL_MSG_RETRY_NUMBER);
-        if (result != null) {
-            getResult.setPullResult(result);
-            List<MessageExt> messageExts = result.getMsgFoundList();
-            if (messageExts == null || messageExts.size() == 0) {
-                return getResult;
-            }
-            getResult.setMsg(messageExts.get(0));
+        if (result == null) {
+            return getResult;
         }
+
+        getResult.setPullResult(result);
+        List<MessageExt> messageExts = result.getMsgFoundList();
+        if (messageExts == null || messageExts.size() == 0) {
+            return getResult;
+        }
+        getResult.setMsg(messageExts.get(0));
         return getResult;
     }
 
