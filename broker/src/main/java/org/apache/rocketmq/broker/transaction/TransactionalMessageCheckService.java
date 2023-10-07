@@ -614,14 +614,14 @@ public class TransactionalMessageCheckService extends ServiceThread {
         Collections.sort(doneOffset);
         long newOffset = oldOffset;
         for (Long aLong : doneOffset) {
-            if (aLong == newOffset) {
-                newOffset++;
-            } else {
+            if (aLong != newOffset) {
                 break;
             }
-        }
-        return newOffset;
 
+            newOffset++;
+        }
+
+        return newOffset;
     }
 
     /**
