@@ -31,7 +31,7 @@ public class MessageStoreConfig {
     @ImportantField
     private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";
 
-    //The directory in which the commitlog is kept
+    //The directory in which the commitLog is kept
     @ImportantField
     private String storePathCommitLog = null;
 
@@ -50,7 +50,7 @@ public class MessageStoreConfig {
     // CommitLog file size,default is 1G
     private int mappedFileSizeCommitLog = 1024 * 1024 * 1024;
 
-    // CompactinLog file size, default is 100M
+    // CompactionLog file size, default is 100M
     private int compactionMappedFileSize = 100 * 1024 * 1024;
 
     // CompactionLog consumeQueue file size, default is 10M

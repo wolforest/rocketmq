@@ -120,6 +120,13 @@ public class TransactionalMessageBridge {
         return getMessage(group, topic, queueId, offset, nums, sub);
     }
 
+    /**
+     * get message from MessageStore(DefaultMessageStore)
+     * @param queueId queueId
+     * @param offset offset
+     * @param nums nums
+     * @return PullResult
+     */
     public PullResult getOpMessage(int queueId, long offset, int nums) {
         String group = TransactionalMessageUtil.buildConsumerGroup();
         String topic = TransactionalMessageUtil.buildOpTopic();
