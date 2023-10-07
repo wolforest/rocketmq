@@ -632,13 +632,13 @@ public class TransactionalMessageCheckService extends ServiceThread {
      */
     private MessageQueue getOpQueue(MessageQueue messageQueue) {
         MessageQueue opQueue = opQueueMap.get(messageQueue);
-        if (opQueue == null) {
-            opQueue = new MessageQueue(TransactionalMessageUtil.buildOpTopic(), messageQueue.getBrokerName(),
-                messageQueue.getQueueId());
-            opQueueMap.put(messageQueue, opQueue);
+        if (opQueue != null) {
+            return opQueue;
         }
-        return opQueue;
 
+        opQueue = new MessageQueue(TransactionalMessageUtil.buildOpTopic(), messageQueue.getBrokerName(), messageQueue.getQueueId());
+        opQueueMap.put(messageQueue, opQueue);
+        return opQueue;
     }
 
     private GetResult getHalfMsg(MessageQueue messageQueue, long offset) {
