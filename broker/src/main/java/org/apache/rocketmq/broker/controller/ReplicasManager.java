@@ -59,10 +59,14 @@ import org.apache.rocketmq.store.ha.autoswitch.TempBrokerMetadata;
 import static org.apache.rocketmq.remoting.protocol.ResponseCode.CONTROLLER_BROKER_METADATA_NOT_EXIST;
 
 /**
- * The manager of broker replicas, including: 0.regularly syncing controller metadata, change controller leader address,
- * both master and slave will start this timed task. 1.regularly syncing metadata from controllers, and changing broker
- * roles and master if needed, both master and slave will start this timed task. 2.regularly expanding and Shrinking
- * syncStateSet, only master will start this timed task.
+ * The manager of broker replicas, including:
+ * 0.regularly syncing controller metadata, change controller leader address,
+ *      both master and slave will start this timed task.
+ * 1.regularly syncing metadata from controllers,
+ *      and changing broker roles and master if needed,
+ *      both master and slave will start this timed task.
+ * 2.regularly expanding and Shrinking syncStateSet,
+ *      only master will start this timed task.
  */
 public class ReplicasManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
@@ -74,8 +78,10 @@ public class ReplicasManager {
     private final ExecutorService scanExecutor;
     private final BrokerController brokerController;
     private final AutoSwitchHAService haService;
+
     private final BrokerConfig brokerConfig;
     private final String brokerAddress;
+
     private final BrokerOuterAPI brokerOuterAPI;
     private List<String> controllerAddresses;
     private final ConcurrentMap<String, Boolean> availableControllerAddresses;
@@ -89,19 +95,17 @@ public class ReplicasManager {
     private ScheduledFuture<?> slaveSyncFuture;
 
     private Long brokerControllerId;
-
     private Long masterBrokerId;
 
-    private BrokerMetadata brokerMetadata;
-
-    private TempBrokerMetadata tempBrokerMetadata;
+    private final BrokerMetadata brokerMetadata;
+    private final TempBrokerMetadata tempBrokerMetadata;
 
     private Set<Long> syncStateSet;
     private int syncStateSetEpoch = 0;
     private String masterAddress = "";
     private int masterEpoch = 0;
     private long lastSyncTimeMs = System.currentTimeMillis();
-    private Random random = new Random();
+    private final Random random = new Random();
 
     public ReplicasManager(final BrokerController brokerController) {
         this.brokerController = brokerController;
@@ -140,24 +144,29 @@ public class ReplicasManager {
         scanAvailableControllerAddresses();
         this.scheduledService.scheduleAtFixedRate(this::updateControllerAddr, 2 * 60 * 1000, 2 * 60 * 1000, TimeUnit.MILLISECONDS);
         this.scheduledService.scheduleAtFixedRate(this::scanAvailableControllerAddresses, 3 * 1000, 3 * 1000, TimeUnit.MILLISECONDS);
+
         if (!startBasicService()) {
-            LOGGER.error("Failed to start replicasManager");
-            this.executorService.submit(() -> {
-                int retryTimes = 0;
-                do {
-                    try {
-                        TimeUnit.SECONDS.sleep(RETRY_INTERVAL_SECOND);
-                    } catch (InterruptedException ignored) {
-
-                    }
-                    retryTimes++;
-                    LOGGER.warn("Failed to start replicasManager, retry times:{}, current state:{}, try it again", retryTimes, this.state);
-                }
-                while (!startBasicService());
-
-                LOGGER.info("Start replicasManager success, retry times:{}", retryTimes);
-            });
+            restartBasicService();
         }
+    }
+
+    private void restartBasicService() {
+        LOGGER.error("Failed to start replicasManager");
+        this.executorService.submit(() -> {
+            int retryTimes = 0;
+            do {
+                try {
+                    TimeUnit.SECONDS.sleep(RETRY_INTERVAL_SECOND);
+                } catch (InterruptedException ignored) {
+
+                }
+                retryTimes++;
+                LOGGER.warn("Failed to start replicasManager, retry times:{}, current state:{}, try it again", retryTimes, this.state);
+            }
+            while (!startBasicService());
+
+            LOGGER.info("Start replicasManager success, retry times:{}", retryTimes);
+        });
     }
 
     private boolean startBasicService() {
