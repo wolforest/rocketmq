@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.client.impl.factory;
 
+import io.netty.channel.Channel;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,6 +67,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.message.MessageQueueAssignment;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.ThreadUtils;
+import org.apache.rocketmq.remoting.ChannelEventListener;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.common.HeartbeatV2Result;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -109,7 +111,7 @@ public class MQClientInstance {
      */
     private final ConcurrentMap<String, MQAdminExtInner> adminExtTable = new ConcurrentHashMap<>();
     private NettyClientConfig nettyClientConfig;
-    private final MQClientAPIImpl mQClientAPIImpl;
+    private MQClientAPIImpl mQClientAPIImpl;
     private final MQAdminImpl mQAdminImpl;
     private final ConcurrentMap<String/* Topic */, TopicRouteData> topicRouteTable = new ConcurrentHashMap<>();
     private final ConcurrentMap<String/* Topic */, ConcurrentMap<MessageQueue, String/*brokerName*/>> topicEndPointsTable = new ConcurrentHashMap<>();
@@ -148,9 +150,7 @@ public class MQClientInstance {
     public MQClientInstance(ClientConfig clientConfig, int instanceIndex, String clientId, RPCHook rpcHook) {
         initConfig(clientConfig);
 
-        ClientRemotingProcessor clientRemotingProcessor = new ClientRemotingProcessor(this);
-        this.mQClientAPIImpl = new MQClientAPIImpl(this.nettyClientConfig, clientRemotingProcessor, rpcHook, clientConfig);
-
+        initMQClientAPIImpl(rpcHook);
         updateNameServerAddressList();
 
         this.clientId = clientId;
@@ -163,6 +163,53 @@ public class MQClientInstance {
         this.consumerStatsManager = new ConsumerStatsManager(this.scheduledExecutorService);
 
         logInitInfo(instanceIndex);
+    }
+
+    private void initMQClientAPIImpl(RPCHook rpcHook) {
+        ClientRemotingProcessor clientRemotingProcessor = new ClientRemotingProcessor(this);
+
+        ChannelEventListener channelEventListener = initChannelEventListener();
+
+        this.mQClientAPIImpl = new MQClientAPIImpl(this.nettyClientConfig, clientRemotingProcessor, rpcHook, clientConfig, channelEventListener);
+    }
+
+    private ChannelEventListener initChannelEventListener() {
+        if (!clientConfig.isEnableHeartbeatChannelEventListener()) {
+            return null;
+        }
+
+        return new ChannelEventListener() {
+            private final ConcurrentMap<String, HashMap<Long, String>> brokerAddrTable = MQClientInstance.this.brokerAddrTable;
+            @Override
+            public void onChannelConnect(String remoteAddr, Channel channel) {
+                for (Map.Entry<String, HashMap<Long, String>> addressEntry : brokerAddrTable.entrySet()) {
+                    onChannelConnect(addressEntry.getValue(), remoteAddr);
+                }
+            }
+
+            @Override
+            public void onChannelClose(String remoteAddr, Channel channel) {
+            }
+
+            @Override
+            public void onChannelException(String remoteAddr, Channel channel) {
+            }
+
+            @Override
+            public void onChannelIdle(String remoteAddr, Channel channel) {
+            }
+
+            private void onChannelConnect(HashMap<Long, String> addressValue, String remoteAddr) {
+                for (String address : addressValue.values()) {
+                    if (!address.equals(remoteAddr)) {
+                        continue;
+                    }
+
+                    sendHeartbeatToAllBrokerWithLockV2(false);
+                    break;
+                }
+            }
+        };
     }
 
     private void initConfig(ClientConfig clientConfig) {
