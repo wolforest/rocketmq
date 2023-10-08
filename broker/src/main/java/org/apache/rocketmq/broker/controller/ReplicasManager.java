@@ -169,48 +169,70 @@ public class ReplicasManager {
         });
     }
 
-    private boolean startBasicService() {
-        if (this.state == State.SHUTDOWN)
+    private boolean startAtInitialState() {
+        if (this.state != State.INITIAL) {
+            return true;
+        }
+
+        if (schedulingSyncControllerMetadata()) {
+            this.state = State.FIRST_TIME_SYNC_CONTROLLER_METADATA_DONE;
+            LOGGER.info("First time sync controller metadata success, change state to: {}", this.state);
+        } else {
             return false;
-        if (this.state == State.INITIAL) {
-            if (schedulingSyncControllerMetadata()) {
-                this.state = State.FIRST_TIME_SYNC_CONTROLLER_METADATA_DONE;
-                LOGGER.info("First time sync controller metadata success, change state to: {}", this.state);
-            } else {
-                return false;
-            }
         }
 
-        if (this.state == State.FIRST_TIME_SYNC_CONTROLLER_METADATA_DONE) {
-            for (int retryTimes = 0; retryTimes < 5; retryTimes++) {
-                if (register()) {
-                    this.state = State.REGISTER_TO_CONTROLLER_DONE;
-                    LOGGER.info("First time register broker success, change state to: {}", this.state);
-                    break;
-                }
+        return true;
+    }
 
-                // Try to avoid registration concurrency conflicts in random sleep
-                ThreadUtils.sleep(random.nextInt(1000));
-            }
-            // register 5 times but still unsuccessful
-            if (this.state != State.REGISTER_TO_CONTROLLER_DONE) {
-                LOGGER.error("Register to broker failed 5 times");
-                return false;
-            }
+    private boolean startAtFirstTimeSyncControllerDone() {
+        if (this.state != State.FIRST_TIME_SYNC_CONTROLLER_METADATA_DONE) {
+            return true;
         }
 
-        if (this.state == State.REGISTER_TO_CONTROLLER_DONE) {
-            // The scheduled task for heartbeat sending is not starting now, so we should manually send heartbeat request
-            this.sendHeartbeatToController();
-            if (this.masterBrokerId != null || brokerElect()) {
-                LOGGER.info("Master in this broker set is elected, masterBrokerId: {}, masterBrokerAddr: {}", this.masterBrokerId, this.masterAddress);
-                this.state = State.RUNNING;
-                setFenced(false);
-                LOGGER.info("All register process has been done, change state to: {}", this.state);
-            } else {
-                return false;
+        for (int retryTimes = 0; retryTimes < 5; retryTimes++) {
+            if (register()) {
+                this.state = State.REGISTER_TO_CONTROLLER_DONE;
+                LOGGER.info("First time register broker success, change state to: {}", this.state);
+                break;
             }
+
+            // Try to avoid registration concurrency conflicts in random sleep
+            ThreadUtils.sleep(random.nextInt(1000));
         }
+        // register 5 times but still unsuccessful
+        if (this.state != State.REGISTER_TO_CONTROLLER_DONE) {
+            LOGGER.error("Register to broker failed 5 times");
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean startAtRegisterToControllerDone() {
+        if (this.state != State.REGISTER_TO_CONTROLLER_DONE) {
+            return true;
+        }
+
+        // The scheduled task for heartbeat sending is not starting now, so we should manually send heartbeat request
+        this.sendHeartbeatToController();
+        if (this.masterBrokerId != null || brokerElect()) {
+            LOGGER.info("Master in this broker set is elected, masterBrokerId: {}, masterBrokerAddr: {}", this.masterBrokerId, this.masterAddress);
+            this.state = State.RUNNING;
+            setFenced(false);
+            LOGGER.info("All register process has been done, change state to: {}", this.state);
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean startBasicService() {
+        if (this.state == State.SHUTDOWN) return false;
+
+        if (!startAtInitialState()) return false;
+        if (!startAtFirstTimeSyncControllerDone()) return false;
+        if (!startAtRegisterToControllerDone()) return false;
 
         schedulingSyncBrokerMetadata();
 
@@ -228,98 +250,104 @@ public class ReplicasManager {
     }
 
     public synchronized void changeBrokerRole(final Long newMasterBrokerId, final String newMasterAddress,
-        final Integer newMasterEpoch,
-        final Integer syncStateSetEpoch, final Set<Long> syncStateSet) {
-        if (newMasterBrokerId != null && newMasterEpoch > this.masterEpoch) {
-            if (newMasterBrokerId.equals(this.brokerControllerId)) {
-                changeToMaster(newMasterEpoch, syncStateSetEpoch, syncStateSet);
-            } else {
-                changeToSlave(newMasterAddress, newMasterEpoch, newMasterBrokerId);
-            }
+        final Integer newMasterEpoch, final Integer syncStateSetEpoch, final Set<Long> syncStateSet) {
+
+        if (newMasterBrokerId == null || newMasterEpoch <= this.masterEpoch) {
+            return;
+        }
+
+        if (newMasterBrokerId.equals(this.brokerControllerId)) {
+            changeToMaster(newMasterEpoch, syncStateSetEpoch, syncStateSet);
+        } else {
+            changeToSlave(newMasterAddress, newMasterEpoch, newMasterBrokerId);
         }
     }
 
     public void changeToMaster(final int newMasterEpoch, final int syncStateSetEpoch, final Set<Long> syncStateSet) {
         synchronized (this) {
-            if (newMasterEpoch > this.masterEpoch) {
-                LOGGER.info("Begin to change to master, brokerName:{}, replicas:{}, new Epoch:{}", this.brokerConfig.getBrokerName(), this.brokerAddress, newMasterEpoch);
-                this.masterEpoch = newMasterEpoch;
-                if (this.masterBrokerId != null && this.masterBrokerId.equals(this.brokerControllerId) && this.brokerController.getBrokerConfig().getBrokerId() == MixAll.MASTER_ID) {
-                    // Change SyncStateSet
-                    final HashSet<Long> newSyncStateSet = new HashSet<>(syncStateSet);
-                    changeSyncStateSet(newSyncStateSet, syncStateSetEpoch);
-                    // if master doesn't change
-                    this.haService.changeToMasterWhenLastRoleIsMaster(newMasterEpoch);
-                    this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
-                    this.executorService.submit(this::checkSyncStateSetAndDoReport);
-                    registerBrokerWhenRoleChange();
-                    return;
-                }
+            if (newMasterEpoch <= this.masterEpoch) {
+                return;
+            }
 
+            LOGGER.info("Begin to change to master, brokerName:{}, replicas:{}, new Epoch:{}", this.brokerConfig.getBrokerName(), this.brokerAddress, newMasterEpoch);
+            this.masterEpoch = newMasterEpoch;
+            if (this.masterBrokerId != null && this.masterBrokerId.equals(this.brokerControllerId) && this.brokerController.getBrokerConfig().getBrokerId() == MixAll.MASTER_ID) {
                 // Change SyncStateSet
                 final HashSet<Long> newSyncStateSet = new HashSet<>(syncStateSet);
                 changeSyncStateSet(newSyncStateSet, syncStateSetEpoch);
-
-                // Handle the slave synchronise
-                handleSlaveSynchronize(BrokerRole.SYNC_MASTER);
-
-                // Notify ha service, change to master
-                this.haService.changeToMaster(newMasterEpoch);
-
-                this.brokerController.getBrokerConfig().setBrokerId(MixAll.MASTER_ID);
-                this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SYNC_MASTER);
-                this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(true);
-
-                // Change record
-                this.masterAddress = this.brokerAddress;
-                this.masterBrokerId = this.brokerControllerId;
-
-                schedulingCheckSyncStateSet();
-
+                // if master doesn't change
+                this.haService.changeToMasterWhenLastRoleIsMaster(newMasterEpoch);
                 this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
                 this.executorService.submit(this::checkSyncStateSetAndDoReport);
                 registerBrokerWhenRoleChange();
+                return;
             }
+
+            // Change SyncStateSet
+            final HashSet<Long> newSyncStateSet = new HashSet<>(syncStateSet);
+            changeSyncStateSet(newSyncStateSet, syncStateSetEpoch);
+
+            // Handle the slave synchronise
+            handleSlaveSynchronize(BrokerRole.SYNC_MASTER);
+
+            // Notify ha service, change to master
+            this.haService.changeToMaster(newMasterEpoch);
+
+            this.brokerController.getBrokerConfig().setBrokerId(MixAll.MASTER_ID);
+            this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SYNC_MASTER);
+            this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(true);
+
+            // Change record
+            this.masterAddress = this.brokerAddress;
+            this.masterBrokerId = this.brokerControllerId;
+
+            schedulingCheckSyncStateSet();
+
+            this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
+            this.executorService.submit(this::checkSyncStateSetAndDoReport);
+            registerBrokerWhenRoleChange();
         }
     }
 
     public void changeToSlave(final String newMasterAddress, final int newMasterEpoch, Long newMasterBrokerId) {
         synchronized (this) {
-            if (newMasterEpoch > this.masterEpoch) {
-                LOGGER.info("Begin to change to slave, brokerName={}, brokerId={}, newMasterBrokerId={}, newMasterAddress={}, newMasterEpoch={}",
-                    this.brokerConfig.getBrokerName(), this.brokerControllerId, newMasterBrokerId, newMasterAddress, newMasterEpoch);
+            if (newMasterEpoch <= this.masterEpoch) {
+                return;
+            }
 
-                this.masterEpoch = newMasterEpoch;
-                if (newMasterBrokerId.equals(this.masterBrokerId)) {
-                    // if master doesn't change
-                    this.haService.changeToSlaveWhenMasterNotChange(newMasterAddress, newMasterEpoch);
-                    this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
-                    registerBrokerWhenRoleChange();
-                    return;
-                }
+            LOGGER.info("Begin to change to slave, brokerName={}, brokerId={}, newMasterBrokerId={}, newMasterAddress={}, newMasterEpoch={}",
+                this.brokerConfig.getBrokerName(), this.brokerControllerId, newMasterBrokerId, newMasterAddress, newMasterEpoch);
 
-                // Stop checking syncStateSet because only master is able to check
-                stopCheckSyncStateSet();
-
-                // Change config(compatibility problem)
-                this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SLAVE);
-                this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(false);
-                // The brokerId in brokerConfig just means its role(master[0] or slave[>=1])
-                this.brokerConfig.setBrokerId(brokerControllerId);
-
-                // Change record
-                this.masterAddress = newMasterAddress;
-                this.masterBrokerId = newMasterBrokerId;
-
-                // Handle the slave synchronise
-                handleSlaveSynchronize(BrokerRole.SLAVE);
-
-                // Notify ha service, change to slave
-                this.haService.changeToSlave(newMasterAddress, newMasterEpoch, brokerControllerId);
-
+            this.masterEpoch = newMasterEpoch;
+            if (newMasterBrokerId.equals(this.masterBrokerId)) {
+                // if master doesn't change
+                this.haService.changeToSlaveWhenMasterNotChange(newMasterAddress, newMasterEpoch);
                 this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
                 registerBrokerWhenRoleChange();
+                return;
             }
+
+            // Stop checking syncStateSet because only master is able to check
+            stopCheckSyncStateSet();
+
+            // Change config(compatibility problem)
+            this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SLAVE);
+            this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(false);
+            // The brokerId in brokerConfig just means its role(master[0] or slave[>=1])
+            this.brokerConfig.setBrokerId(brokerControllerId);
+
+            // Change record
+            this.masterAddress = newMasterAddress;
+            this.masterBrokerId = newMasterBrokerId;
+
+            // Handle the slave synchronise
+            handleSlaveSynchronize(BrokerRole.SLAVE);
+
+            // Notify ha service, change to slave
+            this.haService.changeToSlave(newMasterAddress, newMasterEpoch, brokerControllerId);
+
+            this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
+            registerBrokerWhenRoleChange();
         }
     }
 
@@ -352,31 +380,35 @@ public class ReplicasManager {
         }
     }
 
-    private void handleSlaveSynchronize(final BrokerRole role) {
-        if (role == BrokerRole.SLAVE) {
-            if (this.slaveSyncFuture != null) {
-                this.slaveSyncFuture.cancel(false);
-            }
-            this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(this.masterAddress);
-            slaveSyncFuture = this.brokerController.getBrokerScheduleService().getScheduledExecutorService().scheduleAtFixedRate(() -> {
-                try {
-                    if (System.currentTimeMillis() - lastSyncTimeMs > 10 * 1000) {
-                        brokerController.getBrokerClusterService().getSlaveSynchronize().syncAll();
-                        lastSyncTimeMs = System.currentTimeMillis();
-                    }
-                    //timer checkpoint, latency-sensitive, so sync it more frequently
-                    brokerController.getBrokerClusterService().getSlaveSynchronize().syncTimerCheckPoint();
-                } catch (final Throwable e) {
-                    LOGGER.error("ScheduledTask SlaveSynchronize syncAll error.", e);
-                }
-            }, 1000 * 3, 1000 * 3, TimeUnit.MILLISECONDS);
-
-        } else {
-            if (this.slaveSyncFuture != null) {
-                this.slaveSyncFuture.cancel(false);
-            }
-            this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
+    private void handleNotSlaveSynchronize() {
+        if (this.slaveSyncFuture != null) {
+            this.slaveSyncFuture.cancel(false);
         }
+        this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
+    }
+
+    private void handleSlaveSynchronize(final BrokerRole role) {
+        if (role != BrokerRole.SLAVE) {
+            handleNotSlaveSynchronize();
+            return;
+        }
+
+        if (this.slaveSyncFuture != null) {
+            this.slaveSyncFuture.cancel(false);
+        }
+        this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(this.masterAddress);
+        slaveSyncFuture = this.brokerController.getBrokerScheduleService().getScheduledExecutorService().scheduleAtFixedRate(() -> {
+            try {
+                if (System.currentTimeMillis() - lastSyncTimeMs > 10 * 1000) {
+                    brokerController.getBrokerClusterService().getSlaveSynchronize().syncAll();
+                    lastSyncTimeMs = System.currentTimeMillis();
+                }
+                //timer checkpoint, latency-sensitive, so sync it more frequently
+                brokerController.getBrokerClusterService().getSlaveSynchronize().syncTimerCheckPoint();
+            } catch (final Throwable e) {
+                LOGGER.error("ScheduledTask SlaveSynchronize syncAll error.", e);
+            }
+        }, 1000 * 3, 1000 * 3, TimeUnit.MILLISECONDS);
     }
 
     private boolean brokerElect() {
@@ -408,26 +440,30 @@ public class ReplicasManager {
     public void sendHeartbeatToController() {
         final List<String> controllerAddresses = this.getAvailableControllerAddresses();
         for (String controllerAddress : controllerAddresses) {
-            if (StringUtils.isEmpty(controllerAddress)) {
-                continue;
-            }
-
-            this.brokerOuterAPI.sendHeartbeatToController(
-                controllerAddress,
-                this.brokerConfig.getBrokerClusterName(),
-                this.brokerAddress,
-                this.brokerConfig.getBrokerName(),
-                this.brokerControllerId,
-                this.brokerConfig.getSendHeartbeatTimeoutMillis(),
-                this.brokerConfig.isInBrokerContainer(), this.getLastEpoch(),
-                this.brokerController.getMessageStore().getMaxPhyOffset(),
-                this.brokerController.getMessageStore().getConfirmOffset(),
-                this.brokerConfig.getControllerHeartBeatTimeoutMills(),
-                this.brokerConfig.getBrokerElectionPriority()
-            );
+            sendHeartbeatToController(controllerAddress);
         }
     }
 
+    private void sendHeartbeatToController(String controllerAddress) {
+        if (StringUtils.isEmpty(controllerAddress)) {
+            return;
+        }
+
+        this.brokerOuterAPI.sendHeartbeatToController(
+            controllerAddress,
+            this.brokerConfig.getBrokerClusterName(),
+            this.brokerAddress,
+            this.brokerConfig.getBrokerName(),
+            this.brokerControllerId,
+            this.brokerConfig.getSendHeartbeatTimeoutMillis(),
+            this.brokerConfig.isInBrokerContainer(), this.getLastEpoch(),
+            this.brokerController.getMessageStore().getMaxPhyOffset(),
+            this.brokerController.getMessageStore().getConfirmOffset(),
+            this.brokerConfig.getControllerHeartBeatTimeoutMills(),
+            this.brokerConfig.getBrokerElectionPriority()
+        );
+    }
+    
     /**
      * Register broker to controller, and persist the metadata to file
      *
@@ -651,11 +687,13 @@ public class ReplicasManager {
         this.scheduledService.scheduleAtFixedRate(() -> {
             try {
                 final Pair<GetReplicaInfoResponseHeader, SyncStateSet> result = this.brokerOuterAPI.getReplicaInfo(this.controllerLeaderAddress, this.brokerConfig.getBrokerName());
-                final GetReplicaInfoResponseHeader info = result.getObject1();
                 final SyncStateSet syncStateSet = result.getObject2();
+                final GetReplicaInfoResponseHeader info = result.getObject1();
+
                 final String newMasterAddress = info.getMasterAddress();
                 final int newMasterEpoch = info.getMasterEpoch();
                 final Long masterBrokerId = info.getMasterBrokerId();
+
                 synchronized (this) {
                     // Check if master changed
                     if (newMasterEpoch > this.masterEpoch) {
@@ -679,19 +717,24 @@ public class ReplicasManager {
                     }
                 }
             } catch (final MQBrokerException exception) {
-                LOGGER.warn("Error happen when get broker {}'s metadata", this.brokerConfig.getBrokerName(), exception);
-                if (exception.getResponseCode() == CONTROLLER_BROKER_METADATA_NOT_EXIST) {
-                    try {
-                        registerBrokerToController();
-                        TimeUnit.SECONDS.sleep(2);
-                    } catch (InterruptedException ignore) {
-
-                    }
-                }
+                handleSyncBrokerMetadataException(exception);
             } catch (final Exception e) {
                 LOGGER.warn("Error happen when get broker {}'s metadata", this.brokerConfig.getBrokerName(), e);
             }
         }, 3 * 1000, this.brokerConfig.getSyncBrokerMetadataPeriod(), TimeUnit.MILLISECONDS);
+    }
+
+    private void handleSyncBrokerMetadataException(MQBrokerException exception) {
+        LOGGER.warn("Error happen when get broker {}'s metadata", this.brokerConfig.getBrokerName(), exception);
+        if (exception.getResponseCode() != CONTROLLER_BROKER_METADATA_NOT_EXIST) {
+            return;
+        }
+
+        try {
+            registerBrokerToController();
+            TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException ignore) {
+        }
     }
 
     /**
@@ -719,17 +762,25 @@ public class ReplicasManager {
      */
     private boolean updateControllerMetadata() {
         for (String address : this.availableControllerAddresses.keySet()) {
-            try {
-                final GetMetaDataResponseHeader responseHeader = this.brokerOuterAPI.getControllerMetaData(address);
-                if (responseHeader != null && StringUtils.isNoneEmpty(responseHeader.getControllerLeaderAddress())) {
-                    this.controllerLeaderAddress = responseHeader.getControllerLeaderAddress();
-                    LOGGER.info("Update controller leader address to {}", this.controllerLeaderAddress);
-                    return true;
-                }
-            } catch (final Exception e) {
-                LOGGER.error("Failed to update controller metadata", e);
+            if (updateControllerMetadata(address)) {
+                return true;
             }
         }
+        return false;
+    }
+
+    private boolean updateControllerMetadata(String address) {
+        try {
+            final GetMetaDataResponseHeader responseHeader = this.brokerOuterAPI.getControllerMetaData(address);
+            if (responseHeader != null && StringUtils.isNoneEmpty(responseHeader.getControllerLeaderAddress())) {
+                this.controllerLeaderAddress = responseHeader.getControllerLeaderAddress();
+                LOGGER.info("Update controller leader address to {}", this.controllerLeaderAddress);
+                return true;
+            }
+        } catch (final Exception e) {
+            LOGGER.error("Failed to update controller metadata", e);
+        }
+
         return false;
     }
 
