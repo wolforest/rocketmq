@@ -145,7 +145,6 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
      *
      * @return response
      */
-
     private RemotingCommand rewriteResponseForStaticTopic(SendMessageResponseHeader responseHeader,
         TopicQueueMappingContext mappingContext) {
         try {

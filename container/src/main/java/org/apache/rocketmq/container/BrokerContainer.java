@@ -239,13 +239,13 @@ public class BrokerContainer implements IBrokerContainer {
         final MessageStoreConfig storeConfig) throws Exception {
         if (storeConfig.isEnableDLegerCommitLog()) {
             return this.addDLedgerBroker(brokerConfig, storeConfig);
-        } else {
-            if (brokerConfig.getBrokerId() == MixAll.MASTER_ID && storeConfig.getBrokerRole() != BrokerRole.SLAVE) {
-                return this.addMasterBroker(brokerConfig, storeConfig);
-            }
-            if (brokerConfig.getBrokerId() != MixAll.MASTER_ID && storeConfig.getBrokerRole() == BrokerRole.SLAVE) {
-                return this.addSlaveBroker(brokerConfig, storeConfig);
-            }
+        }
+
+        if (brokerConfig.getBrokerId() == MixAll.MASTER_ID && storeConfig.getBrokerRole() != BrokerRole.SLAVE) {
+            return this.addMasterBroker(brokerConfig, storeConfig);
+        }
+        if (brokerConfig.getBrokerId() != MixAll.MASTER_ID && storeConfig.getBrokerRole() == BrokerRole.SLAVE) {
+            return this.addSlaveBroker(brokerConfig, storeConfig);
         }
 
         return null;
@@ -260,25 +260,26 @@ public class BrokerContainer implements IBrokerContainer {
         InnerBrokerController brokerController = new InnerBrokerController(this, brokerConfig, storeConfig);
         BrokerIdentity brokerIdentity = brokerController.getBrokerIdentity();
         final BrokerController previousBroker = dLedgerBrokerControllers.putIfAbsent(brokerIdentity, brokerController);
-        if (previousBroker == null) {
-            // New dLedger broker added, start it
-            try {
-                BrokerLogbackConfigurator.doConfigure(brokerIdentity);
-                final boolean initResult = brokerController.initialize();
-                if (!initResult) {
-                    dLedgerBrokerControllers.remove(brokerIdentity);
-                    brokerController.shutdown();
-                    throw new Exception("Failed to init dLedger broker " + brokerIdentity.getCanonicalName());
-                }
-            } catch (Exception e) {
-                // Remove the failed dLedger broker and throw the exception
+        if (previousBroker != null) {
+            throw new Exception(brokerIdentity.getCanonicalName() + " has already been added to current broker container");
+        }
+
+        // New dLedger broker added, start it
+        try {
+            BrokerLogbackConfigurator.doConfigure(brokerIdentity);
+            final boolean initResult = brokerController.initialize();
+            if (!initResult) {
                 dLedgerBrokerControllers.remove(brokerIdentity);
                 brokerController.shutdown();
-                throw new Exception("Failed to initialize dLedger broker " + brokerIdentity.getCanonicalName(), e);
+                throw new Exception("Failed to init dLedger broker " + brokerIdentity.getCanonicalName());
             }
-            return brokerController;
+        } catch (Exception e) {
+            // Remove the failed dLedger broker and throw the exception
+            dLedgerBrokerControllers.remove(brokerIdentity);
+            brokerController.shutdown();
+            throw new Exception("Failed to initialize dLedger broker " + brokerIdentity.getCanonicalName(), e);
         }
-        throw new Exception(brokerIdentity.getCanonicalName() + " has already been added to current broker container");
+        return brokerController;
     }
 
     public InnerBrokerController addMasterBroker(final BrokerConfig masterBrokerConfig,
@@ -292,31 +293,32 @@ public class BrokerContainer implements IBrokerContainer {
         InnerBrokerController masterBroker = new InnerBrokerController(this, masterBrokerConfig, storeConfig);
         BrokerIdentity brokerIdentity = masterBroker.getBrokerIdentity();
         final BrokerController previousBroker = masterBrokerControllers.putIfAbsent(brokerIdentity, masterBroker);
-        if (previousBroker == null) {
-            // New master broker added, start it
-            try {
-                BrokerLogbackConfigurator.doConfigure(masterBrokerConfig);
-                final boolean initResult = masterBroker.initialize();
-                if (!initResult) {
-                    masterBrokerControllers.remove(brokerIdentity);
-                    masterBroker.shutdown();
-                    throw new Exception("Failed to init master broker " + masterBrokerConfig.getCanonicalName());
-                }
+        if (previousBroker != null) {
+            throw new Exception(masterBrokerConfig.getCanonicalName() + " has already been added to current broker container");
+        }
 
-                for (InnerSalveBrokerController slaveBroker : this.getSlaveBrokers()) {
-                    if (slaveBroker.getMessageStore().getMasterStoreInProcess() == null) {
-                        slaveBroker.getMessageStore().setMasterStoreInProcess(masterBroker.getMessageStore());
-                    }
-                }
-            } catch (Exception e) {
-                // Remove the failed master broker and throw the exception
+        // New master broker added, start it
+        try {
+            BrokerLogbackConfigurator.doConfigure(masterBrokerConfig);
+            final boolean initResult = masterBroker.initialize();
+            if (!initResult) {
                 masterBrokerControllers.remove(brokerIdentity);
                 masterBroker.shutdown();
-                throw new Exception("Failed to initialize master broker " + masterBrokerConfig.getCanonicalName(), e);
+                throw new Exception("Failed to init master broker " + masterBrokerConfig.getCanonicalName());
             }
-            return masterBroker;
+
+            for (InnerSalveBrokerController slaveBroker : this.getSlaveBrokers()) {
+                if (slaveBroker.getMessageStore().getMasterStoreInProcess() == null) {
+                    slaveBroker.getMessageStore().setMasterStoreInProcess(masterBroker.getMessageStore());
+                }
+            }
+        } catch (Exception e) {
+            // Remove the failed master broker and throw the exception
+            masterBrokerControllers.remove(brokerIdentity);
+            masterBroker.shutdown();
+            throw new Exception("Failed to initialize master broker " + masterBrokerConfig.getCanonicalName(), e);
         }
-        throw new Exception(masterBrokerConfig.getCanonicalName() + " has already been added to current broker container");
+        return masterBroker;
     }
 
     /**
@@ -339,29 +341,30 @@ public class BrokerContainer implements IBrokerContainer {
         InnerSalveBrokerController slaveBroker = new InnerSalveBrokerController(this, slaveBrokerConfig, storeConfig);
         BrokerIdentity brokerIdentity = slaveBroker.getBrokerIdentity();
         final InnerSalveBrokerController previousBroker = slaveBrokerControllers.putIfAbsent(brokerIdentity, slaveBroker);
-        if (previousBroker == null) {
-            // New slave broker added, start it
-            try {
-                BrokerLogbackConfigurator.doConfigure(slaveBrokerConfig);
-                final boolean initResult = slaveBroker.initialize();
-                if (!initResult) {
-                    slaveBrokerControllers.remove(brokerIdentity);
-                    slaveBroker.shutdown();
-                    throw new Exception("Failed to init slave broker " + slaveBrokerConfig.getCanonicalName());
-                }
-                BrokerController masterBroker = this.peekMasterBroker();
-                if (slaveBroker.getMessageStore().getMasterStoreInProcess() == null && masterBroker != null) {
-                    slaveBroker.getMessageStore().setMasterStoreInProcess(masterBroker.getMessageStore());
-                }
-            } catch (Exception e) {
-                // Remove the failed slave broker and throw the exception
+        if (previousBroker != null) {
+            throw new Exception(slaveBrokerConfig.getCanonicalName() + " has already been added to current broker container");
+        }
+
+        // New slave broker added, start it
+        try {
+            BrokerLogbackConfigurator.doConfigure(slaveBrokerConfig);
+            final boolean initResult = slaveBroker.initialize();
+            if (!initResult) {
                 slaveBrokerControllers.remove(brokerIdentity);
                 slaveBroker.shutdown();
-                throw new Exception("Failed to initialize slave broker " + slaveBrokerConfig.getCanonicalName(), e);
+                throw new Exception("Failed to init slave broker " + slaveBrokerConfig.getCanonicalName());
             }
-            return slaveBroker;
+            BrokerController masterBroker = this.peekMasterBroker();
+            if (slaveBroker.getMessageStore().getMasterStoreInProcess() == null && masterBroker != null) {
+                slaveBroker.getMessageStore().setMasterStoreInProcess(masterBroker.getMessageStore());
+            }
+        } catch (Exception e) {
+            // Remove the failed slave broker and throw the exception
+            slaveBrokerControllers.remove(brokerIdentity);
+            slaveBroker.shutdown();
+            throw new Exception("Failed to initialize slave broker " + slaveBrokerConfig.getCanonicalName(), e);
         }
-        throw new Exception(slaveBrokerConfig.getCanonicalName() + " has already been added to current broker container");
+        return slaveBroker;
     }
 
     @Override
