@@ -19,14 +19,10 @@ package org.apache.rocketmq.remoting.rpc;
 import org.apache.rocketmq.remoting.CommandCustomHeader;
 
 public class RpcResponse   {
-    private int code;
+    private final int code;
     private CommandCustomHeader header;
     private Object body;
     public RpcException exception;
-
-    public RpcResponse() {
-
-    }
 
     public RpcResponse(int code, CommandCustomHeader header, Object body) {
         this.code = code;

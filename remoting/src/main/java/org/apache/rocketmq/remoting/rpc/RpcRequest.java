@@ -18,8 +18,8 @@ package org.apache.rocketmq.remoting.rpc;
 
 public class RpcRequest {
     int code;
-    private RpcRequestHeader header;
-    private Object body;
+    private final RpcRequestHeader header;
+    private final Object body;
 
     public RpcRequest(int code, RpcRequestHeader header, Object body) {
         this.code = code;

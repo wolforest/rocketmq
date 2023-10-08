@@ -24,7 +24,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,7 +31,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -49,9 +47,8 @@ public class RemotingCommand {
     static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_REMOTING_NAME);
     private static final int RPC_TYPE = 0; // 0, REQUEST_COMMAND
     private static final int RPC_ONEWAY = 1; // 0, RPC
-    private static final Map<Class<? extends CommandCustomHeader>, Field[]> CLASS_HASH_MAP =
-        new HashMap<>();
-    private static final Map<Class, String> CANONICAL_NAME_CACHE = new HashMap<>();
+    private static final Map<Class<? extends CommandCustomHeader>, Field[]> CLASS_HASH_MAP = new HashMap<>();
+    private static final Map<Class<?>, String> CANONICAL_NAME_CACHE = new HashMap<>();
     // 1, Oneway
     // 1, RESPONSE_COMMAND
     private static final Map<Field, Boolean> NULLABLE_FIELD_CACHE = new HashMap<>();
@@ -66,7 +63,7 @@ public class RemotingCommand {
     private static final String BOOLEAN_CANONICAL_NAME_2 = boolean.class.getCanonicalName();
     private static final String BOUNDARY_TYPE_CANONICAL_NAME = BoundaryType.class.getCanonicalName();
     private static volatile int configVersion = -1;
-    private static AtomicInteger requestId = new AtomicInteger(0);
+    private static final AtomicInteger requestId = new AtomicInteger(0);
 
     private static SerializeType serializeTypeConfigInThisServer = SerializeType.JSON;
 
@@ -119,14 +116,17 @@ public class RemotingCommand {
     protected static void setCmdVersion(RemotingCommand cmd) {
         if (configVersion >= 0) {
             cmd.setVersion(configVersion);
-        } else {
-            String v = System.getProperty(REMOTING_VERSION_KEY);
-            if (v != null) {
-                int value = Integer.parseInt(v);
-                cmd.setVersion(value);
-                configVersion = value;
-            }
+            return;
         }
+
+        String v = System.getProperty(REMOTING_VERSION_KEY);
+        if (v == null) {
+            return;
+        }
+
+        int value = Integer.parseInt(v);
+        cmd.setVersion(value);
+        configVersion = value;
     }
 
     public static RemotingCommand createResponseCommand(Class<? extends CommandCustomHeader> classHeader) {
@@ -162,15 +162,8 @@ public class RemotingCommand {
 
     private static RemotingCommand createResponseCommand(RemotingCommand cmd, Class<? extends CommandCustomHeader> classHeader) {
         try {
-            CommandCustomHeader objectHeader = classHeader.getDeclaredConstructor().newInstance();
-            cmd.customHeader = objectHeader;
-        } catch (InstantiationException e) {
-            return null;
-        } catch (IllegalAccessException e) {
-            return null;
-        } catch (InvocationTargetException e) {
-            return null;
-        } catch (NoSuchMethodException e) {
+            cmd.customHeader = classHeader.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             return null;
         }
 
@@ -206,6 +199,7 @@ public class RemotingCommand {
             bodyData = new byte[bodyLength];
             byteBuffer.readBytes(bodyData);
         }
+        assert cmd != null;
         cmd.body = bodyData;
 
         return cmd;
@@ -302,13 +296,7 @@ public class RemotingCommand {
         CommandCustomHeader objectHeader;
         try {
             objectHeader = classHeader.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException e) {
-            return null;
-        } catch (IllegalAccessException e) {
-            return null;
-        } catch (InvocationTargetException e) {
-            return null;
-        } catch (NoSuchMethodException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             return null;
         }
 
@@ -377,7 +365,7 @@ public class RemotingCommand {
         }
 
         Set<Field> fieldList = new HashSet<>();
-        for (Class className = classHeader; className != Object.class; className = className.getSuperclass()) {
+        for (Class<?> className = classHeader; className != Object.class; className = className.getSuperclass()) {
             Field[] fields = className.getDeclaredFields();
             fieldList.addAll(Arrays.asList(fields));
         }
@@ -398,7 +386,7 @@ public class RemotingCommand {
         return NULLABLE_FIELD_CACHE.get(field);
     }
 
-    private String getCanonicalName(Class clazz) {
+    private String getCanonicalName(Class<?> clazz) {
         String name = CANONICAL_NAME_CACHE.get(clazz);
 
         if (name == null) {
@@ -540,7 +528,7 @@ public class RemotingCommand {
         // header data
         result.put(headerData);
 
-        ((Buffer) result).flip();
+        result.flip();
 
         return result;
     }
