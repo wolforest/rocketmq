@@ -44,7 +44,7 @@ public class CheckContext {
 
     private int getMessageNullCount = 1;
     long newOffset;
-    long i;
+    long counter;
     long nextOpOffset;
     private int putInQueueCount = 0;
     private int escapeFailCnt = 0;
@@ -61,12 +61,12 @@ public class CheckContext {
 
     public void initOffset() {
         this.setNewOffset(this.getHalfOffset());
-        this.setI(this.getHalfOffset());
+        this.setCounter(this.getHalfOffset());
         this.setNextOpOffset(this.getPullResult().getNextBeginOffset());
     }
 
-    public void incI() {
-        this.i++;
+    public void incCounter() {
+        this.counter++;
     }
 
     public void incEscapeFailCnt() {
@@ -157,12 +157,12 @@ public class CheckContext {
         this.newOffset = newOffset;
     }
 
-    public long getI() {
-        return i;
+    public long getCounter() {
+        return counter;
     }
 
-    public void setI(long i) {
-        this.i = i;
+    public void setCounter(long counter) {
+        this.counter = counter;
     }
 
     public long getNextOpOffset() {

@@ -60,7 +60,7 @@ public class TopicConfigManager extends ConfigManager {
 
     private transient final Lock topicConfigTableLock = new ReentrantLock();
     protected ConcurrentMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>(1024);
-    private DataVersion dataVersion = new DataVersion();
+    private final DataVersion dataVersion = new DataVersion();
     protected transient BrokerController brokerController;
 
     public TopicConfigManager() {}

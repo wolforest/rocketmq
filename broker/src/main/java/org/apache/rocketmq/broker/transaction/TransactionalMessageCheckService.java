@@ -154,12 +154,12 @@ public class TransactionalMessageCheckService extends ServiceThread {
                 log.info("Queue={} process time reach max={}", messageQueue, MAX_PROCESS_TIME_LIMIT);
                 break;
             }
-            if (context.getRemoveMap().containsKey(context.getI())) {
+            if (context.getRemoveMap().containsKey(context.getCounter())) {
                 removeOffset(context);
                 continue;
             }
 
-            GetResult getResult = getHalfMsg(messageQueue, context.getI());
+            GetResult getResult = getHalfMsg(messageQueue, context.getCounter());
             context.setMsgExt(getResult.getMsg());
             if (context.getMsgExt() == null) {
                 if (!handleNullHalfMsg(context, getResult)) {
@@ -179,14 +179,14 @@ public class TransactionalMessageCheckService extends ServiceThread {
             }
 
             if (context.getMsgExt().getStoreTimestamp() >= context.getStartTime()) {
-                log.debug("Fresh stored. the miss offset={}, check it later, store={}", context.getI(), new Date(context.getMsgExt().getStoreTimestamp()));
+                log.debug("Fresh stored. the miss offset={}, check it later, store={}", context.getCounter(), new Date(context.getMsgExt().getStoreTimestamp()));
                 break;
             }
 
             long valueOfCurrentMinusBorn = System.currentTimeMillis() - context.getMsgExt().getBornTimestamp();
             String checkImmunityTimeStr = context.getMsgExt().getUserProperty(MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS);
             if (null == checkImmunityTimeStr && 0 <= valueOfCurrentMinusBorn && valueOfCurrentMinusBorn < transactionTimeout) {
-                log.debug("New arrived, the miss offset={}, check it later checkImmunity={}, born={}", context.getI(), transactionTimeout, new Date(context.getMsgExt().getBornTimestamp()));
+                log.debug("New arrived, the miss offset={}, check it later checkImmunity={}, born={}", context.getCounter(), transactionTimeout, new Date(context.getMsgExt().getBornTimestamp()));
                 break;
             }
 
@@ -200,7 +200,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
                 continue;
             }
 
-            if (!putBackHalfMsgQueue(context.getMsgExt(), context.getI())) {
+            if (!putBackHalfMsgQueue(context.getMsgExt(), context.getCounter())) {
                 continue;
             }
 
@@ -211,9 +211,9 @@ public class TransactionalMessageCheckService extends ServiceThread {
     }
 
     private void removeOffset(CheckContext context) {
-        log.debug("Half offset {} has been committed/rolled back", context.getI());
-        Long removedOpOffset = context.getRemoveMap().remove(context.getI());
-        context.getOpMsgMap().get(removedOpOffset).remove(context.getI());
+        log.debug("Half offset {} has been committed/rolled back", context.getCounter());
+        Long removedOpOffset = context.getRemoveMap().remove(context.getCounter());
+        context.getOpMsgMap().get(removedOpOffset).remove(context.getCounter());
         if (context.getOpMsgMap().get(removedOpOffset).size() == 0) {
             context.getOpMsgMap().remove(removedOpOffset);
             context.getDoneOpOffset().add(removedOpOffset);
@@ -226,15 +226,15 @@ public class TransactionalMessageCheckService extends ServiceThread {
             return false;
         }
         if (getResult.getPullResult().getPullStatus() == PullStatus.NO_NEW_MSG) {
-            log.debug("No new msg, the miss offset={} in={}, continue check={}, pull result={}", context.getI(),
+            log.debug("No new msg, the miss offset={} in={}, continue check={}, pull result={}", context.getCounter(),
                 context.getMessageQueue(), context.getGetMessageNullCount(), getResult.getPullResult());
             return false;
         }
 
         log.info("Illegal offset, the miss offset={} in={}, continue check={}, pull result={}",
-            context.getI(), context.getMessageQueue(), context.getGetMessageNullCount(), getResult.getPullResult());
-        context.setI(getResult.getPullResult().getNextBeginOffset());
-        context.setNewOffset(context.getI());
+            context.getCounter(), context.getMessageQueue(), context.getGetMessageNullCount(), getResult.getPullResult());
+        context.setCounter(getResult.getPullResult().getNextBeginOffset());
+        context.setNewOffset(context.getCounter());
 
         return true;
     }
@@ -260,8 +260,8 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
         if (isSuccess) {
             context.setEscapeFailCnt(0);
-            context.setNewOffset(context.getI() + 1);
-            context.incI();
+            context.setNewOffset(context.getCounter() + 1);
+            context.incCounter();
 
             return;
         }
@@ -275,15 +275,15 @@ public class TransactionalMessageCheckService extends ServiceThread {
             Thread.sleep(100L * (2 ^ context.getEscapeFailCnt()));
         } else {
             context.setEscapeFailCnt(0);
-            context.setNewOffset(context.getI() + 1);
-            context.incI();
+            context.setNewOffset(context.getCounter() + 1);
+            context.incCounter();
         }
     }
 
     private void skipOrDiscard(CheckContext context) {
         context.getListener().resolveDiscardMsg(context.getMsgExt());
-        context.setNewOffset(context.getI() + 1);
-        context.incI();
+        context.setNewOffset(context.getCounter() + 1);
+        context.incCounter();
     }
 
     private Long checkImmunityTime(CheckContext context, String checkImmunityTimeStr, long valueOfCurrentMinusBorn) {
@@ -301,8 +301,8 @@ public class TransactionalMessageCheckService extends ServiceThread {
             return checkImmunityTime;
         }
 
-        context.setNewOffset(context.getI() + 1);
-        context.incI();
+        context.setNewOffset(context.getCounter() + 1);
+        context.incCounter();
         return null;
     }
 
@@ -332,8 +332,8 @@ public class TransactionalMessageCheckService extends ServiceThread {
             context.getMsgExt().getQueueOffset(), context.getMsgExt().getCommitLogOffset());
         context.getListener().resolveHalfMsg(context.getMsgExt());
 
-        context.setNewOffset(context.getI() + 1);
-        context.incI();
+        context.setNewOffset(context.getCounter() + 1);
+        context.incCounter();
     }
 
     private void noNeedCheck(CheckContext context) {
@@ -351,7 +351,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
             ThreadUtils.sleep(SLEEP_WHILE_NO_OP);
 
         } else {
-            log.info("The miss message offset:{}, pullOffsetOfOp:{}, miniOffset:{} get more opMsg.", context.getI(), context.getNextOpOffset(), context.getHalfOffset());
+            log.info("The miss message offset:{}, pullOffsetOfOp:{}, miniOffset:{} get more opMsg.", context.getCounter(), context.getNextOpOffset(), context.getHalfOffset());
         }
     }
 
@@ -403,22 +403,19 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
     private boolean putBackHalfMsgQueue(MessageExt msgExt, long offset) {
         PutMessageResult putMessageResult = putBackToHalfQueueReturnResult(msgExt);
-        if (putMessageResult != null && putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
-            msgExt.setQueueOffset(putMessageResult.getAppendMessageResult().getLogicsOffset());
-            msgExt.setCommitLogOffset(putMessageResult.getAppendMessageResult().getWroteOffset());
-            msgExt.setMsgId(putMessageResult.getAppendMessageResult().getMsgId());
-            log.debug("Send check message, the offset={} restored in queueOffset={} "
-                    + "commitLogOffset={} "
-                    + "newMsgId={} realMsgId={} topic={}",
-                offset, msgExt.getQueueOffset(), msgExt.getCommitLogOffset(), msgExt.getMsgId(),
-                msgExt.getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX),
-                msgExt.getTopic());
-            return true;
-        } else {
-            log.error("PutBackToHalfQueueReturnResult write failed, topic: {}, queueId: {}, msgId: {}",
-                msgExt.getTopic(), msgExt.getQueueId(), msgExt.getMsgId());
+        if (putMessageResult == null || putMessageResult.getPutMessageStatus() != PutMessageStatus.PUT_OK) {
+            log.error("PutBackToHalfQueueReturnResult write failed, topic: {}, queueId: {}, msgId: {}", msgExt.getTopic(), msgExt.getQueueId(), msgExt.getMsgId());
             return false;
         }
+
+        msgExt.setQueueOffset(putMessageResult.getAppendMessageResult().getLogicsOffset());
+        msgExt.setCommitLogOffset(putMessageResult.getAppendMessageResult().getWroteOffset());
+        msgExt.setMsgId(putMessageResult.getAppendMessageResult().getMsgId());
+
+        log.debug("Send check message, the offset={} restored in queueOffset={} commitLogOffset={} newMsgId={} realMsgId={} topic={}",
+            offset, msgExt.getQueueOffset(), msgExt.getCommitLogOffset(), msgExt.getMsgId(), msgExt.getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX), msgExt.getTopic());
+
+        return true;
     }
 
     private long getImmunityTime(String checkImmunityTimeStr, long transactionTimeout) {
@@ -559,7 +556,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
      * Write messageExt to Half topic again
      *
      * @param messageExt Message will be write back to queue
-     * @return Put result can used to determine the specific results of storage.
+     * @return Put result is used to determine the specific results of storage.
      */
     private PutMessageResult putBackToHalfQueueReturnResult(MessageExt messageExt) {
         PutMessageResult putMessageResult = null;

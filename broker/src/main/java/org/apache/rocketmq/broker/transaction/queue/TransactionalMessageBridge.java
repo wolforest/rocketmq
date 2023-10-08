@@ -52,6 +52,7 @@ import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
+import org.apache.rocketmq.store.stats.BrokerStatsManager;
 
 import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_CONSUMER_GROUP;
 import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_IS_SYSTEM;
@@ -145,25 +146,25 @@ public class TransactionalMessageBridge {
     public PutMessageResult putMessageReturnResult(MessageExtBrokerInner messageInner) {
         LOGGER.debug("[BUG-TO-FIX] Thread:{} msgID:{}", Thread.currentThread().getName(), messageInner.getMsgId());
         PutMessageResult result = store.putMessage(messageInner);
+
         if (result != null && result.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
-            this.brokerController.getBrokerStatsManager().incTopicPutNums(messageInner.getTopic());
-            this.brokerController.getBrokerStatsManager().incTopicPutSize(messageInner.getTopic(),
-                result.getAppendMessageResult().getWroteBytes());
-            this.brokerController.getBrokerStatsManager().incBrokerPutNums();
+            BrokerStatsManager statsManager = this.brokerController.getBrokerStatsManager();
+            statsManager.incTopicPutNums(messageInner.getTopic());
+            statsManager.incTopicPutSize(messageInner.getTopic(), result.getAppendMessageResult().getWroteBytes());
+            statsManager.incBrokerPutNums();
         }
         return result;
     }
 
     public boolean putMessage(MessageExtBrokerInner messageInner) {
         PutMessageResult putMessageResult = store.putMessage(messageInner);
-        if (putMessageResult != null
-            && putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
+
+        if (putMessageResult != null && putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
             return true;
-        } else {
-            LOGGER.error("Put message failed, topic: {}, queueId: {}, msgId: {}",
-                messageInner.getTopic(), messageInner.getQueueId(), messageInner.getMsgId());
-            return false;
         }
+
+        LOGGER.error("Put message failed, topic: {}, queueId: {}, msgId: {}", messageInner.getTopic(), messageInner.getQueueId(), messageInner.getMsgId());
+        return false;
     }
 
     public MessageExtBrokerInner renewImmunityHalfMessageInner(MessageExt msgExt) {
@@ -200,15 +201,23 @@ public class TransactionalMessageBridge {
         return msgInner;
     }
 
-    public boolean writeOp(Integer queueId,Message message) {
+    private MessageQueue getOpQueue(Integer queueId) {
         MessageQueue opQueue = opQueueMap.get(queueId);
-        if (opQueue == null) {
-            opQueue = getOpQueueByHalf(queueId, this.brokerController.getBrokerConfig().getBrokerName());
-            MessageQueue oldQueue = opQueueMap.putIfAbsent(queueId, opQueue);
-            if (oldQueue != null) {
-                opQueue = oldQueue;
-            }
+        if (opQueue != null) {
+            return opQueue;
         }
+
+        opQueue = getOpQueueByHalf(queueId, this.brokerController.getBrokerConfig().getBrokerName());
+        MessageQueue oldQueue = opQueueMap.putIfAbsent(queueId, opQueue);
+        if (oldQueue != null) {
+            opQueue = oldQueue;
+        }
+
+        return opQueue;
+    }
+
+    public boolean writeOp(Integer queueId,Message message) {
+        MessageQueue opQueue = getOpQueue(queueId);
 
         PutMessageResult result = putMessageReturnResult(makeOpMessageInner(message, opQueue));
         if (result == null) {
