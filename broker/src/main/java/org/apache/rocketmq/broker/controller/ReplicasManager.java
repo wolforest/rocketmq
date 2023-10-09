@@ -463,7 +463,7 @@ public class ReplicasManager {
             this.brokerConfig.getBrokerElectionPriority()
         );
     }
-    
+
     /**
      * Register broker to controller, and persist the metadata to file
      *
