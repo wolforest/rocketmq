@@ -593,6 +593,7 @@ public class PopReviveService extends ServiceThread {
         newCk.setCId(oldCK.getCId());
         newCk.setTopic(oldCK.getTopic());
         newCk.setQueueId(oldCK.getQueueId());
+        newCk.setBrokerName(oldCK.getBrokerName());
         newCk.addDiff(0);
         MessageExtBrokerInner ckMsg = brokerController.getBrokerNettyServer().getPopServiceManager().buildCkMsg(newCk, queueId);
         brokerController.getMessageStore().putMessage(ckMsg);
