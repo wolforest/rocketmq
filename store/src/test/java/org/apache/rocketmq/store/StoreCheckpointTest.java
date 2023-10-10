@@ -20,12 +20,12 @@
  */
 package org.apache.rocketmq.store;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.junit.After;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,6 +50,6 @@ public class StoreCheckpointTest {
     @After
     public void destroy() {
         File file = new File("target/checkpoint_test");
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 }
