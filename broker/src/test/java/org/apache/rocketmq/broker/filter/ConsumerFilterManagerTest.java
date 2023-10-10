@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.filter.ExpressionType;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.remoting.protocol.filter.FilterAPI;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.junit.Test;
@@ -228,7 +229,7 @@ public class ConsumerFilterManagerTest {
             assertThat(filterData.isDead()).isTrue();
             assertThat(filterData.getCompiledExpression()).isNotNull();
         } finally {
-            UtilAll.deleteFile(new File("./unit_test"));
+            IOTinyUtils.deleteFile(new File("./unit_test"));
         }
     }
 
