@@ -26,6 +26,7 @@ import org.apache.rocketmq.broker.topic.TopicConfigManager;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.remoting.protocol.header.controller.ElectMasterResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.GetMetaDataResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.register.ApplyBrokerIdResponseHeader;
@@ -114,7 +115,7 @@ public class ReplicasManagerRegisterTest {
 
     @Before
     public void setUp() throws Exception {
-        UtilAll.deleteFile(new File(STORE_BASE_PATH));
+        IOTinyUtils.deleteFile(new File(STORE_BASE_PATH));
         this.mockedBrokerController = Mockito.mock(BrokerController.class);
         this.mockedBrokerClusterService = Mockito.mock(BrokerClusterService.class);
         this.mockedBrokerMessageService = Mockito.mock(BrokerMessageService.class);
