@@ -17,14 +17,14 @@
 
 package org.apache.rocketmq.store;
 
-import java.io.File;
-import java.util.Random;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.queue.ConsumeQueueExt;
 import org.apache.rocketmq.store.queue.CqExtUnit;
 import org.junit.After;
 import org.junit.Test;
+
+import java.io.File;
+import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -238,6 +238,6 @@ public class ConsumeQueueExtTest {
 
     @After
     public void destroy() {
-        UtilAll.deleteFile(new File(STORE_PATH));
+        IOTinyUtils.deleteFile(new File(STORE_PATH));
     }
 }
