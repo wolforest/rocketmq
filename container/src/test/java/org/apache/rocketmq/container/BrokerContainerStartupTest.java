@@ -130,7 +130,7 @@ public class BrokerContainerStartupTest {
 
     @Before
     public void clear() {
-        UtilAll.deleteFile(new File(storePathRootDir));
+        IOTinyUtils.deleteFile(new File(storePathRootDir));
     }
 
     @After
