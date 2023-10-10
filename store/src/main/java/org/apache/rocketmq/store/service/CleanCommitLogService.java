@@ -16,10 +16,7 @@
  */
 package org.apache.rocketmq.store.service;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
@@ -28,6 +25,9 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
 import org.apache.rocketmq.store.ha.autoswitch.AutoSwitchHAService;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class CleanCommitLogService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -248,7 +248,7 @@ public class CleanCommitLogService {
             return false;
         } else {
             long majorFileSize = messageStore.getMajorFileSize();
-            long partitionLogicalSize = UtilAll.getDiskPartitionTotalSpace(minStorePath) / replicasPerPartition;
+            long partitionLogicalSize = IOTinyUtils.getDiskPartitionTotalSpace(minStorePath) / replicasPerPartition;
             double logicalRatio = 1.0 * majorFileSize / partitionLogicalSize;
 
             if (logicalRatio > messageStore.getMessageStoreConfig().getLogicalDiskSpaceCleanForciblyThreshold()) {
