@@ -209,7 +209,7 @@ public class ConsumeQueueExtTest {
             assertThat(expectMinAddress).isEqualTo(minAddress);
         } finally {
             consumeQueueExt.destroy();
-            UtilAll.deleteFile(new File(STORE_PATH));
+            IOTinyUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
