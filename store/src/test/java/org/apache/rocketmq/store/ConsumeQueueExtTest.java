@@ -126,7 +126,7 @@ public class ConsumeQueueExtTest {
             }
         } finally {
             consumeQueueExt.destroy();
-            UtilAll.deleteFile(new File(STORE_PATH));
+            IOTinyUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
