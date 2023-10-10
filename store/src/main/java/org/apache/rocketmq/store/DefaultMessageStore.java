@@ -550,7 +550,7 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         {
-            double logicsRatio = UtilAll.getDiskPartitionSpaceUsedPercent(getStorePathLogic());
+            double logicsRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(getStorePathLogic());
             result.put(RunningStats.consumeQueueDiskRatio.name(), String.valueOf(logicsRatio));
         }
 
