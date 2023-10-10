@@ -18,14 +18,13 @@
 package org.apache.rocketmq.broker.controller;
 
 import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.broker.service.BrokerClusterService;
 import org.apache.rocketmq.broker.service.BrokerMessageService;
-import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.broker.slave.SlaveSynchronize;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.Pair;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.remoting.protocol.body.SyncStateSet;
 import org.apache.rocketmq.remoting.protocol.header.controller.ElectMasterResponseHeader;
@@ -189,7 +188,7 @@ public class ReplicasManagerTest {
     public void after() {
         replicasManager.shutdown();
         brokerController.shutdown();
-        UtilAll.deleteFile(new File(STORE_BASE_PATH));
+        IOTinyUtils.deleteFile(new File(STORE_BASE_PATH));
     }
 
     @Test
