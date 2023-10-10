@@ -212,4 +212,22 @@ public class IOTinyUtils {
         return -1;
     }
 
+    public static long getDiskPartitionTotalSpace(final String path) {
+        if (null == path || path.isEmpty()) {
+            return -1;
+        }
+
+        try {
+            File file = new File(path);
+
+            if (!file.exists()) {
+                return -1;
+            }
+
+            return file.getTotalSpace() - file.getFreeSpace() + file.getUsableSpace();
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
 }
