@@ -252,7 +252,7 @@ public class UtilAll {
         File file = new File(path);
         return file.exists();
     }
-
+    @Deprecated
     public static double getDiskPartitionSpaceUsedPercent(final String path) {
         if (null == path || path.isEmpty()) {
             STORE_LOG.error("Error when measuring disk space usage, path is null or empty, path : {}", path);
