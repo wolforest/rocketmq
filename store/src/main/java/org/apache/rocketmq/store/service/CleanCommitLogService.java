@@ -181,7 +181,7 @@ public class CleanCommitLogService {
         String[] storePaths = getCommitLogStorePath();
 
         for (String storePathPhysic : storePaths) {
-            double physicRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathPhysic);
+            double physicRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathPhysic);
             if (minPhysicRatio > physicRatio) {
                 minPhysicRatio = physicRatio;
                 minStorePath = storePathPhysic;
