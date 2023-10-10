@@ -17,37 +17,36 @@
 
 package org.apache.rocketmq.test.autoswitchrole;
 
-import java.io.File;
-import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.controller.ReplicasManager;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.ControllerConfig;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
-import org.apache.rocketmq.remoting.protocol.RemotingCommand;
-import org.apache.rocketmq.remoting.protocol.body.SyncStateSet;
 import org.apache.rocketmq.controller.ControllerManager;
 import org.apache.rocketmq.namesrv.NamesrvController;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
+import org.apache.rocketmq.remoting.protocol.RemotingCommand;
+import org.apache.rocketmq.remoting.protocol.body.SyncStateSet;
 import org.apache.rocketmq.remoting.protocol.header.controller.GetReplicaInfoRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.GetReplicaInfoResponseHeader;
-import org.apache.rocketmq.store.logfile.MappedFileQueue;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.ha.HAClient;
 import org.apache.rocketmq.store.ha.HAConnectionState;
 import org.apache.rocketmq.store.ha.autoswitch.AutoSwitchHAService;
 import org.apache.rocketmq.store.logfile.MappedFile;
+import org.apache.rocketmq.store.logfile.MappedFileQueue;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.File;
+import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -322,7 +321,7 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
             controllerManager.shutdown();
         }
         File file = new File(STORE_PATH_ROOT_PARENT_DIR);
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 
 }
