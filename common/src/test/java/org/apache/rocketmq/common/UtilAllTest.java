@@ -99,7 +99,7 @@ public class UtilAllTest {
         String tmpDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test";
 
         assertThat(IOTinyUtils.getDiskPartitionSpaceUsedPercent(null)).isCloseTo(-1, within(0.000001));
-        assertThat(UtilAll.getDiskPartitionSpaceUsedPercent("")).isCloseTo(-1, within(0.000001));
+        assertThat(IOTinyUtils.getDiskPartitionSpaceUsedPercent("")).isCloseTo(-1, within(0.000001));
         assertThat(UtilAll.getDiskPartitionSpaceUsedPercent("nonExistingPath")).isCloseTo(-1, within(0.000001));
         assertThat(UtilAll.getDiskPartitionSpaceUsedPercent(tmpDir)).isNotCloseTo(-1, within(0.000001));
     }
