@@ -53,6 +53,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.FlushDiskType;
@@ -131,7 +132,7 @@ public class DefaultMessageStoreTest {
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         File file = new File(messageStoreConfig.getStorePathRootDir());
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 
     private MessageStore buildMessageStore() throws Exception {
