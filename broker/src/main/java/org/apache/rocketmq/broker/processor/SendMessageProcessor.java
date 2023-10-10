@@ -719,7 +719,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         double logisRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathLogis);
 
         String storePathIndex = StorePathConfigHelper.getStorePathIndex(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
-        double indexRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathIndex);
+        double indexRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathIndex);
 
         return String.format("CL: %5.2f CQ: %5.2f INDEX: %5.2f", physicRatio, logisRatio, indexRatio);
     }
