@@ -232,7 +232,7 @@ public class ConsumeQueueExtTest {
             assertThat(expectMaxAddress).isEqualTo(maxAddress);
         } finally {
             consumeQueueExt.destroy();
-            UtilAll.deleteFile(new File(STORE_PATH));
+            IOTinyUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
