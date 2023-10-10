@@ -17,13 +17,12 @@
 
 package org.apache.rocketmq.store;
 
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.config.FlushDiskType;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
@@ -49,6 +48,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.apache.rocketmq.common.message.MessageDecoder.CHARSET_UTF8;
 import static org.apache.rocketmq.store.queue.ConsumeQueue.CQ_STORE_UNIT_SIZE;
@@ -525,7 +525,7 @@ public class DefaultMessageStoreCleanFilesTest {
 
         MessageStoreConfig messageStoreConfig = messageStore.getMessageStoreConfig();
         File file = new File(messageStoreConfig.getStorePathRootDir());
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 
     private class MessageStoreConfigForTest extends MessageStoreConfig {
