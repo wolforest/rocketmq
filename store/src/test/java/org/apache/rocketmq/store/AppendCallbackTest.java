@@ -17,21 +17,12 @@
 
 package org.apache.rocketmq.store;
 
-import java.io.File;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.commitlog.AppendMessageCallback;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.commitlog.DefaultAppendMessageCallback;
@@ -39,6 +30,15 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.File;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -66,7 +66,7 @@ public class AppendCallbackTest {
 
     @After
     public void destroy() {
-        UtilAll.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore"));
+        IOTinyUtils.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore"));
     }
 
     @Test
