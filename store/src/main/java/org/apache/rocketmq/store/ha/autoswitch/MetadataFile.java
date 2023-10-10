@@ -18,7 +18,6 @@
 package org.apache.rocketmq.store.ha.autoswitch;
 
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 
 import java.io.File;
@@ -51,7 +50,7 @@ public abstract class MetadataFile {
 
     public void clear() {
         clearInMem();
-        UtilAll.deleteFile(new File(filePath));
+        IOTinyUtils.deleteFile(new File(filePath));
     }
 
     public String getFilePath() {
