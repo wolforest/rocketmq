@@ -213,7 +213,7 @@ public class CleanCommitLogService {
 
         String storePathLogics = StorePathConfigHelper
             .getStorePathConsumeQueue(messageStore.getMessageStoreConfig().getStorePathRootDir());
-        double logicsRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathLogics);
+        double logicsRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathLogics);
         if (logicsRatio > getDiskSpaceWarningLevelRatio()) {
             boolean diskOK = messageStore.getRunningFlags().getAndMakeDiskFull();
             if (diskOK) {
