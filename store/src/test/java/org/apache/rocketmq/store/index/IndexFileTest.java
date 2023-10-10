@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +47,7 @@ public class IndexFileTest {
         assertThat(putResult).isFalse();
         indexFile.destroy(0);
         File file = new File("100");
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 
     @Test
