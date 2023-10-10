@@ -17,18 +17,18 @@
 
 package org.apache.rocketmq.remoting.protocol;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.CheckpointFile;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CheckpointFileTest {
 
@@ -88,7 +88,7 @@ public class CheckpointFileTest {
     @Test
     public void testAbNormalWriteAndRead() throws IOException {
         this.checkpoint.write(entryList);
-        UtilAll.deleteFile(new File(FILE_PATH));
+        IOTinyUtils.deleteFile(new File(FILE_PATH));
         List<EpochEntry> listFromFile = checkpoint.read();
         Assert.assertEquals(entryList, listFromFile);
         checkpoint.write(entryList);
