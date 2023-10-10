@@ -542,7 +542,7 @@ public class DefaultMessageStore implements MessageStore {
             String[] paths = commitLogStorePath.trim().split(MixAll.MULTI_PATH_SPLITTER);
             for (String clPath : paths) {
                 double physicRatio = IOTinyUtils.isPathExists(clPath) ?
-                    UtilAll.getDiskPartitionSpaceUsedPercent(clPath) : -1;
+                    IOTinyUtils.getDiskPartitionSpaceUsedPercent(clPath) : -1;
                 result.put(RunningStats.commitLogDiskRatio.name() + "_" + clPath, String.valueOf(physicRatio));
                 minPhysicsUsedRatio = Math.min(minPhysicsUsedRatio, physicRatio);
             }
