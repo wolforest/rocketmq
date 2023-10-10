@@ -49,7 +49,7 @@ public class IOTinyUtilsTest {
     public void init() {
         File dir = new File(testRootDir);
         if (dir.exists()) {
-            UtilAll.deleteFile(dir);
+            IOTinyUtils.deleteFile(dir);
         }
 
         dir.mkdirs();
