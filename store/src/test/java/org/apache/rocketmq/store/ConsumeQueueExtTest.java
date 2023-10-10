@@ -20,6 +20,7 @@ package org.apache.rocketmq.store;
 import java.io.File;
 import java.util.Random;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.queue.ConsumeQueueExt;
 import org.apache.rocketmq.store.queue.CqExtUnit;
 import org.junit.After;
@@ -97,7 +98,7 @@ public class ConsumeQueueExtTest {
             putSth(consumeQueueExt, true, false, UNIT_COUNT);
         } finally {
             consumeQueueExt.destroy();
-            UtilAll.deleteFile(new File(STORE_PATH));
+            IOTinyUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
