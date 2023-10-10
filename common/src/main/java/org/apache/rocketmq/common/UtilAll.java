@@ -651,7 +651,7 @@ public class UtilAll {
             throw new RuntimeException("Can not get local ip", e);
         }
     }
-
+    @Deprecated
     public static void deleteFile(File file) {
         if (!file.exists()) {
             return;
