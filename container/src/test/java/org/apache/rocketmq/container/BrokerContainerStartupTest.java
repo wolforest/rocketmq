@@ -17,17 +17,9 @@
 
 package org.apache.rocketmq.container;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
@@ -39,6 +31,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
@@ -138,6 +137,6 @@ public class BrokerContainerStartupTest {
         File configFile = new File(storePathRootDir);
         IOTinyUtils.deleteFile(configFile);
         IOTinyUtils.deleteEmptyDirectory(configFile);
-        UtilAll.deleteEmptyDirectory(configFile.getParentFile());
+        IOTinyUtils.deleteEmptyDirectory(configFile.getParentFile());
     }
 }
