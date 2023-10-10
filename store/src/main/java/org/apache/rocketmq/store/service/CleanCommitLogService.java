@@ -21,6 +21,7 @@ import java.util.Set;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -281,7 +282,7 @@ public class CleanCommitLogService {
         String[] paths = storePath.trim().split(MixAll.MULTI_PATH_SPLITTER);
         double minPhysicRatio = 100;
         for (String path : paths) {
-            double physicRatio = UtilAll.isPathExists(path) ?
+            double physicRatio = IOTinyUtils.isPathExists(path) ?
                 UtilAll.getDiskPartitionSpaceUsedPercent(path) : -1;
             minPhysicRatio = Math.min(minPhysicRatio, physicRatio);
             if (physicRatio > getDiskSpaceCleanForciblyRatio()) {

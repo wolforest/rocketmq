@@ -247,7 +247,7 @@ public class UtilAll {
             return -1;
         }
     }
-
+    @Deprecated
     public static boolean isPathExists(final String path) {
         File file = new File(path);
         return file.exists();

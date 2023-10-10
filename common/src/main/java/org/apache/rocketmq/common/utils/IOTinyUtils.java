@@ -165,4 +165,9 @@ public class IOTinyUtils {
         return nf.format(offset);
     }
 
+    public static boolean isPathExists(final String path) {
+        File file = new File(path);
+        return file.exists();
+    }
+
 }
