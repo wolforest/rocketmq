@@ -137,7 +137,7 @@ public class BrokerContainerStartupTest {
     public void tearDown() {
         File configFile = new File(storePathRootDir);
         IOTinyUtils.deleteFile(configFile);
-        UtilAll.deleteEmptyDirectory(configFile);
+        IOTinyUtils.deleteEmptyDirectory(configFile);
         UtilAll.deleteEmptyDirectory(configFile.getParentFile());
     }
 }
