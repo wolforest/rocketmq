@@ -28,6 +28,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
@@ -99,7 +100,7 @@ public class BrokerContainerStartupTest {
     @After
     public void destroy() {
         for (File file : TMP_FILE_LIST) {
-            UtilAll.deleteFile(file);
+            IOTinyUtils.deleteFile(file);
         }
     }
 
