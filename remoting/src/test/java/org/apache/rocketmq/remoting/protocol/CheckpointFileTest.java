@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.CheckpointFile;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -71,7 +72,7 @@ public class CheckpointFileTest {
 
     @After
     public void destroy() {
-        UtilAll.deleteFile(new File(FILE_PATH));
+        IOTinyUtils.deleteFile(new File(FILE_PATH));
         UtilAll.deleteFile(new File(FILE_PATH + ".bak"));
     }
 
