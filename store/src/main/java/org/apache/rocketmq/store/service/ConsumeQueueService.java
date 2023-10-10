@@ -375,7 +375,7 @@ public class ConsumeQueueService {
             messageStore.getMessageStoreConfig().getStorePathRootDir()) + File.separator + topic;
 
         IOTinyUtils.deleteEmptyDirectory(new File(consumeQueueDir));
-        UtilAll.deleteEmptyDirectory(new File(consumeQueueExtDir));
+        IOTinyUtils.deleteEmptyDirectory(new File(consumeQueueExtDir));
         UtilAll.deleteEmptyDirectory(new File(batchConsumeQueueDir));
     }
 
