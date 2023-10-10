@@ -47,6 +47,7 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.CleanupPolicyUtils;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
@@ -711,11 +712,11 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         }
         String[] paths = storePath.trim().split(MixAll.MULTI_PATH_SPLITTER);
         for (String storePathPhysic : paths) {
-            physicRatio = Math.min(physicRatio, UtilAll.getDiskPartitionSpaceUsedPercent(storePathPhysic));
+            physicRatio = Math.min(physicRatio, IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathPhysic));
         }
 
         String storePathLogis = StorePathConfigHelper.getStorePathConsumeQueue(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
-        double logisRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathLogis);
+        double logisRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathLogis);
 
         String storePathIndex = StorePathConfigHelper.getStorePathIndex(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
         double indexRatio = UtilAll.getDiskPartitionSpaceUsedPercent(storePathIndex);
