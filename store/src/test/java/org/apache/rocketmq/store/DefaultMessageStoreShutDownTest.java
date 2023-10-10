@@ -17,10 +17,8 @@
 
 package org.apache.rocketmq.store;
 
-import java.io.File;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.config.FlushDiskType;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
@@ -30,6 +28,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.File;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
@@ -61,7 +62,7 @@ public class DefaultMessageStoreShutDownTest {
     public void destroy() {
         messageStore.destroy();
         File file = new File(messageStore.getMessageStoreConfig().getStorePathRootDir());
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 
     public DefaultMessageStore buildMessageStore() throws Exception {
