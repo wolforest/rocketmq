@@ -17,6 +17,10 @@
 
 package org.apache.rocketmq.common.utils;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.CharArrayReader;
@@ -30,10 +34,6 @@ import java.io.Writer;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import org.apache.rocketmq.common.UtilAll;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -58,7 +58,7 @@ public class IOTinyUtilsTest {
     @After
     public void destroy() {
         File file = new File(testRootDir);
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 
     @Test
