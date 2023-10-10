@@ -261,7 +261,7 @@ public class ConsumeQueueTest extends QueueTestBase {
         } finally {
             messageStore.shutdown();
             messageStore.destroy();
-            UtilAll.deleteFile(new File(STORE_PATH));
+            IOTinyUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
