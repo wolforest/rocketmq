@@ -283,7 +283,7 @@ public class CleanCommitLogService {
         double minPhysicRatio = 100;
         for (String path : paths) {
             double physicRatio = IOTinyUtils.isPathExists(path) ?
-                UtilAll.getDiskPartitionSpaceUsedPercent(path) : -1;
+                IOTinyUtils.getDiskPartitionSpaceUsedPercent(path) : -1;
             minPhysicRatio = Math.min(minPhysicRatio, physicRatio);
             if (physicRatio > getDiskSpaceCleanForciblyRatio()) {
                 fullStorePath.add(path);
