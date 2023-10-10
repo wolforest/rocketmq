@@ -73,7 +73,7 @@ public class CheckpointFileTest {
     @After
     public void destroy() {
         IOTinyUtils.deleteFile(new File(FILE_PATH));
-        UtilAll.deleteFile(new File(FILE_PATH + ".bak"));
+        IOTinyUtils.deleteFile(new File(FILE_PATH + ".bak"));
     }
 
     @Test
