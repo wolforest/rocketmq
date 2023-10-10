@@ -17,12 +17,9 @@
 
 package org.apache.rocketmq.store;
 
-import java.util.concurrent.CountDownLatch;
-
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
 import org.apache.rocketmq.store.logfile.MappedFile;
@@ -40,6 +37,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -486,6 +484,6 @@ public class MappedFileQueueTest {
     @After
     public void destroy() {
         File file = new File(storePath);
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 }
