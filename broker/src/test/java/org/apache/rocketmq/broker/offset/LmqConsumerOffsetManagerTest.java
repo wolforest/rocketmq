@@ -17,14 +17,12 @@
 
 package org.apache.rocketmq.broker.offset;
 
-import java.io.File;
-import java.util.Map;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.subscription.LmqSubscriptionGroupManager;
 import org.apache.rocketmq.broker.topic.LmqTopicConfigManager;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.TopicConfig;
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
@@ -32,6 +30,9 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.junit.After;
 import org.junit.Test;
 import org.mockito.Spy;
+
+import java.io.File;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -101,7 +102,7 @@ public class LmqConsumerOffsetManagerTest {
 
     @After
     public void destroy() {
-        UtilAll.deleteFile(new File(new MessageStoreConfig().getStorePathRootDir()));
+        IOTinyUtils.deleteFile(new File(new MessageStoreConfig().getStorePathRootDir()));
     }
 
 }
