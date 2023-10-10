@@ -16,10 +16,7 @@
  */
 package org.apache.rocketmq.store.queue;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.common.TopicConfig;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.MessageStore;
@@ -30,6 +27,8 @@ import org.junit.Test;
 
 import java.io.File;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
@@ -101,7 +100,7 @@ public class ConsumeQueueStoreTest extends QueueTestBase {
         messageStore.shutdown();
         messageStore.destroy();
         File file = new File(messageStore.getMessageStoreConfig().getStorePathRootDir());
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 
 }
