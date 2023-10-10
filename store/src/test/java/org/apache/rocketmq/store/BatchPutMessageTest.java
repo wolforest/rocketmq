@@ -17,6 +17,19 @@
 
 package org.apache.rocketmq.store;
 
+import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.message.MessageDecoder;
+import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.message.MessageExtBatch;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.store.config.FlushDiskType;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
@@ -26,18 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageDecoder;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBatch;
-import org.apache.rocketmq.store.config.FlushDiskType;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.rocketmq.common.message.MessageDecoder.messageProperties2String;
@@ -64,7 +65,7 @@ public class BatchPutMessageTest {
         messageStore.shutdown();
         messageStore.destroy();
 
-        UtilAll.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "putmessagesteststore"));
+        IOTinyUtils.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "putmessagesteststore"));
     }
 
     private MessageStore buildMessageStore() throws Exception {
