@@ -17,17 +17,15 @@
 
 package org.apache.rocketmq.store.ha.autoswitch;
 
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.GetMessageStatus;
-import org.apache.rocketmq.store.logfile.MappedFileQueue;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.StoreCheckpoint;
@@ -35,6 +33,7 @@ import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.FlushDiskType;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
+import org.apache.rocketmq.store.logfile.MappedFileQueue;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -52,6 +51,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -516,7 +516,7 @@ public class AutoSwitchHATest {
             messageStore3.destroy();
         }
         File file = new File(storePathRootParentDir);
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 
     private DefaultMessageStore buildMessageStore(MessageStoreConfig messageStoreConfig,
