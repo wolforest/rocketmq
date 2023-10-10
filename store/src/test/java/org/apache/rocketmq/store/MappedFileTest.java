@@ -20,13 +20,14 @@
  */
 package org.apache.rocketmq.store;
 
-import java.io.File;
-import java.io.IOException;
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.junit.After;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -56,6 +57,6 @@ public class MappedFileTest {
     @After
     public void destroy() {
         File file = new File("target/unit_test_store_MappedFileTest");
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 }
