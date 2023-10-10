@@ -287,7 +287,7 @@ public class UtilAll {
 
         return -1;
     }
-
+    @Deprecated
     public static long getDiskPartitionTotalSpace(final String path) {
         if (null == path || path.isEmpty()) {
             return -1;
