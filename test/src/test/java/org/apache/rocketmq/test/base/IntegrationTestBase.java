@@ -18,20 +18,10 @@
 package org.apache.rocketmq.test.base;
 
 import com.google.common.truth.Truth;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.TopicAttributes;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.attribute.TopicMessageType;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
@@ -43,6 +33,16 @@ import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.test.util.MQAdminTestUtils;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class IntegrationTestBase {
     public static Logger logger = LoggerFactory.getLogger(IntegrationTestBase.class);
@@ -197,7 +197,7 @@ public class IntegrationTestBase {
         if (!file.exists()) {
             return;
         }
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 
     public static void initMQAdmin(String nsAddr) {
