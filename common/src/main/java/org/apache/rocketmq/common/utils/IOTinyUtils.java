@@ -17,6 +17,10 @@
 
 package org.apache.rocketmq.common.utils;
 
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.CharArrayWriter;
 import java.io.File;
@@ -35,6 +39,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class IOTinyUtils {
+
+    private static final Logger STORE_LOG = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+
 
     static public String toString(InputStream input, String encoding) throws IOException {
         return (null == encoding) ? toString(new InputStreamReader(input, StandardCharsets.UTF_8)) : toString(new InputStreamReader(
@@ -168,6 +175,41 @@ public class IOTinyUtils {
     public static boolean isPathExists(final String path) {
         File file = new File(path);
         return file.exists();
+    }
+
+    public static double getDiskPartitionSpaceUsedPercent(final String path) {
+        if (null == path || path.isEmpty()) {
+            STORE_LOG.error("Error when measuring disk space usage, path is null or empty, path : {}", path);
+            return -1;
+        }
+
+        try {
+            File file = new File(path);
+
+            if (!file.exists()) {
+                STORE_LOG.error("Error when measuring disk space usage, file doesn't exist on this path: {}", path);
+                return -1;
+            }
+
+            long totalSpace = file.getTotalSpace();
+
+            if (totalSpace > 0) {
+                long usedSpace = totalSpace - file.getFreeSpace();
+                long usableSpace = file.getUsableSpace();
+                long entireSpace = usedSpace + usableSpace;
+                long roundNum = 0;
+                if (usedSpace * 100 % entireSpace != 0) {
+                    roundNum = 1;
+                }
+                long result = usedSpace * 100 / entireSpace + roundNum;
+                return result / 100.0;
+            }
+        } catch (Exception e) {
+            STORE_LOG.error("Error when measuring disk space usage, got exception: :", e);
+            return -1;
+        }
+
+        return -1;
     }
 
 }
