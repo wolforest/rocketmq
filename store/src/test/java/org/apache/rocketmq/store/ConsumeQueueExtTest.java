@@ -148,7 +148,7 @@ public class ConsumeQueueExtTest {
             assertThat(unit).isNull();
         } finally {
             consumeQueueExt.destroy();
-            UtilAll.deleteFile(new File(STORE_PATH));
+            IOTinyUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
