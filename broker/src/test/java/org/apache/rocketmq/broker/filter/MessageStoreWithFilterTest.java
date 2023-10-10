@@ -17,24 +17,13 @@
 
 package org.apache.rocketmq.broker.filter;
 
-import java.io.File;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.filter.ExpressionType;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.store.CommitLogDispatcher;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -53,6 +42,18 @@ import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.File;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -104,7 +105,7 @@ public class MessageStoreWithFilterTest {
             master.shutdown();
             master.destroy();
         }
-        UtilAll.deleteFile(new File(STORE_PATH));
+        IOTinyUtils.deleteFile(new File(STORE_PATH));
     }
 
     public MessageExtBrokerInner buildMessage() {
