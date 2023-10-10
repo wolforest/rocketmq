@@ -245,4 +245,18 @@ public class IOTinyUtils {
         }
     }
 
+    public static void deleteEmptyDirectory(File file) {
+        if (file == null || !file.exists()) {
+            return;
+        }
+        if (!file.isDirectory()) {
+            return;
+        }
+        File[] files = file.listFiles();
+        if (files == null || files.length <= 0) {
+            file.delete();
+            STORE_LOG.info("delete empty direct, {}", file.getPath());
+        }
+    }
+
 }
