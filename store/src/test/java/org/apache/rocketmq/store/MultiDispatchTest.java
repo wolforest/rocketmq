@@ -17,21 +17,21 @@
 
 package org.apache.rocketmq.store;
 
-import java.io.File;
-import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
-
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.File;
+import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.apache.rocketmq.store.config.StorePathConfigHelper.getStorePathConsumeQueue;
 import static org.junit.Assert.assertEquals;
@@ -66,7 +66,7 @@ public class MultiDispatchTest {
 
     @After
     public void destroy() {
-        UtilAll.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore1"));
+        IOTinyUtils.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore1"));
     }
 
     @Test
