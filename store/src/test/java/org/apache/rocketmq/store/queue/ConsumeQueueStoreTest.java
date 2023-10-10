@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.attribute.CQType;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
@@ -66,7 +67,7 @@ public class ConsumeQueueStoreTest extends QueueTestBase {
         messageStore.shutdown();
         messageStore.destroy();
         File file = new File(messageStore.getMessageStoreConfig().getStorePathRootDir());
-        UtilAll.deleteFile(file);
+        IOTinyUtils.deleteFile(file);
     }
 
     @Test
