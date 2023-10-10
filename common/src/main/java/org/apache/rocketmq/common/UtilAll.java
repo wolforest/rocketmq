@@ -692,7 +692,7 @@ public class UtilAll {
         String[] addrArray = str.split(splitter);
         return Arrays.asList(addrArray);
     }
-
+    @Deprecated
     public static void deleteEmptyDirectory(File file) {
         if (file == null || !file.exists()) {
             return;
