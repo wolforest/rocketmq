@@ -246,7 +246,7 @@ public class ConsumerProgressSubCommand implements SubCommand {
                             }
 
                             System.out.printf("%-64s  %-6d  %-24s %-5s  %-14s  %-7d  %d%n",
-                                UtilAll.frontStringAtLeast(groupConsumeInfo.getGroup(), 64),
+                                StringUtils.frontStringAtLeast(groupConsumeInfo.getGroup(), 64),
                                 groupConsumeInfo.getCount(),
                                 groupConsumeInfo.getCount() > 0 ? groupConsumeInfo.versionDesc() : "OFFLINE",
                                 groupConsumeInfo.consumeTypeDesc(),
