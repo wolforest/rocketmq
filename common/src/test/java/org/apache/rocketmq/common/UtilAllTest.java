@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.junit.Test;
 
@@ -118,8 +119,8 @@ public class UtilAllTest {
     public void testIPv6Check() throws UnknownHostException {
         InetAddress nonInternal = InetAddress.getByName("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
         InetAddress internal = InetAddress.getByName("FE80:0000:0000:0000:0000:0000:0000:FFFF");
-        assertThat(UtilAll.isInternalV6IP(nonInternal)).isFalse();
-        assertThat(UtilAll.isInternalV6IP(internal)).isTrue();
+        assertThat(NetworkUtil.isInternalV6IP(nonInternal)).isFalse();
+        assertThat(NetworkUtil.isInternalV6IP(internal)).isTrue();
         assertThat(UtilAll.ipToIPv6Str(nonInternal.getAddress()).toUpperCase()).isEqualTo("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
     }
 
