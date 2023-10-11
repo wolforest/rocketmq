@@ -470,7 +470,7 @@ public class UtilAll {
     public static String responseCode2String(final int code) {
         return Integer.toString(code);
     }
-
+    @Deprecated
     public static String frontStringAtLeast(final String str, final int size) {
         if (str != null) {
             if (str.length() > size) {
