@@ -887,11 +887,12 @@ public class ReplicasManager {
         scanExecutor.submit(() -> {
             if (brokerOuterAPI.checkAddressReachable(address)) {
                 availableControllerAddresses.putIfAbsent(address, true);
-            } else {
-                Boolean value = availableControllerAddresses.remove(address);
-                if (value != null) {
-                    LOGGER.warn("scanAvailableControllerAddresses remove unconnected address {}", address);
-                }
+                return;
+            }
+
+            Boolean value = availableControllerAddresses.remove(address);
+            if (value != null) {
+                LOGGER.warn("scanAvailableControllerAddresses remove unconnected address {}", address);
             }
         });
     }
