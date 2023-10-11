@@ -17,23 +17,17 @@
 package org.apache.rocketmq.broker.client.net;
 
 import io.netty.channel.Channel;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.client.ConsumerGroupInfo;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.TopicConfig;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.message.MessageQueueForC;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -49,6 +43,13 @@ import org.apache.rocketmq.remoting.protocol.header.CheckTransactionStateRequest
 import org.apache.rocketmq.remoting.protocol.header.GetConsumerStatusRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.NotifyConsumerIdsChangedRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.ResetOffsetRequestHeader;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentMap;
 
 public class Broker2Client {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
@@ -256,7 +257,7 @@ public class Broker2Client {
                 log.warn("[get-consumer-status] the client does not support this feature. channel={}, version={}",
                     RemotingHelper.parseChannelRemoteAddr(entry.getKey()), MQVersion.getVersionDesc(version));
                 return result;
-            } else if (UtilAll.isBlank(originClientId) || originClientId.equals(clientId)) {
+            } else if (StringUtils.isBlank(originClientId) || originClientId.equals(clientId)) {
                 try {
                     RemotingCommand response =
                         this.brokerController.getRemotingServer().invokeSync(entry.getKey(), request, 5000);
@@ -283,7 +284,7 @@ public class Broker2Client {
                         topic, group, e.toString());
                 }
 
-                if (!UtilAll.isBlank(originClientId) && originClientId.equals(clientId)) {
+                if (!StringUtils.isBlank(originClientId) && originClientId.equals(clientId)) {
                     break;
                 }
             }
