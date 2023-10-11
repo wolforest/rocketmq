@@ -234,7 +234,7 @@ public class UtilAllTest {
         String basePath = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "testCalculateFileSizeInPath";
         File baseFile = new File(basePath);
         // test empty path
-        assertEquals(0, UtilAll.calculateFileSizeInPath(baseFile));
+        assertEquals(0, IOTinyUtils.calculateFileSizeInPath(baseFile));
 
         // create baseDir
         assertTrue(baseFile.mkdirs());
