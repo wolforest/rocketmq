@@ -538,7 +538,7 @@ public class CommitLog implements Swappable {
                 return this.defaultMessageStore.getMaxPhyOffset();
             }
             // First time it will compute the confirmOffset.
-            if (!directly && this.confirmOffset <= 0) {
+            if (!directly && this.confirmOffset < 0) {
                 setConfirmOffset(((AutoSwitchHAService) this.defaultMessageStore.getHaService()).computeConfirmOffset());
                 log.info("Init the confirmOffset to {}.", this.confirmOffset);
             }
