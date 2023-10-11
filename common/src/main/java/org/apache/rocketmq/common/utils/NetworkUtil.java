@@ -178,4 +178,30 @@ public class NetworkUtil {
         }
         return false;
     }
+
+    public static boolean isInternalIP(byte[] ip) {
+        if (ip.length != 4) {
+            throw new RuntimeException("illegal ipv4 bytes");
+        }
+
+        //10.0.0.0~10.255.255.255
+        //172.16.0.0~172.31.255.255
+        //192.168.0.0~192.168.255.255
+        //127.0.0.0~127.255.255.255
+        if (ip[0] == (byte) 10) {
+            return true;
+        } else if (ip[0] == (byte) 127) {
+            return true;
+        } else if (ip[0] == (byte) 172) {
+            if (ip[1] >= (byte) 16 && ip[1] <= (byte) 31) {
+                return true;
+            }
+        } else if (ip[0] == (byte) 192) {
+            if (ip[1] == (byte) 168) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
