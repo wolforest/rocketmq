@@ -102,7 +102,7 @@ public class ClientConfig {
 
         sb.append("@");
         sb.append(this.getInstanceName());
-        if (!UtilAll.isBlank(this.unitName)) {
+        if (!org.apache.rocketmq.common.utils.StringUtils.isBlank(this.unitName)) {
             sb.append("@");
             sb.append(this.unitName);
         }
