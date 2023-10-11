@@ -97,7 +97,7 @@ public class StatsAllSubCommand implements SubCommand {
 
                     System.out.printf("%-64s  %-64s %12d %11.2f %11.2f %14d %14d%n",
                         StringUtils.frontStringAtLeast(topic, 64),
-                        UtilAll.frontStringAtLeast(group, 64),
+                        StringUtils.frontStringAtLeast(group, 64),
                         accumulate,
                         inTPS,
                         outTPS,
