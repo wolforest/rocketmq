@@ -25,6 +25,7 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.admin.RollbackStats;
@@ -91,7 +92,7 @@ public class SkipAccumulationSubCommand implements SubCommand {
 
                     for (RollbackStats rollbackStats : rollbackStatsList) {
                         System.out.printf("%-20s  %-20d  %-20d  %-20d  %-20d  %-20d%n",
-                            UtilAll.frontStringAtLeast(rollbackStats.getBrokerName(), 32),
+                            StringUtils.frontStringAtLeast(rollbackStats.getBrokerName(), 32),
                             rollbackStats.getQueueId(),
                             rollbackStats.getBrokerOffset(),
                             rollbackStats.getConsumerOffset(),
