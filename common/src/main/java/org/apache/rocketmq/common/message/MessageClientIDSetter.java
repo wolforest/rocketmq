@@ -21,6 +21,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.StringUtils;
 
 public class MessageClientIDSetter {
@@ -91,9 +92,9 @@ public class MessageClientIDSetter {
     public static String getIPStrFromID(String msgID) {
         byte[] ipBytes = getIPFromID(msgID);
         if (ipBytes.length == 16) {
-            return UtilAll.ipToIPv6Str(ipBytes);
+            return NetworkUtil.ipToIPv6Str(ipBytes);
         } else {
-            return UtilAll.ipToIPv4Str(ipBytes);
+            return NetworkUtil.ipToIPv4Str(ipBytes);
         }
     }
 

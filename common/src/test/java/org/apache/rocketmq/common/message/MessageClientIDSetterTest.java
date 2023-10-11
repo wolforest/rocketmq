@@ -18,6 +18,7 @@
 package org.apache.rocketmq.common.message;
 
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,7 +48,7 @@ public class MessageClientIDSetterTest {
     @Test
     public void testGetIPStrFromID() {
         byte[] ip = UtilAll.getIP();
-        String ipStr = (4 == ip.length) ? UtilAll.ipToIPv4Str(ip) : UtilAll.ipToIPv6Str(ip);
+        String ipStr = (4 == ip.length) ? NetworkUtil.ipToIPv4Str(ip) : NetworkUtil.ipToIPv6Str(ip);
 
         String uniqID = MessageClientIDSetter.createUniqID();
         String ipStrFromID = MessageClientIDSetter.getIPStrFromID(uniqID);

@@ -121,7 +121,7 @@ public class UtilAllTest {
         InetAddress internal = InetAddress.getByName("FE80:0000:0000:0000:0000:0000:0000:FFFF");
         assertThat(NetworkUtil.isInternalV6IP(nonInternal)).isFalse();
         assertThat(NetworkUtil.isInternalV6IP(internal)).isTrue();
-        assertThat(UtilAll.ipToIPv6Str(nonInternal.getAddress()).toUpperCase()).isEqualTo("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
+        assertThat(NetworkUtil.ipToIPv6Str(nonInternal.getAddress()).toUpperCase()).isEqualTo("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
     }
 
     @Test
