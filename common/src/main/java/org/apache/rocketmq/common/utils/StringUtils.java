@@ -116,4 +116,14 @@ public class StringUtils {
         return Integer.toString(code);
     }
 
+    public static String frontStringAtLeast(final String str, final int size) {
+        if (str != null) {
+            if (str.length() > size) {
+                return str.substring(0, size);
+            }
+        }
+
+        return str;
+    }
+
 }
