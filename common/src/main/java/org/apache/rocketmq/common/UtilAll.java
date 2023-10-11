@@ -781,7 +781,7 @@ public class UtilAll {
             STORE_LOG.info(dirName + " mkdir " + (result ? "OK" : "Failed"));
         }
     }
-
+    @Deprecated
     public static long calculateFileSizeInPath(File path) {
         long size = 0;
         try {
