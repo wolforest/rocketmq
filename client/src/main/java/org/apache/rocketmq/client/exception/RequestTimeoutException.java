@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.client.exception;
 
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.StringUtils;
 
 public class RequestTimeoutException extends Exception {
     private static final long serialVersionUID = -5758410930844185841L;
@@ -31,7 +31,7 @@ public class RequestTimeoutException extends Exception {
     }
 
     public RequestTimeoutException(int responseCode, String errorMessage) {
-        super("CODE: " + UtilAll.responseCode2String(responseCode) + "  DESC: "
+        super("CODE: " + StringUtils.responseCode2String(responseCode) + "  DESC: "
             + errorMessage);
         this.responseCode = responseCode;
         this.errorMessage = errorMessage;

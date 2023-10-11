@@ -112,5 +112,18 @@ public class StringUtils {
         return v;
     }
 
+    public static String responseCode2String(final int code) {
+        return Integer.toString(code);
+    }
+
+    public static String frontStringAtLeast(final String str, final int size) {
+        if (str != null) {
+            if (str.length() > size) {
+                return str.substring(0, size);
+            }
+        }
+
+        return str;
+    }
 
 }

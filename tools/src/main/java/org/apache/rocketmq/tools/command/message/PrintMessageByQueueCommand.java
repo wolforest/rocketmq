@@ -34,6 +34,7 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.DateUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
@@ -46,7 +47,7 @@ public class PrintMessageByQueueCommand implements SubCommand {
             timestamp = Long.parseLong(value);
         } catch (NumberFormatException e) {
 
-            timestamp = UtilAll.parseDate(value, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
+            timestamp = DateUtils.parseDate(value, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
         }
 
         return timestamp;

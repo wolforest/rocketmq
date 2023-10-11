@@ -29,6 +29,8 @@ import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.DateUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.admin.ConsumeStats;
 import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
@@ -159,7 +161,7 @@ public class ConsumerProgressSubCommand implements SubCommand {
                         if (offsetWrapper.getLastTimestamp() == 0) {
                             lastTime = "N/A";
                         } else {
-                            lastTime = UtilAll.formatDate(new Date(offsetWrapper.getLastTimestamp()), UtilAll.YYYY_MM_DD_HH_MM_SS);
+                            lastTime = DateUtils.formatDate(new Date(offsetWrapper.getLastTimestamp()), UtilAll.YYYY_MM_DD_HH_MM_SS);
                         }
                     } catch (Exception e) {
                         // ignore
@@ -171,8 +173,8 @@ public class ConsumerProgressSubCommand implements SubCommand {
                     }
                     if (showClientIP) {
                         System.out.printf("%-64s  %-32s  %-4d  %-20d  %-20d  %-20s %-20d %-20d %s%n",
-                                UtilAll.frontStringAtLeast(mq.getTopic(), 64),
-                                UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),
+                                StringUtils.frontStringAtLeast(mq.getTopic(), 64),
+                                StringUtils.frontStringAtLeast(mq.getBrokerName(), 32),
                                 mq.getQueueId(),
                                 offsetWrapper.getBrokerOffset(),
                                 offsetWrapper.getConsumerOffset(),
@@ -183,8 +185,8 @@ public class ConsumerProgressSubCommand implements SubCommand {
                         );
                     } else {
                         System.out.printf("%-64s  %-32s  %-4d  %-20d  %-20d  %-20d %-20d %s%n",
-                                UtilAll.frontStringAtLeast(mq.getTopic(), 64),
-                                UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),
+                                StringUtils.frontStringAtLeast(mq.getTopic(), 64),
+                                StringUtils.frontStringAtLeast(mq.getBrokerName(), 32),
                                 mq.getQueueId(),
                                 offsetWrapper.getBrokerOffset(),
                                 offsetWrapper.getConsumerOffset(),
@@ -244,7 +246,7 @@ public class ConsumerProgressSubCommand implements SubCommand {
                             }
 
                             System.out.printf("%-64s  %-6d  %-24s %-5s  %-14s  %-7d  %d%n",
-                                UtilAll.frontStringAtLeast(groupConsumeInfo.getGroup(), 64),
+                                StringUtils.frontStringAtLeast(groupConsumeInfo.getGroup(), 64),
                                 groupConsumeInfo.getCount(),
                                 groupConsumeInfo.getCount() > 0 ? groupConsumeInfo.versionDesc() : "OFFLINE",
                                 groupConsumeInfo.consumeTypeDesc(),

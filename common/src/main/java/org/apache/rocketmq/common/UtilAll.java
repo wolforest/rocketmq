@@ -452,12 +452,12 @@ public class UtilAll {
             return defaultValue;
         }
     }
-
+    @Deprecated
     public static String formatDate(Date date, String pattern) {
         SimpleDateFormat df = new SimpleDateFormat(pattern);
         return df.format(date);
     }
-
+    @Deprecated
     public static Date parseDate(String date, String pattern) {
         SimpleDateFormat df = new SimpleDateFormat(pattern);
         try {
@@ -466,11 +466,11 @@ public class UtilAll {
             return null;
         }
     }
-
+    @Deprecated
     public static String responseCode2String(final int code) {
         return Integer.toString(code);
     }
-
+    @Deprecated
     public static String frontStringAtLeast(final String str, final int size) {
         if (str != null) {
             if (str.length() > size) {

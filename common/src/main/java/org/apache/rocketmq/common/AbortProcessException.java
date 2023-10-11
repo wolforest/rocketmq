@@ -17,6 +17,7 @@
 package org.apache.rocketmq.common;
 
 import org.apache.rocketmq.common.help.FAQUrl;
+import org.apache.rocketmq.common.utils.StringUtils;
 
 /**
  *
@@ -43,7 +44,7 @@ public class AbortProcessException extends RuntimeException {
     }
 
     public AbortProcessException(int responseCode, String errorMessage) {
-        super(FAQUrl.attachDefaultURL("CODE: " + UtilAll.responseCode2String(responseCode) + "  DESC: "
+        super(FAQUrl.attachDefaultURL("CODE: " + StringUtils.responseCode2String(responseCode) + "  DESC: "
             + errorMessage));
         this.responseCode = responseCode;
         this.errorMessage = errorMessage;

@@ -16,21 +16,22 @@
  */
 package org.apache.rocketmq.tools.command.offset;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.admin.RollbackStats;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class SkipAccumulationSubCommand implements SubCommand {
 
@@ -91,7 +92,7 @@ public class SkipAccumulationSubCommand implements SubCommand {
 
                     for (RollbackStats rollbackStats : rollbackStatsList) {
                         System.out.printf("%-20s  %-20d  %-20d  %-20d  %-20d  %-20d%n",
-                            UtilAll.frontStringAtLeast(rollbackStats.getBrokerName(), 32),
+                            StringUtils.frontStringAtLeast(rollbackStats.getBrokerName(), 32),
                             rollbackStats.getQueueId(),
                             rollbackStats.getBrokerOffset(),
                             rollbackStats.getConsumerOffset(),
@@ -113,7 +114,7 @@ public class SkipAccumulationSubCommand implements SubCommand {
             while (iterator.hasNext()) {
                 Map.Entry<MessageQueue, Long> entry = iterator.next();
                 System.out.printf("%-40s  %-40d  %-40d%n",
-                    UtilAll.frontStringAtLeast(entry.getKey().getBrokerName(), 32),
+                    StringUtils.frontStringAtLeast(entry.getKey().getBrokerName(), 32),
                     entry.getKey().getQueueId(),
                     entry.getValue());
             }

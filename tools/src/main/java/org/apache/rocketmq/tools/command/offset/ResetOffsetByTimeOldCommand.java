@@ -25,6 +25,8 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.DateUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.admin.RollbackStats;
@@ -56,7 +58,7 @@ public class ResetOffsetByTimeOldCommand implements SubCommand {
 
         for (RollbackStats rollbackStats : rollbackStatsList) {
             System.out.printf("%-20s  %-20d  %-20d  %-20d  %-20d  %-20d%n",
-                UtilAll.frontStringAtLeast(rollbackStats.getBrokerName(), 32),
+                StringUtils.frontStringAtLeast(rollbackStats.getBrokerName(), 32),
                 rollbackStats.getQueueId(),
                 rollbackStats.getBrokerOffset(),
                 rollbackStats.getConsumerOffset(),
@@ -109,9 +111,9 @@ public class ResetOffsetByTimeOldCommand implements SubCommand {
                 timestamp = Long.parseLong(timeStampStr);
             } catch (NumberFormatException e) {
 
-                Date date = UtilAll.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
+                Date date = DateUtils.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
                 if (date != null) {
-                    timestamp = UtilAll.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
+                    timestamp = DateUtils.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
                 } else {
                     System.out.printf("specified timestamp invalid.%n");
                     return;
