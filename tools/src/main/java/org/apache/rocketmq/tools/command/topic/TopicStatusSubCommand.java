@@ -16,14 +16,11 @@
  */
 package org.apache.rocketmq.tools.command.topic;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
@@ -31,6 +28,10 @@ import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 public class TopicStatusSubCommand implements SubCommand {
 
@@ -85,7 +86,7 @@ public class TopicStatusSubCommand implements SubCommand {
                 }
 
                 System.out.printf("%-32s  %-4d  %-20d  %-20d    %s%n",
-                    UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),
+                    StringUtils.frontStringAtLeast(mq.getBrokerName(), 32),
                     mq.getQueueId(),
                     topicOffset.getMinOffset(),
                     topicOffset.getMaxOffset(),
