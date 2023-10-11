@@ -70,6 +70,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
+import org.apache.rocketmq.common.utils.DateUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -1147,7 +1148,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 null);
         }
 
-        Date dt = UtilAll.parseDate(this.defaultMQPushConsumer.getConsumeTimestamp(), UtilAll.YYYYMMDDHHMMSS);
+        Date dt = DateUtils.parseDate(this.defaultMQPushConsumer.getConsumeTimestamp(), UtilAll.YYYYMMDDHHMMSS);
         if (null == dt) {
             throw new MQClientException(
                 "consumeTimestamp is invalid, the valid format is yyyyMMddHHmmss,but received "
