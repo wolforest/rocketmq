@@ -23,7 +23,6 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.stats.Stats;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
@@ -110,7 +109,7 @@ public class StatsAllSubCommand implements SubCommand {
             if (!activeTopic || inMsgCntToday > 0) {
 
                 System.out.printf("%-64s  %-64s %12d %11.2f %11s %14d %14s%n",
-                    UtilAll.frontStringAtLeast(topic, 64),
+                    StringUtils.frontStringAtLeast(topic, 64),
                     "",
                     0,
                     inTPS,
