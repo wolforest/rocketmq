@@ -82,6 +82,7 @@ public class ColdDataCgCtrService extends ServiceThread {
                 } else {
                     this.waitForRunning(180 * 1000);
                 }
+
                 long beginLockTimestamp = this.systemClock.now();
                 clearDataAcc();
                 if (!brokerConfig.isColdCtrStrategyEnable()) {
@@ -125,7 +126,7 @@ public class ColdDataCgCtrService extends ServiceThread {
                 }
                 iterator.remove();
             } else if (next.getValue().getColdAcc().get() >= getThresholdByConsumerGroup(next.getKey())) {
-                log.info("Coldctr consumerGroup: {}, acc: {}, threshold: {}", next.getKey(), next.getValue().getColdAcc().get(), getThresholdByConsumerGroup(next.getKey()));
+                log.info("ColdCtr consumerGroup: {}, acc: {}, threshold: {}", next.getKey(), next.getValue().getColdAcc().get(), getThresholdByConsumerGroup(next.getKey()));
                 if (brokerConfig.isColdCtrStrategyEnable() && !isGlobalColdCtr() && !isAdminConfig(next.getKey())) {
                     coldCtrStrategy.promote(buildAdaptiveKey(next.getKey()), getThresholdByConsumerGroup(next.getKey()));
                 }
@@ -133,7 +134,7 @@ public class ColdDataCgCtrService extends ServiceThread {
             next.getValue().getColdAcc().set(0L);
         }
         if (isGlobalColdCtr()) {
-            log.info("Coldctr global acc: {}, threshold: {}", GLOBAL_ACC.get(), this.brokerConfig.getGlobalColdReadThreshold());
+            log.info("ColdCtr global acc: {}, threshold: {}", GLOBAL_ACC.get(), this.brokerConfig.getGlobalColdReadThreshold());
         }
         if (brokerConfig.isColdCtrStrategyEnable()) {
             sortAndDecelerate();
@@ -142,13 +143,9 @@ public class ColdDataCgCtrService extends ServiceThread {
     }
 
     private void sortAndDecelerate() {
-        List<Entry<String, Long>> configMapList = new ArrayList<Entry<String, Long>>(cgColdThresholdMapConfig.entrySet());
-        configMapList.sort(new Comparator<Entry<String, Long>>() {
-            @Override
-            public int compare(Entry<String, Long> o1, Entry<String, Long> o2) {
-                return (int)(o2.getValue() - o1.getValue());
-            }
-        });
+        List<Entry<String, Long>> configMapList = new ArrayList<>(cgColdThresholdMapConfig.entrySet());
+        configMapList.sort((o1, o2) -> (int)(o2.getValue() - o1.getValue()));
+
         Iterator<Entry<String, Long>> iterator = configMapList.iterator();
         int maxDecelerate = 3;
         while (iterator.hasNext() && maxDecelerate > 0) {
