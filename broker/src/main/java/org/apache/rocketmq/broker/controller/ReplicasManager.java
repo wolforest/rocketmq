@@ -30,7 +30,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
@@ -48,7 +47,6 @@ import org.apache.rocketmq.remoting.protocol.body.SyncStateSet;
 import org.apache.rocketmq.remoting.protocol.header.controller.ElectMasterResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.GetMetaDataResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.GetReplicaInfoResponseHeader;
-import org.apache.rocketmq.remoting.protocol.header.controller.register.ApplyBrokerIdResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.register.GetNextBrokerIdResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.register.RegisterBrokerToControllerResponseHeader;
 import org.apache.rocketmq.store.config.BrokerRole;
@@ -138,6 +136,8 @@ public class ReplicasManager {
         REGISTERED
     }
 
+    /******************************* public method start **********************************/
+
     public void start() {
         this.state = State.INITIAL;
         updateControllerAddr();
@@ -149,6 +149,51 @@ public class ReplicasManager {
             restartBasicService();
         }
     }
+
+    public void shutdown() {
+        this.state = State.SHUTDOWN;
+        this.registerState = RegisterState.INITIAL;
+        this.executorService.shutdownNow();
+        this.scheduledService.shutdownNow();
+        this.scanExecutor.shutdownNow();
+    }
+
+    public void sendHeartbeatToController() {
+        final List<String> controllerAddresses = this.getAvailableControllerAddresses();
+        for (String controllerAddress : controllerAddresses) {
+            sendHeartbeatToController(controllerAddress);
+        }
+    }
+
+    public void setFenced(boolean fenced) {
+        this.brokerController.setIsolated(fenced);
+        this.brokerController.getMessageStore().getRunningFlags().makeFenced(fenced);
+    }
+
+    /**
+     * called in admin portal
+     * @param newMasterBrokerId newMasterBrokerId
+     * @param newMasterAddress  newMasterAddress
+     * @param newMasterEpoch newMasterEpoch
+     * @param syncStateSetEpoch  syncStateSetEpoch
+     * @param syncStateSet syncStateSet
+     */
+    public synchronized void changeBrokerRole(final Long newMasterBrokerId, final String newMasterAddress,
+        final Integer newMasterEpoch, final Integer syncStateSetEpoch, final Set<Long> syncStateSet) {
+
+        if (newMasterBrokerId == null || newMasterEpoch <= this.masterEpoch) {
+            return;
+        }
+
+        if (newMasterBrokerId.equals(this.brokerControllerId)) {
+            changeToMaster(newMasterEpoch, syncStateSetEpoch, syncStateSet);
+        } else {
+            changeToSlave(newMasterAddress, newMasterEpoch, newMasterBrokerId);
+        }
+    }
+
+
+    /******************************* public method end **********************************/
 
     private void restartBasicService() {
         LOGGER.error("Failed to start replicasManager");
@@ -241,28 +286,12 @@ public class ReplicasManager {
         return true;
     }
 
-    public void shutdown() {
-        this.state = State.SHUTDOWN;
-        this.registerState = RegisterState.INITIAL;
-        this.executorService.shutdownNow();
-        this.scheduledService.shutdownNow();
-        this.scanExecutor.shutdownNow();
-    }
-
-    public synchronized void changeBrokerRole(final Long newMasterBrokerId, final String newMasterAddress,
-        final Integer newMasterEpoch, final Integer syncStateSetEpoch, final Set<Long> syncStateSet) {
-
-        if (newMasterBrokerId == null || newMasterEpoch <= this.masterEpoch) {
-            return;
-        }
-
-        if (newMasterBrokerId.equals(this.brokerControllerId)) {
-            changeToMaster(newMasterEpoch, syncStateSetEpoch, syncStateSet);
-        } else {
-            changeToSlave(newMasterAddress, newMasterEpoch, newMasterBrokerId);
-        }
-    }
-
+    /**
+     * only called in test case
+     * @param newMasterEpoch newMasterEpoch
+     * @param syncStateSetEpoch syncStateSetEpoch
+     * @param syncStateSet syncStateSet
+     */
     public void changeToMaster(final int newMasterEpoch, final int syncStateSetEpoch, final Set<Long> syncStateSet) {
         synchronized (this) {
             if (newMasterEpoch <= this.masterEpoch) {
@@ -309,6 +338,13 @@ public class ReplicasManager {
         }
     }
 
+    /**
+     * only called in test case
+     *
+     * @param newMasterAddress newMasterAddress
+     * @param newMasterEpoch  newMasterAddress
+     * @param newMasterBrokerId newMasterAddress
+     */
     public void changeToSlave(final String newMasterAddress, final int newMasterEpoch, Long newMasterBrokerId) {
         synchronized (this) {
             if (newMasterEpoch <= this.masterEpoch) {
@@ -351,7 +387,7 @@ public class ReplicasManager {
         }
     }
 
-    public void registerBrokerWhenRoleChange() {
+    private void registerBrokerWhenRoleChange() {
 
         this.executorService.submit(() -> {
             // Register broker to name-srv
@@ -434,13 +470,6 @@ public class ReplicasManager {
         } catch (Exception e) {
             LOGGER.error("Failed to try elect", e);
             return false;
-        }
-    }
-
-    public void sendHeartbeatToController() {
-        final List<String> controllerAddresses = this.getAvailableControllerAddresses();
-        for (String controllerAddress : controllerAddresses) {
-            sendHeartbeatToController(controllerAddress);
         }
     }
 
@@ -544,7 +573,6 @@ public class ReplicasManager {
      * @param brokerId the brokerId that is expected to be assigned
      * @return whether the temp meta file is created successfully
      */
-
     private boolean createTempMetadataFile(Long brokerId) {
         // generate register check code, format like that: $ipAddress;$timestamp
         String registerCheckCode = this.brokerAddress + ";" + System.currentTimeMillis();
@@ -565,7 +593,7 @@ public class ReplicasManager {
      */
     private boolean applyBrokerId() {
         try {
-            ApplyBrokerIdResponseHeader response = this.brokerOuterAPI.applyBrokerId(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(),
+            this.brokerOuterAPI.applyBrokerId(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(),
                 tempBrokerMetadata.getBrokerId(), tempBrokerMetadata.getRegisterCheckCode(), this.controllerLeaderAddress);
             return true;
 
@@ -831,42 +859,53 @@ public class ReplicasManager {
         }
     }
 
+    private void removeAvailableControllerAddresses() {
+        for (String address : availableControllerAddresses.keySet()) {
+            if (controllerAddresses.contains(address)) {
+                continue;
+            }
+
+            LOGGER.warn("scanAvailableControllerAddresses remove invalid address {}", address);
+            availableControllerAddresses.remove(address);
+        }
+    }
+
     private void scanAvailableControllerAddresses() {
         if (controllerAddresses == null) {
             LOGGER.warn("scanAvailableControllerAddresses addresses of controller is null!");
             return;
         }
 
-        for (String address : availableControllerAddresses.keySet()) {
-            if (!controllerAddresses.contains(address)) {
-                LOGGER.warn("scanAvailableControllerAddresses remove invalid address {}", address);
-                availableControllerAddresses.remove(address);
-            }
-        }
+        removeAvailableControllerAddresses();
 
         for (String address : controllerAddresses) {
-            scanExecutor.submit(() -> {
-                if (brokerOuterAPI.checkAddressReachable(address)) {
-                    availableControllerAddresses.putIfAbsent(address, true);
-                } else {
-                    Boolean value = availableControllerAddresses.remove(address);
-                    if (value != null) {
-                        LOGGER.warn("scanAvailableControllerAddresses remove unconnected address {}", address);
-                    }
-                }
-            });
+            scanAvailableControllerAddress(address);
         }
+    }
+
+    private void scanAvailableControllerAddress(String address) {
+        scanExecutor.submit(() -> {
+            if (brokerOuterAPI.checkAddressReachable(address)) {
+                availableControllerAddresses.putIfAbsent(address, true);
+            } else {
+                Boolean value = availableControllerAddresses.remove(address);
+                if (value != null) {
+                    LOGGER.warn("scanAvailableControllerAddresses remove unconnected address {}", address);
+                }
+            }
+        });
     }
 
     private void updateControllerAddr() {
         if (brokerConfig.isFetchControllerAddrByDnsLookup()) {
             this.controllerAddresses = brokerOuterAPI.dnsLookupAddressByDomain(this.brokerConfig.getControllerAddr());
-        } else {
-            final String controllerPaths = this.brokerConfig.getControllerAddr();
-            final String[] controllers = controllerPaths.split(";");
-            assert controllers.length > 0;
-            this.controllerAddresses = Arrays.asList(controllers);
+            return;
         }
+
+        final String controllerPaths = this.brokerConfig.getControllerAddr();
+        final String[] controllers = controllerPaths.split(";");
+        assert controllers.length > 0;
+        this.controllerAddresses = Arrays.asList(controllers);
     }
 
     public int getLastEpoch() {
@@ -929,8 +968,5 @@ public class ReplicasManager {
         return tempBrokerMetadata;
     }
 
-    public void setFenced(boolean fenced) {
-        this.brokerController.setIsolated(fenced);
-        this.brokerController.getMessageStore().getRunningFlags().makeFenced(fenced);
-    }
+
 }
