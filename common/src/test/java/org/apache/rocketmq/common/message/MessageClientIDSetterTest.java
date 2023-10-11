@@ -47,7 +47,7 @@ public class MessageClientIDSetterTest {
 
     @Test
     public void testGetIPStrFromID() {
-        byte[] ip = UtilAll.getIP();
+        byte[] ip = NetworkUtil.getIP();
         String ipStr = (4 == ip.length) ? NetworkUtil.ipToIPv4Str(ip) : NetworkUtil.ipToIPv6Str(ip);
 
         String uniqID = MessageClientIDSetter.createUniqID();

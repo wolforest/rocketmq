@@ -35,7 +35,7 @@ public class MessageClientIDSetter {
     static {
         byte[] ip;
         try {
-            ip = UtilAll.getIP();
+            ip = NetworkUtil.getIP();
         } catch (Exception e) {
             ip = createFakeIP();
         }
