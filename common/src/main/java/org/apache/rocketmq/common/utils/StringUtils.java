@@ -126,4 +126,8 @@ public class StringUtils {
         return str;
     }
 
+    public static boolean isBlank(String str) {
+        return org.apache.commons.lang3.StringUtils.isBlank(str);
+    }
+
 }
