@@ -16,16 +16,13 @@
  */
 package org.apache.rocketmq.broker.coldctr;
 
+import com.alibaba.fastjson.JSONObject;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.alibaba.fastjson.JSONObject;
-
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
