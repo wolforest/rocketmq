@@ -70,7 +70,7 @@ public class QueueTimeSpan {
     }
 
     public String getConsumeTimeStampStr() {
-        return UtilAll.formatDate(new Date(consumeTimeStamp), UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
+        return DateUtils.formatDate(new Date(consumeTimeStamp), UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
     }
 
     public long getDelayTime() {
