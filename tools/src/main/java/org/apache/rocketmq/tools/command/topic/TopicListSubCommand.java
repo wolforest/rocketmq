@@ -25,6 +25,7 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
@@ -97,7 +98,7 @@ public class TopicListSubCommand implements SubCommand {
 
                     for (String group : groupList.getGroupList()) {
                         System.out.printf("%-20s  %-64s  %-64s%n",
-                            UtilAll.frontStringAtLeast(clusterName, 20),
+                            StringUtils.frontStringAtLeast(clusterName, 20),
                             UtilAll.frontStringAtLeast(topic, 64),
                             UtilAll.frontStringAtLeast(group, 64)
                         );
