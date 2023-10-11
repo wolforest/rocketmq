@@ -480,7 +480,7 @@ public class UtilAll {
 
         return str;
     }
-
+    @Deprecated
     public static boolean isBlank(String str) {
         return StringUtils.isBlank(str);
     }
