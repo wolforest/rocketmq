@@ -457,7 +457,7 @@ public class UtilAll {
         SimpleDateFormat df = new SimpleDateFormat(pattern);
         return df.format(date);
     }
-
+    @Deprecated
     public static Date parseDate(String date, String pattern) {
         SimpleDateFormat df = new SimpleDateFormat(pattern);
         try {
