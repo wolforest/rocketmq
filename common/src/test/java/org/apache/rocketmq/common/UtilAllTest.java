@@ -243,7 +243,7 @@ public class UtilAllTest {
         assertTrue(file0.createNewFile());
         writeFixedBytesToFile(file0, 1313);
 
-        assertEquals(1313, UtilAll.calculateFileSizeInPath(baseFile));
+        assertEquals(1313, IOTinyUtils.calculateFileSizeInPath(baseFile));
 
         // build a file tree like above
         File dir1 = new File(baseFile, "dir_1");
