@@ -2193,7 +2193,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             (CloneGroupOffsetRequestHeader) request.decodeCommandCustomHeader(CloneGroupOffsetRequestHeader.class);
 
         Set<String> topics;
-        if (UtilAll.isBlank(requestHeader.getTopic())) {
+        if (StringUtils.isBlank(requestHeader.getTopic())) {
             topics = this.brokerController.getConsumerOffsetManager().whichTopicByConsumer(requestHeader.getSrcGroup());
         } else {
             topics = new HashSet<>();
