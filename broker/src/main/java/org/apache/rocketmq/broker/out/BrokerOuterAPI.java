@@ -179,7 +179,7 @@ public class BrokerOuterAPI {
     public String fetchNameServerAddr() {
         try {
             String addrs = this.topAddressing.fetchNSAddr();
-            if (!UtilAll.isBlank(addrs)) {
+            if (!org.apache.rocketmq.common.utils.StringUtils.isBlank(addrs)) {
                 if (!addrs.equals(this.nameSrvAddr)) {
                     LOGGER.info("name server address changed, old: {} new: {}", this.nameSrvAddr, addrs);
                     this.updateNameServerAddressList(addrs);
