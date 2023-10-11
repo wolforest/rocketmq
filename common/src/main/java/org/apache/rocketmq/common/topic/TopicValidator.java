@@ -16,9 +16,10 @@
  */
 package org.apache.rocketmq.common.topic;
 
+import org.apache.rocketmq.common.utils.StringUtils;
+
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.rocketmq.common.UtilAll;
 
 public class TopicValidator {
 
@@ -101,7 +102,7 @@ public class TopicValidator {
 
     public static ValidateTopicResult validateTopic(String topic) {
 
-        if (UtilAll.isBlank(topic)) {
+        if (StringUtils.isBlank(topic)) {
             return new ValidateTopicResult(false, "The specified topic is blank.");
         }
 
