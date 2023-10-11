@@ -17,6 +17,7 @@
 
 package org.apache.rocketmq.common.utils;
 
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -256,6 +257,27 @@ public class IOTinyUtils {
         if (files == null || files.length <= 0) {
             file.delete();
             STORE_LOG.info("delete empty direct, {}", file.getPath());
+        }
+    }
+
+    public static void ensureDirOK(final String dirName) {
+        if (dirName != null) {
+            if (dirName.contains(MixAll.MULTI_PATH_SPLITTER)) {
+                String[] dirs = dirName.trim().split(MixAll.MULTI_PATH_SPLITTER);
+                for (String dir : dirs) {
+                    createDirIfNotExist(dir);
+                }
+            } else {
+                createDirIfNotExist(dirName);
+            }
+        }
+    }
+
+    private static void createDirIfNotExist(String dirName) {
+        File f = new File(dirName);
+        if (!f.exists()) {
+            boolean result = f.mkdirs();
+            STORE_LOG.info(dirName + " mkdir " + (result ? "OK" : "Failed"));
         }
     }
 
