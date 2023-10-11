@@ -1646,7 +1646,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         ConsumeStats consumeStats = new ConsumeStats();
 
         Set<String> topics = new HashSet<>();
-        if (UtilAll.isBlank(requestHeader.getTopic())) {
+        if (StringUtils.isBlank(requestHeader.getTopic())) {
             topics = this.brokerController.getConsumerOffsetManager().whichTopicByConsumer(requestHeader.getConsumerGroup());
         } else {
             topics.add(requestHeader.getTopic());
