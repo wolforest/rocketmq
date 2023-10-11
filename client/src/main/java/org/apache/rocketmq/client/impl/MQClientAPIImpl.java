@@ -291,7 +291,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     public String fetchNameServerAddr() {
         try {
             String addrs = this.topAddressing.fetchNSAddr();
-            if (!UtilAll.isBlank(addrs)) {
+            if (!org.apache.rocketmq.common.utils.StringUtils.isBlank(addrs)) {
                 if (!addrs.equals(this.nameSrvAddr)) {
                     log.info("name server address changed, old=" + this.nameSrvAddr + ", new=" + addrs);
                     this.updateNameServerAddressList(addrs);
@@ -2495,7 +2495,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                 if (body != null) {
                     TopicList topicList = TopicList.decode(response.getBody(), TopicList.class);
                     if (topicList.getTopicList() != null && !topicList.getTopicList().isEmpty()
-                        && !UtilAll.isBlank(topicList.getBrokerAddr())) {
+                        && !org.apache.rocketmq.common.utils.StringUtils.isBlank(topicList.getBrokerAddr())) {
                         TopicList tmp = getSystemTopicListFromBroker(topicList.getBrokerAddr(), timeoutMillis);
                         if (tmp.getTopicList() != null && !tmp.getTopicList().isEmpty()) {
                             topicList.getTopicList().addAll(tmp.getTopicList());
