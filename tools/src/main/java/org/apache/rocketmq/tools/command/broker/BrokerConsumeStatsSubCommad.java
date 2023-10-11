@@ -141,7 +141,7 @@ public class BrokerConsumeStatsSubCommad implements SubCommand {
                                 System.out.printf("%-64s  %-64s  %-32s  %-4d  %-20d  %-20d  %-20d  %s%n",
                                     StringUtils.frontStringAtLeast(mq.getTopic(), 64),
                                     group,
-                                    UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),
+                                    StringUtils.frontStringAtLeast(mq.getBrokerName(), 32),
                                     mq.getQueueId(),
                                     offsetWrapper.getBrokerOffset(),
                                     offsetWrapper.getConsumerOffset(),
