@@ -16,15 +16,11 @@
  */
 package org.apache.rocketmq.tools.command.topic;
 
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -36,6 +32,10 @@ import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class TopicListSubCommand implements SubCommand {
 
@@ -100,7 +100,7 @@ public class TopicListSubCommand implements SubCommand {
                         System.out.printf("%-20s  %-64s  %-64s%n",
                             StringUtils.frontStringAtLeast(clusterName, 20),
                             StringUtils.frontStringAtLeast(topic, 64),
-                            UtilAll.frontStringAtLeast(group, 64)
+                            StringUtils.frontStringAtLeast(group, 64)
                         );
                     }
                 }
