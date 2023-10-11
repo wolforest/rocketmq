@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -106,11 +107,11 @@ public class UtilAllTest {
 
     @Test
     public void testIsBlank() {
-        assertThat(UtilAll.isBlank("Hello ")).isFalse();
-        assertThat(UtilAll.isBlank(" Hello")).isFalse();
-        assertThat(UtilAll.isBlank("He llo")).isFalse();
-        assertThat(UtilAll.isBlank("  ")).isTrue();
-        assertThat(UtilAll.isBlank("Hello")).isFalse();
+        assertThat(StringUtils.isBlank("Hello ")).isFalse();
+        assertThat(StringUtils.isBlank(" Hello")).isFalse();
+        assertThat(StringUtils.isBlank("He llo")).isFalse();
+        assertThat(StringUtils.isBlank("  ")).isTrue();
+        assertThat(StringUtils.isBlank("Hello")).isFalse();
     }
 
     @Test
