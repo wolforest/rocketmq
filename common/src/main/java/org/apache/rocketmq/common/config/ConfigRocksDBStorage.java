@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;
 import org.rocksdb.ColumnFamilyDescriptor;
@@ -106,7 +107,7 @@ public class ConfigRocksDBStorage extends AbstractRocksDBStorage {
     @Override
     protected boolean postLoad() {
         try {
-            UtilAll.ensureDirOK(this.dbPath);
+            IOTinyUtils.ensureDirOK(this.dbPath);
 
             initOptions();
 
