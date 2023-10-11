@@ -42,6 +42,7 @@ import java.util.List;
 
 public class IOTinyUtils {
 
+    private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
     private static final Logger STORE_LOG = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
 
