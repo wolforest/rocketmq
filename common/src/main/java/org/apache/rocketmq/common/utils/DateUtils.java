@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.common.utils;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -25,4 +26,14 @@ public class DateUtils {
         SimpleDateFormat df = new SimpleDateFormat(pattern);
         return df.format(date);
     }
+
+    public static Date parseDate(String date, String pattern) {
+        SimpleDateFormat df = new SimpleDateFormat(pattern);
+        try {
+            return df.parse(date);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
 }
