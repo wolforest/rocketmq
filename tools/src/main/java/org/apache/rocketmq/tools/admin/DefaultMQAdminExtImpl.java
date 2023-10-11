@@ -1023,7 +1023,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
             }
 
             Map<String, String> orderConfMap = new HashMap<>();
-            if (!UtilAll.isBlank(oldOrderConfs)) {
+            if (!org.apache.rocketmq.common.utils.StringUtils.isBlank(oldOrderConfs)) {
                 String[] oldOrderConfArr = oldOrderConfs.split(";");
                 for (String oldOrderConf : oldOrderConfArr) {
                     String[] items = oldOrderConf.split(":");
