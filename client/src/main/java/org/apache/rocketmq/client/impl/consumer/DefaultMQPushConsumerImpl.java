@@ -838,7 +838,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         Message newMsg = new Message(MixAll.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup()), msg.getBody());
 
         String originMsgId = MessageAccessor.getOriginMessageId(msg);
-        MessageAccessor.setOriginMessageId(newMsg, UtilAll.isBlank(originMsgId) ? msg.getMsgId() : originMsgId);
+        MessageAccessor.setOriginMessageId(newMsg, org.apache.rocketmq.common.utils.StringUtils.isBlank(originMsgId) ? msg.getMsgId() : originMsgId);
 
         newMsg.setFlag(msg.getFlag());
         MessageAccessor.setProperties(newMsg, msg.getProperties());
