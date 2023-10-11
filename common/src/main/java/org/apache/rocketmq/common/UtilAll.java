@@ -466,7 +466,7 @@ public class UtilAll {
             return null;
         }
     }
-
+    @Deprecated
     public static String responseCode2String(final int code) {
         return Integer.toString(code);
     }
