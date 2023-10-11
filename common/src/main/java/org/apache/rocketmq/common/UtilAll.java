@@ -760,7 +760,7 @@ public class UtilAll {
             return viewed(viewedBuffer);
         }
     }
-
+    @Deprecated
     public static void ensureDirOK(final String dirName) {
         if (dirName != null) {
             if (dirName.contains(MixAll.MULTI_PATH_SPLITTER)) {
@@ -773,7 +773,7 @@ public class UtilAll {
             }
         }
     }
-
+    @Deprecated
     private static void createDirIfNotExist(String dirName) {
         File f = new File(dirName);
         if (!f.exists()) {
