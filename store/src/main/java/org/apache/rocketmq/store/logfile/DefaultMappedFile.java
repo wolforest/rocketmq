@@ -43,6 +43,7 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -161,7 +162,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         this.fileFromOffset = Long.parseLong(this.file.getName());
         boolean ok = false;
 
-        UtilAll.ensureDirOK(this.file.getParent());
+        IOTinyUtils.ensureDirOK(this.file.getParent());
 
         try {
             this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();

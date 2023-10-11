@@ -234,7 +234,7 @@ public class UtilAllTest {
         String basePath = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "testCalculateFileSizeInPath";
         File baseFile = new File(basePath);
         // test empty path
-        assertEquals(0, UtilAll.calculateFileSizeInPath(baseFile));
+        assertEquals(0, IOTinyUtils.calculateFileSizeInPath(baseFile));
 
         // create baseDir
         assertTrue(baseFile.mkdirs());
@@ -243,7 +243,7 @@ public class UtilAllTest {
         assertTrue(file0.createNewFile());
         writeFixedBytesToFile(file0, 1313);
 
-        assertEquals(1313, UtilAll.calculateFileSizeInPath(baseFile));
+        assertEquals(1313, IOTinyUtils.calculateFileSizeInPath(baseFile));
 
         // build a file tree like above
         File dir1 = new File(baseFile, "dir_1");
@@ -264,7 +264,7 @@ public class UtilAllTest {
         assertTrue(file120.createNewFile());
         writeFixedBytesToFile(file120, 1313);
 
-        assertEquals(1313 * 4, UtilAll.calculateFileSizeInPath(baseFile));
+        assertEquals(1313 * 4, IOTinyUtils.calculateFileSizeInPath(baseFile));
 
         // clear all file
         IOTinyUtils.delete(baseFile);
