@@ -527,7 +527,7 @@ public class UtilAll {
         }
         return sb.toString();
     }
-
+    @Deprecated
     public static boolean isInternalIP(byte[] ip) {
         if (ip.length != 4) {
             throw new RuntimeException("illegal ipv4 bytes");
@@ -552,7 +552,7 @@ public class UtilAll {
         }
         return false;
     }
-
+    @Deprecated
     public static boolean isInternalV6IP(InetAddress inetAddr) {
         if (inetAddr.isAnyLocalAddress() // Wild card ipv6
             || inetAddr.isLinkLocalAddress() // Single broadcast ipv6 address: fe80:xx:xx...
@@ -562,7 +562,7 @@ public class UtilAll {
         }
         return false;
     }
-
+    @Deprecated
     private static boolean ipCheck(byte[] ip) {
         if (ip.length != 4) {
             throw new RuntimeException("illegal ipv4 bytes");
@@ -571,7 +571,7 @@ public class UtilAll {
         InetAddressValidator validator = InetAddressValidator.getInstance();
         return validator.isValidInet4Address(ipToIPv4Str(ip));
     }
-
+    @Deprecated
     private static boolean ipV6Check(byte[] ip) {
         if (ip.length != 16) {
             throw new RuntimeException("illegal ipv6 bytes");
@@ -580,7 +580,7 @@ public class UtilAll {
         InetAddressValidator validator = InetAddressValidator.getInstance();
         return validator.isValidInet6Address(ipToIPv6Str(ip));
     }
-
+    @Deprecated
     public static String ipToIPv4Str(byte[] ip) {
         if (ip.length != 4) {
             return null;
@@ -589,7 +589,7 @@ public class UtilAll {
                 ip[1] & 0xFF).append(".").append(ip[2] & 0xFF)
             .append(".").append(ip[3] & 0xFF).toString();
     }
-
+    @Deprecated
     public static String ipToIPv6Str(byte[] ip) {
         if (ip.length != 16) {
             return null;
@@ -608,7 +608,7 @@ public class UtilAll {
         }
         return sb.toString();
     }
-
+    @Deprecated
     public static byte[] getIP() {
         try {
             Enumeration allNetInterfaces = NetworkInterface.getNetworkInterfaces();
