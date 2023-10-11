@@ -185,7 +185,7 @@ public class ConsumerProgressSubCommand implements SubCommand {
                         );
                     } else {
                         System.out.printf("%-64s  %-32s  %-4d  %-20d  %-20d  %-20d %-20d %s%n",
-                                UtilAll.frontStringAtLeast(mq.getTopic(), 64),
+                                StringUtils.frontStringAtLeast(mq.getTopic(), 64),
                                 UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),
                                 mq.getQueueId(),
                                 offsetWrapper.getBrokerOffset(),
