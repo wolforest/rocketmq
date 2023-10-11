@@ -16,6 +16,17 @@
  */
 package org.apache.rocketmq.broker.offset;
 
+import com.google.common.base.Strings;
+import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.BrokerPathConfigHelper;
+import org.apache.rocketmq.common.ConfigManager;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.remoting.protocol.DataVersion;
+import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,18 +36,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.google.common.base.Strings;
-
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.BrokerPathConfigHelper;
-import org.apache.rocketmq.common.ConfigManager;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.remoting.protocol.DataVersion;
-import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class ConsumerOffsetManager extends ConfigManager {
     protected static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
@@ -368,7 +367,7 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     private void removeConsumerOffsetByFilterGroups(final String filterGroups) {
         Set<String> topicGroups = this.offsetTable.keySet();
-        if (UtilAll.isBlank(filterGroups)) {
+        if (StringUtils.isBlank(filterGroups)) {
             return;
         }
 
