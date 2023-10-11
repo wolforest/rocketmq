@@ -17,19 +17,20 @@
 package org.apache.rocketmq.common.namesrv;
 
 import com.google.common.base.Strings;
+import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.help.FAQUrl;
+import org.apache.rocketmq.common.utils.HttpTinyClient;
+import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.Map;
-import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.help.FAQUrl;
-import org.apache.rocketmq.common.utils.HttpTinyClient;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import java.util.ServiceLoader;
 
 public class DefaultTopAddressing implements TopAddressing {
 
@@ -110,7 +111,7 @@ public class DefaultTopAddressing implements TopAddressing {
         String url = this.wsAddr;
         try {
             if (null != para && para.size() > 0) {
-                if (!UtilAll.isBlank(this.unitName)) {
+                if (!StringUtils.isBlank(this.unitName)) {
                     url = url + "-" + this.unitName + "?nofix=1&";
                 }
                 else {
@@ -122,7 +123,7 @@ public class DefaultTopAddressing implements TopAddressing {
                 url = url.substring(0, url.length() - 1);
             }
             else {
-                if (!UtilAll.isBlank(this.unitName)) {
+                if (!StringUtils.isBlank(this.unitName)) {
                     url = url + "-" + this.unitName + "?nofix=1";
                 }
             }
