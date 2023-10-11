@@ -17,18 +17,18 @@
 
 package org.apache.rocketmq.client;
 
-import java.io.File;
-import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.common.TopicConfig;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
+
+import java.io.File;
+import java.util.Properties;
 
 import static org.apache.rocketmq.common.topic.TopicValidator.isTopicOrGroupIllegal;
 
@@ -43,7 +43,7 @@ public class Validators {
      * Validate group
      */
     public static void checkGroup(String group) throws MQClientException {
-        if (UtilAll.isBlank(group)) {
+        if (org.apache.rocketmq.common.utils.StringUtils.isBlank(group)) {
             throw new MQClientException("the specified group is blank", null);
         }
 
@@ -89,7 +89,7 @@ public class Validators {
     }
 
     public static void checkTopic(String topic) throws MQClientException {
-        if (UtilAll.isBlank(topic)) {
+        if (org.apache.rocketmq.common.utils.StringUtils.isBlank(topic)) {
             throw new MQClientException("The specified topic is blank", null);
         }
 
