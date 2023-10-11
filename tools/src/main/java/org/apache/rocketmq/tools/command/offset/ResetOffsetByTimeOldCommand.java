@@ -112,7 +112,7 @@ public class ResetOffsetByTimeOldCommand implements SubCommand {
 
                 Date date = DateUtils.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
                 if (date != null) {
-                    timestamp = UtilAll.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
+                    timestamp = DateUtils.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
                 } else {
                     System.out.printf("specified timestamp invalid.%n");
                     return;
