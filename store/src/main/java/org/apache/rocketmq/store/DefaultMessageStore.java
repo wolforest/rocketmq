@@ -1152,7 +1152,7 @@ public class DefaultMessageStore implements MessageStore {
     private void createTempFile() throws IOException {
         String fileName = StorePathConfigHelper.getAbortFile(this.messageStoreConfig.getStorePathRootDir());
         File file = new File(fileName);
-        UtilAll.ensureDirOK(file.getParent());
+        IOTinyUtils.ensureDirOK(file.getParent());
         boolean result = file.createNewFile();
         LOGGER.info(fileName + (result ? " create OK" : " already exists"));
         MixAll.string2File(Long.toString(MixAll.getPID()), file.getAbsolutePath());
