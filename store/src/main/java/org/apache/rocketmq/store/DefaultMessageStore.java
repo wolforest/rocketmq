@@ -979,7 +979,7 @@ public class DefaultMessageStore implements MessageStore {
         File file = new File(StorePathConfigHelper.getLockFile(messageStoreConfig.getStorePathRootDir()));
         IOTinyUtils.ensureDirOK(file.getParent());
         IOTinyUtils.ensureDirOK(getStorePathPhysic());
-        UtilAll.ensureDirOK(getStorePathLogic());
+        IOTinyUtils.ensureDirOK(getStorePathLogic());
         lockFile = new RandomAccessFile(file, "rw");
     }
 
