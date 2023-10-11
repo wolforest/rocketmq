@@ -112,5 +112,8 @@ public class StringUtils {
         return v;
     }
 
+    public static String responseCode2String(final int code) {
+        return Integer.toString(code);
+    }
 
 }
