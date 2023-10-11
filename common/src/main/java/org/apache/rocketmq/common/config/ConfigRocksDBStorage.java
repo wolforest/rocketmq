@@ -16,13 +16,7 @@
  */
 package org.apache.rocketmq.common.config;
 
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;
@@ -52,6 +46,11 @@ import org.rocksdb.WALRecoveryMode;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 import org.rocksdb.util.SizeUnit;
+
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConfigRocksDBStorage extends AbstractRocksDBStorage {
 
@@ -210,7 +209,7 @@ public class ConfigRocksDBStorage extends AbstractRocksDBStorage {
             return "";
         }
         rootPath = rootPath + File.separator + "logs";
-        UtilAll.ensureDirOK(rootPath);
+        IOTinyUtils.ensureDirOK(rootPath);
         return rootPath + File.separator + "rocketmqlogs" + File.separator;
     }
 
