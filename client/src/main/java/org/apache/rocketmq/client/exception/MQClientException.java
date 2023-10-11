@@ -18,6 +18,7 @@ package org.apache.rocketmq.client.exception;
 
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.help.FAQUrl;
+import org.apache.rocketmq.common.utils.StringUtils;
 
 public class MQClientException extends Exception {
     private static final long serialVersionUID = -5758410930844185841L;
@@ -31,7 +32,7 @@ public class MQClientException extends Exception {
     }
 
     public MQClientException(int responseCode, String errorMessage) {
-        super(FAQUrl.attachDefaultURL("CODE: " + UtilAll.responseCode2String(responseCode) + "  DESC: "
+        super(FAQUrl.attachDefaultURL("CODE: " + StringUtils.responseCode2String(responseCode) + "  DESC: "
             + errorMessage));
         this.responseCode = responseCode;
         this.errorMessage = errorMessage;
