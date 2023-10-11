@@ -16,7 +16,6 @@
  */
 package org.apache.rocketmq.store;
 
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBatch;
@@ -26,6 +25,7 @@ import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.junit.After;
+
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -162,7 +162,7 @@ public class StoreTestBase {
 
     public static boolean makeSureFileExists(String fileName) throws Exception {
         File file = new File(fileName);
-        UtilAll.ensureDirOK(file.getParent());
+        IOTinyUtils.ensureDirOK(file.getParent());
         return file.createNewFile();
     }
 
