@@ -264,7 +264,7 @@ public class UtilAllTest {
         assertTrue(file120.createNewFile());
         writeFixedBytesToFile(file120, 1313);
 
-        assertEquals(1313 * 4, UtilAll.calculateFileSizeInPath(baseFile));
+        assertEquals(1313 * 4, IOTinyUtils.calculateFileSizeInPath(baseFile));
 
         // clear all file
         IOTinyUtils.delete(baseFile);
