@@ -30,6 +30,7 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.admin.ConsumeStats;
 import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
@@ -172,7 +173,7 @@ public class ConsumerProgressSubCommand implements SubCommand {
                     }
                     if (showClientIP) {
                         System.out.printf("%-64s  %-32s  %-4d  %-20d  %-20d  %-20s %-20d %-20d %s%n",
-                                UtilAll.frontStringAtLeast(mq.getTopic(), 64),
+                                StringUtils.frontStringAtLeast(mq.getTopic(), 64),
                                 UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),
                                 mq.getQueueId(),
                                 offsetWrapper.getBrokerOffset(),
