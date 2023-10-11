@@ -66,7 +66,7 @@ public class QueueTimeSpan {
     }
 
     public String getMaxTimeStampStr() {
-        return UtilAll.formatDate(new Date(maxTimeStamp), UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
+        return DateUtils.formatDate(new Date(maxTimeStamp), UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
     }
 
     public String getConsumeTimeStampStr() {
