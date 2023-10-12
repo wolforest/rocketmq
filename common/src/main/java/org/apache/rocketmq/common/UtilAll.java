@@ -666,7 +666,7 @@ public class UtilAll {
             file.delete();
         }
     }
-
+    @Deprecated
     public static String join(List<String> list, String splitter) {
         if (list == null) {
             return null;
