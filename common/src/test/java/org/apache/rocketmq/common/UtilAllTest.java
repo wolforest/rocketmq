@@ -128,10 +128,10 @@ public class UtilAllTest {
     public void testJoin() {
         List<String> list = Arrays.asList("groupA=DENY", "groupB=PUB|SUB", "groupC=SUB");
         String comma = ",";
-        assertEquals("groupA=DENY,groupB=PUB|SUB,groupC=SUB", UtilAll.join(list, comma));
-        assertEquals(null, UtilAll.join(null, comma));
+        assertEquals("groupA=DENY,groupB=PUB|SUB,groupC=SUB", StringUtils.join(list, comma));
+        assertEquals(null, StringUtils.join(null, comma));
         List<String> objects = Collections.emptyList();
-        assertEquals("", UtilAll.join(objects, comma));
+        assertEquals("", StringUtils.join(objects, comma));
     }
 
     static class DemoConfig {
