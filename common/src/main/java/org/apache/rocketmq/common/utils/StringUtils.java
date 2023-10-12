@@ -130,4 +130,20 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.isBlank(str);
     }
 
+    public static String join(List<String> list, String splitter) {
+        if (list == null) {
+            return null;
+        }
+
+        StringBuilder str = new StringBuilder();
+        for (int i = 0; i < list.size(); i++) {
+            str.append(list.get(i));
+            if (i == list.size() - 1) {
+                break;
+            }
+            str.append(splitter);
+        }
+        return str.toString();
+    }
+
 }
