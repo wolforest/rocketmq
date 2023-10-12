@@ -20,7 +20,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.service.BrokerNettyServer;
 import org.apache.rocketmq.common.AbstractBrokerRunnable;
+import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -32,8 +34,8 @@ import org.apache.rocketmq.remoting.netty.RequestTask;
 import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
 
 /**
- * BrokerFastFailure will cover {@link BrokerController#getBrokerNettyServer()} #getSendThreadPoolQueue()} and {@link
- * BrokerController#getBrokerNettyServer()} #getPullThreadPoolQueue()}
+ * BrokerFastFailure will cover {@link BrokerController#getBrokerNettyServer()#getSendThreadPoolQueue()} and
+ * {@link BrokerController#getBrokerNettyServer()#getPullThreadPoolQueue()}
  */
 public class BrokerFastFailure {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
@@ -72,79 +74,78 @@ public class BrokerFastFailure {
             }
         }, 1000, 10, TimeUnit.MILLISECONDS);
     }
-
+    
     private void cleanExpiredRequest() {
+        responseSystemBusy();
 
+        BrokerNettyServer nettyServer = this.brokerController.getBrokerNettyServer();
+        BrokerConfig brokerConfig = this.brokerController.getBrokerConfig();
+
+        cleanExpiredRequestInQueue(nettyServer.getSendThreadPoolQueue(), brokerConfig.getWaitTimeMillsInSendQueue());
+        cleanExpiredRequestInQueue(nettyServer.getPullThreadPoolQueue(), brokerConfig.getWaitTimeMillsInPullQueue());
+        cleanExpiredRequestInQueue(nettyServer.getLitePullThreadPoolQueue(), brokerConfig.getWaitTimeMillsInLitePullQueue());
+        cleanExpiredRequestInQueue(nettyServer.getHeartbeatThreadPoolQueue(), brokerConfig.getWaitTimeMillsInHeartbeatQueue());
+        cleanExpiredRequestInQueue(nettyServer.getEndTransactionThreadPoolQueue(), brokerConfig.getWaitTimeMillsInTransactionQueue());
+        cleanExpiredRequestInQueue(nettyServer.getAckThreadPoolQueue(), brokerConfig.getWaitTimeMillsInAckQueue());
+    }
+
+    private void responseSystemBusy() {
         while (this.brokerController.getMessageStore().isOSPageCacheBusy()) {
             try {
-                if (!this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().isEmpty()) {
-                    final Runnable runnable = this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().poll(0, TimeUnit.SECONDS);
-                    if (null == runnable) {
-                        break;
-                    }
-
-                    final RequestTask rt = castRunnable(runnable);
-                    if (rt != null) {
-                        rt.returnResponse(RemotingSysResponseCode.SYSTEM_BUSY, String.format(
-                            "[PCBUSY_CLEAN_QUEUE]broker busy, start flow control for a while, period in queue: %sms, "
-                                + "size of queue: %d",
-                            System.currentTimeMillis() - rt.getCreateTimestamp(),
-                            this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().size()));
-                    }
-                } else {
+                if (this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().isEmpty()) {
                     break;
                 }
+
+                final Runnable runnable = this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().poll(0, TimeUnit.SECONDS);
+                if (null == runnable) {
+                    break;
+                }
+
+                final RequestTask rt = castRunnable(runnable);
+                if (rt == null) {
+                    continue;
+                }
+
+                rt.returnResponse(RemotingSysResponseCode.SYSTEM_BUSY, String.format(
+                    "[PCBUSY_CLEAN_QUEUE]broker busy, start flow control for a while, period in queue: %sms, "
+                        + "size of queue: %d", System.currentTimeMillis() - rt.getCreateTimestamp(),
+                    this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().size()));
             } catch (Throwable ignored) {
             }
         }
-
-        cleanExpiredRequestInQueue(this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue(),
-            this.brokerController.getBrokerConfig().getWaitTimeMillsInSendQueue());
-
-        cleanExpiredRequestInQueue(this.brokerController.getBrokerNettyServer().getPullThreadPoolQueue(),
-            this.brokerController.getBrokerConfig().getWaitTimeMillsInPullQueue());
-
-        cleanExpiredRequestInQueue(this.brokerController.getBrokerNettyServer().getLitePullThreadPoolQueue(),
-            this.brokerController.getBrokerConfig().getWaitTimeMillsInLitePullQueue());
-
-        cleanExpiredRequestInQueue(this.brokerController.getBrokerNettyServer().getHeartbeatThreadPoolQueue(),
-            this.brokerController.getBrokerConfig().getWaitTimeMillsInHeartbeatQueue());
-
-        cleanExpiredRequestInQueue(this.brokerController.getBrokerNettyServer().getEndTransactionThreadPoolQueue(), this
-            .brokerController.getBrokerConfig().getWaitTimeMillsInTransactionQueue());
-
-        cleanExpiredRequestInQueue(this.brokerController.getBrokerNettyServer().getAckThreadPoolQueue(),
-            brokerController.getBrokerConfig().getWaitTimeMillsInAckQueue());
     }
 
     void cleanExpiredRequestInQueue(final BlockingQueue<Runnable> blockingQueue, final long maxWaitTimeMillsInQueue) {
         while (true) {
             try {
-                if (!blockingQueue.isEmpty()) {
-                    final Runnable runnable = blockingQueue.peek();
-                    if (null == runnable) {
-                        break;
-                    }
-                    final RequestTask rt = castRunnable(runnable);
-                    if (rt == null || rt.isStopRun()) {
-                        break;
-                    }
-
-                    final long behind = System.currentTimeMillis() - rt.getCreateTimestamp();
-                    if (behind >= maxWaitTimeMillsInQueue) {
-                        if (blockingQueue.remove(runnable)) {
-                            rt.setStopRun(true);
-                            rt.returnResponse(RemotingSysResponseCode.SYSTEM_BUSY, String.format("[TIMEOUT_CLEAN_QUEUE]broker busy, start flow control for a while, period in queue: %sms, size of queue: %d", behind, blockingQueue.size()));
-                            if (System.currentTimeMillis() - jstackTime > 15000) {
-                                jstackTime = System.currentTimeMillis();
-                                LOGGER.warn("broker jstack \n " + UtilAll.jstack());
-                            }
-                        }
-                    } else {
-                        break;
-                    }
-                } else {
+                if (blockingQueue.isEmpty()) {
                     break;
+                }
+
+                final Runnable runnable = blockingQueue.peek();
+                if (null == runnable) {
+                    break;
+                }
+
+                final RequestTask rt = castRunnable(runnable);
+                if (rt == null || rt.isStopRun()) {
+                    break;
+                }
+
+                final long behind = System.currentTimeMillis() - rt.getCreateTimestamp();
+                if (behind < maxWaitTimeMillsInQueue) {
+                    break;
+                }
+
+                if (!blockingQueue.remove(runnable)) {
+                    continue;
+                }
+
+                rt.setStopRun(true);
+                rt.returnResponse(RemotingSysResponseCode.SYSTEM_BUSY, String.format("[TIMEOUT_CLEAN_QUEUE]broker busy, start flow control for a while, period in queue: %sms, size of queue: %d", behind, blockingQueue.size()));
+                if (System.currentTimeMillis() - jstackTime > 15000) {
+                    jstackTime = System.currentTimeMillis();
+                    LOGGER.warn("broker jstack \n " + UtilAll.jstack());
                 }
             } catch (Throwable ignored) {
             }
