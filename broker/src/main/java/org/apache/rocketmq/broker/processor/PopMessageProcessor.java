@@ -127,7 +127,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         int reviveQid = getReviveQid(requestHeader);
         long popTime = System.currentTimeMillis();
 
-        GetMessageResult getMessageResult = initGetMessageResult();
+        GetMessageResult getMessageResult = new GetMessageResult(requestHeader.getMaxMsgNums());
         CompletableFuture<Long> getMessageFuture = popMessage(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime);
         bindGetMessageFutureCallback(ctx, requestHeader, getMessageResult, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime, getMessageFuture, response, request);
 
@@ -281,11 +281,6 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
 
         return reviveQid;
-    }
-
-    private GetMessageResult initGetMessageResult() {
-        int commercialSizePerMsg = this.brokerController.getBrokerConfig().getCommercialSizePerMsg();
-        return new GetMessageResult(commercialSizePerMsg);
     }
 
     private CompletableFuture<Long> popMessage(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
