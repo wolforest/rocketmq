@@ -179,7 +179,7 @@ public class ReplicasManager {
      * @param syncStateSet syncStateSet
      */
     public synchronized void changeBrokerRole(final Long newMasterBrokerId, final String newMasterAddress,
-        final Integer newMasterEpoch, final Integer syncStateSetEpoch, final Set<Long> syncStateSet) {
+        final Integer newMasterEpoch, final Integer syncStateSetEpoch, final Set<Long> syncStateSet) throws Exception {
 
         if (newMasterBrokerId == null || newMasterEpoch <= this.masterEpoch) {
             return;
@@ -292,7 +292,7 @@ public class ReplicasManager {
      * @param syncStateSetEpoch syncStateSetEpoch
      * @param syncStateSet syncStateSet
      */
-    public void changeToMaster(final int newMasterEpoch, final int syncStateSetEpoch, final Set<Long> syncStateSet) {
+    public void changeToMaster(final int newMasterEpoch, final int syncStateSetEpoch, final Set<Long> syncStateSet) throws Exception {
         synchronized (this) {
             if (newMasterEpoch <= this.masterEpoch) {
                 return;

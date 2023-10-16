@@ -29,13 +29,11 @@ public class FlushConsumeQueueService extends ServiceThread {
     private static final int RETRY_TIMES_OVER = 3;
     private long lastFlushTimestamp = 0;
 
-
-    private final DefaultMessageStore messageStore;
+    protected final DefaultMessageStore messageStore;
 
     public FlushConsumeQueueService(DefaultMessageStore messageStore) {
         this.messageStore = messageStore;
     }
-
 
     private void doFlush(int retryTimes) {
         int flushConsumeQueueLeastPages = messageStore.getMessageStoreConfig().getFlushConsumeQueueLeastPages();

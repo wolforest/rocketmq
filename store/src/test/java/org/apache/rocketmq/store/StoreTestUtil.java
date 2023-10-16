@@ -39,11 +39,16 @@ public class StoreTestUtil {
 
     public static boolean isCommitLogAvailable(DefaultMessageStore store) {
         try {
+            Field serviceField = null;
+            if (store instanceof RocksDBMessageStore) {
+                serviceField = store.getClass().getSuperclass().getDeclaredField("reputMessageService");
+            } else {
+                serviceField = store.getClass().getDeclaredField("reputMessageService");
+            }
 
-            Field serviceField = store.getClass().getDeclaredField("reputMessageService");
             serviceField.setAccessible(true);
             ReputMessageService reputService =
-                    (ReputMessageService) serviceField.get(store);
+                (ReputMessageService) serviceField.get(store);
 
             Method method = ReputMessageService.class.getDeclaredMethod("isCommitLogAvailable");
             method.setAccessible(true);
@@ -52,6 +57,7 @@ public class StoreTestUtil {
             throw new RuntimeException(e);
         }
     }
+
 
     public static void flushConsumeQueue(DefaultMessageStore store) throws Exception {
         Field field = store.getClass().getDeclaredField("flushConsumeQueueService");

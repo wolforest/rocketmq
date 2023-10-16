@@ -40,7 +40,6 @@ import org.apache.rocketmq.common.message.MessageVersion;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
-import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -65,6 +64,7 @@ import org.apache.rocketmq.store.logfile.MultiPathMappedFileQueue;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.logfile.SelectMappedFileResult;
 import org.apache.rocketmq.store.util.LibC;
+import org.rocksdb.RocksDBException;
 import sun.nio.ch.DirectBuffer;
 
 /**
@@ -294,8 +294,9 @@ public class CommitLog implements Swappable {
 
     /**
      * When the normal exit, data recovery, all memory data have been flush
+     * @throws RocksDBException only in rocksdb mode
      */
-    public void recoverNormally(long maxPhyOffsetOfConsumeQueue) {
+    public void recoverNormally(long maxPhyOffsetOfConsumeQueue) throws RocksDBException {
         this.commitLogRecoverService.recoverNormally(maxPhyOffsetOfConsumeQueue);
     }
 
@@ -564,8 +565,11 @@ public class CommitLog implements Swappable {
         return -1;
     }
 
+    /**
+     * @throws RocksDBException only in rocksdb mode
+     */
     @Deprecated
-    public void recoverAbnormally(long maxPhyOffsetOfConsumeQueue) {
+    public void recoverAbnormally(long maxPhyOffsetOfConsumeQueue) throws RocksDBException {
         this.commitLogRecoverService.recoverAbnormally(maxPhyOffsetOfConsumeQueue);
     }
 
@@ -584,7 +588,7 @@ public class CommitLog implements Swappable {
         }
     }
 
-    public boolean isMappedFileMatchedRecover(final MappedFile mappedFile) {
+    public boolean isMappedFileMatchedRecover(final MappedFile mappedFile) throws RocksDBException {
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
 
         int magicCode = byteBuffer.getInt(MessageDecoder.MESSAGE_MAGIC_CODE_POSITION);
@@ -592,28 +596,37 @@ public class CommitLog implements Swappable {
             return false;
         }
 
-        int sysFlag = byteBuffer.getInt(MessageDecoder.SYSFLAG_POSITION);
-        int bornhostLength = (sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 8 : 20;
-        int msgStoreTimePos = 4 + 4 + 4 + 4 + 4 + 8 + 8 + 4 + 8 + bornhostLength;
-        long storeTimestamp = byteBuffer.getLong(msgStoreTimePos);
-        if (0 == storeTimestamp) {
-            return false;
-        }
-
-        if (this.defaultMessageStore.getMessageStoreConfig().isMessageIndexEnable()
-            && this.defaultMessageStore.getMessageStoreConfig().isMessageIndexSafe()) {
-            if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestampIndex()) {
-                log.info("find check timestamp, {} {}",
-                    storeTimestamp,
-                    TimeUtils.timeMillisToHumanString(storeTimestamp));
+        if (this.defaultMessageStore.getMessageStoreConfig().isEnableRocksDBStore()) {
+            final long maxPhyOffsetInConsumeQueue = this.defaultMessageStore.getConsumeQueueStore().getMaxPhyOffsetInConsumeQueue();
+            long phyOffset = byteBuffer.getLong(MessageDecoder.MESSAGE_PHYSIC_OFFSET_POSITION);
+            if (phyOffset <= maxPhyOffsetInConsumeQueue) {
+                log.info("find check. beginPhyOffset: {}, maxPhyOffsetInConsumeQueue: {}", phyOffset, maxPhyOffsetInConsumeQueue);
                 return true;
             }
         } else {
-            if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestamp()) {
-                log.info("find check timestamp, {} {}",
-                    storeTimestamp,
-                    TimeUtils.timeMillisToHumanString(storeTimestamp));
-                return true;
+            int sysFlag = byteBuffer.getInt(MessageDecoder.SYSFLAG_POSITION);
+            int bornHostLength = (sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 8 : 20;
+            int msgStoreTimePos = 4 + 4 + 4 + 4 + 4 + 8 + 8 + 4 + 8 + bornHostLength;
+            long storeTimestamp = byteBuffer.getLong(msgStoreTimePos);
+            if (0 == storeTimestamp) {
+                return false;
+            }
+
+            if (this.defaultMessageStore.getMessageStoreConfig().isMessageIndexEnable()
+                && this.defaultMessageStore.getMessageStoreConfig().isMessageIndexSafe()) {
+                if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestampIndex()) {
+                    log.info("find check timestamp, {} {}",
+                        storeTimestamp,
+                        UtilAll.timeMillisToHumanString(storeTimestamp));
+                    return true;
+                }
+            } else {
+                if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestamp()) {
+                    log.info("find check timestamp, {} {}",
+                        storeTimestamp,
+                        UtilAll.timeMillisToHumanString(storeTimestamp));
+                    return true;
+                }
             }
         }
 

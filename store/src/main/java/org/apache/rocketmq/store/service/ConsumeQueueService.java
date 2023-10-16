@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 import io.openmessaging.storage.dledger.entry.DLedgerEntry;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -51,6 +52,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.rocksdb.RocksDBException;
 
 public class ConsumeQueueService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -66,22 +68,22 @@ public class ConsumeQueueService {
     }
 
     public long getOffsetInQueueByTime(String topic, int queueId, long timestamp, BoundaryType boundaryType) {
-        ConsumeQueueInterface logic = this.findConsumeQueue(topic, queueId);
-        if (logic == null) {
-            return 0;
+        try {
+            return this.messageStore.getConsumeQueueStore().getOffsetInQueueByTime(topic, queueId, timestamp, boundaryType);
+        } catch (RocksDBException e) {
+            LOGGER.error("getOffsetInQueueByTime Failed. topic: {}, queueId: {}, timestamp: {} boundaryType: {}, {}",
+                topic, queueId, timestamp, boundaryType, e.getMessage());
         }
-
-        long resultOffset = logic.getOffsetInQueueByTime(timestamp, boundaryType);
-        // Make sure the result offset is in valid range.
-        resultOffset = Math.max(resultOffset, logic.getMinOffsetInQueue());
-        resultOffset = Math.min(resultOffset, logic.getMaxOffsetInQueue());
-        return resultOffset;
+        return 0;
     }
 
     public long getEarliestMessageTime(String topic, int queueId) {
         ConsumeQueueInterface logicQueue = this.findConsumeQueue(topic, queueId);
         if (logicQueue != null) {
-            return getStoreTime(logicQueue.getEarliestUnit());
+            Pair<CqUnit, Long> pair = logicQueue.getEarliestUnitAndStoreTime();
+            if (pair != null && pair.getObject2() != null) {
+                return pair.getObject2();
+            }
         }
 
         return -1;
@@ -103,14 +105,15 @@ public class ConsumeQueueService {
     public long getMessageStoreTimeStamp(String topic, int queueId, long consumeQueueOffset) {
         ConsumeQueueInterface logicQueue = this.findConsumeQueue(topic, queueId);
         if (logicQueue != null) {
-            return getStoreTime(logicQueue.get(consumeQueueOffset));
+            Pair<CqUnit, Long> pair = logicQueue.getCqUnitAndStoreTime(consumeQueueOffset);
+            if (pair != null && pair.getObject2() != null) {
+                return pair.getObject2();
+            }
         }
-
         return -1;
     }
 
-    public CompletableFuture<Long> getMessageStoreTimeStampAsync(String topic, int queueId,
-        long consumeQueueOffset) {
+    public CompletableFuture<Long> getMessageStoreTimeStampAsync(String topic, int queueId, long consumeQueueOffset) {
         return CompletableFuture.completedFuture(getMessageStoreTimeStamp(topic, queueId, consumeQueueOffset));
     }
 
@@ -288,12 +291,12 @@ public class ConsumeQueueService {
     }
 
     public long getMinOffsetInQueue(String topic, int queueId) {
-        ConsumeQueueInterface logic = this.findConsumeQueue(topic, queueId);
-        if (logic != null) {
-            return logic.getMinOffsetInQueue();
+        try {
+            return this.messageStore.getConsumeQueueStore().getMinOffsetInQueue(topic, queueId);
+        } catch (RocksDBException e) {
+            LOGGER.error("getMinOffsetInQueue Failed. topic: {}, queueId: {}", topic, queueId, e);
+            return -1;
         }
-
-        return -1;
     }
 
     public long getCommitLogOffsetInQueue(String topic, int queueId, long consumeQueueOffset) {
@@ -302,17 +305,9 @@ public class ConsumeQueueService {
             return 0;
         }
 
-        ReferredIterator<CqUnit> bufferConsumeQueue = consumeQueue.iterateFrom(consumeQueueOffset);
-        if (bufferConsumeQueue == null) {
-            return 0;
-        }
-
-        try {
-            if (bufferConsumeQueue.hasNext()) {
-                return bufferConsumeQueue.next().getPos();
-            }
-        } finally {
-            bufferConsumeQueue.release();
+        CqUnit cqUnit = consumeQueue.get(consumeQueueOffset);
+        if (cqUnit != null) {
+            return cqUnit.getPos();
         }
 
         return 0;
@@ -323,6 +318,7 @@ public class ConsumeQueueService {
      * If offset table is cleaned, and old messages are dispatching after the old consume queue is cleaned,
      * consume queue will be created with old offset, then later message with new offset table can not be
      * dispatched to consume queue.
+     * @throws RocksDBException only in rocksdb mode
      */
     public int deleteTopics(final Set<String> deleteTopics) {
         if (deleteTopics == null || deleteTopics.isEmpty()) {
@@ -350,17 +346,20 @@ public class ConsumeQueueService {
     }
 
     private void deleteTopicQueueTable(String topic) {
-        ConcurrentMap<Integer, ConsumeQueueInterface> queueTable =
-            messageStore.getConsumeQueueStore().getConsumeQueueTable().get(topic);
+        ConcurrentMap<Integer, ConsumeQueueInterface> queueTable = messageStore.getConsumeQueueStore().findConsumeQueueMap(topic);
 
         if (queueTable == null || queueTable.isEmpty()) {
             return;
         }
 
         for (ConsumeQueueInterface cq : queueTable.values()) {
-            messageStore.getConsumeQueueStore().destroy(cq);
-            LOGGER.info("DeleteTopic: ConsumeQueue has been cleaned, topic={}, queueId={}",
-                cq.getTopic(), cq.getQueueId());
+            try {
+                messageStore.getConsumeQueueStore().destroy(cq);
+            } catch (RocksDBException e) {
+                LOGGER.error("DeleteTopic: ConsumeQueue cleans error!, topic={}, queueId={}", cq.getTopic(), cq.getQueueId(), e);
+            }
+
+            LOGGER.info("DeleteTopic: ConsumeQueue has been cleaned, topic={}, queueId={}", cq.getTopic(), cq.getQueueId());
             messageStore.getConsumeQueueStore().removeTopicQueueTable(cq.getTopic(), cq.getQueueId());
         }
     }
@@ -452,22 +451,6 @@ public class ConsumeQueueService {
             return false;
         }
     }
-
-    protected long getStoreTime(CqUnit result) {
-        if (result == null) {
-            return -1;
-
-        }
-
-        try {
-            final long phyOffset = result.getPos();
-            final int size = result.getSize();
-            return messageStore.getCommitLog().pickupStoreTimestamp(phyOffset, size);
-        } catch (Exception e) {
-            return -1;
-        }
-    }
-
 
     private boolean checkInMemByCommitOffset(long offsetPy, int size) {
         SelectMappedBufferResult message = messageStore.getCommitLog().getMessage(offsetPy, size);

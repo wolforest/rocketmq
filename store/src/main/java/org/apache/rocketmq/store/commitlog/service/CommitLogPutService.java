@@ -42,6 +42,7 @@ import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.ha.HAService;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.util.LibC;
+import org.rocksdb.RocksDBException;
 
 public class CommitLogPutService {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -80,7 +81,7 @@ public class CommitLogPutService {
 
     public CompletableFuture<PutMessageResult> asyncPutMessages(final MessageExtBatch messageExtBatch) {
         messageExtBatch.setStoreTimestamp(System.currentTimeMillis());
-        AppendMessageResult result;
+        AppendMessageResult result = null;
 
         final int tranType = MessageSysFlag.getTransactionValue(messageExtBatch.getSysFlag());
 
@@ -214,6 +215,8 @@ public class CommitLogPutService {
             if (AppendMessageStatus.PUT_OK.equals(result.getStatus())) {
                 this.defaultMessageStore.increaseOffset(messageExtBatch, (short) putMessageContext.getBatchSize());
             }
+        } catch (RocksDBException e) {
+            return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, result));
         } finally {
             commitLog.getTopicQueueLock().unlock(topicQueueKey);
         }
@@ -389,6 +392,8 @@ public class CommitLogPutService {
             if (AppendMessageStatus.PUT_OK.equals(context.getResult().getStatus())) {
                 this.defaultMessageStore.increaseOffset(msg, commitLog.getMessageNum(msg));
             }
+        } catch (RocksDBException e) {
+            return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, null));
         } finally {
             commitLog.getTopicQueueLock().unlock(context.getTopicQueueKey());
         }

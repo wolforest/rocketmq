@@ -16,6 +16,8 @@
  */
 package org.apache.rocketmq.store.timer.transit;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -26,18 +28,17 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.queue.ConsumeQueue;
+import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
+import org.apache.rocketmq.store.queue.CqUnit;
+import org.apache.rocketmq.store.queue.ReferredIterator;
 import org.apache.rocketmq.store.timer.MessageOperator;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.util.PerfCounter;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
-
 /**
  * Consume the original topic queue, convert message to TimerTask and put it into the in-memory pending queue
+ * @renamed from TimerEnqueueGetService to TimerMessageAccepter
  *
  * pull message directly from consume queue with predefined queueId
  * and put message to TimerMessageStore.fetchedTimerMessageQueue
@@ -93,72 +94,69 @@ public class TimerMessageAccepter extends ServiceThread {
         if (!isRunningEnqueue()) {
             return false;
         }
-        SelectMappedBufferResult queueItem = getIndexBuffer();
-        if (null ==  queueItem) {
+        ConsumeQueueInterface cq = getCqAndSetCurrentOffset();
+        if (null ==  cq) {
             return false;
         }
 
         long currQueueOffset = timerState.currQueueOffset;
-        return fetch(queueItem, currQueueOffset);
+        return fetch(cq, currQueueOffset);
     }
 
-    private boolean fetch(SelectMappedBufferResult queueItem, long currQueueOffset) {
+    private boolean fetch(ConsumeQueueInterface cq, long offset) {
+        ReferredIterator<CqUnit> iterator = null;
         try {
-            int i = 0;
-            for (; i <  queueItem.getSize(); i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
-                if (!enqueueTimerTask(queueItem, currQueueOffset, i)) {
-                    return false;
-                }
+            iterator = cq.iterateFrom(offset);
+            if (null == iterator) {
+                return false;
+            }
 
+            int i = 0;
+            while (iterator.hasNext()) {
+                i++;
+                perfCounterTicks.startTick("enqueue_get");
+                try {
+                    CqUnit cqUnit = iterator.next();
+                    long offsetPy = cqUnit.getPos();
+                    int sizePy = cqUnit.getSize();
+                    cqUnit.getTagsCode(); //tags code
+                    MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
+                    if (null == msgExt) {
+                        perfCounterTicks.getCounter("enqueue_get_miss");
+                    } else {
+                        timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
+                        timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
+                        long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
+                        // use CQ offset, not offset in Message
+                        msgExt.setQueueOffset(offset + i);
+                        TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
+
+                        if (!loopOffer(timerRequest)) {
+                            return false;
+                        }
+                    }
+                } catch (Exception e) {
+                    deferThrow(e);
+                } finally {
+                    perfCounterTicks.endTick("enqueue_get");
+                }
                 // if broker role changes, ignore last enqueue
                 if (!isRunningEnqueue()) {
                     return false;
                 }
-                timerState.currQueueOffset = forwardOffset(currQueueOffset, i);
+                timerState.currQueueOffset  = offset + i;
+
             }
-            timerState.currQueueOffset = forwardOffset(currQueueOffset, i);
+            timerState.currQueueOffset = offset + i;
             return i > 0;
         } catch (Exception e) {
             LOGGER.error("Unknown exception in enqueuing", e);
         } finally {
-            queueItem.release();
+            if (iterator != null) {
+                iterator.release();
+            }
         }
         return false;
-    }
-
-    private boolean enqueueTimerTask(SelectMappedBufferResult queueItem, long currQueueOffset, int i) throws Exception {
-        perfCounterTicks.startTick("enqueue_get");
-        try {
-            long offsetPy =  queueItem.getByteBuffer().getLong();
-            int sizePy =  queueItem.getByteBuffer().getInt();
-            discard(queueItem);
-            MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
-            if (null == msgExt) {
-                perfCounterTicks.getCounter("enqueue_get_miss");
-                return true;
-            }
-            timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
-            timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
-            long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
-            // use CQ offset, not offset in Message
-            msgExt.setQueueOffset(forwardOffset(currQueueOffset, i));
-            TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
-
-            if (!loopOffer(timerRequest)) {
-                return false;
-            }
-
-        } catch (Exception e) {
-            deferThrow(e);
-        } finally {
-            perfCounterTicks.endTick("enqueue_get");
-        }
-
-        return true;
-    }
-
-    private long forwardOffset(long currQueueOffset, int i) {
-        return currQueueOffset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
     }
 
     private void deferThrow(Exception e) throws Exception {
@@ -171,10 +169,6 @@ public class TimerMessageAccepter extends ServiceThread {
         }
     }
 
-    private void discard(SelectMappedBufferResult bufferCQ) {
-        bufferCQ.getByteBuffer().getLong(); //tags code,Just to move the cursor
-    }
-
     private boolean loopOffer(TimerRequest timerRequest) throws InterruptedException {
         while (!fetchedTimerMessageQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
             if (!isRunningEnqueue()) {
@@ -185,13 +179,10 @@ public class TimerMessageAccepter extends ServiceThread {
     }
 
     /**
-     * get consume queue item ByteBuffer
-     * facade of ConsumeQueue.getIndexBuffer
-     *
-     * @return SelectMappedBufferResult
+     * @return ConsumeQueueInterface
      */
-    private SelectMappedBufferResult getIndexBuffer() {
-        ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, TIMER_QUEUE_ID);
+    private ConsumeQueueInterface getCqAndSetCurrentOffset() {
+        ConsumeQueueInterface cq = messageOperator.getConsumeQueue(TIMER_TOPIC, TIMER_QUEUE_ID);
         if (null == cq) {
             return null;
         }
@@ -200,7 +191,7 @@ public class TimerMessageAccepter extends ServiceThread {
                     timerState.currQueueOffset, cq.getMinOffsetInQueue());
             timerState.currQueueOffset = cq.getMinOffsetInQueue();
         }
-        return cq.getIndexBuffer(timerState.currQueueOffset);
+        return cq;
     }
 
     @Override

@@ -16,21 +16,22 @@
  */
 package org.apache.rocketmq.store.timer.transit;
 
+import java.nio.ByteBuffer;
+import java.util.List;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.queue.ConsumeQueue;
+import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
+import org.apache.rocketmq.store.queue.CqUnit;
+import org.apache.rocketmq.store.queue.ReferredIterator;
 import org.apache.rocketmq.store.timer.MessageOperator;
 import org.apache.rocketmq.store.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
 import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheel;
-
-import java.nio.ByteBuffer;
-import java.util.List;
 
 import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
 
@@ -189,7 +190,7 @@ public class TimerMessageRecover {
             // if not, use cq offset.
             long msgQueueOffset = messageExt.getQueueOffset();
             int queueId = messageExt.getQueueId();
-            ConsumeQueue cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
+            ConsumeQueueInterface cq = messageOperator.getConsumeQueue(TIMER_TOPIC, queueId);
             if (null == cq) {
                 return msgQueueOffset;
             }
@@ -199,21 +200,24 @@ public class TimerMessageRecover {
             while (maxCount-- > 0) {
                 if (tmpOffset < 0) {
                     LOGGER.warn("reviseQueueOffset check cq offset fail, msg in cq is not found.{}, {}",
-                            offsetPy, sizePy);
+                        offsetPy, sizePy);
                     break;
                 }
-                SelectMappedBufferResult bufferCQ = cq.getIndexBuffer(tmpOffset);
-                if (null == bufferCQ) {
-                    // offset in msg may be greater than offset of cq.
-                    tmpOffset -= 1;
-                    continue;
-                }
+                ReferredIterator<CqUnit> iterator = null;
                 try {
-                    long offsetPyTemp = bufferCQ.getByteBuffer().getLong();
-                    int sizePyTemp = bufferCQ.getByteBuffer().getInt();
+                    iterator = cq.iterateFrom(tmpOffset);
+                    CqUnit cqUnit = null;
+                    if (null == iterator || (cqUnit = iterator.next()) == null) {
+                        // offset in msg may be greater than offset of cq.
+                        tmpOffset -= 1;
+                        continue;
+                    }
+
+                    long offsetPyTemp = cqUnit.getPos();
+                    int sizePyTemp = cqUnit.getSize();
                     if (offsetPyTemp == offsetPy && sizePyTemp == sizePy) {
                         LOGGER.info("reviseQueueOffset check cq offset ok. {}, {}, {}",
-                                tmpOffset, offsetPyTemp, sizePyTemp);
+                            tmpOffset, offsetPyTemp, sizePyTemp);
                         cqOffset = tmpOffset;
                         break;
                     }
@@ -221,7 +225,9 @@ public class TimerMessageRecover {
                 } catch (Throwable e) {
                     LOGGER.error("reviseQueueOffset check cq offset error.", e);
                 } finally {
-                    bufferCQ.release();
+                    if (iterator != null) {
+                        iterator.release();
+                    }
                 }
             }
 

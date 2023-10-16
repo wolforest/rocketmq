@@ -16,23 +16,22 @@
  */
 package org.apache.rocketmq.store.timer.transit;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.queue.ConsumeQueue;
-import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
+import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.timer.TimerMetrics;
 import org.apache.rocketmq.store.timer.TimerRequest;
 import org.apache.rocketmq.store.timer.TimerState;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
 import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheel;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
 
 import static org.apache.rocketmq.store.timer.TimerState.TIMER_TOPIC;
 
@@ -95,7 +94,7 @@ public class TimerFlushService extends ServiceThread {
             if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
                 start = System.currentTimeMillis();
                 long tmpQueueOffset = timerState.currQueueOffset;
-                ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TIMER_TOPIC, 0);
+                ConsumeQueueInterface cq = messageStore.getConsumeQueue(TIMER_TOPIC, 0);
                 long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
                 LOGGER.info("[{}]Timer progress-check commitRead:[{}] currRead:[{}] currWrite:[{}] readBehind:{} currReadOffset:{} offsetBehind:{} behindMaster:{} " +
                         "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",

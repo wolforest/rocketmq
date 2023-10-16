@@ -27,7 +27,7 @@ import org.apache.rocketmq.store.logfile.MappedFile;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-
+import org.rocksdb.RocksDBException;
 
 public class CommitLogRecoverService {
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -44,8 +44,9 @@ public class CommitLogRecoverService {
 
     /**
      * When the normal exit, data recovery, all memory data have been flush
+     * @throws RocksDBException only in rocksdb mode
      */
-    public void recoverNormally(long maxPhyOffsetOfConsumeQueue) {
+    public void recoverNormally(long maxPhyOffsetOfConsumeQueue) throws RocksDBException {
         boolean checkCRCOnRecover = this.defaultMessageStore.getMessageStoreConfig().isCheckCRCOnRecover();
         boolean checkDupInfo = this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable();
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
@@ -108,8 +109,8 @@ public class CommitLogRecoverService {
         }
 
         processOffset += mappedFileOffset;
-        storeRecoverOffset(processOffset, lastValidMsgPhyOffset);
-        truncateDirtyLogicFiles(processOffset, maxPhyOffsetOfConsumeQueue);
+
+        storeRecoverOffset(processOffset, lastValidMsgPhyOffset, maxPhyOffsetOfConsumeQueue);
     }
 
     private void recoverWithoutMappedFile() {
@@ -117,7 +118,8 @@ public class CommitLogRecoverService {
         log.warn("The CommitLog files are deleted, and delete the consume queue files");
         this.mappedFileQueue.setFlushedWhere(0);
         this.mappedFileQueue.setCommittedWhere(0);
-        this.defaultMessageStore.destroyLogics();
+        this.defaultMessageStore.getConsumeQueueStore().destroy();
+        this.defaultMessageStore.getConsumeQueueStore().loadAfterDestroy();
     }
 
     private int getLastThirdIndex(List<MappedFile> mappedFiles) {
@@ -129,7 +131,7 @@ public class CommitLogRecoverService {
         return index;
     }
 
-    private void storeRecoverOffset(long processOffset, long lastValidMsgPhyOffset) {
+    private void storeRecoverOffset(long processOffset, long lastValidMsgPhyOffset, long maxPhyOffsetOfConsumeQueue) throws RocksDBException {
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
             if (this.defaultMessageStore.getConfirmOffset() < this.defaultMessageStore.getMinPhyOffset()) {
                 log.error("confirmOffset {} is less than minPhyOffset {}, correct confirmOffset to minPhyOffset", this.defaultMessageStore.getConfirmOffset(), this.defaultMessageStore.getMinPhyOffset());
@@ -142,12 +144,14 @@ public class CommitLogRecoverService {
             this.commitLog.setConfirmOffset(lastValidMsgPhyOffset);
         }
 
+        truncateDirtyLogicFiles(processOffset, maxPhyOffsetOfConsumeQueue);
+
         this.mappedFileQueue.setFlushedWhere(processOffset);
         this.mappedFileQueue.setCommittedWhere(processOffset);
         this.mappedFileQueue.truncateDirtyFiles(processOffset);
     }
 
-    private void truncateDirtyLogicFiles(long processOffset, long maxPhyOffsetOfConsumeQueue) {
+    private void truncateDirtyLogicFiles(long processOffset, long maxPhyOffsetOfConsumeQueue) throws RocksDBException {
         // Clear ConsumeQueue redundant data
         if (maxPhyOffsetOfConsumeQueue < processOffset) {
             return;
@@ -157,8 +161,11 @@ public class CommitLogRecoverService {
         this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
     }
 
+    /**
+     * @throws RocksDBException only in rocksdb mode
+     */
     @Deprecated
-    public void recoverAbnormally(long maxPhyOffsetOfConsumeQueue) {
+    public void recoverAbnormally(long maxPhyOffsetOfConsumeQueue) throws RocksDBException {
         // recover by the minimum time stamp
         boolean checkCRCOnRecover = this.defaultMessageStore.getMessageStoreConfig().isCheckCRCOnRecover();
         boolean checkDupInfo = this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable();
@@ -168,7 +175,8 @@ public class CommitLogRecoverService {
             log.warn("The commitlog files are deleted, and delete the consume queue files");
             this.mappedFileQueue.setFlushedWhere(0);
             this.mappedFileQueue.setCommittedWhere(0);
-            this.defaultMessageStore.destroyLogics();
+            this.defaultMessageStore.getConsumeQueueStore().destroy();
+            this.defaultMessageStore.getConsumeQueueStore().loadAfterDestroy();
         }
 
         // Looking beginning to recover from which file
@@ -243,6 +251,9 @@ public class CommitLogRecoverService {
             }
         }
 
+        // only for rocksdb mode
+        this.defaultMessageStore.finishCommitLogDispatch();
+
         processOffset += mappedFileOffset;
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
             if (this.defaultMessageStore.getConfirmOffset() < this.defaultMessageStore.getMinPhyOffset()) {
@@ -255,14 +266,15 @@ public class CommitLogRecoverService {
         } else {
             this.commitLog.setConfirmOffset(lastValidMsgPhyOffset);
         }
-        this.mappedFileQueue.setFlushedWhere(processOffset);
-        this.mappedFileQueue.setCommittedWhere(processOffset);
-        this.mappedFileQueue.truncateDirtyFiles(processOffset);
 
         // Clear ConsumeQueue redundant data
         if (maxPhyOffsetOfConsumeQueue >= processOffset) {
             log.warn("maxPhyOffsetOfConsumeQueue({}) >= processOffset({}), truncate dirty logic files", maxPhyOffsetOfConsumeQueue, processOffset);
             this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
         }
+
+        this.mappedFileQueue.setFlushedWhere(processOffset);
+        this.mappedFileQueue.setCommittedWhere(processOffset);
+        this.mappedFileQueue.truncateDirtyFiles(processOffset);
     }
 }

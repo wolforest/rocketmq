@@ -25,9 +25,9 @@ import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
 
 public  class CleanConsumeQueueService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private long lastPhysicalMinOffset = 0;
+    protected long lastPhysicalMinOffset = 0;
 
-    private final DefaultMessageStore messageStore;
+    protected final DefaultMessageStore messageStore;
 
     public CleanConsumeQueueService(DefaultMessageStore messageStore) {
         this.messageStore = messageStore;
@@ -65,7 +65,7 @@ public  class CleanConsumeQueueService {
         }
     }
 
-    private void deleteExpiredFiles() {
+    protected void deleteExpiredFiles() {
         long minOffset = messageStore.getCommitLog().getMinOffset();
         if (minOffset <= this.lastPhysicalMinOffset) {
             return;

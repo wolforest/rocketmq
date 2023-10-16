@@ -67,6 +67,9 @@ public class ConcurrentReputMessageService extends ReputMessageService {
 
             doNext = doReput(result, doNext);
         }
+
+        // only for rocksdb mode
+        messageStore.finishCommitLogDispatch();
     }
 
     private boolean doReput(SelectMappedBufferResult result, boolean doNext) {
@@ -169,8 +172,7 @@ public class ConcurrentReputMessageService extends ReputMessageService {
 
         if (this.isCommitLogAvailable()) {
             LOGGER.warn("shutdown concurrentReputMessageService, but CommitLog have not finish to be dispatched, CommitLog max" +
-                    " offset={}, reputFromOffset={}", messageStore.getCommitLog().getMaxOffset(),
-                this.reputFromOffset);
+                    " offset={}, reputFromOffset={}", messageStore.getCommitLog().getMaxOffset(), this.reputFromOffset);
         }
 
         this.mainBatchDispatchRequestService.shutdown();

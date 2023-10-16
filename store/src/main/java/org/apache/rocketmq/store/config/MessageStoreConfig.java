@@ -413,8 +413,10 @@ public class MessageStoreConfig {
     private int batchDispatchRequestThreadPoolNums = 16;
 
     // rocksdb mode
+    private long cleanRocksDBDirtyCQIntervalMin = 60;
+    private long statRocksDBCQIntervalSec = 10;
+    private long memTableFlushIntervalMs = 60 * 60 * 1000L;
     private boolean realTimePersistRocksDBConfig = true;
-    private long memTableFlushInterval = 60 * 60 * 1000L;
     private boolean enableRocksDBLog = false;
 
     private int topicQueueLockNum = 32;
@@ -515,6 +517,10 @@ public class MessageStoreConfig {
         this.mappedFileSizeCommitLog = mappedFileSizeCommitLog;
     }
 
+    public boolean isEnableRocksDBStore() {
+        return StoreType.DEFAULT_ROCKSDB.getStoreType().equalsIgnoreCase(this.storeType);
+    }
+
     public String getStoreType() {
         return storeType;
     }
@@ -524,7 +530,6 @@ public class MessageStoreConfig {
     }
 
     public int getMappedFileSizeConsumeQueue() {
-
         int factor = (int) Math.ceil(this.mappedFileSizeConsumeQueue / (ConsumeQueue.CQ_STORE_UNIT_SIZE * 1.0));
         return (int) (factor * ConsumeQueue.CQ_STORE_UNIT_SIZE);
     }
@@ -1754,12 +1759,28 @@ public class MessageStoreConfig {
         this.realTimePersistRocksDBConfig = realTimePersistRocksDBConfig;
     }
 
-    public long getMemTableFlushInterval() {
-        return memTableFlushInterval;
+    public long getStatRocksDBCQIntervalSec() {
+        return statRocksDBCQIntervalSec;
     }
 
-    public void setMemTableFlushInterval(long memTableFlushInterval) {
-        this.memTableFlushInterval = memTableFlushInterval;
+    public void setStatRocksDBCQIntervalSec(long statRocksDBCQIntervalSec) {
+        this.statRocksDBCQIntervalSec = statRocksDBCQIntervalSec;
+    }
+
+    public long getCleanRocksDBDirtyCQIntervalMin() {
+        return cleanRocksDBDirtyCQIntervalMin;
+    }
+
+    public void setCleanRocksDBDirtyCQIntervalMin(long cleanRocksDBDirtyCQIntervalMin) {
+        this.cleanRocksDBDirtyCQIntervalMin = cleanRocksDBDirtyCQIntervalMin;
+    }
+
+    public long getMemTableFlushIntervalMs() {
+        return memTableFlushIntervalMs;
+    }
+
+    public void setMemTableFlushIntervalMs(long memTableFlushIntervalMs) {
+        this.memTableFlushIntervalMs = memTableFlushIntervalMs;
     }
 
     public boolean isEnableRocksDBLog() {

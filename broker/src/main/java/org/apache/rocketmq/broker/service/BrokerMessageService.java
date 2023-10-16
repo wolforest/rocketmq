@@ -47,6 +47,8 @@ import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.MessageArrivingListener;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
+import org.apache.rocketmq.store.RocksDBMessageStore;
+import org.apache.rocketmq.store.StoreType;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.dledger.DLedgerCommitLog;
 import org.apache.rocketmq.store.hook.PutMessageHook;
@@ -98,8 +100,12 @@ public class BrokerMessageService {
 
     public boolean init() {
         try {
-            DefaultMessageStore defaultMessageStore = new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager,
-                this.messageArrivingListener, this.brokerConfig, topicConfigTable);
+            DefaultMessageStore defaultMessageStore;
+            if (this.messageStoreConfig.isEnableRocksDBStore()) {
+                defaultMessageStore = new RocksDBMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener, this.brokerConfig, topicConfigTable);
+            } else {
+                defaultMessageStore = new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener, this.brokerConfig, topicConfigTable);
+            }
 
             initDLedgerCommitLog(defaultMessageStore);
             initStorePlugins(defaultMessageStore);
@@ -286,17 +292,17 @@ public class BrokerMessageService {
 
     private void initTransaction() {
         TransactionalMessageBridge transactionalMessageBridge = new TransactionalMessageBridge(brokerController, this.getMessageStore());
+
         this.transactionalMessageService = ServiceProvider.loadClass(TransactionalMessageService.class);
         if (null == this.transactionalMessageService) {
             this.transactionalMessageService = new TransactionalMessageServiceImpl(transactionalMessageBridge);
-            LOG.warn("Load default transaction message hook service: {}",
-                TransactionalMessageServiceImpl.class.getSimpleName());
+            LOG.warn("Load default transaction message hook service: {}", TransactionalMessageServiceImpl.class.getSimpleName());
         }
+
         this.transactionalMessageCheckListener = ServiceProvider.loadClass(AbstractTransactionalMessageCheckListener.class);
         if (null == this.transactionalMessageCheckListener) {
             this.transactionalMessageCheckListener = new DefaultTransactionalMessageCheckListener();
-            LOG.warn("Load default discard message hook service: {}",
-                DefaultTransactionalMessageCheckListener.class.getSimpleName());
+            LOG.warn("Load default discard message hook service: {}", DefaultTransactionalMessageCheckListener.class.getSimpleName());
         }
         this.transactionalMessageCheckListener.setBrokerController(brokerController);
         this.transactionalMessageCheckService = new TransactionalMessageCheckService(brokerController, transactionalMessageBridge, this.transactionalMessageCheckListener);
@@ -413,6 +419,10 @@ public class BrokerMessageService {
 
     public boolean isScheduleServiceStart() {
         return isScheduleServiceStart;
+    }
+
+    public boolean isEnableRocksDBStore() {
+        return StoreType.DEFAULT_ROCKSDB.getStoreType().equalsIgnoreCase(this.messageStoreConfig.getStoreType());
     }
 
 }

@@ -23,7 +23,8 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.CommitLogDispatcher;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
-import org.apache.rocketmq.store.queue.ConsumeQueueStore;
+import org.apache.rocketmq.store.queue.ConsumeQueueStoreInterface;
+import org.rocksdb.RocksDBException;
 
 /**
  * Dispatch commitLog with Flag:
@@ -37,14 +38,14 @@ import org.apache.rocketmq.store.queue.ConsumeQueueStore;
 public class CommitLogDispatcherBuildConsumeQueue implements CommitLogDispatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private final ConsumeQueueStore consumeQueueStore;
+    private final ConsumeQueueStoreInterface consumeQueueStore;
 
     public CommitLogDispatcherBuildConsumeQueue(DefaultMessageStore messageStore) {
         this.consumeQueueStore = messageStore.getConsumeQueueStore();
     }
 
     @Override
-    public void dispatch(DispatchRequest request) {
+    public void dispatch(DispatchRequest request) throws RocksDBException {
         final int tranType = MessageSysFlag.getTransactionValue(request.getSysFlag());
         switch (tranType) {
             case MessageSysFlag.TRANSACTION_NOT_TYPE:

@@ -30,6 +30,7 @@ import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.BrokerRole;
+import org.rocksdb.RocksDBException;
 
 /**
  * synchronize commitLog messages to consume queue, index service, ...
@@ -154,9 +155,14 @@ public class ReputMessageService extends ServiceThread {
                     fixReputOffset(result, readSize);
                 }
             }
+        } catch (RocksDBException e) {
+            LOGGER.info("dispatch message to cq exception. reputFromOffset: {}", this.reputFromOffset, e);
+            return doNext;
         } finally {
             result.release();
         }
+
+        messageStore.finishCommitLogDispatch();
 
         return doNext;
     }
@@ -181,18 +187,12 @@ public class ReputMessageService extends ServiceThread {
     }
 
     private void invokeArrivingListener(DispatchRequest dispatchRequest) {
-        if (!messageStore.getBrokerConfig().isLongPollingEnable() || messageStore.getMessageArrivingListener() == null) {
-            return;
+        if (!messageStore.isNotifyMessageArriveInBatch()) {
+            messageStore.notifyMessageArriveIfNecessary(dispatchRequest);
         }
-
-        messageStore.getMessageArrivingListener().arriving(dispatchRequest.getTopic(),
-            dispatchRequest.getQueueId(), dispatchRequest.getConsumeQueueOffset() + 1,
-            dispatchRequest.getTagsCode(), dispatchRequest.getStoreTimestamp(),
-            dispatchRequest.getBitMap(), dispatchRequest.getPropertiesMap());
-        notifyMessageArrive4MultiQueue(dispatchRequest);
     }
 
-    private int handleSuccessDispatchRequest(int readSize, int size, SelectMappedBufferResult result, DispatchRequest dispatchRequest) {
+    private int handleSuccessDispatchRequest(int readSize, int size, SelectMappedBufferResult result, DispatchRequest dispatchRequest) throws RocksDBException {
         if (size < 0) {
             return readSize;
         }

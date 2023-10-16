@@ -158,7 +158,7 @@ public class CleanCommitLogService {
         return messageStore.getBrokerConfig().getIdentifier() + CleanCommitLogService.class.getSimpleName();
     }
 
-    private boolean isTimeToDelete() {
+    public boolean isTimeToDelete() {
         String when = messageStore.getMessageStoreConfig().getDeleteWhen();
         if (TimeUtils.isItTimeToDo(when)) {
             LOGGER.info("it's time to reclaim disk space, " + when);

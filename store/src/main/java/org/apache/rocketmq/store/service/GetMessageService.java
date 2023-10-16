@@ -36,6 +36,7 @@ import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.queue.CqUnit;
 import org.apache.rocketmq.store.queue.ReferredIterator;
+import org.rocksdb.RocksDBException;
 
 public class GetMessageService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -267,13 +268,24 @@ public class GetMessageService {
 
         int cqFileNum = 0;
         while (getResult.getBufferTotalSize() <= 0 && context.getNextBeginOffset() < consumeQueue.getMaxOffsetInQueue() && cqFileNum++ < messageStore.getMessageStoreConfig().getTravelCqFileNumWhenGetMessage()) {
-            ReferredIterator<CqUnit> bufferConsumeQueue = consumeQueue.iterateFrom(context.getNextBeginOffset());
-            if (bufferConsumeQueue == null) {
-                handleNoBufferQueue(context);
-                break;
-            }
+            ReferredIterator<CqUnit> bufferConsumeQueue = null;
+            try {
+                bufferConsumeQueue = consumeQueue.iterateFrom(context.getNextBeginOffset(), maxMsgNums);
+                if (bufferConsumeQueue == null) {
+                    handleNoBufferQueue(context);
+                    break;
+                }
 
-            handleBufferQueue(context, bufferConsumeQueue);
+                handleBufferQueue(context, bufferConsumeQueue);
+
+            } catch (RocksDBException e) {
+                LOGGER.error("getMessage Failed. cid: {}, topic: {}, queueId: {}, offset: {},  {}",
+                    group, topic, queueId, offset,  e.getMessage());
+            } finally {
+                if (bufferConsumeQueue != null) {
+                    bufferConsumeQueue.release();
+                }
+            }
         }
 
         recordDiskFallBehindSize(group, topic, queueId, context.getMaxOffsetPy(), context.getMaxPhyOffsetPulling());

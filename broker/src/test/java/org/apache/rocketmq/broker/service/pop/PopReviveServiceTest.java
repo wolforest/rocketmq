@@ -239,7 +239,7 @@ public class PopReviveServiceTest {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
 
         msgInner.setTopic(REVIVE_TOPIC);
-        msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.charset));
+        msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(REVIVE_QUEUE_ID);
         msgInner.setTags(PopAckConstants.CK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());
@@ -274,7 +274,7 @@ public class PopReviveServiceTest {
         SocketAddress host, long deliverMs, String ackUniqueId) {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
         msgInner.setTopic(reviveTopic);
-        msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.charset));
+        msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(reviveQid);
         msgInner.setTags(PopAckConstants.ACK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());

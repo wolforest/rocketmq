@@ -26,6 +26,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.config.BrokerRole;
+import org.rocksdb.RocksDBException;
 
 /**
  * DispatchService for ConcurrentReputMessageService
@@ -60,7 +61,7 @@ public class DispatchService extends ServiceThread {
     // dispatchRequestsList:[
     //      {dispatchRequests:[{dispatchRequest}, {dispatchRequest}]},
     //      {dispatchRequests:[{dispatchRequest}, {dispatchRequest}]}]
-    private void dispatch() {
+    private void dispatch() throws RocksDBException {
         dispatchRequestsList.clear();
         messageStore.getDispatchRequestOrderlyQueue().get(dispatchRequestsList);
         if (dispatchRequestsList.isEmpty()) {
@@ -77,19 +78,8 @@ public class DispatchService extends ServiceThread {
     }
 
     private void activeMessageArrivingListener(DispatchRequest dispatchRequest) {
-        if (messageStore.getBrokerConfig().isLongPollingEnable()
-            && messageStore.getMessageArrivingListener() != null) {
-            messageStore.getMessageArrivingListener().arriving(
-                dispatchRequest.getTopic(),
-                dispatchRequest.getQueueId(),
-                dispatchRequest.getConsumeQueueOffset() + 1,
-                dispatchRequest.getTagsCode(),
-                dispatchRequest.getStoreTimestamp(),
-                dispatchRequest.getBitMap(),
-                dispatchRequest.getPropertiesMap()
-            );
-            messageStore.getReputMessageService().notifyMessageArrive4MultiQueue(dispatchRequest);
-        }
+        // wake up long-polling
+        messageStore.notifyMessageArriveIfNecessary(dispatchRequest);
     }
 
     private void increaseTopicCounter(DispatchRequest dispatchRequest) {
@@ -97,12 +87,8 @@ public class DispatchService extends ServiceThread {
         if (!messageStore.getMessageStoreConfig().isDuplicationEnable()
             && messageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
 
-            messageStore.getStoreStatsService().getSinglePutMessageTopicTimesTotal(
-                    dispatchRequest.getTopic())
-                .add(1);
-            messageStore.getStoreStatsService().getSinglePutMessageTopicSizeTotal(
-                    dispatchRequest.getTopic())
-                .add(dispatchRequest.getMsgSize());
+            messageStore.getStoreStatsService().getSinglePutMessageTopicTimesTotal(dispatchRequest.getTopic()).add(1);
+            messageStore.getStoreStatsService().getSinglePutMessageTopicSizeTotal(dispatchRequest.getTopic()).add(dispatchRequest.getMsgSize());
         }
     }
 

@@ -91,7 +91,7 @@ public class PopServiceManager {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
 
         msgInner.setTopic(brokerController.getBrokerNettyServer().getPopServiceManager().getReviveTopic());
-        msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.charset));
+        msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(reviveQid);
         msgInner.setTags(PopAckConstants.CK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());

@@ -370,7 +370,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     private MessageExtBrokerInner initMessageInner(AckMsg ackMsg, AckMessageRequestHeader requestHeader, BatchAck batchAck) {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
         msgInner.setTopic(brokerController.getBrokerNettyServer().getPopServiceManager().getReviveTopic());
-        msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.charset));
+        msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(getRqid(requestHeader, batchAck));
         if (null != batchAck) {
             msgInner.setTags(PopAckConstants.BATCH_ACK_TAG);

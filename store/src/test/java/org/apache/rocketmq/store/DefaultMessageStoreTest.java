@@ -18,36 +18,8 @@
 package org.apache.rocketmq.store;
 
 import com.google.common.collect.Sets;
-import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.message.MessageBatch;
-import org.apache.rocketmq.common.message.MessageDecoder;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBatch;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
-import org.apache.rocketmq.store.commitlog.CommitLog;
-import org.apache.rocketmq.store.config.BrokerRole;
-import org.apache.rocketmq.store.config.FlushDiskType;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.config.StorePathConfigHelper;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.queue.ConsumeQueue;
-import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
-import org.apache.rocketmq.store.queue.CqUnit;
-import org.apache.rocketmq.store.service.ConsumeQueueService;
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.assertj.core.util.Strings;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
-
 import java.io.File;
 import java.io.RandomAccessFile;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -70,6 +42,31 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.message.MessageBatch;
+import org.apache.rocketmq.common.message.MessageDecoder;
+import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.message.MessageExtBatch;
+import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.store.commitlog.CommitLog;
+import org.apache.rocketmq.store.config.BrokerRole;
+import org.apache.rocketmq.store.config.FlushDiskType;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.config.StorePathConfigHelper;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.queue.ConsumeQueue;
+import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
+import org.apache.rocketmq.store.queue.CqUnit;
+import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.assertj.core.util.Strings;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -434,13 +431,11 @@ public class DefaultMessageStoreTest {
 
     private long getStoreTime(CqUnit cqUnit) {
         try {
-            Field field = getDefaultMessageStore().getClass().getDeclaredField("consumeQueueService");
-            field.setAccessible(true);
-            ConsumeQueueService consumeQueueService = (ConsumeQueueService) field.get(getDefaultMessageStore());
-            Method getStoreTime = consumeQueueService.getClass().getDeclaredMethod("getStoreTime", CqUnit.class);
+            Class abstractConsumeQueueStore = getDefaultMessageStore().getConsumeQueueStore().getClass().getSuperclass();
+            Method getStoreTime = abstractConsumeQueueStore.getDeclaredMethod("getStoreTime", CqUnit.class);
             getStoreTime.setAccessible(true);
-            return (long) getStoreTime.invoke(consumeQueueService, cqUnit);
-        } catch (NoSuchMethodException | IllegalAccessException | NoSuchFieldException | InvocationTargetException e) {
+            return (long) getStoreTime.invoke(getDefaultMessageStore().getConsumeQueueStore(), cqUnit);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }

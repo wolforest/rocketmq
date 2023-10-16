@@ -34,9 +34,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
-import org.apache.rocketmq.store.logfile.AllocateMappedFileService;
 import org.apache.rocketmq.store.AppendMessageResult;
-import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.CommitLogDispatcher;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.GetMessageResult;
@@ -45,20 +43,23 @@ import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.QueryMessageResult;
 import org.apache.rocketmq.store.RunningFlags;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.StoreCheckpoint;
-import org.apache.rocketmq.store.stats.StoreStatsService;
 import org.apache.rocketmq.store.TransientStorePool;
+import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.ha.HAService;
 import org.apache.rocketmq.store.hook.PutMessageHook;
 import org.apache.rocketmq.store.hook.SendMessageBackHook;
+import org.apache.rocketmq.store.logfile.AllocateMappedFileService;
 import org.apache.rocketmq.store.logfile.MappedFile;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
-import org.apache.rocketmq.store.queue.ConsumeQueueStore;
+import org.apache.rocketmq.store.queue.ConsumeQueueStoreInterface;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.stats.StoreStatsService;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.util.PerfCounter;
+import org.rocksdb.RocksDBException;
 
 /**
  * abstract class of pluginMessageStore
@@ -463,7 +464,7 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     }
 
     @Override
-    public boolean truncateFiles(long offsetToTruncate) {
+    public boolean truncateFiles(long offsetToTruncate) throws RocksDBException {
         return next.truncateFiles(offsetToTruncate);
     }
 
@@ -517,7 +518,7 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
 
     @Override
     public void onCommitLogDispatch(DispatchRequest dispatchRequest, boolean doDispatch, MappedFile commitLogFile,
-        boolean isRecover, boolean isFileEnd) {
+        boolean isRecover, boolean isFileEnd) throws RocksDBException {
         next.onCommitLogDispatch(dispatchRequest, doDispatch, commitLogFile, isRecover, isFileEnd);
     }
 
@@ -557,13 +558,8 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     }
 
     @Override
-    public void truncateDirtyLogicFiles(long phyOffset) {
+    public void truncateDirtyLogicFiles(long phyOffset) throws RocksDBException {
         next.truncateDirtyLogicFiles(phyOffset);
-    }
-
-    @Override
-    public void destroyLogics() {
-        next.destroyLogics();
     }
 
     @Override
@@ -577,7 +573,7 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     }
 
     @Override
-    public ConsumeQueueStore getConsumeQueueStore() {
+    public ConsumeQueueStoreInterface getConsumeQueueStore() {
         return next.getConsumeQueueStore();
     }
 
@@ -592,7 +588,7 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     }
 
     @Override
-    public void assignOffset(MessageExtBrokerInner msg) {
+    public void assignOffset(MessageExtBrokerInner msg) throws RocksDBException {
         next.assignOffset(msg);
     }
 

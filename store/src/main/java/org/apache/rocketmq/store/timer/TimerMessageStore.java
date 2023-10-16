@@ -17,33 +17,6 @@
 package org.apache.rocketmq.store.timer;
 
 import com.conversantmedia.util.concurrent.DisruptorBlockingQueue;
-import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.ThreadUtils;
-import org.apache.rocketmq.common.utils.TimeUtils;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.DefaultMessageStore;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.queue.ConsumeQueue;
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.timer.transit.TimerDequeueWarmService;
-import org.apache.rocketmq.store.timer.transit.TimerFlushService;
-import org.apache.rocketmq.store.timer.transit.TimerMessageDeliver;
-import org.apache.rocketmq.store.timer.transit.TimerMessageAccepter;
-import org.apache.rocketmq.store.timer.transit.TimerMessageQuery;
-import org.apache.rocketmq.store.timer.transit.TimerMessageRecover;
-import org.apache.rocketmq.store.timer.transit.TimerMessageSaver;
-import org.apache.rocketmq.store.timer.transit.TimerMessageScanner;
-import org.apache.rocketmq.store.timer.persistence.wheel.Slot;
-import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
-import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheel;
-import org.apache.rocketmq.store.util.PerfCounter;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -56,6 +29,32 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.apache.rocketmq.common.ThreadFactoryImpl;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.ThreadUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.PutMessageResult;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
+import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.timer.persistence.wheel.Slot;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
+import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheel;
+import org.apache.rocketmq.store.timer.transit.TimerDequeueWarmService;
+import org.apache.rocketmq.store.timer.transit.TimerFlushService;
+import org.apache.rocketmq.store.timer.transit.TimerMessageAccepter;
+import org.apache.rocketmq.store.timer.transit.TimerMessageDeliver;
+import org.apache.rocketmq.store.timer.transit.TimerMessageQuery;
+import org.apache.rocketmq.store.timer.transit.TimerMessageRecover;
+import org.apache.rocketmq.store.timer.transit.TimerMessageSaver;
+import org.apache.rocketmq.store.timer.transit.TimerMessageScanner;
+import org.apache.rocketmq.store.util.PerfCounter;
 
 /**
  * timer server
@@ -223,7 +222,7 @@ public class TimerMessageStore {
 
     public long getEnqueueBehindMessages() {
         long tmpQueueOffset = timerState.currQueueOffset;
-        ConsumeQueue cq = (ConsumeQueue) messageStore.getConsumeQueue(TimerState.TIMER_TOPIC, 0);
+        ConsumeQueueInterface cq = messageStore.getConsumeQueue(TimerState.TIMER_TOPIC, 0);
         long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
         return maxOffsetInQueue - tmpQueueOffset;
     }
