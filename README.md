@@ -1,3 +1,4 @@
+![](book/cn/image/rocketmq_wolf_branch.jpg)
 ## Why another RocketMQ branch?
 ### 官方分支的难处
 大家试想，如下两件相加会发生什么：
@@ -79,5 +80,8 @@
 ### 更好的社区
 完美的社区是从没有社区开始的。<br />
 没有使命的企业难成大业，没有灵魂的社区注定不会开花. <br />
+
+## 《RocketMQ源码分析与改进》图书目录
+
 
 
