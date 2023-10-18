@@ -120,6 +120,9 @@ public class DefaultMessageStore implements MessageStore {
 
     // CommitLog
     protected CommitLog commitLog;
+
+
+
     protected CleanCommitLogService cleanCommitLogService;
 
     protected ConsumeQueueStoreInterface consumeQueueStore;
@@ -1629,5 +1632,21 @@ public class DefaultMessageStore implements MessageStore {
 
     public ReputMessageService getReputMessageService() {
         return reputMessageService;
+    }
+
+    public CleanCommitLogService getCleanCommitLogService() {
+        return cleanCommitLogService;
+    }
+
+    public FlushConsumeQueueService getFlushConsumeQueueService() {
+        return flushConsumeQueueService;
+    }
+
+    public CleanConsumeQueueService getCleanConsumeQueueService() {
+        return cleanConsumeQueueService;
+    }
+
+    public CorrectLogicOffsetService getCorrectLogicOffsetService() {
+        return correctLogicOffsetService;
     }
 }

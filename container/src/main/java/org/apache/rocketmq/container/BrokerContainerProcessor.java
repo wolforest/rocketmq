@@ -77,10 +77,9 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         LOGGER.info("addBroker called by {}", RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
 
         String configPath = requestHeader.getConfigPath();
-        Properties brokerProperties = getConfigProperties(request, configPath);
+        Properties brokerProperties = getConfigProperties(configPath, response);
         if (brokerProperties == null) {
-            LOGGER.error("addBroker properties empty");
-            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "addBroker properties empty");
+            return  response;
         }
 
         BrokerConfig brokerConfig = getBrokerConfig(brokerProperties, configPath);
@@ -102,7 +101,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         return startBroker(brokerController, brokerProperties, brokerConfig, messageStoreConfig, response);
     }
 
-    private Properties getConfigProperties(RemotingCommand request, String configPath) throws UnsupportedEncodingException {
+    private Properties getConfigProperties(String configPath, RemotingCommand response) throws UnsupportedEncodingException {
         Properties brokerProperties = null;
         if (configPath != null && !configPath.isEmpty()) {
             SystemConfigFileHelper configFileHelper = new SystemConfigFileHelper();
@@ -115,9 +114,14 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
             }
         } else {
             LOGGER.error("addBroker config path is empty");
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark("addBroker config path is empty");
-            return response;
+            response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "addBroker config path is empty");
+            return null;
+        }
+
+        if (null == brokerProperties) {
+            LOGGER.error("addBroker properties empty");
+            response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "addBroker properties empty");
+            return null;
         }
 
         return brokerProperties;
