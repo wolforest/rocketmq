@@ -210,7 +210,7 @@ public class UtilAllTest {
 
     @Test(expected = NoSuchMethodException.class)
     public void testMethod() throws NoSuchMethodException {
-        UtilAll.method(new Object(), "noMethod", null);
+        IOTinyUtils.method(new Object(), "noMethod", null);
     }
 
     @Test(expected = IllegalStateException.class)
