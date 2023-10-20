@@ -80,7 +80,7 @@ public class UtilAll {
         };
         PID = supplier.get();
     }
-
+    @Deprecated
     public static int getPid() {
         return PID;
     }
