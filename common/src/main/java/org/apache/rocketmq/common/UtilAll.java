@@ -485,11 +485,11 @@ public class UtilAll {
     public static boolean isBlank(String str) {
         return StringUtils.isBlank(str);
     }
-
+    @Deprecated
     public static String jstack() {
         return jstack(Thread.getAllStackTraces());
     }
-
+    @Deprecated
     public static String jstack(Map<Thread, StackTraceElement[]> map) {
         StringBuilder result = new StringBuilder();
         try {
