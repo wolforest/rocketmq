@@ -67,28 +67,50 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
+    /**
+     * total memory size of mapped files in the jvm
+     * increase in method init()
+     * decrease in method cleanup()
+     */
     protected static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
 
+    /**
+     * total numbers of mapped files in the jvm
+     * increase in method init()
+     * decrease in method cleanup()
+     */
     protected static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
 
+    /**
+     * atomic updater for wrotePosition
+     */
     protected static final AtomicIntegerFieldUpdater<DefaultMappedFile> WROTE_POSITION_UPDATER;
+    /**
+     * atomic updater for committedPosition
+     */
     protected static final AtomicIntegerFieldUpdater<DefaultMappedFile> COMMITTED_POSITION_UPDATER;
+    /**
+     * atomic updater for flushedPosition
+     */
     protected static final AtomicIntegerFieldUpdater<DefaultMappedFile> FLUSHED_POSITION_UPDATER;
 
     protected volatile int wrotePosition;
     protected volatile int committedPosition;
     protected volatile int flushedPosition;
+
+    protected String fileName;
+    protected long fileFromOffset;
+    protected File file;
     protected int fileSize;
     protected FileChannel fileChannel;
+
     /**
      * Message will put to here first, and then reput to FileChannel if writeBuffer is not null.
      */
     protected ByteBuffer writeBuffer = null;
     protected TransientStorePool transientStorePool = null;
-    protected String fileName;
-    protected long fileFromOffset;
-    protected File file;
     protected MappedByteBuffer mappedByteBuffer;
+    
     protected volatile long storeTimestamp = 0;
     protected boolean firstCreateInQueue = false;
     private long lastFlushTime = -1L;
