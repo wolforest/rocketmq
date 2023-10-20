@@ -681,7 +681,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
             if (!force && gapTime < minGapTime) {
                 Thread.sleep(minGapTime - gapTime);
             }
-            UtilAll.cleanBuffer(this.mappedByteBufferWaitToClean);
+            IOTinyUtils.cleanBuffer(this.mappedByteBufferWaitToClean);
             mappedByteBufferWaitToClean = null;
             log.info("cleanSwapedMap file " + this.fileName + " success.");
         } catch (Exception e) {
