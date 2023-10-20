@@ -16,17 +16,14 @@
  */
 package org.apache.rocketmq.store.commitlog.service;
 
-import java.net.Inet6Address;
-import java.net.InetSocketAddress;
-import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.message.MessageVersion;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.utils.BinaryUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.AppendMessageResult;
@@ -43,6 +40,10 @@ import org.apache.rocketmq.store.ha.HAService;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.util.LibC;
 import org.rocksdb.RocksDBException;
+
+import java.net.Inet6Address;
+import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
 
 public class CommitLogPutService {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -416,7 +417,7 @@ public class CommitLogPutService {
         }
 
         // Set the message body CRC (consider the most appropriate setting on the client)
-        msg.setBodyCRC(UtilAll.crc32(msg.getBody()));
+        msg.setBodyCRC(BinaryUtil.crc32(msg.getBody()));
 
         msg.setVersion(MessageVersion.MESSAGE_VERSION_V1);
         boolean autoMessageVersionOnTopicLen = this.defaultMessageStore.getMessageStoreConfig().isAutoMessageVersionOnTopicLen();
