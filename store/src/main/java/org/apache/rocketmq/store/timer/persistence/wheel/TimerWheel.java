@@ -16,7 +16,6 @@
  */
 package org.apache.rocketmq.store.timer.persistence.wheel;
 
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -89,8 +88,8 @@ public class TimerWheel {
             this.flush();
 
         // unmap mappedByteBuffer
-        UtilAll.cleanBuffer(this.mappedByteBuffer);
-        UtilAll.cleanBuffer(this.byteBuffer);
+        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
+        IOTinyUtils.cleanBuffer(this.byteBuffer);
 
         try {
             this.fileChannel.close();
