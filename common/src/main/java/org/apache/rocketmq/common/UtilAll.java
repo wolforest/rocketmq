@@ -513,7 +513,7 @@ public class UtilAll {
 
         return result.toString();
     }
-
+    @Deprecated
     public static String exceptionSimpleDesc(final Throwable e) {
         StringBuilder sb = new StringBuilder();
         if (e != null) {
