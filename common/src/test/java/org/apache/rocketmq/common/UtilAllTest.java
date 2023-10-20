@@ -215,7 +215,7 @@ public class UtilAllTest {
 
     @Test(expected = IllegalStateException.class)
     public void testInvoke() throws Exception {
-        UtilAll.invoke(new Object(), "noMethod");
+        IOTinyUtils.invoke(new Object(), "noMethod");
     }
 
 }
