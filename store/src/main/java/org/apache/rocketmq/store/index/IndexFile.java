@@ -16,16 +16,17 @@
  */
 package org.apache.rocketmq.store.index;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
-import java.util.List;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
 import org.apache.rocketmq.store.logfile.MappedFile;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.util.List;
 
 public class IndexFile {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -89,7 +90,7 @@ public class IndexFile {
 
     public void shutdown() {
         this.flush();
-        UtilAll.cleanBuffer(this.mappedByteBuffer);
+        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
     }
 
     public void flush() {
