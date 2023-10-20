@@ -19,6 +19,7 @@ package org.apache.rocketmq.common.message;
 
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.utils.BinaryUtil;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -187,7 +188,7 @@ public class MessageDecoderTest {
         messageExt.putUserProperty("b", "hello");
         messageExt.putUserProperty("c", "3.14");
 
-        messageExt.setBodyCRC(UtilAll.crc32(messageExt.getBody()));
+        messageExt.setBodyCRC(BinaryUtil.crc32(messageExt.getBody()));
 
         byte[] msgBytes = new byte[0];
         try {
