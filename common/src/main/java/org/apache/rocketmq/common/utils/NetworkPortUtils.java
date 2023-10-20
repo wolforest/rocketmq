@@ -19,8 +19,23 @@ package org.apache.rocketmq.common.utils;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 public class NetworkPortUtils {
+
+    private final static int PID;
+    static {
+        Supplier<Integer> supplier = () -> {
+            // format: "pid@hostname"
+            String currentJVM = ManagementFactory.getRuntimeMXBean().getName();
+            try {
+                return Integer.parseInt(currentJVM.substring(0, currentJVM.indexOf('@')));
+            } catch (Exception e) {
+                return -1;
+            }
+        };
+        PID = supplier.get();
+    }
     private static AtomicInteger port = new AtomicInteger(uniquePort());
 
     public static int nextPort() {
@@ -60,6 +75,10 @@ public class NetworkPortUtils {
         RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
         String strID = runtimeMXBean.getName().split("@")[0];
         return Integer.parseInt(strID);
+    }
+
+    public static int getPid() {
+        return PID;
     }
 
 }
