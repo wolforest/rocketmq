@@ -541,8 +541,8 @@ public class DefaultMappedFile extends AbstractMappedFile {
             return true;
         }
 
-        UtilAll.cleanBuffer(this.mappedByteBuffer);
-        UtilAll.cleanBuffer(this.mappedByteBufferWaitToClean);
+        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
+        IOTinyUtils.cleanBuffer(this.mappedByteBufferWaitToClean);
         this.mappedByteBufferWaitToClean = null;
         TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(this.fileSize * (-1));
         TOTAL_MAPPED_FILES.decrementAndGet();
