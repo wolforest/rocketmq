@@ -43,6 +43,7 @@ import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.remoting.protocol.body.CMResult;
 import org.apache.rocketmq.remoting.protocol.body.ConsumeMessageDirectlyResult;
@@ -154,10 +155,10 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
             }
         } catch (Throwable e) {
             result.setConsumeResult(CMResult.CR_THROW_EXCEPTION);
-            result.setRemark(UtilAll.exceptionSimpleDesc(e));
+            result.setRemark(IOTinyUtils.exceptionSimpleDesc(e));
 
             log.warn(String.format("consumeMessageDirectly exception: %s Group: %s Msgs: %s MQ: %s",
-                UtilAll.exceptionSimpleDesc(e),
+                IOTinyUtils.exceptionSimpleDesc(e),
                 ConsumeMessagePopConcurrentlyService.this.consumerGroup,
                 msgs,
                 mq), e);
