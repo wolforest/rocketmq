@@ -89,7 +89,7 @@ public class UtilAll {
     public static void sleep(long sleepMs) {
         sleep(sleepMs, TimeUnit.MILLISECONDS);
     }
-
+    @Deprecated
     private static void sleep(long timeOut, TimeUnit timeUnit) {
         if (null == timeUnit) {
             return;
