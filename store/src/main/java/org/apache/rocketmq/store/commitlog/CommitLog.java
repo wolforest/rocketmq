@@ -446,21 +446,26 @@ public class CommitLog implements Swappable {
     }
 
     private DispatchRequest checkBody(java.nio.ByteBuffer byteBuffer, int bodyLen, int bodyCRC, byte[] bytesContent, boolean readBody, boolean checkCRC) {
-        if (bodyLen > 0) {
-            if (readBody) {
-                byteBuffer.get(bytesContent, 0, bodyLen);
-
-                if (checkCRC) {
-                    int crc = BinaryUtil.crc32(bytesContent, 0, bodyLen);
-                    if (crc != bodyCRC) {
-                        log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
-                        return new DispatchRequest(-1, false/* success */);
-                    }
-                }
-            } else {
-                byteBuffer.position(byteBuffer.position() + bodyLen);
-            }
+        if (bodyLen <= 0) {
+            return null;
         }
+
+        if (!readBody) {
+            byteBuffer.position(byteBuffer.position() + bodyLen);
+            return null;
+        }
+
+        byteBuffer.get(bytesContent, 0, bodyLen);
+        if (!checkCRC) {
+            return null;
+        }
+
+        int crc = BinaryUtil.crc32(bytesContent, 0, bodyLen);
+        if (crc != bodyCRC) {
+            log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
+            return new DispatchRequest(-1, false/* success */);
+        }
+
         return null;
     }
 
@@ -799,12 +804,16 @@ public class CommitLog implements Swappable {
         // IF inner batch, build batchQueueOffset and batchNum property.
         CQType cqType = getCqType(msgInner);
 
-        if (MessageSysFlag.check(msgInner.getSysFlag(), MessageSysFlag.INNER_BATCH_FLAG) || CQType.BatchCQ.equals(cqType)) {
-            if (msgInner.getProperty(MessageConst.PROPERTY_INNER_NUM) != null) {
-                messageNum = Short.parseShort(msgInner.getProperty(MessageConst.PROPERTY_INNER_NUM));
-                messageNum = messageNum >= 1 ? messageNum : 1;
-            }
+        if (!MessageSysFlag.check(msgInner.getSysFlag(), MessageSysFlag.INNER_BATCH_FLAG) && !CQType.BatchCQ.equals(cqType)) {
+            return messageNum;
         }
+
+        if (msgInner.getProperty(MessageConst.PROPERTY_INNER_NUM) == null) {
+            return messageNum;
+        }
+
+        messageNum = Short.parseShort(msgInner.getProperty(MessageConst.PROPERTY_INNER_NUM));
+        messageNum = messageNum >= 1 ? messageNum : 1;
 
         return messageNum;
     }
@@ -848,8 +857,6 @@ public class CommitLog implements Swappable {
     public FlushManager getFlushManager() {
         return flushManager;
     }
-
-
 
     public void scanFileAndSetReadMode(int mode) {
         if (MixAll.isWindows()) {
