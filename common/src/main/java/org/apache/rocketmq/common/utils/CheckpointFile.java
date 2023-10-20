@@ -120,7 +120,7 @@ public class CheckpointFile<T> {
                     }
                     line = reader.readLine();
                 }
-                int truthCrc32 = UtilAll.crc32(sb.toString().getBytes(StandardCharsets.UTF_8));
+                int truthCrc32 = BinaryUtil.crc32(sb.toString().getBytes(StandardCharsets.UTF_8));
 
                 if (result.size() != expectedLines) {
                     final String err = String.format(
