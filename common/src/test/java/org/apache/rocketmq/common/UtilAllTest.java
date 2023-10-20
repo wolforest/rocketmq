@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.junit.Test;
@@ -90,7 +91,7 @@ public class UtilAllTest {
 
     @Test
     public void testGetPid() {
-        assertThat(UtilAll.getPid()).isGreaterThan(0);
+        assertThat(NetworkPortUtils.getPid()).isGreaterThan(0);
     }
 
     @Test
