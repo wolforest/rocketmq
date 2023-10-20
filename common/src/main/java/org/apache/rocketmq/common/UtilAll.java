@@ -707,7 +707,7 @@ public class UtilAll {
             STORE_LOG.info("delete empty direct, {}", file.getPath());
         }
     }
-
+    @Deprecated
     public static void cleanBuffer(final ByteBuffer buffer) {
         if (buffer == null || !buffer.isDirect() || buffer.capacity() == 0) {
             return;
@@ -726,7 +726,7 @@ public class UtilAll {
             invoke(invoke(viewed(buffer), "cleaner"), "clean");
         }
     }
-
+    @Deprecated
     public static Object invoke(final Object target, final String methodName, final Class<?>... args) {
         return AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @Override
@@ -741,7 +741,7 @@ public class UtilAll {
             }
         });
     }
-
+    @Deprecated
     public static Method method(Object target, String methodName, Class<?>[] args) throws NoSuchMethodException {
         try {
             return target.getClass().getMethod(methodName, args);
@@ -749,7 +749,7 @@ public class UtilAll {
             return target.getClass().getDeclaredMethod(methodName, args);
         }
     }
-
+    @Deprecated
     private static ByteBuffer viewed(ByteBuffer buffer) {
         if (!buffer.isDirect()) {
             throw new IllegalArgumentException("buffer is non-direct");
