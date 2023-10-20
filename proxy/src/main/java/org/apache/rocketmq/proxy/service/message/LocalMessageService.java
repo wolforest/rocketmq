@@ -105,7 +105,7 @@ public class LocalMessageService implements MessageService {
             messageId = MessageClientIDSetter.getUniqID(message);
         }
 
-        RemotingCommand request = LocalRemotingCommand.createRequestCommand(RequestCode.SEND_MESSAGE, requestHeader);
+        RemotingCommand request = LocalRemotingCommand.createRequestCommand(RequestCode.SEND_MESSAGE, requestHeader, ctx.getLanguage());
         request.setBody(body);
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
 
@@ -119,7 +119,7 @@ public class LocalMessageService implements MessageService {
         ConsumerSendMsgBackRequestHeader requestHeader, long timeoutMillis) {
         SimpleChannel channel = channelManager.createChannel(ctx);
         ChannelHandlerContext channelHandlerContext = channel.getChannelHandlerContext();
-        RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.CONSUMER_SEND_MSG_BACK, requestHeader);
+        RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.CONSUMER_SEND_MSG_BACK, requestHeader, ctx.getLanguage());
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
             RemotingCommand response = brokerController.getBrokerNettyServer().getSendMessageProcessor()
@@ -138,7 +138,7 @@ public class LocalMessageService implements MessageService {
         CompletableFuture<Void> future = new CompletableFuture<>();
         SimpleChannel channel = channelManager.createChannel(ctx);
         ChannelHandlerContext channelHandlerContext = channel.getChannelHandlerContext();
-        RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.END_TRANSACTION, requestHeader);
+        RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.END_TRANSACTION, requestHeader, ctx.getLanguage());
         try {
             brokerController.getBrokerNettyServer().getEndTransactionProcessor()
                 .processRequest(channelHandlerContext, command);
@@ -165,7 +165,7 @@ public class LocalMessageService implements MessageService {
         ChangeInvisibleTimeRequestHeader requestHeader, long timeoutMillis) {
         SimpleChannel channel = channelManager.createChannel(ctx);
         ChannelHandlerContext channelHandlerContext = channel.getChannelHandlerContext();
-        RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.CHANGE_MESSAGE_INVISIBLETIME, requestHeader);
+        RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.CHANGE_MESSAGE_INVISIBLETIME, requestHeader, ctx.getLanguage());
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
             RemotingCommand response = brokerController.getBrokerNettyServer().getChangeInvisibleTimeProcessor()
@@ -184,7 +184,7 @@ public class LocalMessageService implements MessageService {
         AckMessageRequestHeader requestHeader, long timeoutMillis) {
         SimpleChannel channel = channelManager.createChannel(ctx);
         ChannelHandlerContext channelHandlerContext = channel.getChannelHandlerContext();
-        RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.ACK_MESSAGE, requestHeader);
+        RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.ACK_MESSAGE, requestHeader, ctx.getLanguage());
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
             RemotingCommand response = brokerController.getBrokerNettyServer().getAckMessageProcessor()
@@ -337,7 +337,7 @@ public class LocalMessageService implements MessageService {
     }
 
     private void processPopRequest(ProxyContext ctx, PopMessageRequestHeader requestHeader, CompletableFuture<RemotingCommand> future) {
-        RemotingCommand request = LocalRemotingCommand.createRequestCommand(RequestCode.POP_MESSAGE, requestHeader);
+        RemotingCommand request = LocalRemotingCommand.createRequestCommand(RequestCode.POP_MESSAGE, requestHeader, ctx.getLanguage());
         SimpleChannel channel = channelManager.createInvocationChannel(ctx);
         InvocationContext invocationContext = new InvocationContext(future);
         channel.registerInvocationContext(request.getOpaque(), invocationContext);
