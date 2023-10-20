@@ -81,7 +81,7 @@ public interface MappedFile {
      *
      * @param message a message to append
      * @param messageCallback the specific call back to execute the real append action
-     * @param putMessageContext
+     * @param putMessageContext putMessageContext
      * @return the append result
      */
     AppendMessageResult appendMessage(MessageExtBrokerInner message, AppendMessageCallback messageCallback, PutMessageContext putMessageContext);
@@ -91,7 +91,7 @@ public interface MappedFile {
      *
      * @param message a message to append
      * @param messageCallback the specific call back to execute the real append action
-     * @param putMessageContext
+     * @param putMessageContext putMessageContext
      * @return the append result
      */
     AppendMessageResult appendMessages(MessageExtBatch message, AppendMessageCallback messageCallback, PutMessageContext putMessageContext);
@@ -302,8 +302,8 @@ public interface MappedFile {
 
     /**
      * Warm up the mapped bytebuffer
-     * @param type
-     * @param pages
+     * @param type type
+     * @param pages pages
      */
     void warmMappedFile(FlushDiskType type, int pages);
 
@@ -329,7 +329,7 @@ public interface MappedFile {
 
     /**
      * Get the underlying file
-     * @return
+     * @return File
      */
     File getFile();
 
@@ -340,13 +340,13 @@ public interface MappedFile {
 
     /**
      * move the file to the parent directory
-     * @throws IOException
+     * @throws IOException exception
      */
     void moveToParent() throws IOException;
 
     /**
      * Get the last flush time
-     * @return
+     * @return lastFlushTime
      */
     long getLastFlushTime();
 
@@ -355,7 +355,7 @@ public interface MappedFile {
      * @param fileName file name
      * @param fileSize file size
      * @param transientStorePool transient store pool
-     * @throws IOException
+     * @throws IOException IOException
      */
     void init(String fileName, int fileSize, TransientStorePool transientStorePool) throws IOException;
 
