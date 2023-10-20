@@ -19,13 +19,13 @@ package org.apache.rocketmq.store;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.message.MessageVersion;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.utils.BinaryUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
@@ -201,7 +201,7 @@ public class MessageExtEncoder {
             // 5 BODY
             int bodyLen = messagesByteBuff.getInt();
             int bodyPos = messagesByteBuff.position();
-            int bodyCrc = UtilAll.crc32(messagesByteBuff.array(), bodyPos, bodyLen);
+            int bodyCrc = BinaryUtil.crc32(messagesByteBuff.array(), bodyPos, bodyLen);
             messagesByteBuff.position(bodyPos + bodyLen);
             // 6 properties
             short propertiesLen = messagesByteBuff.getShort();
