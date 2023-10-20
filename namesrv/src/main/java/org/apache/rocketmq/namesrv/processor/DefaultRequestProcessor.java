@@ -17,17 +17,13 @@
 package org.apache.rocketmq.namesrv.processor;
 
 import io.netty.channel.ChannelHandlerContext;
-import java.io.UnsupportedEncodingException;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MQVersion.Version;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.namesrv.NamesrvUtil;
+import org.apache.rocketmq.common.utils.BinaryUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.namesrv.NamesrvController;
@@ -65,6 +61,11 @@ import org.apache.rocketmq.remoting.protocol.header.namesrv.WipeWritePermOfBroke
 import org.apache.rocketmq.remoting.protocol.header.namesrv.WipeWritePermOfBrokerResponseHeader;
 import org.apache.rocketmq.remoting.protocol.namesrv.RegisterBrokerResult;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
+
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class DefaultRequestProcessor implements NettyRequestProcessor {
     private static Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
@@ -315,7 +316,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
     private boolean checksum(ChannelHandlerContext ctx, RemotingCommand request,
         RegisterBrokerRequestHeader requestHeader) {
         if (requestHeader.getBodyCrc32() != 0) {
-            final int crc32 = UtilAll.crc32(request.getBody());
+            final int crc32 = BinaryUtil.crc32(request.getBody());
             if (crc32 != requestHeader.getBodyCrc32()) {
                 log.warn(String.format("receive registerBroker request,crc32 not match,from %s",
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel())));
