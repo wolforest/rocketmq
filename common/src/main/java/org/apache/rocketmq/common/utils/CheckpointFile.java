@@ -17,6 +17,9 @@
 
 package org.apache.rocketmq.common.utils;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.rocketmq.common.MixAll;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -24,9 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 
 /**
  * Entry Checkpoint file util
