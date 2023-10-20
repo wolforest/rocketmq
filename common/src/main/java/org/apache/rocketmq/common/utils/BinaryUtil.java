@@ -20,6 +20,8 @@ package org.apache.rocketmq.common.utils;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.zip.CRC32;
+
 import org.apache.commons.codec.binary.Hex;
 
 public class BinaryUtil {
@@ -60,4 +62,19 @@ public class BinaryUtil {
         }
         return true;
     }
+
+    public static int crc32(byte[] array) {
+        if (array != null) {
+            return crc32(array, 0, array.length);
+        }
+
+        return 0;
+    }
+
+    public static int crc32(byte[] array, int offset, int length) {
+        CRC32 crc32 = new CRC32();
+        crc32.update(array, offset, length);
+        return (int) (crc32.getValue() & 0x7FFFFFFF);
+    }
+
 }
