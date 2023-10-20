@@ -17,16 +17,11 @@
 package org.apache.rocketmq.client.impl;
 
 import io.netty.channel.ChannelHandlerContext;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.impl.producer.MQProducerInner;
 import org.apache.rocketmq.client.producer.RequestFutureHolder;
 import org.apache.rocketmq.client.producer.RequestResponseFuture;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.compression.Compressor;
 import org.apache.rocketmq.common.compression.CompressorFactory;
 import org.apache.rocketmq.common.message.MessageAccessor;
@@ -37,6 +32,8 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
@@ -55,8 +52,11 @@ import org.apache.rocketmq.remoting.protocol.header.GetConsumerStatusRequestHead
 import org.apache.rocketmq.remoting.protocol.header.NotifyConsumerIdsChangedRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.ReplyMessageRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.ResetOffsetRequestHeader;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ClientRemotingProcessor implements NettyRequestProcessor {
     private final Logger logger = LoggerFactory.getLogger(ClientRemotingProcessor.class);
@@ -188,7 +188,7 @@ public class ClientRemotingProcessor implements NettyRequestProcessor {
         if (null != consumerRunningInfo) {
             if (requestHeader.isJstackEnable()) {
                 Map<Thread, StackTraceElement[]> map = Thread.getAllStackTraces();
-                String jstack = UtilAll.jstack(map);
+                String jstack = IOTinyUtils.jstack(map);
                 consumerRunningInfo.setJstack(jstack);
             }
 
