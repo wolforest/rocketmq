@@ -203,9 +203,9 @@ public class UtilAllTest {
 
     @Test
     public void testCleanBuffer() {
-        UtilAll.cleanBuffer(null);
-        UtilAll.cleanBuffer(ByteBuffer.allocate(10));
-        UtilAll.cleanBuffer(ByteBuffer.allocate(0));
+        IOTinyUtils.cleanBuffer(null);
+        IOTinyUtils.cleanBuffer(ByteBuffer.allocate(10));
+        IOTinyUtils.cleanBuffer(ByteBuffer.allocate(0));
     }
 
     @Test(expected = NoSuchMethodException.class)
