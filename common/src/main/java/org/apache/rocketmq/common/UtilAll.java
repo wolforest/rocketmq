@@ -51,6 +51,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import sun.misc.Unsafe;
@@ -305,7 +306,7 @@ public class UtilAll {
             return -1;
         }
     }
-
+    @Deprecated
     public static int crc32(byte[] array) {
         if (array != null) {
             return crc32(array, 0, array.length);
@@ -313,7 +314,7 @@ public class UtilAll {
 
         return 0;
     }
-
+    @Deprecated
     public static int crc32(byte[] array, int offset, int length) {
         CRC32 crc32 = new CRC32();
         crc32.update(array, offset, length);
@@ -484,11 +485,11 @@ public class UtilAll {
     public static boolean isBlank(String str) {
         return StringUtils.isBlank(str);
     }
-
+    @Deprecated
     public static String jstack() {
         return jstack(Thread.getAllStackTraces());
     }
-
+    @Deprecated
     public static String jstack(Map<Thread, StackTraceElement[]> map) {
         StringBuilder result = new StringBuilder();
         try {
@@ -507,12 +508,12 @@ public class UtilAll {
                 }
             }
         } catch (Throwable e) {
-            result.append(exceptionSimpleDesc(e));
+            result.append(IOTinyUtils.exceptionSimpleDesc(e));
         }
 
         return result.toString();
     }
-
+    @Deprecated
     public static String exceptionSimpleDesc(final Throwable e) {
         StringBuilder sb = new StringBuilder();
         if (e != null) {
@@ -706,7 +707,7 @@ public class UtilAll {
             STORE_LOG.info("delete empty direct, {}", file.getPath());
         }
     }
-
+    @Deprecated
     public static void cleanBuffer(final ByteBuffer buffer) {
         if (buffer == null || !buffer.isDirect() || buffer.capacity() == 0) {
             return;
@@ -725,7 +726,7 @@ public class UtilAll {
             invoke(invoke(viewed(buffer), "cleaner"), "clean");
         }
     }
-
+    @Deprecated
     public static Object invoke(final Object target, final String methodName, final Class<?>... args) {
         return AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @Override
@@ -740,7 +741,7 @@ public class UtilAll {
             }
         });
     }
-
+    @Deprecated
     public static Method method(Object target, String methodName, Class<?>[] args) throws NoSuchMethodException {
         try {
             return target.getClass().getMethod(methodName, args);
@@ -748,7 +749,7 @@ public class UtilAll {
             return target.getClass().getDeclaredMethod(methodName, args);
         }
     }
-
+    @Deprecated
     private static ByteBuffer viewed(ByteBuffer buffer) {
         if (!buffer.isDirect()) {
             throw new IllegalArgumentException("buffer is non-direct");

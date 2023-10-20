@@ -21,23 +21,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import java.io.UnsupportedEncodingException;
-import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.rocketmq.acl.AccessValidator;
 import org.apache.rocketmq.acl.plain.PlainAccessValidator;
 import org.apache.rocketmq.broker.BrokerController;
@@ -58,7 +41,6 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.PlainAccessConfig;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.UnlockCallback;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.attribute.AttributeParser;
 import org.apache.rocketmq.common.attribute.TopicMessageType;
 import org.apache.rocketmq.common.constant.ConsumeInitMode;
@@ -75,6 +57,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.stats.StatsItem;
 import org.apache.rocketmq.common.stats.StatsSnapshot;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.filter.util.BitsArray;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -182,8 +165,8 @@ import org.apache.rocketmq.store.MessageFilter;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.BrokerRole;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.queue.CqExtUnit;
 import org.apache.rocketmq.store.queue.CqUnit;
@@ -191,6 +174,23 @@ import org.apache.rocketmq.store.queue.ReferredIterator;
 import org.apache.rocketmq.store.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.util.LibC;
+
+import java.io.UnsupportedEncodingException;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.rocketmq.remoting.protocol.RemotingCommand.buildErrorResponse;
 
@@ -2494,12 +2494,12 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         } catch (RemotingTimeoutException e) {
             response.setCode(ResponseCode.CONSUME_MSG_TIMEOUT);
             response
-                .setRemark(String.format("consumer <%s> <%s> Timeout: %s", consumerGroup, clientId, UtilAll.exceptionSimpleDesc(e)));
+                .setRemark(String.format("consumer <%s> <%s> Timeout: %s", consumerGroup, clientId, IOTinyUtils.exceptionSimpleDesc(e)));
             return response;
         } catch (Exception e) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(
-                String.format("invoke consumer <%s> <%s> Exception: %s", consumerGroup, clientId, UtilAll.exceptionSimpleDesc(e)));
+                String.format("invoke consumer <%s> <%s> Exception: %s", consumerGroup, clientId, IOTinyUtils.exceptionSimpleDesc(e)));
             return response;
         }
     }

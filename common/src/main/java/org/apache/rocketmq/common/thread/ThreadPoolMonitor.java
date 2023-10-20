@@ -19,6 +19,11 @@ package org.apache.rocketmq.common.thread;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.ThreadUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,10 +31,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.utils.ThreadUtils;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 public class ThreadPoolMonitor {
     private static Logger jstackLogger = LoggerFactory.getLogger(ThreadPoolMonitor.class);
@@ -113,7 +114,7 @@ public class ThreadPoolMonitor {
                     if (monitor.needPrintJstack(threadPoolWrapper.getThreadPoolExecutor(), value) &&
                         System.currentTimeMillis() - jstackTime > jstackPeriodTime) {
                         jstackTime = System.currentTimeMillis();
-                        jstackLogger.warn("jstack start\n{}", UtilAll.jstack());
+                        jstackLogger.warn("jstack start\n{}", IOTinyUtils.jstack());
                     }
                 }
             }

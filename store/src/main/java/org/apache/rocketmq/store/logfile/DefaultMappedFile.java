@@ -18,6 +18,27 @@ package org.apache.rocketmq.store.logfile;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.message.MessageExtBatch;
+import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.TimeUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.AppendMessageResult;
+import org.apache.rocketmq.store.AppendMessageStatus;
+import org.apache.rocketmq.store.CompactionAppendMsgCallback;
+import org.apache.rocketmq.store.PutMessageContext;
+import org.apache.rocketmq.store.TransientStorePool;
+import org.apache.rocketmq.store.commitlog.AppendMessageCallback;
+import org.apache.rocketmq.store.config.FlushDiskType;
+import org.apache.rocketmq.store.util.LibC;
+import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,28 +57,6 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBatch;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
-import org.apache.rocketmq.common.utils.NetworkUtil;
-import org.apache.rocketmq.common.utils.TimeUtils;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.commitlog.AppendMessageCallback;
-import org.apache.rocketmq.store.AppendMessageResult;
-import org.apache.rocketmq.store.AppendMessageStatus;
-import org.apache.rocketmq.store.CompactionAppendMsgCallback;
-import org.apache.rocketmq.store.PutMessageContext;
-import org.apache.rocketmq.store.TransientStorePool;
-import org.apache.rocketmq.store.config.FlushDiskType;
-import org.apache.rocketmq.store.util.LibC;
-import sun.misc.Unsafe;
-import sun.nio.ch.DirectBuffer;
 
 public class DefaultMappedFile extends AbstractMappedFile {
     public static final int OS_PAGE_SIZE = 1024 * 4;
@@ -563,8 +562,8 @@ public class DefaultMappedFile extends AbstractMappedFile {
             return true;
         }
 
-        UtilAll.cleanBuffer(this.mappedByteBuffer);
-        UtilAll.cleanBuffer(this.mappedByteBufferWaitToClean);
+        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
+        IOTinyUtils.cleanBuffer(this.mappedByteBufferWaitToClean);
         this.mappedByteBufferWaitToClean = null;
         TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(this.fileSize * (-1));
         TOTAL_MAPPED_FILES.decrementAndGet();
@@ -703,7 +702,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
             if (!force && gapTime < minGapTime) {
                 Thread.sleep(minGapTime - gapTime);
             }
-            UtilAll.cleanBuffer(this.mappedByteBufferWaitToClean);
+            IOTinyUtils.cleanBuffer(this.mappedByteBufferWaitToClean);
             mappedByteBufferWaitToClean = null;
             log.info("cleanSwapedMap file " + this.fileName + " success.");
         } catch (Exception e) {
@@ -803,7 +802,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
             // Windows can't move the file when mmapped.
             if (NetworkUtil.isWindowsPlatform() && mappedByteBuffer != null) {
                 long position = this.fileChannel.position();
-                UtilAll.cleanBuffer(this.mappedByteBuffer);
+                IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
                 this.fileChannel.close();
                 Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
                 try (RandomAccessFile file = new RandomAccessFile(newFileName, "rw")) {
@@ -831,7 +830,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         // Windows can't move the file when mmapped.
         if (NetworkUtil.isWindowsPlatform() && mappedByteBuffer != null) {
             long position = this.fileChannel.position();
-            UtilAll.cleanBuffer(this.mappedByteBuffer);
+            IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
             this.fileChannel.close();
             Files.move(Paths.get(fileName), parentPath, StandardCopyOption.ATOMIC_MOVE);
             try (RandomAccessFile file = new RandomAccessFile(parentPath.toFile(), "rw")) {

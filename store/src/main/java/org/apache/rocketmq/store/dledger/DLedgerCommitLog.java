@@ -16,33 +16,6 @@
  */
 package org.apache.rocketmq.store.dledger;
 
-import java.net.Inet6Address;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.message.MessageDecoder;
-import org.apache.rocketmq.common.message.MessageExtBatch;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.message.MessageVersion;
-import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.store.AppendMessageResult;
-import org.apache.rocketmq.store.AppendMessageStatus;
-import org.apache.rocketmq.store.commitlog.CommitLog;
-import org.apache.rocketmq.store.DefaultMessageStore;
-import org.apache.rocketmq.store.DispatchRequest;
-import org.apache.rocketmq.store.MessageExtEncoder;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.PutMessageStatus;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.stats.StoreStatsService;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.logfile.MappedFile;
-import org.rocksdb.RocksDBException;
-
 import io.openmessaging.storage.dledger.AppendFuture;
 import io.openmessaging.storage.dledger.BatchAppendFuture;
 import io.openmessaging.storage.dledger.DLedgerConfig;
@@ -57,6 +30,32 @@ import io.openmessaging.storage.dledger.store.file.MmapFile;
 import io.openmessaging.storage.dledger.store.file.MmapFileList;
 import io.openmessaging.storage.dledger.store.file.SelectMmapBufferResult;
 import io.openmessaging.storage.dledger.utils.DLedgerUtils;
+import org.apache.rocketmq.common.message.MessageDecoder;
+import org.apache.rocketmq.common.message.MessageExtBatch;
+import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.message.MessageVersion;
+import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.store.AppendMessageResult;
+import org.apache.rocketmq.store.AppendMessageStatus;
+import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.DispatchRequest;
+import org.apache.rocketmq.store.MessageExtEncoder;
+import org.apache.rocketmq.store.PutMessageResult;
+import org.apache.rocketmq.store.PutMessageStatus;
+import org.apache.rocketmq.store.commitlog.CommitLog;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.logfile.MappedFile;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.stats.StoreStatsService;
+import org.rocksdb.RocksDBException;
+
+import java.net.Inet6Address;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Store all metadata downtime for recovery, data protection reliability
@@ -404,7 +403,7 @@ public class DLedgerCommitLog extends CommitLog {
         msg.setStoreTimestamp(System.currentTimeMillis());
         // Set the message body BODY CRC (consider the most appropriate setting
         // on the client)
-        msg.setBodyCRC(UtilAll.crc32(msg.getBody()));
+        msg.setBodyCRC(BinaryUtil.crc32(msg.getBody()));
 
         InetSocketAddress bornSocketAddress = (InetSocketAddress) msg.getBornHost();
         if (bornSocketAddress.getAddress() instanceof Inet6Address) {
@@ -907,7 +906,7 @@ public class DLedgerCommitLog extends CommitLog {
                 // 5 BODY
                 int bodyLen = messagesByteBuff.getInt();
                 int bodyPos = messagesByteBuff.position();
-                int bodyCrc = UtilAll.crc32(messagesByteBuff.array(), bodyPos, bodyLen);
+                int bodyCrc = BinaryUtil.crc32(messagesByteBuff.array(), bodyPos, bodyLen);
                 messagesByteBuff.position(bodyPos + bodyLen);
                 // 6 properties
                 short propertiesLen = messagesByteBuff.getShort();

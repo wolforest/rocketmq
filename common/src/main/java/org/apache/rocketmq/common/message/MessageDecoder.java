@@ -33,6 +33,7 @@ import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.compression.Compressor;
 import org.apache.rocketmq.common.compression.CompressorFactory;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.utils.BinaryUtil;
 import org.apache.rocketmq.common.utils.StringUtils;
 
 public class MessageDecoder {
@@ -482,7 +483,7 @@ public class MessageDecoder {
 
                     if (checkCRC) {
                         //crc body
-                        int crc = UtilAll.crc32(body, 0, bodyLen);
+                        int crc = BinaryUtil.crc32(body, 0, bodyLen);
                         if (crc != bodyCRC) {
                             throw new Exception("Msg crc is error!");
                         }

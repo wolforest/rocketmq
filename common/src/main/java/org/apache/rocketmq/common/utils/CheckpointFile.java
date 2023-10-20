@@ -17,6 +17,9 @@
 
 package org.apache.rocketmq.common.utils;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.rocketmq.common.MixAll;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -24,9 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 
 /**
  * Entry Checkpoint file util
@@ -87,7 +87,7 @@ public class CheckpointFile<T> {
                     entryContent.append(System.lineSeparator());
                 }
             }
-            int crc32 = UtilAll.crc32(entryContent.toString().getBytes(StandardCharsets.UTF_8));
+            int crc32 = BinaryUtil.crc32(entryContent.toString().getBytes(StandardCharsets.UTF_8));
 
             String content = entries.size() + System.lineSeparator() +
                 crc32 + System.lineSeparator() + entryContent;
@@ -120,7 +120,7 @@ public class CheckpointFile<T> {
                     }
                     line = reader.readLine();
                 }
-                int truthCrc32 = UtilAll.crc32(sb.toString().getBytes(StandardCharsets.UTF_8));
+                int truthCrc32 = BinaryUtil.crc32(sb.toString().getBytes(StandardCharsets.UTF_8));
 
                 if (result.size() != expectedLines) {
                     final String err = String.format(
