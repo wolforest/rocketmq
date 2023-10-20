@@ -17,10 +17,14 @@
 
 package org.apache.rocketmq.common.utils;
 
+import org.apache.commons.lang3.JavaVersion;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
 
 import java.io.BufferedReader;
 import java.io.CharArrayWriter;
@@ -33,9 +37,14 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -352,6 +361,60 @@ public class IOTinyUtils {
         }
 
         return result.toString();
+    }
+
+    public static void cleanBuffer(final ByteBuffer buffer) {
+        if (buffer == null || !buffer.isDirect() || buffer.capacity() == 0) {
+            return;
+        }
+        if (SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_9)) {
+            try {
+                Field field = Unsafe.class.getDeclaredField("theUnsafe");
+                field.setAccessible(true);
+                Unsafe unsafe = (Unsafe) field.get(null);
+                Method cleaner = method(unsafe, "invokeCleaner", new Class[] {ByteBuffer.class});
+                cleaner.invoke(unsafe, viewed(buffer));
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        } else {
+            invoke(invoke(viewed(buffer), "cleaner"), "clean");
+        }
+    }
+
+    public static Object invoke(final Object target, final String methodName, final Class<?>... args) {
+        return AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            @Override
+            public Object run() {
+                try {
+                    Method method = method(target, methodName, args);
+                    method.setAccessible(true);
+                    return method.invoke(target);
+                } catch (Exception e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        });
+    }
+
+    public static Method method(Object target, String methodName, Class<?>[] args) throws NoSuchMethodException {
+        try {
+            return target.getClass().getMethod(methodName, args);
+        } catch (NoSuchMethodException e) {
+            return target.getClass().getDeclaredMethod(methodName, args);
+        }
+    }
+
+    private static ByteBuffer viewed(ByteBuffer buffer) {
+        if (!buffer.isDirect()) {
+            throw new IllegalArgumentException("buffer is non-direct");
+        }
+        ByteBuffer viewedBuffer = (ByteBuffer) ((DirectBuffer) buffer).attachment();
+        if (viewedBuffer == null) {
+            return buffer;
+        } else {
+            return viewed(viewedBuffer);
+        }
     }
 
 }
