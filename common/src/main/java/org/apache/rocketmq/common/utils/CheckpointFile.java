@@ -87,7 +87,7 @@ public class CheckpointFile<T> {
                     entryContent.append(System.lineSeparator());
                 }
             }
-            int crc32 = UtilAll.crc32(entryContent.toString().getBytes(StandardCharsets.UTF_8));
+            int crc32 = BinaryUtil.crc32(entryContent.toString().getBytes(StandardCharsets.UTF_8));
 
             String content = entries.size() + System.lineSeparator() +
                 crc32 + System.lineSeparator() + entryContent;
