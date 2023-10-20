@@ -126,9 +126,9 @@ public class MessageClientIDSetter {
             diff = 0;
         }
         int pos = FIX_STRING.length;
-        UtilAll.writeInt(sb, pos, diff);
+        StringUtils.writeInt(sb, pos, diff);
         pos += 8;
-        UtilAll.writeShort(sb, pos, COUNTER.getAndIncrement());
+        StringUtils.writeShort(sb, pos, COUNTER.getAndIncrement());
         return new String(sb);
     }
 
