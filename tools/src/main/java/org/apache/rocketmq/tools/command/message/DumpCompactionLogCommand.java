@@ -16,12 +16,12 @@
  */
 package org.apache.rocketmq.tools.command.message;
 
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
@@ -99,7 +99,7 @@ public class DumpCompactionLogCommand implements SubCommand {
                     }
                 }
 
-                UtilAll.cleanBuffer(buf);
+                IOTinyUtils.cleanBuffer(buf);
             } catch (IOException e) {
                 e.printStackTrace();
             }
