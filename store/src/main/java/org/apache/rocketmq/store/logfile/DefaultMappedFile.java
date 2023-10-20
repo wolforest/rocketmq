@@ -781,7 +781,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
             // Windows can't move the file when mmapped.
             if (NetworkUtil.isWindowsPlatform() && mappedByteBuffer != null) {
                 long position = this.fileChannel.position();
-                UtilAll.cleanBuffer(this.mappedByteBuffer);
+                IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
                 this.fileChannel.close();
                 Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
                 try (RandomAccessFile file = new RandomAccessFile(newFileName, "rw")) {
