@@ -331,14 +331,14 @@ public class UtilAll {
         }
         return new String(hexChars);
     }
-
+    @Deprecated
     public static void writeInt(char[] buffer, int pos, int value) {
         char[] hexArray = HEX_ARRAY;
         for (int moveBits = 28; moveBits >= 0; moveBits -= 4) {
             buffer[pos++] = hexArray[(value >>> moveBits) & 0x0F];
         }
     }
-
+    @Deprecated
     public static void writeShort(char[] buffer, int pos, int value) {
         char[] hexArray = HEX_ARRAY;
         for (int moveBits = 12; moveBits >= 0; moveBits -= 4) {
