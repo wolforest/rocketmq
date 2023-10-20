@@ -309,4 +309,19 @@ public class IOTinyUtils {
         return size;
     }
 
+    public static String exceptionSimpleDesc(final Throwable e) {
+        StringBuilder sb = new StringBuilder();
+        if (e != null) {
+            sb.append(e);
+
+            StackTraceElement[] stackTrace = e.getStackTrace();
+            if (stackTrace != null && stackTrace.length > 0) {
+                StackTraceElement element = stackTrace[0];
+                sb.append(", ");
+                sb.append(element.toString());
+            }
+        }
+        return sb.toString();
+    }
+
 }
