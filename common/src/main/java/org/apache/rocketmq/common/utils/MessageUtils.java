@@ -26,7 +26,6 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 
 public class MessageUtils {
-
     public static int getShardingKeyIndex(String shardingKey, int indexSize) {
         return Math.abs(Hashing.murmur3_32().hashBytes(shardingKey.getBytes(StandardCharsets.UTF_8)).asInt() % indexSize);
     }

@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.common.message;
 
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.junit.Test;
 
@@ -60,7 +60,7 @@ public class MessageClientIDSetterTest {
     @Test
     public void testGetPidFromID() {
         // Temporary fix on MacOS
-        short pid = (short) UtilAll.getPid();
+        short pid = (short) NetworkPortUtils.getPid();
 
         String uniqID = MessageClientIDSetter.createUniqID();
         short pidFromID = (short) MessageClientIDSetter.getPidFromID(uniqID);

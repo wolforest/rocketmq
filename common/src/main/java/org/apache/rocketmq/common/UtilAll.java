@@ -80,7 +80,7 @@ public class UtilAll {
         };
         PID = supplier.get();
     }
-
+    @Deprecated
     public static int getPid() {
         return PID;
     }
@@ -89,7 +89,7 @@ public class UtilAll {
     public static void sleep(long sleepMs) {
         sleep(sleepMs, TimeUnit.MILLISECONDS);
     }
-
+    @Deprecated
     private static void sleep(long timeOut, TimeUnit timeUnit) {
         if (null == timeUnit) {
             return;
@@ -331,14 +331,14 @@ public class UtilAll {
         }
         return new String(hexChars);
     }
-
+    @Deprecated
     public static void writeInt(char[] buffer, int pos, int value) {
         char[] hexArray = HEX_ARRAY;
         for (int moveBits = 28; moveBits >= 0; moveBits -= 4) {
             buffer[pos++] = hexArray[(value >>> moveBits) & 0x0F];
         }
     }
-
+    @Deprecated
     public static void writeShort(char[] buffer, int pos, int value) {
         char[] hexArray = HEX_ARRAY;
         for (int moveBits = 12; moveBits >= 0; moveBits -= 4) {
