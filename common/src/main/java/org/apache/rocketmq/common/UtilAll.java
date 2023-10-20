@@ -306,7 +306,7 @@ public class UtilAll {
             return -1;
         }
     }
-
+    @Deprecated
     public static int crc32(byte[] array) {
         if (array != null) {
             return crc32(array, 0, array.length);
@@ -314,7 +314,7 @@ public class UtilAll {
 
         return 0;
     }
-
+    @Deprecated
     public static int crc32(byte[] array, int offset, int length) {
         CRC32 crc32 = new CRC32();
         crc32.update(array, offset, length);
