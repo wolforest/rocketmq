@@ -51,6 +51,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import sun.misc.Unsafe;
@@ -507,7 +508,7 @@ public class UtilAll {
                 }
             }
         } catch (Throwable e) {
-            result.append(exceptionSimpleDesc(e));
+            result.append(IOTinyUtils.exceptionSimpleDesc(e));
         }
 
         return result.toString();
