@@ -17,14 +17,6 @@
 package org.apache.rocketmq.client.impl.consumer;
 
 import io.netty.util.internal.ConcurrentSet;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
@@ -33,19 +25,28 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.stat.ConsumerStatsManager;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
 import org.apache.rocketmq.remoting.protocol.body.CMResult;
 import org.apache.rocketmq.remoting.protocol.body.ConsumeMessageDirectlyResult;
 import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class ConsumeMessagePopOrderlyService implements ConsumeMessageService {
     private static final Logger log = LoggerFactory.getLogger(ConsumeMessagePopOrderlyService.class);
@@ -173,10 +174,10 @@ public class ConsumeMessagePopOrderlyService implements ConsumeMessageService {
             }
         } catch (Throwable e) {
             result.setConsumeResult(CMResult.CR_THROW_EXCEPTION);
-            result.setRemark(UtilAll.exceptionSimpleDesc(e));
+            result.setRemark(IOTinyUtils.exceptionSimpleDesc(e));
 
             log.warn(String.format("consumeMessageDirectly exception: %s Group: %s Msgs: %s MQ: %s",
-                UtilAll.exceptionSimpleDesc(e),
+                IOTinyUtils.exceptionSimpleDesc(e),
                 ConsumeMessagePopOrderlyService.this.consumerGroup,
                 msgs,
                 mq), e);
