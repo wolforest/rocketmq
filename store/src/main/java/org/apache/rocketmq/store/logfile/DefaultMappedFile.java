@@ -762,15 +762,18 @@ public class DefaultMappedFile extends AbstractMappedFile {
         final long beginTime = System.currentTimeMillis();
         final long address = ((DirectBuffer) (this.mappedByteBuffer)).address();
         Pointer pointer = new Pointer(address);
-        {
-            int ret = LibC.INSTANCE.mlock(pointer, new NativeLong(this.fileSize));
-            log.info("mlock {} {} {} ret = {} time consuming = {}", address, this.fileName, this.fileSize, ret, System.currentTimeMillis() - beginTime);
-        }
+        mlock(pointer, address, beginTime);
+        madvise(pointer, address, beginTime);
+    }
 
-        {
-            int ret = LibC.INSTANCE.madvise(pointer, new NativeLong(this.fileSize), LibC.MADV_WILLNEED);
-            log.info("madvise {} {} {} ret = {} time consuming = {}", address, this.fileName, this.fileSize, ret, System.currentTimeMillis() - beginTime);
-        }
+    private void mlock(Pointer pointer, long address, long beginTime) {
+        int ret = LibC.INSTANCE.mlock(pointer, new NativeLong(this.fileSize));
+        log.info("mlock {} {} {} ret = {} time consuming = {}", address, this.fileName, this.fileSize, ret, System.currentTimeMillis() - beginTime);
+    }
+
+    private void madvise(Pointer pointer, long address, long beginTime) {
+        int ret = LibC.INSTANCE.madvise(pointer, new NativeLong(this.fileSize), LibC.MADV_WILLNEED);
+        log.info("madvise {} {} {} ret = {} time consuming = {}", address, this.fileName, this.fileSize, ret, System.currentTimeMillis() - beginTime);
     }
 
     @Override
