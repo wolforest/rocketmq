@@ -182,14 +182,15 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
     @Override
     public long getOffsetInQueueByTime(String topic, int queueId, long timestamp, BoundaryType boundaryType) {
         ConsumeQueueInterface logic = findOrCreateConsumeQueue(topic, queueId);
-        if (logic != null) {
-            long resultOffset = logic.getOffsetInQueueByTime(timestamp, boundaryType);
-            // Make sure the result offset is in valid range.
-            resultOffset = Math.max(resultOffset, logic.getMinOffsetInQueue());
-            resultOffset = Math.min(resultOffset, logic.getMaxOffsetInQueue());
-            return resultOffset;
+        if (logic == null) {
+            return 0;
         }
-        return 0;
+
+        long resultOffset = logic.getOffsetInQueueByTime(timestamp, boundaryType);
+        // Make sure the result offset is in valid range.
+        resultOffset = Math.max(resultOffset, logic.getMinOffsetInQueue());
+        resultOffset = Math.min(resultOffset, logic.getMaxOffsetInQueue());
+        return resultOffset;
     }
 
     private FileQueueLifeCycle getLifeCycle(String topic, int queueId) {
@@ -204,34 +205,45 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
     private boolean loadConsumeQueues(String storePath, CQType cqType) {
         File dirLogic = new File(storePath);
         File[] fileTopicList = dirLogic.listFiles();
-        if (fileTopicList != null) {
+        if (fileTopicList == null) {
+            return true;
+        }
 
-            for (File fileTopic : fileTopicList) {
-                String topic = fileTopic.getName();
 
-                File[] fileQueueIdList = fileTopic.listFiles();
-                if (fileQueueIdList != null) {
-                    for (File fileQueueId : fileQueueIdList) {
-                        int queueId;
-                        try {
-                            queueId = Integer.parseInt(fileQueueId.getName());
-                        } catch (NumberFormatException e) {
-                            continue;
-                        }
+        for (File fileTopic : fileTopicList) {
+            String topic = fileTopic.getName();
+            File[] fileQueueIdList = fileTopic.listFiles();
+            if (fileQueueIdList == null) {
+                continue;
+            }
 
-                        queueTypeShouldBe(topic, cqType);
-
-                        ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
-                        this.putConsumeQueue(topic, queueId, logic);
-                        if (!this.load(logic)) {
-                            return false;
-                        }
-                    }
-                }
+            if (!loadConsumeQueues(storePath, cqType, topic, fileQueueIdList)) {
+                return false;
             }
         }
 
         log.info("load {} all over, OK", cqType);
+        return true;
+    }
+
+    private boolean loadConsumeQueues(String storePath, CQType cqType, String topic, File[] fileQueueIdList) {
+        for (File fileQueueId : fileQueueIdList) {
+            int queueId;
+            try {
+                queueId = Integer.parseInt(fileQueueId.getName());
+            } catch (NumberFormatException e) {
+                continue;
+            }
+
+            queueTypeShouldBe(topic, cqType);
+
+            ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
+            this.putConsumeQueue(topic, queueId, logic);
+
+            if (!this.load(logic)) {
+                return false;
+            }
+        }
 
         return true;
     }
@@ -244,16 +256,18 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
                 storePath,
                 this.messageStoreConfig.getMappedFileSizeConsumeQueue(),
                 this.messageStore);
-        } else if (Objects.equals(CQType.BatchCQ, cqType)) {
+        }
+
+        if (Objects.equals(CQType.BatchCQ, cqType)) {
             return new BatchConsumeQueue(
                 topic,
                 queueId,
                 storePath,
                 this.messageStoreConfig.getMapperFileSizeBatchConsumeQueue(),
                 this.messageStore);
-        } else {
-            throw new RuntimeException(format("queue type %s is not supported.", cqType.toString()));
         }
+
+        throw new RuntimeException(format("queue type %s is not supported.", cqType.toString()));
     }
 
     private void queueTypeShouldBe(String topic, CQType cqTypeExpected) {
@@ -373,8 +387,7 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
         return fileQueueLifeCycle.isFirstFileExist();
     }
 
-    @Override
-    public ConsumeQueueInterface findOrCreateConsumeQueue(String topic, int queueId) {
+    private ConcurrentMap<Integer, ConsumeQueueInterface> getQueueMapFromTable(String topic) {
         ConcurrentMap<Integer, ConsumeQueueInterface> map = consumeQueueTable.get(topic);
         if (null == map) {
             ConcurrentMap<Integer, ConsumeQueueInterface> newMap = new ConcurrentHashMap<>(128);
@@ -386,6 +399,12 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
             }
         }
 
+        return map;
+    }
+
+    @Override
+    public ConsumeQueueInterface findOrCreateConsumeQueue(String topic, int queueId) {
+        ConcurrentMap<Integer, ConsumeQueueInterface> map = getQueueMapFromTable(topic);
         ConsumeQueueInterface logic = map.get(queueId);
         if (logic != null) {
             return logic;
@@ -521,39 +540,41 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
         while (it.hasNext()) {
             Map.Entry<String, ConcurrentMap<Integer, ConsumeQueueInterface>> next = it.next();
             String topic = next.getKey();
-            if (!TopicValidator.isSystemTopic(topic)) {
-                ConcurrentMap<Integer, ConsumeQueueInterface> queueTable = next.getValue();
-                Iterator<Map.Entry<Integer, ConsumeQueueInterface>> itQT = queueTable.entrySet().iterator();
-                while (itQT.hasNext()) {
-                    Map.Entry<Integer, ConsumeQueueInterface> nextQT = itQT.next();
-                    long maxCLOffsetInConsumeQueue = nextQT.getValue().getLastOffset();
+            if (TopicValidator.isSystemTopic(topic)) {
+                continue;
+            }
 
-                    if (maxCLOffsetInConsumeQueue == -1) {
-                        log.warn("maybe ConsumeQueue was created just now. topic={} queueId={} maxPhysicOffset={} minLogicOffset={}.",
-                            nextQT.getValue().getTopic(),
-                            nextQT.getValue().getQueueId(),
-                            nextQT.getValue().getMaxPhysicOffset(),
-                            nextQT.getValue().getMinLogicOffset());
-                    } else if (maxCLOffsetInConsumeQueue < minCommitLogOffset) {
-                        log.info(
-                            "cleanExpiredConsumerQueue: {} {} consumer queue destroyed, minCommitLogOffset: {} maxCLOffsetInConsumeQueue: {}",
-                            topic,
-                            nextQT.getKey(),
-                            minCommitLogOffset,
-                            maxCLOffsetInConsumeQueue);
+            ConcurrentMap<Integer, ConsumeQueueInterface> queueTable = next.getValue();
+            Iterator<Map.Entry<Integer, ConsumeQueueInterface>> itQT = queueTable.entrySet().iterator();
+            while (itQT.hasNext()) {
+                Map.Entry<Integer, ConsumeQueueInterface> nextQT = itQT.next();
+                long maxCLOffsetInConsumeQueue = nextQT.getValue().getLastOffset();
 
-                        removeTopicQueueTable(nextQT.getValue().getTopic(),
-                            nextQT.getValue().getQueueId());
+                if (maxCLOffsetInConsumeQueue == -1) {
+                    log.warn("maybe ConsumeQueue was created just now. topic={} queueId={} maxPhysicOffset={} minLogicOffset={}.",
+                        nextQT.getValue().getTopic(),
+                        nextQT.getValue().getQueueId(),
+                        nextQT.getValue().getMaxPhysicOffset(),
+                        nextQT.getValue().getMinLogicOffset());
+                } else if (maxCLOffsetInConsumeQueue < minCommitLogOffset) {
+                    log.info(
+                        "cleanExpiredConsumerQueue: {} {} consumer queue destroyed, minCommitLogOffset: {} maxCLOffsetInConsumeQueue: {}",
+                        topic,
+                        nextQT.getKey(),
+                        minCommitLogOffset,
+                        maxCLOffsetInConsumeQueue);
 
-                        this.destroy(nextQT.getValue());
-                        itQT.remove();
-                    }
+                    removeTopicQueueTable(nextQT.getValue().getTopic(),
+                        nextQT.getValue().getQueueId());
+
+                    this.destroy(nextQT.getValue());
+                    itQT.remove();
                 }
+            }
 
-                if (queueTable.isEmpty()) {
-                    log.info("cleanExpiredConsumerQueue: {},topic destroyed", topic);
-                    it.remove();
-                }
+            if (queueTable.isEmpty()) {
+                log.info("cleanExpiredConsumerQueue: {},topic destroyed", topic);
+                it.remove();
             }
         }
     }
