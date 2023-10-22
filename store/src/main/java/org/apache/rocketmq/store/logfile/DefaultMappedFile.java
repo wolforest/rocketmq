@@ -834,24 +834,30 @@ public class DefaultMappedFile extends AbstractMappedFile {
         Path currentPath = Paths.get(fileName);
         String baseName = currentPath.getFileName().toString();
         Path parentPath = currentPath.getParent().getParent().resolve(baseName);
-        // https://bugs.openjdk.org/browse/JDK-4724038
-        // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
-        // Windows can't move the file when mmapped.
+
         if (NetworkUtil.isWindowsPlatform() && mappedByteBuffer != null) {
-            long position = this.fileChannel.position();
-            IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
-            this.fileChannel.close();
-            Files.move(Paths.get(fileName), parentPath, StandardCopyOption.ATOMIC_MOVE);
-            try (RandomAccessFile file = new RandomAccessFile(parentPath.toFile(), "rw")) {
-                this.fileChannel = file.getChannel();
-                this.fileChannel.position(position);
-                this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
-            }
+            moveToParentInWindows(parentPath);
         } else {
             Files.move(Paths.get(fileName), parentPath, StandardCopyOption.ATOMIC_MOVE);
         }
         this.file = parentPath.toFile();
         this.fileName = parentPath.toString();
+    }
+
+    private void moveToParentInWindows(Path parentPath) throws IOException {
+        // https://bugs.openjdk.org/browse/JDK-4724038
+        // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
+        // Windows can't move the file when mmap.
+        long position = this.fileChannel.position();
+        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
+        this.fileChannel.close();
+        Files.move(Paths.get(fileName), parentPath, StandardCopyOption.ATOMIC_MOVE);
+
+        try (RandomAccessFile file = new RandomAccessFile(parentPath.toFile(), "rw")) {
+            this.fileChannel = file.getChannel();
+            this.fileChannel.position(position);
+            this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
+        }
     }
 
     @Override
