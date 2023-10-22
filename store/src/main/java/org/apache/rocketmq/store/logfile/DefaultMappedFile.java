@@ -800,26 +800,32 @@ public class DefaultMappedFile extends AbstractMappedFile {
         String newFileName = this.fileName + ".delete";
         try {
             Path newFilePath = Paths.get(newFileName);
-            // https://bugs.openjdk.org/browse/JDK-4724038
-            // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
-            // Windows can't move the file when mmapped.
             if (NetworkUtil.isWindowsPlatform() && mappedByteBuffer != null) {
-                long position = this.fileChannel.position();
-                IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
-                this.fileChannel.close();
-                Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
-                try (RandomAccessFile file = new RandomAccessFile(newFileName, "rw")) {
-                    this.fileChannel = file.getChannel();
-                    this.fileChannel.position(position);
-                    this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
-                }
+                renameToDeleteInWindows(newFileName, newFilePath);
             } else {
                 Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
             }
+
             this.fileName = newFileName;
             this.file = new File(newFileName);
         } catch (IOException e) {
             log.error("move file {} failed", fileName, e);
+        }
+    }
+
+    private void renameToDeleteInWindows(String newFileName, Path newFilePath) throws IOException {
+        // https://bugs.openjdk.org/browse/JDK-4724038
+        // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
+        // Windows can't move the file when mmap.
+        long position = this.fileChannel.position();
+        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
+        this.fileChannel.close();
+        Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
+
+        try (RandomAccessFile file = new RandomAccessFile(newFileName, "rw")) {
+            this.fileChannel = file.getChannel();
+            this.fileChannel.position(position);
+            this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
         }
     }
 
