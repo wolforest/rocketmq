@@ -26,6 +26,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicConfigAndQueueMapping;
@@ -92,7 +93,7 @@ public class RemappingStaticTopicSubCommand implements SubCommand {
             String topic = commandLine.getOptionValue('t').trim();
 
             String mapFileName = commandLine.getOptionValue('f').trim();
-            String mapData = MixAll.file2String(mapFileName);
+            String mapData = StringUtils.file2String(mapFileName);
             TopicRemappingDetailWrapper wrapper = TopicRemappingDetailWrapper.decode(mapData.getBytes(StandardCharsets.UTF_8),
                 TopicRemappingDetailWrapper.class);
             //double check the config
