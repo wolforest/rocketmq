@@ -29,6 +29,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -57,6 +58,20 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
         super(messageStore);
     }
 
+    /**
+     * consume queue api from commitLog dispatching, the process is below:
+     * ReputMessageService -> messageStore.doDispatch() -> CommitLogDispatcherBuildConsumeQueue.dispatch()
+     *
+     * TODO: enqueue may be a better name
+     *
+     * @param dispatchRequest DispatchRequest create by ReputMessageService
+     */
+    @Override
+    public void putMessagePositionInfoWrapper(DispatchRequest dispatchRequest) {
+        ConsumeQueueInterface cq = this.findOrCreateConsumeQueue(dispatchRequest.getTopic(), dispatchRequest.getQueueId());
+        this.putMessagePositionInfoWrapper(cq, dispatchRequest);
+    }
+
     @Override
     public void start() {
         log.info("Default ConsumeQueueStore start!");
@@ -77,50 +92,25 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
     @Override
     public void recover() {
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-            for (ConsumeQueueInterface logic : maps.values()) {
-                this.recover(logic);
-            }
+            recover(maps);
         }
     }
 
     @Override
     public boolean recoverConcurrently() {
-        int count = 0;
-        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-            count += maps.values().size();
-        }
-        final CountDownLatch countDownLatch = new CountDownLatch(count);
-        BlockingQueue<Runnable> recoverQueue = new LinkedBlockingQueue<>();
-        final ExecutorService executor = buildExecutorService(recoverQueue, "RecoverConsumeQueueThread_");
-        List<FutureTask<Boolean>> result = new ArrayList<>(count);
-        try {
-            for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-                for (final ConsumeQueueInterface logic : maps.values()) {
-                    FutureTask<Boolean> futureTask = new FutureTask<>(() -> {
-                        boolean ret = true;
-                        try {
-                            logic.recover();
-                        } catch (Throwable e) {
-                            ret = false;
-                            log.error("Exception occurs while recover consume queue concurrently, " +
-                                "topic={}, queueId={}", logic.getTopic(), logic.getQueueId(), e);
-                        } finally {
-                            countDownLatch.countDown();
-                        }
-                        return ret;
-                    });
+        int count = countQueueTable();
 
-                    result.add(futureTask);
-                    executor.submit(futureTask);
-                }
-            }
+        final CountDownLatch countDownLatch = new CountDownLatch(count);
+        final ExecutorService executor = createRecoverExecutor();
+        List<FutureTask<Boolean>> result = new ArrayList<>(count);
+
+        try {
+            recoverConcurrently(result, executor, countDownLatch);
+
             countDownLatch.await();
-            for (FutureTask<Boolean> task : result) {
-                if (task != null && task.isDone()) {
-                    if (!task.get()) {
-                        return false;
-                    }
-                }
+
+            if (!isTaskDone(result)) {
+                return false;
             }
         } catch (Exception e) {
             log.error("Exception occurs while recover consume queue concurrently", e);
@@ -128,6 +118,7 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
         } finally {
             executor.shutdown();
         }
+
         return true;
     }
 
@@ -144,20 +135,6 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
 
     public void correctMinOffset(ConsumeQueueInterface consumeQueue, long minCommitLogOffset) {
         consumeQueue.correctMinOffset(minCommitLogOffset);
-    }
-
-    /**
-     * consume queue api from commitLog dispatching, the process is below:
-     * ReputMessageService -> messageStore.doDispatch() -> CommitLogDispatcherBuildConsumeQueue.dispatch()
-     *
-     * TODO: enqueue may be a better name
-     *
-     * @param dispatchRequest DispatchRequest create by ReputMessageService
-     */
-    @Override
-    public void putMessagePositionInfoWrapper(DispatchRequest dispatchRequest) {
-        ConsumeQueueInterface cq = this.findOrCreateConsumeQueue(dispatchRequest.getTopic(), dispatchRequest.getQueueId());
-        this.putMessagePositionInfoWrapper(cq, dispatchRequest);
     }
 
     @Override
@@ -201,6 +178,65 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
         FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
         return fileQueueLifeCycle.load();
     }
+
+    private ExecutorService createRecoverExecutor() {
+        BlockingQueue<Runnable> recoverQueue = new LinkedBlockingQueue<>();
+        return buildExecutorService(recoverQueue, "RecoverConsumeQueueThread_");
+    }
+
+    private FutureTask<Boolean> createRecoverFutureTask(ConsumeQueueInterface logic, CountDownLatch countDownLatch) {
+        return new FutureTask<>(() -> {
+            boolean ret = true;
+            try {
+                logic.recover();
+            } catch (Throwable e) {
+                ret = false;
+                log.error("Exception occurs while recover consume queue concurrently, " +
+                    "topic={}, queueId={}", logic.getTopic(), logic.getQueueId(), e);
+            } finally {
+                countDownLatch.countDown();
+            }
+            return ret;
+        });
+    }
+
+    private void recoverConcurrently(List<FutureTask<Boolean>> result, ExecutorService executor, CountDownLatch countDownLatch) {
+        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
+            recoverConcurrently(result, executor, countDownLatch, maps);
+        }
+    }
+
+    private void recoverConcurrently(List<FutureTask<Boolean>> result, ExecutorService executor, CountDownLatch countDownLatch, ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (final ConsumeQueueInterface logic : maps.values()) {
+            FutureTask<Boolean> futureTask = createRecoverFutureTask(logic, countDownLatch);
+            result.add(futureTask);
+            executor.submit(futureTask);
+        }
+    }
+
+    private boolean isTaskDone(List<FutureTask<Boolean>> result) throws ExecutionException, InterruptedException {
+        for (FutureTask<Boolean> task : result) {
+            if (task == null || !task.isDone()) {
+                continue;
+            }
+
+            if (!task.get()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private int countQueueTable() {
+        int count = 0;
+        for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
+            count += maps.values().size();
+        }
+
+        return count;
+    }
+
 
     private boolean loadConsumeQueues(String storePath, CQType cqType) {
         File dirLogic = new File(storePath);
@@ -290,7 +326,13 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
             new ThreadFactoryImpl(threadNamePrefix));
     }
 
-    public void recover(ConsumeQueueInterface consumeQueue) {
+    private void recover(ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (ConsumeQueueInterface logic : maps.values()) {
+            this.recover(logic);
+        }
+    }
+
+    private void recover(ConsumeQueueInterface consumeQueue) {
         FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
         fileQueueLifeCycle.recover();
     }
@@ -325,11 +367,6 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
         }
 
         return -1;
-    }
-
-    public void checkSelf(ConsumeQueueInterface consumeQueue) {
-        FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
-        fileQueueLifeCycle.checkSelf();
     }
 
     @Override
@@ -385,6 +422,11 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
     public boolean isFirstFileExist(ConsumeQueueInterface consumeQueue) {
         FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
         return fileQueueLifeCycle.isFirstFileExist();
+    }
+
+    private void checkSelf(ConsumeQueueInterface consumeQueue) {
+        FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
+        fileQueueLifeCycle.checkSelf();
     }
 
     private ConcurrentMap<Integer, ConsumeQueueInterface> getQueueMapFromTable(String topic) {
@@ -528,9 +570,13 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
     @Override
     public void destroy() {
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
-            for (ConsumeQueueInterface logic : maps.values()) {
-                this.destroy(logic);
-            }
+            destroy(maps);
+        }
+    }
+
+    private void destroy(ConcurrentMap<Integer, ConsumeQueueInterface> maps) {
+        for (ConsumeQueueInterface logic : maps.values()) {
+            this.destroy(logic);
         }
     }
 
