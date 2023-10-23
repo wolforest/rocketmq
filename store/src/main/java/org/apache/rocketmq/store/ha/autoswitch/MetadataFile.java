@@ -41,7 +41,7 @@ public abstract class MetadataFile {
     }
 
     public void readFromFile() throws Exception {
-        String dataStr = MixAll.file2String(filePath);
+        String dataStr = StringUtils.file2String(filePath);
         decodeFromStr(dataStr);
     }
     public boolean fileExists() {
