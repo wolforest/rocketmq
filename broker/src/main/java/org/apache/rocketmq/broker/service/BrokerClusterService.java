@@ -27,6 +27,7 @@ import org.apache.rocketmq.broker.slave.SlaveSynchronize;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.ChannelUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.BrokerSyncInfo;
@@ -113,7 +114,7 @@ public class BrokerClusterService {
         String masterAddr = this.slaveSynchronize.getMasterAddr();
         if (masterAddr != null) {
             brokerController.getBrokerOuterAPI().getRemotingClient().closeChannels(
-                Arrays.asList(masterAddr, MixAll.brokerVIPChannel(true, masterAddr)));
+                Arrays.asList(masterAddr, ChannelUtil.brokerVIPChannel(true, masterAddr)));
         }
         // master not available, stop sync
         this.slaveSynchronize.setMasterAddr(null);

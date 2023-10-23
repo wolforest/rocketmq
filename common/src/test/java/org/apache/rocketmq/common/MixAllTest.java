@@ -17,13 +17,10 @@
 
 package org.apache.rocketmq.common;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.ChannelUtil;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,11 +32,6 @@ public class MixAllTest {
         String local = InetAddress.getLocalHost().getHostAddress();
         assertThat(localInetAddress).contains("127.0.0.1");
         assertThat(local).isNotNull();
-    }
-
-    @Test
-    public void testBrokerVIPChannel() {
-        assertThat(MixAll.brokerVIPChannel(true, "127.0.0.1:10911")).isEqualTo("127.0.0.1:10909");
     }
 
     @Test

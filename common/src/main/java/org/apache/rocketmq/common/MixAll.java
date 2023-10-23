@@ -17,9 +17,6 @@
 package org.apache.rocketmq.common;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
@@ -30,9 +27,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -49,7 +43,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.annotation.ImportantField;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.help.FAQUrl;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
@@ -150,17 +143,6 @@ public class MixAll {
 
     public static String getDLQTopic(final String consumerGroup) {
         return DLQ_GROUP_TOPIC_PREFIX + consumerGroup;
-    }
-
-    public static String brokerVIPChannel(final boolean isChange, final String brokerAddr) {
-        if (!isChange) {
-            return brokerAddr;
-        }
-
-        int split = brokerAddr.lastIndexOf(":");
-        String ip = brokerAddr.substring(0, split);
-        String port = brokerAddr.substring(split + 1);
-        return ip + ":" + (Integer.parseInt(port) - 2);
     }
 
     public static long getPID() {

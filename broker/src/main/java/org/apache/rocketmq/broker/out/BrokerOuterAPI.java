@@ -46,6 +46,7 @@ import org.apache.rocketmq.common.namesrv.TopAddressing;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.ChannelUtil;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -737,7 +738,7 @@ public class BrokerOuterAPI {
         RemotingTimeoutException, InterruptedException, MQBrokerException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_TOPIC_CONFIG, null);
 
-        RemotingCommand response = this.remotingClient.invokeSync(MixAll.brokerVIPChannel(true, addr), request, 3000);
+        RemotingCommand response = this.remotingClient.invokeSync(ChannelUtil.brokerVIPChannel(true, addr), request, 3000);
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return TopicConfigSerializeWrapper.decode(response.getBody(), TopicConfigAndMappingSerializeWrapper.class);
@@ -751,7 +752,7 @@ public class BrokerOuterAPI {
         RemotingTimeoutException, InterruptedException, MQBrokerException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_TIMER_CHECK_POINT, null);
 
-        RemotingCommand response = this.remotingClient.invokeSync(MixAll.brokerVIPChannel(true, addr), request, 3000);
+        RemotingCommand response = this.remotingClient.invokeSync(ChannelUtil.brokerVIPChannel(true, addr), request, 3000);
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return TimerCheckpoint.decode(ByteBuffer.wrap(response.getBody()));
@@ -765,7 +766,7 @@ public class BrokerOuterAPI {
         RemotingTimeoutException, InterruptedException, MQBrokerException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_TIMER_METRICS, null);
 
-        RemotingCommand response = this.remotingClient.invokeSync(MixAll.brokerVIPChannel(true, addr), request, 3000);
+        RemotingCommand response = this.remotingClient.invokeSync(ChannelUtil.brokerVIPChannel(true, addr), request, 3000);
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return TimerMetrics.TimerMetricsSerializeWrapper.decode(response.getBody(), TimerMetrics.TimerMetricsSerializeWrapper.class);
