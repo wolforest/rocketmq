@@ -41,6 +41,7 @@ public class NetworkUtil {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
     private static boolean isLinuxPlatform = false;
     private static boolean isWindowsPlatform = false;
+    public static final String DEFAULT_NAMESRV_ADDR_LOOKUP = "jmenv.tbsite.net";
 
     static {
         if (OS_NAME != null && OS_NAME.toLowerCase().contains("linux")) {
@@ -305,6 +306,16 @@ public class NetworkUtil {
         } catch (Exception e) {
             throw new RuntimeException("Can not get local ip", e);
         }
+    }
+
+    public static String getWSAddr() {
+        String wsDomainName = System.getProperty("rocketmq.namesrv.domain", DEFAULT_NAMESRV_ADDR_LOOKUP);
+        String wsDomainSubgroup = System.getProperty("rocketmq.namesrv.domain.subgroup", "nsaddr");
+        String wsAddr = "http://" + wsDomainName + ":8080/rocketmq/" + wsDomainSubgroup;
+        if (wsDomainName.indexOf(":") > 0) {
+            wsAddr = "http://" + wsDomainName + "/rocketmq/" + wsDomainSubgroup;
+        }
+        return wsAddr;
     }
 
 }

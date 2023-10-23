@@ -136,16 +136,6 @@ public class MixAll {
         return OS.indexOf("sunos") >= 0;
     }
 
-    public static String getWSAddr() {
-        String wsDomainName = System.getProperty("rocketmq.namesrv.domain", DEFAULT_NAMESRV_ADDR_LOOKUP);
-        String wsDomainSubgroup = System.getProperty("rocketmq.namesrv.domain.subgroup", "nsaddr");
-        String wsAddr = "http://" + wsDomainName + ":8080/rocketmq/" + wsDomainSubgroup;
-        if (wsDomainName.indexOf(":") > 0) {
-            wsAddr = "http://" + wsDomainName + "/rocketmq/" + wsDomainSubgroup;
-        }
-        return wsAddr;
-    }
-
     public static String getRetryTopic(final String consumerGroup) {
         return RETRY_GROUP_TOPIC_PREFIX + consumerGroup;
     }

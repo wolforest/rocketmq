@@ -63,6 +63,7 @@ import org.apache.rocketmq.common.namesrv.NameServerUpdateCallback;
 import org.apache.rocketmq.common.namesrv.TopAddressing;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.ChannelEventListener;
@@ -254,7 +255,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         final ClientRemotingProcessor clientRemotingProcessor,
         RPCHook rpcHook, final ClientConfig clientConfig, final ChannelEventListener channelEventListener) {
         this.clientConfig = clientConfig;
-        topAddressing = new DefaultTopAddressing(MixAll.getWSAddr(), clientConfig.getUnitName());
+        topAddressing = new DefaultTopAddressing(NetworkUtil.getWSAddr(), clientConfig.getUnitName());
         topAddressing.registerChangeCallBack(this);
         this.remotingClient = new NettyRemotingClient(nettyClientConfig, channelEventListener);
         this.clientRemotingProcessor = clientRemotingProcessor;

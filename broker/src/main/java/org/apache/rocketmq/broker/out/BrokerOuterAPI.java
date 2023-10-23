@@ -46,6 +46,7 @@ import org.apache.rocketmq.common.namesrv.TopAddressing;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -146,7 +147,7 @@ import static org.apache.rocketmq.remoting.protocol.ResponseCode.CONTROLLER_MAST
 public class BrokerOuterAPI {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final RemotingClient remotingClient;
-    private final TopAddressing topAddressing = new DefaultTopAddressing(MixAll.getWSAddr());
+    private final TopAddressing topAddressing = new DefaultTopAddressing(NetworkUtil.getWSAddr());
     private final ExecutorService brokerOuterExecutor = ThreadUtils.newThreadPoolExecutor(4, 10, 1, TimeUnit.MINUTES,
             new ArrayBlockingQueue<>(32), new ThreadFactoryImpl("brokerOutApi_thread_", true));
     private final ClientMetadata clientMetadata;
