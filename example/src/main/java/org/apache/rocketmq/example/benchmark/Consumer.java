@@ -32,6 +32,7 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.filter.ExpressionType;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -148,11 +149,11 @@ public class Consumer {
             consumer.subscribe(topic, "*");
         } else {
             if (ExpressionType.TAG.equals(filterType)) {
-                String expr = MixAll.file2String(expression);
+                String expr = StringUtils.file2String(expression);
                 System.out.printf("Expression: %s%n", expr);
                 consumer.subscribe(topic, MessageSelector.byTag(expr));
             } else if (ExpressionType.SQL92.equals(filterType)) {
-                String expr = MixAll.file2String(expression);
+                String expr = StringUtils.file2String(expression);
                 System.out.printf("Expression: %s%n", expr);
                 consumer.subscribe(topic, MessageSelector.bySql(expr));
             } else {
