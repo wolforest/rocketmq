@@ -24,8 +24,7 @@ public class PutMessageContext {
      */
     private final String topicQueueTableKey;
     /**
-     *
-     * array with size = batchSize
+     * message position array, size = batchSize
      * item value = wroteOffset + totalMsgLen - msgLen
      */
     private long[] phyPos;

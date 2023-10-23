@@ -26,7 +26,7 @@ import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import java.nio.ByteBuffer;
 
 public class TimerLog {
-    private static Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     public final static int BLANK_MAGIC_CODE = 0xBBCCDDEE ^ 1880681586 + 8;
     private final static int MIN_BLANK_LEN = 4 + 8 + 4;
     public final static int UNIT_SIZE = Block.SIZE;
@@ -51,7 +51,7 @@ public class TimerLog {
      * @param block block object
      * @param pos   position or offset
      * @param len   len of block,current is fixed length Block.SIZE
-     * @return
+     * @return offset
      */
     public long append(Block block, int pos, int len) {
         return append(block.bytes(), pos, len);
@@ -60,8 +60,8 @@ public class TimerLog {
     /**
      * test use only
      *
-     * @param data
-     * @return
+     * @param data data
+     * @return offset
      */
     public long append(byte[] data) {
         return append(data, 0, data.length);
@@ -71,7 +71,7 @@ public class TimerLog {
         MappedFile mappedFile = chooseLastMappedFile(len);
         long currPosition = mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition();
         if (!mappedFile.appendMessage(data, pos, len)) {
-            log.error("Append error for timer log");
+            LOGGER.error("Append error for timer log");
             return -1;
         }
         return currPosition;
@@ -97,11 +97,11 @@ public class TimerLog {
 
     public void shutdown() {
         this.mappedFileQueue.flush(0);
-        //it seems do not need to call shutdown
+        //it seems not need to call shutdown
     }
 
     // be careful.
-    // if the format of timerlog changed, this offset has to be changed too
+    // if the format of timerLog changed, this offset has to be changed too
     // so dose the batch writing
     public int getOffsetForLastUnit() {
 
@@ -114,7 +114,7 @@ public class TimerLog {
             mappedFile = this.mappedFileQueue.getLastMappedFile(0);
         }
         if (null == mappedFile) {
-            log.error("Create mapped file1 error for timer log");
+            LOGGER.error("Create mapped file1 error for timer log");
             return null;
         }
         if (len + MIN_BLANK_LEN > mappedFile.getFileSize() - mappedFile.getWrotePosition()) {
@@ -126,12 +126,12 @@ public class TimerLog {
                 //need to set the wrote position
                 mappedFile.setWrotePosition(mappedFile.getFileSize());
             } else {
-                log.error("Append blank error for timer log");
+                LOGGER.error("Append blank error for timer log");
                 return null;
             }
             mappedFile = this.mappedFileQueue.getLastMappedFile(0);
             if (null == mappedFile) {
-                log.error("create mapped file2 error for timer log");
+                LOGGER.error("create mapped file2 error for timer log");
                 return null;
             }
         }

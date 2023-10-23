@@ -48,8 +48,8 @@ public class BinaryUtil {
 
     /**
      * Returns true if subject contains only bytes that are spec-compliant ASCII characters.
-     * @param subject
-     * @return
+     * @param subject subject
+     * @return bool
      */
     public static boolean isAscii(byte[] subject) {
         if (subject == null) {

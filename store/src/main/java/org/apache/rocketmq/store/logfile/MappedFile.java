@@ -82,7 +82,7 @@ public interface MappedFile {
      * @param message a message to append
      * @param messageCallback the specific call back to execute the real append action
      * @param putMessageContext putMessageContext
-     * @return the append result
+     * @return append result
      */
     AppendMessageResult appendMessage(MessageExtBrokerInner message, AppendMessageCallback messageCallback, PutMessageContext putMessageContext);
 
@@ -92,7 +92,7 @@ public interface MappedFile {
      * @param message a message to append
      * @param messageCallback the specific call back to execute the real append action
      * @param putMessageContext putMessageContext
-     * @return the append result
+     * @return append result
      */
     AppendMessageResult appendMessages(MessageExtBatch message, AppendMessageCallback messageCallback, PutMessageContext putMessageContext);
 
@@ -150,17 +150,17 @@ public interface MappedFile {
     int commit(int commitLeastPages);
 
     /**
-     * Selects a slice of the mapped byte buffer's sub-region behind the mapped file,
+     * Selects a slice of the mapped byte buffer's subregion behind the mapped file,
      * starting at the given position.
      *
      * @param pos the given position
-     * @param size the size of the returned sub-region
+     * @param size the size of the returned subregion
      * @return a {@code SelectMappedBufferResult} instance contains the selected slice
      */
     SelectMappedBufferResult selectMappedBuffer(int pos, int size);
 
     /**
-     * Selects a slice of the mapped byte buffer's sub-region behind the mapped file,
+     * Selects a slice of the mapped byte buffer's subregion behind the mapped file,
      * starting at the given position.
      *
      * @param pos the given position
@@ -217,7 +217,7 @@ public interface MappedFile {
     /**
      * Shutdowns the file and mark it unavailable.
      *
-     * @param intervalForcibly If {@code true} then this method will shutdown the file forcibly and ignore the reference
+     * @param intervalForcibly If {@code true} then this method will shut down the file forcibly and ignore the reference
      */
     void shutdown(long intervalForcibly);
 
@@ -251,7 +251,7 @@ public interface MappedFile {
     /**
      * Returns the flushed position of this mapped file.
      *
-     * @return the flushed posotion
+     * @return the flushed position
      */
     int getFlushedPosition();
 
