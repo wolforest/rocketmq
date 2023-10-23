@@ -1235,7 +1235,7 @@ public class DefaultMessageStore implements MessageStore {
                             String stack = IOTinyUtils.jstack();
                             final String fileName = System.getProperty("user.home") + File.separator + "debug/lock/stack-"
                                 + DefaultMessageStore.this.commitLog.getBeginTimeInLock() + "-" + lockTime;
-                            MixAll.string2FileNotSafe(stack, fileName);
+                            StringUtils.string2FileNotSafe(stack, fileName);
                         }
                     }
                 } catch (Exception e) {
