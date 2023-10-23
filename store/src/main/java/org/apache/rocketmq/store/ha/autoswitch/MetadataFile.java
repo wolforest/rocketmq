@@ -21,6 +21,7 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 
 import java.io.File;
+import org.apache.rocketmq.common.utils.StringUtils;
 
 public abstract class MetadataFile {
 
@@ -36,7 +37,7 @@ public abstract class MetadataFile {
 
     public void writeToFile() throws Exception {
         IOTinyUtils.deleteFile(new File(filePath));
-        MixAll.string2File(encodeToStr(), this.filePath);
+        StringUtils.string2File(encodeToStr(), this.filePath);
     }
 
     public void readFromFile() throws Exception {
