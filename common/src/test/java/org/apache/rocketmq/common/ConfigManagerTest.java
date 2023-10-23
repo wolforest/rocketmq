@@ -18,6 +18,7 @@ package org.apache.rocketmq.common;/*
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -59,7 +60,7 @@ public class ConfigManagerTest {
         ConfigManager testConfigManager = buildTestConfigManager();
         testConfigManager.persist();
         File file = new File(testConfigManager.configFilePath());
-        assertEquals(CONTENT_ENCODE, MixAll.file2String(file));
+        assertEquals(CONTENT_ENCODE, StringUtils.file2String(file));
     }
 
     private ConfigManager buildTestConfigManager() {
