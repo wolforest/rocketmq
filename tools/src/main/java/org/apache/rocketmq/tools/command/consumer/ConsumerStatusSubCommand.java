@@ -24,6 +24,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.body.Connection;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
@@ -104,7 +105,7 @@ public class ConsumerStatusSubCommand implements SubCommand {
                         if (consumerRunningInfo != null) {
                             criTable.put(conn.getClientId(), consumerRunningInfo);
                             String filePath = now + "/" + conn.getClientId();
-                            MixAll.string2FileNotSafe(consumerRunningInfo.formatString(), filePath);
+                            StringUtils.string2FileNotSafe(consumerRunningInfo.formatString(), filePath);
                             System.out.printf("%-10d %-40s %-20s %s%n",
                                 i++,
                                 conn.getClientId(),
