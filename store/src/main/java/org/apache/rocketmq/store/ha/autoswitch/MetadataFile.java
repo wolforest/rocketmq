@@ -17,7 +17,6 @@
 
 package org.apache.rocketmq.store.ha.autoswitch;
 
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 
 import java.io.File;
