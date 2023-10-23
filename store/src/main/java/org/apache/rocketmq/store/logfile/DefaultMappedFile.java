@@ -98,6 +98,10 @@ public class DefaultMappedFile extends AbstractMappedFile {
     protected volatile int flushedPosition;
 
     protected String fileName;
+    /**
+     * offset from filename
+     * It is the logical offset of MappedFileQueue
+     */
     protected long fileFromOffset;
     protected File file;
     protected int fileSize;

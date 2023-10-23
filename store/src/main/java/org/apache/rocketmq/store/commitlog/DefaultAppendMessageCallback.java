@@ -68,7 +68,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         };
 
         // Record ConsumeQueue information
-        Long queueOffset = msgInner.getQueueOffset();
+        long queueOffset = msgInner.getQueueOffset();
 
         // this msg maybe a inner-batch msg.
         short messageNum = commitLog.getMessageNum(msgInner);
@@ -135,7 +135,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         //physical offset
         long wroteOffset = fileFromOffset + byteBuffer.position();
         // Record ConsumeQueue information
-        Long queueOffset = messageExtBatch.getQueueOffset();
+        long queueOffset = messageExtBatch.getQueueOffset();
         long beginQueueOffset = queueOffset;
         int totalMsgLen = 0;
         int msgNum = 0;
