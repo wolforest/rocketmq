@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,29 +50,6 @@ public class MixAllTest {
 
         assertThat(MixAll.compareAndIncreaseOnly(target, 4)).isFalse();
         assertThat(target.get()).isEqualTo(6);
-    }
-
-    @Test
-    public void testFile2String() throws IOException {
-        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "MixAllTest" + System.currentTimeMillis();
-        File file = new File(fileName);
-        if (file.exists()) {
-            file.delete();
-        }
-        file.createNewFile();
-        PrintWriter out = new PrintWriter(fileName);
-        out.write("TestForMixAll");
-        out.close();
-        String string = MixAll.file2String(fileName);
-        assertThat(string).isEqualTo("TestForMixAll");
-        file.delete();
-    }
-
-    @Test
-    public void testString2File() throws IOException {
-        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "MixAllTest" + System.currentTimeMillis();
-        MixAll.string2File("MixAll_testString2File", fileName);
-        assertThat(MixAll.file2String(fileName)).isEqualTo("MixAll_testString2File");
     }
 
     @Test

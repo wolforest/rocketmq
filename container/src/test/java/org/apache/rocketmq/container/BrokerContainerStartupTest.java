@@ -21,6 +21,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
@@ -82,7 +83,7 @@ public class BrokerContainerStartupTest {
         for (Object key : storeConfigProp.keySet()) {
             brokerConfigProp.put(key, storeConfigProp.get(key));
         }
-        MixAll.string2File(MixAll.properties2String(brokerConfigProp), brokerConfigPath);
+        StringUtils.string2File(MixAll.properties2String(brokerConfigProp), brokerConfigPath);
 
         brokerContainerConfigPath = BASE_TMP_PATH + SHARED_BROKER_NAME_PREFIX + System.currentTimeMillis();
         BrokerContainerConfig brokerContainerConfig = new BrokerContainerConfig();
@@ -93,7 +94,7 @@ public class BrokerContainerStartupTest {
         File file1 = new File(brokerContainerConfigPath);
         TMP_FILE_LIST.add(file1);
         Properties brokerContainerConfigProp = MixAll.object2Properties(brokerContainerConfig);
-        MixAll.string2File(MixAll.properties2String(brokerContainerConfigProp), brokerContainerConfigPath);
+        StringUtils.string2File(MixAll.properties2String(brokerContainerConfigProp), brokerContainerConfigPath);
     }
 
     @After
