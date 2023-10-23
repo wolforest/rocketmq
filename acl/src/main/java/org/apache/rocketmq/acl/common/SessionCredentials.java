@@ -22,6 +22,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.StringUtils;
 
 public class SessionCredentials {
     public static final Charset CHARSET = StandardCharsets.UTF_8;
@@ -41,7 +42,7 @@ public class SessionCredentials {
     public SessionCredentials() {
         String keyContent = null;
         try {
-            keyContent = MixAll.file2String(KEY_FILE);
+            keyContent = StringUtils.file2String(KEY_FILE);
         } catch (IOException ignore) {
         }
         if (keyContent != null) {
