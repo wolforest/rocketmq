@@ -32,6 +32,8 @@ public interface AppendMessageCallback {
      *
      * @param offsetInFileName logical offset of MappedFileQueue stored in mapped file name
      * @param byteBuffer msg related byteBuffer, sliced from MappedFile.appendMessageBuffer()
+     * @param maxBlank fileSize - currentWritePos
+     * @param putMessageContext context with queue key(topic-queueId), batchSize, positionArray
      * @return How many bytes to write
      */
     AppendMessageResult doAppend(final long offsetInFileName, final ByteBuffer byteBuffer,
@@ -42,7 +44,9 @@ public interface AppendMessageCallback {
      *
      * @param offsetInFileName logical offset of MappedFileQueue stored in mapped file name
      * @param byteBuffer batch related byteBuffer, sliced from MappedFile.appendMessageBuffer()
+     * @param maxBlank fileSize - currentWritePos
      * @param messageExtBatch, backed up by a byte array
+     * @param putMessageContext context with queue key(topic-queueId), batchSize, positionArray
      * @return How many bytes to write
      */
     AppendMessageResult doAppend(final long offsetInFileName, final ByteBuffer byteBuffer,
