@@ -30,6 +30,7 @@ import java.util.Queue;
 import java.util.Set;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.common.utils.StringUtils;
 
 public class TopicQueueMappingUtils {
 
@@ -394,7 +395,7 @@ public class TopicQueueMappingUtils {
         }
         String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + topic + "-" + wrapper.getEpoch() + suffix;
         try {
-            MixAll.string2File(data, fileName);
+            StringUtils.string2File(data, fileName);
             return fileName;
         } catch (Exception e) {
             throw new RuntimeException("write file failed " + fileName,e);
