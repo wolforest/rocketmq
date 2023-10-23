@@ -53,7 +53,7 @@ public class StoreUtil {
     }
 
     public static FileQueueSnapshot getFileQueueSnapshot(MappedFileQueue mappedFileQueue) {
-        return getFileQueueSnapshot(mappedFileQueue, mappedFileQueue.getLastMappedFile().getFileFromOffset());
+        return getFileQueueSnapshot(mappedFileQueue, mappedFileQueue.getLastMappedFile().getOffsetInFileName());
     }
 
     public static FileQueueSnapshot getFileQueueSnapshot(MappedFileQueue mappedFileQueue, final long currentFile) {
@@ -67,10 +67,10 @@ public class StoreUtil {
             }
 
             long firstFileIndex = 0;
-            long lastFileIndex = (lastFile.getFileFromOffset() - firstFile.getFileFromOffset()) / mappedFileSize;
-            long currentFileIndex = (currentFile - firstFile.getFileFromOffset()) / mappedFileSize;
-            long behind = (lastFile.getFileFromOffset() - currentFile) / mappedFileSize;
-            boolean exist = firstFile.getFileFromOffset() <= currentFile && currentFile <= lastFile.getFileFromOffset();
+            long lastFileIndex = (lastFile.getOffsetInFileName() - firstFile.getOffsetInFileName()) / mappedFileSize;
+            long currentFileIndex = (currentFile - firstFile.getOffsetInFileName()) / mappedFileSize;
+            long behind = (lastFile.getOffsetInFileName() - currentFile) / mappedFileSize;
+            boolean exist = firstFile.getOffsetInFileName() <= currentFile && currentFile <= lastFile.getOffsetInFileName();
             return new FileQueueSnapshot(firstFile, firstFileIndex, lastFile, lastFileIndex, currentFile, currentFileIndex, behind, exist);
         } catch (Exception e) {
             log.error("[BUG] get file queue snapshot failed. fileQueue: {}, currentFile: {}", mappedFileQueue, currentFile, e);

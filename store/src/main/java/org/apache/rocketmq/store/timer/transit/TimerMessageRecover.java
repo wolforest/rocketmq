@@ -123,14 +123,14 @@ public class TimerMessageRecover {
         int index = mappedFiles.size() - 1;
         for (; index >= 0; index--) {
             MappedFile mappedFile = mappedFiles.get(index);
-            if (beginOffset >= mappedFile.getFileFromOffset()) {
+            if (beginOffset >= mappedFile.getOffsetInFileName()) {
                 break;
             }
         }
         if (index < 0) {
             index = 0;
         }
-        long checkOffset = mappedFiles.get(index).getFileFromOffset();
+        long checkOffset = mappedFiles.get(index).getOffsetInFileName();
         for (; index < mappedFiles.size(); index++) {
             MappedFile mappedFile = mappedFiles.get(index);
             SelectMappedBufferResult sbr = mappedFile.selectMappedBuffer(0, checkTimerLog ? mappedFiles.get(index).getFileSize() : mappedFile.getReadPosition());
@@ -161,7 +161,7 @@ public class TimerMessageRecover {
                 }
             }
             sbr.release();
-            checkOffset = mappedFiles.get(index).getFileFromOffset() + position;
+            checkOffset = mappedFiles.get(index).getOffsetInFileName() + position;
             if (stopCheck) {
                 break;
             }

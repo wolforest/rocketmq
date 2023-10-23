@@ -221,7 +221,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
         int mappedFileSizeLogics = this.mappedFileSize;
         MappedFile mappedFile = mappedFiles.get(index);
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-        long processOffset = mappedFile.getFileFromOffset();
+        long processOffset = mappedFile.getOffsetInFileName();
         long mappedFileOffset = 0;
         while (true) {
             for (int i = 0; i < mappedFileSizeLogics; i += CQ_STORE_UNIT_SIZE) {
@@ -250,7 +250,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
                 } else {
                     mappedFile = mappedFiles.get(index);
                     byteBuffer = mappedFile.sliceByteBuffer();
-                    processOffset = mappedFile.getFileFromOffset();
+                    processOffset = mappedFile.getOffsetInFileName();
                     mappedFileOffset = 0;
                     log.info("Recover next batch consume queue file: " + mappedFile.getFileName());
                 }
@@ -275,7 +275,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
             log.info("reviseMinOffsetInQueue found firstMappedFile null, topic:{} queue:{}", topic, queueId);
             return;
         }
-        minLogicOffset = firstMappedFile.getFileFromOffset();
+        minLogicOffset = firstMappedFile.getOffsetInFileName();
         BatchOffsetIndex min = getMinMsgOffset(firstMappedFile, false, false);
         minOffsetInQueue = null == min ? -1 : min.getMsgOffset();
     }
@@ -1041,9 +1041,9 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
 
             // calculate start and len for first segment and last segment to reduce scanning
             // first file segment
-            if (mappedFile.getFileFromOffset() <= physicalOffsetFrom) {
-                start = (int) (physicalOffsetFrom - mappedFile.getFileFromOffset());
-                if (mappedFile.getFileFromOffset() + mappedFile.getFileSize() >= physicalOffsetTo) {
+            if (mappedFile.getOffsetInFileName() <= physicalOffsetFrom) {
+                start = (int) (physicalOffsetFrom - mappedFile.getOffsetInFileName());
+                if (mappedFile.getOffsetInFileName() + mappedFile.getFileSize() >= physicalOffsetTo) {
                     // current mapped file covers search range completely.
                     len = (int) (physicalOffsetTo - physicalOffsetFrom);
                 } else {
@@ -1052,8 +1052,8 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
             }
 
             // last file segment
-            if (0 == start && mappedFile.getFileFromOffset() + mappedFile.getFileSize() > physicalOffsetTo) {
-                len = (int) (physicalOffsetTo - mappedFile.getFileFromOffset());
+            if (0 == start && mappedFile.getOffsetInFileName() + mappedFile.getFileSize() > physicalOffsetTo) {
+                len = (int) (physicalOffsetTo - mappedFile.getOffsetInFileName());
             }
 
             // select partial data to scan

@@ -233,7 +233,7 @@ public class ConsumeQueueExt {
                 }
 
                 if (mappedFile.appendMessage(cqExtUnit.write(this.tempContainer), 0, size)) {
-                    return decorate(wrotePosition + mappedFile.getFileFromOffset());
+                    return decorate(wrotePosition + mappedFile.getOffsetInFileName());
                 }
             }
         } catch (Throwable e) {
@@ -283,7 +283,7 @@ public class ConsumeQueueExt {
 
         MappedFile mappedFile = mappedFiles.get(index);
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-        long processOffset = mappedFile.getFileFromOffset();
+        long processOffset = mappedFile.getOffsetInFileName();
         long mappedFileOffset = 0;
         CqExtUnit extUnit = new CqExtUnit();
         while (true) {
@@ -299,7 +299,7 @@ public class ConsumeQueueExt {
             if (index < mappedFiles.size()) {
                 mappedFile = mappedFiles.get(index);
                 byteBuffer = mappedFile.sliceByteBuffer();
-                processOffset = mappedFile.getFileFromOffset();
+                processOffset = mappedFile.getOffsetInFileName();
                 mappedFileOffset = 0;
                 log.info("Recover next consume queue extend file, " + mappedFile.getFileName());
                 continue;
@@ -334,7 +334,7 @@ public class ConsumeQueueExt {
         final long realOffset = unDecorate(minAddress);
 
         for (MappedFile file : mappedFiles) {
-            long fileTailOffset = file.getFileFromOffset() + this.mappedFileSize;
+            long fileTailOffset = file.getOffsetInFileName() + this.mappedFileSize;
 
             if (fileTailOffset < realOffset) {
                 log.info("Destroy consume queue ext by min: file={}, fileTailOffset={}, minOffset={}", file.getFileName(),
@@ -397,7 +397,7 @@ public class ConsumeQueueExt {
         if (mappedFile == null) {
             return decorate(0);
         }
-        return decorate(mappedFile.getFileFromOffset() + mappedFile.getWrotePosition());
+        return decorate(mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition());
     }
 
     /**
@@ -408,7 +408,7 @@ public class ConsumeQueueExt {
         if (firstFile == null) {
             return decorate(0);
         }
-        return decorate(firstFile.getFileFromOffset());
+        return decorate(firstFile.getOffsetInFileName());
     }
 
 

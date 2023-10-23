@@ -69,7 +69,7 @@ public class TimerLog {
 
     private long append(byte[] data, int pos, int len) {
         MappedFile mappedFile = chooseLastMappedFile(len);
-        long currPosition = mappedFile.getFileFromOffset() + mappedFile.getWrotePosition();
+        long currPosition = mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition();
         if (!mappedFile.appendMessage(data, pos, len)) {
             log.error("Append error for timer log");
             return -1;

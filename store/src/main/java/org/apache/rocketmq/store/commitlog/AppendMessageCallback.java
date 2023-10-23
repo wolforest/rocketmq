@@ -30,17 +30,21 @@ public interface AppendMessageCallback {
     /**
      * After message serialization, write MappedByteBuffer
      *
+     * @param offsetInFileName logical offset of MappedFileQueue stored in mapped file name
+     * @param byteBuffer msg related byteBuffer, sliced from MappedFile.appendMessageBuffer()
      * @return How many bytes to write
      */
-    AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer,
+    AppendMessageResult doAppend(final long offsetInFileName, final ByteBuffer byteBuffer,
         final int maxBlank, final MessageExtBrokerInner msg, PutMessageContext putMessageContext);
 
     /**
      * After batched message serialization, write MappedByteBuffer
      *
+     * @param offsetInFileName logical offset of MappedFileQueue stored in mapped file name
+     * @param byteBuffer batch related byteBuffer, sliced from MappedFile.appendMessageBuffer()
      * @param messageExtBatch, backed up by a byte array
      * @return How many bytes to write
      */
-    AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer,
+    AppendMessageResult doAppend(final long offsetInFileName, final ByteBuffer byteBuffer,
         final int maxBlank, final MessageExtBatch messageExtBatch, PutMessageContext putMessageContext);
 }

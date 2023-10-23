@@ -131,7 +131,7 @@ public interface MappedFile {
      *
      * @return the offset of this file
      */
-    long getFileFromOffset();
+    long getOffsetInFileName();
 
     /**
      * Flushes the data in cache to disk immediately.

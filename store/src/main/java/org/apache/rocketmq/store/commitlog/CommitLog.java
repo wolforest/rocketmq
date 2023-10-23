@@ -565,7 +565,7 @@ public class CommitLog implements Swappable {
         }
 
         if (lastMappedFile.isAvailable()) {
-            return lastMappedFile.getFileFromOffset();
+            return lastMappedFile.getOffsetInFileName();
         }
 
         return -1;
@@ -730,10 +730,10 @@ public class CommitLog implements Swappable {
         }
 
         if (mappedFile.isAvailable()) {
-            return mappedFile.getFileFromOffset();
+            return mappedFile.getOffsetInFileName();
         }
 
-        return this.rollNextFile(mappedFile.getFileFromOffset());
+        return this.rollNextFile(mappedFile.getOffsetInFileName());
     }
 
     public SelectMappedBufferResult getMessage(final long offset, final int size) {

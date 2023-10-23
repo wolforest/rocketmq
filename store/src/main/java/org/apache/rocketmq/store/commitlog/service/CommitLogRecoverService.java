@@ -61,7 +61,7 @@ public class CommitLogRecoverService {
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
 
         // init this variable with the min offset which stored in the filename
-        long processOffset = mappedFile.getFileFromOffset();
+        long processOffset = mappedFile.getOffsetInFileName();
         // init this variable with the max offset of commitLog
         long lastValidMsgPhyOffset = this.commitLog.getConfirmOffset();
 
@@ -93,7 +93,7 @@ public class CommitLogRecoverService {
                 } else {
                     mappedFile = mappedFiles.get(index);
                     byteBuffer = mappedFile.sliceByteBuffer();
-                    processOffset = mappedFile.getFileFromOffset();
+                    processOffset = mappedFile.getOffsetInFileName();
                     mappedFileOffset = 0;
                     log.info("recover next physics file, " + mappedFile.getFileName());
                 }
@@ -196,7 +196,7 @@ public class CommitLogRecoverService {
         }
 
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-        long processOffset = mappedFile.getFileFromOffset();
+        long processOffset = mappedFile.getOffsetInFileName();
         long mappedFileOffset = 0;
         long lastValidMsgPhyOffset = processOffset;
         long lastConfirmValidMsgPhyOffset = processOffset;
@@ -235,7 +235,7 @@ public class CommitLogRecoverService {
                     } else {
                         mappedFile = mappedFiles.get(index);
                         byteBuffer = mappedFile.sliceByteBuffer();
-                        processOffset = mappedFile.getFileFromOffset();
+                        processOffset = mappedFile.getOffsetInFileName();
                         mappedFileOffset = 0;
                         log.info("recover next physics file, " + mappedFile.getFileName());
                     }

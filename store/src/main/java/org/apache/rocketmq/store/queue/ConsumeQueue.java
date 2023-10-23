@@ -137,7 +137,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         int mappedFileSizeLogics = this.mappedFileSize;
         MappedFile mappedFile = mappedFiles.get(index);
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-        long processOffset = mappedFile.getFileFromOffset();
+        long processOffset = mappedFile.getOffsetInFileName();
         long mappedFileOffset = 0;
         long maxExtAddr = 1;
         while (true) {
@@ -169,7 +169,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                 } else {
                     mappedFile = mappedFiles.get(index);
                     byteBuffer = mappedFile.sliceByteBuffer();
-                    processOffset = mappedFile.getFileFromOffset();
+                    processOffset = mappedFile.getOffsetInFileName();
                     mappedFileOffset = 0;
                     log.info("recover next consume queue file, " + mappedFile.getFileName());
                 }
@@ -228,7 +228,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         }
 
         long offset = 0;
-        int low = minLogicOffset > mappedFile.getFileFromOffset() ? (int) (minLogicOffset - mappedFile.getFileFromOffset()) : 0;
+        int low = minLogicOffset > mappedFile.getOffsetInFileName() ? (int) (minLogicOffset - mappedFile.getOffsetInFileName()) : 0;
         int high = 0;
         int midOffset = -1, targetOffset = -1, leftOffset = -1, rightOffset = -1;
         long minPhysicOffset = this.messageStore.getMinPhyOffset();
@@ -258,9 +258,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                 if (storeTime < timestamp) {
                     switch (boundaryType) {
                         case LOWER:
-                            return (mappedFile.getFileFromOffset() + ceiling + CQ_STORE_UNIT_SIZE) / CQ_STORE_UNIT_SIZE;
+                            return (mappedFile.getOffsetInFileName() + ceiling + CQ_STORE_UNIT_SIZE) / CQ_STORE_UNIT_SIZE;
                         case UPPER:
-                            return (mappedFile.getFileFromOffset() + ceiling) / CQ_STORE_UNIT_SIZE;
+                            return (mappedFile.getOffsetInFileName() + ceiling) / CQ_STORE_UNIT_SIZE;
                         default:
                             log.warn("Unknown boundary type");
                             break;
@@ -274,7 +274,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                 if (storeTime > timestamp) {
                     switch (boundaryType) {
                         case LOWER:
-                            return mappedFile.getFileFromOffset() / CQ_STORE_UNIT_SIZE;
+                            return mappedFile.getOffsetInFileName() / CQ_STORE_UNIT_SIZE;
                         case UPPER:
                             return 0;
                         default:
@@ -395,7 +395,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                         }
                     }
                 }
-                return (mappedFile.getFileFromOffset() + offset) / CQ_STORE_UNIT_SIZE;
+                return (mappedFile.getOffsetInFileName() + offset) / CQ_STORE_UNIT_SIZE;
             } finally {
                 sbr.release();
             }
@@ -567,7 +567,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                 if (commitLogOffset < minCommitLogOffset) {
                     // Keep the largest known consume offset, even if this consume-queue contains no valid entries at
                     // all. Let minLogicOffset point to a future slot.
-                    this.minLogicOffset = lastMappedFile.getFileFromOffset() + maxReadablePosition;
+                    this.minLogicOffset = lastMappedFile.getOffsetInFileName() + maxReadablePosition;
                     log.info("ConsumeQueue[topic={}, queue-id={}] contains no valid entries. Min-offset is assigned as: {}.",
                             topic, queueId, getMinOffsetInQueue());
                     return;
@@ -585,7 +585,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             // Search from previous min logical offset. Typically, a consume queue file segment contains 300,000 entries
             // searching from previous position saves significant amount of comparisons and IOs
             boolean intact = true; // Assume previous value is still valid
-            long start = this.minLogicOffset - mappedFile.getFileFromOffset();
+            long start = this.minLogicOffset - mappedFile.getOffsetInFileName();
             if (start < 0) {
                 intact = false;
                 start = 0;
@@ -650,7 +650,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                     long tagsCode = buffer.getLong();
 
                     if (offsetPy >= minCommitLogOffset) {
-                        this.minLogicOffset = mappedFile.getFileFromOffset() + start + i;
+                        this.minLogicOffset = mappedFile.getOffsetInFileName() + start + i;
                         log.info("Compute logical min offset: {}, topic: {}, queueId: {}",
                                 this.getMinOffsetInQueue(), this.topic, this.queueId);
                         // This maybe not take effect, when not every consume queue has an extended file.
@@ -918,7 +918,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             return false;
         }
 
-        long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();
+        long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getOffsetInFileName();
 
         if (expectLogicOffset < currentLogicOffset) {
             log.warn("Build  consume queue repeatedly, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
@@ -1143,9 +1143,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
 
             // calculate start and len for first segment and last segment to reduce scanning
             // first file segment
-            if (mappedFile.getFileFromOffset() <= physicalOffsetFrom) {
-                start = (int) (physicalOffsetFrom - mappedFile.getFileFromOffset());
-                if (mappedFile.getFileFromOffset() + mappedFile.getFileSize() >= physicalOffsetTo) {
+            if (mappedFile.getOffsetInFileName() <= physicalOffsetFrom) {
+                start = (int) (physicalOffsetFrom - mappedFile.getOffsetInFileName());
+                if (mappedFile.getOffsetInFileName() + mappedFile.getFileSize() >= physicalOffsetTo) {
                     // current mapped file covers search range completely.
                     len = (int) (physicalOffsetTo - physicalOffsetFrom);
                 } else {
@@ -1154,8 +1154,8 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             }
 
             // last file segment
-            if (0 == start && mappedFile.getFileFromOffset() + mappedFile.getFileSize() > physicalOffsetTo) {
-                len = (int) (physicalOffsetTo - mappedFile.getFileFromOffset());
+            if (0 == start && mappedFile.getOffsetInFileName() + mappedFile.getFileSize() > physicalOffsetTo) {
+                len = (int) (physicalOffsetTo - mappedFile.getOffsetInFileName());
             }
 
             // select partial data to scan

@@ -1063,7 +1063,7 @@ public class CompactionLog {
             if (mappedFile == null) {
                 throw new IOException("create new file error");
             }
-            long baseOffset = mappedFile.getFileFromOffset();
+            long baseOffset = mappedFile.getOffsetInFileName();
             MappedFile cqFile = consumeQueue.createFile(baseOffset);
             if (cqFile == null) {
                 mappedFile.destroy(1000);

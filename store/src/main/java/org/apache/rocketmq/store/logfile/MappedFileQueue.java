@@ -75,7 +75,7 @@ public class MappedFileQueue implements Swappable {
             MappedFile cur = iterator.next();
 
             if (pre != null) {
-                if (cur.getFileFromOffset() - pre.getFileFromOffset() != this.mappedFileSize) {
+                if (cur.getOffsetInFileName() - pre.getOffsetInFileName() != this.mappedFileSize) {
                     LOG_ERROR.error("[BUG]The mappedFile queue's data is damaged, the adjacent mappedFile's offset don't match. pre file {}, cur file {}",
                         pre.getFileName(), cur.getFileName());
                 }
@@ -198,9 +198,9 @@ public class MappedFileQueue implements Swappable {
         List<MappedFile> willRemoveFiles = new ArrayList<>();
 
         for (MappedFile file : this.mappedFiles) {
-            long fileTailOffset = file.getFileFromOffset() + this.mappedFileSize;
+            long fileTailOffset = file.getOffsetInFileName() + this.mappedFileSize;
             if (fileTailOffset > offset) {
-                if (offset >= file.getFileFromOffset()) {
+                if (offset >= file.getOffsetInFileName()) {
                     file.setWrotePosition((int) (offset % this.mappedFileSize));
                     file.setCommittedPosition((int) (offset % this.mappedFileSize));
                     file.setFlushedPosition((int) (offset % this.mappedFileSize));
@@ -293,7 +293,7 @@ public class MappedFileQueue implements Swappable {
         if (committed != 0) {
             MappedFile mappedFile = this.getLastMappedFile(0, false);
             if (mappedFile != null) {
-                return (mappedFile.getFileFromOffset() + mappedFile.getWrotePosition()) - committed;
+                return (mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition()) - committed;
             }
         }
 
@@ -309,7 +309,7 @@ public class MappedFileQueue implements Swappable {
         }
 
         if (mappedFileLast != null && mappedFileLast.isFull()) {
-            createOffset = mappedFileLast.getFileFromOffset() + this.mappedFileSize;
+            createOffset = mappedFileLast.getOffsetInFileName() + this.mappedFileSize;
         }
 
         if (createOffset != -1 && needCreate) {
@@ -400,7 +400,7 @@ public class MappedFileQueue implements Swappable {
         MappedFile mappedFileLast = getLastMappedFile();
 
         if (mappedFileLast != null) {
-            long lastOffset = mappedFileLast.getFileFromOffset() +
+            long lastOffset = mappedFileLast.getOffsetInFileName() +
                 mappedFileLast.getWrotePosition();
             long diff = lastOffset - offset;
 
@@ -413,7 +413,7 @@ public class MappedFileQueue implements Swappable {
 
         while (iterator.hasPrevious()) {
             mappedFileLast = iterator.previous();
-            if (offset >= mappedFileLast.getFileFromOffset()) {
+            if (offset >= mappedFileLast.getOffsetInFileName()) {
                 int where = (int) (offset % mappedFileLast.getFileSize());
                 mappedFileLast.setFlushedPosition(where);
                 mappedFileLast.setWrotePosition(where);
@@ -432,7 +432,7 @@ public class MappedFileQueue implements Swappable {
         }
 
         try {
-            return this.mappedFiles.get(0).getFileFromOffset();
+            return this.mappedFiles.get(0).getOffsetInFileName();
         } catch (IndexOutOfBoundsException e) {
             //continue;
         } catch (Exception e) {
@@ -444,7 +444,7 @@ public class MappedFileQueue implements Swappable {
     public long getMaxOffset() {
         MappedFile mappedFile = getLastMappedFile();
         if (mappedFile != null) {
-            return mappedFile.getFileFromOffset() + mappedFile.getReadPosition();
+            return mappedFile.getOffsetInFileName() + mappedFile.getReadPosition();
         }
         return 0;
     }
@@ -452,7 +452,7 @@ public class MappedFileQueue implements Swappable {
     public long getMaxWrotePosition() {
         MappedFile mappedFile = getLastMappedFile();
         if (mappedFile != null) {
-            return mappedFile.getFileFromOffset() + mappedFile.getWrotePosition();
+            return mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition();
         }
         return 0;
     }
@@ -636,7 +636,7 @@ public class MappedFileQueue implements Swappable {
         if (mappedFile != null) {
             long tmpTimeStamp = mappedFile.getStoreTimestamp();
             int offset = mappedFile.flush(flushLeastPages);
-            long where = mappedFile.getFileFromOffset() + offset;
+            long where = mappedFile.getOffsetInFileName() + offset;
             result = where == this.getFlushedWhere();
             this.setFlushedWhere(where);
             if (0 == flushLeastPages) {
@@ -652,7 +652,7 @@ public class MappedFileQueue implements Swappable {
         MappedFile mappedFile = this.findMappedFileByOffset(this.getCommittedWhere(), this.getCommittedWhere() == 0);
         if (mappedFile != null) {
             int offset = mappedFile.commit(commitLeastPages);
-            long where = mappedFile.getFileFromOffset() + offset;
+            long where = mappedFile.getOffsetInFileName() + offset;
             result = where == this.getCommittedWhere();
             this.setCommittedWhere(where);
         }
@@ -672,29 +672,29 @@ public class MappedFileQueue implements Swappable {
             MappedFile firstMappedFile = this.getFirstMappedFile();
             MappedFile lastMappedFile = this.getLastMappedFile();
             if (firstMappedFile != null && lastMappedFile != null) {
-                if (offset < firstMappedFile.getFileFromOffset() || offset >= lastMappedFile.getFileFromOffset() + this.mappedFileSize) {
+                if (offset < firstMappedFile.getOffsetInFileName() || offset >= lastMappedFile.getOffsetInFileName() + this.mappedFileSize) {
                     LOG_ERROR.warn("Offset not matched. Request offset: {}, firstOffset: {}, lastOffset: {}, mappedFileSize: {}, mappedFiles count: {}",
                         offset,
-                        firstMappedFile.getFileFromOffset(),
-                        lastMappedFile.getFileFromOffset() + this.mappedFileSize,
+                        firstMappedFile.getOffsetInFileName(),
+                        lastMappedFile.getOffsetInFileName() + this.mappedFileSize,
                         this.mappedFileSize,
                         this.mappedFiles.size());
                 } else {
-                    int index = (int) ((offset / this.mappedFileSize) - (firstMappedFile.getFileFromOffset() / this.mappedFileSize));
+                    int index = (int) ((offset / this.mappedFileSize) - (firstMappedFile.getOffsetInFileName() / this.mappedFileSize));
                     MappedFile targetFile = null;
                     try {
                         targetFile = this.mappedFiles.get(index);
                     } catch (Exception ignored) {
                     }
 
-                    if (targetFile != null && offset >= targetFile.getFileFromOffset()
-                        && offset < targetFile.getFileFromOffset() + this.mappedFileSize) {
+                    if (targetFile != null && offset >= targetFile.getOffsetInFileName()
+                        && offset < targetFile.getOffsetInFileName() + this.mappedFileSize) {
                         return targetFile;
                     }
 
                     for (MappedFile tmpMappedFile : this.mappedFiles) {
-                        if (offset >= tmpMappedFile.getFileFromOffset()
-                            && offset < tmpMappedFile.getFileFromOffset() + this.mappedFileSize) {
+                        if (offset >= tmpMappedFile.getOffsetInFileName()
+                            && offset < tmpMappedFile.getOffsetInFileName() + this.mappedFileSize) {
                             return tmpMappedFile;
                         }
                     }
@@ -901,11 +901,11 @@ public class MappedFileQueue implements Swappable {
         List<MappedFile> result = new ArrayList<>();
         for (Object mf : mfs) {
             MappedFile mappedFile = (MappedFile) mf;
-            if (mappedFile.getFileFromOffset() + mappedFile.getFileSize() <= from) {
+            if (mappedFile.getOffsetInFileName() + mappedFile.getFileSize() <= from) {
                 continue;
             }
 
-            if (to <= mappedFile.getFileFromOffset()) {
+            if (to <= mappedFile.getOffsetInFileName()) {
                 break;
             }
             result.add(mappedFile);

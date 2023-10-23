@@ -75,7 +75,7 @@ public class SelectMappedBufferResult {
         if (mappedFile == null) {
             return true;
         }
-        long pos = startOffset - mappedFile.getFileFromOffset();
+        long pos = startOffset - mappedFile.getOffsetInFileName();
         return mappedFile.isLoaded(pos, size);
     }
 

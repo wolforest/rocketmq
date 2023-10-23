@@ -65,7 +65,7 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
         MappedFile mappedFile = mappedFiles.get(index);
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
         int mappedFileOffset = 0;
-        long processOffset = mappedFile.getFileFromOffset();
+        long processOffset = mappedFile.getOffsetInFileName();
         while (true) {
             for (int i = 0; i < mappedFileSize; i += CQ_STORE_UNIT_SIZE) {
                 byteBuffer.position(i);
@@ -99,7 +99,7 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
             } else {
                 mappedFile = mappedFiles.get(index);
                 byteBuffer = mappedFile.sliceByteBuffer();
-                processOffset = mappedFile.getFileFromOffset();
+                processOffset = mappedFile.getOffsetInFileName();
                 mappedFileOffset = 0;
                 log.info("Recover next batch consume queue file: " + mappedFile.getFileName());
             }

@@ -50,12 +50,12 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         this.msgStoreItemMemory = ByteBuffer.allocate(END_FILE_MIN_BLANK_LENGTH);
     }
 
-    public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
+    public AppendMessageResult doAppend(final long offsetInFileName, final ByteBuffer byteBuffer, final int maxBlank,
                                         final MessageExtBrokerInner msgInner, PutMessageContext putMessageContext) {
         // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
 
         // PHY OFFSET
-        long wroteOffset = fileFromOffset + byteBuffer.position();
+        long wroteOffset = offsetInFileName + byteBuffer.position();
 
         Supplier<String> msgIdSupplier = () -> {
             int sysflag = msgInner.getSysFlag();
@@ -112,7 +112,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         preEncodeBuffer.putLong(pos, queueOffset);
         pos += 8;
         // 7 PHYSICALOFFSET
-        preEncodeBuffer.putLong(pos, fileFromOffset + byteBuffer.position());
+        preEncodeBuffer.putLong(pos, offsetInFileName + byteBuffer.position());
         int ipLen = (msgInner.getSysFlag() & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 4 + 4 : 16 + 4;
         // 8 SYSFLAG, 9 BORNTIMESTAMP, 10 BORNHOST, 11 STORETIMESTAMP
         pos += 8 + 4 + 8 + ipLen;
@@ -129,11 +129,11 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
             msgInner.getStoreTimestamp(), queueOffset, defaultMessageStore.now() - beginTimeMills, messageNum);
     }
 
-    public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
+    public AppendMessageResult doAppend(final long offsetInFileName, final ByteBuffer byteBuffer, final int maxBlank,
                                         final MessageExtBatch messageExtBatch, PutMessageContext putMessageContext) {
         byteBuffer.mark();
         //physical offset
-        long wroteOffset = fileFromOffset + byteBuffer.position();
+        long wroteOffset = offsetInFileName + byteBuffer.position();
         // Record ConsumeQueue information
         long queueOffset = messageExtBatch.getQueueOffset();
         long beginQueueOffset = queueOffset;

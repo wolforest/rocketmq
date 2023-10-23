@@ -111,7 +111,7 @@ public class CommitLogPutService {
         if (mappedFile == null) {
             currOffset = 0;
         } else {
-            currOffset = mappedFile.getFileFromOffset() + mappedFile.getWrotePosition();
+            currOffset = mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition();
         }
 
         int needAckNums = this.defaultMessageStore.getMessageStoreConfig().getInSyncReplicas();
@@ -441,7 +441,7 @@ public class CommitLogPutService {
         if (mappedFile == null) {
             currOffset = 0;
         } else {
-            currOffset = mappedFile.getFileFromOffset() + mappedFile.getWrotePosition();
+            currOffset = mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition();
         }
 
         return currOffset;

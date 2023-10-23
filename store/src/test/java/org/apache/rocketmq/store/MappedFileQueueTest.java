@@ -86,27 +86,27 @@ public class MappedFileQueueTest {
 
         MappedFile mappedFile = mappedFileQueue.findMappedFileByOffset(0);
         assertThat(mappedFile).isNotNull();
-        assertThat(mappedFile.getFileFromOffset()).isEqualTo(0);
+        assertThat(mappedFile.getOffsetInFileName()).isEqualTo(0);
 
         mappedFile = mappedFileQueue.findMappedFileByOffset(100);
         assertThat(mappedFile).isNotNull();
-        assertThat(mappedFile.getFileFromOffset()).isEqualTo(0);
+        assertThat(mappedFile.getOffsetInFileName()).isEqualTo(0);
 
         mappedFile = mappedFileQueue.findMappedFileByOffset(1024);
         assertThat(mappedFile).isNotNull();
-        assertThat(mappedFile.getFileFromOffset()).isEqualTo(1024);
+        assertThat(mappedFile.getOffsetInFileName()).isEqualTo(1024);
 
         mappedFile = mappedFileQueue.findMappedFileByOffset(1024 + 100);
         assertThat(mappedFile).isNotNull();
-        assertThat(mappedFile.getFileFromOffset()).isEqualTo(1024);
+        assertThat(mappedFile.getOffsetInFileName()).isEqualTo(1024);
 
         mappedFile = mappedFileQueue.findMappedFileByOffset(1024 * 2);
         assertThat(mappedFile).isNotNull();
-        assertThat(mappedFile.getFileFromOffset()).isEqualTo(1024 * 2);
+        assertThat(mappedFile.getOffsetInFileName()).isEqualTo(1024 * 2);
 
         mappedFile = mappedFileQueue.findMappedFileByOffset(1024 * 2 + 100);
         assertThat(mappedFile).isNotNull();
-        assertThat(mappedFile.getFileFromOffset()).isEqualTo(1024 * 2);
+        assertThat(mappedFile.getOffsetInFileName()).isEqualTo(1024 * 2);
 
         // over mapped memory size.
         mappedFile = mappedFileQueue.findMappedFileByOffset(1024 * 4);
@@ -220,7 +220,7 @@ public class MappedFileQueueTest {
 
         assertThat(mappedFileQueue.deleteExpiredFileByOffset(20480, ConsumeQueue.CQ_STORE_UNIT_SIZE)).isGreaterThan(0);
         first = mappedFileQueue.getFirstMappedFile();
-        assertThat(first.getFileFromOffset()).isGreaterThan(0);
+        assertThat(first.getOffsetInFileName()).isGreaterThan(0);
 
         mappedFileQueue.shutdown(1000);
         mappedFileQueue.destroy();
@@ -263,13 +263,13 @@ public class MappedFileQueueTest {
             mappedFile.setWrotePosition(1024);
         }
 
-        assertThat(mappedFileQueue.findMappedFileByOffset(1028).getFileFromOffset()).isEqualTo(1024);
+        assertThat(mappedFileQueue.findMappedFileByOffset(1028).getOffsetInFileName()).isEqualTo(1024);
 
         // Switch two MappedFiles and verify findMappedFileByOffset method
         MappedFile tmpFile = mappedFileQueue.getMappedFiles().get(1);
         mappedFileQueue.getMappedFiles().set(1, mappedFileQueue.getMappedFiles().get(2));
         mappedFileQueue.getMappedFiles().set(2, tmpFile);
-        assertThat(mappedFileQueue.findMappedFileByOffset(1028).getFileFromOffset()).isEqualTo(1024);
+        assertThat(mappedFileQueue.findMappedFileByOffset(1028).getOffsetInFileName()).isEqualTo(1024);
     }
 
     @Test

@@ -101,8 +101,10 @@ public class DefaultMappedFile extends AbstractMappedFile {
     /**
      * offset from filename
      * It is the logical offset of MappedFileQueue
+     *
+     * @renamed from fileFromOffset to offsetInFileName
      */
-    protected long fileFromOffset;
+    protected long offsetInFileName;
     protected File file;
     protected int fileSize;
     protected FileChannel fileChannel;
@@ -184,7 +186,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         this.fileName = fileName;
         this.fileSize = fileSize;
         this.file = new File(fileName);
-        this.fileFromOffset = Long.parseLong(this.file.getName());
+        this.offsetInFileName = Long.parseLong(this.file.getName());
         boolean ok = false;
 
         IOTinyUtils.ensureDirOK(this.file.getParent());
@@ -233,12 +235,12 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
         int readPosition = getReadPosition();
         if ((pos + size) > readPosition) {
-            log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size + ", fileFromOffset: " + this.fileFromOffset);
+            log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size + ", fileFromOffset: " + this.offsetInFileName);
             return false;
         }
 
         if (!this.hold()) {
-            log.debug("matched, but hold failed, request pos: " + pos + ", fileFromOffset: " + this.fileFromOffset);
+            log.debug("matched, but hold failed, request pos: " + pos + ", fileFromOffset: " + this.offsetInFileName);
             return false;
         }
 
@@ -246,7 +248,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
             int readNum = fileChannel.read(byteBuffer, pos);
             return size == readNum;
         } catch (Throwable t) {
-            log.warn("Get data failed pos:{} size:{} fileFromOffset:{}", pos, size, this.fileFromOffset);
+            log.warn("Get data failed pos:{} size:{} fileFromOffset:{}", pos, size, this.offsetInFileName);
             return false;
         } finally {
             this.release();
@@ -275,7 +277,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
         ByteBuffer byteBuffer = appendMessageBuffer().slice();
         byteBuffer.position(currentPos);
-        AppendMessageResult result = cb.doAppend(byteBuffer, this.fileFromOffset, this.fileSize - currentPos, byteBufferMsg);
+        AppendMessageResult result = cb.doAppend(byteBuffer, this.offsetInFileName, this.fileSize - currentPos, byteBufferMsg);
         WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
         this.storeTimestamp = result.getStoreTimestamp();
         return result;
@@ -309,10 +311,10 @@ public class DefaultMappedFile extends AbstractMappedFile {
         AppendMessageResult result;
         if (messageExt instanceof MessageExtBatch && !((MessageExtBatch) messageExt).isInnerBatch()) {
             // traditional batch message
-            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, (MessageExtBatch) messageExt, putMessageContext);
+            result = cb.doAppend(this.getOffsetInFileName(), byteBuffer, this.fileSize - currentPos, (MessageExtBatch) messageExt, putMessageContext);
         } else if (messageExt instanceof MessageExtBrokerInner) {
             // traditional single message or newly introduced inner-batch message
-            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos, (MessageExtBrokerInner) messageExt, putMessageContext);
+            result = cb.doAppend(this.getOffsetInFileName(), byteBuffer, this.fileSize - currentPos, (MessageExtBrokerInner) messageExt, putMessageContext);
         } else {
             return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
         }
@@ -327,8 +329,8 @@ public class DefaultMappedFile extends AbstractMappedFile {
     }
 
     @Override
-    public long getFileFromOffset() {
-        return this.fileFromOffset;
+    public long getOffsetInFileName() {
+        return this.offsetInFileName;
     }
 
     @Override
@@ -515,12 +517,12 @@ public class DefaultMappedFile extends AbstractMappedFile {
         int readPosition = getReadPosition();
         if ((pos + size) > readPosition) {
             log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size
-                + ", fileFromOffset: " + this.fileFromOffset);
+                + ", fileFromOffset: " + this.offsetInFileName);
             return null;
         }
 
         if (!this.hold()) {
-            log.warn("matched, but hold failed, request pos: " + pos + ", fileFromOffset: " + this.fileFromOffset);
+            log.warn("matched, but hold failed, request pos: " + pos + ", fileFromOffset: " + this.offsetInFileName);
             return null;
         }
 
@@ -530,7 +532,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         byteBuffer.position(pos);
         ByteBuffer byteBufferNew = byteBuffer.slice();
         byteBufferNew.limit(size);
-        return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
+        return new SelectMappedBufferResult(this.offsetInFileName + pos, byteBufferNew, size, this);
     }
 
     @Override
@@ -549,7 +551,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         int size = readPosition - pos;
         ByteBuffer byteBufferNew = byteBuffer.slice();
         byteBufferNew.limit(size);
-        return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
+        return new SelectMappedBufferResult(this.offsetInFileName + pos, byteBufferNew, size, this);
     }
 
     @Override

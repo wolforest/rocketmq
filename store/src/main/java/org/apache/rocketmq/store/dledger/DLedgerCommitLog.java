@@ -327,8 +327,8 @@ public class DLedgerCommitLog extends CommitLog {
             log.info("Recover old commitlog found a illegal magic code={}", magicCode);
         }
         dLedgerConfig.setEnableDiskForceClean(false);
-        dividedCommitlogOffset = mappedFile.getFileFromOffset() + mappedFile.getFileSize();
-        log.info("Recover old commitlog needWriteMagicCode={} pos={} file={} dividedCommitlogOffset={}", needWriteMagicCode, mappedFile.getFileFromOffset() + mappedFile.getWrotePosition(), mappedFile.getFileName(), dividedCommitlogOffset);
+        dividedCommitlogOffset = mappedFile.getOffsetInFileName() + mappedFile.getFileSize();
+        log.info("Recover old commitlog needWriteMagicCode={} pos={} file={} dividedCommitlogOffset={}", needWriteMagicCode, mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition(), mappedFile.getFileName(), dividedCommitlogOffset);
         if (needWriteMagicCode) {
             byteBuffer.position(mappedFile.getWrotePosition());
             byteBuffer.putInt(mappedFile.getFileSize() - mappedFile.getWrotePosition());

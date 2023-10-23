@@ -52,7 +52,7 @@ class DefaultMappedFileIterator implements Iterator<SelectMappedBufferResult> {
                 ByteBuffer bufferResult = byteBuffer.slice();
                 bufferResult.limit(size);
                 current += size;
-                return new SelectMappedBufferResult(mappedFile.getFileFromOffset() + current, bufferResult, size,
+                return new SelectMappedBufferResult(mappedFile.getOffsetInFileName() + current, bufferResult, size,
                     mappedFile);
             }
         }
