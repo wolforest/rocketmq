@@ -17,7 +17,6 @@
 package org.apache.rocketmq.common.namesrv;
 
 import com.google.common.base.Strings;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.help.FAQUrl;
 import org.apache.rocketmq.common.utils.HttpTinyClient;

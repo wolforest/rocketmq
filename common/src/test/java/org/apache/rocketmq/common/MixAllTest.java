@@ -20,7 +20,6 @@ package org.apache.rocketmq.common;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.common.utils.ChannelUtil;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
