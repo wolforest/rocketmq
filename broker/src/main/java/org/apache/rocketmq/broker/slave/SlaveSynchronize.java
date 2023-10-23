@@ -158,7 +158,7 @@ public class SlaveSynchronize {
                     StorePathConfigHelper.getDelayOffsetStorePath(this.brokerController
                         .getMessageStoreConfig().getStorePathRootDir());
                 try {
-                    MixAll.string2File(delayOffset, fileName);
+                    org.apache.rocketmq.common.utils.StringUtils.string2File(delayOffset, fileName);
                     this.brokerController.getScheduleMessageService().loadWhenSyncDelayOffset();
                 } catch (IOException e) {
                     LOGGER.error("Persist file Exception, {}", fileName, e);
