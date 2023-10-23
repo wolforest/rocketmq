@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.rocketmq.common.config.RocksDBConfigManager;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
@@ -84,7 +85,7 @@ public abstract class ConfigManager {
 
         String fileName = this.configFilePath();
         try {
-            MixAll.string2File(jsonString, fileName);
+            StringUtils.string2File(jsonString, fileName);
         } catch (IOException e) {
             log.error("persist file " + fileName + " exception", e);
         }
