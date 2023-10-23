@@ -34,7 +34,7 @@ public abstract class ConfigManager {
         String fileName = null;
         try {
             fileName = this.configFilePath();
-            String jsonString = MixAll.file2String(fileName);
+            String jsonString = StringUtils.file2String(fileName);
 
             if (null == jsonString || jsonString.length() == 0) {
                 return this.loadBak();
@@ -53,7 +53,7 @@ public abstract class ConfigManager {
         String fileName = null;
         try {
             fileName = this.configFilePath();
-            String jsonString = MixAll.file2String(fileName + ".bak");
+            String jsonString = StringUtils.file2String(fileName + ".bak");
             if (jsonString != null && jsonString.length() > 0) {
                 this.decode(jsonString);
                 log.info("load " + fileName + " OK");
