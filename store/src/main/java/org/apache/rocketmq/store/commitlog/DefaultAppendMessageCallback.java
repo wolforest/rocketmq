@@ -16,7 +16,9 @@
  */
 package org.apache.rocketmq.store.commitlog;
 
+import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
@@ -43,19 +45,22 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
     private static final int END_FILE_MIN_BLANK_LENGTH = 4 + 4;
     // Store the message content
     private final ByteBuffer msgStoreItemMemory;
+    private final int crc32ReservedLength = CommitLog.CRC32_RESERVED_LEN;
+    private final boolean enabledAppendPropCRC;
 
     public DefaultAppendMessageCallback(final DefaultMessageStore messageStore, CommitLog commitLog) {
         this.defaultMessageStore = messageStore;
         this.commitLog = commitLog;
         this.msgStoreItemMemory = ByteBuffer.allocate(END_FILE_MIN_BLANK_LENGTH);
+        this.enabledAppendPropCRC = defaultMessageStore.getMessageStoreConfig().isEnabledAppendPropCRC();
     }
 
-    public AppendMessageResult doAppend(final long offsetInFileName, final ByteBuffer byteBuffer, final int maxBlank,
-                                        final MessageExtBrokerInner msgInner, PutMessageContext putMessageContext) {
+    public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
+        final MessageExtBrokerInner msgInner, PutMessageContext putMessageContext) {
         // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
 
         // PHY OFFSET
-        long wroteOffset = offsetInFileName + byteBuffer.position();
+        long wroteOffset = fileFromOffset + byteBuffer.position();
 
         Supplier<String> msgIdSupplier = () -> {
             int sysflag = msgInner.getSysFlag();
@@ -112,28 +117,37 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         preEncodeBuffer.putLong(pos, queueOffset);
         pos += 8;
         // 7 PHYSICALOFFSET
-        preEncodeBuffer.putLong(pos, offsetInFileName + byteBuffer.position());
+        preEncodeBuffer.putLong(pos, fileFromOffset + byteBuffer.position());
         int ipLen = (msgInner.getSysFlag() & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 4 + 4 : 16 + 4;
         // 8 SYSFLAG, 9 BORNTIMESTAMP, 10 BORNHOST, 11 STORETIMESTAMP
         pos += 8 + 4 + 8 + ipLen;
         // refresh store time stamp in lock
         preEncodeBuffer.putLong(pos, msgInner.getStoreTimestamp());
+        if (enabledAppendPropCRC) {
+            // 18 CRC32
+            int checkSize = msgLen - crc32ReservedLength;
+            ByteBuffer tmpBuffer = preEncodeBuffer.duplicate();
+            tmpBuffer.limit(tmpBuffer.position() + checkSize);
+            int crc32 = UtilAll.crc32(tmpBuffer);
+            tmpBuffer.limit(tmpBuffer.position() + crc32ReservedLength);
+            MessageDecoder.createCrc32(tmpBuffer, crc32);
+        }
 
         final long beginTimeMills = defaultMessageStore.now();
-        commitLog.getMessageStore().getPerfCounter().startTick("WRITE_MEMORY_TIME_MS");
+        defaultMessageStore.getPerfCounter().startTick("WRITE_MEMORY_TIME_MS");
         // Write messages to the queue buffer
         byteBuffer.put(preEncodeBuffer);
-        commitLog.getMessageStore().getPerfCounter().endTick("WRITE_MEMORY_TIME_MS");
+        defaultMessageStore.getPerfCounter().endTick("WRITE_MEMORY_TIME_MS");
         msgInner.setEncodedBuff(null);
         return new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, msgLen, msgIdSupplier,
             msgInner.getStoreTimestamp(), queueOffset, defaultMessageStore.now() - beginTimeMills, messageNum);
     }
 
-    public AppendMessageResult doAppend(final long offsetInFileName, final ByteBuffer byteBuffer, final int maxBlank,
-                                        final MessageExtBatch messageExtBatch, PutMessageContext putMessageContext) {
+    public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
+        final MessageExtBatch messageExtBatch, PutMessageContext putMessageContext) {
         byteBuffer.mark();
         //physical offset
-        long wroteOffset = offsetInFileName + byteBuffer.position();
+        long wroteOffset = fileFromOffset + byteBuffer.position();
         // Record ConsumeQueue information
         long queueOffset = messageExtBatch.getQueueOffset();
         long beginQueueOffset = queueOffset;
@@ -199,6 +213,15 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
             pos += 8 + 4 + 8 + bornHostLength;
             // refresh store time stamp in lock
             messagesByteBuff.putLong(pos, messageExtBatch.getStoreTimestamp());
+            if (enabledAppendPropCRC) {
+                //append crc32
+                int checkSize = msgLen - crc32ReservedLength;
+                ByteBuffer tmpBuffer = messagesByteBuff.duplicate();
+                tmpBuffer.position(msgPos).limit(msgPos + checkSize);
+                int crc32 = UtilAll.crc32(tmpBuffer);
+                messagesByteBuff.position(msgPos + checkSize);
+                MessageDecoder.createCrc32(messagesByteBuff, crc32);
+            }
 
             putMessageContext.getPhyPos()[index++] = wroteOffset + totalMsgLen - msgLen;
             queueOffset++;

@@ -74,9 +74,14 @@ import sun.nio.ch.DirectBuffer;
 public class CommitLog implements Swappable {
     // Message's MAGIC CODE daa320a7
     public final static int MESSAGE_MAGIC_CODE = -626843481;
-    protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+    public static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     // End of file empty MAGIC CODE cbd43194
     public final static int BLANK_MAGIC_CODE = -875286124;
+    /**
+     * CRC32 Format: [PROPERTY_CRC32 + NAME_VALUE_SEPARATOR + 10-digit fixed-length string + PROPERTY_SEPARATOR]
+     */
+    public static final int CRC32_RESERVED_LEN = MessageConst.PROPERTY_CRC32.length() + 1 + 10 + 1;
+
     protected MappedFileQueue mappedFileQueue;
 
     protected final DefaultMessageStore defaultMessageStore;
@@ -117,6 +122,7 @@ public class CommitLog implements Swappable {
         this.flushDiskWatcher = new FlushDiskWatcher();
         this.topicQueueLock = new TopicQueueLock(messageStore.getMessageStoreConfig().getTopicQueueLockNum());
         this.commitLogSize = messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
+
     }
 
     public void setFullStorePaths(Set<String> fullStorePaths) {
@@ -374,6 +380,43 @@ public class CommitLog implements Swappable {
                 tagsCode = getTagsCode(tagsCode, propertiesMap, topic, storeTimestamp, sysFlag);
             }
 
+            if (checkCRC) {
+                /*
+                 * When the forceVerifyPropCRC = true,
+                 * Crc verification needs to be performed on the entire message data (excluding the length reserved at the tail)
+                 */
+                if (this.defaultMessageStore.getMessageStoreConfig().isForceVerifyPropCRC()) {
+                    int expectedCRC = -1;
+                    if (propertiesMap != null) {
+                        String crc32Str = propertiesMap.get(MessageConst.PROPERTY_CRC32);
+                        if (crc32Str != null) {
+                            expectedCRC = 0;
+                            for (int i = crc32Str.length() - 1; i >= 0; i--) {
+                                int num = crc32Str.charAt(i) - '0';
+                                expectedCRC *= 10;
+                                expectedCRC += num;
+                            }
+                        }
+                    }
+                    if (expectedCRC > 0) {
+                        ByteBuffer tmpBuffer = byteBuffer.duplicate();
+                        tmpBuffer.position(tmpBuffer.position() - totalSize);
+                        tmpBuffer.limit(tmpBuffer.position() + totalSize - CommitLog.CRC32_RESERVED_LEN);
+                        int crc = BinaryUtil.crc32(tmpBuffer);
+                        if (crc != expectedCRC) {
+                            log.warn(
+                                "CommitLog#checkAndDispatchMessage: failed to check message CRC, expected "
+                                    + "CRC={}, actual CRC={}", bodyCRC, crc);
+                            return new DispatchRequest(-1, false/* success */);
+                        }
+                    } else {
+                        log.warn(
+                            "CommitLog#checkAndDispatchMessage: failed to check message CRC, not found CRC in properties");
+                        return new DispatchRequest(-1, false/* success */);
+                    }
+                }
+            }
+
             int readLength = MessageExtEncoder.calMsgLength(messageVersion, sysFlag, bodyLen, topicLen, propertiesLength);
             if (totalSize != readLength) {
                 doNothingForDeadCode(reconsumeTimes);
@@ -460,13 +503,21 @@ public class CommitLog implements Swappable {
             return null;
         }
 
-        int crc = BinaryUtil.crc32(bytesContent, 0, bodyLen);
-        if (crc != bodyCRC) {
-            log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
-            return new DispatchRequest(-1, false/* success */);
+        /*
+         * When the forceVerifyPropCRC = false,
+         * use original bodyCrc validation.
+         */
+        if (this.defaultMessageStore.getMessageStoreConfig().isForceVerifyPropCRC()) {
+            return null;
         }
 
-        return null;
+        int crc = BinaryUtil.crc32(bytesContent, 0, bodyLen);
+        if (crc == bodyCRC) {
+            return null;
+        }
+
+        log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
+        return new DispatchRequest(-1, false/* success */);
     }
 
     private DispatchRequest checkDuplicate(boolean checkDupInfo, Map<String, String> propertiesMap) {
@@ -695,7 +746,9 @@ public class CommitLog implements Swappable {
         putMessageThreadLocal = new ThreadLocal<PutMessageThreadLocal>() {
             @Override
             protected PutMessageThreadLocal initialValue() {
-                return new PutMessageThreadLocal(defaultMessageStore.getMessageStoreConfig().getMaxMessageSize());
+                return new PutMessageThreadLocal(
+                    defaultMessageStore.getMessageStoreConfig().getMaxMessageSize(),
+                    defaultMessageStore.getMessageStoreConfig().isEnabledAppendPropCRC());
             }
         };
     }

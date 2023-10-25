@@ -322,6 +322,22 @@ public class UtilAll {
     }
 
     @Deprecated
+    public static int crc32(ByteBuffer byteBuffer) {
+        CRC32 crc32 = new CRC32();
+        crc32.update(byteBuffer);
+        return (int) (crc32.getValue() & 0x7FFFFFFF);
+    }
+
+    @Deprecated
+    public static int crc32(ByteBuffer[] byteBuffers) {
+        CRC32 crc32 = new CRC32();
+        for (ByteBuffer buffer : byteBuffers) {
+            crc32.update(buffer);
+        }
+        return (int) (crc32.getValue() & 0x7FFFFFFF);
+    }
+
+    @Deprecated
     public static String bytes2string(byte[] src) {
         char[] hexChars = new char[src.length * 2];
         for (int j = 0; j < src.length; j++) {

@@ -18,6 +18,7 @@ package org.apache.rocketmq.store.commitlog.service;
 
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
@@ -50,10 +51,12 @@ public class CommitLogPutService {
 
     private final CommitLog commitLog;
     protected final DefaultMessageStore defaultMessageStore;
+    private final boolean enabledAppendPropCRC;
 
     public CommitLogPutService(CommitLog commitLog) {
         this.commitLog = commitLog;
         this.defaultMessageStore = (DefaultMessageStore) commitLog.getMessageStore();
+        this.enabledAppendPropCRC = defaultMessageStore.getMessageStoreConfig().isEnabledAppendPropCRC();
     }
 
     public CompletableFuture<PutMessageResult> asyncPutMessage(final MessageExtBrokerInner msg) {
@@ -418,6 +421,10 @@ public class CommitLogPutService {
 
         // Set the message body CRC (consider the most appropriate setting on the client)
         msg.setBodyCRC(BinaryUtil.crc32(msg.getBody()));
+        if (enabledAppendPropCRC) {
+            // delete crc32 properties if exist
+            msg.deleteProperty(MessageConst.PROPERTY_CRC32);
+        }
 
         msg.setVersion(MessageVersion.MESSAGE_VERSION_V1);
         boolean autoMessageVersionOnTopicLen = this.defaultMessageStore.getMessageStoreConfig().isAutoMessageVersionOnTopicLen();

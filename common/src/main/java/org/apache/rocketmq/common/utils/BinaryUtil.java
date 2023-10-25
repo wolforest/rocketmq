@@ -17,6 +17,7 @@
 
 package org.apache.rocketmq.common.utils;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -74,6 +75,20 @@ public class BinaryUtil {
     public static int crc32(byte[] array, int offset, int length) {
         CRC32 crc32 = new CRC32();
         crc32.update(array, offset, length);
+        return (int) (crc32.getValue() & 0x7FFFFFFF);
+    }
+
+    public static int crc32(ByteBuffer byteBuffer) {
+        CRC32 crc32 = new CRC32();
+        crc32.update(byteBuffer);
+        return (int) (crc32.getValue() & 0x7FFFFFFF);
+    }
+
+    public static int crc32(ByteBuffer[] byteBuffers) {
+        CRC32 crc32 = new CRC32();
+        for (ByteBuffer buffer : byteBuffers) {
+            crc32.update(buffer);
+        }
         return (int) (crc32.getValue() & 0x7FFFFFFF);
     }
 
