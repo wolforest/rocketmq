@@ -295,7 +295,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         return appendMessagesInner(messageExtBatch, cb, putMessageContext);
     }
 
-    public AppendMessageResult appendMessagesInner(final MessageExt messageExt, final AppendMessageCallback cb,
+    private AppendMessageResult appendMessagesInner(final MessageExt messageExt, final AppendMessageCallback cb,
         PutMessageContext putMessageContext) {
         assert messageExt != null;
         assert cb != null;
