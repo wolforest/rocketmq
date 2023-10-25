@@ -27,7 +27,7 @@ import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.DateUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
@@ -120,7 +120,7 @@ public class ClusterAclConfigVersionListSubCommand implements SubCommand {
 
         ClusterAclVersionInfo clusterAclVersionInfo = defaultMQAdminExt.examineBrokerClusterAclVersionInfo(addr);
         Map<String, DataVersion> aclDataVersion = clusterAclVersionInfo.getAllAclConfigDataVersion();
-        DateFormat sdf = new SimpleDateFormat(UtilAll.YYYY_MM_DD_HH_MM_SS);
+        DateFormat sdf = new SimpleDateFormat(DateUtils.YYYY_MM_DD_HH_MM_SS);
         if (aclDataVersion.size() > 0) {
             for (Map.Entry<String, DataVersion> entry : aclDataVersion.entrySet()) {
                 System.out.printf("%-16s  %-22s  %-22s  %-20s  %-22s  %-22s%n",

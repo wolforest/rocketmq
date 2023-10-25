@@ -16,22 +16,21 @@
  */
 package org.apache.rocketmq.store.queue;
 
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.store.commitlog.CommitLog;
-import org.apache.rocketmq.store.DefaultMessageStore;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ThreadLocalRandom;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.commitlog.CommitLog;
+import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -79,8 +78,8 @@ public class SparseConsumeQueueTest {
     public void testLoad() throws IOException {
         scq = new SparseConsumeQueue(topic, queueId, path, BatchConsumeQueue.CQ_STORE_UNIT_SIZE, defaultMessageStore);
 
-        String file1 = UtilAll.offset2FileName(111111);
-        String file2 = UtilAll.offset2FileName(222222);
+        String file1 = IOTinyUtils.offset2FileName(111111);
+        String file2 = IOTinyUtils.offset2FileName(222222);
 
         long phyOffset = 10;
         long queueOffset = 1;
@@ -125,7 +124,7 @@ public class SparseConsumeQueueTest {
            ...
          */
         for (int i = 0; i < 5; i++) {
-            String fileName = UtilAll.offset2FileName(i * fileSize);
+            String fileName = IOTinyUtils.offset2FileName(i * fileSize);
             fillByteBufSeq(bb, 10, basePhyOffset, baseQueueOffset);
             Files.createDirectories(Paths.get(path, topic, String.valueOf(queueId)));
             Files.write(Paths.get(path, topic, String.valueOf(queueId), fileName), bb.array(),
@@ -158,7 +157,7 @@ public class SparseConsumeQueueTest {
     public void testCreateFile() throws IOException {
         scq = new SparseConsumeQueue(topic, queueId, path, BatchConsumeQueue.CQ_STORE_UNIT_SIZE, defaultMessageStore);
         long physicalOffset = Math.abs(ThreadLocalRandom.current().nextLong());
-        String formatName = UtilAll.offset2FileName(physicalOffset);
+        String formatName = IOTinyUtils.offset2FileName(physicalOffset);
         scq.createFile(physicalOffset);
 
         assertTrue(Files.exists(Paths.get(path, topic, String.valueOf(queueId), formatName)));

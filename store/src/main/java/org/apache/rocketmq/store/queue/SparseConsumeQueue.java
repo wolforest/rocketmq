@@ -16,18 +16,17 @@
  */
 package org.apache.rocketmq.store.queue;
 
-import org.apache.rocketmq.common.BoundaryType;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.logfile.MappedFile;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import org.apache.rocketmq.common.BoundaryType;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.logfile.MappedFile;
+import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 
 public class SparseConsumeQueue extends BatchConsumeQueue {
 
@@ -302,7 +301,7 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
     }
 
     public boolean containsOffsetFile(final long physicalOffset) {
-        String fileName = UtilAll.offset2FileName(physicalOffset);
+        String fileName = IOTinyUtils.offset2FileName(physicalOffset);
         return mappedFileQueue.getMappedFiles().stream()
             .anyMatch(mf -> Objects.equals(mf.getFile().getName(), fileName));
     }

@@ -18,7 +18,6 @@
 package org.apache.rocketmq.remoting.protocol.body;
 
 import java.util.Date;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
 
@@ -62,15 +61,15 @@ public class QueueTimeSpan {
     }
 
     public String getMinTimeStampStr() {
-        return DateUtils.formatDate(new Date(minTimeStamp), UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
+        return DateUtils.formatDate(new Date(minTimeStamp), DateUtils.YYYY_MM_DD_HH_MM_SS_SSS);
     }
 
     public String getMaxTimeStampStr() {
-        return DateUtils.formatDate(new Date(maxTimeStamp), UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
+        return DateUtils.formatDate(new Date(maxTimeStamp), DateUtils.YYYY_MM_DD_HH_MM_SS_SSS);
     }
 
     public String getConsumeTimeStampStr() {
-        return DateUtils.formatDate(new Date(consumeTimeStamp), UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
+        return DateUtils.formatDate(new Date(consumeTimeStamp), DateUtils.YYYY_MM_DD_HH_MM_SS_SSS);
     }
 
     public long getDelayTime() {

@@ -16,19 +16,18 @@
  */
 package org.apache.rocketmq.store.logfile;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class MultiPathMappedFileQueue extends MappedFileQueue {
 
@@ -99,9 +98,9 @@ public class MultiPathMappedFileQueue extends MappedFileQueue {
         String[] paths = availableStorePath.toArray(new String[]{});
         Arrays.sort(paths);
         String nextFilePath = paths[(int) (fileIdx % paths.length)] + File.separator
-                + UtilAll.offset2FileName(createOffset);
+                + IOTinyUtils.offset2FileName(createOffset);
         String nextNextFilePath = paths[(int) ((fileIdx + 1) % paths.length)] + File.separator
-                + UtilAll.offset2FileName(createOffset + this.mappedFileSize);
+                + IOTinyUtils.offset2FileName(createOffset + this.mappedFileSize);
         return doCreateMappedFile(nextFilePath, nextNextFilePath);
     }
 

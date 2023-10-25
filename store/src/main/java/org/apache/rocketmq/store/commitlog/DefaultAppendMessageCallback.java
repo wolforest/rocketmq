@@ -16,13 +16,15 @@
  */
 package org.apache.rocketmq.store.commitlog;
 
-import org.apache.rocketmq.common.UtilAll;
+import java.nio.ByteBuffer;
+import java.util.function.Supplier;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.utils.BinaryUtil;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -30,9 +32,6 @@ import org.apache.rocketmq.store.AppendMessageResult;
 import org.apache.rocketmq.store.AppendMessageStatus;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.PutMessageContext;
-
-import java.nio.ByteBuffer;
-import java.util.function.Supplier;
 
 
 public class DefaultAppendMessageCallback implements AppendMessageCallback {
@@ -128,7 +127,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
             int checkSize = msgLen - crc32ReservedLength;
             ByteBuffer tmpBuffer = preEncodeBuffer.duplicate();
             tmpBuffer.limit(tmpBuffer.position() + checkSize);
-            int crc32 = UtilAll.crc32(tmpBuffer);
+            int crc32 = BinaryUtil.crc32(tmpBuffer);
             tmpBuffer.limit(tmpBuffer.position() + crc32ReservedLength);
             MessageDecoder.createCrc32(tmpBuffer, crc32);
         }
@@ -218,7 +217,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
                 int checkSize = msgLen - crc32ReservedLength;
                 ByteBuffer tmpBuffer = messagesByteBuff.duplicate();
                 tmpBuffer.position(msgPos).limit(msgPos + checkSize);
-                int crc32 = UtilAll.crc32(tmpBuffer);
+                int crc32 = BinaryUtil.crc32(tmpBuffer);
                 messagesByteBuff.position(msgPos + checkSize);
                 MessageDecoder.createCrc32(messagesByteBuff, crc32);
             }

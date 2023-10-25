@@ -25,7 +25,6 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
@@ -40,7 +39,7 @@ public class PrintMessageSubCommand implements SubCommand {
         try {
             timestamp = Long.parseLong(value);
         } catch (NumberFormatException e) {
-            timestamp = DateUtils.parseDate(value, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
+            timestamp = DateUtils.parseDate(value, DateUtils.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
         }
 
         return timestamp;

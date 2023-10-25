@@ -17,16 +17,17 @@
 
 package org.apache.rocketmq.store;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.logfile.MappedFileQueue;
 import org.apache.rocketmq.store.logfile.MultiPathMappedFileQueue;
 import org.junit.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 
 public class MultiPathMappedFileQueueTest {
@@ -85,7 +86,7 @@ public class MultiPathMappedFileQueueTest {
         assertThat(mappedFileQueue.getMappedFiles().size()).isEqualTo(1024);
         for (int i = 0; i < 1024; i++) {
             assertThat(mappedFileQueue.getMappedFiles().get(i).getFile().getName())
-                    .isEqualTo(UtilAll.offset2FileName(1024 * i));
+                    .isEqualTo(IOTinyUtils.offset2FileName(1024 * i));
         }
         mappedFileQueue.destroy();
 

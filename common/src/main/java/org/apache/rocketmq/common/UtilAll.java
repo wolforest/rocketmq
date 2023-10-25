@@ -57,6 +57,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import sun.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
 
+@Deprecated
 public class UtilAll {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
     private static final Logger STORE_LOG = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);

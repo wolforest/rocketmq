@@ -17,12 +17,15 @@
 
 package org.apache.rocketmq.common.utils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.zip.CRC32;
 
+import java.util.zip.DeflaterOutputStream;
 import org.apache.commons.codec.binary.Hex;
 
 public class BinaryUtil {
@@ -91,5 +94,34 @@ public class BinaryUtil {
         }
         return (int) (crc32.getValue() & 0x7FFFFFFF);
     }
+
+    /**
+     * use {@link org.apache.rocketmq.common.compression.Compressor#compress(byte[], int)} instead.
+     */
+    public static byte[] compress(final byte[] src, final int level) throws IOException {
+        byte[] result = src;
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(src.length);
+        java.util.zip.Deflater defeater = new java.util.zip.Deflater(level);
+        DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, defeater);
+        try {
+            deflaterOutputStream.write(src);
+            deflaterOutputStream.finish();
+            deflaterOutputStream.close();
+            result = byteArrayOutputStream.toByteArray();
+        } catch (IOException e) {
+            defeater.end();
+            throw e;
+        } finally {
+            try {
+                byteArrayOutputStream.close();
+            } catch (IOException ignored) {
+            }
+
+            defeater.end();
+        }
+
+        return result;
+    }
+
 
 }

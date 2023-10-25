@@ -19,7 +19,6 @@ package org.apache.rocketmq.tools.command.message;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.common.utils.DateUtils;
 import org.apache.rocketmq.remoting.RPCHook;
@@ -57,7 +56,7 @@ public class DecodeMessageIdCommond implements SubCommand {
         }
 
         try {
-            String date = DateUtils.formatDate(MessageClientIDSetter.getNearlyTimeFromID(messageId), UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
+            String date = DateUtils.formatDate(MessageClientIDSetter.getNearlyTimeFromID(messageId), DateUtils.YYYY_MM_DD_HH_MM_SS_SSS);
             System.out.printf("date=%s", date);
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);

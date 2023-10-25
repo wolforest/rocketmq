@@ -24,7 +24,6 @@ import java.util.Map;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
@@ -133,7 +132,7 @@ public class BrokerConsumeStatsSubCommad implements SubCommand {
                             }
                             String lastTime = "-";
                             try {
-                                lastTime = DateUtils.formatDate(new Date(offsetWrapper.getLastTimestamp()), UtilAll.YYYY_MM_DD_HH_MM_SS);
+                                lastTime = DateUtils.formatDate(new Date(offsetWrapper.getLastTimestamp()), DateUtils.YYYY_MM_DD_HH_MM_SS);
                             } catch (Exception ignored) {
 
                             }

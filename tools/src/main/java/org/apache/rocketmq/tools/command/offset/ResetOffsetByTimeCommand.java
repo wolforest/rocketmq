@@ -23,7 +23,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
@@ -98,7 +97,7 @@ public class ResetOffsetByTimeCommand implements SubCommand {
                 }
             } catch (NumberFormatException e) {
                 timestamp = Objects.requireNonNull(
-                    DateUtils.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS)).getTime();
+                    DateUtils.parseDate(timeStampStr, DateUtils.YYYY_MM_DD_HH_MM_SS_SSS)).getTime();
             }
 
             boolean force = true;

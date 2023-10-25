@@ -30,8 +30,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.ReferenceResource;
@@ -350,8 +350,8 @@ public class MappedFileQueue implements Swappable {
     }
 
     public MappedFile tryCreateMappedFile(long createOffset) {
-        String nextFilePath = this.storePath + File.separator + UtilAll.offset2FileName(createOffset);
-        String nextNextFilePath = this.storePath + File.separator + UtilAll.offset2FileName(createOffset
+        String nextFilePath = this.storePath + File.separator + IOTinyUtils.offset2FileName(createOffset);
+        String nextNextFilePath = this.storePath + File.separator + IOTinyUtils.offset2FileName(createOffset
                 + this.mappedFileSize);
         return doCreateMappedFile(nextFilePath, nextNextFilePath);
     }
