@@ -32,8 +32,25 @@ public class BrokerConfig extends BrokerIdentity {
     private String brokerConfigPath = null;
 
     private String rocketmqHome = System.getProperty(MQConstants.ROCKETMQ_HOME_PROPERTY, System.getenv(MQConstants.ROCKETMQ_HOME_ENV));
+
+    /**
+     * name server related setting
+     * if namesrvAddr is not blank:
+     *     fetchNamesrvAddrByAddressServer is useless
+     * else if fetchNameSrvAddrByDnsLookup is true
+     *     broker will load name server info by dns
+     * else
+     *     broker will load name server info by nameSrvAddr
+     *
+     */
     @ImportantField
     private String namesrvAddr = System.getProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, System.getenv(NameServerAddressUtils.NAMESRV_ADDR_ENV));
+
+    @ImportantField
+    private boolean fetchNameSrvAddrByDnsLookup = false;
+
+    @ImportantField
+    private boolean fetchNamesrvAddrByAddressServer = false;
 
     /**
      * Listen port for single broker
@@ -48,23 +65,66 @@ public class BrokerConfig extends BrokerIdentity {
     @ImportantField
     private boolean recoverConcurrently = false;
 
+    /**
+     * broker permission
+     * default: Readable and writable
+     */
     private int brokerPermission = PermName.PERM_READ | PermName.PERM_WRITE;
+
+    /**
+     * default consume queue nums per topic
+     * default: 8
+     *
+     * @renamed from defaultTopicQueueNums to queueNumPerTopic
+     */
     private int defaultTopicQueueNums = 8;
     @ImportantField
     private boolean autoCreateTopicEnable = true;
 
+    /**
+     * can cluster name be used as topic name
+     * default: true
+     */
     private boolean clusterTopicEnable = true;
 
+    /**
+     * can broker name be used as topic name
+     */
     private boolean brokerTopicEnable = true;
+
     @ImportantField
     private boolean autoCreateSubscriptionGroup = true;
+
+    /**
+     * message store plugin
+     * default: blank string - no plugin
+     */
     private String messageStorePlugIn = "";
 
+    /**
+     * @TODO move it out of Broker Config
+     */
     private static final int PROCESSOR_NUMBER = Runtime.getRuntime().availableProcessors();
+
+    /**
+     * on-off switch for message tracing
+     */
+    private boolean traceOn = true;
+    /**
+     *
+     */
     @ImportantField
     private String msgTraceTopicName = TopicValidator.RMQ_SYS_TRACE_TOPIC;
+    /**
+     * on-off switch whether special tracing topic was used
+     * if you want to enable message tracing
+     * you need set traceOn and traceTopicEnable both true
+     *
+     * @renamed from traceTopicEnable to useTraceTopic
+     */
     @ImportantField
     private boolean traceTopicEnable = false;
+
     /**
      * thread numbers for send message thread pool.
      */
@@ -89,18 +149,25 @@ public class BrokerConfig extends BrokerIdentity {
     private int endTransactionThreadPoolNums = Math.max(8 + PROCESSOR_NUMBER * 2,
             sendMessageThreadPoolNums * 4);
 
+    /**
+     * interval of consume offset storage
+     */
     private int flushConsumerOffsetInterval = 1000 * 5;
 
+    /**
+     * useless 
+     */
+    @Deprecated
     private int flushConsumerOffsetHistoryInterval = 1000 * 60;
 
+    /**
+     * whether reject transaction message
+     * default: false
+     */
     @ImportantField
     private boolean rejectTransactionMessage = false;
 
-    @ImportantField
-    private boolean fetchNameSrvAddrByDnsLookup = false;
 
-    @ImportantField
-    private boolean fetchNamesrvAddrByAddressServer = false;
 
     private int sendThreadPoolQueueCapacity = 10000;
     private int putThreadPoolQueueCapacity = 10000;
@@ -153,7 +220,7 @@ public class BrokerConfig extends BrokerIdentity {
 
     private long startAcceptSendRequestTimeStamp = 0L;
 
-    private boolean traceOn = true;
+
 
     // Switch of filter bit map calculation.
     // If switch on:
@@ -740,14 +807,6 @@ public class BrokerConfig extends BrokerIdentity {
 
     public void setFlushConsumerOffsetInterval(int flushConsumerOffsetInterval) {
         this.flushConsumerOffsetInterval = flushConsumerOffsetInterval;
-    }
-
-    public int getFlushConsumerOffsetHistoryInterval() {
-        return flushConsumerOffsetHistoryInterval;
-    }
-
-    public void setFlushConsumerOffsetHistoryInterval(int flushConsumerOffsetHistoryInterval) {
-        this.flushConsumerOffsetHistoryInterval = flushConsumerOffsetHistoryInterval;
     }
 
     public boolean isClusterTopicEnable() {
