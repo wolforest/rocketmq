@@ -620,7 +620,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
 
             Properties properties = PropertyUtils.string2Properties(bodyStr);
             if (properties == null) {
-                log.error("updateConfig MixAll.string2Properties error {}", bodyStr);
+                log.error("updateConfig PropertyUtils.string2Properties error {}", bodyStr);
                 response.setCode(ResponseCode.SYSTEM_ERROR);
                 response.setRemark("string2Properties error");
                 return response;

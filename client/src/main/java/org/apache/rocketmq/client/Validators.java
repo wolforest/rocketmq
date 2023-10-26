@@ -127,7 +127,7 @@ public class Validators {
     }
 
     public static void checkBrokerConfig(final Properties brokerConfig) throws MQClientException {
-        // TODO: use MixAll.isPropertyValid() when jdk upgrade to 1.8
+        // TODO: use PropertyUtils.isPropertyValid() when jdk upgrade to 1.8
         if (brokerConfig.containsKey("brokerPermission")
             && !PermName.isValid(brokerConfig.getProperty("brokerPermission"))) {
             throw new MQClientException(ResponseCode.NO_PERMISSION,
