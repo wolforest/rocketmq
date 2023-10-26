@@ -155,7 +155,7 @@ public class BrokerConfig extends BrokerIdentity {
     private int flushConsumerOffsetInterval = 1000 * 5;
 
     /**
-     * useless 
+     * useless
      */
     @Deprecated
     private int flushConsumerOffsetHistoryInterval = 1000 * 60;
@@ -166,8 +166,6 @@ public class BrokerConfig extends BrokerIdentity {
      */
     @ImportantField
     private boolean rejectTransactionMessage = false;
-
-
 
     private int sendThreadPoolQueueCapacity = 10000;
     private int putThreadPoolQueueCapacity = 10000;
@@ -229,9 +227,11 @@ public class BrokerConfig extends BrokerIdentity {
     private boolean enableCalcFilterBitMap = false;
 
     //Reject the pull consumer instance to pull messages from broker.
+    //this property is used while receiving heartbeat request
     private boolean rejectPullConsumerEnable = false;
 
     // Expect num of consumers will use filter.
+    // used by bloom filer with maxErrorRateOfBloomFilter
     private int expectConsumerNumUseFilter = 32;
 
     // Error rate of bloom filter, 1~100.
@@ -240,8 +240,13 @@ public class BrokerConfig extends BrokerIdentity {
     //how long to clean filter data after dead.Default: 24h
     private long filterDataCleanTimeSpan = 24 * 3600 * 1000;
 
-    // whether do filter when retry.
+    // whether to do filter while retry.
     private boolean filterSupportRetry = false;
+
+    /**
+     * whether property filter is supported
+     * to use SQL92 filter, this must be set true
+     */
     private boolean enablePropertyFilter = false;
 
     private boolean compressedRegister = false;
