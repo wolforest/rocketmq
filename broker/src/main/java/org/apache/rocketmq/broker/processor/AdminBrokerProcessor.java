@@ -57,6 +57,7 @@ import org.apache.rocketmq.common.stats.StatsItem;
 import org.apache.rocketmq.common.stats.StatsSnapshot;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.NumberUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.filter.util.BitsArray;
@@ -2401,13 +2402,13 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         MessageStore messageStore = this.brokerController.getMessageStore();
         runtimeInfo.put("remainTransientStoreBufferNumbs", String.valueOf(messageStore.remainTransientStoreBufferNumbs()));
         if (this.brokerController.getMessageStore() instanceof DefaultMessageStore && ((DefaultMessageStore) this.brokerController.getMessageStore()).isTransientStorePoolEnable()) {
-            runtimeInfo.put("remainHowManyDataToCommit", MixAll.humanReadableByteCount(messageStore.remainHowManyDataToCommit(), false));
+            runtimeInfo.put("remainHowManyDataToCommit", NumberUtils.humanReadableByteCount(messageStore.remainHowManyDataToCommit(), false));
         }
-        runtimeInfo.put("remainHowManyDataToFlush", MixAll.humanReadableByteCount(messageStore.remainHowManyDataToFlush(), false));
+        runtimeInfo.put("remainHowManyDataToFlush", NumberUtils.humanReadableByteCount(messageStore.remainHowManyDataToFlush(), false));
 
         java.io.File commitLogDir = new java.io.File(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
         if (commitLogDir.exists()) {
-            runtimeInfo.put("commitLogDirCapacity", String.format("Total : %s, Free : %s.", MixAll.humanReadableByteCount(commitLogDir.getTotalSpace(), false), MixAll.humanReadableByteCount(commitLogDir.getFreeSpace(), false)));
+            runtimeInfo.put("commitLogDirCapacity", String.format("Total : %s, Free : %s.", NumberUtils.humanReadableByteCount(commitLogDir.getTotalSpace(), false), NumberUtils.humanReadableByteCount(commitLogDir.getFreeSpace(), false)));
         }
 
         runtimeInfo.put("sendThreadPoolQueueSize", String.valueOf(this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().size()));

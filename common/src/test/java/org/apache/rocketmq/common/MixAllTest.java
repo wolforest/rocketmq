@@ -21,6 +21,7 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NumberUtils;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,10 +38,10 @@ public class MixAllTest {
     @Test
     public void testCompareAndIncreaseOnly() {
         AtomicLong target = new AtomicLong(5);
-        assertThat(MixAll.compareAndIncreaseOnly(target, 6)).isTrue();
+        assertThat(NumberUtils.compareAndIncreaseOnly(target, 6)).isTrue();
         assertThat(target.get()).isEqualTo(6);
 
-        assertThat(MixAll.compareAndIncreaseOnly(target, 4)).isFalse();
+        assertThat(NumberUtils.compareAndIncreaseOnly(target, 4)).isFalse();
         assertThat(target.get()).isEqualTo(6);
     }
 

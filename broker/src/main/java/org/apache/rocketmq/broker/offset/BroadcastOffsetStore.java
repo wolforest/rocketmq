@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.NumberUtils;
 
 public class BroadcastOffsetStore {
 
@@ -34,7 +34,7 @@ public class BroadcastOffsetStore {
 
         if (null != offsetOld) {
             if (increaseOnly) {
-                MixAll.compareAndIncreaseOnly(offsetOld, offset);
+                NumberUtils.compareAndIncreaseOnly(offsetOld, offset);
             } else {
                 offsetOld.set(offset);
             }

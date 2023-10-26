@@ -19,7 +19,6 @@ package org.apache.rocketmq.common;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 
 public class MixAll {
@@ -95,36 +94,6 @@ public class MixAll {
 
     public static String getDLQTopic(final String consumerGroup) {
         return DLQ_GROUP_TOPIC_PREFIX + consumerGroup;
-    }
-
-    public static boolean compareAndIncreaseOnly(final AtomicLong target, final long value) {
-        long prev = target.get();
-        while (value > prev) {
-            boolean updated = target.compareAndSet(prev, value);
-            if (updated)
-                return true;
-
-            prev = target.get();
-        }
-
-        return false;
-    }
-
-    public static String humanReadableByteCount(long bytes, boolean si) {
-        int unit = si ? 1000 : 1024;
-        if (bytes < unit)
-            return bytes + " B";
-        int exp = (int) (Math.log(bytes) / Math.log(unit));
-        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
-    }
-
-    public static int compareInteger(int x, int y) {
-        return Integer.compare(x, y);
-    }
-
-    public static int compareLong(long x, long y) {
-        return Long.compare(x, y);
     }
 
     public static boolean isLmq(String lmqMetaData) {
