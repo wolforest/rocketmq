@@ -28,6 +28,7 @@ import java.util.Properties;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.junit.Test;
 
@@ -45,7 +46,7 @@ public class UtilAllTest {
         properties.setProperty("demoLength", "456");
         properties.setProperty("demoOK", "true");
         properties.setProperty("demoName", "TestDemo");
-        MixAll.properties2Object(properties, demoConfig);
+        PropertyUtils.properties2Object(properties, demoConfig);
         assertThat(demoConfig.getDemoLength()).isEqualTo(456);
         assertThat(demoConfig.getDemoWidth()).isEqualTo(123);
         assertThat(demoConfig.isDemoOK()).isTrue();
@@ -63,7 +64,7 @@ public class UtilAllTest {
         demoConfig.setSubField0("1");
         demoConfig.setSubField1(false);
 
-        Properties properties = MixAll.object2Properties(demoConfig);
+        Properties properties = PropertyUtils.object2Properties(demoConfig);
         assertThat(properties.getProperty("demoLength")).isEqualTo("123");
         assertThat(properties.getProperty("demoWidth")).isEqualTo("456");
         assertThat(properties.getProperty("demoOK")).isEqualTo("true");
@@ -72,7 +73,7 @@ public class UtilAllTest {
         assertThat(properties.getProperty("subField0")).isEqualTo("1");
         assertThat(properties.getProperty("subField1")).isEqualTo("false");
 
-        properties = MixAll.object2Properties(new Object());
+        properties = PropertyUtils.object2Properties(new Object());
         assertEquals(0, properties.size());
     }
 
@@ -86,7 +87,7 @@ public class UtilAllTest {
         p2.setProperty("a", "1");
         p2.setProperty("b", "2");
 
-        assertThat(MixAll.isPropertiesEqual(p1, p2)).isTrue();
+        assertThat(PropertyUtils.isPropertiesEqual(p1, p2)).isTrue();
     }
 
     @Test

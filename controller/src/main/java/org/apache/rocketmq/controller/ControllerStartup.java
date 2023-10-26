@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.ControllerConfig;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -84,9 +85,9 @@ public class ControllerStartup {
                 InputStream in = new BufferedInputStream(new FileInputStream(file));
                 properties = new Properties();
                 properties.load(in);
-                MixAll.properties2Object(properties, controllerConfig);
-                MixAll.properties2Object(properties, nettyServerConfig);
-                MixAll.properties2Object(properties, nettyClientConfig);
+                PropertyUtils.properties2Object(properties, controllerConfig);
+                PropertyUtils.properties2Object(properties, nettyServerConfig);
+                PropertyUtils.properties2Object(properties, nettyClientConfig);
 
                 System.out.printf("load config properties file OK, %s%n", file);
                 in.close();
@@ -95,13 +96,13 @@ public class ControllerStartup {
 
         if (commandLine.hasOption('p')) {
             Logger console = LoggerFactory.getLogger(LoggerName.CONTROLLER_CONSOLE_NAME);
-            MixAll.printObjectProperties(console, controllerConfig);
-            MixAll.printObjectProperties(console, nettyServerConfig);
-            MixAll.printObjectProperties(console, nettyClientConfig);
+            PropertyUtils.printObjectProperties(console, controllerConfig);
+            PropertyUtils.printObjectProperties(console, nettyServerConfig);
+            PropertyUtils.printObjectProperties(console, nettyClientConfig);
             System.exit(0);
         }
 
-        MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), controllerConfig);
+        PropertyUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), controllerConfig);
 
         if (StringUtils.isEmpty(controllerConfig.getRocketmqHome())) {
             System.out.printf("Please set the %s or %s variable in your environment!%n", MixAll.ROCKETMQ_HOME_ENV, MixAll.ROCKETMQ_HOME_PROPERTY);
@@ -110,8 +111,8 @@ public class ControllerStartup {
 
         log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
-        MixAll.printObjectProperties(log, controllerConfig);
-        MixAll.printObjectProperties(log, nettyServerConfig);
+        PropertyUtils.printObjectProperties(log, controllerConfig);
+        PropertyUtils.printObjectProperties(log, nettyServerConfig);
 
         final ControllerManager controllerManager = new ControllerManager(controllerConfig, nettyServerConfig, nettyClientConfig);
         // remember all configs to prevent discard

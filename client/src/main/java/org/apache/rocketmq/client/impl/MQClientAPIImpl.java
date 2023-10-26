@@ -64,6 +64,7 @@ import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.ChannelUtil;
 import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.ChannelEventListener;
@@ -1839,7 +1840,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_BROKER_CONFIG, null);
 
-        String str = MixAll.properties2String(properties);
+        String str = PropertyUtils.properties2String(properties);
         if (str != null && str.length() > 0) {
             request.setBody(str.getBytes(MixAll.DEFAULT_CHARSET));
             RemotingCommand response = this.remotingClient
@@ -1865,7 +1866,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
-                return MixAll.string2Properties(new String(response.getBody(), MixAll.DEFAULT_CHARSET));
+                return PropertyUtils.string2Properties(new String(response.getBody(), MixAll.DEFAULT_CHARSET));
             }
             default:
                 break;
@@ -1877,7 +1878,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     public void updateColdDataFlowCtrGroupConfig(final String addr, final Properties properties, final long timeoutMillis)
         throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_COLD_DATA_FLOW_CTR_CONFIG, null);
-        String str = MixAll.properties2String(properties);
+        String str = PropertyUtils.properties2String(properties);
         if (str != null && str.length() > 0) {
             request.setBody(str.getBytes(MixAll.DEFAULT_CHARSET));
             RemotingCommand response = this.remotingClient.invokeSync(
@@ -2874,7 +2875,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     public void updateNameServerConfig(final Properties properties, final List<String> nameServers, long timeoutMillis)
         throws UnsupportedEncodingException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException,
         RemotingConnectException, MQClientException {
-        String str = MixAll.properties2String(properties);
+        String str = PropertyUtils.properties2String(properties);
         if (str == null || str.length() < 1) {
             return;
         }
@@ -2924,7 +2925,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
             assert response != null;
 
             if (ResponseCode.SUCCESS == response.getCode()) {
-                configMap.put(nameServer, MixAll.string2Properties(new String(response.getBody(), MixAll.DEFAULT_CHARSET)));
+                configMap.put(nameServer, PropertyUtils.string2Properties(new String(response.getBody(), MixAll.DEFAULT_CHARSET)));
             } else {
                 throw new MQClientException(response.getCode(), response.getRemark());
             }
@@ -3207,7 +3208,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
             assert response != null;
 
             if (ResponseCode.SUCCESS == response.getCode()) {
-                configMap.put(controller, MixAll.string2Properties(new String(response.getBody(), MixAll.DEFAULT_CHARSET)));
+                configMap.put(controller, PropertyUtils.string2Properties(new String(response.getBody(), MixAll.DEFAULT_CHARSET)));
             } else {
                 throw new MQClientException(response.getCode(), response.getRemark());
             }
@@ -3218,7 +3219,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     public void updateControllerConfig(final Properties properties, final List<String> controllers,
         final long timeoutMillis) throws InterruptedException, RemotingConnectException, UnsupportedEncodingException,
         RemotingSendRequestException, RemotingTimeoutException, MQClientException {
-        String str = MixAll.properties2String(properties);
+        String str = PropertyUtils.properties2String(properties);
         if (str.length() < 1 || controllers == null || controllers.isEmpty()) {
             return;
         }

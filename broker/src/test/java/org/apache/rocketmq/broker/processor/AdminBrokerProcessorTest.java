@@ -54,6 +54,7 @@ import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
@@ -357,7 +358,7 @@ public class AdminBrokerProcessorTest {
 
         // Update allowed value
         properties.setProperty("allAckInSyncStateSet", "true");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         RemotingCommand response = adminBrokerProcessor.processRequest(ctx, updateConfigRequest);
 
@@ -367,7 +368,7 @@ public class AdminBrokerProcessorTest {
         //update disallowed value
         properties.clear();
         properties.setProperty("brokerConfigPath", "test/path");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = adminBrokerProcessor.processRequest(ctx, updateConfigRequest);
 

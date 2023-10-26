@@ -24,6 +24,7 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.namesrv.NamesrvUtil;
 import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.namesrv.NamesrvController;
@@ -617,7 +618,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
                 return response;
             }
 
-            Properties properties = MixAll.string2Properties(bodyStr);
+            Properties properties = PropertyUtils.string2Properties(bodyStr);
             if (properties == null) {
                 log.error("updateConfig MixAll.string2Properties error {}", bodyStr);
                 response.setCode(ResponseCode.SYSTEM_ERROR);

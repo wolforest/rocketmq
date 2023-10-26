@@ -57,6 +57,7 @@ import org.apache.rocketmq.common.stats.StatsItem;
 import org.apache.rocketmq.common.stats.StatsSnapshot;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.filter.util.BitsArray;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -778,7 +779,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         if (body != null) {
             try {
                 String bodyStr = new String(body, MixAll.DEFAULT_CHARSET);
-                Properties properties = MixAll.string2Properties(bodyStr);
+                Properties properties = PropertyUtils.string2Properties(bodyStr);
                 if (properties != null) {
                     LOGGER.info("updateColdDataFlowCtrGroupConfig new config: {}, client: {}", properties, ctx.channel().remoteAddress());
                     properties.entrySet().stream().forEach(i -> {
@@ -905,7 +906,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         if (body != null) {
             try {
                 String bodyStr = new String(body, MixAll.DEFAULT_CHARSET);
-                Properties properties = MixAll.string2Properties(bodyStr);
+                Properties properties = PropertyUtils.string2Properties(bodyStr);
                 if (properties != null) {
                     LOGGER.info("updateBrokerConfig, new config: [{}] client: {} ", properties, callerAddress);
 

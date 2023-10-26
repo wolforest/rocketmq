@@ -46,6 +46,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -431,7 +432,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
     public ConsumerRunningInfo consumerRunningInfo() {
         ConsumerRunningInfo info = new ConsumerRunningInfo();
 
-        Properties prop = MixAll.object2Properties(this.defaultMQPullConsumer);
+        Properties prop = PropertyUtils.object2Properties(this.defaultMQPullConsumer);
         prop.put(ConsumerRunningInfo.PROP_CONSUMER_START_TIMESTAMP, String.valueOf(this.consumerStartTimestamp));
         info.setProperties(prop);
 

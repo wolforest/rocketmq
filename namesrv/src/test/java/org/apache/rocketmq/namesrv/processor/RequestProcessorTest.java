@@ -18,10 +18,10 @@ package org.apache.rocketmq.namesrv.processor;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.namesrv.NamesrvController;
 import org.apache.rocketmq.namesrv.routeinfo.RouteInfoManager;
@@ -188,7 +188,7 @@ public class RequestProcessorTest {
 
         // Update allowed value
         properties.setProperty("enableTopicList", "true");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         RemotingCommand response = defaultRequestProcessor.processRequest(null, updateConfigRequest);
 
@@ -198,7 +198,7 @@ public class RequestProcessorTest {
         //update disallowed value
         properties.clear();
         properties.setProperty("configStorePath", "test/path");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = defaultRequestProcessor.processRequest(null, updateConfigRequest);
 
@@ -209,7 +209,7 @@ public class RequestProcessorTest {
         //update disallowed values
         properties.clear();
         properties.setProperty("kvConfigPath", "test/path");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = defaultRequestProcessor.processRequest(null, updateConfigRequest);
 

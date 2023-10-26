@@ -34,6 +34,7 @@ import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -131,7 +132,7 @@ public class BrokerContainerStartup {
 
         Properties properties = loadConfigProperties(configFileHelper, brokerContainerConfigPath);
         if (properties != null) {
-            MixAll.properties2Object(properties, brokerContainerConfig);
+            PropertyUtils.properties2Object(properties, brokerContainerConfig);
         }
         return brokerContainerConfig.getBrokerConfigPaths();
     }
@@ -169,10 +170,10 @@ public class BrokerContainerStartup {
         BrokerConfig brokerConfig = new BrokerConfig();
 
         if (brokerProperties != null) {
-            MixAll.properties2Object(brokerProperties, brokerConfig);
+            PropertyUtils.properties2Object(brokerProperties, brokerConfig);
         }
 
-        MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
+        PropertyUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
         brokerConfig.setBrokerConfigPath(filePath);
 
         return brokerConfig;
@@ -182,7 +183,7 @@ public class BrokerContainerStartup {
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
 
         if (brokerProperties != null) {
-            MixAll.properties2Object(brokerProperties, messageStoreConfig);
+            PropertyUtils.properties2Object(brokerProperties, messageStoreConfig);
         }
 
         messageStoreConfig.setHaListenPort(brokerConfig.getListenPort() + 1);
@@ -222,8 +223,8 @@ public class BrokerContainerStartup {
 
     private static void logConfigProperties(BrokerConfig brokerConfig, MessageStoreConfig messageStoreConfig) {
         log = LoggerFactory.getLogger(brokerConfig.getIdentifier() + LoggerName.BROKER_LOGGER_NAME);
-        MixAll.printObjectProperties(log, brokerConfig);
-        MixAll.printObjectProperties(log, messageStoreConfig);
+        PropertyUtils.printObjectProperties(log, brokerConfig);
+        PropertyUtils.printObjectProperties(log, messageStoreConfig);
     }
 
     public static BrokerContainer startBrokerContainer(BrokerContainer brokerContainer) {
@@ -366,12 +367,12 @@ public class BrokerContainerStartup {
         properties = CONFIG_FILE_HELPER.loadConfig();
         if (properties != null) {
             properties2SystemEnv(properties);
-            MixAll.properties2Object(properties, containerConfig);
-            MixAll.properties2Object(properties, nettyServerConfig);
-            MixAll.properties2Object(properties, nettyClientConfig);
+            PropertyUtils.properties2Object(properties, containerConfig);
+            PropertyUtils.properties2Object(properties, nettyServerConfig);
+            PropertyUtils.properties2Object(properties, nettyClientConfig);
         }
 
-        MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), containerConfig);
+        PropertyUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), containerConfig);
     }
 
     private static void initRocketmqHome(BrokerContainerConfig containerConfig) {
@@ -404,22 +405,22 @@ public class BrokerContainerStartup {
     private static void printObjectProperties(BrokerContainerConfig containerConfig, NettyServerConfig nettyServerConfig, NettyClientConfig nettyClientConfig) {
         if (commandLine.hasOption(PRINT_PROPERTIES_OPTION)) {
             Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
-            MixAll.printObjectProperties(console, containerConfig);
-            MixAll.printObjectProperties(console, nettyServerConfig);
-            MixAll.printObjectProperties(console, nettyClientConfig);
+            PropertyUtils.printObjectProperties(console, containerConfig);
+            PropertyUtils.printObjectProperties(console, nettyServerConfig);
+            PropertyUtils.printObjectProperties(console, nettyClientConfig);
             System.exit(0);
         } else if (commandLine.hasOption(PRINT_IMPORTANT_PROPERTIES_OPTION)) {
             Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
-            MixAll.printObjectProperties(console, containerConfig, true);
-            MixAll.printObjectProperties(console, nettyServerConfig, true);
-            MixAll.printObjectProperties(console, nettyClientConfig, true);
+            PropertyUtils.printObjectProperties(console, containerConfig, true);
+            PropertyUtils.printObjectProperties(console, nettyServerConfig, true);
+            PropertyUtils.printObjectProperties(console, nettyClientConfig, true);
             System.exit(0);
         }
 
         log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-        MixAll.printObjectProperties(log, containerConfig);
-        MixAll.printObjectProperties(log, nettyServerConfig);
-        MixAll.printObjectProperties(log, nettyClientConfig);
+        PropertyUtils.printObjectProperties(log, containerConfig);
+        PropertyUtils.printObjectProperties(log, nettyServerConfig);
+        PropertyUtils.printObjectProperties(log, nettyClientConfig);
     }
 
     private static void initContainer(BrokerContainer brokerContainer) {

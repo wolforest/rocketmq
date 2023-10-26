@@ -33,9 +33,9 @@ import org.apache.rocketmq.acl.AccessValidator;
 import org.apache.rocketmq.acl.plain.PlainAccessValidator;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerStartup;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.thread.ThreadPoolMonitor;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.common.utils.ServiceProvider;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -150,7 +150,7 @@ public class ProxyStartup {
         }
 
         CommandLineArgument commandLineArgument = new CommandLineArgument();
-        MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), commandLineArgument);
+        PropertyUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), commandLineArgument);
         return commandLineArgument;
     }
 

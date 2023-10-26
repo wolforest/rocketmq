@@ -22,6 +22,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.srvutil.ServerUtil;
 import org.apache.rocketmq.tools.command.SubCommandException;
 import org.apache.rocketmq.tools.command.server.ServerResponseMocker;
@@ -36,7 +37,7 @@ public class GetBrokerConfigCommandTest extends ServerResponseMocker {
         properties.setProperty("stat", "123");
         properties.setProperty("ip", "192.168.1.1");
         properties.setProperty("broker_name", "broker_101");
-        sb.append(MixAll.properties2String(properties));
+        sb.append(PropertyUtils.properties2String(properties));
         try {
             return sb.toString().getBytes(MixAll.DEFAULT_CHARSET);
         } catch (UnsupportedEncodingException e) {
