@@ -33,13 +33,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
@@ -176,7 +176,7 @@ public class TimerMessageStoreTest {
 
     @Test
     public void testPutTimerMessage() throws Exception {
-        Assume.assumeFalse(MixAll.isWindows());
+        Assume.assumeFalse(PlatformUtils.isWindows());
         String topic = "TimerTest_testPutTimerMessage";
 
         final TimerMessageStore timerMessageStore = createTimerMessageStore(null);
@@ -268,8 +268,8 @@ public class TimerMessageStoreTest {
     @Test
     public void testPutExpiredTimerMessage() throws Exception {
         // Skip on Mac to make CI pass
-        Assume.assumeFalse(MixAll.isMac());
-        Assume.assumeFalse(MixAll.isWindows());
+        Assume.assumeFalse(PlatformUtils.isMac());
+        Assume.assumeFalse(PlatformUtils.isWindows());
 
         String topic = "TimerTest_testPutExpiredTimerMessage";
 

@@ -18,11 +18,11 @@
 package org.apache.rocketmq.store;
 
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.FlushDiskType;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
@@ -166,7 +166,7 @@ public class HATest {
     @Test
     public void testSemiSyncReplicaWhenSlaveActingMaster() throws Exception {
         // SKip MacOS
-        Assume.assumeFalse(MixAll.isMac());
+        Assume.assumeFalse(PlatformUtils.isMac());
         long totalMsgs = 5;
         queueTotal = 1;
         messageBody = storeMessage.getBytes();

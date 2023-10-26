@@ -18,9 +18,9 @@
 package org.apache.rocketmq.store;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.logfile.MappedFileQueue;
@@ -395,7 +395,7 @@ public class MappedFileQueueTest {
 
     @Test
     public void testMappedFile_Rename() throws IOException, InterruptedException {
-        Assume.assumeFalse(MixAll.isWindows());
+        Assume.assumeFalse(PlatformUtils.isWindows());
         final String fixedMsg = RandomStringUtils.randomAlphanumeric(128);
         final byte[] msgByteArr = fixedMsg.getBytes(StandardCharsets.UTF_8);
         final int mappedFileSize = 5 * 1024 * 1024;

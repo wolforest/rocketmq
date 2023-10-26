@@ -54,6 +54,7 @@ import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -687,6 +688,6 @@ public class AdminBrokerProcessorTest {
     }
 
     private boolean notToBeExecuted() {
-        return MixAll.isMac();
+        return PlatformUtils.isMac();
     }
 }
