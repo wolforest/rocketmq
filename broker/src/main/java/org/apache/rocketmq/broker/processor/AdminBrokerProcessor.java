@@ -522,7 +522,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
         String topic = requestHeader.getTopic();
 
-        if (UtilAll.isBlank(topic)) {
+        if (StringUtils.isBlank(topic)) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark("The specified topic is blank.");
             return response;
