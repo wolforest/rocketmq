@@ -44,15 +44,12 @@ public class RocksDBConfigManager {
         if (!this.configRocksDBStorage.start()) {
             return false;
         }
-        RocksIterator iterator = this.configRocksDBStorage.iterator();
-        try {
+        try (RocksIterator iterator = this.configRocksDBStorage.iterator()) {
             iterator.seekToFirst();
             while (iterator.isValid()) {
                 biConsumer.accept(iterator.key(), iterator.value());
                 iterator.next();
             }
-        } finally {
-            iterator.close();
         }
 
         this.flushOptions = new FlushOptions();

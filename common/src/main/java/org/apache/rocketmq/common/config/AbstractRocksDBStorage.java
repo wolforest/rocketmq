@@ -73,7 +73,7 @@ public abstract class AbstractRocksDBStorage {
     protected CompactRangeOptions compactRangeOptions;
 
     protected ColumnFamilyHandle defaultCFHandle;
-    protected final List<ColumnFamilyOptions> cfOptions = new ArrayList();
+    protected final List<ColumnFamilyOptions> cfOptions = new ArrayList<>();
 
     protected volatile boolean loaded;
     private volatile boolean closed;
@@ -82,7 +82,7 @@ public abstract class AbstractRocksDBStorage {
     private final ScheduledExecutorService reloadScheduler = ThreadUtils.newScheduledThreadPool(1, new ThreadFactoryImpl("RocksDBStorageReloadService_"));
     private final ThreadPoolExecutor manualCompactionThread = (ThreadPoolExecutor) ThreadUtils.newThreadPoolExecutor(
             1, 1, 1000 * 60, TimeUnit.MILLISECONDS,
-            new ArrayBlockingQueue(1),
+            new ArrayBlockingQueue<>(1),
             new ThreadFactoryImpl("RocksDBManualCompactionService_"),
             new ThreadPoolExecutor.DiscardOldestPolicy());
 

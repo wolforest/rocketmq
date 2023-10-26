@@ -110,13 +110,13 @@ public class ConfigRocksDBStorage extends AbstractRocksDBStorage {
 
             initOptions();
 
-            final List<ColumnFamilyDescriptor> cfDescriptors = new ArrayList();
+            final List<ColumnFamilyDescriptor> cfDescriptors = new ArrayList<>();
 
             ColumnFamilyOptions defaultOptions = createConfigOptions();
             this.cfOptions.add(defaultOptions);
             cfDescriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, defaultOptions));
 
-            final List<ColumnFamilyHandle> cfHandles = new ArrayList();
+            final List<ColumnFamilyHandle> cfHandles = new ArrayList<>();
             open(cfDescriptors, cfHandles);
 
             this.defaultCFHandle = cfHandles.get(0);
@@ -187,9 +187,9 @@ public class ConfigRocksDBStorage extends AbstractRocksDBStorage {
             setCreateIfMissing(true).
             setCreateMissingColumnFamilies(true).
             setMaxOpenFiles(-1).
-            setMaxLogFileSize(1 * SizeUnit.GB).
+            setMaxLogFileSize(SizeUnit.GB).
             setKeepLogFileNum(5).
-            setMaxManifestFileSize(1 * SizeUnit.GB).
+            setMaxManifestFileSize(SizeUnit.GB).
             setAllowConcurrentMemtableWrite(false).
             setStatistics(statistics).
             setStatsDumpPeriodSec(600).
