@@ -33,10 +33,10 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.FindBrokerResult;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.message.MessageQueueAssignment;
 import org.apache.rocketmq.common.message.MessageRequestMode;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.protocol.body.LockBatchRequestBody;
@@ -78,7 +78,7 @@ public abstract class RebalanceImpl {
     }
 
     public void unlock(final MessageQueue mq, final boolean oneway) {
-        FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MixAll.MASTER_ID, true);
+        FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MQUtils.MASTER_ID, true);
         if (findBrokerResult != null) {
             UnlockBatchRequestBody requestBody = new UnlockBatchRequestBody();
             requestBody.setConsumerGroup(this.consumerGroup);
@@ -108,7 +108,7 @@ public abstract class RebalanceImpl {
                 continue;
             }
 
-            FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(brokerName, MixAll.MASTER_ID, true);
+            FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(brokerName, MQUtils.MASTER_ID, true);
             if (findBrokerResult != null) {
                 UnlockBatchRequestBody requestBody = new UnlockBatchRequestBody();
                 requestBody.setConsumerGroup(this.consumerGroup);
@@ -157,7 +157,7 @@ public abstract class RebalanceImpl {
     }
 
     public boolean lock(final MessageQueue mq) {
-        FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MixAll.MASTER_ID, true);
+        FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MQUtils.MASTER_ID, true);
         if (findBrokerResult == null) {
             return false;
         }
@@ -201,7 +201,7 @@ public abstract class RebalanceImpl {
                 continue;
             }
 
-            FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(entry.getKey(), MixAll.MASTER_ID, true);
+            FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(entry.getKey(), MQUtils.MASTER_ID, true);
             if (findBrokerResult == null) {
                 continue;
             }
@@ -281,7 +281,7 @@ public abstract class RebalanceImpl {
                 balanced = this.rebalanceByTopic(topic, isOrder);
             }
         } catch (Throwable e) {
-            if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            if (!topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                 log.warn("rebalance Exception", e);
                 balanced = false;
             }
@@ -351,7 +351,7 @@ public abstract class RebalanceImpl {
 
         Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);
         if (null == mqSet) {
-            if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            if (!topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                 this.messageQueueChanged(topic, Collections.<MessageQueue>emptySet(), Collections.<MessageQueue>emptySet());
                 log.warn("doRebalance, {}, but the topic[{}] not exist.", consumerGroup, topic);
             }
@@ -640,7 +640,7 @@ public abstract class RebalanceImpl {
             }
         }
 
-        if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (!topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
             if (mq2PopAssignment.isEmpty() && !mq2PushAssignment.isEmpty()) {
                 //pop switch to push
                 //subscribe pop retry topic

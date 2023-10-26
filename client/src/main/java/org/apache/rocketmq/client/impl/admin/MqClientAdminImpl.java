@@ -26,11 +26,11 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.MqClientAdmin;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.RemotingClient;
@@ -83,7 +83,7 @@ public class MqClientAdminImpl implements MqClientAdmin {
         QueryMessageRequestHeader requestHeader, long timeoutMillis) {
         CompletableFuture<List<MessageExt>> future = new CompletableFuture<>();
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_MESSAGE, requestHeader);
-        request.addExtField(MixAll.UNIQUE_MSG_QUERY_FLAG, String.valueOf(uniqueKeyFlag));
+        request.addExtField(MQUtils.UNIQUE_MSG_QUERY_FLAG, String.valueOf(uniqueKeyFlag));
         remotingClient.invoke(address, request, timeoutMillis).thenAccept(response -> {
             if (response.getCode() == ResponseCode.SUCCESS) {
                 List<MessageExt> wrappers = MessageDecoder.decodesBatch(ByteBuffer.wrap(response.getBody()), true, decompressBody, true);

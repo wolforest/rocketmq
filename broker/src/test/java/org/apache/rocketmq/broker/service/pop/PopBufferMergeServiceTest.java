@@ -22,8 +22,8 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.schedule.ScheduleMessageService;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.heartbeat.ConsumerData;
@@ -78,7 +78,7 @@ public class PopBufferMergeServiceTest {
     public void testBasic() throws Exception {
         // This test case fails on Windows in CI pipeline
         // Disable it for later fix
-        Assume.assumeFalse(MixAll.isWindows());
+        Assume.assumeFalse(PlatformUtils.isWindows());
         PopBufferMergeService popBufferMergeService = new PopBufferMergeService(brokerController);
         popBufferMergeService.start();
         PopCheckPoint ck = new PopCheckPoint();

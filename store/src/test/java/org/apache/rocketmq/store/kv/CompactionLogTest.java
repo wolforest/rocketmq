@@ -20,10 +20,10 @@ package org.apache.rocketmq.store.kv;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.store.AppendMessageResult;
 import org.apache.rocketmq.store.AppendMessageStatus;
 import org.apache.rocketmq.store.commitlog.CommitLog;
@@ -233,7 +233,7 @@ public class CompactionLogTest {
 
     @Test
     public void testReplaceFiles() throws IOException, IllegalAccessException {
-        Assume.assumeFalse(MixAll.isWindows());
+        Assume.assumeFalse(PlatformUtils.isWindows());
         CompactionLog clog = mock(CompactionLog.class);
         doCallRealMethod().when(clog).replaceFiles(anyList(), any(CompactionLog.TopicPartitionLog.class),
             any(CompactionLog.TopicPartitionLog.class));

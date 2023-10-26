@@ -28,8 +28,8 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
@@ -138,7 +138,7 @@ public class CLusterSendMsgRTCommand implements SubCommand {
                     }
 
                     for (String brokerName : brokerNames) {
-                        Message msg = new Message(brokerName, getStringBySize(size).getBytes(MixAll.DEFAULT_CHARSET));
+                        Message msg = new Message(brokerName, getStringBySize(size).getBytes(MQUtils.DEFAULT_CHARSET));
                         long start = 0;
                         long end = 0;
                         long elapsed = 0;

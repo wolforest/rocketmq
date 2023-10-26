@@ -19,8 +19,8 @@ package org.apache.rocketmq.broker.util;
 import java.util.Objects;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.RunningFlags;
@@ -53,16 +53,16 @@ public class HookUtilsTest {
         Assert.assertEquals(PutMessageStatus.MESSAGE_ILLEGAL, Objects.requireNonNull(
             HookUtils.checkBeforePutMessage(brokerController, messageExt)).getPutMessageStatus());
 
-        messageExt.setTopic(MixAll.RETRY_GROUP_TOPIC_PREFIX +
+        messageExt.setTopic(MQUtils.RETRY_GROUP_TOPIC_PREFIX +
             RandomStringUtils.randomAlphabetic(Byte.MAX_VALUE + 1).toUpperCase());
         Assert.assertNull(HookUtils.checkBeforePutMessage(brokerController, messageExt));
 
-        messageExt.setTopic(MixAll.RETRY_GROUP_TOPIC_PREFIX +
-            RandomStringUtils.randomAlphabetic(255 - MixAll.RETRY_GROUP_TOPIC_PREFIX.length()).toUpperCase());
+        messageExt.setTopic(MQUtils.RETRY_GROUP_TOPIC_PREFIX +
+            RandomStringUtils.randomAlphabetic(255 - MQUtils.RETRY_GROUP_TOPIC_PREFIX.length()).toUpperCase());
         Assert.assertNull(HookUtils.checkBeforePutMessage(brokerController, messageExt));
 
-        messageExt.setTopic(MixAll.RETRY_GROUP_TOPIC_PREFIX +
-            RandomStringUtils.randomAlphabetic(256 - MixAll.RETRY_GROUP_TOPIC_PREFIX.length()).toUpperCase());
+        messageExt.setTopic(MQUtils.RETRY_GROUP_TOPIC_PREFIX +
+            RandomStringUtils.randomAlphabetic(256 - MQUtils.RETRY_GROUP_TOPIC_PREFIX.length()).toUpperCase());
         Assert.assertEquals(PutMessageStatus.MESSAGE_ILLEGAL, Objects.requireNonNull(
             HookUtils.checkBeforePutMessage(brokerController, messageExt)).getPutMessageStatus());
     }

@@ -20,9 +20,9 @@ package org.apache.rocketmq.store.ha;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -85,7 +85,7 @@ public class GroupTransferService extends ServiceThread {
             boolean transferOK = false;
 
             long deadLine = req.getDeadLine();
-            final boolean allAckInSyncStateSet = req.getAckNums() == MixAll.ALL_ACK_IN_SYNC_STATE_SET;
+            final boolean allAckInSyncStateSet = req.getAckNums() == MQUtils.ALL_ACK_IN_SYNC_STATE_SET;
 
             for (int i = 0; !transferOK && deadLine - System.nanoTime() > 0; i++) {
                 if (i > 0) {

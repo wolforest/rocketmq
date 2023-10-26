@@ -33,7 +33,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.PermName;
@@ -41,6 +40,7 @@ import org.apache.rocketmq.common.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.sysflag.TopicSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.ConcurrentHashMapUtils;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.namesrv.NamesrvController;
@@ -300,7 +300,7 @@ public class RouteInfoManager {
             String oldAddr = brokerAddrsMap.put(brokerId, brokerAddr);
             registerFirst = registerFirst || (StringUtils.isEmpty(oldAddr));
 
-            boolean isMaster = MixAll.MASTER_ID == brokerId;
+            boolean isMaster = MQUtils.MASTER_ID == brokerId;
             boolean isPrimeSlave = !isOldVersionBroker && !isMaster
                 && brokerId == Collections.min(brokerAddrsMap.keySet());
 
@@ -381,8 +381,8 @@ public class RouteInfoManager {
                 }
             }
 
-            if (MixAll.MASTER_ID != brokerId) {
-                String masterAddr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
+            if (MQUtils.MASTER_ID != brokerId) {
+                String masterAddr = brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID);
                 if (masterAddr != null) {
                     BrokerAddrInfo masterAddrInfo = new BrokerAddrInfo(clusterName, masterAddr);
                     BrokerLiveInfo masterLiveInfo = this.brokerLiveTable.get(masterAddrInfo);
@@ -764,7 +764,7 @@ public class RouteInfoManager {
 
         for (final BrokerData brokerData : topicRouteData.getBrokerDatas()) {
             if (brokerData.getBrokerAddrs().size() != 0
-                && !brokerData.getBrokerAddrs().containsKey(MixAll.MASTER_ID)) {
+                && !brokerData.getBrokerAddrs().containsKey(MQUtils.MASTER_ID)) {
                 needActingMaster = true;
                 break;
             }
@@ -776,7 +776,7 @@ public class RouteInfoManager {
 
         for (final BrokerData brokerData : topicRouteData.getBrokerDatas()) {
             final HashMap<Long, String> brokerAddrs = brokerData.getBrokerAddrs();
-            if (brokerAddrs.size() == 0 || brokerAddrs.containsKey(MixAll.MASTER_ID) || !brokerData.isEnableActingMaster()) {
+            if (brokerAddrs.size() == 0 || brokerAddrs.containsKey(MQUtils.MASTER_ID) || !brokerData.isEnableActingMaster()) {
                 continue;
             }
 
@@ -786,7 +786,7 @@ public class RouteInfoManager {
                     if (!PermName.isWriteable(queueData.getPerm())) {
                         final Long minBrokerId = Collections.min(brokerAddrs.keySet());
                         final String actingMasterAddr = brokerAddrs.remove(minBrokerId);
-                        brokerAddrs.put(MixAll.MASTER_ID, actingMasterAddr);
+                        brokerAddrs.put(MQUtils.MASTER_ID, actingMasterAddr);
                     }
                     break;
                 }

@@ -44,7 +44,6 @@ import org.apache.rocketmq.broker.topic.TopicConfigManager;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.TopicQueueId;
@@ -54,6 +53,9 @@ import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.utils.PlatformUtils;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
@@ -159,7 +161,7 @@ public class AdminBrokerProcessorTest {
             TopicValidator.RMQ_SYS_OFFSET_MOVED_EVENT,
             TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC,
             this.brokerController.getBrokerConfig().getBrokerClusterName(),
-            this.brokerController.getBrokerConfig().getBrokerClusterName() + "_" + MixAll.REPLY_TOPIC_POSTFIX);
+            this.brokerController.getBrokerConfig().getBrokerClusterName() + "_" + MQUtils.REPLY_TOPIC_POSTFIX);
         if (this.brokerController.getBrokerConfig().isTraceTopicEnable()) {
             systemTopicSet.add(this.brokerController.getBrokerConfig().getMsgTraceTopicName());
         }
@@ -357,7 +359,7 @@ public class AdminBrokerProcessorTest {
 
         // Update allowed value
         properties.setProperty("allAckInSyncStateSet", "true");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         RemotingCommand response = adminBrokerProcessor.processRequest(ctx, updateConfigRequest);
 
@@ -367,7 +369,7 @@ public class AdminBrokerProcessorTest {
         //update disallowed value
         properties.clear();
         properties.setProperty("brokerConfigPath", "test/path");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = adminBrokerProcessor.processRequest(ctx, updateConfigRequest);
 
@@ -686,6 +688,6 @@ public class AdminBrokerProcessorTest {
     }
 
     private boolean notToBeExecuted() {
-        return MixAll.isMac();
+        return PlatformUtils.isMac();
     }
 }

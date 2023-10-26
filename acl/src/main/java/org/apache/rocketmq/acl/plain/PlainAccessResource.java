@@ -49,8 +49,8 @@ import org.apache.rocketmq.acl.common.AuthorizationHeader;
 import org.apache.rocketmq.acl.common.Permission;
 import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.PlainAccessConfig;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -184,7 +184,7 @@ public class PlainAccessResource implements AccessResource {
         SortedMap<String, String> map = new TreeMap<>();
         for (Map.Entry<String, String> entry : request.getExtFields().entrySet()) {
             if (request.getVersion() <= MQVersion.Version.V4_9_3.ordinal() &&
-                    MixAll.UNIQUE_MSG_QUERY_FLAG.equals(entry.getKey())) {
+                    MQUtils.UNIQUE_MSG_QUERY_FLAG.equals(entry.getKey())) {
                 continue;
             }
             if (!SessionCredentials.SIGNATURE.equals(entry.getKey())) {
@@ -323,7 +323,7 @@ public class PlainAccessResource implements AccessResource {
     }
 
     public static boolean isRetryTopic(String topic) {
-        return null != topic && topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX);
+        return null != topic && topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX);
     }
 
     public static String printStr(String resource, boolean isGroup) {
@@ -341,14 +341,14 @@ public class PlainAccessResource implements AccessResource {
         if (retryTopic == null) {
             return null;
         }
-        return retryTopic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+        return retryTopic.substring(MQUtils.RETRY_GROUP_TOPIC_PREFIX.length());
     }
 
     public static String getRetryTopic(String group) {
         if (group == null) {
             return null;
         }
-        return MixAll.getRetryTopic(group);
+        return MQUtils.getRetryTopic(group);
     }
 
     public void addResourceAndPerm(String resource, byte perm) {

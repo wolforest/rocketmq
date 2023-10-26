@@ -20,9 +20,9 @@ package org.apache.rocketmq.broker.subscription;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.SubscriptionGroupAttributes;
 import org.apache.rocketmq.common.attribute.BooleanAttribute;
+import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.junit.After;
@@ -59,7 +59,7 @@ public class SubscriptionGroupManagerTest {
 
     @After
     public void destroy() {
-        if (MixAll.isMac()) {
+        if (PlatformUtils.isMac()) {
             return;
         }
         if (subscriptionGroupManager != null) {
@@ -69,7 +69,7 @@ public class SubscriptionGroupManagerTest {
 
     @Test
     public void testUpdateAndCreateSubscriptionGroupInRocksdb() {
-        if (MixAll.isMac()) {
+        if (PlatformUtils.isMac()) {
             return;
         }
         when(brokerControllerMock.getMessageStoreConfig()).thenReturn(new MessageStoreConfig());

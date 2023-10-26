@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class LmqConsumerOffsetManager extends ConsumerOffsetManager {
@@ -38,7 +38,7 @@ public class LmqConsumerOffsetManager extends ConsumerOffsetManager {
 
     @Override
     public long queryOffset(final String group, final String topic, final int queueId) {
-        if (!MixAll.isLmq(group)) {
+        if (!MQUtils.isLmq(group)) {
             return super.queryOffset(group, topic, queueId);
         }
         // topic@group
@@ -52,7 +52,7 @@ public class LmqConsumerOffsetManager extends ConsumerOffsetManager {
 
     @Override
     public Map<Integer, Long> queryOffset(final String group, final String topic) {
-        if (!MixAll.isLmq(group)) {
+        if (!MQUtils.isLmq(group)) {
             return super.queryOffset(group, topic);
         }
         Map<Integer, Long> map = new HashMap<>();
@@ -68,7 +68,7 @@ public class LmqConsumerOffsetManager extends ConsumerOffsetManager {
     @Override
     public void commitOffset(final String clientHost, final String group, final String topic, final int queueId,
         final long offset) {
-        if (!MixAll.isLmq(group)) {
+        if (!MQUtils.isLmq(group)) {
             super.commitOffset(clientHost, group, topic, queueId, offset);
             return;
         }

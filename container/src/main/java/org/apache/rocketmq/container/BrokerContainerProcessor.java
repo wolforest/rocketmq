@@ -25,8 +25,9 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.service.SystemConfigFileHelper;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -130,7 +131,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
     private static BrokerConfig getBrokerConfig(Properties brokerProperties, String filePath) {
         BrokerConfig brokerConfig = new BrokerConfig();
 
-        MixAll.properties2Object(brokerProperties, brokerConfig);
+        PropertyUtils.properties2Object(brokerProperties, brokerConfig);
         if (filePath != null && !filePath.isEmpty()) {
             brokerConfig.setBrokerConfigPath(filePath);
         }
@@ -141,7 +142,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
     private static MessageStoreConfig getMessageStoreConfig(Properties brokerProperties, BrokerConfig brokerConfig) {
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
 
-        MixAll.properties2Object(brokerProperties, messageStoreConfig);
+        PropertyUtils.properties2Object(brokerProperties, messageStoreConfig);
         messageStoreConfig.setHaListenPort(brokerConfig.getListenPort() + 1);
 
         return messageStoreConfig;
@@ -156,7 +157,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
             switch (messageStoreConfig.getBrokerRole()) {
                 case ASYNC_MASTER:
                 case SYNC_MASTER:
-                    brokerConfig.setBrokerId(MixAll.MASTER_ID);
+                    brokerConfig.setBrokerId(MQUtils.MASTER_ID);
                     break;
                 case SLAVE:
                     if (brokerConfig.getBrokerId() <= 0) {
@@ -255,8 +256,8 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         byte[] body = request.getBody();
         if (body != null) {
             try {
-                String bodyStr = new String(body, MixAll.DEFAULT_CHARSET);
-                Properties properties = MixAll.string2Properties(bodyStr);
+                String bodyStr = new String(body, MQUtils.DEFAULT_CHARSET);
+                Properties properties = PropertyUtils.string2Properties(bodyStr);
                 if (properties != null) {
                     LOGGER.info("updateSharedBrokerConfig, new config: [{}] client: {} ", properties, ctx.channel().remoteAddress());
                     this.brokerContainer.getConfiguration().update(properties);
@@ -287,7 +288,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         String content = this.brokerContainer.getConfiguration().getAllConfigsFormatString();
         if (content != null && content.length() > 0) {
             try {
-                response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("", e);
 

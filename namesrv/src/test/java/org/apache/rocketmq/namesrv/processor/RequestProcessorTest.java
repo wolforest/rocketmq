@@ -18,10 +18,10 @@ package org.apache.rocketmq.namesrv.processor;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.namesrv.NamesrvController;
 import org.apache.rocketmq.namesrv.routeinfo.RouteInfoManager;
@@ -188,7 +188,7 @@ public class RequestProcessorTest {
 
         // Update allowed value
         properties.setProperty("enableTopicList", "true");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         RemotingCommand response = defaultRequestProcessor.processRequest(null, updateConfigRequest);
 
@@ -198,7 +198,7 @@ public class RequestProcessorTest {
         //update disallowed value
         properties.clear();
         properties.setProperty("configStorePath", "test/path");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = defaultRequestProcessor.processRequest(null, updateConfigRequest);
 
@@ -209,7 +209,7 @@ public class RequestProcessorTest {
         //update disallowed values
         properties.clear();
         properties.setProperty("kvConfigPath", "test/path");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = defaultRequestProcessor.processRequest(null, updateConfigRequest);
 
@@ -262,7 +262,7 @@ public class RequestProcessorTest {
             request.addExtField("brokerAddr", broker1Addr);
             request.addExtField("clusterName", cluster);
             request.addExtField("haServerAddr", "10.10.2.1");
-            request.addExtField("brokerId", String.valueOf(MixAll.MASTER_ID));
+            request.addExtField("brokerId", String.valueOf(MQUtils.MASTER_ID));
             request.setVersion(MQVersion.CURRENT_VERSION);
             TopicConfigSerializeWrapper topicConfigSerializeWrapper = new TopicConfigSerializeWrapper();
             topicConfigSerializeWrapper.setTopicConfigTable(new ConcurrentHashMap<>(Collections.singletonMap(topic, new TopicConfig(topic))));
@@ -294,7 +294,7 @@ public class RequestProcessorTest {
             request.addExtField("brokerAddr", broker2Addr);
             request.addExtField("clusterName", cluster);
             request.addExtField("haServerAddr", "10.10.2.1");
-            request.addExtField("brokerId", String.valueOf(MixAll.MASTER_ID));
+            request.addExtField("brokerId", String.valueOf(MQUtils.MASTER_ID));
             request.setVersion(MQVersion.CURRENT_VERSION);
             TopicConfigSerializeWrapper topicConfigSerializeWrapper = new TopicConfigSerializeWrapper();
             topicConfigSerializeWrapper.setTopicConfigTable(new ConcurrentHashMap<>(Collections.singletonMap(topic, new TopicConfig(topic))));

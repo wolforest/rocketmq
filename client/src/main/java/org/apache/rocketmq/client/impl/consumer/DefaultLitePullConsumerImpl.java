@@ -54,7 +54,6 @@ import org.apache.rocketmq.client.hook.FilterMessageHook;
 import org.apache.rocketmq.client.impl.CommunicationMode;
 import org.apache.rocketmq.client.impl.MQClientManager;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
@@ -63,6 +62,8 @@ import org.apache.rocketmq.common.help.FAQUrl;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
+import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
@@ -405,10 +406,10 @@ public class DefaultLitePullConsumerImpl implements MQConsumerInner {
         Validators.checkGroup(this.defaultLitePullConsumer.getConsumerGroup());
 
         // Check consumerGroup name is not equal default consumer group name.
-        if (this.defaultLitePullConsumer.getConsumerGroup().equals(MixAll.DEFAULT_CONSUMER_GROUP)) {
+        if (this.defaultLitePullConsumer.getConsumerGroup().equals(MQUtils.DEFAULT_CONSUMER_GROUP)) {
             throw new MQClientException(
                 "consumerGroup can not equal "
-                    + MixAll.DEFAULT_CONSUMER_GROUP
+                    + MQUtils.DEFAULT_CONSUMER_GROUP
                     + ", please specify another one."
                     + FAQUrl.suggestTodo(FAQUrl.CLIENT_PARAMETER_CHECK_URL),
                 null);
@@ -1170,7 +1171,7 @@ public class DefaultLitePullConsumerImpl implements MQConsumerInner {
     public ConsumerRunningInfo consumerRunningInfo() {
         ConsumerRunningInfo info = new ConsumerRunningInfo();
 
-        Properties prop = MixAll.object2Properties(this.defaultLitePullConsumer);
+        Properties prop = PropertyUtils.object2Properties(this.defaultLitePullConsumer);
         prop.put(ConsumerRunningInfo.PROP_CONSUMER_START_TIMESTAMP, String.valueOf(this.consumerStartTimestamp));
         info.setProperties(prop);
 

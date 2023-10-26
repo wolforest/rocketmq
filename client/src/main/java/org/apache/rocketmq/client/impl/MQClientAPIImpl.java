@@ -40,9 +40,9 @@ import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
+import org.apache.rocketmq.client.utils.MessageUtil;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.PlainAccessConfig;
 import org.apache.rocketmq.common.TopicConfig;
@@ -63,7 +63,9 @@ import org.apache.rocketmq.common.namesrv.TopAddressing;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.ChannelUtil;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.ChannelEventListener;
@@ -550,7 +552,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         long beginStartTime = System.currentTimeMillis();
         RemotingCommand request = null;
         String msgType = msg.getProperty(MessageConst.PROPERTY_MESSAGE_TYPE);
-        boolean isReply = msgType != null && msgType.equals(MixAll.REPLY_MESSAGE_FLAG);
+        boolean isReply = msgType != null && msgType.equals(MessageUtil.REPLY_MESSAGE_FLAG);
         if (isReply) {
             if (sendSmartMsg) {
                 SendMessageRequestHeaderV2 requestHeaderV2 = SendMessageRequestHeaderV2.createSendMessageRequestHeaderV2(requestHeader);
@@ -798,7 +800,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         sendResult.setTransactionId(responseHeader.getTransactionId());
         String regionId = response.getExtFields().get(MessageConst.PROPERTY_MSG_REGION);
         if (regionId == null || regionId.isEmpty()) {
-            regionId = MixAll.DEFAULT_TRACE_REGION_ID;
+            regionId = MQUtils.DEFAULT_TRACE_REGION_ID;
         }
         sendResult.setRegionId(regionId);
         String traceOn = response.getExtFields().get(MessageConst.PROPERTY_TRACE_SWITCH);
@@ -1138,11 +1140,11 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                         final String queueOffsetKey;
                         final int index;
                         final Long msgQueueOffset;
-                        if (MixAll.isLmq(topic) && messageExt.getReconsumeTimes() == 0 && StringUtils.isNotEmpty(
+                        if (MQUtils.isLmq(topic) && messageExt.getReconsumeTimes() == 0 && StringUtils.isNotEmpty(
                             messageExt.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH))) {
                             // process LMQ, LMQ topic has only 1 queue, which queue id is 0
-                            queueIdKey = ExtraInfoUtil.getStartOffsetInfoMapKey(topic, MixAll.LMQ_QUEUE_ID);
-                            queueOffsetKey = ExtraInfoUtil.getQueueOffsetMapKey(topic, MixAll.LMQ_QUEUE_ID, Long.parseLong(
+                            queueIdKey = ExtraInfoUtil.getStartOffsetInfoMapKey(topic, MQUtils.LMQ_QUEUE_ID);
+                            queueOffsetKey = ExtraInfoUtil.getQueueOffsetMapKey(topic, MQUtils.LMQ_QUEUE_ID, Long.parseLong(
                                 messageExt.getProperty(MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET)));
                             index = sortMap.get(queueIdKey).indexOf(
                                 Long.parseLong(messageExt.getProperty(MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET)));
@@ -1200,7 +1202,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         Map<String/*topicMark@queueId*/, List<Long>/*msg queueOffset*/> sortMap = new HashMap<>(16);
         for (MessageExt messageExt : msgFoundList) {
             final String key;
-            if (MixAll.isLmq(topic) && messageExt.getReconsumeTimes() == 0
+            if (MQUtils.isLmq(topic) && messageExt.getReconsumeTimes() == 0
                 && StringUtils.isNotEmpty(messageExt.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH))) {
                 // process LMQ, LMQ topic has only 1 queue, which queue id is 0
                 key = ExtraInfoUtil.getStartOffsetInfoMapKey(
@@ -1503,7 +1505,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
                 if (response.getExtFields() != null) {
-                    return new HeartbeatV2Result(response.getVersion(), Boolean.parseBoolean(response.getExtFields().get(MixAll.IS_SUB_CHANGE)), Boolean.parseBoolean(response.getExtFields().get(MixAll.IS_SUPPORT_HEART_BEAT_V2)));
+                    return new HeartbeatV2Result(response.getVersion(), Boolean.parseBoolean(response.getExtFields().get(MQUtils.IS_SUB_CHANGE)), Boolean.parseBoolean(response.getExtFields().get(MQUtils.IS_SUPPORT_HEART_BEAT_V2)));
                 }
                 return new HeartbeatV2Result(response.getVersion(), false, false);
             }
@@ -1560,7 +1562,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         final Boolean isUnqiueKey
     ) throws RemotingException, MQBrokerException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_MESSAGE, requestHeader);
-        request.addExtField(MixAll.UNIQUE_MSG_QUERY_FLAG, isUnqiueKey.toString());
+        request.addExtField(MQUtils.UNIQUE_MSG_QUERY_FLAG, isUnqiueKey.toString());
         this.remotingClient.invokeAsync(ChannelUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis,
             invokeCallback);
     }
@@ -1839,9 +1841,9 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_BROKER_CONFIG, null);
 
-        String str = MixAll.properties2String(properties);
+        String str = PropertyUtils.properties2String(properties);
         if (str != null && str.length() > 0) {
-            request.setBody(str.getBytes(MixAll.DEFAULT_CHARSET));
+            request.setBody(str.getBytes(MQUtils.DEFAULT_CHARSET));
             RemotingCommand response = this.remotingClient
                 .invokeSync(ChannelUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
             switch (response.getCode()) {
@@ -1865,7 +1867,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
-                return MixAll.string2Properties(new String(response.getBody(), MixAll.DEFAULT_CHARSET));
+                return PropertyUtils.string2Properties(new String(response.getBody(), MQUtils.DEFAULT_CHARSET));
             }
             default:
                 break;
@@ -1877,9 +1879,9 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     public void updateColdDataFlowCtrGroupConfig(final String addr, final Properties properties, final long timeoutMillis)
         throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_COLD_DATA_FLOW_CTR_CONFIG, null);
-        String str = MixAll.properties2String(properties);
+        String str = PropertyUtils.properties2String(properties);
         if (str != null && str.length() > 0) {
-            request.setBody(str.getBytes(MixAll.DEFAULT_CHARSET));
+            request.setBody(str.getBytes(MQUtils.DEFAULT_CHARSET));
             RemotingCommand response = this.remotingClient.invokeSync(
                 ChannelUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
             switch (response.getCode()) {
@@ -1897,7 +1899,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.REMOVE_COLD_DATA_FLOW_CTR_CONFIG, null);
         if (consumerGroup != null && consumerGroup.length() > 0) {
-            request.setBody(consumerGroup.getBytes(MixAll.DEFAULT_CHARSET));
+            request.setBody(consumerGroup.getBytes(MQUtils.DEFAULT_CHARSET));
             RemotingCommand response = this.remotingClient.invokeSync(
                 ChannelUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
             switch (response.getCode()) {
@@ -1919,7 +1921,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
                 if (null != response.getBody() && response.getBody().length > 0) {
-                    return new String(response.getBody(), MixAll.DEFAULT_CHARSET);
+                    return new String(response.getBody(), MQUtils.DEFAULT_CHARSET);
                 }
                 return null;
             }
@@ -2665,7 +2667,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                         Iterator<String> it = topicList.getTopicList().iterator();
                         while (it.hasNext()) {
                             String topic = it.next();
-                            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                            if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                                 it.remove();
                             }
                         }
@@ -2695,7 +2697,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                         Iterator<String> it = topicList.getTopicList().iterator();
                         while (it.hasNext()) {
                             String topic = it.next();
-                            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                            if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                                 it.remove();
                             }
                         }
@@ -2724,7 +2726,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                         Iterator<String> it = topicList.getTopicList().iterator();
                         while (it.hasNext()) {
                             String topic = it.next();
-                            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                            if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                                 it.remove();
                             }
                         }
@@ -2874,7 +2876,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     public void updateNameServerConfig(final Properties properties, final List<String> nameServers, long timeoutMillis)
         throws UnsupportedEncodingException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException,
         RemotingConnectException, MQClientException {
-        String str = MixAll.properties2String(properties);
+        String str = PropertyUtils.properties2String(properties);
         if (str == null || str.length() < 1) {
             return;
         }
@@ -2885,7 +2887,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         }
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_NAMESRV_CONFIG, null);
-        request.setBody(str.getBytes(MixAll.DEFAULT_CHARSET));
+        request.setBody(str.getBytes(MQUtils.DEFAULT_CHARSET));
 
         RemotingCommand errResponse = null;
         for (String nameServer : invokeNameServers) {
@@ -2924,7 +2926,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
             assert response != null;
 
             if (ResponseCode.SUCCESS == response.getCode()) {
-                configMap.put(nameServer, MixAll.string2Properties(new String(response.getBody(), MixAll.DEFAULT_CHARSET)));
+                configMap.put(nameServer, PropertyUtils.string2Properties(new String(response.getBody(), MQUtils.DEFAULT_CHARSET)));
             } else {
                 throw new MQClientException(response.getCode(), response.getRemark());
             }
@@ -3207,7 +3209,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
             assert response != null;
 
             if (ResponseCode.SUCCESS == response.getCode()) {
-                configMap.put(controller, MixAll.string2Properties(new String(response.getBody(), MixAll.DEFAULT_CHARSET)));
+                configMap.put(controller, PropertyUtils.string2Properties(new String(response.getBody(), MQUtils.DEFAULT_CHARSET)));
             } else {
                 throw new MQClientException(response.getCode(), response.getRemark());
             }
@@ -3218,13 +3220,13 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     public void updateControllerConfig(final Properties properties, final List<String> controllers,
         final long timeoutMillis) throws InterruptedException, RemotingConnectException, UnsupportedEncodingException,
         RemotingSendRequestException, RemotingTimeoutException, MQClientException {
-        String str = MixAll.properties2String(properties);
+        String str = PropertyUtils.properties2String(properties);
         if (str.length() < 1 || controllers == null || controllers.isEmpty()) {
             return;
         }
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_CONTROLLER_CONFIG, null);
-        request.setBody(str.getBytes(MixAll.DEFAULT_CHARSET));
+        request.setBody(str.getBytes(MQUtils.DEFAULT_CHARSET));
 
         RemotingCommand errResponse = null;
         for (String controller : controllers) {

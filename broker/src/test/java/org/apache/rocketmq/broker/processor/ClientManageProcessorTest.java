@@ -28,8 +28,8 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.client.ConsumerGroupInfo;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
@@ -122,26 +122,26 @@ public class ClientManageProcessorTest {
         RemotingCommand request = createHeartbeatCommand(false, "topicA");
         RemotingCommand response = clientManageProcessor.processRequest(handlerContext, request);
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
-        assertThat(Boolean.parseBoolean(response.getExtFields().get(MixAll.IS_SUB_CHANGE))).isFalse();
+        assertThat(Boolean.parseBoolean(response.getExtFields().get(MQUtils.IS_SUB_CHANGE))).isFalse();
         ConsumerGroupInfo consumerGroupInfo = brokerController.getConsumerManager().getConsumerGroupInfo(group);
 
         RemotingCommand requestSimple = createHeartbeatCommand(true, "topicA");
         RemotingCommand responseSimple = clientManageProcessor.processRequest(handlerContext, requestSimple);
         assertThat(responseSimple.getCode()).isEqualTo(ResponseCode.SUCCESS);
-        assertThat(Boolean.parseBoolean(responseSimple.getExtFields().get(MixAll.IS_SUB_CHANGE))).isFalse();
+        assertThat(Boolean.parseBoolean(responseSimple.getExtFields().get(MQUtils.IS_SUB_CHANGE))).isFalse();
         ConsumerGroupInfo consumerGroupInfoSimple = brokerController.getConsumerManager().getConsumerGroupInfo(group);
         assertThat(consumerGroupInfoSimple).isEqualTo(consumerGroupInfo);
 
         request = createHeartbeatCommand(false, "topicB");
         response = clientManageProcessor.processRequest(handlerContext, request);
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
-        assertThat(Boolean.parseBoolean(response.getExtFields().get(MixAll.IS_SUB_CHANGE))).isTrue();
+        assertThat(Boolean.parseBoolean(response.getExtFields().get(MQUtils.IS_SUB_CHANGE))).isTrue();
         consumerGroupInfo = brokerController.getConsumerManager().getConsumerGroupInfo(group);
 
         requestSimple = createHeartbeatCommand(true, "topicB");
         responseSimple = clientManageProcessor.processRequest(handlerContext, requestSimple);
         assertThat(responseSimple.getCode()).isEqualTo(ResponseCode.SUCCESS);
-        assertThat(Boolean.parseBoolean(responseSimple.getExtFields().get(MixAll.IS_SUB_CHANGE))).isFalse();
+        assertThat(Boolean.parseBoolean(responseSimple.getExtFields().get(MQUtils.IS_SUB_CHANGE))).isFalse();
         consumerGroupInfoSimple = brokerController.getConsumerManager().getConsumerGroupInfo(group);
         assertThat(consumerGroupInfoSimple).isEqualTo(consumerGroupInfo);
     }

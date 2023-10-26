@@ -19,10 +19,10 @@ package org.apache.rocketmq.store.service;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -74,7 +74,7 @@ public class ReputMessageService extends ServiceThread {
      */
     public void notifyMessageArrive4MultiQueue(DispatchRequest dispatchRequest) {
         Map<String, String> prop = dispatchRequest.getPropertiesMap();
-        if (prop == null || dispatchRequest.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (prop == null || dispatchRequest.getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
             return;
         }
         String multiDispatchQueue = prop.get(MessageConst.PROPERTY_INNER_MULTI_DISPATCH);
@@ -82,8 +82,8 @@ public class ReputMessageService extends ServiceThread {
         if (StringUtils.isBlank(multiDispatchQueue) || StringUtils.isBlank(multiQueueOffset)) {
             return;
         }
-        String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
-        String[] queueOffsets = multiQueueOffset.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queues = multiDispatchQueue.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queueOffsets = multiQueueOffset.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
         if (queues.length != queueOffsets.length) {
             return;
         }
@@ -218,7 +218,7 @@ public class ReputMessageService extends ServiceThread {
             String queueName = queues[i];
             long queueOffset = Long.parseLong(queueOffsets[i]);
             int queueId = dispatchRequest.getQueueId();
-            if (messageStore.getMessageStoreConfig().isEnableLmq() && MixAll.isLmq(queueName)) {
+            if (messageStore.getMessageStoreConfig().isEnableLmq() && MQUtils.isLmq(queueName)) {
                 queueId = 0;
             }
             messageStore.getMessageArrivingListener().arriving(
@@ -231,7 +231,7 @@ public class ReputMessageService extends ServiceThread {
         // If user open the dledger pattern or the broker is master node,
         // it will not ignore the exception and fix the reputFromOffset variable
         if (messageStore.getMessageStoreConfig().isEnableDLegerCommitLog() ||
-            messageStore.getBrokerConfig().getBrokerId() == MixAll.MASTER_ID) {
+            messageStore.getBrokerConfig().getBrokerId() == MQUtils.MASTER_ID) {
             LOGGER.error("[BUG]dispatch message to consume queue error, COMMITLOG OFFSET: {}",
                 this.reputFromOffset);
             this.reputFromOffset += result.getSize() - readSize;

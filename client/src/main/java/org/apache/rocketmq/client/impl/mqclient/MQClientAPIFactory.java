@@ -25,7 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.common.NameserverAccessConfig;
 import org.apache.rocketmq.client.impl.ClientRemotingProcessor;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.common.utils.StartAndShutdown;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -59,7 +59,7 @@ public class MQClientAPIFactory implements StartAndShutdown {
             if (Strings.isNullOrEmpty(nameserverAccessConfig.getNamesrvAddr())) {
                 throw new RuntimeException("The configuration item NamesrvAddr is not configured");
             }
-            System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, nameserverAccessConfig.getNamesrvAddr());
+            System.setProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, nameserverAccessConfig.getNamesrvAddr());
         } else {
             System.setProperty("rocketmq.namesrv.domain", nameserverAccessConfig.getNamesrvDomain());
             System.setProperty("rocketmq.namesrv.domain.subgroup", nameserverAccessConfig.getNamesrvDomainSubgroup());

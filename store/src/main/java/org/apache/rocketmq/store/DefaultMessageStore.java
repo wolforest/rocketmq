@@ -25,7 +25,6 @@ import org.apache.rocketmq.common.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.SystemClock;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
@@ -38,6 +37,7 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.running.RunningStats;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.ProcessUtils;
 import org.apache.rocketmq.common.utils.ServiceProvider;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -547,7 +547,7 @@ public class DefaultMessageStore implements MessageStore {
         {
             double minPhysicsUsedRatio = Double.MAX_VALUE;
             String commitLogStorePath = getStorePathPhysic();
-            String[] paths = commitLogStorePath.trim().split(MixAll.MULTI_PATH_SPLITTER);
+            String[] paths = commitLogStorePath.trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
             for (String clPath : paths) {
                 double physicRatio = IOTinyUtils.isPathExists(clPath) ?
                     IOTinyUtils.getDiskPartitionSpaceUsedPercent(clPath) : -1;
@@ -1201,7 +1201,7 @@ public class DefaultMessageStore implements MessageStore {
         IOTinyUtils.ensureDirOK(file.getParent());
         boolean result = file.createNewFile();
         LOGGER.info(fileName + (result ? " create OK" : " already exists"));
-        StringUtils.string2File(Long.toString(MixAll.getPID()), file.getAbsolutePath());
+        StringUtils.string2File(Long.toString(ProcessUtils.getPID()), file.getAbsolutePath());
     }
 
     private void addScheduleTask() {

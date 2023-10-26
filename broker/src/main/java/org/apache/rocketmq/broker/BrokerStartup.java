@@ -26,9 +26,10 @@ import org.apache.rocketmq.broker.service.BrokerShutdownThread;
 import org.apache.rocketmq.broker.service.SystemConfigFileHelper;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -128,10 +129,10 @@ public class BrokerStartup {
 
         if (properties != null) {
             properties2SystemEnv(properties);
-            MixAll.properties2Object(properties, brokerConfig);
-            MixAll.properties2Object(properties, nettyServerConfig);
-            MixAll.properties2Object(properties, nettyClientConfig);
-            MixAll.properties2Object(properties, messageStoreConfig);
+            PropertyUtils.properties2Object(properties, brokerConfig);
+            PropertyUtils.properties2Object(properties, nettyServerConfig);
+            PropertyUtils.properties2Object(properties, nettyClientConfig);
+            PropertyUtils.properties2Object(properties, messageStoreConfig);
         }
 
         return properties;
@@ -149,10 +150,10 @@ public class BrokerStartup {
     }
 
     private static void commandLineToBrokerConfig(CommandLine commandLine, BrokerConfig brokerConfig) {
-        MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
+        PropertyUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
         if (null == brokerConfig.getRocketmqHome()) {
             System.out.printf("Please set the %s variable in your environment " +
-                "to match the location of the RocketMQ installation", MixAll.ROCKETMQ_HOME_ENV);
+                "to match the location of the RocketMQ installation", MQUtils.ROCKETMQ_HOME_ENV);
             System.exit(-2);
         }
     }
@@ -191,10 +192,10 @@ public class BrokerStartup {
         switch (messageStoreConfig.getBrokerRole()) {
             case ASYNC_MASTER:
             case SYNC_MASTER:
-                brokerConfig.setBrokerId(MixAll.MASTER_ID);
+                brokerConfig.setBrokerId(MQUtils.MASTER_ID);
                 break;
             case SLAVE:
-                if (brokerConfig.getBrokerId() <= MixAll.MASTER_ID) {
+                if (brokerConfig.getBrokerId() <= MQUtils.MASTER_ID) {
                     System.out.printf("Slave's brokerId must be > 0%n");
                     System.exit(-3);
                 }
@@ -239,25 +240,25 @@ public class BrokerStartup {
     private static void printConfigInfo(CommandLine commandLine, BrokerConfig brokerConfig, NettyServerConfig nettyServerConfig, NettyClientConfig nettyClientConfig, MessageStoreConfig messageStoreConfig) {
         if (commandLine.hasOption('p')) {
             Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
-            MixAll.printObjectProperties(console, brokerConfig);
-            MixAll.printObjectProperties(console, nettyServerConfig);
-            MixAll.printObjectProperties(console, nettyClientConfig);
-            MixAll.printObjectProperties(console, messageStoreConfig);
+            PropertyUtils.printObjectProperties(console, brokerConfig);
+            PropertyUtils.printObjectProperties(console, nettyServerConfig);
+            PropertyUtils.printObjectProperties(console, nettyClientConfig);
+            PropertyUtils.printObjectProperties(console, messageStoreConfig);
             System.exit(0);
         } else if (commandLine.hasOption('m')) {
             Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
-            MixAll.printObjectProperties(console, brokerConfig, true);
-            MixAll.printObjectProperties(console, nettyServerConfig, true);
-            MixAll.printObjectProperties(console, nettyClientConfig, true);
-            MixAll.printObjectProperties(console, messageStoreConfig, true);
+            PropertyUtils.printObjectProperties(console, brokerConfig, true);
+            PropertyUtils.printObjectProperties(console, nettyServerConfig, true);
+            PropertyUtils.printObjectProperties(console, nettyClientConfig, true);
+            PropertyUtils.printObjectProperties(console, messageStoreConfig, true);
             System.exit(0);
         }
 
         log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-        MixAll.printObjectProperties(log, brokerConfig);
-        MixAll.printObjectProperties(log, nettyServerConfig);
-        MixAll.printObjectProperties(log, nettyClientConfig);
-        MixAll.printObjectProperties(log, messageStoreConfig);
+        PropertyUtils.printObjectProperties(log, brokerConfig);
+        PropertyUtils.printObjectProperties(log, nettyServerConfig);
+        PropertyUtils.printObjectProperties(log, nettyClientConfig);
+        PropertyUtils.printObjectProperties(log, messageStoreConfig);
     }
 
     private static Runnable buildShutdownHook(BrokerController brokerController) {
@@ -281,8 +282,8 @@ public class BrokerStartup {
         if (properties == null) {
             return;
         }
-        String rmqAddressServerDomain = properties.getProperty("rmqAddressServerDomain", MixAll.WS_DOMAIN_NAME);
-        String rmqAddressServerSubGroup = properties.getProperty("rmqAddressServerSubGroup", MixAll.WS_DOMAIN_SUBGROUP);
+        String rmqAddressServerDomain = properties.getProperty("rmqAddressServerDomain", NetworkUtil.WS_DOMAIN_NAME);
+        String rmqAddressServerSubGroup = properties.getProperty("rmqAddressServerSubGroup", NetworkUtil.WS_DOMAIN_SUBGROUP);
         System.setProperty("rocketmq.namesrv.domain", rmqAddressServerDomain);
         System.setProperty("rocketmq.namesrv.domain.subgroup", rmqAddressServerSubGroup);
     }

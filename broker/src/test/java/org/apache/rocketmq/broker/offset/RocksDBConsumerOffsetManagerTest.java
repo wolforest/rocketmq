@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.junit.After;
 import org.junit.Assert;
@@ -108,6 +108,6 @@ public class RocksDBConsumerOffsetManagerTest {
     }
 
     private boolean notToBeExecuted() {
-        return MixAll.isMac();
+        return PlatformUtils.isMac();
     }
 }

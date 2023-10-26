@@ -25,8 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.namesrv.RegisterBrokerResult;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
@@ -91,7 +91,7 @@ public class RouteInfoManagerTestBase {
 
         long startId = 0;
         if (hasMaster) {
-            brokerAddrMap.put(MixAll.MASTER_ID, getBrokerAddr(clusterName, brokerName, MixAll.MASTER_ID));
+            brokerAddrMap.put(MQUtils.MASTER_ID, getBrokerAddr(clusterName, brokerName, MQUtils.MASTER_ID));
             startId = 1;
         }
 

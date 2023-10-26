@@ -26,7 +26,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
@@ -80,7 +80,7 @@ public class Configuration {
 
             try {
 
-                Properties registerProps = MixAll.object2Properties(configObject);
+                Properties registerProps = PropertyUtils.object2Properties(configObject);
 
                 merge(registerProps, this.allConfigs);
 
@@ -187,7 +187,7 @@ public class Configuration {
 
                 for (Object configObject : configObjectList) {
                     // not allConfigs to update...
-                    MixAll.properties2Object(properties, configObject);
+                    PropertyUtils.properties2Object(properties, configObject);
                 }
 
                 this.dataVersion.nextVersion();
@@ -284,7 +284,7 @@ public class Configuration {
 
         // reload from config object ?
         for (Object configObject : this.configObjectList) {
-            Properties properties = MixAll.object2Properties(configObject);
+            Properties properties = PropertyUtils.object2Properties(configObject);
             if (properties != null) {
                 merge(properties, this.allConfigs);
             } else {
@@ -293,7 +293,7 @@ public class Configuration {
         }
 
         {
-            stringBuilder.append(MixAll.properties2String(this.allConfigs, true));
+            stringBuilder.append(PropertyUtils.properties2String(this.allConfigs, true));
         }
 
         return stringBuilder.toString();
@@ -305,7 +305,7 @@ public class Configuration {
 
         // reload from config object ?
         for (Object configObject : this.configObjectList) {
-            Properties properties = MixAll.object2Properties(configObject);
+            Properties properties = PropertyUtils.object2Properties(configObject);
 
             for (String nameNow : clientConigKeys) {
                 if (properties.containsKey(nameNow)) {
@@ -314,7 +314,7 @@ public class Configuration {
             }
 
         }
-        stringBuilder.append(MixAll.properties2String(clientProperties));
+        stringBuilder.append(PropertyUtils.properties2String(clientProperties));
 
         return stringBuilder.toString();
     }

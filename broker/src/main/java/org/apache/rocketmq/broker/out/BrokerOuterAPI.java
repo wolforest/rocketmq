@@ -26,7 +26,6 @@ import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.LockCallback;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.TopicConfig;
@@ -47,6 +46,7 @@ import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.BinaryUtil;
 import org.apache.rocketmq.common.utils.ChannelUtil;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -795,7 +795,7 @@ public class BrokerOuterAPI {
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, 3000);
         assert response != null;
         if (response.getCode() == SUCCESS) {
-            return new String(response.getBody(), MixAll.DEFAULT_CHARSET);
+            return new String(response.getBody(), MQUtils.DEFAULT_CHARSET);
         }
 
         throw new MQBrokerException(response.getCode(), response.getRemark(), addr);
@@ -1056,7 +1056,7 @@ public class BrokerOuterAPI {
         String regionId = response.getExtFields().get(MessageConst.PROPERTY_MSG_REGION);
         String traceOn = response.getExtFields().get(MessageConst.PROPERTY_TRACE_SWITCH);
         if (regionId == null || regionId.isEmpty()) {
-            regionId = MixAll.DEFAULT_TRACE_REGION_ID;
+            regionId = MQUtils.DEFAULT_TRACE_REGION_ID;
         }
         if (traceOn != null && traceOn.equals("false")) {
             sendResult.setTraceOn(false);

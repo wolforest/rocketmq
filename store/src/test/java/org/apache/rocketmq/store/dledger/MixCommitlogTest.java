@@ -19,7 +19,7 @@ package org.apache.rocketmq.store.dledger;
 import java.time.Duration;
 import java.util.UUID;
 
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.StoreTestBase;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
@@ -33,7 +33,7 @@ public class MixCommitlogTest extends MessageStoreTestBase {
 
     @Test
     public void testFallBehindCQ() throws Exception {
-        Assume.assumeFalse(MixAll.isWindows());
+        Assume.assumeFalse(PlatformUtils.isWindows());
         String base = createBaseDir();
         String topic = UUID.randomUUID().toString();
         String peers = String.format("n0-localhost:%d", nextPort());

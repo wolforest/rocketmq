@@ -39,11 +39,11 @@ import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.header.QueryConsumerOffsetRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.UpdateConsumerOffsetRequestHeader;
@@ -257,7 +257,7 @@ public class BenchLmqStore {
         if (brokerMap == null || brokerMap.isEmpty()) {
             return;
         }
-        String brokerAddress = brokerMap.get(MixAll.MASTER_ID);
+        String brokerAddress = brokerMap.get(MQUtils.MASTER_ID);
         for (int i = 0; i < sendThreadNum; i++) {
             final int flag = i;
             sendPool.execute(new Runnable() {

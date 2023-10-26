@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.remoting.rpchook;
 
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.RequestType;
@@ -25,7 +25,7 @@ import org.apache.rocketmq.remoting.protocol.RequestType;
 public class StreamTypeRPCHook implements RPCHook {
     @Override
     public void doBeforeRequest(String remoteAddr, RemotingCommand request) {
-        request.addExtField(MixAll.REQ_T, String.valueOf(RequestType.STREAM.getCode()));
+        request.addExtField(MQUtils.REQ_T, String.valueOf(RequestType.STREAM.getCode()));
     }
 
     @Override

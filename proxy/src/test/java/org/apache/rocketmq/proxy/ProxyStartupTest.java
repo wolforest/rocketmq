@@ -34,7 +34,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerStartup;
 import org.apache.rocketmq.broker.service.BrokerServiceManager;
 import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.proxy.config.Configuration;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.config.ProxyConfig;
@@ -134,7 +134,7 @@ public class ProxyStartupTest {
     @After
     public void after() {
         System.clearProperty(RMQ_PROXY_HOME);
-        System.clearProperty(MixAll.NAMESRV_ADDR_PROPERTY);
+        System.clearProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY);
         System.clearProperty(Configuration.CONFIG_PATH_PROPERTY);
         recursiveDelete(proxyHome);
     }
@@ -172,7 +172,7 @@ public class ProxyStartupTest {
     @Test
     public void testLocalModeWithNameSrvAddrByProperty() throws Exception {
         String namesrvAddr = "namesrvAddr";
-        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, namesrvAddr);
+        System.setProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, namesrvAddr);
         CommandLineArgument commandLineArgument = ProxyStartup.parseCommandLineArgument(new String[] {
             "-pm", "local"
         });
@@ -212,7 +212,7 @@ public class ProxyStartupTest {
     @Test
     public void testLocalModeWithNameSrvAddrByConfigFile() throws Exception {
         String namesrvAddr = "namesrvAddr";
-        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, "foo");
+        System.setProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, "foo");
         Path configFilePath = Files.createTempFile("testLocalModeWithNameSrvAddrByConfigFile", ".json");
         String configData = "{\n" +
             "  \"namesrvAddr\": \"namesrvAddr\"\n" +
@@ -234,7 +234,7 @@ public class ProxyStartupTest {
     @Test
     public void testLocalModeWithNameSrvAddrByCommandLine() throws Exception {
         String namesrvAddr = "namesrvAddr";
-        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, "foo");
+        System.setProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, "foo");
         Path configFilePath = Files.createTempFile("testLocalModeWithNameSrvAddrByCommandLine", ".json");
         String configData = "{\n" +
             "  \"namesrvAddr\": \"foo\"\n" +
@@ -257,7 +257,7 @@ public class ProxyStartupTest {
     @Test
     public void testLocalModeWithAllArgs() throws Exception {
         String namesrvAddr = "namesrvAddr";
-        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, "foo");
+        System.setProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, "foo");
         Path configFilePath = Files.createTempFile("testLocalMode", ".json");
         String configData = "{\n" +
             "  \"namesrvAddr\": \"foo\"\n" +

@@ -25,10 +25,10 @@ import java.util.Set;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -260,7 +260,7 @@ public class TopicQueueMappingCleanService extends ServiceThread {
                     //find the mapping detail of real leader
                     Map<String, TopicQueueMappingDetail> mappingDetailMap = new HashMap<>();
                     for (Map.Entry<Integer, String> entry : qid2RealLeaderBroker.entrySet()) {
-                        if (entry.getValue().startsWith(MixAll.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
+                        if (entry.getValue().startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
                             continue;
                         }
                         String broker = entry.getValue();

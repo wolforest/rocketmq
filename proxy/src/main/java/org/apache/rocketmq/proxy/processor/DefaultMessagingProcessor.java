@@ -32,13 +32,13 @@ import org.apache.rocketmq.client.consumer.AckResult;
 import org.apache.rocketmq.client.consumer.PopResult;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.producer.SendResult;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.consumer.ReceiptHandle;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.thread.ThreadPoolMonitor;
 import org.apache.rocketmq.common.utils.AbstractStartAndShutdown;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.proxy.common.Address;
 import org.apache.rocketmq.proxy.common.MessageReceiptHandle;
 import org.apache.rocketmq.proxy.common.ProxyContext;
@@ -69,8 +69,8 @@ public class DefaultMessagingProcessor extends AbstractStartAndShutdown implemen
 
     protected ThreadPoolExecutor producerProcessorExecutor;
     protected ThreadPoolExecutor consumerProcessorExecutor;
-    protected static final String ROCKETMQ_HOME = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY,
-            System.getenv(MixAll.ROCKETMQ_HOME_ENV));
+    protected static final String ROCKETMQ_HOME = System.getProperty(MQUtils.ROCKETMQ_HOME_PROPERTY,
+            System.getenv(MQUtils.ROCKETMQ_HOME_ENV));
 
     protected DefaultMessagingProcessor(ServiceManager serviceManager) {
         ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
@@ -113,7 +113,7 @@ public class DefaultMessagingProcessor extends AbstractStartAndShutdown implemen
     public static DefaultMessagingProcessor createForClusterMode() {
         RPCHook rpcHook = null;
         if (ConfigurationManager.getProxyConfig().isEnableAclRpcHookForClusterMode()) {
-            rpcHook = AclUtils.getAclRPCHook(ROCKETMQ_HOME + MixAll.ACL_CONF_TOOLS_FILE);
+            rpcHook = AclUtils.getAclRPCHook(ROCKETMQ_HOME + MQUtils.ACL_CONF_TOOLS_FILE);
         }
         return createForClusterMode(rpcHook);
     }

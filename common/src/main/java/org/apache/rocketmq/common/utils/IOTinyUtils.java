@@ -17,9 +17,10 @@
 
 package org.apache.rocketmq.common.utils;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -53,6 +54,7 @@ import java.util.Map;
 
 public class IOTinyUtils {
 
+    public static final String MULTI_PATH_SPLITTER = System.getProperty("rocketmq.broker.multiPathSplitter", ",");
     private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
     private static final Logger STORE_LOG = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -275,8 +277,8 @@ public class IOTinyUtils {
 
     public static void ensureDirOK(final String dirName) {
         if (dirName != null) {
-            if (dirName.contains(MixAll.MULTI_PATH_SPLITTER)) {
-                String[] dirs = dirName.trim().split(MixAll.MULTI_PATH_SPLITTER);
+            if (dirName.contains(MULTI_PATH_SPLITTER)) {
+                String[] dirs = dirName.trim().split(MULTI_PATH_SPLITTER);
                 for (String dir : dirs) {
                     createDirIfNotExist(dir);
                 }
@@ -417,4 +419,8 @@ public class IOTinyUtils {
         }
     }
 
+    public static String dealFilePath(String aclFilePath) {
+        Path path = Paths.get(aclFilePath);
+        return path.normalize().toString();
+    }
 }

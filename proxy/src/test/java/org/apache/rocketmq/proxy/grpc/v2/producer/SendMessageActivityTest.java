@@ -39,11 +39,11 @@ import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.latency.MQFaultStrategy;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
@@ -280,7 +280,7 @@ public class SendMessageActivityTest extends BaseActivityTest {
         brokerData.setCluster(CLUSTER_NAME);
         brokerData.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MixAll.MASTER_ID, BROKER_ADDR);
+        brokerAddrs.put(MQUtils.MASTER_ID, BROKER_ADDR);
         brokerData.setBrokerAddrs(brokerAddrs);
         topicRouteData.setBrokerDatas(Lists.newArrayList(brokerData));
 
@@ -337,7 +337,7 @@ public class SendMessageActivityTest extends BaseActivityTest {
         brokerData.setCluster(CLUSTER_NAME);
         brokerData.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MixAll.MASTER_ID, BROKER_ADDR);
+        brokerAddrs.put(MQUtils.MASTER_ID, BROKER_ADDR);
         brokerData.setBrokerAddrs(brokerAddrs);
         topicRouteData.setBrokerDatas(Lists.newArrayList(brokerData));
 
@@ -921,7 +921,7 @@ public class SendMessageActivityTest extends BaseActivityTest {
         brokerData.setCluster(clusterName);
         brokerData.setBrokerName(brokerName);
         HashMap<Long, String> brokerAddrsMap = new HashMap<>();
-        brokerAddrsMap.put(MixAll.MASTER_ID, brokerAddrs);
+        brokerAddrsMap.put(MQUtils.MASTER_ID, brokerAddrs);
         brokerData.setBrokerAddrs(brokerAddrsMap);
 
         return brokerData;

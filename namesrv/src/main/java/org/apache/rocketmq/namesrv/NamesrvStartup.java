@@ -28,9 +28,10 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.ControllerConfig;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
+import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.controller.ControllerManager;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -100,12 +101,12 @@ public class NamesrvStartup {
                 InputStream in = new BufferedInputStream(Files.newInputStream(Paths.get(file)));
                 properties = new Properties();
                 properties.load(in);
-                MixAll.properties2Object(properties, namesrvConfig);
-                MixAll.properties2Object(properties, nettyServerConfig);
-                MixAll.properties2Object(properties, nettyClientConfig);
+                PropertyUtils.properties2Object(properties, namesrvConfig);
+                PropertyUtils.properties2Object(properties, nettyServerConfig);
+                PropertyUtils.properties2Object(properties, nettyClientConfig);
                 if (namesrvConfig.isEnableControllerInNamesrv()) {
                     controllerConfig = new ControllerConfig();
-                    MixAll.properties2Object(properties, controllerConfig);
+                    PropertyUtils.properties2Object(properties, controllerConfig);
                 }
                 namesrvConfig.setConfigStorePath(file);
 
@@ -114,23 +115,23 @@ public class NamesrvStartup {
             }
         }
 
-        MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
+        PropertyUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
         if (commandLine.hasOption('p')) {
-            MixAll.printObjectProperties(logConsole, namesrvConfig);
-            MixAll.printObjectProperties(logConsole, nettyServerConfig);
-            MixAll.printObjectProperties(logConsole, nettyClientConfig);
+            PropertyUtils.printObjectProperties(logConsole, namesrvConfig);
+            PropertyUtils.printObjectProperties(logConsole, nettyServerConfig);
+            PropertyUtils.printObjectProperties(logConsole, nettyClientConfig);
             if (namesrvConfig.isEnableControllerInNamesrv()) {
-                MixAll.printObjectProperties(logConsole, controllerConfig);
+                PropertyUtils.printObjectProperties(logConsole, controllerConfig);
             }
             System.exit(0);
         }
 
         if (null == namesrvConfig.getRocketmqHome()) {
-            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation%n", MixAll.ROCKETMQ_HOME_ENV);
+            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation%n", MQUtils.ROCKETMQ_HOME_ENV);
             System.exit(-2);
         }
-        MixAll.printObjectProperties(log, namesrvConfig);
-        MixAll.printObjectProperties(log, nettyServerConfig);
+        PropertyUtils.printObjectProperties(log, namesrvConfig);
+        PropertyUtils.printObjectProperties(log, nettyServerConfig);
 
     }
 

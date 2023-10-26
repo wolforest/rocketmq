@@ -18,8 +18,8 @@ package org.apache.rocketmq.namesrv.routeinfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.junit.After;
@@ -83,12 +83,12 @@ public class RouteInfoManagerBrokerRegisterTest extends RouteInfoManagerTestBase
         String topicName = getTopicName(topicPrefix, 0);
         String brokerName = getBrokerName(brokerPrefix, 0);
 
-        String originMasterAddr = getBrokerAddr(clusterName, brokerName, MixAll.MASTER_ID);
+        String originMasterAddr = getBrokerAddr(clusterName, brokerName, MQUtils.MASTER_ID);
         TopicRouteData topicRouteData = routeInfoManager.pickupTopicRouteData(topicName);
         BrokerData brokerDataOrigin = findBrokerDataByBrokerName(topicRouteData.getBrokerDatas(), brokerName);
 
         // check origin master address
-        Assert.assertEquals(brokerDataOrigin.getBrokerAddrs().get(MixAll.MASTER_ID), originMasterAddr);
+        Assert.assertEquals(brokerDataOrigin.getBrokerAddrs().get(MQUtils.MASTER_ID), originMasterAddr);
 
         // master changed
         String newMasterAddr = getBrokerAddr(clusterName, brokerName, 1);
@@ -96,7 +96,7 @@ public class RouteInfoManagerBrokerRegisterTest extends RouteInfoManagerTestBase
             clusterName,
             newMasterAddr,
             brokerName,
-            MixAll.MASTER_ID,
+            MQUtils.MASTER_ID,
             newMasterAddr,
             cluster.topicConfig,
             new ArrayList<>());
@@ -105,7 +105,7 @@ public class RouteInfoManagerBrokerRegisterTest extends RouteInfoManagerTestBase
         brokerDataOrigin = findBrokerDataByBrokerName(topicRouteData.getBrokerDatas(), brokerName);
 
         // check new master address
-        assertEquals(brokerDataOrigin.getBrokerAddrs().get(MixAll.MASTER_ID), newMasterAddr);
+        assertEquals(brokerDataOrigin.getBrokerAddrs().get(MQUtils.MASTER_ID), newMasterAddr);
     }
 
     @Test

@@ -36,7 +36,6 @@ import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.LockCallback;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.PlainAccessConfig;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.UnlockCallback;
@@ -57,6 +56,9 @@ import org.apache.rocketmq.common.stats.StatsItem;
 import org.apache.rocketmq.common.stats.StatsSnapshot;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.utils.NumberUtils;
+import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.filter.util.BitsArray;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -350,7 +352,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         }
         String content = JSONObject.toJSONString(groupConfig);
         try {
-            response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
+            response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
         } catch (UnsupportedEncodingException e) {
             LOGGER.error("UnsupportedEncodingException getSubscriptionGroup: group=" + groupConfig.getGroupName(), e);
 
@@ -718,7 +720,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         String content = topicConfigAndMappingSerializeWrapper.toJson();
         if (content != null && content.length() > 0) {
             try {
-                response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("", e);
 
@@ -777,8 +779,8 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         byte[] body = request.getBody();
         if (body != null) {
             try {
-                String bodyStr = new String(body, MixAll.DEFAULT_CHARSET);
-                Properties properties = MixAll.string2Properties(bodyStr);
+                String bodyStr = new String(body, MQUtils.DEFAULT_CHARSET);
+                Properties properties = PropertyUtils.string2Properties(bodyStr);
                 if (properties != null) {
                     LOGGER.info("updateColdDataFlowCtrGroupConfig new config: {}, client: {}", properties, ctx.channel().remoteAddress());
                     properties.entrySet().stream().forEach(i -> {
@@ -816,7 +818,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         byte[] body = request.getBody();
         if (body != null) {
             try {
-                String consumerGroup = new String(body, MixAll.DEFAULT_CHARSET);
+                String consumerGroup = new String(body, MQUtils.DEFAULT_CHARSET);
                 if (consumerGroup != null) {
                     LOGGER.info("removeColdDataFlowCtrGroupConfig, consumerGroup: {} client: {}", consumerGroup, ctx.channel().remoteAddress());
                     this.brokerController.getColdDataCgCtrService().removeGroupConfig(consumerGroup);
@@ -845,7 +847,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         String content = this.brokerController.getColdDataCgCtrService().getColdDataFlowCtrInfo();
         if (content != null) {
             try {
-                response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("getColdDataFlowCtrInfo UnsupportedEncodingException", e);
                 response.setCode(ResponseCode.SYSTEM_ERROR);
@@ -904,8 +906,8 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         byte[] body = request.getBody();
         if (body != null) {
             try {
-                String bodyStr = new String(body, MixAll.DEFAULT_CHARSET);
-                Properties properties = MixAll.string2Properties(bodyStr);
+                String bodyStr = new String(body, MQUtils.DEFAULT_CHARSET);
+                Properties properties = PropertyUtils.string2Properties(bodyStr);
                 if (properties != null) {
                     LOGGER.info("updateBrokerConfig, new config: [{}] client: {} ", properties, callerAddress);
 
@@ -950,7 +952,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         String content = this.brokerController.getConfiguration().getAllConfigsFormatString();
         if (content != null && content.length() > 0) {
             try {
-                response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("AdminBrokerProcessor#getBrokerConfig: unexpected error, caller={}",
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel()), e);
@@ -1426,7 +1428,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         String content = this.brokerController.getSubscriptionGroupManager().encode();
         if (content != null && content.length() > 0) {
             try {
-                response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("UnsupportedEncodingException getAllSubscriptionGroup", e);
 
@@ -1714,7 +1716,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         String content = this.brokerController.getConsumerOffsetManager().encode();
         if (content != null && content.length() > 0) {
             try {
-                response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("get all consumer offset from master error.", e);
 
@@ -1741,7 +1743,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         String content = this.brokerController.getScheduleMessageService().encode();
         if (content != null && content.length() > 0) {
             try {
-                response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("AdminBrokerProcessor#getAllDelayOffset: unexpected error, caller={}.",
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel()), e);
@@ -1770,7 +1772,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         String content = this.brokerController.getBrokerNettyServer().getQueryAssignmentProcessor().getMessageRequestModeManager().encode();
         if (content != null && content.length() > 0) {
             try {
-                response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("get all message request mode from master error.", e);
 
@@ -2400,13 +2402,13 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         MessageStore messageStore = this.brokerController.getMessageStore();
         runtimeInfo.put("remainTransientStoreBufferNumbs", String.valueOf(messageStore.remainTransientStoreBufferNumbs()));
         if (this.brokerController.getMessageStore() instanceof DefaultMessageStore && ((DefaultMessageStore) this.brokerController.getMessageStore()).isTransientStorePoolEnable()) {
-            runtimeInfo.put("remainHowManyDataToCommit", MixAll.humanReadableByteCount(messageStore.remainHowManyDataToCommit(), false));
+            runtimeInfo.put("remainHowManyDataToCommit", NumberUtils.humanReadableByteCount(messageStore.remainHowManyDataToCommit(), false));
         }
-        runtimeInfo.put("remainHowManyDataToFlush", MixAll.humanReadableByteCount(messageStore.remainHowManyDataToFlush(), false));
+        runtimeInfo.put("remainHowManyDataToFlush", NumberUtils.humanReadableByteCount(messageStore.remainHowManyDataToFlush(), false));
 
         java.io.File commitLogDir = new java.io.File(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
         if (commitLogDir.exists()) {
-            runtimeInfo.put("commitLogDirCapacity", String.format("Total : %s, Free : %s.", MixAll.humanReadableByteCount(commitLogDir.getTotalSpace(), false), MixAll.humanReadableByteCount(commitLogDir.getFreeSpace(), false)));
+            runtimeInfo.put("commitLogDirCapacity", String.format("Total : %s, Free : %s.", NumberUtils.humanReadableByteCount(commitLogDir.getTotalSpace(), false), NumberUtils.humanReadableByteCount(commitLogDir.getFreeSpace(), false)));
         }
 
         runtimeInfo.put("sendThreadPoolQueueSize", String.valueOf(this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().size()));
@@ -2639,7 +2641,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         }
         String content = JSONObject.toJSONString(new TopicConfigAndQueueMapping(topicConfig, topicQueueMappingDetail));
         try {
-            response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
+            response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
         } catch (UnsupportedEncodingException e) {
             LOGGER.error("UnsupportedEncodingException getTopicConfig: topic=" + topicConfig.getTopicName(), e);
 
@@ -2684,7 +2686,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 LOGGER.info("Set master flush offset in slave to {}", requestHeader.getMasterFlushOffset());
                 this.brokerController.getMessageStore().setMasterFlushedOffset(requestHeader.getMasterFlushOffset());
             }
-        } else if (this.brokerController.getBrokerConfig().getBrokerId() == MixAll.MASTER_ID) {
+        } else if (this.brokerController.getBrokerConfig().getBrokerId() == MQUtils.MASTER_ID) {
             final ExchangeHAInfoResponseHeader responseHeader = (ExchangeHAInfoResponseHeader) response.readCustomHeader();
             responseHeader.setMasterHaAddress(this.brokerController.getHAServerAddr());
             responseHeader.setMasterFlushOffset(this.brokerController.getMessageStore().getBrokerInitMaxOffset());
@@ -2739,7 +2741,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
 
-        if (this.brokerController.getBrokerConfig().getBrokerId() != MixAll.MASTER_ID) {
+        if (this.brokerController.getBrokerConfig().getBrokerId() != MQUtils.MASTER_ID) {
 
             ResetMasterFlushOffsetHeader requestHeader = (ResetMasterFlushOffsetHeader) request.decodeCommandCustomHeader(ResetMasterFlushOffsetHeader.class);
 

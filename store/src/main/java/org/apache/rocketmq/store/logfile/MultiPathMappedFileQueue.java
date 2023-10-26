@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
@@ -43,7 +42,7 @@ public class MultiPathMappedFileQueue extends MappedFileQueue {
     }
 
     private Set<String> getPaths() {
-        String[] paths = config.getStorePathCommitLog().trim().split(MixAll.MULTI_PATH_SPLITTER);
+        String[] paths = config.getStorePathCommitLog().trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
         return new HashSet<>(Arrays.asList(paths));
     }
 
@@ -52,7 +51,7 @@ public class MultiPathMappedFileQueue extends MappedFileQueue {
         if (StringUtils.isBlank(pathStr)) {
             return Collections.emptySet();
         }
-        String[] paths = pathStr.trim().split(MixAll.MULTI_PATH_SPLITTER);
+        String[] paths = pathStr.trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
         return new HashSet<>(Arrays.asList(paths));
     }
 

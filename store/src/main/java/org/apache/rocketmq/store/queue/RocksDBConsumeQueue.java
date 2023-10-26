@@ -21,13 +21,13 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.BoundaryType;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DispatchRequest;
@@ -226,16 +226,16 @@ public class RocksDBConsumeQueue implements ConsumeQueueInterface {
         if (StringUtils.isBlank(multiDispatchQueue)) {
             return;
         }
-        String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queues = multiDispatchQueue.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
         Long[] queueOffsets = new Long[queues.length];
         for (int i = 0; i < queues.length; i++) {
-            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MixAll.isLmq(queues[i])) {
+            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQUtils.isLmq(queues[i])) {
                 String key = MultiDispatch.lmqQueueKey(queues[i]);
                 queueOffsets[i] = queueOffsetOperator.getLmqTopicQueueNextOffset(key);
             }
         }
         MessageAccessor.putProperty(msg, MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET,
-            StringUtils.join(queueOffsets, MixAll.MULTI_DISPATCH_QUEUE_SPLITTER));
+            StringUtils.join(queueOffsets, MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER));
         msg.removeWaitStorePropertyString();
     }
 
@@ -253,9 +253,9 @@ public class RocksDBConsumeQueue implements ConsumeQueueInterface {
         if (StringUtils.isBlank(multiDispatchQueue)) {
             return;
         }
-        String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queues = multiDispatchQueue.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
         for (int i = 0; i < queues.length; i++) {
-            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MixAll.isLmq(queues[i])) {
+            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQUtils.isLmq(queues[i])) {
                 String key = MultiDispatch.lmqQueueKey(queues[i]);
                 queueOffsetOperator.increaseLmqOffset(key, (short) 1);
             }

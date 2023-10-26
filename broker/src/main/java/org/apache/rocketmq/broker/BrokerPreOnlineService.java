@@ -29,9 +29,9 @@ import org.apache.rocketmq.broker.plugin.BrokerAttachedPlugin;
 import org.apache.rocketmq.broker.schedule.DelayOffsetSerializeWrapper;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -107,7 +107,7 @@ public class BrokerPreOnlineService extends ServiceThread {
             LOGGER.error("wait for handshake completion failed, HA connection lost");
             return false;
         }
-        if (this.brokerController.getBrokerConfig().getBrokerId() != MixAll.MASTER_ID) {
+        if (this.brokerController.getBrokerConfig().getBrokerId() != MQUtils.MASTER_ID) {
             LOGGER.info("slave preOnline complete, start service");
             long minBrokerId = getMinBrokerId(brokerMemberGroup.getBrokerAddrs());
             this.registerBroker(minBrokerId, brokerMemberGroup.getBrokerAddrs().get(minBrokerId));
@@ -121,7 +121,7 @@ public class BrokerPreOnlineService extends ServiceThread {
         while (true) {
             if (waitBrokerIndex >= brokerIdList.size()) {
                 LOGGER.info("master preOnline complete, start service");
-                this.registerBroker(MixAll.MASTER_ID, this.brokerController.getBrokerAddr());
+                this.registerBroker(MQUtils.MASTER_ID, this.brokerController.getBrokerAddr());
                 return true;
             }
 
@@ -226,7 +226,7 @@ public class BrokerPreOnlineService extends ServiceThread {
         BrokerSyncInfo brokerSyncInfo;
         try {
             brokerSyncInfo = this.brokerController.getBrokerOuterAPI()
-                .retrieveBrokerHaInfo(brokerMemberGroup.getBrokerAddrs().get(MixAll.MASTER_ID));
+                .retrieveBrokerHaInfo(brokerMemberGroup.getBrokerAddrs().get(MQUtils.MASTER_ID));
         } catch (Exception e) {
             LOGGER.error("retrieve master ha info exception, {}", e);
             return false;
@@ -278,9 +278,9 @@ public class BrokerPreOnlineService extends ServiceThread {
         if (brokerMemberGroup != null && !brokerMemberGroup.getBrokerAddrs().isEmpty()) {
             long minBrokerId = getMinBrokerId(brokerMemberGroup.getBrokerAddrs());
 
-            if (this.brokerController.getBrokerConfig().getBrokerId() == MixAll.MASTER_ID) {
+            if (this.brokerController.getBrokerConfig().getBrokerId() == MQUtils.MASTER_ID) {
                 return prepareForMasterOnline(brokerMemberGroup);
-            } else if (minBrokerId == MixAll.MASTER_ID) {
+            } else if (minBrokerId == MQUtils.MASTER_ID) {
                 return prepareForSlaveOnline(brokerMemberGroup);
             } else {
                 LOGGER.info("no master online, start service directly");

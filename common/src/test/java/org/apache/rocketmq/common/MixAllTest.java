@@ -20,6 +20,9 @@ package org.apache.rocketmq.common;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NumberUtils;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MixAllTest {
     @Test
     public void testGetLocalInetAddress() throws Exception {
-        List<String> localInetAddress = MixAll.getLocalInetAddress();
+        List<String> localInetAddress = NetworkUtil.getLocalInetAddress();
         String local = InetAddress.getLocalHost().getHostAddress();
         assertThat(localInetAddress).contains("127.0.0.1");
         assertThat(local).isNotNull();
@@ -36,28 +39,28 @@ public class MixAllTest {
     @Test
     public void testCompareAndIncreaseOnly() {
         AtomicLong target = new AtomicLong(5);
-        assertThat(MixAll.compareAndIncreaseOnly(target, 6)).isTrue();
+        assertThat(NumberUtils.compareAndIncreaseOnly(target, 6)).isTrue();
         assertThat(target.get()).isEqualTo(6);
 
-        assertThat(MixAll.compareAndIncreaseOnly(target, 4)).isFalse();
+        assertThat(NumberUtils.compareAndIncreaseOnly(target, 4)).isFalse();
         assertThat(target.get()).isEqualTo(6);
     }
 
     @Test
     public void testGetLocalhostByNetworkInterface() throws Exception {
-        assertThat(MixAll.LOCALHOST).isNotNull();
-        assertThat(MixAll.getLocalhostByNetworkInterface()).isNotNull();
+        assertThat(NetworkUtil.LOCALHOST).isNotNull();
+        assertThat(NetworkUtil.getLocalhostByNetworkInterface()).isNotNull();
     }
 
     @Test
     public void testIsLmq() {
         String testLmq = null;
-        assertThat(MixAll.isLmq(testLmq)).isFalse();
+        assertThat(MQUtils.isLmq(testLmq)).isFalse();
         testLmq = "lmq";
-        assertThat(MixAll.isLmq(testLmq)).isFalse();
+        assertThat(MQUtils.isLmq(testLmq)).isFalse();
         testLmq = "%LMQ%queue123";
-        assertThat(MixAll.isLmq(testLmq)).isTrue();
+        assertThat(MQUtils.isLmq(testLmq)).isTrue();
         testLmq = "%LMQ%GID_TEST";
-        assertThat(MixAll.isLmq(testLmq)).isTrue();
+        assertThat(MQUtils.isLmq(testLmq)).isTrue();
     }
 }

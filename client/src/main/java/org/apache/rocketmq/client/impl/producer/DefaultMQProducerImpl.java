@@ -49,7 +49,6 @@ import org.apache.rocketmq.client.producer.TransactionCheckListener;
 import org.apache.rocketmq.client.producer.TransactionListener;
 import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.apache.rocketmq.client.producer.TransactionSendResult;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.compression.CompressionType;
@@ -70,6 +69,7 @@ import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.ChannelUtil;
 import org.apache.rocketmq.common.utils.CorrelationIdUtil;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.RPCHook;
@@ -121,8 +121,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     private ExecutorService asyncSenderExecutor;
 
     // compression related
-    private int compressLevel = Integer.parseInt(System.getProperty(MixAll.MESSAGE_COMPRESS_LEVEL, "5"));
-    private CompressionType compressType = CompressionType.of(System.getProperty(MixAll.MESSAGE_COMPRESS_TYPE, "ZLIB"));
+    private int compressLevel = Integer.parseInt(System.getProperty(MQUtils.MESSAGE_COMPRESS_LEVEL, "5"));
+    private CompressionType compressType = CompressionType.of(System.getProperty(MQUtils.MESSAGE_COMPRESS_TYPE, "ZLIB"));
     private final Compressor compressor = CompressorFactory.getCompressor(compressType);
 
     // backpressure related
@@ -281,7 +281,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
         this.checkConfig();
 
-        if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
+        if (!this.defaultMQProducer.getProducerGroup().equals(MQUtils.CLIENT_INNER_PRODUCER_GROUP)) {
             this.defaultMQProducer.changeInstanceNameToPID();
         }
 
@@ -309,8 +309,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     private void checkConfig() throws MQClientException {
         Validators.checkGroup(this.defaultMQProducer.getProducerGroup());
 
-        if (this.defaultMQProducer.getProducerGroup().equals(MixAll.DEFAULT_PRODUCER_GROUP)) {
-            throw new MQClientException("producerGroup can not equal " + MixAll.DEFAULT_PRODUCER_GROUP + ", please specify another one.",
+        if (this.defaultMQProducer.getProducerGroup().equals(MQUtils.DEFAULT_PRODUCER_GROUP)) {
+            throw new MQClientException("producerGroup can not equal " + MQUtils.DEFAULT_PRODUCER_GROUP + ", please specify another one.",
                 null);
         }
     }
@@ -1102,7 +1102,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         requestHeader.setBatch(msg instanceof MessageBatch);
         requestHeader.setBname(brokerName);
 
-        if (!requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (!requestHeader.getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
             return requestHeader;
         }
 

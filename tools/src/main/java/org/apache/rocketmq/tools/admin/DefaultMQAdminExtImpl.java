@@ -47,7 +47,6 @@ import org.apache.rocketmq.client.impl.MQClientManager;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.PlainAccessConfig;
 import org.apache.rocketmq.common.ServiceState;
@@ -64,6 +63,7 @@ import org.apache.rocketmq.common.message.MessageRequestMode;
 import org.apache.rocketmq.common.namesrv.NamesrvUtil;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -127,20 +127,20 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
     private static final Set<String> SYSTEM_GROUP_SET = new HashSet<>();
 
     static {
-        SYSTEM_GROUP_SET.add(MixAll.DEFAULT_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.DEFAULT_PRODUCER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.TOOLS_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.SCHEDULE_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.FILTERSRV_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.MONITOR_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.CLIENT_INNER_PRODUCER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.SELF_TEST_PRODUCER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.SELF_TEST_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.ONS_HTTP_PROXY_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.CID_ONSAPI_PERMISSION_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.CID_ONSAPI_OWNER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.CID_ONSAPI_PULL_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.CID_SYS_RMQ_TRANS);
+        SYSTEM_GROUP_SET.add(MQUtils.DEFAULT_CONSUMER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.DEFAULT_PRODUCER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.TOOLS_CONSUMER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.SCHEDULE_CONSUMER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.FILTERSRV_CONSUMER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.MONITOR_CONSUMER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.CLIENT_INNER_PRODUCER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.SELF_TEST_PRODUCER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.SELF_TEST_CONSUMER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.ONS_HTTP_PROXY_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.CID_ONSAPI_PERMISSION_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.CID_ONSAPI_OWNER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.CID_ONSAPI_PULL_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.CID_SYS_RMQ_TRANS);
     }
 
     private final Logger logger = LoggerFactory.getLogger(DefaultMQAdminExtImpl.class);
@@ -419,7 +419,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         String topic) throws RemotingException, MQClientException, InterruptedException, MQBrokerException {
         TopicRouteData topicRouteData = null;
         List<String> routeTopics = new ArrayList<>();
-        routeTopics.add(MixAll.getRetryTopic(consumerGroup));
+        routeTopics.add(MQUtils.getRetryTopic(consumerGroup));
         if (topic != null) {
             routeTopics.add(topic);
             routeTopics.add(KeyBuilder.buildPopRetryTopic(topic, consumerGroup));
@@ -506,7 +506,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
             public AdminToolResult doExecute() throws Exception {
                 TopicRouteData topicRouteData = null;
                 List<String> routeTopics = new ArrayList<>();
-                routeTopics.add(MixAll.getRetryTopic(consumerGroup));
+                routeTopics.add(MQUtils.getRetryTopic(consumerGroup));
                 if (topic != null) {
                     routeTopics.add(topic);
                     routeTopics.add(KeyBuilder.buildPopRetryTopic(topic, consumerGroup));
@@ -612,7 +612,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         String consumerGroup) throws InterruptedException, MQBrokerException,
         RemotingException, MQClientException {
         ConsumerConnection result = new ConsumerConnection();
-        String topic = MixAll.getRetryTopic(consumerGroup);
+        String topic = MQUtils.getRetryTopic(consumerGroup);
         List<BrokerData> brokers = this.examineTopicRouteInfo(topic).getBrokerDatas();
         BrokerData brokerData = brokers.get(random.nextInt(brokers.size()));
         String addr = null;
@@ -1067,7 +1067,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
     @Override
     public TopicList queryTopicsByConsumer(
         String group) throws InterruptedException, MQBrokerException, RemotingException, MQClientException {
-        String retryTopic = MixAll.getRetryTopic(group);
+        String retryTopic = MQUtils.getRetryTopic(group);
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(retryTopic);
         TopicList result = new TopicList();
 
@@ -1088,7 +1088,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         return adminToolExecute(new AdminToolHandler() {
             @Override
             public AdminToolResult doExecute() throws Exception {
-                String retryTopic = MixAll.getRetryTopic(group);
+                String retryTopic = MQUtils.getRetryTopic(group);
                 TopicRouteData topicRouteData = examineTopicRouteInfo(retryTopic);
 
                 if (topicRouteData == null || CollectionUtils.isEmpty(topicRouteData.getBrokerDatas())) {
@@ -1295,7 +1295,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
     @Override
     public ConsumerRunningInfo getConsumerRunningInfo(String consumerGroup, String clientId, boolean jstack,
         boolean metrics) throws RemotingException, MQClientException, InterruptedException {
-        String topic = MixAll.RETRY_GROUP_TOPIC_PREFIX + consumerGroup;
+        String topic = MQUtils.RETRY_GROUP_TOPIC_PREFIX + consumerGroup;
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
         List<BrokerData> brokerDatas = topicRouteData.getBrokerDatas();
         if (brokerDatas != null) {
@@ -1528,7 +1528,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
             if (mq.getTopic().equals(msg.getTopic()) && mq.getQueueId() == msg.getQueueId()) {
                 BrokerData brokerData = ci.getBrokerAddrTable().get(mq.getBrokerName());
                 if (brokerData != null) {
-                    String addr = NetworkUtil.convert2IpString(brokerData.getBrokerAddrs().get(MixAll.MASTER_ID));
+                    String addr = NetworkUtil.convert2IpString(brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID));
                     if (NetworkUtil.socketAddress2String(msg.getStoreHost()).equals(addr)) {
                         if (next.getValue().getConsumerOffset() > msg.getQueueOffset()) {
                             return true;
@@ -1558,7 +1558,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                 if (mq.getTopic().equals(msg.getTopic()) && mq.getQueueId() == msg.getQueueId()) {
                     BrokerData brokerData = ci.getBrokerAddrTable().get(mq.getBrokerName());
                     if (brokerData != null) {
-                        String addr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
+                        String addr = brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID);
                         if (addr.equals(NetworkUtil.socketAddress2String(msg.getStoreHost()))) {
                             if (next.getValue().getConsumerOffset() > msg.getQueueOffset()) {
                                 return true;
@@ -1575,7 +1575,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
     @Override
     public void cloneGroupOffset(String srcGroup, String destGroup, String topic,
         boolean isOffline) throws RemotingException, MQClientException, InterruptedException, MQBrokerException {
-        String retryTopic = MixAll.getRetryTopic(srcGroup);
+        String retryTopic = MQUtils.getRetryTopic(srcGroup);
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(retryTopic);
 
         for (BrokerData bd : topicRouteData.getBrokerDatas()) {
@@ -1636,7 +1636,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         Iterator<Entry<String, SubscriptionGroupConfig>> iterator = subscriptionGroupWrapper.getSubscriptionGroupTable().entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, SubscriptionGroupConfig> configEntry = iterator.next();
-            if (MixAll.isSysConsumerGroup(configEntry.getKey()) || SYSTEM_GROUP_SET.contains(configEntry.getKey())) {
+            if (MQUtils.isSysConsumerGroup(configEntry.getKey()) || SYSTEM_GROUP_SET.contains(configEntry.getKey())) {
                 iterator.remove();
             }
         }
@@ -1662,7 +1662,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                     || TopicValidator.isSystemTopic(topicConfig.getTopicName())) {
                 iterator.remove();
             } else if (!specialTopic && StringUtils.startsWithAny(topicConfig.getTopicName(),
-                    MixAll.RETRY_GROUP_TOPIC_PREFIX, MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
+                    MQUtils.RETRY_GROUP_TOPIC_PREFIX, MQUtils.DLQ_GROUP_TOPIC_PREFIX)) {
                 iterator.remove();
             } else if (!PermName.isValid(topicConfig.getPerm())) {
                 iterator.remove();

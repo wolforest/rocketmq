@@ -19,10 +19,10 @@ package org.apache.rocketmq.store.ha.autoswitch;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.GetMessageStatus;
@@ -307,7 +307,7 @@ public class AutoSwitchHATest {
     public void testChangeRoleManyTimes() throws Exception {
 
         // Skip MacOSX platform for now as this test case is not stable on it.
-        Assume.assumeFalse(MixAll.isMac());
+        Assume.assumeFalse(PlatformUtils.isMac());
 
         // Step1, change store1 to master, store2 to follower
         init(defaultMappedFileSize);
