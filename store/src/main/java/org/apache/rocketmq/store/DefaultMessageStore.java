@@ -38,6 +38,7 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.running.RunningStats;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.ProcessUtils;
 import org.apache.rocketmq.common.utils.ServiceProvider;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -1201,7 +1202,7 @@ public class DefaultMessageStore implements MessageStore {
         IOTinyUtils.ensureDirOK(file.getParent());
         boolean result = file.createNewFile();
         LOGGER.info(fileName + (result ? " create OK" : " already exists"));
-        StringUtils.string2File(Long.toString(MixAll.getPID()), file.getAbsolutePath());
+        StringUtils.string2File(Long.toString(ProcessUtils.getPID()), file.getAbsolutePath());
     }
 
     private void addScheduleTask() {

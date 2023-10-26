@@ -19,7 +19,6 @@ package org.apache.rocketmq.common;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -38,8 +37,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
-
-import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.annotation.ImportantField;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.help.FAQUrl;
@@ -79,7 +76,6 @@ public class MixAll {
     public static final long FIRST_SLAVE_ID = 1L;
 
     public static final long FIRST_BROKER_CONTROLLER_ID = 1L;
-    public static final long CURRENT_JVM_PID = getPID();
     public final static int UNIT_PRE_SIZE_FOR_MSG = 28;
     public final static int ALL_ACK_IN_SYNC_STATE_SET = -1;
 
@@ -145,18 +141,6 @@ public class MixAll {
         return DLQ_GROUP_TOPIC_PREFIX + consumerGroup;
     }
 
-    public static long getPID() {
-        String processName = ManagementFactory.getRuntimeMXBean().getName();
-        if (StringUtils.isEmpty(processName)) {
-            return 0;
-        }
-
-        try {
-            return Long.parseLong(processName.split("@")[0]);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
 
     public static void printObjectProperties(final Logger logger, final Object object) {
         printObjectProperties(logger, object, false);
