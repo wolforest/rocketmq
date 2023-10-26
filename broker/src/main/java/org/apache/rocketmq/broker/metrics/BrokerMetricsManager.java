@@ -52,7 +52,6 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ConsumerManager;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.attribute.TopicMessageType;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -63,6 +62,7 @@ import org.apache.rocketmq.common.metrics.NopLongCounter;
 import org.apache.rocketmq.common.metrics.NopLongHistogram;
 import org.apache.rocketmq.common.metrics.NopObservableLongGauge;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.metrics.RemotingMetricsManager;
@@ -144,7 +144,7 @@ public class BrokerMetricsManager {
 
     public static final List<String> SYSTEM_GROUP_PREFIX_LIST = new ArrayList<String>() {
         {
-            add(MixAll.CID_RMQ_SYS_PREFIX.toLowerCase());
+            add(MQUtils.CID_RMQ_SYS_PREFIX.toLowerCase());
         }
     };
 
@@ -179,7 +179,7 @@ public class BrokerMetricsManager {
         if (StringUtils.isBlank(topic)) {
             return false;
         }
-        return topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX) || topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX);
+        return topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX) || topic.startsWith(MQUtils.DLQ_GROUP_TOPIC_PREFIX);
     }
 
     public static boolean isSystemGroup(String group) {

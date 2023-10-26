@@ -33,6 +33,7 @@ import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -377,7 +378,7 @@ public class BrokerContainerStartup {
 
     private static void initRocketmqHome(BrokerContainerConfig containerConfig) {
         if (null == containerConfig.getRocketmqHome()) {
-            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation", MixAll.ROCKETMQ_HOME_ENV);
+            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation", MQUtils.ROCKETMQ_HOME_ENV);
             System.exit(-2);
         }
         rocketmqHome = containerConfig.getRocketmqHome();
@@ -458,8 +459,8 @@ public class BrokerContainerStartup {
         if (properties == null) {
             return;
         }
-        String rmqAddressServerDomain = properties.getProperty("rmqAddressServerDomain", MixAll.WS_DOMAIN_NAME);
-        String rmqAddressServerSubGroup = properties.getProperty("rmqAddressServerSubGroup", MixAll.WS_DOMAIN_SUBGROUP);
+        String rmqAddressServerDomain = properties.getProperty("rmqAddressServerDomain", NetworkUtil.WS_DOMAIN_NAME);
+        String rmqAddressServerSubGroup = properties.getProperty("rmqAddressServerSubGroup", NetworkUtil.WS_DOMAIN_SUBGROUP);
         System.setProperty("rocketmq.namesrv.domain", rmqAddressServerDomain);
         System.setProperty("rocketmq.namesrv.domain.subgroup", rmqAddressServerSubGroup);
     }

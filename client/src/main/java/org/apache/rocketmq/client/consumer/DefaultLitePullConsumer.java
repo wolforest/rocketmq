@@ -24,10 +24,10 @@ import org.apache.rocketmq.client.impl.consumer.DefaultLitePullConsumerImpl;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.TraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -184,7 +184,7 @@ public class DefaultLitePullConsumer extends ClientConfig implements LitePullCon
      * Default constructor.
      */
     public DefaultLitePullConsumer() {
-        this(null, MixAll.DEFAULT_CONSUMER_GROUP, null);
+        this(null, MQUtils.DEFAULT_CONSUMER_GROUP, null);
     }
 
     /**
@@ -202,7 +202,7 @@ public class DefaultLitePullConsumer extends ClientConfig implements LitePullCon
      * @param rpcHook RPC hook to execute before each remoting command.
      */
     public DefaultLitePullConsumer(RPCHook rpcHook) {
-        this(null, MixAll.DEFAULT_CONSUMER_GROUP, rpcHook);
+        this(null, MQUtils.DEFAULT_CONSUMER_GROUP, rpcHook);
     }
 
     /**

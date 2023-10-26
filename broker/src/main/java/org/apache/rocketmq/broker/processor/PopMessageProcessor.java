@@ -41,7 +41,6 @@ import org.apache.rocketmq.broker.pagecache.ManyMessageTransfer;
 import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.service.pop.QueueLockManager;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.PopAckConstants;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.ConsumeInitMode;
@@ -53,6 +52,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -532,7 +532,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
                     Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
                         .put(LABEL_TOPIC, requestHeader.getTopic())
                         .put(LABEL_CONSUMER_GROUP, requestHeader.getConsumerGroup())
-                        .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(requestHeader.getTopic()) || MixAll.isSysConsumerGroup(requestHeader.getConsumerGroup()))
+                        .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(requestHeader.getTopic()) || MQUtils.isSysConsumerGroup(requestHeader.getConsumerGroup()))
                         .put(LABEL_IS_RETRY, isRetry)
                         .build();
                     BrokerMetricsManager.messagesOutTotal.add(result.getMessageCount(), attributes);

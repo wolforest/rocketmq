@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ConcurrentHashMapUtils;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
@@ -98,7 +98,7 @@ public class QueueOffsetOperator {
     public void setLmqTopicQueueTable(ConcurrentMap<String, Long> lmqTopicQueueTable) {
         ConcurrentMap<String, Long> table = new ConcurrentHashMap<String, Long>(1024);
         for (Map.Entry<String, Long> entry : lmqTopicQueueTable.entrySet()) {
-            if (MixAll.isLmq(entry.getKey())) {
+            if (MQUtils.isLmq(entry.getKey())) {
                 table.put(entry.getKey(), entry.getValue());
             }
         }

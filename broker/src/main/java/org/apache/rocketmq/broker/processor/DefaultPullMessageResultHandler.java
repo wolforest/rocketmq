@@ -30,7 +30,6 @@ import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.pagecache.ManyMessageTransfer;
 import org.apache.rocketmq.broker.plugin.PullMessageResultHandler;
 import org.apache.rocketmq.common.AbortProcessException;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -40,6 +39,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -130,7 +130,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
             Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
                 .put(LABEL_TOPIC, requestHeader.getTopic())
                 .put(LABEL_CONSUMER_GROUP, requestHeader.getConsumerGroup())
-                .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(requestHeader.getTopic()) || MixAll.isSysConsumerGroup(requestHeader.getConsumerGroup()))
+                .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(requestHeader.getTopic()) || MQUtils.isSysConsumerGroup(requestHeader.getConsumerGroup()))
                 .build();
             BrokerMetricsManager.messagesOutTotal.add(getMessageResult.getMessageCount(), attributes);
             BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);

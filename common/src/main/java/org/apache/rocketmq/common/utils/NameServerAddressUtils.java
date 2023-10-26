@@ -14,7 +14,6 @@ package org.apache.rocketmq.common.utils;
 
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.MixAll;
 
 public class NameServerAddressUtils {
     public static final String INSTANCE_PREFIX = "MQ_INST_";
@@ -22,9 +21,11 @@ public class NameServerAddressUtils {
     public static final String ENDPOINT_PREFIX = "(\\w+://|)";
     public static final Pattern NAMESRV_ENDPOINT_PATTERN = Pattern.compile("^http://.*");
     public static final Pattern INST_ENDPOINT_PATTERN = Pattern.compile("^" + ENDPOINT_PREFIX + INSTANCE_REGEX + "\\..*");
+    public static final String NAMESRV_ADDR_ENV = "NAMESRV_ADDR";
+    public static final String NAMESRV_ADDR_PROPERTY = "rocketmq.namesrv.addr";
 
     public static String getNameServerAddresses() {
-        return System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
+        return System.getProperty(NAMESRV_ADDR_PROPERTY, System.getenv(NAMESRV_ADDR_ENV));
     }
 
     public static boolean validateInstanceEndpoint(String endpoint) {

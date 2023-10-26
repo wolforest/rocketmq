@@ -20,7 +20,7 @@ import java.util.HashMap;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.srvutil.ServerUtil;
 import org.apache.rocketmq.tools.command.SubCommandException;
 import org.apache.rocketmq.tools.command.server.NameServerMocker;
@@ -39,7 +39,7 @@ public class AddWritePermSubCommandTest {
     public void before() {
         brokerMocker = startOneBroker();
         nameServerMocker = startNameServer();
-        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, "localhost:" + nameServerMocker.listenPort());
+        System.setProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, "localhost:" + nameServerMocker.listenPort());
     }
 
     @After

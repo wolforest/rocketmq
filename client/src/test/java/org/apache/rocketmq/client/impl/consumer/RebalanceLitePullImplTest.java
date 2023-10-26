@@ -22,9 +22,9 @@ import org.apache.rocketmq.client.consumer.store.ReadOffsetType;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.MQAdminImpl;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 
 public class RebalanceLitePullImplTest {
     private MessageQueue mq = new MessageQueue("topic1", "broker1", 0);
-    private MessageQueue retryMq = new MessageQueue(MixAll.RETRY_GROUP_TOPIC_PREFIX + "group", "broker1", 0);
+    private MessageQueue retryMq = new MessageQueue(MQUtils.RETRY_GROUP_TOPIC_PREFIX + "group", "broker1", 0);
     private DefaultLitePullConsumerImpl consumerImpl = mock(DefaultLitePullConsumerImpl.class);
     private RebalanceLitePullImpl rebalanceImpl = new RebalanceLitePullImpl(consumerImpl);
     private OffsetStore offsetStore = mock(OffsetStore.class);

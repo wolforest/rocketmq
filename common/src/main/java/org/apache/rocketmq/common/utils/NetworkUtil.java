@@ -41,11 +41,13 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 public class NetworkUtil {
     public static final String OS_NAME = System.getProperty("os.name");
     public static final String LOCALHOST = localhost();
-
+    public static final String DEFAULT_NAMESRV_ADDR_LOOKUP = "jmenv.tbsite.net";
+    public static final String WS_DOMAIN_NAME = System.getProperty("rocketmq.namesrv.domain", DEFAULT_NAMESRV_ADDR_LOOKUP);
+    public static final String WS_DOMAIN_SUBGROUP = System.getProperty("rocketmq.namesrv.domain.subgroup", "nsaddr");
+    public static final List<String> LOCAL_INET_ADDRESS = getLocalInetAddress();
     private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
     private static boolean isLinuxPlatform = false;
     private static boolean isWindowsPlatform = false;
-    public static final String DEFAULT_NAMESRV_ADDR_LOOKUP = "jmenv.tbsite.net";
 
     static {
         if (OS_NAME != null && OS_NAME.toLowerCase().contains("linux")) {

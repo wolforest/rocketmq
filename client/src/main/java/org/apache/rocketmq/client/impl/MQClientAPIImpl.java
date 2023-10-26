@@ -40,6 +40,7 @@ import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
+import org.apache.rocketmq.client.utils.MessageUtil;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
@@ -63,6 +64,7 @@ import org.apache.rocketmq.common.namesrv.TopAddressing;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.ChannelUtil;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -551,7 +553,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         long beginStartTime = System.currentTimeMillis();
         RemotingCommand request = null;
         String msgType = msg.getProperty(MessageConst.PROPERTY_MESSAGE_TYPE);
-        boolean isReply = msgType != null && msgType.equals(MixAll.REPLY_MESSAGE_FLAG);
+        boolean isReply = msgType != null && msgType.equals(MessageUtil.REPLY_MESSAGE_FLAG);
         if (isReply) {
             if (sendSmartMsg) {
                 SendMessageRequestHeaderV2 requestHeaderV2 = SendMessageRequestHeaderV2.createSendMessageRequestHeaderV2(requestHeader);
@@ -799,7 +801,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         sendResult.setTransactionId(responseHeader.getTransactionId());
         String regionId = response.getExtFields().get(MessageConst.PROPERTY_MSG_REGION);
         if (regionId == null || regionId.isEmpty()) {
-            regionId = MixAll.DEFAULT_TRACE_REGION_ID;
+            regionId = MQUtils.DEFAULT_TRACE_REGION_ID;
         }
         sendResult.setRegionId(regionId);
         String traceOn = response.getExtFields().get(MessageConst.PROPERTY_TRACE_SWITCH);
@@ -1139,11 +1141,11 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                         final String queueOffsetKey;
                         final int index;
                         final Long msgQueueOffset;
-                        if (MixAll.isLmq(topic) && messageExt.getReconsumeTimes() == 0 && StringUtils.isNotEmpty(
+                        if (MQUtils.isLmq(topic) && messageExt.getReconsumeTimes() == 0 && StringUtils.isNotEmpty(
                             messageExt.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH))) {
                             // process LMQ, LMQ topic has only 1 queue, which queue id is 0
-                            queueIdKey = ExtraInfoUtil.getStartOffsetInfoMapKey(topic, MixAll.LMQ_QUEUE_ID);
-                            queueOffsetKey = ExtraInfoUtil.getQueueOffsetMapKey(topic, MixAll.LMQ_QUEUE_ID, Long.parseLong(
+                            queueIdKey = ExtraInfoUtil.getStartOffsetInfoMapKey(topic, MQUtils.LMQ_QUEUE_ID);
+                            queueOffsetKey = ExtraInfoUtil.getQueueOffsetMapKey(topic, MQUtils.LMQ_QUEUE_ID, Long.parseLong(
                                 messageExt.getProperty(MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET)));
                             index = sortMap.get(queueIdKey).indexOf(
                                 Long.parseLong(messageExt.getProperty(MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET)));
@@ -1201,7 +1203,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         Map<String/*topicMark@queueId*/, List<Long>/*msg queueOffset*/> sortMap = new HashMap<>(16);
         for (MessageExt messageExt : msgFoundList) {
             final String key;
-            if (MixAll.isLmq(topic) && messageExt.getReconsumeTimes() == 0
+            if (MQUtils.isLmq(topic) && messageExt.getReconsumeTimes() == 0
                 && StringUtils.isNotEmpty(messageExt.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH))) {
                 // process LMQ, LMQ topic has only 1 queue, which queue id is 0
                 key = ExtraInfoUtil.getStartOffsetInfoMapKey(
@@ -1561,7 +1563,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         final Boolean isUnqiueKey
     ) throws RemotingException, MQBrokerException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_MESSAGE, requestHeader);
-        request.addExtField(MixAll.UNIQUE_MSG_QUERY_FLAG, isUnqiueKey.toString());
+        request.addExtField(MQUtils.UNIQUE_MSG_QUERY_FLAG, isUnqiueKey.toString());
         this.remotingClient.invokeAsync(ChannelUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis,
             invokeCallback);
     }
@@ -2666,7 +2668,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                         Iterator<String> it = topicList.getTopicList().iterator();
                         while (it.hasNext()) {
                             String topic = it.next();
-                            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                            if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                                 it.remove();
                             }
                         }
@@ -2696,7 +2698,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                         Iterator<String> it = topicList.getTopicList().iterator();
                         while (it.hasNext()) {
                             String topic = it.next();
-                            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                            if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                                 it.remove();
                             }
                         }
@@ -2725,7 +2727,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
                         Iterator<String> it = topicList.getTopicList().iterator();
                         while (it.hasNext()) {
                             String topic = it.next();
-                            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                            if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                                 it.remove();
                             }
                         }

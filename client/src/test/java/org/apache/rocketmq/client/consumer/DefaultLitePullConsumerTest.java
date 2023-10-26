@@ -47,12 +47,12 @@ import org.apache.rocketmq.client.impl.consumer.PullResultExt;
 import org.apache.rocketmq.client.impl.consumer.RebalanceImpl;
 import org.apache.rocketmq.client.impl.consumer.RebalanceService;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageClientExt;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.protocol.header.PullMessageRequestHeader;
 import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.junit.After;
@@ -541,7 +541,7 @@ public class DefaultLitePullConsumerTest {
 
     @Test
     public void testCheckConfig_Exception() {
-        DefaultLitePullConsumer litePullConsumer = new DefaultLitePullConsumer(MixAll.DEFAULT_CONSUMER_GROUP);
+        DefaultLitePullConsumer litePullConsumer = new DefaultLitePullConsumer(MQUtils.DEFAULT_CONSUMER_GROUP);
         try {
             litePullConsumer.start();
             failBecauseExceptionWasNotThrown(MQClientException.class);

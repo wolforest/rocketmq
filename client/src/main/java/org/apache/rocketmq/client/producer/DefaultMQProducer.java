@@ -43,6 +43,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
@@ -369,7 +370,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
             return false;
         }
         // retry message do not support batch processing
-        if (msg.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (msg.getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
             return false;
         }
         // message which have been assigned to producer group do not support batch processing

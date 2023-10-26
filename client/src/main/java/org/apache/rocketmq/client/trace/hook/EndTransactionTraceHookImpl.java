@@ -24,10 +24,10 @@ import org.apache.rocketmq.client.trace.TraceBean;
 import org.apache.rocketmq.client.trace.TraceContext;
 import org.apache.rocketmq.client.trace.TraceDispatcher;
 import org.apache.rocketmq.client.trace.TraceType;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageType;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
 
 public class EndTransactionTraceHookImpl implements EndTransactionHook {
@@ -69,7 +69,7 @@ public class EndTransactionTraceHookImpl implements EndTransactionHook {
         traceBean.setFromTransactionCheck(context.isFromTransactionCheck());
         String regionId = msg.getProperty(MessageConst.PROPERTY_MSG_REGION);
         if (regionId == null || regionId.isEmpty()) {
-            regionId = MixAll.DEFAULT_TRACE_REGION_ID;
+            regionId = MQUtils.DEFAULT_TRACE_REGION_ID;
         }
         tuxeContext.setRegionId(regionId);
         tuxeContext.getTraceBeans().add(traceBean);

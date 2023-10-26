@@ -37,7 +37,6 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.PlainAccessConfig;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.message.Message;
@@ -47,6 +46,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.message.MessageQueueAssignment;
 import org.apache.rocketmq.common.message.MessageRequestMode;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.InvokeCallback;
 import org.apache.rocketmq.remoting.RemotingClient;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -498,7 +498,7 @@ public class MQClientAPIImplTest {
     public void testPopLmqMessage_async() throws Exception {
         final long popTime = System.currentTimeMillis();
         final int invisibleTime = 10 * 1000;
-        final String lmqTopic = MixAll.LMQ_PREFIX + "lmq1";
+        final String lmqTopic = MQUtils.LMQ_PREFIX + "lmq1";
         doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock mock) throws Throwable {

@@ -17,8 +17,8 @@
 package org.apache.rocketmq.broker.longpolling;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
@@ -54,7 +54,7 @@ public class LmqPullRequestHoldService extends PullRequestHoldService {
             } catch (Throwable e) {
                 LOGGER.error("check hold request failed. topic={}, queueId={}", topic, queueId, e);
             }
-            if (MixAll.isLmq(topic)) {
+            if (MQUtils.isLmq(topic)) {
                 ManyPullRequest mpr = pullRequestTable.get(key);
                 if (mpr == null || mpr.getPullRequestList() == null || mpr.getPullRequestList().isEmpty()) {
                     pullRequestTable.remove(key);

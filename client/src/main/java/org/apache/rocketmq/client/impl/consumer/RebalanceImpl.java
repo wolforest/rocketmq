@@ -37,6 +37,7 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.message.MessageQueueAssignment;
 import org.apache.rocketmq.common.message.MessageRequestMode;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.protocol.body.LockBatchRequestBody;
@@ -281,7 +282,7 @@ public abstract class RebalanceImpl {
                 balanced = this.rebalanceByTopic(topic, isOrder);
             }
         } catch (Throwable e) {
-            if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            if (!topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                 log.warn("rebalance Exception", e);
                 balanced = false;
             }
@@ -351,7 +352,7 @@ public abstract class RebalanceImpl {
 
         Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);
         if (null == mqSet) {
-            if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            if (!topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                 this.messageQueueChanged(topic, Collections.<MessageQueue>emptySet(), Collections.<MessageQueue>emptySet());
                 log.warn("doRebalance, {}, but the topic[{}] not exist.", consumerGroup, topic);
             }
@@ -640,7 +641,7 @@ public abstract class RebalanceImpl {
             }
         }
 
-        if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (!topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
             if (mq2PopAssignment.isEmpty() && !mq2PushAssignment.isEmpty()) {
                 //pop switch to push
                 //subscribe pop retry topic

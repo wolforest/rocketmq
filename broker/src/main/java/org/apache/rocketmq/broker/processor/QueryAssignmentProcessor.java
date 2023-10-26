@@ -32,11 +32,11 @@ import org.apache.rocketmq.broker.topic.TopicRouteInfoManager;
 import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;
 import org.apache.rocketmq.client.consumer.rebalance.AllocateMessageQueueAveragely;
 import org.apache.rocketmq.client.consumer.rebalance.AllocateMessageQueueAveragelyByCircle;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.message.MessageQueueAssignment;
 import org.apache.rocketmq.common.message.MessageRequestMode;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -114,7 +114,7 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
             setMessageRequestModeRequestBody.setTopic(topic);
             setMessageRequestModeRequestBody.setConsumerGroup(consumerGroup);
 
-            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                 // retry topic must be pull mode
                 setMessageRequestModeRequestBody.setMode(MessageRequestMode.PULL);
             } else {
@@ -176,7 +176,7 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
             case CLUSTERING: {
                 Set<MessageQueue> mqSet = topicRouteInfoManager.getTopicSubscribeInfo(topic);
                 if (null == mqSet) {
-                    if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                    if (!topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
                         log.warn("QueryLoad: no assignment for group[{}], the topic[{}] does not exist.", consumerGroup, topic);
                     }
                     return null;
@@ -302,7 +302,7 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
         final SetMessageRequestModeRequestBody requestBody = SetMessageRequestModeRequestBody.decode(request.getBody(), SetMessageRequestModeRequestBody.class);
 
         final String topic = requestBody.getTopic();
-        if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
             response.setCode(ResponseCode.NO_PERMISSION);
             response.setRemark("retry topic is not allowed to set mode");
             return response;

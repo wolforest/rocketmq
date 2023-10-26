@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.subscription;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 
 public class LmqSubscriptionGroupManager extends SubscriptionGroupManager {
@@ -28,7 +28,7 @@ public class LmqSubscriptionGroupManager extends SubscriptionGroupManager {
 
     @Override
     public SubscriptionGroupConfig findSubscriptionGroupConfig(final String group) {
-        if (MixAll.isLmq(group)) {
+        if (MQUtils.isLmq(group)) {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
             subscriptionGroupConfig.setGroupName(group);
             return subscriptionGroupConfig;
@@ -38,7 +38,7 @@ public class LmqSubscriptionGroupManager extends SubscriptionGroupManager {
 
     @Override
     public void updateSubscriptionGroupConfig(final SubscriptionGroupConfig config) {
-        if (config == null || MixAll.isLmq(config.getGroupName())) {
+        if (config == null || MQUtils.isLmq(config.getGroupName())) {
             return;
         }
         super.updateSubscriptionGroupConfig(config);

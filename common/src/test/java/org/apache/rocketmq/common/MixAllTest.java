@@ -20,6 +20,7 @@ package org.apache.rocketmq.common;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.NumberUtils;
 import org.junit.Test;
@@ -54,12 +55,12 @@ public class MixAllTest {
     @Test
     public void testIsLmq() {
         String testLmq = null;
-        assertThat(MixAll.isLmq(testLmq)).isFalse();
+        assertThat(MQUtils.isLmq(testLmq)).isFalse();
         testLmq = "lmq";
-        assertThat(MixAll.isLmq(testLmq)).isFalse();
+        assertThat(MQUtils.isLmq(testLmq)).isFalse();
         testLmq = "%LMQ%queue123";
-        assertThat(MixAll.isLmq(testLmq)).isTrue();
+        assertThat(MQUtils.isLmq(testLmq)).isTrue();
         testLmq = "%LMQ%GID_TEST";
-        assertThat(MixAll.isLmq(testLmq)).isTrue();
+        assertThat(MQUtils.isLmq(testLmq)).isTrue();
     }
 }

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageBatch;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.junit.Test;
 
 public class MessageBatchTest {
@@ -65,7 +66,7 @@ public class MessageBatchTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testGenerate_Retry() throws Exception {
         List<Message> messages = generateMessages();
-        messages.get(1).setTopic(MixAll.RETRY_GROUP_TOPIC_PREFIX + "topic");
+        messages.get(1).setTopic(MQUtils.RETRY_GROUP_TOPIC_PREFIX + "topic");
         MessageBatch.generateFromList(messages);
     }
 }

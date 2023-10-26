@@ -23,9 +23,9 @@ import com.google.common.base.CharMatcher;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.Validators;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
@@ -72,7 +72,7 @@ public class GrpcValidator {
         } catch (MQClientException mqClientException) {
             throw new GrpcProxyException(Code.ILLEGAL_CONSUMER_GROUP, mqClientException.getErrorMessage());
         }
-        if (MixAll.isSysConsumerGroup(consumerGroupName)) {
+        if (MQUtils.isSysConsumerGroup(consumerGroupName)) {
             throw new GrpcProxyException(Code.ILLEGAL_CONSUMER_GROUP, "cannot use system consumer group");
         }
     }

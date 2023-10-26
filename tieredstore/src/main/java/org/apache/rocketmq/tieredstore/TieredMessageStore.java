@@ -26,12 +26,12 @@ import com.google.common.base.Stopwatch;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.BoundaryType;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.PopAckConstants;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DispatchRequest;
@@ -412,7 +412,7 @@ public class TieredMessageStore extends AbstractPluginMessageStore {
                 String topic = topicMetadata.getTopic();
                 if (retainTopics.contains(topic) ||
                     TopicValidator.isSystemTopic(topic) ||
-                    MixAll.isLmq(topic)) {
+                    MQUtils.isLmq(topic)) {
                     return;
                 }
                 this.destroyCompositeFlatFile(topicMetadata.getTopic());

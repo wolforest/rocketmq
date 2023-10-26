@@ -16,7 +16,6 @@
  */
 package org.apache.rocketmq.store.service;
 
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
@@ -170,7 +169,7 @@ public class CleanCommitLogService {
 
     private String[] getCommitLogStorePath() {
         String commitLogStorePath = messageStore.getMessageStoreConfig().getStorePathCommitLog();
-        return commitLogStorePath.trim().split(MixAll.MULTI_PATH_SPLITTER);
+        return commitLogStorePath.trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
     }
 
     private boolean isSpaceToDelete() {
@@ -279,7 +278,7 @@ public class CleanCommitLogService {
     public double calcStorePathPhysicRatio() {
         Set<String> fullStorePath = new HashSet<>();
         String storePath = messageStore.getStorePathPhysic();
-        String[] paths = storePath.trim().split(MixAll.MULTI_PATH_SPLITTER);
+        String[] paths = storePath.trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
         double minPhysicRatio = 100;
         for (String path : paths) {
             double physicRatio = IOTinyUtils.isPathExists(path) ?

@@ -28,8 +28,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.ControllerConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -105,7 +105,7 @@ public class ControllerStartup {
         PropertyUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), controllerConfig);
 
         if (StringUtils.isEmpty(controllerConfig.getRocketmqHome())) {
-            System.out.printf("Please set the %s or %s variable in your environment!%n", MixAll.ROCKETMQ_HOME_ENV, MixAll.ROCKETMQ_HOME_PROPERTY);
+            System.out.printf("Please set the %s or %s variable in your environment!%n", MQUtils.ROCKETMQ_HOME_ENV, MQUtils.ROCKETMQ_HOME_PROPERTY);
             System.exit(-1);
         }
 

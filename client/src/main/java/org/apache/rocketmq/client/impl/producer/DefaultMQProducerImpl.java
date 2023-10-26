@@ -70,6 +70,7 @@ import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.ChannelUtil;
 import org.apache.rocketmq.common.utils.CorrelationIdUtil;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.RPCHook;
@@ -1102,7 +1103,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         requestHeader.setBatch(msg instanceof MessageBatch);
         requestHeader.setBname(brokerName);
 
-        if (!requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (!requestHeader.getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
             return requestHeader;
         }
 

@@ -26,10 +26,10 @@ import org.apache.rocketmq.broker.failover.EscapeBridge;
 import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.service.pop.PopServiceManager;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
@@ -271,7 +271,7 @@ public class AckMessageProcessorTest {
             requestHeader.setTopic(topic);
             requestHeader.setQueueId(0);
             requestHeader.setOffset(ackOffset);
-            requestHeader.setConsumerGroup(MixAll.DEFAULT_CONSUMER_GROUP);
+            requestHeader.setConsumerGroup(MQUtils.DEFAULT_CONSUMER_GROUP);
             requestHeader.setExtraInfo("64 1666860736757 60000 4 0 broker-a 0 " + ackOffset);
             RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.ACK_MESSAGE, requestHeader);
             request.makeCustomHeaderToNet();
@@ -294,7 +294,7 @@ public class AckMessageProcessorTest {
             requestHeader.setTopic(topic);
             requestHeader.setQueueId(0);
             requestHeader.setOffset(ackOffset);
-            requestHeader.setConsumerGroup(MixAll.DEFAULT_CONSUMER_GROUP);
+            requestHeader.setConsumerGroup(MQUtils.DEFAULT_CONSUMER_GROUP);
             requestHeader.setExtraInfo("64 1666860736757 60000 4 0 broker-a 0 " + ackOffset);
             RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.ACK_MESSAGE, requestHeader);
             request.makeCustomHeaderToNet();
@@ -313,7 +313,7 @@ public class AckMessageProcessorTest {
             when(brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
 
             BatchAck bAck1 = new BatchAck();
-            bAck1.setConsumerGroup(MixAll.DEFAULT_CONSUMER_GROUP);
+            bAck1.setConsumerGroup(MQUtils.DEFAULT_CONSUMER_GROUP);
             bAck1.setTopic(topic);
             bAck1.setStartOffset(MIN_OFFSET_IN_QUEUE);
             bAck1.setBitSet(new BitSet());
@@ -340,7 +340,7 @@ public class AckMessageProcessorTest {
             when(messageStore.putMessage(any())).thenReturn(putMessageResult);
 
             BatchAck bAck1 = new BatchAck();
-            bAck1.setConsumerGroup(MixAll.DEFAULT_CONSUMER_GROUP);
+            bAck1.setConsumerGroup(MQUtils.DEFAULT_CONSUMER_GROUP);
             bAck1.setTopic(topic);
             bAck1.setStartOffset(MIN_OFFSET_IN_QUEUE);
             bAck1.setBitSet(new BitSet());

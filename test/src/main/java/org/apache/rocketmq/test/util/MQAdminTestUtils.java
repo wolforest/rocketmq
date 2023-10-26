@@ -30,8 +30,8 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -279,7 +279,7 @@ public class MQAdminTestUtils {
         }
         if (commandLine.hasOption('n')) {
             String namesrvAddr = commandLine.getOptionValue('n');
-            System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, namesrvAddr);
+            System.setProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, namesrvAddr);
         }
         cmd.execute(commandLine, options, null);
     }
@@ -308,7 +308,7 @@ public class MQAdminTestUtils {
         }
         if (commandLine.hasOption('n')) {
             String namesrvAddr = commandLine.getOptionValue('n');
-            System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, namesrvAddr);
+            System.setProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, namesrvAddr);
         }
         cmd.execute(commandLine, options, null);
     }

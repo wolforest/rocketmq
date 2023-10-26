@@ -19,10 +19,11 @@ package org.apache.rocketmq.common;
 import java.io.File;
 import java.util.Arrays;
 import org.apache.rocketmq.common.metrics.MetricsExporterType;
+import org.apache.rocketmq.common.utils.MQUtils;
 
 public class ControllerConfig {
 
-    private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
+    private String rocketmqHome = System.getProperty(MQUtils.ROCKETMQ_HOME_PROPERTY, System.getenv(MQUtils.ROCKETMQ_HOME_ENV));
     private String configStorePath = System.getProperty("user.home") + File.separator + "controller" + File.separator + "controller.properties";
 
     /**

@@ -28,9 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.metrics.MetricsExporterType;
+import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -73,7 +73,7 @@ public class ProxyConfig implements ConfigFile {
     private long printJstackInMillis = Duration.ofSeconds(60).toMillis();
     private long printThreadPoolStatusInMillis = Duration.ofSeconds(3).toMillis();
 
-    private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
+    private String namesrvAddr = System.getProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, System.getenv(NameServerAddressUtils.NAMESRV_ADDR_ENV));
     private String namesrvDomain = "";
     private String namesrvDomainSubgroup = "";
     /**

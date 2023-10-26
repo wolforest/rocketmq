@@ -28,6 +28,7 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DispatchRequest;
@@ -229,7 +230,7 @@ public class RocksDBConsumeQueue implements ConsumeQueueInterface {
         String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
         Long[] queueOffsets = new Long[queues.length];
         for (int i = 0; i < queues.length; i++) {
-            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MixAll.isLmq(queues[i])) {
+            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQUtils.isLmq(queues[i])) {
                 String key = MultiDispatch.lmqQueueKey(queues[i]);
                 queueOffsets[i] = queueOffsetOperator.getLmqTopicQueueNextOffset(key);
             }
@@ -255,7 +256,7 @@ public class RocksDBConsumeQueue implements ConsumeQueueInterface {
         }
         String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
         for (int i = 0; i < queues.length; i++) {
-            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MixAll.isLmq(queues[i])) {
+            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQUtils.isLmq(queues[i])) {
                 String key = MultiDispatch.lmqQueueKey(queues[i]);
                 queueOffsetOperator.increaseLmqOffset(key, (short) 1);
             }

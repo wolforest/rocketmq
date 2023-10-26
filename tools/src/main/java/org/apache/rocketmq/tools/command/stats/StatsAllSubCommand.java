@@ -24,6 +24,7 @@ import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.stats.Stats;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -185,7 +186,7 @@ public class StatsAllSubCommand implements SubCommand {
             String selectTopic = commandLine.getOptionValue('t');
 
             for (String topic : topicList.getTopicList()) {
-                if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX) || topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
+                if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX) || topic.startsWith(MQUtils.DLQ_GROUP_TOPIC_PREFIX)) {
                     continue;
                 }
 
