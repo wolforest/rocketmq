@@ -16,17 +16,11 @@
  */
 package org.apache.rocketmq.common;
 
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.common.help.FAQUrl;
+import org.apache.rocketmq.common.utils.NetworkUtil;
 
 public class MixAll {
     public static final String ROCKETMQ_HOME_ENV = "ROCKETMQ_HOME";
@@ -54,8 +48,7 @@ public class MixAll {
     public static final String CID_RMQ_SYS_PREFIX = "CID_RMQ_SYS_";
     public static final String IS_SUPPORT_HEART_BEAT_V2 = "IS_SUPPORT_HEART_BEAT_V2";
     public static final String IS_SUB_CHANGE = "IS_SUB_CHANGE";
-    public static final List<String> LOCAL_INET_ADDRESS = getLocalInetAddress();
-    public static final String LOCALHOST = localhost();
+    public static final List<String> LOCAL_INET_ADDRESS = NetworkUtil.getLocalInetAddress();
     public static final String DEFAULT_CHARSET = "UTF-8";
     public static final long MASTER_ID = 0L;
     public static final long FIRST_SLAVE_ID = 1L;
@@ -102,72 +95,6 @@ public class MixAll {
 
     public static String getDLQTopic(final String consumerGroup) {
         return DLQ_GROUP_TOPIC_PREFIX + consumerGroup;
-    }
-
-    public static List<String> getLocalInetAddress() {
-        List<String> inetAddressList = new ArrayList<>();
-        try {
-            Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
-            while (enumeration.hasMoreElements()) {
-                NetworkInterface networkInterface = enumeration.nextElement();
-                Enumeration<InetAddress> addrs = networkInterface.getInetAddresses();
-                while (addrs.hasMoreElements()) {
-                    inetAddressList.add(addrs.nextElement().getHostAddress());
-                }
-            }
-        } catch (SocketException e) {
-            throw new RuntimeException("get local inet address fail", e);
-        }
-
-        return inetAddressList;
-    }
-
-    private static String localhost() {
-        try {
-            return InetAddress.getLocalHost().getHostAddress();
-        } catch (Throwable e) {
-            try {
-                String candidatesHost = getLocalhostByNetworkInterface();
-                if (candidatesHost != null)
-                    return candidatesHost;
-
-            } catch (Exception ignored) {
-            }
-
-            throw new RuntimeException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException" + FAQUrl.suggestTodo(FAQUrl.UNKNOWN_HOST_EXCEPTION), e);
-        }
-    }
-
-    //Reverse logic comparing to RemotingUtil method, consider refactor in RocketMQ 5.0
-    public static String getLocalhostByNetworkInterface() throws SocketException {
-        List<String> candidatesHost = new ArrayList<>();
-        Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
-
-        while (enumeration.hasMoreElements()) {
-            NetworkInterface networkInterface = enumeration.nextElement();
-            // Workaround for docker0 bridge
-            if ("docker0".equals(networkInterface.getName()) || !networkInterface.isUp()) {
-                continue;
-            }
-            Enumeration<InetAddress> addrs = networkInterface.getInetAddresses();
-            while (addrs.hasMoreElements()) {
-                InetAddress address = addrs.nextElement();
-                if (address.isLoopbackAddress()) {
-                    continue;
-                }
-                //ip4 higher priority
-                if (address instanceof Inet6Address) {
-                    candidatesHost.add(address.getHostAddress());
-                    continue;
-                }
-                return address.getHostAddress();
-            }
-        }
-
-        if (!candidatesHost.isEmpty()) {
-            return candidatesHost.get(0);
-        }
-        return null;
     }
 
     public static boolean compareAndIncreaseOnly(final AtomicLong target, final long value) {

@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class ClusterInfoTest {
         assertTrue(json.getBrokerAddrTable().containsKey("master"));
         assertEquals(json.getBrokerAddrTable().get("master").getBrokerName(), "master");
         assertEquals(json.getBrokerAddrTable().get("master").getCluster(), "DEFAULT_CLUSTER");
-        assertEquals(json.getBrokerAddrTable().get("master").getBrokerAddrs().get(MixAll.MASTER_ID), MixAll.getLocalhostByNetworkInterface());
+        assertEquals(json.getBrokerAddrTable().get("master").getBrokerAddrs().get(MixAll.MASTER_ID), NetworkUtil.getLocalhostByNetworkInterface());
     }
 
     @Test
@@ -65,7 +66,7 @@ public class ClusterInfoTest {
         byte[] data = clusterInfo.encode();
         ClusterInfo json = RemotingSerializable.decode(data, ClusterInfo.class);
 
-        assertArrayEquals(new String[]{MixAll.getLocalhostByNetworkInterface()}, json.retrieveAllAddrByCluster("DEFAULT_CLUSTER"));
+        assertArrayEquals(new String[]{NetworkUtil.getLocalhostByNetworkInterface()}, json.retrieveAllAddrByCluster("DEFAULT_CLUSTER"));
     }
 
 
@@ -81,7 +82,7 @@ public class ClusterInfoTest {
 
         //build brokerAddrs
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MixAll.MASTER_ID, MixAll.getLocalhostByNetworkInterface());
+        brokerAddrs.put(MixAll.MASTER_ID, NetworkUtil.getLocalhostByNetworkInterface());
 
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerAddrTable.put("master", brokerData);

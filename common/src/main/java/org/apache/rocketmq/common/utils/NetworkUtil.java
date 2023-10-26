@@ -25,18 +25,22 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
+import java.util.List;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.help.FAQUrl;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 public class NetworkUtil {
     public static final String OS_NAME = System.getProperty("os.name");
+    public static final String LOCALHOST = localhost();
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
     private static boolean isLinuxPlatform = false;
@@ -318,4 +322,69 @@ public class NetworkUtil {
         return wsAddr;
     }
 
+    public static String localhost() {
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (Throwable e) {
+            try {
+                String candidatesHost = getLocalhostByNetworkInterface();
+                if (candidatesHost != null)
+                    return candidatesHost;
+
+            } catch (Exception ignored) {
+            }
+
+            throw new RuntimeException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException" + FAQUrl.suggestTodo(FAQUrl.UNKNOWN_HOST_EXCEPTION), e);
+        }
+    }
+
+    //Reverse logic comparing to RemotingUtil method, consider refactor in RocketMQ 5.0
+    public static String getLocalhostByNetworkInterface() throws SocketException {
+        List<String> candidatesHost = new ArrayList<>();
+        Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
+
+        while (enumeration.hasMoreElements()) {
+            NetworkInterface networkInterface = enumeration.nextElement();
+            // Workaround for docker0 bridge
+            if ("docker0".equals(networkInterface.getName()) || !networkInterface.isUp()) {
+                continue;
+            }
+            Enumeration<InetAddress> addrs = networkInterface.getInetAddresses();
+            while (addrs.hasMoreElements()) {
+                InetAddress address = addrs.nextElement();
+                if (address.isLoopbackAddress()) {
+                    continue;
+                }
+                //ip4 higher priority
+                if (address instanceof Inet6Address) {
+                    candidatesHost.add(address.getHostAddress());
+                    continue;
+                }
+                return address.getHostAddress();
+            }
+        }
+
+        if (!candidatesHost.isEmpty()) {
+            return candidatesHost.get(0);
+        }
+        return null;
+    }
+
+    public static List<String> getLocalInetAddress() {
+        List<String> inetAddressList = new ArrayList<>();
+        try {
+            Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
+            while (enumeration.hasMoreElements()) {
+                NetworkInterface networkInterface = enumeration.nextElement();
+                Enumeration<InetAddress> addrs = networkInterface.getInetAddresses();
+                while (addrs.hasMoreElements()) {
+                    inetAddressList.add(addrs.nextElement().getHostAddress());
+                }
+            }
+        } catch (SocketException e) {
+            throw new RuntimeException("get local inet address fail", e);
+        }
+
+        return inetAddressList;
+    }
 }

@@ -20,6 +20,7 @@ package org.apache.rocketmq.common;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MixAllTest {
     @Test
     public void testGetLocalInetAddress() throws Exception {
-        List<String> localInetAddress = MixAll.getLocalInetAddress();
+        List<String> localInetAddress = NetworkUtil.getLocalInetAddress();
         String local = InetAddress.getLocalHost().getHostAddress();
         assertThat(localInetAddress).contains("127.0.0.1");
         assertThat(local).isNotNull();
@@ -45,8 +46,8 @@ public class MixAllTest {
 
     @Test
     public void testGetLocalhostByNetworkInterface() throws Exception {
-        assertThat(MixAll.LOCALHOST).isNotNull();
-        assertThat(MixAll.getLocalhostByNetworkInterface()).isNotNull();
+        assertThat(NetworkUtil.LOCALHOST).isNotNull();
+        assertThat(NetworkUtil.getLocalhostByNetworkInterface()).isNotNull();
     }
 
     @Test
