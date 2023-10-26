@@ -46,7 +46,7 @@ import org.apache.rocketmq.broker.topic.TopicRouteInfoManager;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.Configuration;
@@ -156,7 +156,7 @@ public class BrokerController {
         startBasicService();
 
         if (!isIsolated && !this.messageStoreConfig.isEnableDLegerCommitLog() && !this.messageStoreConfig.isDuplicationEnable()) {
-            this.brokerMessageService.changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MQUtils.MASTER_ID);
+            this.brokerMessageService.changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MQConstants.MASTER_ID);
             this.brokerServiceRegistry.registerBrokerAll(true, false, true);
         }
 
@@ -190,7 +190,7 @@ public class BrokerController {
     protected void registerBroker() {
         BrokerController.LOG.info("{} start service", this.brokerConfig.getCanonicalName());
 
-        this.brokerMessageService.changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MQUtils.MASTER_ID);
+        this.brokerMessageService.changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MQConstants.MASTER_ID);
         this.brokerServiceRegistry.registerBrokerAll(true, false, brokerConfig.isForceRegister());
 
         isIsolated = false;
@@ -407,7 +407,7 @@ public class BrokerController {
     }
 
     public BrokerController peekMasterBroker() {
-        return brokerConfig.getBrokerId() == MQUtils.MASTER_ID ? this : null;
+        return brokerConfig.getBrokerId() == MQConstants.MASTER_ID ? this : null;
     }
 
     public BrokerMemberGroup getBrokerMemberGroup() {

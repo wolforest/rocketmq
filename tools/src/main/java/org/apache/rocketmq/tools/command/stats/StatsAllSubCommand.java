@@ -23,7 +23,7 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.stats.Stats;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -49,7 +49,7 @@ public class StatsAllSubCommand implements SubCommand {
         long inMsgCntToday = 0;
 
         for (BrokerData bd : topicRouteData.getBrokerDatas()) {
-            String masterAddr = bd.getBrokerAddrs().get(MQUtils.MASTER_ID);
+            String masterAddr = bd.getBrokerAddrs().get(MQConstants.MASTER_ID);
             if (masterAddr != null) {
                 try {
                     BrokerStatsData bsd = admin.viewBrokerStatsData(masterAddr, Stats.TOPIC_PUT_NUMS, topic);
@@ -67,7 +67,7 @@ public class StatsAllSubCommand implements SubCommand {
                 long outMsgCntToday = 0;
 
                 for (BrokerData bd : topicRouteData.getBrokerDatas()) {
-                    String masterAddr = bd.getBrokerAddrs().get(MQUtils.MASTER_ID);
+                    String masterAddr = bd.getBrokerAddrs().get(MQConstants.MASTER_ID);
                     if (masterAddr != null) {
                         try {
                             String statsKey = String.format("%s@%s", topic, group);
@@ -185,7 +185,7 @@ public class StatsAllSubCommand implements SubCommand {
             String selectTopic = commandLine.getOptionValue('t');
 
             for (String topic : topicList.getTopicList()) {
-                if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX) || topic.startsWith(MQUtils.DLQ_GROUP_TOPIC_PREFIX)) {
+                if (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX) || topic.startsWith(MQConstants.DLQ_GROUP_TOPIC_PREFIX)) {
                     continue;
                 }
 

@@ -42,7 +42,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageId;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -96,7 +96,7 @@ public class MQAdminImpl {
                 StringBuilder orderTopicString = new StringBuilder();
 
                 for (BrokerData brokerData : brokerDataList) {
-                    String addr = brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID);
+                    String addr = brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
                     if (addr != null) {
                         TopicConfig topicConfig = new TopicConfig(newTopic);
                         topicConfig.setReadQueueNums(queueNum);

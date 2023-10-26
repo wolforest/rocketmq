@@ -26,7 +26,7 @@ import org.apache.rocketmq.broker.service.SystemConfigFileHelper;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -157,7 +157,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
             switch (messageStoreConfig.getBrokerRole()) {
                 case ASYNC_MASTER:
                 case SYNC_MASTER:
-                    brokerConfig.setBrokerId(MQUtils.MASTER_ID);
+                    brokerConfig.setBrokerId(MQConstants.MASTER_ID);
                     break;
                 case SLAVE:
                     if (brokerConfig.getBrokerId() <= 0) {
@@ -256,7 +256,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         byte[] body = request.getBody();
         if (body != null) {
             try {
-                String bodyStr = new String(body, MQUtils.DEFAULT_CHARSET);
+                String bodyStr = new String(body, MQConstants.DEFAULT_CHARSET);
                 Properties properties = PropertyUtils.string2Properties(bodyStr);
                 if (properties != null) {
                     LOGGER.info("updateSharedBrokerConfig, new config: [{}] client: {} ", properties, ctx.channel().remoteAddress());
@@ -288,7 +288,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         String content = this.brokerContainer.getConfiguration().getAllConfigsFormatString();
         if (content != null && content.length() > 0) {
             try {
-                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQConstants.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("", e);
 

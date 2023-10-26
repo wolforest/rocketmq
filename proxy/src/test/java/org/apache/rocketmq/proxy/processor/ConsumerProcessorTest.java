@@ -40,7 +40,7 @@ import org.apache.rocketmq.common.filter.ExpressionType;
 import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.common.ProxyExceptionCode;
 import org.apache.rocketmq.proxy.common.utils.FutureUtils;
@@ -156,7 +156,7 @@ public class ConsumerProcessorTest extends BaseProcessorTest {
 
     @Test
     public void testAckMessage() throws Throwable {
-        ReceiptHandle handle = create(createMessageExt(MQUtils.RETRY_GROUP_TOPIC_PREFIX + TOPIC, "", 0, 3000));
+        ReceiptHandle handle = create(createMessageExt(MQConstants.RETRY_GROUP_TOPIC_PREFIX + TOPIC, "", 0, 3000));
         assertNotNull(handle);
 
         ArgumentCaptor<AckMessageRequestHeader> requestHeaderArgumentCaptor = ArgumentCaptor.forClass(AckMessageRequestHeader.class);
@@ -279,7 +279,7 @@ public class ConsumerProcessorTest extends BaseProcessorTest {
 
     @Test
     public void testChangeInvisibleTime() throws Throwable {
-        ReceiptHandle handle = create(createMessageExt(MQUtils.RETRY_GROUP_TOPIC_PREFIX + TOPIC, "", 0, 3000));
+        ReceiptHandle handle = create(createMessageExt(MQConstants.RETRY_GROUP_TOPIC_PREFIX + TOPIC, "", 0, 3000));
         assertNotNull(handle);
 
         ArgumentCaptor<ChangeInvisibleTimeRequestHeader> requestHeaderArgumentCaptor = ArgumentCaptor.forClass(ChangeInvisibleTimeRequestHeader.class);

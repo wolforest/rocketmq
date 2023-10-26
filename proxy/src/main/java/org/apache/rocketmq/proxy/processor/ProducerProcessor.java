@@ -34,7 +34,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageId;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.proxy.common.ProxyContext;
@@ -201,7 +201,7 @@ public class ProducerProcessor extends AbstractProcessor {
         if (messageList.size() > 1) {
             requestHeader.setBatch(true);
         }
-        if (requestHeader.getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (requestHeader.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
             String reconsumeTimes = MessageAccessor.getReconsumeTime(message);
             if (reconsumeTimes != null) {
                 requestHeader.setReconsumeTimes(Integer.valueOf(reconsumeTimes));

@@ -36,7 +36,7 @@ import org.apache.rocketmq.acl.common.AclUtils;
 import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.common.AclConfig;
 import org.apache.rocketmq.common.PlainAccessConfig;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -154,7 +154,7 @@ public class PlainAccessValidatorTest {
     @Test
     public void validateSendMessageToRetryTopicTest() {
         SendMessageRequestHeader messageRequestHeader = new SendMessageRequestHeader();
-        messageRequestHeader.setTopic(MQUtils.getRetryTopic("groupB"));
+        messageRequestHeader.setTopic(MQConstants.getRetryTopic("groupB"));
         RemotingCommand remotingCommand = RemotingCommand.createRequestCommand(RequestCode.SEND_MESSAGE, messageRequestHeader);
         aclClient.doBeforeRequest("", remotingCommand);
 
@@ -196,7 +196,7 @@ public class PlainAccessValidatorTest {
     @Test
     public void validateSendMessageV2ToRetryTopicTest() {
         SendMessageRequestHeader messageRequestHeader = new SendMessageRequestHeader();
-        messageRequestHeader.setTopic(MQUtils.getRetryTopic("groupC"));
+        messageRequestHeader.setTopic(MQConstants.getRetryTopic("groupC"));
         RemotingCommand remotingCommand = RemotingCommand.createRequestCommand(RequestCode.SEND_MESSAGE_V2, SendMessageRequestHeaderV2.createSendMessageRequestHeaderV2(messageRequestHeader));
         aclClient.doBeforeRequest("", remotingCommand);
 
@@ -298,7 +298,7 @@ public class PlainAccessValidatorTest {
         queryMessageRequestHeader.setTopic("topicC");
         RemotingCommand remotingCommand = RemotingCommand.createRequestCommand(RequestCode.QUERY_MESSAGE, queryMessageRequestHeader);
         aclClient.doBeforeRequest("", remotingCommand);
-        remotingCommand.addExtField(MQUtils.UNIQUE_MSG_QUERY_FLAG, "false");
+        remotingCommand.addExtField(MQConstants.UNIQUE_MSG_QUERY_FLAG, "false");
         ByteBuffer buf = remotingCommand.encodeHeader();
         buf.getInt();
         buf = ByteBuffer.allocate(buf.limit() - buf.position()).put(buf);

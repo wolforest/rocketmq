@@ -34,12 +34,12 @@ import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.admin.ConsumeStats;
@@ -64,9 +64,9 @@ public class MonitorService {
 
     private final DefaultMQAdminExt defaultMQAdminExt;
     private final DefaultMQPullConsumer defaultMQPullConsumer = new DefaultMQPullConsumer(
-        MQUtils.TOOLS_CONSUMER_GROUP);
+        MQConstants.TOOLS_CONSUMER_GROUP);
     private final DefaultMQPushConsumer defaultMQPushConsumer = new DefaultMQPushConsumer(
-        MQUtils.MONITOR_CONSUMER_GROUP);
+        MQConstants.MONITOR_CONSUMER_GROUP);
 
     public MonitorService(MonitorConfig monitorConfig, MonitorListener monitorListener, RPCHook rpcHook) {
         this.monitorConfig = monitorConfig;
@@ -171,8 +171,8 @@ public class MonitorService {
 
         TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
         for (String topic : topicList.getTopicList()) {
-            if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
-                String consumerGroup = topic.substring(MQUtils.RETRY_GROUP_TOPIC_PREFIX.length());
+            if (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
+                String consumerGroup = topic.substring(MQConstants.RETRY_GROUP_TOPIC_PREFIX.length());
 
                 try {
                     this.reportUndoneMsgs(consumerGroup);

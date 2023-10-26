@@ -34,7 +34,7 @@ import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -297,7 +297,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * Default constructor.
      */
     public DefaultMQPushConsumer() {
-        this(null, MQUtils.DEFAULT_CONSUMER_GROUP, null, new AllocateMessageQueueAveragely());
+        this(null, MQConstants.DEFAULT_CONSUMER_GROUP, null, new AllocateMessageQueueAveragely());
     }
 
     /**
@@ -326,7 +326,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * @param rpcHook RPC hook to execute before each remoting command.
      */
     public DefaultMQPushConsumer(RPCHook rpcHook) {
-        this(null, MQUtils.DEFAULT_CONSUMER_GROUP, rpcHook, new AllocateMessageQueueAveragely());
+        this(null, MQConstants.DEFAULT_CONSUMER_GROUP, rpcHook, new AllocateMessageQueueAveragely());
     }
 
     /**

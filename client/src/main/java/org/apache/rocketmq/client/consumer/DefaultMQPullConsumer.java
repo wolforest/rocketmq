@@ -29,7 +29,7 @@ import org.apache.rocketmq.client.impl.consumer.DefaultMQPullConsumerImpl;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
@@ -89,7 +89,7 @@ public class DefaultMQPullConsumer extends ClientConfig implements MQPullConsume
     private int maxReconsumeTimes = 16;
 
     public DefaultMQPullConsumer() {
-        this(null, MQUtils.DEFAULT_CONSUMER_GROUP, null);
+        this(null, MQConstants.DEFAULT_CONSUMER_GROUP, null);
     }
 
     public DefaultMQPullConsumer(final String consumerGroup) {
@@ -97,7 +97,7 @@ public class DefaultMQPullConsumer extends ClientConfig implements MQPullConsume
     }
 
     public DefaultMQPullConsumer(RPCHook rpcHook) {
-        this(null, MQUtils.DEFAULT_CONSUMER_GROUP, rpcHook);
+        this(null, MQConstants.DEFAULT_CONSUMER_GROUP, rpcHook);
     }
 
     public DefaultMQPullConsumer(final String consumerGroup, RPCHook rpcHook) {

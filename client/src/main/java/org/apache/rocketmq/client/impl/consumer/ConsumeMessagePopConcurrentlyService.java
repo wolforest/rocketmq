@@ -31,7 +31,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -458,7 +458,7 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
             }
 
             if (ConsumeMessagePopConcurrentlyService.this.defaultMQPushConsumerImpl.hasHook()) {
-                consumeMessageContext.getProps().put(MQUtils.CONSUME_CONTEXT_TYPE, returnType.name());
+                consumeMessageContext.getProps().put(MQConstants.CONSUME_CONTEXT_TYPE, returnType.name());
                 consumeMessageContext.setStatus(status.toString());
                 consumeMessageContext.setSuccess(ConsumeConcurrentlyStatus.CONSUME_SUCCESS == status);
                 consumeMessageContext.setAccessChannel(defaultMQPushConsumer.getAccessChannel());

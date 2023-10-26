@@ -25,9 +25,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.service.BrokerShutdownThread;
 import org.apache.rocketmq.broker.service.SystemConfigFileHelper;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -153,7 +153,7 @@ public class BrokerStartup {
         PropertyUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
         if (null == brokerConfig.getRocketmqHome()) {
             System.out.printf("Please set the %s variable in your environment " +
-                "to match the location of the RocketMQ installation", MQUtils.ROCKETMQ_HOME_ENV);
+                "to match the location of the RocketMQ installation", MQConstants.ROCKETMQ_HOME_ENV);
             System.exit(-2);
         }
     }
@@ -192,10 +192,10 @@ public class BrokerStartup {
         switch (messageStoreConfig.getBrokerRole()) {
             case ASYNC_MASTER:
             case SYNC_MASTER:
-                brokerConfig.setBrokerId(MQUtils.MASTER_ID);
+                brokerConfig.setBrokerId(MQConstants.MASTER_ID);
                 break;
             case SLAVE:
-                if (brokerConfig.getBrokerId() <= MQUtils.MASTER_ID) {
+                if (brokerConfig.getBrokerId() <= MQConstants.MASTER_ID) {
                     System.out.printf("Slave's brokerId must be > 0%n");
                     System.exit(-3);
                 }

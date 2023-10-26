@@ -22,7 +22,7 @@ import java.util.TreeMap;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;

@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 public class SubscriptionGroupConfig {
 
@@ -38,7 +38,7 @@ public class SubscriptionGroupConfig {
     private int retryMaxTimes = 16;
     private GroupRetryPolicy groupRetryPolicy = new GroupRetryPolicy();
 
-    private long brokerId = MQUtils.MASTER_ID;
+    private long brokerId = MQConstants.MASTER_ID;
 
     private long whichBrokerWhenConsumeSlowly = 1;
 

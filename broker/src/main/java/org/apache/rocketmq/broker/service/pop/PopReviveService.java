@@ -46,7 +46,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.DataConverter;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -103,7 +103,7 @@ public class PopReviveService extends ServiceThread {
 
     private boolean reviveRetry(PopCheckPoint popCheckPoint, MessageExt messageExt) {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
-        if (!popCheckPoint.getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (!popCheckPoint.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
             msgInner.setTopic(KeyBuilder.buildPopRetryTopic(popCheckPoint.getTopic(), popCheckPoint.getCId()));
         } else {
             msgInner.setTopic(popCheckPoint.getTopic());
@@ -231,7 +231,7 @@ public class PopReviveService extends ServiceThread {
                     Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
                         .put(LABEL_TOPIC, topic)
                         .put(LABEL_CONSUMER_GROUP, group)
-                        .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(topic) || MQUtils.isSysConsumerGroup(group))
+                        .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(topic) || MQConstants.isSysConsumerGroup(group))
                         .build();
                     BrokerMetricsManager.messagesOutTotal.add(getMessageResult.getMessageCount(), attributes);
                     BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);

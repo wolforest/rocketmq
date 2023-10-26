@@ -29,7 +29,7 @@ import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.SystemClock;
 import org.apache.rocketmq.common.coldctr.AccAndTimeStamp;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
@@ -182,7 +182,7 @@ public class ColdDataCgCtrService extends ServiceThread {
         if (!this.messageStoreConfig.isColdDataFlowControlEnable()) {
             return false;
         }
-        if (MQUtils.isSysConsumerGroupForNoColdReadLimit(consumerGroup)) {
+        if (MQConstants.isSysConsumerGroupForNoColdReadLimit(consumerGroup)) {
             return false;
         }
         AccAndTimeStamp accAndTimeStamp = cgColdThresholdMapRuntime.get(consumerGroup);

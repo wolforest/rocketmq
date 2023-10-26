@@ -42,7 +42,7 @@ public class NetworkPortUtils {
         return port.addAndGet(5);
     }
 
-    private static final int uniquePort() {
+    private static int uniquePort() {
         int minPort = 5000;
         int step = 500;
         int forkNumber = getForkNumber();
@@ -59,7 +59,7 @@ public class NetworkPortUtils {
         return minPort + (firstNumber * 10 + lastNumber) * step;
     }
 
-    private static final int getForkNumber() {
+    private static int getForkNumber() {
         String forkNumberString = System.getProperty("forkNumber");
         if (forkNumberString == null) {
             return 0;
@@ -71,7 +71,7 @@ public class NetworkPortUtils {
         }
     }
 
-    public static final int getProcessID() {
+    public static int getProcessID() {
         RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
         String strID = runtimeMXBean.getName().split("@")[0];
         return Integer.parseInt(strID);

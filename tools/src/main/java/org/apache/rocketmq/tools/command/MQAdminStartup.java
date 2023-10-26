@@ -22,8 +22,8 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.acl.common.AclUtils;
-import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQVersion;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -108,8 +108,8 @@ import org.apache.rocketmq.tools.command.topic.UpdateTopicSubCommand;
 public class MQAdminStartup {
     protected static final List<SubCommand> SUB_COMMANDS = new ArrayList<>();
 
-    private static final String ROCKETMQ_HOME = System.getProperty(MQUtils.ROCKETMQ_HOME_PROPERTY,
-        System.getenv(MQUtils.ROCKETMQ_HOME_ENV));
+    private static final String ROCKETMQ_HOME = System.getProperty(MQConstants.ROCKETMQ_HOME_PROPERTY,
+        System.getenv(MQConstants.ROCKETMQ_HOME_ENV));
 
     public static void main(String[] args) {
         main0(args, null);
@@ -162,7 +162,7 @@ public class MQAdminStartup {
                         if (rpcHook != null) {
                             cmd.execute(commandLine, options, rpcHook);
                         } else {
-                            cmd.execute(commandLine, options, AclUtils.getAclRPCHook(ROCKETMQ_HOME + MQUtils.ACL_CONF_TOOLS_FILE));
+                            cmd.execute(commandLine, options, AclUtils.getAclRPCHook(ROCKETMQ_HOME + MQConstants.ACL_CONF_TOOLS_FILE));
                         }
                     } else {
                         System.out.printf("The sub command %s not exist.%n", args[0]);

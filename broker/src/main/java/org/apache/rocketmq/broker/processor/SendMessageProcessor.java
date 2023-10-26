@@ -23,7 +23,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.mqtrace.SendMessageContext;
 import org.apache.rocketmq.common.AbortProcessException;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.attribute.CleanupPolicy;
@@ -41,7 +41,7 @@ import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.CleanupPolicyUtils;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
@@ -185,11 +185,11 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         RemotingCommand request, MessageExt msg, TopicConfig topicConfig, Map<String, String> properties) {
         setMsgFlag(msg, requestHeader, topicConfig);
         String newTopic = requestHeader.getTopic();
-        if (null == newTopic || !newTopic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (null == newTopic || !newTopic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
             return true;
         }
 
-        String groupName = newTopic.substring(MQUtils.RETRY_GROUP_TOPIC_PREFIX.length());
+        String groupName = newTopic.substring(MQConstants.RETRY_GROUP_TOPIC_PREFIX.length());
         SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(groupName);
         if (null == subscriptionGroupConfig) {
             response.setCodeAndRemark(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST, "subscription group not exist, " + groupName + " " + FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST));
@@ -216,7 +216,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
         setDlqMatrix(requestHeader);
         properties.put(MessageConst.PROPERTY_DELAY_TIME_LEVEL, "-1");
-        newTopic = MQUtils.getDLQTopic(groupName);
+        newTopic = MQConstants.getDLQTopic(groupName);
         setMsgInfo(msg, newTopic);
 
         topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic, DLQ_NUMS_PER_GROUP, PermName.PERM_WRITE | PermName.PERM_READ, 0);
@@ -623,7 +623,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             return false;
         }
 
-        if (requestHeader.getTopic() != null && requestHeader.getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (requestHeader.getTopic() != null && requestHeader.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
             response.setCodeAndRemark(ResponseCode.MESSAGE_ILLEGAL, "batch request does not support retry group " + requestHeader.getTopic());
             return false;
         }

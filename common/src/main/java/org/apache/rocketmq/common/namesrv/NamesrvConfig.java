@@ -21,11 +21,11 @@
 package org.apache.rocketmq.common.namesrv;
 
 import java.io.File;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 public class NamesrvConfig {
 
-    private String rocketmqHome = System.getProperty(MQUtils.ROCKETMQ_HOME_PROPERTY, System.getenv(MQUtils.ROCKETMQ_HOME_ENV));
+    private String rocketmqHome = System.getProperty(MQConstants.ROCKETMQ_HOME_PROPERTY, System.getenv(MQConstants.ROCKETMQ_HOME_ENV));
     private String kvConfigPath = System.getProperty("user.home") + File.separator + "namesrv" + File.separator + "kvConfig.json";
     private String configStorePath = System.getProperty("user.home") + File.separator + "namesrv" + File.separator + "namesrv.properties";
     private String productEnvName = "center";

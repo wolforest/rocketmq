@@ -33,7 +33,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.proxy.service.route.AddressableMessageQueue;
 import org.apache.rocketmq.proxy.service.transaction.TransactionData;
@@ -140,7 +140,7 @@ public class ProducerProcessorTest extends BaseProcessorTest {
             .thenReturn(CompletableFuture.completedFuture(Lists.newArrayList(sendResult)));
 
         List<Message> messageExtList = new ArrayList<>();
-        Message messageExt = createMessageExt(MQUtils.getRetryTopic(CONSUMER_GROUP), "tag", 0, 0);
+        Message messageExt = createMessageExt(MQConstants.getRetryTopic(CONSUMER_GROUP), "tag", 0, 0);
         MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_RECONSUME_TIME, "1");
         MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_MAX_RECONSUME_TIMES, "16");
         messageExtList.add(messageExt);
@@ -174,7 +174,7 @@ public class ProducerProcessorTest extends BaseProcessorTest {
 
         SendMessageRequestHeader requestHeader = requestHeaderArgumentCaptor.getValue();
         assertEquals(PRODUCER_GROUP, requestHeader.getProducerGroup());
-        assertEquals(MQUtils.getRetryTopic(CONSUMER_GROUP), requestHeader.getTopic());
+        assertEquals(MQConstants.getRetryTopic(CONSUMER_GROUP), requestHeader.getTopic());
         assertEquals(1, requestHeader.getReconsumeTimes().intValue());
         assertEquals(16, requestHeader.getMaxReconsumeTimes().intValue());
     }

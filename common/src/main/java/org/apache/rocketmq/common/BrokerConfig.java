@@ -21,7 +21,7 @@ import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.message.MessageRequestMode;
 import org.apache.rocketmq.common.metrics.MetricsExporterType;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 
@@ -31,7 +31,7 @@ public class BrokerConfig extends BrokerIdentity {
 
     private String brokerConfigPath = null;
 
-    private String rocketmqHome = System.getProperty(MQUtils.ROCKETMQ_HOME_PROPERTY, System.getenv(MQUtils.ROCKETMQ_HOME_ENV));
+    private String rocketmqHome = System.getProperty(MQConstants.ROCKETMQ_HOME_PROPERTY, System.getenv(MQConstants.ROCKETMQ_HOME_ENV));
     @ImportantField
     private String namesrvAddr = System.getProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, System.getenv(NameServerAddressUtils.NAMESRV_ADDR_ENV));
 
@@ -133,7 +133,7 @@ public class BrokerConfig extends BrokerIdentity {
 
     private boolean transferMsgByHeap = true;
 
-    private String regionId = MQUtils.DEFAULT_TRACE_REGION_ID;
+    private String regionId = MQConstants.DEFAULT_TRACE_REGION_ID;
     private int registerBrokerTimeoutMills = 24000;
 
     private int sendHeartbeatTimeoutMillis = 1000;

@@ -62,7 +62,7 @@ import org.apache.rocketmq.common.help.FAQUrl;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -406,10 +406,10 @@ public class DefaultLitePullConsumerImpl implements MQConsumerInner {
         Validators.checkGroup(this.defaultLitePullConsumer.getConsumerGroup());
 
         // Check consumerGroup name is not equal default consumer group name.
-        if (this.defaultLitePullConsumer.getConsumerGroup().equals(MQUtils.DEFAULT_CONSUMER_GROUP)) {
+        if (this.defaultLitePullConsumer.getConsumerGroup().equals(MQConstants.DEFAULT_CONSUMER_GROUP)) {
             throw new MQClientException(
                 "consumerGroup can not equal "
-                    + MQUtils.DEFAULT_CONSUMER_GROUP
+                    + MQConstants.DEFAULT_CONSUMER_GROUP
                     + ", please specify another one."
                     + FAQUrl.suggestTodo(FAQUrl.CLIENT_PARAMETER_CHECK_URL),
                 null);

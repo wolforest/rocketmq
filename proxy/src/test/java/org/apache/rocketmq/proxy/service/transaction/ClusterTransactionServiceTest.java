@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.apache.rocketmq.broker.client.ProducerManager;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.service.BaseServiceTest;
@@ -123,7 +123,7 @@ public class ClusterTransactionServiceTest extends BaseServiceTest {
         brokerData.setCluster(clusterName2);
         brokerData.setBrokerName(brokerName2);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MQUtils.MASTER_ID, brokerName2);
+        brokerAddrs.put(MQConstants.MASTER_ID, brokerName2);
         brokerData.setBrokerAddrs(brokerAddrs);
         topicRouteData.getQueueDatas().add(queueData);
         topicRouteData.getBrokerDatas().add(brokerData);
@@ -138,7 +138,7 @@ public class ClusterTransactionServiceTest extends BaseServiceTest {
         clusterBrokerData.setCluster(CLUSTER_NAME);
         clusterBrokerData.setBrokerName(BROKER_NAME);
         brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MQUtils.MASTER_ID, BROKER_ADDR);
+        brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
         clusterBrokerData.setBrokerAddrs(brokerAddrs);
         clusterTopicRouteData.setBrokerDatas(Lists.newArrayList(clusterBrokerData));
         when(this.topicRouteService.getAllMessageQueueView(any(), eq(CLUSTER_NAME))).thenReturn(new MessageQueueView(CLUSTER_NAME, clusterTopicRouteData, null));
@@ -152,7 +152,7 @@ public class ClusterTransactionServiceTest extends BaseServiceTest {
         clusterBrokerData2.setCluster(clusterName2);
         clusterBrokerData2.setBrokerName(brokerName2);
         brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MQUtils.MASTER_ID, brokerAddr2);
+        brokerAddrs.put(MQConstants.MASTER_ID, brokerAddr2);
         clusterBrokerData2.setBrokerAddrs(brokerAddrs);
         clusterTopicRouteData2.setBrokerDatas(Lists.newArrayList(clusterBrokerData2));
         when(this.topicRouteService.getAllMessageQueueView(any(), eq(clusterName2))).thenReturn(new MessageQueueView(clusterName2, clusterTopicRouteData2, null));

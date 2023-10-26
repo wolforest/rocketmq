@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import java.util.concurrent.TimeoutException;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.controller.BrokerHeartbeatManager;
 import org.apache.rocketmq.controller.ControllerManager;
@@ -266,7 +266,7 @@ public class ControllerRequestProcessor implements NettyRequestProcessor {
         if (body != null) {
             String bodyStr;
             try {
-                bodyStr = new String(body, MQUtils.DEFAULT_CHARSET);
+                bodyStr = new String(body, MQConstants.DEFAULT_CHARSET);
             } catch (UnsupportedEncodingException e) {
                 log.error("updateConfig byte array to string error: ", e);
                 response.setCode(ResponseCode.SYSTEM_ERROR);
@@ -302,7 +302,7 @@ public class ControllerRequestProcessor implements NettyRequestProcessor {
         String content = this.controllerManager.getConfiguration().getAllConfigsFormatString();
         if (content != null && content.length() > 0) {
             try {
-                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQConstants.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 log.error("getConfig error, ", e);
                 response.setCode(ResponseCode.SYSTEM_ERROR);

@@ -16,18 +16,18 @@
  */
 package org.apache.rocketmq.common;
 
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 public class KeyBuilder {
     public static final int POP_ORDER_REVIVE_QUEUE = 999;
 
     public static String buildPopRetryTopic(String topic, String cid) {
-        return MQUtils.RETRY_GROUP_TOPIC_PREFIX + cid + "_" + topic;
+        return MQConstants.RETRY_GROUP_TOPIC_PREFIX + cid + "_" + topic;
     }
 
     public static String parseNormalTopic(String topic, String cid) {
-        if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
-            return topic.substring((MQUtils.RETRY_GROUP_TOPIC_PREFIX + cid + "_").length());
+        if (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
+            return topic.substring((MQConstants.RETRY_GROUP_TOPIC_PREFIX + cid + "_").length());
         } else {
             return topic;
         }

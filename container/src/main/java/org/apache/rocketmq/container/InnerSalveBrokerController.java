@@ -23,7 +23,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 public class InnerSalveBrokerController extends InnerBrokerController {
@@ -41,6 +41,6 @@ public class InnerSalveBrokerController extends InnerBrokerController {
     private void checkSlaveBrokerConfig() {
         Preconditions.checkNotNull(brokerConfig.getBrokerClusterName());
         Preconditions.checkNotNull(brokerConfig.getBrokerName());
-        Preconditions.checkArgument(brokerConfig.getBrokerId() != MQUtils.MASTER_ID);
+        Preconditions.checkArgument(brokerConfig.getBrokerId() != MQConstants.MASTER_ID);
     }
 }

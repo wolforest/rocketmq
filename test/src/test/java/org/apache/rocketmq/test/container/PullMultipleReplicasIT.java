@@ -27,7 +27,7 @@ import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPullConsumerImpl;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.container.InnerSalveBrokerController;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
@@ -185,7 +185,7 @@ public class PullMultipleReplicasIT extends ContainerIntegrationTestBase {
         backMessage.setStoreHost(new InetSocketAddress(slaveBroker.getBrokerConfig().getBrokerIP1(), slaveBroker.getBrokerConfig().getListenPort()));
         pullConsumer.sendMessageBack(backMessage, 0);
 
-        String retryTopic = MQUtils.getRetryTopic(pullConsumer.getConsumerGroup());
+        String retryTopic = MQConstants.getRetryTopic(pullConsumer.getConsumerGroup());
         // Retry topic only has one queue by default
         MessageQueue newMsgQueue = new MessageQueue(retryTopic, master1With3Replicas.getBrokerConfig().getBrokerName(), 0);
         await().atMost(Duration.ofSeconds(60)).until(() -> {

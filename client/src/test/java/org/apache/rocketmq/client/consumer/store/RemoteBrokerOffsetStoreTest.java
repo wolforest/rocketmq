@@ -26,7 +26,7 @@ import org.apache.rocketmq.client.impl.FindBrokerResult;
 import org.apache.rocketmq.client.impl.MQClientAPIImpl;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.header.QueryConsumerOffsetRequestHeader;
@@ -62,7 +62,7 @@ public class RemoteBrokerOffsetStoreTest {
         System.setProperty("rocketmq.client.localOffsetStoreDir", System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + ".rocketmq_offsets");
         String clientId = new ClientConfig().buildMQClientId() + "#TestNamespace" + System.currentTimeMillis();
         when(mQClientFactory.getClientId()).thenReturn(clientId);
-        when(mQClientFactory.findBrokerAddressInSubscribe(brokerName, MQUtils.MASTER_ID, false)).thenReturn(new FindBrokerResult("127.0.0.1", false));
+        when(mQClientFactory.findBrokerAddressInSubscribe(brokerName, MQConstants.MASTER_ID, false)).thenReturn(new FindBrokerResult("127.0.0.1", false));
         when(mQClientFactory.getMQClientAPIImpl()).thenReturn(mqClientAPI);
         when(mQClientFactory.getBrokerNameFromMessageQueue(any())).thenReturn(brokerName);
     }

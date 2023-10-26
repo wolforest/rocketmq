@@ -28,7 +28,7 @@ import org.apache.rocketmq.client.impl.MQAdminImpl;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public class RebalancePushImplTest {
     private String consumerGroup = "CID_RebalancePushImplTest";
     private String topic = "TopicA";
     private MessageQueue mq = new MessageQueue("topic1", "broker1", 0);
-    private MessageQueue retryMq = new MessageQueue(MQUtils.RETRY_GROUP_TOPIC_PREFIX + "group", "broker1", 0);
+    private MessageQueue retryMq = new MessageQueue(MQConstants.RETRY_GROUP_TOPIC_PREFIX + "group", "broker1", 0);
     private DefaultMQPushConsumerImpl consumerImpl = mock(DefaultMQPushConsumerImpl.class);
     private RebalancePushImpl rebalanceImpl = new RebalancePushImpl(consumerImpl);
     private DefaultMQPushConsumer consumer = new DefaultMQPushConsumer();

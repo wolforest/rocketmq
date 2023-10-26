@@ -20,7 +20,7 @@ package org.apache.rocketmq.remoting.protocol;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
@@ -47,7 +47,7 @@ public class ClusterInfoTest {
         assertTrue(json.getBrokerAddrTable().containsKey("master"));
         assertEquals(json.getBrokerAddrTable().get("master").getBrokerName(), "master");
         assertEquals(json.getBrokerAddrTable().get("master").getCluster(), "DEFAULT_CLUSTER");
-        assertEquals(json.getBrokerAddrTable().get("master").getBrokerAddrs().get(MQUtils.MASTER_ID), NetworkUtil.getLocalhostByNetworkInterface());
+        assertEquals(json.getBrokerAddrTable().get("master").getBrokerAddrs().get(MQConstants.MASTER_ID), NetworkUtil.getLocalhostByNetworkInterface());
     }
 
     @Test
@@ -82,7 +82,7 @@ public class ClusterInfoTest {
 
         //build brokerAddrs
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MQUtils.MASTER_ID, NetworkUtil.getLocalhostByNetworkInterface());
+        brokerAddrs.put(MQConstants.MASTER_ID, NetworkUtil.getLocalhostByNetworkInterface());
 
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerAddrTable.put("master", brokerData);

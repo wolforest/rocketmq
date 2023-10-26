@@ -14,9 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common.utils;
+package org.apache.rocketmq.common.constant;
 
-public class MQUtils {
+/**
+ * @renamed from MixAll to MQConstants
+ */
+public class MQConstants {
     public static final String RETRY_GROUP_TOPIC_PREFIX = "%RETRY%";
     public static final String DLQ_GROUP_TOPIC_PREFIX = "%DLQ%";
     public static final String REPLY_TOPIC_POSTFIX = "REPLY_TOPIC";

@@ -22,7 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.acl.common.AclException;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.utils.NetworkUtil;

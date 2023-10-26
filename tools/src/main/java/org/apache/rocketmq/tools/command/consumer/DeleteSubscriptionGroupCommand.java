@@ -20,7 +20,7 @@ import java.util.Set;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.srvutil.ServerUtil;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
@@ -97,8 +97,8 @@ public class DeleteSubscriptionGroupCommand implements SubCommand {
                 }
 
                 try {
-                    adminExt.deleteTopic(MQUtils.RETRY_GROUP_TOPIC_PREFIX + groupName, clusterName);
-                    adminExt.deleteTopic(MQUtils.DLQ_GROUP_TOPIC_PREFIX + groupName, clusterName);
+                    adminExt.deleteTopic(MQConstants.RETRY_GROUP_TOPIC_PREFIX + groupName, clusterName);
+                    adminExt.deleteTopic(MQConstants.DLQ_GROUP_TOPIC_PREFIX + groupName, clusterName);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

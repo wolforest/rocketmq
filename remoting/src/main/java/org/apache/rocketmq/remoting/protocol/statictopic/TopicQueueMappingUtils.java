@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import org.apache.rocketmq.common.TopicConfig;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.StringUtils;
 
 public class TopicQueueMappingUtils {
@@ -197,10 +197,10 @@ public class TopicQueueMappingUtils {
 
     public static String getMockBrokerName(String scope) {
         assert scope != null;
-        if (scope.equals(MQUtils.METADATA_SCOPE_GLOBAL)) {
-            return MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX + scope.substring(2);
+        if (scope.equals(MQConstants.METADATA_SCOPE_GLOBAL)) {
+            return MQConstants.LOGICAL_QUEUE_MOCK_BROKER_PREFIX + scope.substring(2);
         } else {
-            return MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX + scope;
+            return MQConstants.LOGICAL_QUEUE_MOCK_BROKER_PREFIX + scope;
         }
     }
 

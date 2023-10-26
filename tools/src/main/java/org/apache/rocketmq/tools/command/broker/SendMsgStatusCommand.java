@@ -23,7 +23,7 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
@@ -38,7 +38,7 @@ public class SendMsgStatusCommand implements SubCommand {
         for (int i = 0; i < messageSize; i += 11) {
             sb.append("hello jodie");
         }
-        msg.setBody(sb.toString().getBytes(MQUtils.DEFAULT_CHARSET));
+        msg.setBody(sb.toString().getBytes(MQConstants.DEFAULT_CHARSET));
         return msg;
     }
 

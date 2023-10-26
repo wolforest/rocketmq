@@ -24,7 +24,7 @@ import java.util.Set;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.PermName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.common.topic.TopicValidator;
@@ -96,7 +96,7 @@ public class DefaultAdminService implements AdminService {
         Set<String> curBrokerAddr = new HashSet<>();
         if (curBrokerDataList != null) {
             for (BrokerData brokerData : curBrokerDataList) {
-                curBrokerAddr.add(brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID));
+                curBrokerAddr.add(brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID));
             }
         }
 
@@ -107,7 +107,7 @@ public class DefaultAdminService implements AdminService {
         topicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
 
         for (BrokerData brokerData : sampleBrokerDataList) {
-            String addr = brokerData.getBrokerAddrs() == null ? null : brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID);
+            String addr = brokerData.getBrokerAddrs() == null ? null : brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
             if (addr == null) {
                 continue;
             }

@@ -25,10 +25,10 @@ import java.util.Map;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -212,8 +212,8 @@ public class ConsumerProgressSubCommand implements SubCommand {
                 );
                 TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
                 for (String topic : topicList.getTopicList()) {
-                    if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
-                        String consumerGroup = topic.substring(MQUtils.RETRY_GROUP_TOPIC_PREFIX.length());
+                    if (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
+                        String consumerGroup = topic.substring(MQConstants.RETRY_GROUP_TOPIC_PREFIX.length());
                         try {
                             ConsumeStats consumeStats = null;
                             try {

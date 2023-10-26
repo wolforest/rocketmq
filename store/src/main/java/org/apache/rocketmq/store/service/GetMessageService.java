@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.attribute.CleanupPolicy;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.CleanupPolicyUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -235,7 +235,7 @@ public class GetMessageService {
             return;
         }
 
-        if (messageStore.getMessageStoreConfig().isColdDataFlowControlEnable() && !MQUtils.isSysConsumerGroupForNoColdReadLimit(context.getGroup()) && !selectResult.isInCache()) {
+        if (messageStore.getMessageStoreConfig().isColdDataFlowControlEnable() && !MQConstants.isSysConsumerGroupForNoColdReadLimit(context.getGroup()) && !selectResult.isInCache()) {
             context.getGetResult().setColdDataSum(context.getGetResult().getColdDataSum() + cqUnit.getSize());
         }
 

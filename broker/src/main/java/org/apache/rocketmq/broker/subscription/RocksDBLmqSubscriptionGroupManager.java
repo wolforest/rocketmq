@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.subscription;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 
 public class RocksDBLmqSubscriptionGroupManager extends RocksDBSubscriptionGroupManager {
@@ -28,7 +28,7 @@ public class RocksDBLmqSubscriptionGroupManager extends RocksDBSubscriptionGroup
 
     @Override
     public SubscriptionGroupConfig findSubscriptionGroupConfig(final String group) {
-        if (MQUtils.isLmq(group)) {
+        if (MQConstants.isLmq(group)) {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
             subscriptionGroupConfig.setGroupName(group);
             return subscriptionGroupConfig;
@@ -38,7 +38,7 @@ public class RocksDBLmqSubscriptionGroupManager extends RocksDBSubscriptionGroup
 
     @Override
     public void updateSubscriptionGroupConfig(final SubscriptionGroupConfig config) {
-        if (config == null || MQUtils.isLmq(config.getGroupName())) {
+        if (config == null || MQConstants.isLmq(config.getGroupName())) {
             return;
         }
         super.updateSubscriptionGroupConfig(config);

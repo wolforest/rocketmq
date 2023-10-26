@@ -26,7 +26,7 @@ import org.apache.rocketmq.broker.mqtrace.SendMessageContext;
 import org.apache.rocketmq.broker.mqtrace.SendMessageHook;
 import org.apache.rocketmq.common.AbortProcessException;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.constant.DBMsgConstants;
@@ -42,7 +42,7 @@ import org.apache.rocketmq.common.message.MessageType;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.sysflag.TopicSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -129,7 +129,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             return response;
         }
 
-        String newTopic = MQUtils.getRetryTopic(requestHeader.getGroup());
+        String newTopic = MQConstants.getRetryTopic(requestHeader.getGroup());
         int queueIdInt = this.random.nextInt(subscriptionGroupConfig.getRetryQueueNums());
 
         int topicSysFlag = 0;
@@ -190,7 +190,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             BrokerMetricsManager.sendToDlqMessages.add(1, attributes);
 
             isDLQ = true;
-            newTopic = MQUtils.getDLQTopic(requestHeader.getGroup());
+            newTopic = MQConstants.getDLQTopic(requestHeader.getGroup());
             queueIdInt = randomQueueId(DLQ_NUMS_PER_GROUP);
 
             // Create DLQ topic to master broker
@@ -491,7 +491,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         if (null == topicConfig) {
             int topicSysFlag = 0;
             if (requestHeader.isUnitMode()) {
-                if (requestHeader.getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+                if (requestHeader.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
                     topicSysFlag = TopicSysFlag.buildSysFlag(false, true);
                 } else {
                     topicSysFlag = TopicSysFlag.buildSysFlag(true, false);
@@ -506,7 +506,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
                 requestHeader.getDefaultTopicQueueNums(), topicSysFlag);
 
             if (null == topicConfig) {
-                if (requestHeader.getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+                if (requestHeader.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
                     topicConfig =
                         this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(
                             requestHeader.getTopic(), 1, PermName.PERM_WRITE | PermName.PERM_READ,

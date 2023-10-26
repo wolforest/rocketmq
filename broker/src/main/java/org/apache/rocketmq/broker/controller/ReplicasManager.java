@@ -38,7 +38,7 @@ import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -300,7 +300,7 @@ public class ReplicasManager {
 
             LOGGER.info("Begin to change to master, brokerName:{}, replicas:{}, new Epoch:{}", this.brokerConfig.getBrokerName(), this.brokerAddress, newMasterEpoch);
             this.masterEpoch = newMasterEpoch;
-            if (this.masterBrokerId != null && this.masterBrokerId.equals(this.brokerControllerId) && this.brokerController.getBrokerConfig().getBrokerId() == MQUtils.MASTER_ID) {
+            if (this.masterBrokerId != null && this.masterBrokerId.equals(this.brokerControllerId) && this.brokerController.getBrokerConfig().getBrokerId() == MQConstants.MASTER_ID) {
                 // Change SyncStateSet
                 final HashSet<Long> newSyncStateSet = new HashSet<>(syncStateSet);
                 changeSyncStateSet(newSyncStateSet, syncStateSetEpoch);
@@ -322,7 +322,7 @@ public class ReplicasManager {
             // Notify ha service, change to master
             this.haService.changeToMaster(newMasterEpoch);
 
-            this.brokerController.getBrokerConfig().setBrokerId(MQUtils.MASTER_ID);
+            this.brokerController.getBrokerConfig().setBrokerId(MQConstants.MASTER_ID);
             this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SYNC_MASTER);
             this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(true);
 

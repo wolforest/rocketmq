@@ -33,7 +33,7 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.header.QueryConsumerOffsetRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.UpdateConsumerOffsetRequestHeader;
@@ -89,7 +89,7 @@ public class TestBenchLmqStore {
         when(mqClientInstance.getMQClientAPIImpl()).thenReturn(mqClientAPI);
         TopicRouteData topicRouteData = new TopicRouteData();
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MQUtils.MASTER_ID, "test");
+        brokerAddrs.put(MQConstants.MASTER_ID, "test");
         List<BrokerData> brokerData = Collections.singletonList(new BrokerData("test", "test", brokerAddrs));
         topicRouteData.setBrokerDatas(brokerData);
         FieldUtils.writeStaticField(BenchLmqStore.class, "lmqTopic", "test", true);

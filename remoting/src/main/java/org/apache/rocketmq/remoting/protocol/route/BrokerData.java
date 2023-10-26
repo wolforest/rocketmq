@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 /**
  * The class describes that a typical broker cluster's (in replication) details: the cluster (in sharding) name
@@ -89,7 +89,7 @@ public class BrokerData implements Comparable<BrokerData> {
      * @return Broker address.
      */
     public String selectBrokerAddr() {
-        String masterAddress = this.brokerAddrs.get(MQUtils.MASTER_ID);
+        String masterAddress = this.brokerAddrs.get(MQConstants.MASTER_ID);
 
         if (masterAddress == null) {
             List<String> addrs = new ArrayList<>(brokerAddrs.values());

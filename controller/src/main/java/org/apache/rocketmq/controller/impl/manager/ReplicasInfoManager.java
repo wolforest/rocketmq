@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.ControllerConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.controller.elect.ElectPolicy;
 import org.apache.rocketmq.controller.helper.BrokerValidPredicate;
 import org.apache.rocketmq.controller.impl.event.AlterSyncStateSetEvent;
@@ -265,7 +265,7 @@ public class ReplicasInfoManager {
         final GetNextBrokerIdResponseHeader response = result.getResponse();
         if (brokerReplicaInfo == null) {
             // means that none of brokers in this broker-set are registered
-            response.setNextBrokerId(MQUtils.FIRST_BROKER_CONTROLLER_ID);
+            response.setNextBrokerId(MQConstants.FIRST_BROKER_CONTROLLER_ID);
         } else {
             response.setNextBrokerId(brokerReplicaInfo.getNextAssignBrokerId());
         }
@@ -284,7 +284,7 @@ public class ReplicasInfoManager {
         // broker-set unregistered
         if (brokerReplicaInfo == null) {
             // first brokerId
-            if (brokerId == MQUtils.FIRST_BROKER_CONTROLLER_ID) {
+            if (brokerId == MQConstants.FIRST_BROKER_CONTROLLER_ID) {
                 result.addEvent(event);
             } else {
                 result.setCodeAndRemark(ResponseCode.CONTROLLER_BROKER_ID_INVALID, String.format("Broker-set: %s hasn't been registered in controller, but broker try to apply brokerId: %d", brokerName, brokerId));

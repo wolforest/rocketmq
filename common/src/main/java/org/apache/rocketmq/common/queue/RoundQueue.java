@@ -25,8 +25,8 @@ import java.util.Queue;
  */
 public class RoundQueue<E> {
 
-    private Queue<E> queue;
-    private int capacity;
+    private final Queue<E> queue;
+    private final int capacity;
 
     public RoundQueue(int capacity) {
         this.capacity = capacity;

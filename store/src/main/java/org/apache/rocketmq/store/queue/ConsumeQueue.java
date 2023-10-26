@@ -29,7 +29,7 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DispatchRequest;
@@ -753,8 +753,8 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         Map<String, String> prop = request.getPropertiesMap();
         String multiDispatchQueue = prop.get(MessageConst.PROPERTY_INNER_MULTI_DISPATCH);
         String multiQueueOffset = prop.get(MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET);
-        String[] queues = multiDispatchQueue.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
-        String[] queueOffsets = multiQueueOffset.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queues = multiDispatchQueue.split(MQConstants.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queueOffsets = multiQueueOffset.split(MQConstants.MULTI_DISPATCH_QUEUE_SPLITTER);
         if (queues.length != queueOffsets.length) {
             log.error("[bug] queues.length!=queueOffsets.length ", request.getTopic());
             return;
@@ -766,7 +766,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             }
             long queueOffset = Long.parseLong(queueOffsets[i]);
             int queueId = request.getQueueId();
-            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQUtils.isLmq(queueName)) {
+            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQConstants.isLmq(queueName)) {
                 queueId = 0;
             }
             doDispatchLmqQueue(request, maxRetries, queueName, queueOffset, queueId);
@@ -812,16 +812,16 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         if (StringUtils.isBlank(multiDispatchQueue)) {
             return;
         }
-        String[] queues = multiDispatchQueue.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queues = multiDispatchQueue.split(MQConstants.MULTI_DISPATCH_QUEUE_SPLITTER);
         Long[] queueOffsets = new Long[queues.length];
         for (int i = 0; i < queues.length; i++) {
-            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQUtils.isLmq(queues[i])) {
+            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQConstants.isLmq(queues[i])) {
                 String key = MultiDispatch.lmqQueueKey(queues[i]);
                 queueOffsets[i] = queueOffsetOperator.getLmqOffset(key);
             }
         }
         MessageAccessor.putProperty(msg, MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET,
-            StringUtils.join(queueOffsets, MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER));
+            StringUtils.join(queueOffsets, MQConstants.MULTI_DISPATCH_QUEUE_SPLITTER));
         msg.removeWaitStorePropertyString();
     }
 
@@ -840,9 +840,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         if (StringUtils.isBlank(multiDispatchQueue)) {
             return;
         }
-        String[] queues = multiDispatchQueue.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queues = multiDispatchQueue.split(MQConstants.MULTI_DISPATCH_QUEUE_SPLITTER);
         for (String queue : queues) {
-            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQUtils.isLmq(queue)) {
+            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQConstants.isLmq(queue)) {
                 String key = MultiDispatch.lmqQueueKey(queue);
                 queueOffsetOperator.increaseLmqOffset(key, (short) 1);
             }

@@ -20,11 +20,11 @@ package org.apache.rocketmq.proxy.config;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 public class ConfigurationManager {
     public static final String RMQ_PROXY_HOME = "RMQ_PROXY_HOME";
-    protected static final String DEFAULT_RMQ_PROXY_HOME = System.getenv(MQUtils.ROCKETMQ_HOME_ENV);
+    protected static final String DEFAULT_RMQ_PROXY_HOME = System.getenv(MQConstants.ROCKETMQ_HOME_ENV);
     protected static String proxyHome;
     protected static Configuration configuration;
 

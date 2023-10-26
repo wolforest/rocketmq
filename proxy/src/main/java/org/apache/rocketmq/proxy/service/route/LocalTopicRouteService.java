@@ -24,7 +24,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.proxy.common.Address;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
@@ -44,7 +44,7 @@ public class LocalTopicRouteService extends TopicRouteService {
         this.brokerController = brokerController;
         BrokerConfig brokerConfig = this.brokerController.getBrokerConfig();
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MQUtils.MASTER_ID, this.brokerController.getBrokerAddr());
+        brokerAddrs.put(MQConstants.MASTER_ID, this.brokerController.getBrokerAddr());
         this.brokerDataList = Lists.newArrayList(
             new BrokerData(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(), brokerAddrs)
         );

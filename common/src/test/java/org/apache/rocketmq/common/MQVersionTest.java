@@ -17,6 +17,7 @@
 
 package org.apache.rocketmq.common;
 
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

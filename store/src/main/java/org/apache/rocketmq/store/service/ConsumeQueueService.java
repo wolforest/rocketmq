@@ -27,7 +27,7 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -384,7 +384,7 @@ public class ConsumeQueueService {
         for (String topicName : Sets.difference(consumeQueueTopicSet, retainTopics)) {
             if (retainTopics.contains(topicName) ||
                 TopicValidator.isSystemTopic(topicName) ||
-                MQUtils.isLmq(topicName)) {
+                MQConstants.isLmq(topicName)) {
                 continue;
             }
             deleteCount += this.deleteTopics(Sets.newHashSet(topicName));

@@ -53,7 +53,7 @@ import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
@@ -161,7 +161,7 @@ public class AdminBrokerProcessorTest {
             TopicValidator.RMQ_SYS_OFFSET_MOVED_EVENT,
             TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC,
             this.brokerController.getBrokerConfig().getBrokerClusterName(),
-            this.brokerController.getBrokerConfig().getBrokerClusterName() + "_" + MQUtils.REPLY_TOPIC_POSTFIX);
+            this.brokerController.getBrokerConfig().getBrokerClusterName() + "_" + MQConstants.REPLY_TOPIC_POSTFIX);
         if (this.brokerController.getBrokerConfig().isTraceTopicEnable()) {
             systemTopicSet.add(this.brokerController.getBrokerConfig().getMsgTraceTopicName());
         }

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 public class ExtraInfoUtil {
     private static final String NORMAL_TOPIC = "0";
@@ -109,7 +109,7 @@ public class ExtraInfoUtil {
 
     public static String buildExtraInfo(long ckQueueOffset, long popTime, long invisibleTime, int reviveQid, String topic, String brokerName, int queueId) {
         String t = NORMAL_TOPIC;
-        if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
             t = RETRY_TOPIC;
         }
         return ckQueueOffset + MessageConst.KEY_SEPARATOR + popTime + MessageConst.KEY_SEPARATOR + invisibleTime + MessageConst.KEY_SEPARATOR + reviveQid + MessageConst.KEY_SEPARATOR + t
@@ -119,7 +119,7 @@ public class ExtraInfoUtil {
     public static String buildExtraInfo(long ckQueueOffset, long popTime, long invisibleTime, int reviveQid, String topic, String brokerName, int queueId,
                                         long msgQueueOffset) {
         String t = NORMAL_TOPIC;
-        if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
             t = RETRY_TOPIC;
         }
         return ckQueueOffset
@@ -279,11 +279,11 @@ public class ExtraInfoUtil {
     }
 
     public static String getStartOffsetInfoMapKey(String topic, long key) {
-        return (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX) ? RETRY_TOPIC : NORMAL_TOPIC) + "@" + key;
+        return (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX) ? RETRY_TOPIC : NORMAL_TOPIC) + "@" + key;
     }
 
     public static String getStartOffsetInfoMapKey(String topic, String popCk, long key) {
-        return ((topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX) || popCk != null) ? RETRY_TOPIC : NORMAL_TOPIC) + "@" + key;
+        return ((topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX) || popCk != null) ? RETRY_TOPIC : NORMAL_TOPIC) + "@" + key;
     }
 
     public static String getQueueOffsetKeyValueKey(long queueId, long queueOffset) {
@@ -291,7 +291,7 @@ public class ExtraInfoUtil {
     }
 
     public static String getQueueOffsetMapKey(String topic, long queueId, long queueOffset) {
-        return (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX) ? RETRY_TOPIC : NORMAL_TOPIC) + "@" + getQueueOffsetKeyValueKey(queueId, queueOffset);
+        return (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX) ? RETRY_TOPIC : NORMAL_TOPIC) + "@" + getQueueOffsetKeyValueKey(queueId, queueOffset);
     }
 
     public static boolean isOrder(String[] extraInfo) {

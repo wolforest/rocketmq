@@ -30,9 +30,9 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -198,7 +198,7 @@ public class BrokerContainerStartup {
         switch (messageStoreConfig.getBrokerRole()) {
             case ASYNC_MASTER:
             case SYNC_MASTER:
-                brokerConfig.setBrokerId(MQUtils.MASTER_ID);
+                brokerConfig.setBrokerId(MQConstants.MASTER_ID);
                 break;
             case SLAVE:
                 if (brokerConfig.getBrokerId() <= 0) {
@@ -377,7 +377,7 @@ public class BrokerContainerStartup {
 
     private static void initRocketmqHome(BrokerContainerConfig containerConfig) {
         if (null == containerConfig.getRocketmqHome()) {
-            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation", MQUtils.ROCKETMQ_HOME_ENV);
+            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation", MQConstants.ROCKETMQ_HOME_ENV);
             System.exit(-2);
         }
         rocketmqHome = containerConfig.getRocketmqHome();

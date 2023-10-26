@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.common.Pair;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 /**
  * Broker replicas info, mapping from brokerAddress to {brokerId, brokerHaAddress}.
@@ -41,7 +41,7 @@ public class BrokerReplicaInfo {
     public BrokerReplicaInfo(String clusterName, String brokerName) {
         this.clusterName = clusterName;
         this.brokerName = brokerName;
-        this.nextAssignBrokerId = new AtomicLong(MQUtils.FIRST_BROKER_CONTROLLER_ID);
+        this.nextAssignBrokerId = new AtomicLong(MQConstants.FIRST_BROKER_CONTROLLER_ID);
         this.brokerIdInfo = new ConcurrentHashMap<>();
     }
 

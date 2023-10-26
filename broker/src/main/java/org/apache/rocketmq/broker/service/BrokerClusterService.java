@@ -27,7 +27,7 @@ import org.apache.rocketmq.broker.slave.SlaveSynchronize;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ChannelUtil;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.BrokerSyncInfo;
@@ -85,7 +85,7 @@ public class BrokerClusterService {
     }
 
     public void updateMinBroker(long minBrokerId, String minBrokerAddr, String offlineBrokerAddr, String masterHaAddr) {
-        if (!brokerConfig.isEnableSlaveActingMaster() || brokerConfig.getBrokerId() == MQUtils.MASTER_ID) {
+        if (!brokerConfig.isEnableSlaveActingMaster() || brokerConfig.getBrokerId() == MQConstants.MASTER_ID) {
             return;
         }
 
@@ -170,13 +170,13 @@ public class BrokerClusterService {
             onMasterOffline();
         }
 
-        if (minBrokerId == MQUtils.MASTER_ID && minBrokerAddr != null) {
+        if (minBrokerId == MQConstants.MASTER_ID && minBrokerAddr != null) {
             // master online
             onMasterOnline(minBrokerAddr, masterHaAddr);
         }
 
         // notify PullRequest on hold to pull from master.
-        if (this.minBrokerIdInGroup == MQUtils.MASTER_ID) {
+        if (this.minBrokerIdInGroup == MQConstants.MASTER_ID) {
             brokerController.getBrokerNettyServer().getPullRequestHoldService().notifyMasterOnline();
         }
     }

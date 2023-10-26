@@ -27,10 +27,10 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.ControllerConfig;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.controller.ControllerManager;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -127,7 +127,7 @@ public class NamesrvStartup {
         }
 
         if (null == namesrvConfig.getRocketmqHome()) {
-            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation%n", MQUtils.ROCKETMQ_HOME_ENV);
+            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation%n", MQConstants.ROCKETMQ_HOME_ENV);
             System.exit(-2);
         }
         PropertyUtils.printObjectProperties(log, namesrvConfig);

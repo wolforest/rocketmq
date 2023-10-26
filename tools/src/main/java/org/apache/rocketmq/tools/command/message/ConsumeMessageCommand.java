@@ -25,7 +25,7 @@ import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
@@ -116,7 +116,7 @@ public class ConsumeMessageCommand implements SubCommand {
     @Override
     public void execute(final CommandLine commandLine, final Options options, RPCHook rpcHook) throws SubCommandException {
         if (defaultMQPullConsumer == null) {
-            defaultMQPullConsumer = new DefaultMQPullConsumer(MQUtils.TOOLS_CONSUMER_GROUP, rpcHook);
+            defaultMQPullConsumer = new DefaultMQPullConsumer(MQConstants.TOOLS_CONSUMER_GROUP, rpcHook);
         }
         defaultMQPullConsumer.setInstanceName(Long.toString(System.currentTimeMillis()));
 

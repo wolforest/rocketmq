@@ -36,7 +36,7 @@ import org.apache.rocketmq.client.impl.MQClientManager;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
@@ -133,7 +133,7 @@ public class QueryMsgByUniqueKeySubCommandTest {
         List<BrokerData> brokerDataList = new ArrayList<>();
         BrokerData brokerData = new BrokerData();
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MQUtils.MASTER_ID, "127.0.0.1:9876");
+        brokerAddrs.put(MQConstants.MASTER_ID, "127.0.0.1:9876");
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDataList.add(brokerData);
         topicRouteData.setBrokerDatas(brokerDataList);

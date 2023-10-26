@@ -24,7 +24,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 public class HttpTinyClient {
 
@@ -105,7 +106,7 @@ public class HttpTinyClient {
             conn.setDoInput(true);
             setHeaders(conn, headers, encoding);
 
-            conn.getOutputStream().write(encodedContent.getBytes(MQUtils.DEFAULT_CHARSET));
+            conn.getOutputStream().write(encodedContent.getBytes(MQConstants.DEFAULT_CHARSET));
 
             int respCode = conn.getResponseCode();
             String resp = null;

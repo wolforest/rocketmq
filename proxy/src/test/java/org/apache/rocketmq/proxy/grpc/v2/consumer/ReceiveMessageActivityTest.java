@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.client.consumer.PopResult;
 import org.apache.rocketmq.client.consumer.PopStatus;
 import org.apache.rocketmq.common.constant.PermName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.grpc.v2.BaseActivityTest;
@@ -291,7 +291,7 @@ public class ReceiveMessageActivityTest extends BaseActivityTest {
             brokerData.setCluster(CLUSTER_NAME);
             brokerData.setBrokerName(BROKER_NAME + i);
             HashMap<Long, String> brokerAddrs = new HashMap<>();
-            brokerAddrs.put(MQUtils.MASTER_ID, BROKER_ADDR);
+            brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
             brokerData.setBrokerAddrs(brokerAddrs);
             brokerDatas.add(brokerData);
         }

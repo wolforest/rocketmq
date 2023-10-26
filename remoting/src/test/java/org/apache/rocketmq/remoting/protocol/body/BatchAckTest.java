@@ -17,7 +17,7 @@
 package org.apache.rocketmq.remoting.protocol.body;
 
 import com.alibaba.fastjson.JSON;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class BatchAckTest {
     private static String topic = "myTopic";
-    private static String cid = MQUtils.DEFAULT_CONSUMER_GROUP;
+    private static String cid = MQConstants.DEFAULT_CONSUMER_GROUP;
     private static long startOffset = 100;
     private static int qId = 1;
     private static int rqId = 2;

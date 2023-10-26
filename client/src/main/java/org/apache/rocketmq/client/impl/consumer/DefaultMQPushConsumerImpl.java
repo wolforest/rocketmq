@@ -60,6 +60,7 @@ import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.stat.ConsumerStatsManager;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.ServiceState;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.help.FAQUrl;
 import org.apache.rocketmq.common.message.Message;
@@ -69,7 +70,6 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.utils.DateUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -402,7 +402,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     }
 
     private void handleExceptionEvent(PullRequest pullRequest, Throwable e) {
-        if (!pullRequest.getMessageQueue().getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (!pullRequest.getMessageQueue().getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
             log.warn("execute the pull request exception", e);
         }
 
@@ -634,7 +634,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
             @Override
             public void onException(Throwable e) {
-                if (!popRequest.getMessageQueue().getTopic().startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+                if (!popRequest.getMessageQueue().getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
                     log.warn("execute the pull request exception: {}", e);
                 }
 
@@ -813,8 +813,8 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
         boolean needRetry = true;
         try {
-            if (brokerName != null && brokerName.startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)
-                || mq != null && mq.getBrokerName().startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
+            if (brokerName != null && brokerName.startsWith(MQConstants.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)
+                || mq != null && mq.getBrokerName().startsWith(MQConstants.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
                 needRetry = false;
                 sendMessageBackAsNormalMessage(msg);
             } else {
@@ -835,7 +835,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     }
 
     private void sendMessageBackAsNormalMessage(MessageExt msg) throws  RemotingException, MQBrokerException, InterruptedException, MQClientException {
-        Message newMsg = new Message(MQUtils.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup()), msg.getBody());
+        Message newMsg = new Message(MQConstants.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup()), msg.getBody());
 
         String originMsgId = MessageAccessor.getOriginMessageId(msg);
         MessageAccessor.setOriginMessageId(newMsg, org.apache.rocketmq.common.utils.StringUtils.isBlank(originMsgId) ? msg.getMsgId() : originMsgId);
@@ -862,16 +862,16 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             String topic = message.getTopic();
 
             String desBrokerName = brokerName;
-            if (brokerName != null && brokerName.startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
+            if (brokerName != null && brokerName.startsWith(MQConstants.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
                 desBrokerName = this.mQClientFactory.getBrokerNameFromMessageQueue(this.defaultMQPushConsumer.queueWithNamespace(new MessageQueue(topic, brokerName, queueId)));
             }
 
 
             FindBrokerResult
-                findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQUtils.MASTER_ID, true);
+                findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQConstants.MASTER_ID, true);
             if (null == findBrokerResult) {
                 this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
-                findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQUtils.MASTER_ID, true);
+                findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQConstants.MASTER_ID, true);
             }
 
             if (findBrokerResult == null) {
@@ -911,15 +911,15 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         int queueId = ExtraInfoUtil.getQueueId(extraInfoStrs);
 
         String desBrokerName = brokerName;
-        if (brokerName != null && brokerName.startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
+        if (brokerName != null && brokerName.startsWith(MQConstants.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
             desBrokerName = this.mQClientFactory.getBrokerNameFromMessageQueue(this.defaultMQPushConsumer.queueWithNamespace(new MessageQueue(topic, brokerName, queueId)));
         }
 
         FindBrokerResult
-            findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQUtils.MASTER_ID, true);
+            findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQConstants.MASTER_ID, true);
         if (null == findBrokerResult) {
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
-            findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQUtils.MASTER_ID, true);
+            findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQConstants.MASTER_ID, true);
         }
         if (findBrokerResult != null) {
             ChangeInvisibleTimeRequestHeader requestHeader = new ChangeInvisibleTimeRequestHeader();
@@ -1125,10 +1125,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 null);
         }
 
-        if (this.defaultMQPushConsumer.getConsumerGroup().equals(MQUtils.DEFAULT_CONSUMER_GROUP)) {
+        if (this.defaultMQPushConsumer.getConsumerGroup().equals(MQConstants.DEFAULT_CONSUMER_GROUP)) {
             throw new MQClientException(
                 "consumerGroup can not equal "
-                    + MQUtils.DEFAULT_CONSUMER_GROUP
+                    + MQConstants.DEFAULT_CONSUMER_GROUP
                     + ", please specify another one."
                     + FAQUrl.suggestTodo(FAQUrl.CLIENT_PARAMETER_CHECK_URL),
                 null);
@@ -1355,7 +1355,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             case BROADCASTING:
                 break;
             case CLUSTERING:
-                final String retryTopic = MQUtils.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup());
+                final String retryTopic = MQConstants.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup());
                 SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(retryTopic, SubscriptionData.SUB_ALL);
                 this.rebalanceImpl.getSubscriptionInner().put(retryTopic, subscriptionData);
                 break;
@@ -1688,7 +1688,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     }
 
     public void tryResetPopRetryTopic(final List<MessageExt> msgs, String consumerGroup) {
-        String popRetryPrefix = MQUtils.RETRY_GROUP_TOPIC_PREFIX + consumerGroup + "_";
+        String popRetryPrefix = MQConstants.RETRY_GROUP_TOPIC_PREFIX + consumerGroup + "_";
         for (MessageExt msg : msgs) {
             if (!msg.getTopic().startsWith(popRetryPrefix)) {
                 continue;
@@ -1703,7 +1703,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
 
     public void resetRetryAndNamespace(final List<MessageExt> msgs, String consumerGroup) {
-        final String groupTopic = MQUtils.getRetryTopic(consumerGroup);
+        final String groupTopic = MQConstants.getRetryTopic(consumerGroup);
         for (MessageExt msg : msgs) {
             String retryTopic = msg.getProperty(MessageConst.PROPERTY_RETRY_TOPIC);
             if (retryTopic != null && groupTopic.equals(msg.getTopic())) {

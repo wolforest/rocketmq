@@ -43,7 +43,7 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
@@ -315,7 +315,7 @@ public class TransactionalMessageBridge {
         Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
             .put(LABEL_TOPIC, context.getTopic())
             .put(LABEL_CONSUMER_GROUP, context.getGroup())
-            .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(context.getTopic()) || MQUtils.isSysConsumerGroup(context.getGroup()))
+            .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(context.getTopic()) || MQConstants.isSysConsumerGroup(context.getGroup()))
             .build();
         BrokerMetricsManager.messagesOutTotal.add(context.getGetMessageResult().getMessageCount(), attributes);
         BrokerMetricsManager.throughputOutTotal.add(context.getGetMessageResult().getBufferTotalSize(), attributes);

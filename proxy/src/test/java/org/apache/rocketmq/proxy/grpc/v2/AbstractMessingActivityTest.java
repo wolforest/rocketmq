@@ -19,7 +19,7 @@ package org.apache.rocketmq.proxy.grpc.v2;
 
 import apache.rocketmq.v2.Resource;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.proxy.config.InitConfigTest;
 import org.apache.rocketmq.proxy.grpc.v2.channel.GrpcChannelManager;
 import org.apache.rocketmq.proxy.grpc.v2.common.GrpcClientSettingsManager;
@@ -61,7 +61,7 @@ public class AbstractMessingActivityTest extends InitConfigTest {
     @Test
     public void testValidateConsumer() {
         assertThrows(GrpcProxyException.class, () -> messingActivity.validateConsumerGroup(Resource.newBuilder().build()));
-        assertThrows(GrpcProxyException.class, () -> messingActivity.validateConsumerGroup(Resource.newBuilder().setName(MQUtils.CID_SYS_RMQ_TRANS).build()));
+        assertThrows(GrpcProxyException.class, () -> messingActivity.validateConsumerGroup(Resource.newBuilder().setName(MQConstants.CID_SYS_RMQ_TRANS).build()));
         assertThrows(GrpcProxyException.class, () -> messingActivity.validateConsumerGroup(Resource.newBuilder().setName("@").build()));
         assertThrows(GrpcProxyException.class, () -> messingActivity.validateConsumerGroup(Resource.newBuilder().setName(createString(256)).build()));
         messingActivity.validateConsumerGroup(Resource.newBuilder().setName(createString(255)).build());

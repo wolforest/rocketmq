@@ -42,7 +42,7 @@ import org.apache.rocketmq.common.PlainAccessConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
@@ -52,8 +52,8 @@ public class PlainPermissionManager {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
 
-    private String fileHome = System.getProperty(MQUtils.ROCKETMQ_HOME_PROPERTY,
-        System.getenv(MQUtils.ROCKETMQ_HOME_ENV));
+    private String fileHome = System.getProperty(MQConstants.ROCKETMQ_HOME_PROPERTY,
+        System.getenv(MQConstants.ROCKETMQ_HOME_ENV));
 
     private String defaultAclDir;
 
@@ -98,7 +98,7 @@ public class PlainPermissionManager {
         for (int i = 0; i < files.length; i++) {
             String fileName = files[i].getAbsolutePath();
             File f = new File(fileName);
-            if (fileName.equals(fileHome + MQUtils.ACL_CONF_TOOLS_FILE)) {
+            if (fileName.equals(fileHome + MQConstants.ACL_CONF_TOOLS_FILE)) {
                 continue;
             } else if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
                 allAclFileFullPath.add(fileName);

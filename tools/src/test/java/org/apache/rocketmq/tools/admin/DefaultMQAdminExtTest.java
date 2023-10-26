@@ -40,7 +40,7 @@ import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.namesrv.NamesrvUtil;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -137,20 +137,20 @@ public class DefaultMQAdminExtTest {
 
         List<BrokerData> brokerDatas = new ArrayList<>();
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MQUtils.MASTER_ID, BROKER1_ADDR);
+        brokerAddrs.put(MQConstants.MASTER_ID, BROKER1_ADDR);
         BrokerData brokerData = new BrokerData();
         brokerData.setCluster(CLUSTER);
         brokerData.setBrokerName(BROKER1_NAME);
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDatas.add(brokerData);
-        brokerDatas.add(new BrokerData(CLUSTER, BROKER2_NAME, (HashMap<Long, String>) Maps.newHashMap(MQUtils.MASTER_ID, BROKER2_ADDR)));
+        brokerDatas.add(new BrokerData(CLUSTER, BROKER2_NAME, (HashMap<Long, String>) Maps.newHashMap(MQConstants.MASTER_ID, BROKER2_ADDR)));
         topicRouteData.setBrokerDatas(brokerDatas);
         topicRouteData.setQueueDatas(new ArrayList<>());
         topicRouteData.setFilterServerTable(new HashMap<>());
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
 
         HashMap<String, String> result = new HashMap<>();
-        result.put("id", String.valueOf(MQUtils.MASTER_ID));
+        result.put("id", String.valueOf(MQConstants.MASTER_ID));
         result.put("brokerName", BROKER1_NAME);
         kvTable.setTable(result);
         when(mQClientAPIImpl.getBrokerRuntimeInfo(anyString(), anyLong())).thenReturn(kvTable);
@@ -288,7 +288,7 @@ public class DefaultMQAdminExtTest {
     @Test
     public void testFetchBrokerRuntimeStats() throws InterruptedException, MQBrokerException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
         KVTable brokerStats = defaultMQAdminExt.fetchBrokerRuntimeStats("127.0.0.1:10911");
-        assertThat(brokerStats.getTable().get("id")).isEqualTo(String.valueOf(MQUtils.MASTER_ID));
+        assertThat(brokerStats.getTable().get("id")).isEqualTo(String.valueOf(MQConstants.MASTER_ID));
         assertThat(brokerStats.getTable().get("brokerName")).isEqualTo("default-broker");
     }
 

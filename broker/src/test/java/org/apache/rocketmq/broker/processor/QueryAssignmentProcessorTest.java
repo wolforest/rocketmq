@@ -32,7 +32,7 @@ import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.message.MessageRequestMode;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
@@ -121,7 +121,7 @@ public class QueryAssignmentProcessorTest {
     @Test
     public void testSetMessageRequestMode_RetryTopic() throws Exception {
         brokerController.getProducerManager().registerProducer(group, clientInfo);
-        final RemotingCommand request = createSetMessageRequestModeRequest(MQUtils.RETRY_GROUP_TOPIC_PREFIX + topic);
+        final RemotingCommand request = createSetMessageRequestModeRequest(MQConstants.RETRY_GROUP_TOPIC_PREFIX + topic);
         RemotingCommand responseToReturn = queryAssignmentProcessor.processRequest(handlerContext, request);
         assertThat(responseToReturn.getCode()).isEqualTo(ResponseCode.NO_PERMISSION);
     }

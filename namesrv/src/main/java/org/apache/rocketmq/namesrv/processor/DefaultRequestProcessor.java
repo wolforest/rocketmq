@@ -18,12 +18,12 @@ package org.apache.rocketmq.namesrv.processor;
 
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MQVersion.Version;
+import org.apache.rocketmq.common.constant.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion.Version;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.namesrv.NamesrvUtil;
 import org.apache.rocketmq.common.utils.BinaryUtil;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -238,7 +238,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             requestHeader.getBrokerName(),
             requestHeader.getBrokerId(),
             requestHeader.getHaServerAddr(),
-            request.getExtFields().get(MQUtils.ZONE_NAME),
+            request.getExtFields().get(MQConstants.ZONE_NAME),
             requestHeader.getHeartbeatTimeoutMillis(),
             requestHeader.getEnableActingMaster(),
             topicConfigWrapper,
@@ -610,7 +610,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         if (body != null) {
             String bodyStr;
             try {
-                bodyStr = new String(body, MQUtils.DEFAULT_CHARSET);
+                bodyStr = new String(body, MQConstants.DEFAULT_CHARSET);
             } catch (UnsupportedEncodingException e) {
                 log.error("updateConfig byte array to string error: ", e);
                 response.setCode(ResponseCode.SYSTEM_ERROR);
@@ -646,7 +646,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         String content = this.namesrvController.getConfiguration().getAllConfigsFormatString();
         if (StringUtils.isNotBlank(content)) {
             try {
-                response.setBody(content.getBytes(MQUtils.DEFAULT_CHARSET));
+                response.setBody(content.getBytes(MQConstants.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
                 log.error("getConfig error, ", e);
                 response.setCode(ResponseCode.SYSTEM_ERROR);

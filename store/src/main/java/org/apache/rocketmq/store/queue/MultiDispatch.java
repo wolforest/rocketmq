@@ -23,7 +23,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
@@ -40,7 +40,7 @@ public class MultiDispatch {
 
     public static boolean isNeedHandleMultiDispatch(MessageStoreConfig messageStoreConfig, String topic) {
         return messageStoreConfig.isEnableMultiDispatch()
-            && !topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)
+            && !topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)
             && !topic.startsWith(TopicValidator.SYSTEM_TOPIC_PREFIX)
             && !topic.equals(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC);
     }

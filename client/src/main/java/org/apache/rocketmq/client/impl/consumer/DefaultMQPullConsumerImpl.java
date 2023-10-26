@@ -45,7 +45,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -615,7 +615,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
         throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
         try {
             String destBrokerName = brokerName;
-            if (destBrokerName != null && destBrokerName.startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
+            if (destBrokerName != null && destBrokerName.startsWith(MQConstants.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
                 destBrokerName = this.mQClientFactory.getBrokerNameFromMessageQueue(this.defaultMQPullConsumer.queueWithNamespace(new MessageQueue(msg.getTopic(), msg.getBrokerName(), msg.getQueueId())));
             }
             String brokerAddr = (null != destBrokerName) ? this.mQClientFactory.findBrokerAddressInPublish(destBrokerName)
@@ -630,7 +630,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
         } catch (Exception e) {
             log.error("sendMessageBack Exception, " + this.defaultMQPullConsumer.getConsumerGroup(), e);
 
-            Message newMsg = new Message(MQUtils.getRetryTopic(this.defaultMQPullConsumer.getConsumerGroup()), msg.getBody());
+            Message newMsg = new Message(MQConstants.getRetryTopic(this.defaultMQPullConsumer.getConsumerGroup()), msg.getBody());
             String originMsgId = MessageAccessor.getOriginMessageId(msg);
             MessageAccessor.setOriginMessageId(newMsg, StringUtils.isBlank(originMsgId) ? msg.getMsgId() : originMsgId);
             newMsg.setFlag(msg.getFlag());
@@ -745,10 +745,10 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
         }
 
         // consumerGroup
-        if (this.defaultMQPullConsumer.getConsumerGroup().equals(MQUtils.DEFAULT_CONSUMER_GROUP)) {
+        if (this.defaultMQPullConsumer.getConsumerGroup().equals(MQConstants.DEFAULT_CONSUMER_GROUP)) {
             throw new MQClientException(
                 "consumerGroup can not equal "
-                    + MQUtils.DEFAULT_CONSUMER_GROUP
+                    + MQConstants.DEFAULT_CONSUMER_GROUP
                     + ", please specify another one."
                     + FAQUrl.suggestTodo(FAQUrl.CLIENT_PARAMETER_CHECK_URL),
                 null);

@@ -26,7 +26,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 public class TransactionalMessageUtil {
     public static final String REMOVE_TAG = "d";
@@ -43,7 +43,7 @@ public class TransactionalMessageUtil {
     }
 
     public static String buildConsumerGroup() {
-        return MQUtils.CID_SYS_RMQ_TRANS;
+        return MQConstants.CID_SYS_RMQ_TRANS;
     }
 
     public static MessageExtBrokerInner buildTransactionalMessageFromHalfMessage(MessageExt msgExt) {

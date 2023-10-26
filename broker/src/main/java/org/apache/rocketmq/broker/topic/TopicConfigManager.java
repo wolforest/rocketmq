@@ -42,7 +42,7 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.sysflag.TopicSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
@@ -102,7 +102,7 @@ public class TopicConfigManager extends ConfigManager {
             addSystemTopic(this.brokerController.getBrokerConfig().getMsgTraceTopicName(), 1, 1);
         }
 
-        addSystemTopic(this.brokerController.getBrokerConfig().getBrokerClusterName() + "_" + MQUtils.REPLY_TOPIC_POSTFIX,
+        addSystemTopic(this.brokerController.getBrokerConfig().getBrokerClusterName() + "_" + MQConstants.REPLY_TOPIC_POSTFIX,
             1, 1);
 
         // PopAckConstants.REVIVE_TOPIC

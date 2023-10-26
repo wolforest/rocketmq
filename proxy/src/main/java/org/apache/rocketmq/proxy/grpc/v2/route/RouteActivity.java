@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.common.attribute.TopicMessageType;
 import org.apache.rocketmq.common.constant.PermName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.grpc.v2.AbstractMessingActivity;
@@ -122,7 +122,7 @@ public class RouteActivity extends AbstractMessingActivity {
                 if (PermName.isReadable(queueData.getPerm()) && queueData.getReadQueueNums() > 0) {
                     Map<Long, Broker> brokerIdMap = brokerMap.get(queueData.getBrokerName());
                     if (brokerIdMap != null) {
-                        Broker broker = brokerIdMap.get(MQUtils.MASTER_ID);
+                        Broker broker = brokerIdMap.get(MQConstants.MASTER_ID);
                         Permission permission = this.convertToPermission(queueData.getPerm());
                         if (fifo) {
                             for (int i = 0; i < queueData.getReadQueueNums(); i++) {

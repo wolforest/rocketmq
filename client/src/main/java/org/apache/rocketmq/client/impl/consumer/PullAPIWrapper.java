@@ -34,7 +34,7 @@ import org.apache.rocketmq.client.hook.FilterMessageHook;
 import org.apache.rocketmq.client.impl.CommunicationMode;
 import org.apache.rocketmq.client.impl.FindBrokerResult;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.filter.ExpressionType;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -43,7 +43,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.header.PopMessageRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.PullMessageRequestHeader;
@@ -60,7 +60,7 @@ public class PullAPIWrapper {
     private ConcurrentMap<MessageQueue, AtomicLong/* brokerId */> pullFromWhichNodeTable =
         new ConcurrentHashMap<>(32);
     private volatile boolean connectBrokerByUser = false;
-    private volatile long defaultBrokerId = MQUtils.MASTER_ID;
+    private volatile long defaultBrokerId = MQConstants.MASTER_ID;
     private Random random = new Random(System.nanoTime());
     private ArrayList<FilterMessageHook> filterMessageHookList = new ArrayList<>();
 
@@ -291,7 +291,7 @@ public class PullAPIWrapper {
             return suggest.get();
         }
 
-        return MQUtils.MASTER_ID;
+        return MQConstants.MASTER_ID;
     }
 
     private String computePullFromWhichFilterServer(final String topic, final String brokerAddr)
@@ -362,10 +362,10 @@ public class PullAPIWrapper {
     public void popAsync(MessageQueue mq, long invisibleTime, int maxNums, String consumerGroup,
                          long timeout, PopCallback popCallback, boolean poll, int initMode, boolean order, String expressionType, String expression)
         throws MQClientException, RemotingException, InterruptedException {
-        FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(), MQUtils.MASTER_ID, true);
+        FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(), MQConstants.MASTER_ID, true);
         if (null == findBrokerResult) {
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(mq.getTopic());
-            findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(), MQUtils.MASTER_ID, true);
+            findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(), MQConstants.MASTER_ID, true);
         }
         if (findBrokerResult != null) {
             PopMessageRequestHeader requestHeader = new PopMessageRequestHeader();

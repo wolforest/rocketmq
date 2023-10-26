@@ -262,7 +262,7 @@ public class RequestProcessorTest {
             request.addExtField("brokerAddr", broker1Addr);
             request.addExtField("clusterName", cluster);
             request.addExtField("haServerAddr", "10.10.2.1");
-            request.addExtField("brokerId", String.valueOf(MQUtils.MASTER_ID));
+            request.addExtField("brokerId", String.valueOf(MQConstants.MASTER_ID));
             request.setVersion(MQVersion.CURRENT_VERSION);
             TopicConfigSerializeWrapper topicConfigSerializeWrapper = new TopicConfigSerializeWrapper();
             topicConfigSerializeWrapper.setTopicConfigTable(new ConcurrentHashMap<>(Collections.singletonMap(topic, new TopicConfig(topic))));
@@ -294,7 +294,7 @@ public class RequestProcessorTest {
             request.addExtField("brokerAddr", broker2Addr);
             request.addExtField("clusterName", cluster);
             request.addExtField("haServerAddr", "10.10.2.1");
-            request.addExtField("brokerId", String.valueOf(MQUtils.MASTER_ID));
+            request.addExtField("brokerId", String.valueOf(MQConstants.MASTER_ID));
             request.setVersion(MQVersion.CURRENT_VERSION);
             TopicConfigSerializeWrapper topicConfigSerializeWrapper = new TopicConfigSerializeWrapper();
             topicConfigSerializeWrapper.setTopicConfigTable(new ConcurrentHashMap<>(Collections.singletonMap(topic, new TopicConfig(topic))));

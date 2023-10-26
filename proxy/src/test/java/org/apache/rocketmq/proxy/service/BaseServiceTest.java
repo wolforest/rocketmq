@@ -19,7 +19,7 @@ package org.apache.rocketmq.proxy.service;
 
 import java.util.HashMap;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.proxy.config.InitConfigTest;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIExt;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIFactory;
@@ -73,7 +73,7 @@ public class BaseServiceTest extends InitConfigTest {
         brokerData.setCluster(CLUSTER_NAME);
         brokerData.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MQUtils.MASTER_ID, BROKER_ADDR);
+        brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
         brokerData.setBrokerAddrs(brokerAddrs);
         topicRouteData.setBrokerDatas(Lists.newArrayList(brokerData));
 

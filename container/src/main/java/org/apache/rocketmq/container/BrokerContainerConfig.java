@@ -18,13 +18,13 @@
 package org.apache.rocketmq.container;
 
 import org.apache.rocketmq.common.annotation.ImportantField;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 
 public class BrokerContainerConfig {
 
-    private String rocketmqHome = System.getProperty(MQUtils.ROCKETMQ_HOME_PROPERTY, System.getenv(MQUtils.ROCKETMQ_HOME_ENV));
+    private String rocketmqHome = System.getProperty(MQConstants.ROCKETMQ_HOME_PROPERTY, System.getenv(MQConstants.ROCKETMQ_HOME_ENV));
 
     @ImportantField
     private String namesrvAddr = System.getProperty(NameServerAddressUtils.NAMESRV_ADDR_PROPERTY, System.getenv(NameServerAddressUtils.NAMESRV_ADDR_ENV));

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
@@ -47,11 +47,11 @@ public class ZoneRouteRPCHook implements RPCHook {
         if (response == null || response.getBody() == null || ResponseCode.SUCCESS != response.getCode()) {
             return;
         }
-        boolean zoneMode = Boolean.parseBoolean(request.getExtFields().get(MQUtils.ZONE_MODE));
+        boolean zoneMode = Boolean.parseBoolean(request.getExtFields().get(MQConstants.ZONE_MODE));
         if (!zoneMode) {
             return;
         }
-        String zoneName = request.getExtFields().get(MQUtils.ZONE_NAME);
+        String zoneName = request.getExtFields().get(MQConstants.ZONE_NAME);
         if (StringUtils.isBlank(zoneName)) {
             return;
         }
@@ -65,7 +65,7 @@ public class ZoneRouteRPCHook implements RPCHook {
         Map<String, BrokerData> brokerDataRemoved = new HashMap<>();
         for (BrokerData brokerData : topicRouteData.getBrokerDatas()) {
             //master down, consume from slave. break nearby route rule.
-            if (brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID) == null
+            if (brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID) == null
                 || StringUtils.equalsIgnoreCase(brokerData.getZoneName(), zoneName)) {
                 brokerDataReserved.add(brokerData);
             } else {

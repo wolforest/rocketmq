@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
@@ -433,7 +433,7 @@ public class RouteInfoManagerNewTest {
 
         // Acting master check
         assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
-            .containsOnlyKeys(MQUtils.MASTER_ID);
+            .containsOnlyKeys(MQConstants.MASTER_ID);
         assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
             .containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
         assertThat(PermName.isWriteable(orderRoute.getQueueDatas().get(0).getPerm())).isFalse();
@@ -450,7 +450,7 @@ public class RouteInfoManagerNewTest {
 
         // Acting master check
         assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
-            .containsOnlyKeys(MQUtils.MASTER_ID);
+            .containsOnlyKeys(MQConstants.MASTER_ID);
         assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
             .containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
         assertThat(PermName.isWriteable(orderRoute.getQueueDatas().get(0).getPerm())).isFalse();
@@ -480,10 +480,10 @@ public class RouteInfoManagerNewTest {
 
         for (final BrokerData brokerData : orderRoute.getBrokerDatas()) {
             if (brokerData.getBrokerAddrs().size() == 1) {
-                assertThat(brokerData.getBrokerAddrs()).containsOnlyKeys(MQUtils.MASTER_ID);
+                assertThat(brokerData.getBrokerAddrs()).containsOnlyKeys(MQConstants.MASTER_ID);
                 assertThat(brokerData.getBrokerAddrs()).containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
             } else if (brokerData.getBrokerAddrs().size() == 2) {
-                assertThat(brokerData.getBrokerAddrs()).containsKeys(MQUtils.MASTER_ID, (long) slave1.brokerId);
+                assertThat(brokerData.getBrokerAddrs()).containsKeys(MQConstants.MASTER_ID, (long) slave1.brokerId);
                 assertThat(brokerData.getBrokerAddrs()).containsValues(master1.brokerAddr, slave1.brokerAddr);
             } else {
                 throw new RuntimeException("Shouldn't reach here");
@@ -502,7 +502,7 @@ public class RouteInfoManagerNewTest {
 
         // Acting master check
         assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
-            .containsOnlyKeys(MQUtils.MASTER_ID);
+            .containsOnlyKeys(MQConstants.MASTER_ID);
         assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
             .containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
         assertThat(PermName.isWriteable(orderRoute.getQueueDatas().get(0).getPerm())).isFalse();
@@ -517,7 +517,7 @@ public class RouteInfoManagerNewTest {
 
         // Acting master check
         assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
-            .containsOnlyKeys(MQUtils.MASTER_ID);
+            .containsOnlyKeys(MQConstants.MASTER_ID);
         assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
             .containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
         assertThat(PermName.isWriteable(orderRoute.getQueueDatas().get(0).getPerm())).isFalse();

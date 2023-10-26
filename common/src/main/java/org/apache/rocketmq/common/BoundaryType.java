@@ -27,7 +27,7 @@ public enum BoundaryType {
      */
     UPPER("upper");
 
-    private String name;
+    private final String name;
 
     BoundaryType(String name) {
         this.name = name;

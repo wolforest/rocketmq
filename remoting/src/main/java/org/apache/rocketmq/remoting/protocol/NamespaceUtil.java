@@ -18,13 +18,13 @@ package org.apache.rocketmq.remoting.protocol;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 public class NamespaceUtil {
     public static final char NAMESPACE_SEPARATOR = '%';
     public static final String STRING_BLANK = "";
-    public static final int RETRY_PREFIX_LENGTH = MQUtils.RETRY_GROUP_TOPIC_PREFIX.length();
-    public static final int DLQ_PREFIX_LENGTH = MQUtils.DLQ_GROUP_TOPIC_PREFIX.length();
+    public static final int RETRY_PREFIX_LENGTH = MQConstants.RETRY_GROUP_TOPIC_PREFIX.length();
+    public static final int DLQ_PREFIX_LENGTH = MQConstants.DLQ_GROUP_TOPIC_PREFIX.length();
 
     /**
      * Unpack namespace from resource, just like:
@@ -41,10 +41,10 @@ public class NamespaceUtil {
 
         StringBuilder stringBuilder = new StringBuilder();
         if (isRetryTopic(resourceWithNamespace)) {
-            stringBuilder.append(MQUtils.RETRY_GROUP_TOPIC_PREFIX);
+            stringBuilder.append(MQConstants.RETRY_GROUP_TOPIC_PREFIX);
         }
         if (isDLQTopic(resourceWithNamespace)) {
-            stringBuilder.append(MQUtils.DLQ_GROUP_TOPIC_PREFIX);
+            stringBuilder.append(MQConstants.DLQ_GROUP_TOPIC_PREFIX);
         }
 
         String resourceWithoutRetryAndDLQ = withOutRetryAndDLQ(resourceWithNamespace);
@@ -94,11 +94,11 @@ public class NamespaceUtil {
         StringBuilder stringBuilder = new StringBuilder();
 
         if (isRetryTopic(resourceWithOutNamespace)) {
-            stringBuilder.append(MQUtils.RETRY_GROUP_TOPIC_PREFIX);
+            stringBuilder.append(MQConstants.RETRY_GROUP_TOPIC_PREFIX);
         }
 
         if (isDLQTopic(resourceWithOutNamespace)) {
-            stringBuilder.append(MQUtils.DLQ_GROUP_TOPIC_PREFIX);
+            stringBuilder.append(MQConstants.DLQ_GROUP_TOPIC_PREFIX);
         }
 
         return stringBuilder.append(namespace).append(NAMESPACE_SEPARATOR).append(resourceWithoutRetryAndDLQ).toString();
@@ -121,7 +121,7 @@ public class NamespaceUtil {
         }
 
         return new StringBuilder()
-            .append(MQUtils.RETRY_GROUP_TOPIC_PREFIX)
+            .append(MQConstants.RETRY_GROUP_TOPIC_PREFIX)
             .append(wrapNamespace(namespace, consumerGroup))
             .toString();
     }
@@ -156,7 +156,7 @@ public class NamespaceUtil {
             return false;
         }
 
-        if (TopicValidator.isSystemTopic(resource) || MQUtils.isSysConsumerGroup(resource)) {
+        if (TopicValidator.isSystemTopic(resource) || MQConstants.isSysConsumerGroup(resource)) {
             return true;
         }
 
@@ -164,10 +164,10 @@ public class NamespaceUtil {
     }
 
     public static boolean isRetryTopic(String resource) {
-        return StringUtils.isNotBlank(resource) && resource.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX);
+        return StringUtils.isNotBlank(resource) && resource.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX);
     }
 
     public static boolean isDLQTopic(String resource) {
-        return StringUtils.isNotBlank(resource) && resource.startsWith(MQUtils.DLQ_GROUP_TOPIC_PREFIX);
+        return StringUtils.isNotBlank(resource) && resource.startsWith(MQConstants.DLQ_GROUP_TOPIC_PREFIX);
     }
 }

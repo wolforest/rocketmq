@@ -21,7 +21,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.store.MessageStore;
@@ -62,7 +62,7 @@ public class InnerBrokerController extends BrokerController {
         startBasicService();
 
         if (!isIsolated && !this.messageStoreConfig.isEnableDLegerCommitLog() && !this.messageStoreConfig.isDuplicationEnable()) {
-            this.getBrokerMessageService().changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MQUtils.MASTER_ID);
+            this.getBrokerMessageService().changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MQConstants.MASTER_ID);
             this.getBrokerServiceRegistry().registerBrokerAll(true, false, true);
         }
 
@@ -171,7 +171,7 @@ public class InnerBrokerController extends BrokerController {
 
     @Override
     public BrokerController peekMasterBroker() {
-        if (brokerConfig.getBrokerId() == MQUtils.MASTER_ID) {
+        if (brokerConfig.getBrokerId() == MQConstants.MASTER_ID) {
             return this;
         }
         return this.brokerContainer.peekMasterBroker();

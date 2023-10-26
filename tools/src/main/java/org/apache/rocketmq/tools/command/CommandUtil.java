@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.rocketmq.client.exception.MQBrokerException;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
@@ -62,7 +62,7 @@ public class CommandUtil {
                 continue;
             }
 
-            String masterAddr = brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID);
+            String masterAddr = brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
 
             if (masterAddr == null) {
                 masterAndSlaveMap.putIfAbsent(NO_MASTER_PLACEHOLDER, new ArrayList<>());
@@ -71,7 +71,7 @@ public class CommandUtil {
             }
 
             for (Entry<Long, String> brokerAddrEntry : brokerData.getBrokerAddrs().entrySet()) {
-                if (brokerAddrEntry.getValue() == null || brokerAddrEntry.getKey() == MQUtils.MASTER_ID) {
+                if (brokerAddrEntry.getValue() == null || brokerAddrEntry.getKey() == MQConstants.MASTER_ID) {
                     continue;
                 }
 
@@ -100,7 +100,7 @@ public class CommandUtil {
                 BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
                 if (brokerData != null) {
 
-                    String addr = brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID);
+                    String addr = brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
                     if (addr != null) {
                         masterSet.add(addr);
                     }
@@ -139,7 +139,7 @@ public class CommandUtil {
         ClusterInfo clusterInfoSerializeWrapper = adminExt.examineBrokerClusterInfo();
         BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
         if (null != brokerData) {
-            String addr = brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID);
+            String addr = brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
             if (addr != null) {
                 return addr;
             }

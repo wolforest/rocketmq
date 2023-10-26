@@ -31,7 +31,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -443,7 +443,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
     public boolean sendMessageBack(final MessageExt msg) {
         try {
             // max reconsume times exceeded then send to dead letter queue.
-            Message newMsg = new Message(MQUtils.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup()), msg.getBody());
+            Message newMsg = new Message(MQConstants.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup()), msg.getBody());
             MessageAccessor.setProperties(newMsg, msg.getProperties());
             String originMsgId = MessageAccessor.getOriginMessageId(msg);
             MessageAccessor.setOriginMessageId(newMsg, org.apache.rocketmq.common.utils.StringUtils.isBlank(originMsgId) ? msg.getMsgId() : originMsgId);
@@ -682,7 +682,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                 return;
             }
 
-            consumeMessageContext.getProps().put(MQUtils.CONSUME_CONTEXT_TYPE, returnType.name());
+            consumeMessageContext.getProps().put(MQConstants.CONSUME_CONTEXT_TYPE, returnType.name());
 
             consumeMessageContext.setStatus(status.toString());
             consumeMessageContext.setSuccess(ConsumeOrderlyStatus.SUCCESS == status || ConsumeOrderlyStatus.COMMIT == status);

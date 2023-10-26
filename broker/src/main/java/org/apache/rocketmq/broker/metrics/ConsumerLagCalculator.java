@@ -38,7 +38,7 @@ import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.filter.ExpressionType;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.heartbeat.ConsumeType;
@@ -159,7 +159,7 @@ public class ConsumerLagCalculator {
             }
             for (String topic : topics) {
                 // skip retry topic
-                if (topic.startsWith(MQUtils.RETRY_GROUP_TOPIC_PREFIX)) {
+                if (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
                     continue;
                 }
 

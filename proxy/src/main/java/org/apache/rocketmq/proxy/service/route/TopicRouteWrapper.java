@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
@@ -43,12 +43,12 @@ public class TopicRouteWrapper {
     }
 
     public String getMasterAddr(String brokerName) {
-        return this.brokerNameRouteData.get(brokerName).getBrokerAddrs().get(MQUtils.MASTER_ID);
+        return this.brokerNameRouteData.get(brokerName).getBrokerAddrs().get(MQConstants.MASTER_ID);
     }
 
     public String getMasterAddrPrefer(String brokerName) {
         HashMap<Long, String> brokerAddr = brokerNameRouteData.get(brokerName).getBrokerAddrs();
-        String addr = brokerAddr.get(MQUtils.MASTER_ID);
+        String addr = brokerAddr.get(MQConstants.MASTER_ID);
         if (addr == null) {
             Optional<Long> optional = brokerAddr.keySet().stream().findFirst();
             return optional.map(brokerAddr::get).orElse(null);

@@ -23,7 +23,7 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +34,7 @@ public class MessageUtilsTest {
     @Test
     public void testCreateReplyMessage() throws MQClientException {
         Message msg = MessageUtil.createReplyMessage(createReplyMessage("clusterName"), new byte[] {'a'});
-        assertThat(msg.getTopic()).isEqualTo("clusterName" + "_" + MQUtils.REPLY_TOPIC_POSTFIX);
+        assertThat(msg.getTopic()).isEqualTo("clusterName" + "_" + MQConstants.REPLY_TOPIC_POSTFIX);
         assertThat(msg.getProperty(MessageConst.PROPERTY_MESSAGE_REPLY_TO_CLIENT)).isEqualTo("127.0.0.1");
         assertThat(msg.getProperty(MessageConst.PROPERTY_MESSAGE_TTL)).isEqualTo("3000");
     }

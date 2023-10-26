@@ -33,7 +33,7 @@ import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
@@ -158,7 +158,7 @@ public class PrintMessageByQueueCommand implements SubCommand {
 
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) throws SubCommandException {
-        DefaultMQPullConsumer consumer = new DefaultMQPullConsumer(MQUtils.TOOLS_CONSUMER_GROUP, rpcHook);
+        DefaultMQPullConsumer consumer = new DefaultMQPullConsumer(MQConstants.TOOLS_CONSUMER_GROUP, rpcHook);
 
         try {
             String charsetName =

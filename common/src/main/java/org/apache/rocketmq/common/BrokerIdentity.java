@@ -22,7 +22,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.rocketmq.common.annotation.ImportantField;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
@@ -52,7 +52,7 @@ public class BrokerIdentity {
     @ImportantField
     private String brokerClusterName = DEFAULT_CLUSTER_NAME;
     @ImportantField
-    private volatile long brokerId = MQUtils.MASTER_ID;
+    private volatile long brokerId = MQConstants.MASTER_ID;
 
     private boolean isBrokerContainer = false;
 

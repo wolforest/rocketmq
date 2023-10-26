@@ -30,10 +30,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
-import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
@@ -72,12 +72,12 @@ public class RegisterBrokerBody extends RemotingSerializable {
 
             // write topic config entry one by one.
             for (ConcurrentMap.Entry<String, TopicConfig> next : topicConfigTable.entrySet()) {
-                buffer = next.getValue().encode().getBytes(MQUtils.DEFAULT_CHARSET);
+                buffer = next.getValue().encode().getBytes(MQConstants.DEFAULT_CHARSET);
                 outputStream.write(convertIntToByteArray(buffer.length));
                 outputStream.write(buffer);
             }
 
-            buffer = JSON.toJSONString(filterServerList).getBytes(MQUtils.DEFAULT_CHARSET);
+            buffer = JSON.toJSONString(filterServerList).getBytes(MQConstants.DEFAULT_CHARSET);
 
             // write filter server list json length
             outputStream.write(convertIntToByteArray(buffer.length));
@@ -93,7 +93,7 @@ public class RegisterBrokerBody extends RemotingSerializable {
             }
             outputStream.write(convertIntToByteArray(topicQueueMappingInfoMap.size()));
             for (TopicQueueMappingInfo info: topicQueueMappingInfoMap.values()) {
-                buffer = JSON.toJSONString(info).getBytes(MQUtils.DEFAULT_CHARSET);
+                buffer = JSON.toJSONString(info).getBytes(MQConstants.DEFAULT_CHARSET);
                 outputStream.write(convertIntToByteArray(buffer.length));
                 // write filter server list json
                 outputStream.write(buffer);
@@ -134,7 +134,7 @@ public class RegisterBrokerBody extends RemotingSerializable {
 
             byte[] buffer = readBytes(inflaterInputStream, topicConfigJsonLength);
             TopicConfig topicConfig = new TopicConfig();
-            String topicConfigJson = new String(buffer, MQUtils.DEFAULT_CHARSET);
+            String topicConfigJson = new String(buffer, MQConstants.DEFAULT_CHARSET);
             topicConfig.decode(topicConfigJson);
             topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
         }
@@ -142,7 +142,7 @@ public class RegisterBrokerBody extends RemotingSerializable {
         int filterServerListJsonLength = readInt(inflaterInputStream);
 
         byte[] filterServerListBuffer = readBytes(inflaterInputStream, filterServerListJsonLength);
-        String filterServerListJson = new String(filterServerListBuffer, MQUtils.DEFAULT_CHARSET);
+        String filterServerListJson = new String(filterServerListBuffer, MQConstants.DEFAULT_CHARSET);
         List<String> filterServerList = new ArrayList<>();
         try {
             filterServerList = JSON.parseArray(filterServerListJson, String.class);

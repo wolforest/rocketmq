@@ -31,8 +31,8 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 public class ConcurrentTreeMap<K, V> {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final ReentrantLock lock;
-    private TreeMap<K, V> tree;
-    private RoundQueue<K> roundQueue;
+    private final TreeMap<K, V> tree;
+    private final RoundQueue<K> roundQueue;
 
     public ConcurrentTreeMap(int capacity, Comparator<? super K> comparator) {
         tree = new TreeMap<>(comparator);

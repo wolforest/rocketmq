@@ -28,7 +28,7 @@ import org.apache.rocketmq.client.trace.TraceDispatcher;
 import org.apache.rocketmq.client.trace.TraceType;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
 
 public class ConsumeMessageTraceHookImpl implements ConsumeMessageHook {
@@ -108,7 +108,7 @@ public class ConsumeMessageTraceHookImpl implements ConsumeMessageHook {
         subAfterContext.setTraceBeans(subBeforeContext.getTraceBeans());
         Map<String, String> props = context.getProps();
         if (props != null) {
-            String contextType = props.get(MQUtils.CONSUME_CONTEXT_TYPE);
+            String contextType = props.get(MQConstants.CONSUME_CONTEXT_TYPE);
             if (contextType != null) {
                 subAfterContext.setContextCode(ConsumeReturnType.valueOf(contextType).ordinal());
             }

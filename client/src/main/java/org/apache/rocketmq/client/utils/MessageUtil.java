@@ -22,7 +22,7 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 public class MessageUtil {
     public static final String REPLY_MESSAGE_FLAG = "reply";
@@ -36,7 +36,7 @@ public class MessageUtil {
             String ttl = requestMessage.getProperty(MessageConst.PROPERTY_MESSAGE_TTL);
             replyMessage.setBody(body);
             if (cluster != null) {
-                String replyTopic = MQUtils.getReplyTopic(cluster);
+                String replyTopic = MQConstants.getReplyTopic(cluster);
                 replyMessage.setTopic(replyTopic);
                 MessageAccessor.putProperty(replyMessage, MessageConst.PROPERTY_MESSAGE_TYPE, REPLY_MESSAGE_FLAG);
                 MessageAccessor.putProperty(replyMessage, MessageConst.PROPERTY_CORRELATION_ID, correlationId);

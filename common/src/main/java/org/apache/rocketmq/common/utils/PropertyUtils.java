@@ -30,6 +30,7 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import org.apache.rocketmq.common.annotation.ImportantField;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
@@ -95,7 +96,7 @@ public class PropertyUtils {
     public static Properties string2Properties(final String str) {
         Properties properties = new Properties();
         try {
-            InputStream in = new ByteArrayInputStream(str.getBytes(MQUtils.DEFAULT_CHARSET));
+            InputStream in = new ByteArrayInputStream(str.getBytes(MQConstants.DEFAULT_CHARSET));
             properties.load(in);
         } catch (Exception e) {
             log.error("Failed to handle properties", e);

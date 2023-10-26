@@ -24,7 +24,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.TopicConfig;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
@@ -114,7 +114,7 @@ public class UpdateTopicPermSubCommand implements SubCommand {
                         continue;
                     }
                     for (Map.Entry<Long, String> entry : brokerAddrs.entrySet()) {
-                        if (brokerAddr.equals(entry.getValue()) && MQUtils.MASTER_ID == entry.getKey()) {
+                        if (brokerAddr.equals(entry.getValue()) && MQConstants.MASTER_ID == entry.getKey()) {
                             brokerName = data.getBrokerName();
                             break;
                         }

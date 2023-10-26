@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.topic;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.PermName;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 
 public class LmqTopicConfigManager extends TopicConfigManager {
     public LmqTopicConfigManager(BrokerController brokerController) {
@@ -28,7 +28,7 @@ public class LmqTopicConfigManager extends TopicConfigManager {
 
     @Override
     public TopicConfig selectTopicConfig(final String topic) {
-        if (MQUtils.isLmq(topic)) {
+        if (MQConstants.isLmq(topic)) {
             return simpleLmqTopicConfig(topic);
         }
         return super.selectTopicConfig(topic);
@@ -36,7 +36,7 @@ public class LmqTopicConfigManager extends TopicConfigManager {
 
     @Override
     public void updateTopicConfig(final TopicConfig topicConfig) {
-        if (topicConfig == null || MQUtils.isLmq(topicConfig.getTopicName())) {
+        if (topicConfig == null || MQConstants.isLmq(topicConfig.getTopicName())) {
             return;
         }
         super.updateTopicConfig(topicConfig);
@@ -48,7 +48,7 @@ public class LmqTopicConfigManager extends TopicConfigManager {
 
     @Override
     public boolean containsTopic(String topic) {
-        if (MQUtils.isLmq(topic)) {
+        if (MQConstants.isLmq(topic)) {
             return true;
         }
         return super.containsTopic(topic);

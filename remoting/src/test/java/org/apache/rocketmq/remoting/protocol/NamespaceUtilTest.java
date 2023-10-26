@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.remoting.protocol;
 
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -33,12 +33,12 @@ public class NamespaceUtilTest {
     private static final String SYSTEM_TOPIC = "rmq_sys_topic";
     private static final String GROUP_ID_WITH_NAMESPACE = INSTANCE_ID + NamespaceUtil.NAMESPACE_SEPARATOR + GROUP_ID;
     private static final String TOPIC_WITH_NAMESPACE = INSTANCE_ID + NamespaceUtil.NAMESPACE_SEPARATOR + TOPIC;
-    private static final String RETRY_TOPIC = MQUtils.RETRY_GROUP_TOPIC_PREFIX + GROUP_ID;
+    private static final String RETRY_TOPIC = MQConstants.RETRY_GROUP_TOPIC_PREFIX + GROUP_ID;
     private static final String RETRY_TOPIC_WITH_NAMESPACE =
-        MQUtils.RETRY_GROUP_TOPIC_PREFIX + INSTANCE_ID + NamespaceUtil.NAMESPACE_SEPARATOR + GROUP_ID;
-    private static final String DLQ_TOPIC = MQUtils.DLQ_GROUP_TOPIC_PREFIX + GROUP_ID;
+        MQConstants.RETRY_GROUP_TOPIC_PREFIX + INSTANCE_ID + NamespaceUtil.NAMESPACE_SEPARATOR + GROUP_ID;
+    private static final String DLQ_TOPIC = MQConstants.DLQ_GROUP_TOPIC_PREFIX + GROUP_ID;
     private static final String DLQ_TOPIC_WITH_NAMESPACE =
-        MQUtils.DLQ_GROUP_TOPIC_PREFIX + INSTANCE_ID + NamespaceUtil.NAMESPACE_SEPARATOR + GROUP_ID;
+        MQConstants.DLQ_GROUP_TOPIC_PREFIX + INSTANCE_ID + NamespaceUtil.NAMESPACE_SEPARATOR + GROUP_ID;
 
     @Test
     public void testWithoutNamespace() {

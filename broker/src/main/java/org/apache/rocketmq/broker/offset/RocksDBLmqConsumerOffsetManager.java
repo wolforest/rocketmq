@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.utils.MQUtils;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class RocksDBLmqConsumerOffsetManager extends RocksDBConsumerOffsetManager {
@@ -33,7 +33,7 @@ public class RocksDBLmqConsumerOffsetManager extends RocksDBConsumerOffsetManage
 
     @Override
     public long queryOffset(final String group, final String topic, final int queueId) {
-        if (!MQUtils.isLmq(group)) {
+        if (!MQConstants.isLmq(group)) {
             return super.queryOffset(group, topic, queueId);
         }
         // topic@group
@@ -47,7 +47,7 @@ public class RocksDBLmqConsumerOffsetManager extends RocksDBConsumerOffsetManage
 
     @Override
     public Map<Integer, Long> queryOffset(final String group, final String topic) {
-        if (!MQUtils.isLmq(group)) {
+        if (!MQConstants.isLmq(group)) {
             return super.queryOffset(group, topic);
         }
         Map<Integer, Long> map = new HashMap<>();
@@ -63,7 +63,7 @@ public class RocksDBLmqConsumerOffsetManager extends RocksDBConsumerOffsetManage
     @Override
     public void commitOffset(final String clientHost, final String group, final String topic, final int queueId,
         final long offset) {
-        if (!MQUtils.isLmq(group)) {
+        if (!MQConstants.isLmq(group)) {
             super.commitOffset(clientHost, group, topic, queueId, offset);
             return;
         }
