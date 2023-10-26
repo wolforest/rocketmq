@@ -31,7 +31,6 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
@@ -199,7 +198,7 @@ public class BrokerContainerStartup {
         switch (messageStoreConfig.getBrokerRole()) {
             case ASYNC_MASTER:
             case SYNC_MASTER:
-                brokerConfig.setBrokerId(MixAll.MASTER_ID);
+                brokerConfig.setBrokerId(MQUtils.MASTER_ID);
                 break;
             case SLAVE:
                 if (brokerConfig.getBrokerId() <= 0) {

@@ -16,7 +16,6 @@
  */
 package org.apache.rocketmq.store.commitlog.service;
 
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -25,6 +24,7 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.message.MessageVersion;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -127,7 +127,7 @@ public class CommitLogPutService {
             }
             if (this.defaultMessageStore.getMessageStoreConfig().isAllAckInSyncStateSet()) {
                 // -1 means all ack in SyncStateSet
-                needAckNums = MixAll.ALL_ACK_IN_SYNC_STATE_SET;
+                needAckNums = MQUtils.ALL_ACK_IN_SYNC_STATE_SET;
             }
         } else if (needHandleHA && this.defaultMessageStore.getBrokerConfig().isEnableSlaveActingMaster()) {
             int inSyncReplicas = Math.min(this.defaultMessageStore.getAliveReplicaNumInGroup(),
@@ -263,7 +263,7 @@ public class CommitLogPutService {
             }
             if (this.defaultMessageStore.getMessageStoreConfig().isAllAckInSyncStateSet()) {
                 // -1 means all ack in SyncStateSet
-                context.setNeedAckNums(MixAll.ALL_ACK_IN_SYNC_STATE_SET);
+                context.setNeedAckNums(MQUtils.ALL_ACK_IN_SYNC_STATE_SET);
             }
         } else if (context.isNeedHandleHA() && this.defaultMessageStore.getBrokerConfig().isEnableSlaveActingMaster()) {
             int inSyncReplicas = Math.min(this.defaultMessageStore.getAliveReplicaNumInGroup(),

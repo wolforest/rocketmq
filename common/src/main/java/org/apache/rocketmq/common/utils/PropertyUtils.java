@@ -28,7 +28,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.annotation.ImportantField;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -96,7 +95,7 @@ public class PropertyUtils {
     public static Properties string2Properties(final String str) {
         Properties properties = new Properties();
         try {
-            InputStream in = new ByteArrayInputStream(str.getBytes(MixAll.DEFAULT_CHARSET));
+            InputStream in = new ByteArrayInputStream(str.getBytes(MQUtils.DEFAULT_CHARSET));
             properties.load(in);
         } catch (Exception e) {
             log.error("Failed to handle properties", e);

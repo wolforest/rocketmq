@@ -35,7 +35,6 @@ import org.apache.rocketmq.client.hook.FilterMessageHook;
 import org.apache.rocketmq.client.impl.CommunicationMode;
 import org.apache.rocketmq.client.impl.MQClientManager;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.filter.ExpressionType;
@@ -616,7 +615,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
         throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
         try {
             String destBrokerName = brokerName;
-            if (destBrokerName != null && destBrokerName.startsWith(MixAll.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
+            if (destBrokerName != null && destBrokerName.startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
                 destBrokerName = this.mQClientFactory.getBrokerNameFromMessageQueue(this.defaultMQPullConsumer.queueWithNamespace(new MessageQueue(msg.getTopic(), msg.getBrokerName(), msg.getQueueId())));
             }
             String brokerAddr = (null != destBrokerName) ? this.mQClientFactory.findBrokerAddressInPublish(destBrokerName)

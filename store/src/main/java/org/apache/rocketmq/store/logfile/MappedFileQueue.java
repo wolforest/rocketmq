@@ -29,9 +29,9 @@ import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 import org.apache.rocketmq.common.BoundaryType;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.ReferenceResource;
@@ -599,7 +599,7 @@ public class MappedFileQueue implements Swappable {
                         result.getByteBuffer().getLong(); //prev pos
                         int magic = result.getByteBuffer().getInt();
                         if (size == unitSize && (magic | 0xF) == 0xF) {
-                            result.getByteBuffer().position(position + MixAll.UNIT_PRE_SIZE_FOR_MSG);
+                            result.getByteBuffer().position(position + MQUtils.UNIT_PRE_SIZE_FOR_MSG);
                             long maxOffsetPy = result.getByteBuffer().getLong();
                             destroy = maxOffsetPy < offset;
                             if (destroy) {

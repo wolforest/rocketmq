@@ -26,7 +26,6 @@ import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.LockCallback;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.TopicConfig;
@@ -796,7 +795,7 @@ public class BrokerOuterAPI {
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, 3000);
         assert response != null;
         if (response.getCode() == SUCCESS) {
-            return new String(response.getBody(), MixAll.DEFAULT_CHARSET);
+            return new String(response.getBody(), MQUtils.DEFAULT_CHARSET);
         }
 
         throw new MQBrokerException(response.getCode(), response.getRemark(), addr);

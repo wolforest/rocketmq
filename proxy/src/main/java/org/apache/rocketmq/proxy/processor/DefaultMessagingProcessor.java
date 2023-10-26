@@ -32,7 +32,6 @@ import org.apache.rocketmq.client.consumer.AckResult;
 import org.apache.rocketmq.client.consumer.PopResult;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.producer.SendResult;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.consumer.ReceiptHandle;
 import org.apache.rocketmq.common.message.Message;
@@ -114,7 +113,7 @@ public class DefaultMessagingProcessor extends AbstractStartAndShutdown implemen
     public static DefaultMessagingProcessor createForClusterMode() {
         RPCHook rpcHook = null;
         if (ConfigurationManager.getProxyConfig().isEnableAclRpcHookForClusterMode()) {
-            rpcHook = AclUtils.getAclRPCHook(ROCKETMQ_HOME + MixAll.ACL_CONF_TOOLS_FILE);
+            rpcHook = AclUtils.getAclRPCHook(ROCKETMQ_HOME + MQUtils.ACL_CONF_TOOLS_FILE);
         }
         return createForClusterMode(rpcHook);
     }

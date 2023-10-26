@@ -28,7 +28,6 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
 import org.apache.rocketmq.client.Validators;
 import org.apache.rocketmq.common.ConfigManager;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.SubscriptionGroupAttributes;
 import org.apache.rocketmq.common.attribute.AttributeUtil;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -76,47 +75,47 @@ public class SubscriptionGroupManager extends ConfigManager {
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
-            subscriptionGroupConfig.setGroupName(MixAll.FILTERSRV_CONSUMER_GROUP);
+            subscriptionGroupConfig.setGroupName(MQUtils.FILTERSRV_CONSUMER_GROUP);
             putSubscriptionGroupConfig(subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
-            subscriptionGroupConfig.setGroupName(MixAll.SELF_TEST_CONSUMER_GROUP);
+            subscriptionGroupConfig.setGroupName(MQUtils.SELF_TEST_CONSUMER_GROUP);
             putSubscriptionGroupConfig(subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
-            subscriptionGroupConfig.setGroupName(MixAll.ONS_HTTP_PROXY_GROUP);
+            subscriptionGroupConfig.setGroupName(MQUtils.ONS_HTTP_PROXY_GROUP);
             subscriptionGroupConfig.setConsumeBroadcastEnable(true);
             putSubscriptionGroupConfig(subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
-            subscriptionGroupConfig.setGroupName(MixAll.CID_ONSAPI_PULL_GROUP);
+            subscriptionGroupConfig.setGroupName(MQUtils.CID_ONSAPI_PULL_GROUP);
             subscriptionGroupConfig.setConsumeBroadcastEnable(true);
             putSubscriptionGroupConfig(subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
-            subscriptionGroupConfig.setGroupName(MixAll.CID_ONSAPI_PERMISSION_GROUP);
+            subscriptionGroupConfig.setGroupName(MQUtils.CID_ONSAPI_PERMISSION_GROUP);
             subscriptionGroupConfig.setConsumeBroadcastEnable(true);
             putSubscriptionGroupConfig(subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
-            subscriptionGroupConfig.setGroupName(MixAll.CID_ONSAPI_OWNER_GROUP);
+            subscriptionGroupConfig.setGroupName(MQUtils.CID_ONSAPI_OWNER_GROUP);
             subscriptionGroupConfig.setConsumeBroadcastEnable(true);
             putSubscriptionGroupConfig(subscriptionGroupConfig);
         }
 
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
-            subscriptionGroupConfig.setGroupName(MixAll.CID_SYS_RMQ_TRANS);
+            subscriptionGroupConfig.setGroupName(MQUtils.CID_SYS_RMQ_TRANS);
             subscriptionGroupConfig.setConsumeBroadcastEnable(true);
             putSubscriptionGroupConfig(subscriptionGroupConfig);
         }

@@ -23,7 +23,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.acl.common.AclUtils;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.remoting.RPCHook;
@@ -163,7 +162,7 @@ public class MQAdminStartup {
                         if (rpcHook != null) {
                             cmd.execute(commandLine, options, rpcHook);
                         } else {
-                            cmd.execute(commandLine, options, AclUtils.getAclRPCHook(ROCKETMQ_HOME + MixAll.ACL_CONF_TOOLS_FILE));
+                            cmd.execute(commandLine, options, AclUtils.getAclRPCHook(ROCKETMQ_HOME + MQUtils.ACL_CONF_TOOLS_FILE));
                         }
                     } else {
                         System.out.printf("The sub command %s not exist.%n", args[0]);

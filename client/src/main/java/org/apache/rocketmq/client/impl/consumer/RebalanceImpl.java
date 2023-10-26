@@ -33,7 +33,6 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.FindBrokerResult;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.message.MessageQueueAssignment;
 import org.apache.rocketmq.common.message.MessageRequestMode;
@@ -79,7 +78,7 @@ public abstract class RebalanceImpl {
     }
 
     public void unlock(final MessageQueue mq, final boolean oneway) {
-        FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MixAll.MASTER_ID, true);
+        FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MQUtils.MASTER_ID, true);
         if (findBrokerResult != null) {
             UnlockBatchRequestBody requestBody = new UnlockBatchRequestBody();
             requestBody.setConsumerGroup(this.consumerGroup);
@@ -109,7 +108,7 @@ public abstract class RebalanceImpl {
                 continue;
             }
 
-            FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(brokerName, MixAll.MASTER_ID, true);
+            FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(brokerName, MQUtils.MASTER_ID, true);
             if (findBrokerResult != null) {
                 UnlockBatchRequestBody requestBody = new UnlockBatchRequestBody();
                 requestBody.setConsumerGroup(this.consumerGroup);
@@ -158,7 +157,7 @@ public abstract class RebalanceImpl {
     }
 
     public boolean lock(final MessageQueue mq) {
-        FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MixAll.MASTER_ID, true);
+        FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(this.mQClientFactory.getBrokerNameFromMessageQueue(mq), MQUtils.MASTER_ID, true);
         if (findBrokerResult == null) {
             return false;
         }
@@ -202,7 +201,7 @@ public abstract class RebalanceImpl {
                 continue;
             }
 
-            FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(entry.getKey(), MixAll.MASTER_ID, true);
+            FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(entry.getKey(), MQUtils.MASTER_ID, true);
             if (findBrokerResult == null) {
                 continue;
             }

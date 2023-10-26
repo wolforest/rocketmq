@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
@@ -88,7 +88,7 @@ public class ClientMetadata {
         if (!brokerAddrTable.containsKey(brokerName)) {
             return null;
         }
-        return brokerAddrTable.get(brokerName).get(MixAll.MASTER_ID);
+        return brokerAddrTable.get(brokerName).get(MQUtils.MASTER_ID);
     }
 
     public ConcurrentMap<String, HashMap<Long, String>> getBrokerAddrTable() {
@@ -142,7 +142,7 @@ public class ClientMetadata {
             for (int i = 0; i < maxTotalNums; i++) {
                 MessageQueue mq = new MessageQueue(topic, TopicQueueMappingUtils.getMockBrokerName(scope), i);
                 if (!mqEndPoints.containsKey(mq)) {
-                    mqEndPointsOfBroker.put(mq, MixAll.LOGICAL_QUEUE_MOCK_BROKER_NAME_NOT_EXIST);
+                    mqEndPointsOfBroker.put(mq, MQUtils.LOGICAL_QUEUE_MOCK_BROKER_NAME_NOT_EXIST);
                 } else {
                     mqEndPointsOfBroker.put(mq, mqEndPoints.get(mq).getBname());
                 }

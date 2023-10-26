@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentMap;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ClientChannelInfo;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.filter.ExpressionType;
@@ -145,8 +144,8 @@ public class ClientManageProcessor implements NettyRequestProcessor {
         }
         response.setCode(ResponseCode.SUCCESS);
         response.setRemark(null);
-        response.addExtField(MixAll.IS_SUPPORT_HEART_BEAT_V2, Boolean.TRUE.toString());
-        response.addExtField(MixAll.IS_SUB_CHANGE, Boolean.TRUE.toString());
+        response.addExtField(MQUtils.IS_SUPPORT_HEART_BEAT_V2, Boolean.TRUE.toString());
+        response.addExtField(MQUtils.IS_SUB_CHANGE, Boolean.TRUE.toString());
         return response;
     }
 
@@ -200,8 +199,8 @@ public class ClientManageProcessor implements NettyRequestProcessor {
         }
         response.setCode(ResponseCode.SUCCESS);
         response.setRemark(null);
-        response.addExtField(MixAll.IS_SUPPORT_HEART_BEAT_V2, Boolean.TRUE.toString());
-        response.addExtField(MixAll.IS_SUB_CHANGE, Boolean.valueOf(isSubChange).toString());
+        response.addExtField(MQUtils.IS_SUPPORT_HEART_BEAT_V2, Boolean.TRUE.toString());
+        response.addExtField(MQUtils.IS_SUB_CHANGE, Boolean.valueOf(isSubChange).toString());
         return response;
     }
 

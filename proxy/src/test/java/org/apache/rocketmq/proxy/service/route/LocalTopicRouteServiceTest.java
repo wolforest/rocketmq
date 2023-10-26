@@ -25,9 +25,9 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.PermName;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.proxy.common.Address;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
@@ -100,6 +100,6 @@ public class LocalTopicRouteServiceTest extends BaseServiceTest {
             Lists.newArrayList(new Address(Address.AddressScheme.IPv4, HostAndPort.fromParts(
                 HostAndPort.fromString(BROKER_ADDR).getHost(),
                 ConfigurationManager.getProxyConfig().getGrpcServerPort()))),
-            proxyTopicRouteData.getBrokerDatas().get(0).getBrokerAddrs().get(MixAll.MASTER_ID));
+            proxyTopicRouteData.getBrokerDatas().get(0).getBrokerAddrs().get(MQUtils.MASTER_ID));
     }
 }

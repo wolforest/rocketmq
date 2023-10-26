@@ -28,8 +28,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.thread.ThreadPoolMonitor;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.proxy.common.Address;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.service.BaseServiceTest;
@@ -72,7 +72,7 @@ public class ClusterTopicRouteServiceTest extends BaseServiceTest {
         brokerData.setCluster(CLUSTER_NAME);
         brokerData.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MixAll.MASTER_ID, BROKER_ADDR);
+        brokerAddrs.put(MQUtils.MASTER_ID, BROKER_ADDR);
         brokerData.setBrokerAddrs(brokerAddrs);
 
         // build broker2
@@ -80,7 +80,7 @@ public class ClusterTopicRouteServiceTest extends BaseServiceTest {
         broke2Data.setCluster(CLUSTER_NAME);
         broke2Data.setBrokerName(BROKER2_NAME);
         HashMap<Long, String> broker2Addrs = new HashMap<>();
-        broker2Addrs.put(MixAll.MASTER_ID, BROKER2_ADDR);
+        broker2Addrs.put(MQUtils.MASTER_ID, BROKER2_ADDR);
         broke2Data.setBrokerAddrs(broker2Addrs);
 
         // add brokers
@@ -123,7 +123,7 @@ public class ClusterTopicRouteServiceTest extends BaseServiceTest {
         ProxyTopicRouteData proxyTopicRouteData = this.topicRouteService.getTopicRouteForProxy(ctx, addressList, TOPIC);
 
         assertEquals(1, proxyTopicRouteData.getBrokerDatas().size());
-        assertEquals(addressList, proxyTopicRouteData.getBrokerDatas().get(0).getBrokerAddrs().get(MixAll.MASTER_ID));
+        assertEquals(addressList, proxyTopicRouteData.getBrokerDatas().get(0).getBrokerAddrs().get(MQUtils.MASTER_ID));
     }
 
     @Test

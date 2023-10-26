@@ -31,10 +31,10 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -208,7 +208,7 @@ public class TopicRouteInfoManager {
         }
         Map<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
         if (map != null && !map.isEmpty()) {
-            return map.get(MixAll.MASTER_ID);
+            return map.get(MQUtils.MASTER_ID);
         }
 
         return null;
@@ -228,7 +228,7 @@ public class TopicRouteInfoManager {
         Map<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
         if (map != null && !map.isEmpty()) {
             brokerAddr = map.get(brokerId);
-            boolean slave = brokerId != MixAll.MASTER_ID;
+            boolean slave = brokerId != MQUtils.MASTER_ID;
             found = brokerAddr != null;
 
             if (!found && slave) {

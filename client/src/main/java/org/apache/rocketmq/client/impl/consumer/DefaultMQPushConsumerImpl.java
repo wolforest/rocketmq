@@ -59,7 +59,6 @@ import org.apache.rocketmq.client.impl.MQClientManager;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.stat.ConsumerStatsManager;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.help.FAQUrl;
@@ -814,8 +813,8 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
         boolean needRetry = true;
         try {
-            if (brokerName != null && brokerName.startsWith(MixAll.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)
-                || mq != null && mq.getBrokerName().startsWith(MixAll.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
+            if (brokerName != null && brokerName.startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)
+                || mq != null && mq.getBrokerName().startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
                 needRetry = false;
                 sendMessageBackAsNormalMessage(msg);
             } else {
@@ -863,16 +862,16 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             String topic = message.getTopic();
 
             String desBrokerName = brokerName;
-            if (brokerName != null && brokerName.startsWith(MixAll.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
+            if (brokerName != null && brokerName.startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
                 desBrokerName = this.mQClientFactory.getBrokerNameFromMessageQueue(this.defaultMQPushConsumer.queueWithNamespace(new MessageQueue(topic, brokerName, queueId)));
             }
 
 
             FindBrokerResult
-                findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MixAll.MASTER_ID, true);
+                findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQUtils.MASTER_ID, true);
             if (null == findBrokerResult) {
                 this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
-                findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MixAll.MASTER_ID, true);
+                findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQUtils.MASTER_ID, true);
             }
 
             if (findBrokerResult == null) {
@@ -912,15 +911,15 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         int queueId = ExtraInfoUtil.getQueueId(extraInfoStrs);
 
         String desBrokerName = brokerName;
-        if (brokerName != null && brokerName.startsWith(MixAll.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
+        if (brokerName != null && brokerName.startsWith(MQUtils.LOGICAL_QUEUE_MOCK_BROKER_PREFIX)) {
             desBrokerName = this.mQClientFactory.getBrokerNameFromMessageQueue(this.defaultMQPushConsumer.queueWithNamespace(new MessageQueue(topic, brokerName, queueId)));
         }
 
         FindBrokerResult
-            findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MixAll.MASTER_ID, true);
+            findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQUtils.MASTER_ID, true);
         if (null == findBrokerResult) {
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
-            findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MixAll.MASTER_ID, true);
+            findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(desBrokerName, MQUtils.MASTER_ID, true);
         }
         if (findBrokerResult != null) {
             ChangeInvisibleTimeRequestHeader requestHeader = new ChangeInvisibleTimeRequestHeader();

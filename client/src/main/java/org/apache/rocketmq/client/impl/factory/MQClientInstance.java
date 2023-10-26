@@ -58,7 +58,6 @@ import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.stat.ConsumerStatsManager;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.filter.ExpressionType;
@@ -160,7 +159,7 @@ public class MQClientInstance {
         this.pullMessageService = new PullMessageService(this);
         this.rebalanceService = new RebalanceService(this);
 
-        this.defaultMQProducer = new DefaultMQProducer(MixAll.CLIENT_INNER_PRODUCER_GROUP);
+        this.defaultMQProducer = new DefaultMQProducer(MQUtils.CLIENT_INNER_PRODUCER_GROUP);
         this.defaultMQProducer.resetClientConfig(clientConfig);
         this.consumerStatsManager = new ConsumerStatsManager(this.scheduledExecutorService);
 
@@ -278,7 +277,7 @@ public class MQClientInstance {
                         continue;
                     }
 
-                    if (!brokerData.getBrokerAddrs().containsKey(MixAll.MASTER_ID)) {
+                    if (!brokerData.getBrokerAddrs().containsKey(MQUtils.MASTER_ID)) {
                         continue;
                     }
 
@@ -687,7 +686,7 @@ public class MQClientInstance {
         if (addr == null) {
             return;
         }
-        if (consumerEmpty && MixAll.MASTER_ID != id) {
+        if (consumerEmpty && MQUtils.MASTER_ID != id) {
             return;
         }
 
@@ -743,7 +742,7 @@ public class MQClientInstance {
                 if (addr == null) {
                     continue;
                 }
-                if (consumerEmpty && MixAll.MASTER_ID != id) {
+                if (consumerEmpty && MQUtils.MASTER_ID != id) {
                     continue;
                 }
                 try {
@@ -1137,7 +1136,7 @@ public class MQClientInstance {
                 brokerAddr = entry.getValue();
                 if (brokerAddr != null) {
                     found = true;
-                    slave = MixAll.MASTER_ID != id;
+                    slave = MQUtils.MASTER_ID != id;
                     break;
 
                 }
@@ -1157,7 +1156,7 @@ public class MQClientInstance {
         }
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
         if (map != null && !map.isEmpty()) {
-            return map.get(MixAll.MASTER_ID);
+            return map.get(MQUtils.MASTER_ID);
         }
 
         return null;
@@ -1178,7 +1177,7 @@ public class MQClientInstance {
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
         if (map != null && !map.isEmpty()) {
             brokerAddr = map.get(brokerId);
-            slave = brokerId != MixAll.MASTER_ID;
+            slave = brokerId != MQUtils.MASTER_ID;
             found = brokerAddr != null;
 
             if (!found && slave) {
@@ -1189,7 +1188,7 @@ public class MQClientInstance {
             if (!found && !onlyThisBroker) {
                 Entry<Long, String> entry = map.entrySet().iterator().next();
                 brokerAddr = entry.getValue();
-                slave = entry.getKey() != MixAll.MASTER_ID;
+                slave = entry.getKey() != MQUtils.MASTER_ID;
                 found = true;
             }
         }

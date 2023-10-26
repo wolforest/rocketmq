@@ -35,7 +35,6 @@ import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.TraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.EndTransactionTraceHookImpl;
 import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageBatch;
 import org.apache.rocketmq.common.message.MessageClientIDSetter;
@@ -167,7 +166,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * Default constructor.
      */
     public DefaultMQProducer() {
-        this(null, MixAll.DEFAULT_PRODUCER_GROUP, null);
+        this(null, MQUtils.DEFAULT_PRODUCER_GROUP, null);
     }
 
     /**
@@ -176,7 +175,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * @param rpcHook RPC hook to execute per each remoting command execution.
      */
     public DefaultMQProducer(RPCHook rpcHook) {
-        this(null, MixAll.DEFAULT_PRODUCER_GROUP, rpcHook);
+        this(null, MQUtils.DEFAULT_PRODUCER_GROUP, rpcHook);
     }
 
     /**

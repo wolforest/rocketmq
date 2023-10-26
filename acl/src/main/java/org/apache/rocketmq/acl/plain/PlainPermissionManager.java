@@ -38,7 +38,6 @@ import org.apache.rocketmq.acl.common.AclException;
 import org.apache.rocketmq.acl.common.AclUtils;
 import org.apache.rocketmq.acl.common.Permission;
 import org.apache.rocketmq.common.AclConfig;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.PlainAccessConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.topic.TopicValidator;
@@ -99,7 +98,7 @@ public class PlainPermissionManager {
         for (int i = 0; i < files.length; i++) {
             String fileName = files[i].getAbsolutePath();
             File f = new File(fileName);
-            if (fileName.equals(fileHome + MixAll.ACL_CONF_TOOLS_FILE)) {
+            if (fileName.equals(fileHome + MQUtils.ACL_CONF_TOOLS_FILE)) {
                 continue;
             } else if (fileName.endsWith(".yml") || fileName.endsWith(".yaml")) {
                 allAclFileFullPath.add(fileName);

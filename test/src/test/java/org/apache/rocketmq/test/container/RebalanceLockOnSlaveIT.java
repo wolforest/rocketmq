@@ -28,10 +28,10 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.FindBrokerResult;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -99,7 +99,7 @@ public class RebalanceLockOnSlaveIT extends ContainerIntegrationTestBase {
 
         mqConsumerThreeReplica3.getDefaultMQPushConsumerImpl().getmQClientFactory().updateTopicRouteInfoFromNameServer(THREE_REPLICAS_TOPIC);
         FindBrokerResult result = mqConsumerThreeReplica3.getDefaultMQPushConsumerImpl().getmQClientFactory().findBrokerAddressInSubscribe(
-            master3With3Replicas.getBrokerConfig().getBrokerName(), MixAll.MASTER_ID, true);
+            master3With3Replicas.getBrokerConfig().getBrokerName(), MQUtils.MASTER_ID, true);
         assertThat(result).isNotNull();
 
         for (MessageQueue mq : mqSet) {
@@ -155,12 +155,12 @@ public class RebalanceLockOnSlaveIT extends ContainerIntegrationTestBase {
         mqConsumerThreeReplica2.getDefaultMQPushConsumerImpl().getmQClientFactory().updateTopicRouteInfoFromNameServer(THREE_REPLICAS_TOPIC);
 
         assertThat(mqConsumerThreeReplica1.getDefaultMQPushConsumerImpl().getmQClientFactory().findBrokerAddressInSubscribe(
-            master3With3Replicas.getBrokerConfig().getBrokerName(), MixAll.MASTER_ID, true)).isNotNull();
+            master3With3Replicas.getBrokerConfig().getBrokerName(), MQUtils.MASTER_ID, true)).isNotNull();
 
         mqConsumerThreeReplica2.getDefaultMQPushConsumerImpl().getmQClientFactory().findBrokerAddressInSubscribe(
-            master3With3Replicas.getBrokerConfig().getBrokerName(), MixAll.MASTER_ID, true);
+            master3With3Replicas.getBrokerConfig().getBrokerName(), MQUtils.MASTER_ID, true);
         assertThat(mqConsumerThreeReplica2.getDefaultMQPushConsumerImpl().getmQClientFactory().findBrokerAddressInSubscribe(
-            master3With3Replicas.getBrokerConfig().getBrokerName(), MixAll.MASTER_ID, true)).isNotNull();
+            master3With3Replicas.getBrokerConfig().getBrokerName(), MQUtils.MASTER_ID, true)).isNotNull();
 
         mqConsumerThreeReplica1.getDefaultMQPushConsumerImpl().doRebalance();
         mqConsumerThreeReplica2.getDefaultMQPushConsumerImpl().doRebalance();

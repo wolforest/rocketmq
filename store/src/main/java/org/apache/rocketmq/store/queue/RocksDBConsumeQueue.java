@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.BoundaryType;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -227,7 +226,7 @@ public class RocksDBConsumeQueue implements ConsumeQueueInterface {
         if (StringUtils.isBlank(multiDispatchQueue)) {
             return;
         }
-        String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queues = multiDispatchQueue.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
         Long[] queueOffsets = new Long[queues.length];
         for (int i = 0; i < queues.length; i++) {
             if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQUtils.isLmq(queues[i])) {
@@ -236,7 +235,7 @@ public class RocksDBConsumeQueue implements ConsumeQueueInterface {
             }
         }
         MessageAccessor.putProperty(msg, MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET,
-            StringUtils.join(queueOffsets, MixAll.MULTI_DISPATCH_QUEUE_SPLITTER));
+            StringUtils.join(queueOffsets, MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER));
         msg.removeWaitStorePropertyString();
     }
 
@@ -254,7 +253,7 @@ public class RocksDBConsumeQueue implements ConsumeQueueInterface {
         if (StringUtils.isBlank(multiDispatchQueue)) {
             return;
         }
-        String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queues = multiDispatchQueue.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
         for (int i = 0; i < queues.length; i++) {
             if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQUtils.isLmq(queues[i])) {
                 String key = MultiDispatch.lmqQueueKey(queues[i]);

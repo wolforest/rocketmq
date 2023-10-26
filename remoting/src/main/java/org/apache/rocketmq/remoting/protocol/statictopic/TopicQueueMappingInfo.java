@@ -18,14 +18,14 @@ package org.apache.rocketmq.remoting.protocol.statictopic;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class TopicQueueMappingInfo extends RemotingSerializable {
     public static final int LEVEL_0 = 0;
 
     String topic; // redundant field
-    String scope = MixAll.METADATA_SCOPE_GLOBAL;
+    String scope = MQUtils.METADATA_SCOPE_GLOBAL;
     int totalQueues;
     String bname;  //identify the hosted broker name
     long epoch; //important to fence the old dirty data

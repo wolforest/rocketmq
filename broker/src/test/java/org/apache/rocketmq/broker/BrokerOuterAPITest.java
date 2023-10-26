@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyRemotingClient;
@@ -216,7 +216,7 @@ public class BrokerOuterAPITest {
         response.setRemark(null);
 
         ClusterInfo want = new ClusterInfo();
-        want.setBrokerAddrTable(new HashMap<>(Collections.singletonMap("key", new BrokerData("cluster", "broker", new HashMap<>(Collections.singletonMap(MixAll.MASTER_ID, "127.0.0.1:10911"))))));
+        want.setBrokerAddrTable(new HashMap<>(Collections.singletonMap("key", new BrokerData("cluster", "broker", new HashMap<>(Collections.singletonMap(MQUtils.MASTER_ID, "127.0.0.1:10911"))))));
         response.setBody(RemotingSerializable.encode(want));
 
         when(nettyRemotingClient.invokeSync(isNull(), argThat(argument -> argument.getCode() == RequestCode.GET_BROKER_CLUSTER_INFO), anyLong())).thenReturn(response);

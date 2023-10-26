@@ -23,9 +23,9 @@ import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.container.logback.BrokerLogbackConfigurator;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -241,10 +241,10 @@ public class BrokerContainer implements IBrokerContainer {
             return this.addDLedgerBroker(brokerConfig, storeConfig);
         }
 
-        if (brokerConfig.getBrokerId() == MixAll.MASTER_ID && storeConfig.getBrokerRole() != BrokerRole.SLAVE) {
+        if (brokerConfig.getBrokerId() == MQUtils.MASTER_ID && storeConfig.getBrokerRole() != BrokerRole.SLAVE) {
             return this.addMasterBroker(brokerConfig, storeConfig);
         }
-        if (brokerConfig.getBrokerId() != MixAll.MASTER_ID && storeConfig.getBrokerRole() == BrokerRole.SLAVE) {
+        if (brokerConfig.getBrokerId() != MQUtils.MASTER_ID && storeConfig.getBrokerRole() == BrokerRole.SLAVE) {
             return this.addSlaveBroker(brokerConfig, storeConfig);
         }
 

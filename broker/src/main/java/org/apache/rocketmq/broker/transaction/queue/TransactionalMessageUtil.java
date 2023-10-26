@@ -19,7 +19,6 @@ package org.apache.rocketmq.broker.transaction.queue;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
@@ -27,6 +26,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.MQUtils;
 
 public class TransactionalMessageUtil {
     public static final String REMOVE_TAG = "d";
@@ -43,7 +43,7 @@ public class TransactionalMessageUtil {
     }
 
     public static String buildConsumerGroup() {
-        return MixAll.CID_SYS_RMQ_TRANS;
+        return MQUtils.CID_SYS_RMQ_TRANS;
     }
 
     public static MessageExtBrokerInner buildTransactionalMessageFromHalfMessage(MessageExt msgExt) {

@@ -26,7 +26,6 @@ import org.apache.rocketmq.broker.service.BrokerShutdownThread;
 import org.apache.rocketmq.broker.service.SystemConfigFileHelper;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
@@ -193,10 +192,10 @@ public class BrokerStartup {
         switch (messageStoreConfig.getBrokerRole()) {
             case ASYNC_MASTER:
             case SYNC_MASTER:
-                brokerConfig.setBrokerId(MixAll.MASTER_ID);
+                brokerConfig.setBrokerId(MQUtils.MASTER_ID);
                 break;
             case SLAVE:
-                if (brokerConfig.getBrokerId() <= MixAll.MASTER_ID) {
+                if (brokerConfig.getBrokerId() <= MQUtils.MASTER_ID) {
                     System.out.printf("Slave's brokerId must be > 0%n");
                     System.exit(-3);
                 }

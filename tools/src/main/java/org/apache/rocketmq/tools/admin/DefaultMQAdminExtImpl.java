@@ -47,7 +47,6 @@ import org.apache.rocketmq.client.impl.MQClientManager;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.PlainAccessConfig;
 import org.apache.rocketmq.common.ServiceState;
@@ -129,19 +128,19 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
 
     static {
         SYSTEM_GROUP_SET.add(MQUtils.DEFAULT_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.DEFAULT_PRODUCER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.DEFAULT_PRODUCER_GROUP);
         SYSTEM_GROUP_SET.add(MQUtils.TOOLS_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.SCHEDULE_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.FILTERSRV_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.MONITOR_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.CLIENT_INNER_PRODUCER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.SELF_TEST_PRODUCER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.SELF_TEST_CONSUMER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.ONS_HTTP_PROXY_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.CID_ONSAPI_PERMISSION_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.CID_ONSAPI_OWNER_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.CID_ONSAPI_PULL_GROUP);
-        SYSTEM_GROUP_SET.add(MixAll.CID_SYS_RMQ_TRANS);
+        SYSTEM_GROUP_SET.add(MQUtils.SCHEDULE_CONSUMER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.FILTERSRV_CONSUMER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.MONITOR_CONSUMER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.CLIENT_INNER_PRODUCER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.SELF_TEST_PRODUCER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.SELF_TEST_CONSUMER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.ONS_HTTP_PROXY_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.CID_ONSAPI_PERMISSION_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.CID_ONSAPI_OWNER_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.CID_ONSAPI_PULL_GROUP);
+        SYSTEM_GROUP_SET.add(MQUtils.CID_SYS_RMQ_TRANS);
     }
 
     private final Logger logger = LoggerFactory.getLogger(DefaultMQAdminExtImpl.class);
@@ -1529,7 +1528,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
             if (mq.getTopic().equals(msg.getTopic()) && mq.getQueueId() == msg.getQueueId()) {
                 BrokerData brokerData = ci.getBrokerAddrTable().get(mq.getBrokerName());
                 if (brokerData != null) {
-                    String addr = NetworkUtil.convert2IpString(brokerData.getBrokerAddrs().get(MixAll.MASTER_ID));
+                    String addr = NetworkUtil.convert2IpString(brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID));
                     if (NetworkUtil.socketAddress2String(msg.getStoreHost()).equals(addr)) {
                         if (next.getValue().getConsumerOffset() > msg.getQueueOffset()) {
                             return true;
@@ -1559,7 +1558,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                 if (mq.getTopic().equals(msg.getTopic()) && mq.getQueueId() == msg.getQueueId()) {
                     BrokerData brokerData = ci.getBrokerAddrTable().get(mq.getBrokerName());
                     if (brokerData != null) {
-                        String addr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
+                        String addr = brokerData.getBrokerAddrs().get(MQUtils.MASTER_ID);
                         if (addr.equals(NetworkUtil.socketAddress2String(msg.getStoreHost()))) {
                             if (next.getValue().getConsumerOffset() > msg.getQueueOffset()) {
                                 return true;

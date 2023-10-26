@@ -32,13 +32,13 @@ import org.apache.rocketmq.broker.longpolling.PullRequest;
 import org.apache.rocketmq.broker.mqtrace.ConsumeMessageContext;
 import org.apache.rocketmq.broker.mqtrace.ConsumeMessageHook;
 import org.apache.rocketmq.broker.plugin.PullMessageResultHandler;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.filter.ExpressionType;
 import org.apache.rocketmq.common.help.FAQUrl;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -741,14 +741,14 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                 responseHeader.setSuggestWhichBrokerId(subscriptionGroupConfig.getBrokerId());
             }
         } else {
-            responseHeader.setSuggestWhichBrokerId(MixAll.MASTER_ID);
+            responseHeader.setSuggestWhichBrokerId(MQUtils.MASTER_ID);
         }
 
-        if (this.brokerController.getBrokerConfig().getBrokerId() == MixAll.MASTER_ID || getMessageResult.isSuggestPullingFromSlave()) {
+        if (this.brokerController.getBrokerConfig().getBrokerId() == MQUtils.MASTER_ID || getMessageResult.isSuggestPullingFromSlave()) {
             return;
         }
 
-        if (this.brokerController.getMinBrokerIdInGroup() != MixAll.MASTER_ID) {
+        if (this.brokerController.getMinBrokerIdInGroup() != MQUtils.MASTER_ID) {
             return;
         }
 
@@ -756,7 +756,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                 requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getConsumerGroup(), responseHeader.getNextBeginOffset(),
                 responseHeader.getMinOffset(), responseHeader.getMaxOffset());
 
-        responseHeader.setSuggestWhichBrokerId(MixAll.MASTER_ID);
+        responseHeader.setSuggestWhichBrokerId(MQUtils.MASTER_ID);
         if (!getMessageResult.getStatus().equals(GetMessageStatus.FOUND)) {
             response.setCode(ResponseCode.PULL_RETRY_IMMEDIATELY);
         }

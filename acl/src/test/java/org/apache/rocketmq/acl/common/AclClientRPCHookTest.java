@@ -21,7 +21,7 @@ import java.lang.reflect.Field;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.remoting.CommandCustomHeader;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
@@ -72,10 +72,10 @@ public class AclClientRPCHookTest {
         requestHeader.setSuspendTimeoutMillis(15000L);
         requestHeader.setSubVersion(0L);
         RemotingCommand testPullRemotingCommand = RemotingCommand.createRequestCommand(RequestCode.PULL_MESSAGE, requestHeader);
-        testPullRemotingCommand.addExtField(MixAll.REQ_T, String.valueOf(RequestType.STREAM.getCode()));
+        testPullRemotingCommand.addExtField(MQUtils.REQ_T, String.valueOf(RequestType.STREAM.getCode()));
         testPullRemotingCommand.addExtField(ACCESS_KEY, "ak");
         SortedMap<String, String> content = aclClientRPCHook.parseRequestContent(testPullRemotingCommand);
-        assertThat(content.get(MixAll.REQ_T)).isEqualTo(String.valueOf(RequestType.STREAM.getCode()));
+        assertThat(content.get(MQUtils.REQ_T)).isEqualTo(String.valueOf(RequestType.STREAM.getCode()));
     }
 
     private SortedMap<String, String> oldVersionParseRequestContent(RemotingCommand request, String ak, String securityToken) {

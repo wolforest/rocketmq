@@ -19,7 +19,6 @@ package org.apache.rocketmq.store.service;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -83,8 +82,8 @@ public class ReputMessageService extends ServiceThread {
         if (StringUtils.isBlank(multiDispatchQueue) || StringUtils.isBlank(multiQueueOffset)) {
             return;
         }
-        String[] queues = multiDispatchQueue.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
-        String[] queueOffsets = multiQueueOffset.split(MixAll.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queues = multiDispatchQueue.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
+        String[] queueOffsets = multiQueueOffset.split(MQUtils.MULTI_DISPATCH_QUEUE_SPLITTER);
         if (queues.length != queueOffsets.length) {
             return;
         }
@@ -232,7 +231,7 @@ public class ReputMessageService extends ServiceThread {
         // If user open the dledger pattern or the broker is master node,
         // it will not ignore the exception and fix the reputFromOffset variable
         if (messageStore.getMessageStoreConfig().isEnableDLegerCommitLog() ||
-            messageStore.getBrokerConfig().getBrokerId() == MixAll.MASTER_ID) {
+            messageStore.getBrokerConfig().getBrokerId() == MQUtils.MASTER_ID) {
             LOGGER.error("[BUG]dispatch message to consume queue error, COMMITLOG OFFSET: {}",
                 this.reputFromOffset);
             this.reputFromOffset += result.getSize() - readSize;

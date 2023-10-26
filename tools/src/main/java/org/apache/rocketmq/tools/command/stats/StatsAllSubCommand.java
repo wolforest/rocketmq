@@ -22,7 +22,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.stats.Stats;
 import org.apache.rocketmq.common.utils.MQUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
@@ -50,7 +49,7 @@ public class StatsAllSubCommand implements SubCommand {
         long inMsgCntToday = 0;
 
         for (BrokerData bd : topicRouteData.getBrokerDatas()) {
-            String masterAddr = bd.getBrokerAddrs().get(MixAll.MASTER_ID);
+            String masterAddr = bd.getBrokerAddrs().get(MQUtils.MASTER_ID);
             if (masterAddr != null) {
                 try {
                     BrokerStatsData bsd = admin.viewBrokerStatsData(masterAddr, Stats.TOPIC_PUT_NUMS, topic);
@@ -68,7 +67,7 @@ public class StatsAllSubCommand implements SubCommand {
                 long outMsgCntToday = 0;
 
                 for (BrokerData bd : topicRouteData.getBrokerDatas()) {
-                    String masterAddr = bd.getBrokerAddrs().get(MixAll.MASTER_ID);
+                    String masterAddr = bd.getBrokerAddrs().get(MQUtils.MASTER_ID);
                     if (masterAddr != null) {
                         try {
                             String statsKey = String.format("%s@%s", topic, group);

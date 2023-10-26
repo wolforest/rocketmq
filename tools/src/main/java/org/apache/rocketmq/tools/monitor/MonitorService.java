@@ -35,7 +35,6 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
@@ -67,7 +66,7 @@ public class MonitorService {
     private final DefaultMQPullConsumer defaultMQPullConsumer = new DefaultMQPullConsumer(
         MQUtils.TOOLS_CONSUMER_GROUP);
     private final DefaultMQPushConsumer defaultMQPushConsumer = new DefaultMQPushConsumer(
-        MixAll.MONITOR_CONSUMER_GROUP);
+        MQUtils.MONITOR_CONSUMER_GROUP);
 
     public MonitorService(MonitorConfig monitorConfig, MonitorListener monitorListener, RPCHook rpcHook) {
         this.monitorConfig = monitorConfig;
