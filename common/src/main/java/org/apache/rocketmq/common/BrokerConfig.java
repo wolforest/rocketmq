@@ -187,6 +187,9 @@ public class BrokerConfig extends BrokerIdentity {
 
     private boolean notifyConsumerIdsChangedEnable = true;
 
+    /**
+     * useless now
+     */
     private boolean highSpeedMode = false;
 
     private int commercialBaseCount = 1;
@@ -478,261 +481,171 @@ public class BrokerConfig extends BrokerIdentity {
 
     private int splitRegistrationSize = 800;
 
-    public long getMaxPopPollingSize() {
-        return maxPopPollingSize;
-    }
-
-    public void setMaxPopPollingSize(long maxPopPollingSize) {
-        this.maxPopPollingSize = maxPopPollingSize;
-    }
-
-    public int getReviveQueueNum() {
-        return reviveQueueNum;
-    }
-
-    public void setReviveQueueNum(int reviveQueueNum) {
-        this.reviveQueueNum = reviveQueueNum;
-    }
-
-    public long getReviveInterval() {
-        return reviveInterval;
-    }
-
-    public void setReviveInterval(long reviveInterval) {
-        this.reviveInterval = reviveInterval;
-    }
-
-    public int getPopCkStayBufferTime() {
-        return popCkStayBufferTime;
-    }
-
-    public void setPopCkStayBufferTime(int popCkStayBufferTime) {
-        this.popCkStayBufferTime = popCkStayBufferTime;
-    }
-
-    public int getPopCkStayBufferTimeOut() {
-        return popCkStayBufferTimeOut;
-    }
-
-    public void setPopCkStayBufferTimeOut(int popCkStayBufferTimeOut) {
-        this.popCkStayBufferTimeOut = popCkStayBufferTimeOut;
-    }
-
-    public int getPopPollingMapSize() {
-        return popPollingMapSize;
-    }
-
-    public void setPopPollingMapSize(int popPollingMapSize) {
-        this.popPollingMapSize = popPollingMapSize;
-    }
-
-    public long getReviveScanTime() {
-        return reviveScanTime;
-    }
-
-    public void setReviveScanTime(long reviveScanTime) {
-        this.reviveScanTime = reviveScanTime;
-    }
-
-    public long getReviveMaxSlow() {
-        return reviveMaxSlow;
-    }
-
-    public void setReviveMaxSlow(long reviveMaxSlow) {
-        this.reviveMaxSlow = reviveMaxSlow;
-    }
-
-    public int getPopPollingSize() {
-        return popPollingSize;
-    }
-
-    public void setPopPollingSize(int popPollingSize) {
-        this.popPollingSize = popPollingSize;
-    }
-
-    public boolean isEnablePopBufferMerge() {
-        return enablePopBufferMerge;
-    }
-
     public void setEnablePopBufferMerge(boolean enablePopBufferMerge) {
         this.enablePopBufferMerge = enablePopBufferMerge;
-    }
-
-    public int getPopCkMaxBufferSize() {
-        return popCkMaxBufferSize;
-    }
-
-    public void setPopCkMaxBufferSize(int popCkMaxBufferSize) {
-        this.popCkMaxBufferSize = popCkMaxBufferSize;
-    }
-
-    public int getPopCkOffsetMaxQueueSize() {
-        return popCkOffsetMaxQueueSize;
-    }
-
-    public void setPopCkOffsetMaxQueueSize(int popCkOffsetMaxQueueSize) {
-        this.popCkOffsetMaxQueueSize = popCkOffsetMaxQueueSize;
-    }
-
-    public boolean isEnablePopBatchAck() {
-        return enablePopBatchAck;
-    }
-
-    public void setEnablePopBatchAck(boolean enablePopBatchAck) {
-        this.enablePopBatchAck = enablePopBatchAck;
-    }
-
-    public boolean isEnableSkipLongAwaitingAck() {
-        return enableSkipLongAwaitingAck;
     }
 
     public void setEnableSkipLongAwaitingAck(boolean enableSkipLongAwaitingAck) {
         this.enableSkipLongAwaitingAck = enableSkipLongAwaitingAck;
     }
 
-    public long getReviveAckWaitMs() {
-        return reviveAckWaitMs;
-    }
-
     public void setReviveAckWaitMs(long reviveAckWaitMs) {
         this.reviveAckWaitMs = reviveAckWaitMs;
-    }
-
-    public boolean isEnablePopLog() {
-        return enablePopLog;
-    }
-
-    public void setEnablePopLog(boolean enablePopLog) {
-        this.enablePopLog = enablePopLog;
-    }
-
-    public boolean isTraceOn() {
-        return traceOn;
-    }
-
-    public void setTraceOn(final boolean traceOn) {
-        this.traceOn = traceOn;
-    }
-
-    public long getStartAcceptSendRequestTimeStamp() {
-        return startAcceptSendRequestTimeStamp;
-    }
-
-    public void setStartAcceptSendRequestTimeStamp(final long startAcceptSendRequestTimeStamp) {
-        this.startAcceptSendRequestTimeStamp = startAcceptSendRequestTimeStamp;
-    }
-
-    public long getWaitTimeMillsInSendQueue() {
-        return waitTimeMillsInSendQueue;
-    }
-
-    public void setWaitTimeMillsInSendQueue(final long waitTimeMillsInSendQueue) {
-        this.waitTimeMillsInSendQueue = waitTimeMillsInSendQueue;
-    }
-
-    public long getConsumerFallbehindThreshold() {
-        return consumerFallbehindThreshold;
-    }
-
-    public void setConsumerFallbehindThreshold(final long consumerFallbehindThreshold) {
-        this.consumerFallbehindThreshold = consumerFallbehindThreshold;
-    }
-
-    public boolean isBrokerFastFailureEnable() {
-        return brokerFastFailureEnable;
-    }
-
-    public void setBrokerFastFailureEnable(final boolean brokerFastFailureEnable) {
-        this.brokerFastFailureEnable = brokerFastFailureEnable;
-    }
-
-    public long getWaitTimeMillsInPullQueue() {
-        return waitTimeMillsInPullQueue;
-    }
-
-    public void setWaitTimeMillsInPullQueue(final long waitTimeMillsInPullQueue) {
-        this.waitTimeMillsInPullQueue = waitTimeMillsInPullQueue;
-    }
-
-    public boolean isDisableConsumeIfConsumerReadSlowly() {
-        return disableConsumeIfConsumerReadSlowly;
-    }
-
-    public void setDisableConsumeIfConsumerReadSlowly(final boolean disableConsumeIfConsumerReadSlowly) {
-        this.disableConsumeIfConsumerReadSlowly = disableConsumeIfConsumerReadSlowly;
-    }
-
-    public boolean isSlaveReadEnable() {
-        return slaveReadEnable;
     }
 
     public void setSlaveReadEnable(final boolean slaveReadEnable) {
         this.slaveReadEnable = slaveReadEnable;
     }
 
-    public int getRegisterBrokerTimeoutMills() {
-        return registerBrokerTimeoutMills;
-    }
-
-    public void setRegisterBrokerTimeoutMills(final int registerBrokerTimeoutMills) {
-        this.registerBrokerTimeoutMills = registerBrokerTimeoutMills;
-    }
-
-    public String getRegionId() {
-        return regionId;
-    }
-
     public void setRegionId(final String regionId) {
         this.regionId = regionId;
-    }
-
-    public boolean isTransferMsgByHeap() {
-        return transferMsgByHeap;
-    }
-
-    public void setTransferMsgByHeap(final boolean transferMsgByHeap) {
-        this.transferMsgByHeap = transferMsgByHeap;
-    }
-
-    public String getMessageStorePlugIn() {
-        return messageStorePlugIn;
-    }
-
-    public void setMessageStorePlugIn(String messageStorePlugIn) {
-        this.messageStorePlugIn = messageStorePlugIn;
-    }
-
-    public boolean isHighSpeedMode() {
-        return highSpeedMode;
-    }
-
-    public void setHighSpeedMode(final boolean highSpeedMode) {
-        this.highSpeedMode = highSpeedMode;
-    }
-
-    public int getBrokerPermission() {
-        return brokerPermission;
     }
 
     public void setBrokerPermission(int brokerPermission) {
         this.brokerPermission = brokerPermission;
     }
 
-    public int getDefaultTopicQueueNums() {
-        return defaultTopicQueueNums;
-    }
-
     public void setDefaultTopicQueueNums(int defaultTopicQueueNums) {
         this.defaultTopicQueueNums = defaultTopicQueueNums;
-    }
-
-    public boolean isAutoCreateTopicEnable() {
-        return autoCreateTopicEnable;
     }
 
     public void setAutoCreateTopicEnable(boolean autoCreateTopic) {
         this.autoCreateTopicEnable = autoCreateTopic;
     }
+
+    public void setBrokerIP2(String brokerIP2) {
+        this.brokerIP2 = brokerIP2;
+    }
+    
+    public long getMaxPopPollingSize() {
+        return maxPopPollingSize;
+    }
+
+    public int getReviveQueueNum() {
+        return reviveQueueNum;
+    }
+
+    public long getReviveInterval() {
+        return reviveInterval;
+    }
+
+    public int getPopCkStayBufferTime() {
+        return popCkStayBufferTime;
+    }
+
+    public int getPopCkStayBufferTimeOut() {
+        return popCkStayBufferTimeOut;
+    }
+
+    public int getPopPollingMapSize() {
+        return popPollingMapSize;
+    }
+
+    public long getReviveScanTime() {
+        return reviveScanTime;
+    }
+
+    public long getReviveMaxSlow() {
+        return reviveMaxSlow;
+    }
+
+    public int getPopPollingSize() {
+        return popPollingSize;
+    }
+
+    public boolean isEnablePopBufferMerge() {
+        return enablePopBufferMerge;
+    }
+
+    public int getPopCkMaxBufferSize() {
+        return popCkMaxBufferSize;
+    }
+
+    public int getPopCkOffsetMaxQueueSize() {
+        return popCkOffsetMaxQueueSize;
+    }
+
+    public boolean isEnablePopBatchAck() {
+        return enablePopBatchAck;
+    }
+
+    public boolean isEnableSkipLongAwaitingAck() {
+        return enableSkipLongAwaitingAck;
+    }
+
+    public long getReviveAckWaitMs() {
+        return reviveAckWaitMs;
+    }
+
+    public boolean isEnablePopLog() {
+        return enablePopLog;
+    }
+
+    public boolean isTraceOn() {
+        return traceOn;
+    }
+
+    public long getStartAcceptSendRequestTimeStamp() {
+        return startAcceptSendRequestTimeStamp;
+    }
+
+    public long getWaitTimeMillsInSendQueue() {
+        return waitTimeMillsInSendQueue;
+    }
+
+    public long getConsumerFallbehindThreshold() {
+        return consumerFallbehindThreshold;
+    }
+
+    public boolean isBrokerFastFailureEnable() {
+        return brokerFastFailureEnable;
+    }
+
+    public long getWaitTimeMillsInPullQueue() {
+        return waitTimeMillsInPullQueue;
+    }
+
+    public boolean isDisableConsumeIfConsumerReadSlowly() {
+        return disableConsumeIfConsumerReadSlowly;
+    }
+
+    public boolean isSlaveReadEnable() {
+        return slaveReadEnable;
+    }
+
+    public int getRegisterBrokerTimeoutMills() {
+        return registerBrokerTimeoutMills;
+    }
+
+    public String getRegionId() {
+        return regionId;
+    }
+
+    public boolean isTransferMsgByHeap() {
+        return transferMsgByHeap;
+    }
+
+    public String getMessageStorePlugIn() {
+        return messageStorePlugIn;
+    }
+
+    public boolean isHighSpeedMode() {
+        return highSpeedMode;
+    }
+
+    public int getBrokerPermission() {
+        return brokerPermission;
+    }
+
+    public int getDefaultTopicQueueNums() {
+        return defaultTopicQueueNums;
+    }
+
+
+    public boolean isAutoCreateTopicEnable() {
+        return autoCreateTopicEnable;
+    }
+
 
     public String getBrokerIP1() {
         return brokerIP1;
@@ -746,80 +659,41 @@ public class BrokerConfig extends BrokerIdentity {
         return brokerIP2;
     }
 
-    public void setBrokerIP2(String brokerIP2) {
-        this.brokerIP2 = brokerIP2;
-    }
 
     public int getSendMessageThreadPoolNums() {
         return sendMessageThreadPoolNums;
-    }
-
-    public void setSendMessageThreadPoolNums(int sendMessageThreadPoolNums) {
-        this.sendMessageThreadPoolNums = sendMessageThreadPoolNums;
     }
 
     public int getPutMessageFutureThreadPoolNums() {
         return putMessageFutureThreadPoolNums;
     }
 
-    public void setPutMessageFutureThreadPoolNums(int putMessageFutureThreadPoolNums) {
-        this.putMessageFutureThreadPoolNums = putMessageFutureThreadPoolNums;
-    }
-
     public int getPullMessageThreadPoolNums() {
         return pullMessageThreadPoolNums;
-    }
-
-    public void setPullMessageThreadPoolNums(int pullMessageThreadPoolNums) {
-        this.pullMessageThreadPoolNums = pullMessageThreadPoolNums;
     }
 
     public int getAckMessageThreadPoolNums() {
         return ackMessageThreadPoolNums;
     }
 
-    public void setAckMessageThreadPoolNums(int ackMessageThreadPoolNums) {
-        this.ackMessageThreadPoolNums = ackMessageThreadPoolNums;
-    }
-
     public int getProcessReplyMessageThreadPoolNums() {
         return processReplyMessageThreadPoolNums;
-    }
-
-    public void setProcessReplyMessageThreadPoolNums(int processReplyMessageThreadPoolNums) {
-        this.processReplyMessageThreadPoolNums = processReplyMessageThreadPoolNums;
     }
 
     public int getQueryMessageThreadPoolNums() {
         return queryMessageThreadPoolNums;
     }
 
-    public void setQueryMessageThreadPoolNums(final int queryMessageThreadPoolNums) {
-        this.queryMessageThreadPoolNums = queryMessageThreadPoolNums;
-    }
-
     public int getAdminBrokerThreadPoolNums() {
         return adminBrokerThreadPoolNums;
-    }
-
-    public void setAdminBrokerThreadPoolNums(int adminBrokerThreadPoolNums) {
-        this.adminBrokerThreadPoolNums = adminBrokerThreadPoolNums;
     }
 
     public int getFlushConsumerOffsetInterval() {
         return flushConsumerOffsetInterval;
     }
 
-    public void setFlushConsumerOffsetInterval(int flushConsumerOffsetInterval) {
-        this.flushConsumerOffsetInterval = flushConsumerOffsetInterval;
-    }
-
     public boolean isClusterTopicEnable() {
         return clusterTopicEnable;
-    }
-
-    public void setClusterTopicEnable(boolean clusterTopicEnable) {
-        this.clusterTopicEnable = clusterTopicEnable;
     }
 
     public String getNamesrvAddr() {
@@ -832,10 +706,6 @@ public class BrokerConfig extends BrokerIdentity {
 
     public boolean isAutoCreateSubscriptionGroup() {
         return autoCreateSubscriptionGroup;
-    }
-
-    public void setAutoCreateSubscriptionGroup(boolean autoCreateSubscriptionGroup) {
-        this.autoCreateSubscriptionGroup = autoCreateSubscriptionGroup;
     }
 
     public String getBrokerConfigPath() {
@@ -866,48 +736,24 @@ public class BrokerConfig extends BrokerIdentity {
         return litePullMessageThreadPoolNums;
     }
 
-    public void setLitePullMessageThreadPoolNums(int litePullMessageThreadPoolNums) {
-        this.litePullMessageThreadPoolNums = litePullMessageThreadPoolNums;
-    }
-
     public int getLitePullThreadPoolQueueCapacity() {
         return litePullThreadPoolQueueCapacity;
-    }
-
-    public void setLitePullThreadPoolQueueCapacity(int litePullThreadPoolQueueCapacity) {
-        this.litePullThreadPoolQueueCapacity = litePullThreadPoolQueueCapacity;
     }
 
     public int getAdminBrokerThreadPoolQueueCapacity() {
         return adminBrokerThreadPoolQueueCapacity;
     }
 
-    public void setAdminBrokerThreadPoolQueueCapacity(int adminBrokerThreadPoolQueueCapacity) {
-        this.adminBrokerThreadPoolQueueCapacity = adminBrokerThreadPoolQueueCapacity;
-    }
-
     public int getLoadBalanceThreadPoolQueueCapacity() {
         return loadBalanceThreadPoolQueueCapacity;
-    }
-
-    public void setLoadBalanceThreadPoolQueueCapacity(int loadBalanceThreadPoolQueueCapacity) {
-        this.loadBalanceThreadPoolQueueCapacity = loadBalanceThreadPoolQueueCapacity;
     }
 
     public int getSendHeartbeatTimeoutMillis() {
         return sendHeartbeatTimeoutMillis;
     }
 
-    public void setSendHeartbeatTimeoutMillis(int sendHeartbeatTimeoutMillis) {
-        this.sendHeartbeatTimeoutMillis = sendHeartbeatTimeoutMillis;
-    }
-
     public long getWaitTimeMillsInLitePullQueue() {
         return waitTimeMillsInLitePullQueue;
-    }
-
-    public void setWaitTimeMillsInLitePullQueue(long waitTimeMillsInLitePullQueue) {
-        this.waitTimeMillsInLitePullQueue = waitTimeMillsInLitePullQueue;
     }
 
     public boolean isLitePullMessageEnable() {
@@ -922,72 +768,36 @@ public class BrokerConfig extends BrokerIdentity {
         return syncBrokerMemberGroupPeriod;
     }
 
-    public void setSyncBrokerMemberGroupPeriod(int syncBrokerMemberGroupPeriod) {
-        this.syncBrokerMemberGroupPeriod = syncBrokerMemberGroupPeriod;
-    }
-
     public boolean isRejectTransactionMessage() {
         return rejectTransactionMessage;
-    }
-
-    public void setRejectTransactionMessage(boolean rejectTransactionMessage) {
-        this.rejectTransactionMessage = rejectTransactionMessage;
     }
 
     public boolean isFetchNamesrvAddrByAddressServer() {
         return fetchNamesrvAddrByAddressServer;
     }
 
-    public void setFetchNamesrvAddrByAddressServer(boolean fetchNamesrvAddrByAddressServer) {
-        this.fetchNamesrvAddrByAddressServer = fetchNamesrvAddrByAddressServer;
-    }
-
     public int getSendThreadPoolQueueCapacity() {
         return sendThreadPoolQueueCapacity;
-    }
-
-    public void setSendThreadPoolQueueCapacity(int sendThreadPoolQueueCapacity) {
-        this.sendThreadPoolQueueCapacity = sendThreadPoolQueueCapacity;
     }
 
     public int getPutThreadPoolQueueCapacity() {
         return putThreadPoolQueueCapacity;
     }
 
-    public void setPutThreadPoolQueueCapacity(int putThreadPoolQueueCapacity) {
-        this.putThreadPoolQueueCapacity = putThreadPoolQueueCapacity;
-    }
-
     public int getPullThreadPoolQueueCapacity() {
         return pullThreadPoolQueueCapacity;
-    }
-
-    public void setPullThreadPoolQueueCapacity(int pullThreadPoolQueueCapacity) {
-        this.pullThreadPoolQueueCapacity = pullThreadPoolQueueCapacity;
     }
 
     public int getAckThreadPoolQueueCapacity() {
         return ackThreadPoolQueueCapacity;
     }
 
-    public void setAckThreadPoolQueueCapacity(int ackThreadPoolQueueCapacity) {
-        this.ackThreadPoolQueueCapacity = ackThreadPoolQueueCapacity;
-    }
-
     public int getReplyThreadPoolQueueCapacity() {
         return replyThreadPoolQueueCapacity;
     }
 
-    public void setReplyThreadPoolQueueCapacity(int replyThreadPoolQueueCapacity) {
-        this.replyThreadPoolQueueCapacity = replyThreadPoolQueueCapacity;
-    }
-
     public int getQueryThreadPoolQueueCapacity() {
         return queryThreadPoolQueueCapacity;
-    }
-
-    public void setQueryThreadPoolQueueCapacity(final int queryThreadPoolQueueCapacity) {
-        this.queryThreadPoolQueueCapacity = queryThreadPoolQueueCapacity;
     }
 
     public boolean isBrokerTopicEnable() {
@@ -1010,10 +820,6 @@ public class BrokerConfig extends BrokerIdentity {
         return notifyConsumerIdsChangedEnable;
     }
 
-    public void setNotifyConsumerIdsChangedEnable(boolean notifyConsumerIdsChangedEnable) {
-        this.notifyConsumerIdsChangedEnable = notifyConsumerIdsChangedEnable;
-    }
-
     public long getShortPollingTimeMills() {
         return shortPollingTimeMills;
     }
@@ -1026,40 +832,20 @@ public class BrokerConfig extends BrokerIdentity {
         return clientManageThreadPoolNums;
     }
 
-    public void setClientManageThreadPoolNums(int clientManageThreadPoolNums) {
-        this.clientManageThreadPoolNums = clientManageThreadPoolNums;
-    }
-
     public int getClientManagerThreadPoolQueueCapacity() {
         return clientManagerThreadPoolQueueCapacity;
-    }
-
-    public void setClientManagerThreadPoolQueueCapacity(int clientManagerThreadPoolQueueCapacity) {
-        this.clientManagerThreadPoolQueueCapacity = clientManagerThreadPoolQueueCapacity;
     }
 
     public int getConsumerManagerThreadPoolQueueCapacity() {
         return consumerManagerThreadPoolQueueCapacity;
     }
 
-    public void setConsumerManagerThreadPoolQueueCapacity(int consumerManagerThreadPoolQueueCapacity) {
-        this.consumerManagerThreadPoolQueueCapacity = consumerManagerThreadPoolQueueCapacity;
-    }
-
     public int getConsumerManageThreadPoolNums() {
         return consumerManageThreadPoolNums;
     }
 
-    public void setConsumerManageThreadPoolNums(int consumerManageThreadPoolNums) {
-        this.consumerManageThreadPoolNums = consumerManageThreadPoolNums;
-    }
-
     public int getCommercialBaseCount() {
         return commercialBaseCount;
-    }
-
-    public void setCommercialBaseCount(int commercialBaseCount) {
-        this.commercialBaseCount = commercialBaseCount;
     }
 
     public boolean isEnableCalcFilterBitMap() {
@@ -1090,16 +876,8 @@ public class BrokerConfig extends BrokerIdentity {
         return filterDataCleanTimeSpan;
     }
 
-    public void setFilterDataCleanTimeSpan(long filterDataCleanTimeSpan) {
-        this.filterDataCleanTimeSpan = filterDataCleanTimeSpan;
-    }
-
     public boolean isFilterSupportRetry() {
         return filterSupportRetry;
-    }
-
-    public void setFilterSupportRetry(boolean filterSupportRetry) {
-        this.filterSupportRetry = filterSupportRetry;
     }
 
     public boolean isEnablePropertyFilter() {
@@ -1114,48 +892,24 @@ public class BrokerConfig extends BrokerIdentity {
         return compressedRegister;
     }
 
-    public void setCompressedRegister(boolean compressedRegister) {
-        this.compressedRegister = compressedRegister;
-    }
-
     public boolean isForceRegister() {
         return forceRegister;
-    }
-
-    public void setForceRegister(boolean forceRegister) {
-        this.forceRegister = forceRegister;
     }
 
     public int getHeartbeatThreadPoolQueueCapacity() {
         return heartbeatThreadPoolQueueCapacity;
     }
 
-    public void setHeartbeatThreadPoolQueueCapacity(int heartbeatThreadPoolQueueCapacity) {
-        this.heartbeatThreadPoolQueueCapacity = heartbeatThreadPoolQueueCapacity;
-    }
-
     public int getHeartbeatThreadPoolNums() {
         return heartbeatThreadPoolNums;
-    }
-
-    public void setHeartbeatThreadPoolNums(int heartbeatThreadPoolNums) {
-        this.heartbeatThreadPoolNums = heartbeatThreadPoolNums;
     }
 
     public long getWaitTimeMillsInHeartbeatQueue() {
         return waitTimeMillsInHeartbeatQueue;
     }
 
-    public void setWaitTimeMillsInHeartbeatQueue(long waitTimeMillsInHeartbeatQueue) {
-        this.waitTimeMillsInHeartbeatQueue = waitTimeMillsInHeartbeatQueue;
-    }
-
     public int getRegisterNameServerPeriod() {
         return registerNameServerPeriod;
-    }
-
-    public void setRegisterNameServerPeriod(int registerNameServerPeriod) {
-        this.registerNameServerPeriod = registerNameServerPeriod;
     }
 
     public long getTransactionTimeOut() {
@@ -1186,24 +940,12 @@ public class BrokerConfig extends BrokerIdentity {
         return endTransactionThreadPoolNums;
     }
 
-    public void setEndTransactionThreadPoolNums(int endTransactionThreadPoolNums) {
-        this.endTransactionThreadPoolNums = endTransactionThreadPoolNums;
-    }
-
     public int getEndTransactionPoolQueueCapacity() {
         return endTransactionPoolQueueCapacity;
     }
 
-    public void setEndTransactionPoolQueueCapacity(int endTransactionPoolQueueCapacity) {
-        this.endTransactionPoolQueueCapacity = endTransactionPoolQueueCapacity;
-    }
-
     public long getWaitTimeMillsInTransactionQueue() {
         return waitTimeMillsInTransactionQueue;
-    }
-
-    public void setWaitTimeMillsInTransactionQueue(long waitTimeMillsInTransactionQueue) {
-        this.waitTimeMillsInTransactionQueue = waitTimeMillsInTransactionQueue;
     }
 
     public String getMsgTraceTopicName() {
@@ -1218,32 +960,16 @@ public class BrokerConfig extends BrokerIdentity {
         return traceTopicEnable;
     }
 
-    public void setTraceTopicEnable(boolean traceTopicEnable) {
-        this.traceTopicEnable = traceTopicEnable;
-    }
-
     public boolean isAclEnable() {
         return aclEnable;
-    }
-
-    public void setAclEnable(boolean aclEnable) {
-        this.aclEnable = aclEnable;
     }
 
     public boolean isStoreReplyMessageEnable() {
         return storeReplyMessageEnable;
     }
 
-    public void setStoreReplyMessageEnable(boolean storeReplyMessageEnable) {
-        this.storeReplyMessageEnable = storeReplyMessageEnable;
-    }
-
     public boolean isEnableDetailStat() {
         return enableDetailStat;
-    }
-
-    public void setEnableDetailStat(boolean enableDetailStat) {
-        this.enableDetailStat = enableDetailStat;
     }
 
     public boolean isAutoDeleteUnusedStats() {
@@ -1266,72 +992,36 @@ public class BrokerConfig extends BrokerIdentity {
         return cleanOfflineBrokerInterval;
     }
 
-    public void setCleanOfflineBrokerInterval(int cleanOfflineBrokerInterval) {
-        this.cleanOfflineBrokerInterval = cleanOfflineBrokerInterval;
-    }
-
     public int getLoadBalanceProcessorThreadPoolNums() {
         return loadBalanceProcessorThreadPoolNums;
-    }
-
-    public void setLoadBalanceProcessorThreadPoolNums(int loadBalanceProcessorThreadPoolNums) {
-        this.loadBalanceProcessorThreadPoolNums = loadBalanceProcessorThreadPoolNums;
     }
 
     public boolean isServerLoadBalancerEnable() {
         return serverLoadBalancerEnable;
     }
 
-    public void setServerLoadBalancerEnable(boolean serverLoadBalancerEnable) {
-        this.serverLoadBalancerEnable = serverLoadBalancerEnable;
-    }
-
     public MessageRequestMode getDefaultMessageRequestMode() {
         return defaultMessageRequestMode;
-    }
-
-    public void setDefaultMessageRequestMode(String defaultMessageRequestMode) {
-        this.defaultMessageRequestMode = MessageRequestMode.valueOf(defaultMessageRequestMode);
     }
 
     public int getDefaultPopShareQueueNum() {
         return defaultPopShareQueueNum;
     }
 
-    public void setDefaultPopShareQueueNum(int defaultPopShareQueueNum) {
-        this.defaultPopShareQueueNum = defaultPopShareQueueNum;
-    }
-
     public long getForwardTimeout() {
         return forwardTimeout;
-    }
-
-    public void setForwardTimeout(long timeout) {
-        this.forwardTimeout = timeout;
     }
 
     public int getBrokerHeartbeatInterval() {
         return brokerHeartbeatInterval;
     }
 
-    public void setBrokerHeartbeatInterval(int brokerHeartbeatInterval) {
-        this.brokerHeartbeatInterval = brokerHeartbeatInterval;
-    }
-
     public long getBrokerNotActiveTimeoutMillis() {
         return brokerNotActiveTimeoutMillis;
     }
 
-    public void setBrokerNotActiveTimeoutMillis(long brokerNotActiveTimeoutMillis) {
-        this.brokerNotActiveTimeoutMillis = brokerNotActiveTimeoutMillis;
-    }
-
     public boolean isEnableNetWorkFlowControl() {
         return enableNetWorkFlowControl;
-    }
-
-    public void setEnableNetWorkFlowControl(boolean enableNetWorkFlowControl) {
-        this.enableNetWorkFlowControl = enableNetWorkFlowControl;
     }
 
     public boolean isEnableNotifyAfterPopOrderLockRelease() {
@@ -1346,16 +1036,8 @@ public class BrokerConfig extends BrokerIdentity {
         return initPopOffsetByCheckMsgInMem;
     }
 
-    public void setInitPopOffsetByCheckMsgInMem(boolean initPopOffsetByCheckMsgInMem) {
-        this.initPopOffsetByCheckMsgInMem = initPopOffsetByCheckMsgInMem;
-    }
-
     public boolean isRealTimeNotifyConsumerChange() {
         return realTimeNotifyConsumerChange;
-    }
-
-    public void setRealTimeNotifyConsumerChange(boolean realTimeNotifyConsumerChange) {
-        this.realTimeNotifyConsumerChange = realTimeNotifyConsumerChange;
     }
 
     public boolean isEnableSlaveActingMaster() {
@@ -1378,16 +1060,8 @@ public class BrokerConfig extends BrokerIdentity {
         return skipPreOnline;
     }
 
-    public void setSkipPreOnline(boolean skipPreOnline) {
-        this.skipPreOnline = skipPreOnline;
-    }
-
     public boolean isAsyncSendEnable() {
         return asyncSendEnable;
-    }
-
-    public void setAsyncSendEnable(boolean asyncSendEnable) {
-        this.asyncSendEnable = asyncSendEnable;
     }
 
     public long getConsumerOffsetUpdateVersionStep() {
@@ -1410,40 +1084,20 @@ public class BrokerConfig extends BrokerIdentity {
         return commercialSizePerMsg;
     }
 
-    public void setCommercialSizePerMsg(int commercialSizePerMsg) {
-        this.commercialSizePerMsg = commercialSizePerMsg;
-    }
-
     public long getWaitTimeMillsInAckQueue() {
         return waitTimeMillsInAckQueue;
-    }
-
-    public void setWaitTimeMillsInAckQueue(long waitTimeMillsInAckQueue) {
-        this.waitTimeMillsInAckQueue = waitTimeMillsInAckQueue;
     }
 
     public boolean isRejectPullConsumerEnable() {
         return rejectPullConsumerEnable;
     }
 
-    public void setRejectPullConsumerEnable(boolean rejectPullConsumerEnable) {
-        this.rejectPullConsumerEnable = rejectPullConsumerEnable;
-    }
-
     public boolean isAccountStatsEnable() {
         return accountStatsEnable;
     }
 
-    public void setAccountStatsEnable(boolean accountStatsEnable) {
-        this.accountStatsEnable = accountStatsEnable;
-    }
-
     public boolean isAccountStatsPrintZeroValues() {
         return accountStatsPrintZeroValues;
-    }
-
-    public void setAccountStatsPrintZeroValues(boolean accountStatsPrintZeroValues) {
-        this.accountStatsPrintZeroValues = accountStatsPrintZeroValues;
     }
 
     public boolean isLockInStrictMode() {
@@ -1456,10 +1110,6 @@ public class BrokerConfig extends BrokerIdentity {
 
     public boolean isIsolateLogEnable() {
         return isolateLogEnable;
-    }
-
-    public void setIsolateLogEnable(boolean isolateLogEnable) {
-        this.isolateLogEnable = isolateLogEnable;
     }
 
     public boolean isCompatibleWithOldNameSrv() {
@@ -1490,10 +1140,6 @@ public class BrokerConfig extends BrokerIdentity {
         return fetchControllerAddrByDnsLookup;
     }
 
-    public void setFetchControllerAddrByDnsLookup(boolean fetchControllerAddrByDnsLookup) {
-        this.fetchControllerAddrByDnsLookup = fetchControllerAddrByDnsLookup;
-    }
-
     public long getSyncBrokerMetadataPeriod() {
         return syncBrokerMetadataPeriod;
     }
@@ -1522,40 +1168,20 @@ public class BrokerConfig extends BrokerIdentity {
         return brokerElectionPriority;
     }
 
-    public void setBrokerElectionPriority(int brokerElectionPriority) {
-        this.brokerElectionPriority = brokerElectionPriority;
-    }
-
     public long getControllerHeartBeatTimeoutMills() {
         return controllerHeartBeatTimeoutMills;
-    }
-
-    public void setControllerHeartBeatTimeoutMills(long controllerHeartBeatTimeoutMills) {
-        this.controllerHeartBeatTimeoutMills = controllerHeartBeatTimeoutMills;
     }
 
     public boolean isRecoverConcurrently() {
         return recoverConcurrently;
     }
 
-    public void setRecoverConcurrently(boolean recoverConcurrently) {
-        this.recoverConcurrently = recoverConcurrently;
-    }
-
     public int getRecoverThreadPoolNums() {
         return recoverThreadPoolNums;
     }
 
-    public void setRecoverThreadPoolNums(int recoverThreadPoolNums) {
-        this.recoverThreadPoolNums = recoverThreadPoolNums;
-    }
-
     public boolean isFetchNameSrvAddrByDnsLookup() {
         return fetchNameSrvAddrByDnsLookup;
-    }
-
-    public void setFetchNameSrvAddrByDnsLookup(boolean fetchNameSrvAddrByDnsLookup) {
-        this.fetchNameSrvAddrByDnsLookup = fetchNameSrvAddrByDnsLookup;
     }
 
     public boolean isUseServerSideResetOffset() {
@@ -1594,96 +1220,44 @@ public class BrokerConfig extends BrokerIdentity {
         return metricsExporterType;
     }
 
-    public void setMetricsExporterType(MetricsExporterType metricsExporterType) {
-        this.metricsExporterType = metricsExporterType;
-    }
-
-    public void setMetricsExporterType(int metricsExporterType) {
-        this.metricsExporterType = MetricsExporterType.valueOf(metricsExporterType);
-    }
-
-    public void setMetricsExporterType(String metricsExporterType) {
-        this.metricsExporterType = MetricsExporterType.valueOf(metricsExporterType);
-    }
-
     public int getMetricsOtelCardinalityLimit() {
         return metricsOtelCardinalityLimit;
-    }
-
-    public void setMetricsOtelCardinalityLimit(int metricsOtelCardinalityLimit) {
-        this.metricsOtelCardinalityLimit = metricsOtelCardinalityLimit;
     }
 
     public String getMetricsGrpcExporterTarget() {
         return metricsGrpcExporterTarget;
     }
 
-    public void setMetricsGrpcExporterTarget(String metricsGrpcExporterTarget) {
-        this.metricsGrpcExporterTarget = metricsGrpcExporterTarget;
-    }
-
     public String getMetricsGrpcExporterHeader() {
         return metricsGrpcExporterHeader;
-    }
-
-    public void setMetricsGrpcExporterHeader(String metricsGrpcExporterHeader) {
-        this.metricsGrpcExporterHeader = metricsGrpcExporterHeader;
     }
 
     public long getMetricGrpcExporterTimeOutInMills() {
         return metricGrpcExporterTimeOutInMills;
     }
 
-    public void setMetricGrpcExporterTimeOutInMills(long metricGrpcExporterTimeOutInMills) {
-        this.metricGrpcExporterTimeOutInMills = metricGrpcExporterTimeOutInMills;
-    }
-
     public long getMetricGrpcExporterIntervalInMills() {
         return metricGrpcExporterIntervalInMills;
-    }
-
-    public void setMetricGrpcExporterIntervalInMills(long metricGrpcExporterIntervalInMills) {
-        this.metricGrpcExporterIntervalInMills = metricGrpcExporterIntervalInMills;
     }
 
     public long getMetricLoggingExporterIntervalInMills() {
         return metricLoggingExporterIntervalInMills;
     }
 
-    public void setMetricLoggingExporterIntervalInMills(long metricLoggingExporterIntervalInMills) {
-        this.metricLoggingExporterIntervalInMills = metricLoggingExporterIntervalInMills;
-    }
-
     public String getMetricsLabel() {
         return metricsLabel;
-    }
-
-    public void setMetricsLabel(String metricsLabel) {
-        this.metricsLabel = metricsLabel;
     }
 
     public boolean isMetricsInDelta() {
         return metricsInDelta;
     }
 
-    public void setMetricsInDelta(boolean metricsInDelta) {
-        this.metricsInDelta = metricsInDelta;
-    }
-
     public int getMetricsPromExporterPort() {
         return metricsPromExporterPort;
     }
 
-    public void setMetricsPromExporterPort(int metricsPromExporterPort) {
-        this.metricsPromExporterPort = metricsPromExporterPort;
-    }
-
     public String getMetricsPromExporterHost() {
         return metricsPromExporterHost;
-    }
-
-    public void setMetricsPromExporterHost(String metricsPromExporterHost) {
-        this.metricsPromExporterHost = metricsPromExporterHost;
     }
 
     public int getTransactionOpMsgMaxSize() {
@@ -1706,24 +1280,12 @@ public class BrokerConfig extends BrokerIdentity {
         return channelExpiredTimeout;
     }
 
-    public void setChannelExpiredTimeout(long channelExpiredTimeout) {
-        this.channelExpiredTimeout = channelExpiredTimeout;
-    }
-
     public long getSubscriptionExpiredTimeout() {
         return subscriptionExpiredTimeout;
     }
 
-    public void setSubscriptionExpiredTimeout(long subscriptionExpiredTimeout) {
-        this.subscriptionExpiredTimeout = subscriptionExpiredTimeout;
-    }
-
     public boolean isValidateSystemTopicWhenUpdateTopic() {
         return validateSystemTopicWhenUpdateTopic;
-    }
-
-    public void setValidateSystemTopicWhenUpdateTopic(boolean validateSystemTopicWhenUpdateTopic) {
-        this.validateSystemTopicWhenUpdateTopic = validateSystemTopicWhenUpdateTopic;
     }
 
     public boolean isEstimateAccumulation() {
@@ -1738,56 +1300,28 @@ public class BrokerConfig extends BrokerIdentity {
         return coldCtrStrategyEnable;
     }
 
-    public void setColdCtrStrategyEnable(boolean coldCtrStrategyEnable) {
-        this.coldCtrStrategyEnable = coldCtrStrategyEnable;
-    }
-
     public boolean isUsePIDColdCtrStrategy() {
         return usePIDColdCtrStrategy;
-    }
-
-    public void setUsePIDColdCtrStrategy(boolean usePIDColdCtrStrategy) {
-        this.usePIDColdCtrStrategy = usePIDColdCtrStrategy;
     }
 
     public long getCgColdReadThreshold() {
         return cgColdReadThreshold;
     }
 
-    public void setCgColdReadThreshold(long cgColdReadThreshold) {
-        this.cgColdReadThreshold = cgColdReadThreshold;
-    }
-
     public long getGlobalColdReadThreshold() {
         return globalColdReadThreshold;
-    }
-
-    public void setGlobalColdReadThreshold(long globalColdReadThreshold) {
-        this.globalColdReadThreshold = globalColdReadThreshold;
     }
 
     public boolean isUseStaticSubscription() {
         return useStaticSubscription;
     }
 
-    public void setUseStaticSubscription(boolean useStaticSubscription) {
-        this.useStaticSubscription = useStaticSubscription;
-    }
-    
     public long getFetchNamesrvAddrInterval() {
         return fetchNamesrvAddrInterval;
-    }
-    
-    public void setFetchNamesrvAddrInterval(final long fetchNamesrvAddrInterval) {
-        this.fetchNamesrvAddrInterval = fetchNamesrvAddrInterval;
     }
 
     public boolean isPopResponseReturnActualRetryTopic() {
         return popResponseReturnActualRetryTopic;
-    }
-
-    public void setPopResponseReturnActualRetryTopic(boolean popResponseReturnActualRetryTopic) {
-        this.popResponseReturnActualRetryTopic = popResponseReturnActualRetryTopic;
     }
 
     public boolean isEnableSingleTopicRegister() {
@@ -1802,10 +1336,6 @@ public class BrokerConfig extends BrokerIdentity {
         return enableMixedMessageType;
     }
 
-    public void setEnableMixedMessageType(boolean enableMixedMessageType) {
-        this.enableMixedMessageType = enableMixedMessageType;
-    }
-
     public boolean isEnableSplitRegistration() {
         return enableSplitRegistration;
     }
@@ -1818,7 +1348,4 @@ public class BrokerConfig extends BrokerIdentity {
         return splitRegistrationSize;
     }
 
-    public void setSplitRegistrationSize(int splitRegistrationSize) {
-        this.splitRegistrationSize = splitRegistrationSize;
-    }
 }
