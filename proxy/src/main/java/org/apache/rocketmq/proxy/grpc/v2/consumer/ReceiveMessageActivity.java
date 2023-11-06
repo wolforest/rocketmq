@@ -133,19 +133,25 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
                     request.hasAttemptId() ? request.getAttemptId() : null,
                     timeRemaining
                 ).thenAccept(popResult -> {
-                    if (proxyConfig.isEnableProxyAutoRenew() && request.getAutoRenew()) {
-                        if (PopStatus.FOUND.equals(popResult.getPopStatus())) {
-                            List<MessageExt> messageExtList = popResult.getMsgFoundList();
-                            for (MessageExt messageExt : messageExtList) {
-                                String receiptHandle = messageExt.getProperty(MessageConst.PROPERTY_POP_CK);
-                                if (receiptHandle != null) {
-                                    MessageReceiptHandle messageReceiptHandle =
-                                        new MessageReceiptHandle(group, topic, messageExt.getQueueId(), receiptHandle, messageExt.getMsgId(),
-                                            messageExt.getQueueOffset(), messageExt.getReconsumeTimes());
-                                    messagingProcessor.addReceiptHandle(ctx, grpcChannelManager.getChannel(ctx.getClientID()), group, messageExt.getMsgId(), messageReceiptHandle);
-                                }
-                            }
+                    if (!proxyConfig.isEnableProxyAutoRenew() || !request.getAutoRenew()) {
+                        return;
+                    }
+
+                    if (!PopStatus.FOUND.equals(popResult.getPopStatus())) {
+                        return;
+                    }
+
+                    List<MessageExt> messageExtList = popResult.getMsgFoundList();
+                    for (MessageExt messageExt : messageExtList) {
+                        String receiptHandle = messageExt.getProperty(MessageConst.PROPERTY_POP_CK);
+                        if (receiptHandle == null) {
+                            continue;
                         }
+
+                        MessageReceiptHandle messageReceiptHandle =
+                            new MessageReceiptHandle(group, topic, messageExt.getQueueId(), receiptHandle, messageExt.getMsgId(),
+                                messageExt.getQueueOffset(), messageExt.getReconsumeTimes());
+                        messagingProcessor.addReceiptHandle(ctx, grpcChannelManager.getChannel(ctx.getClientID()), group, messageExt.getMsgId(), messageReceiptHandle);
                     }
                     writer.writeAndComplete(ctx, request, popResult);
                 })
