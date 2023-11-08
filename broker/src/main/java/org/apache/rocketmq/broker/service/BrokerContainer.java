@@ -16,5 +16,5 @@
  */
 package org.apache.rocketmq.broker.service;
 
-public class BrokerContext {
+public class BrokerContainer {
 }
