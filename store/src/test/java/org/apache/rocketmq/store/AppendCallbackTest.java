@@ -47,7 +47,7 @@ public class AppendCallbackTest {
 
     AppendMessageCallback callback;
 
-    MessageExtEncoder batchEncoder = new MessageExtEncoder(10 * 1024 * 1024);
+    MessageExtEncoder batchEncoder;
 
     @Before
     public void init() throws Exception {
@@ -56,12 +56,14 @@ public class AppendCallbackTest {
         messageStoreConfig.setMappedFileSizeConsumeQueue(1024 * 4);
         messageStoreConfig.setMaxHashSlotNum(100);
         messageStoreConfig.setMaxIndexNum(100 * 10);
+        messageStoreConfig.setMaxMessageSize(10 * 1024 * 1024);
         messageStoreConfig.setStorePathRootDir(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore");
         messageStoreConfig.setStorePathCommitLog(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore" + File.separator + "commitlog");
         //too much reference
         DefaultMessageStore messageStore = new DefaultMessageStore(messageStoreConfig, null, null, new BrokerConfig(), new ConcurrentHashMap<>());
         CommitLog commitLog = new CommitLog(messageStore);
         callback = new DefaultAppendMessageCallback(messageStore, commitLog);
+        batchEncoder = new MessageExtEncoder(messageStoreConfig);
     }
 
     @After

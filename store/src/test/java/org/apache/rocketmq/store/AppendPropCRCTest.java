@@ -66,7 +66,7 @@ public class AppendPropCRCTest {
         //too much reference
         DefaultMessageStore messageStore = new DefaultMessageStore(messageStoreConfig, null, null, new BrokerConfig(), new ConcurrentHashMap<>());
         commitLog = new CommitLog(messageStore);
-        encoder = new MessageExtEncoder(10 * 1024 * 1024, true);
+        encoder = new MessageExtEncoder(messageStoreConfig);
         callback = new DefaultAppendMessageCallback(messageStore, commitLog);
     }
 

@@ -31,6 +31,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.AppendMessageResult;
 import org.apache.rocketmq.store.AppendMessageStatus;
 import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.MultiDispatch;
 import org.apache.rocketmq.store.PutMessageContext;
 
 
@@ -47,16 +48,88 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
     private final int crc32ReservedLength = CommitLog.CRC32_RESERVED_LEN;
     private final boolean enabledAppendPropCRC;
 
+    protected final MultiDispatch multiDispatch;
+
     public DefaultAppendMessageCallback(final DefaultMessageStore messageStore, CommitLog commitLog) {
         this.defaultMessageStore = messageStore;
         this.commitLog = commitLog;
         this.msgStoreItemMemory = ByteBuffer.allocate(END_FILE_MIN_BLANK_LENGTH);
         this.enabledAppendPropCRC = defaultMessageStore.getMessageStoreConfig().isEnabledAppendPropCRC();
+        this.multiDispatch = new MultiDispatch(defaultMessageStore);
     }
+
+    public AppendMessageResult handlePropertiesForLmqMsg(ByteBuffer preEncodeBuffer, final MessageExtBrokerInner msgInner) {
+        if (msgInner.isEncodeCompleted()) {
+            return null;
+        }
+
+        multiDispatch.wrapMultiDispatch(msgInner);
+
+        msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
+
+        final byte[] propertiesData =
+            msgInner.getPropertiesString() == null ? null : msgInner.getPropertiesString().getBytes(MessageDecoder.CHARSET_UTF8);
+
+        boolean needAppendLastPropertySeparator = enabledAppendPropCRC && propertiesData != null && propertiesData.length > 0
+            && propertiesData[propertiesData.length - 1] != MessageDecoder.PROPERTY_SEPARATOR;
+
+        final int propertiesLength = (propertiesData == null ? 0 : propertiesData.length) + (needAppendLastPropertySeparator ? 1 : 0) + crc32ReservedLength;
+
+        if (propertiesLength > Short.MAX_VALUE) {
+            log.warn("putMessage message properties length too long. length={}", propertiesData.length);
+            return new AppendMessageResult(AppendMessageStatus.PROPERTIES_SIZE_EXCEEDED);
+        }
+
+        int msgLenWithoutProperties = preEncodeBuffer.getInt(0);
+
+        int msgLen = msgLenWithoutProperties + 2 + propertiesLength;
+
+        // Exceeds the maximum message
+        if (msgLen > this.defaultMessageStore.getMessageStoreConfig().getMaxMessageSize()) {
+            log.warn("message size exceeded, msg total size: " + msgLen + ", maxMessageSize: " + this.defaultMessageStore.getMessageStoreConfig().getMaxMessageSize());
+            return new AppendMessageResult(AppendMessageStatus.MESSAGE_SIZE_EXCEEDED);
+        }
+
+        // Back filling total message length
+        preEncodeBuffer.putInt(0, msgLen);
+        // Modify position to msgLenWithoutProperties
+        preEncodeBuffer.position(msgLenWithoutProperties);
+
+        preEncodeBuffer.putShort((short) propertiesLength);
+
+        if (propertiesLength > crc32ReservedLength) {
+            preEncodeBuffer.put(propertiesData);
+        }
+
+        if (needAppendLastPropertySeparator) {
+            preEncodeBuffer.put((byte) MessageDecoder.PROPERTY_SEPARATOR);
+        }
+        // 18 CRC32
+        preEncodeBuffer.position(preEncodeBuffer.position() + crc32ReservedLength);
+
+        msgInner.setEncodeCompleted(true);
+
+        return null;
+    }
+
 
     public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
         final MessageExtBrokerInner msgInner, PutMessageContext putMessageContext) {
         // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
+
+        ByteBuffer preEncodeBuffer = msgInner.getEncodedBuff();
+        boolean isMultiDispatchMsg = defaultMessageStore.getMessageStoreConfig().isEnableMultiDispatch() && CommitLog.isMultiDispatchMsg(msgInner);
+        if (isMultiDispatchMsg) {
+            AppendMessageResult appendMessageResult = handlePropertiesForLmqMsg(preEncodeBuffer, msgInner);
+            if (appendMessageResult != null) {
+                return appendMessageResult;
+            }
+        }
+
+        final int msgLen = preEncodeBuffer.getInt(0);
+        preEncodeBuffer.position(0);
+        preEncodeBuffer.limit(msgLen);
+
 
         // PHY OFFSET
         long wroteOffset = fileFromOffset + byteBuffer.position();
@@ -90,9 +163,6 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
             default:
                 break;
         }
-
-        ByteBuffer preEncodeBuffer = msgInner.getEncodedBuff();
-        final int msgLen = preEncodeBuffer.getInt(0);
 
         // Determines whether there is sufficient free space
         if ((msgLen + END_FILE_MIN_BLANK_LENGTH) > maxBlank) {
@@ -138,6 +208,11 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         byteBuffer.put(preEncodeBuffer);
         defaultMessageStore.getPerfCounter().endTick("WRITE_MEMORY_TIME_MS");
         msgInner.setEncodedBuff(null);
+
+        if (isMultiDispatchMsg) {
+            multiDispatch.updateMultiQueueOffset(msgInner);
+        }
+
         return new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, msgLen, msgIdSupplier,
             msgInner.getStoreTimestamp(), queueOffset, defaultMessageStore.now() - beginTimeMills, messageNum);
     }

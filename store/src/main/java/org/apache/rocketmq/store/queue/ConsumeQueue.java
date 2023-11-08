@@ -26,10 +26,9 @@ import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageAccessor;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DispatchRequest;
@@ -732,7 +731,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             this.messageStore.getStoreCheckpoint().setPhysicMsgTimestamp(request.getStoreTimestamp());
         }
         this.messageStore.getStoreCheckpoint().setLogicsMsgTimestamp(request.getStoreTimestamp());
-        if (MultiDispatch.checkMultiDispatchQueue(this.messageStore.getMessageStoreConfig(), request)) {
+        if (MultiDispatchUtils.checkMultiDispatchQueue(this.messageStore.getMessageStoreConfig(), request)) {
             multiDispatchLmqQueue(request, maxRetries);
         }
     }
@@ -801,28 +800,6 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         String topicQueueKey = getTopic() + "-" + getQueueId();
         long queueOffset = queueOffsetOperator.getQueueOffset(topicQueueKey);
         msg.setQueueOffset(queueOffset);
-
-
-        // Handling the multi dispatch message. In the context of a light message queue (as defined in RIP-28),
-        // light message queues are constructed based on message properties, which requires special handling of queue offset of the light message queue.
-        if (!MultiDispatch.isNeedHandleMultiDispatch(this.messageStore.getMessageStoreConfig(), msg.getTopic())) {
-            return;
-        }
-        String multiDispatchQueue = msg.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH);
-        if (StringUtils.isBlank(multiDispatchQueue)) {
-            return;
-        }
-        String[] queues = multiDispatchQueue.split(MQConstants.MULTI_DISPATCH_QUEUE_SPLITTER);
-        Long[] queueOffsets = new Long[queues.length];
-        for (int i = 0; i < queues.length; i++) {
-            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQConstants.isLmq(queues[i])) {
-                String key = MultiDispatch.lmqQueueKey(queues[i]);
-                queueOffsets[i] = queueOffsetOperator.getLmqOffset(key);
-            }
-        }
-        MessageAccessor.putProperty(msg, MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET,
-            StringUtils.join(queueOffsets, MQConstants.MULTI_DISPATCH_QUEUE_SPLITTER));
-        msg.removeWaitStorePropertyString();
     }
 
     @Override
@@ -830,23 +807,6 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         short messageNum) {
         String topicQueueKey = getTopic() + "-" + getQueueId();
         queueOffsetOperator.increaseQueueOffset(topicQueueKey, messageNum);
-
-        // Handling the multi dispatch message. In the context of a light message queue (as defined in RIP-28),
-        // light message queues are constructed based on message properties, which requires special handling of queue offset of the light message queue.
-        if (!MultiDispatch.isNeedHandleMultiDispatch(this.messageStore.getMessageStoreConfig(), msg.getTopic())) {
-            return;
-        }
-        String multiDispatchQueue = msg.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH);
-        if (StringUtils.isBlank(multiDispatchQueue)) {
-            return;
-        }
-        String[] queues = multiDispatchQueue.split(MQConstants.MULTI_DISPATCH_QUEUE_SPLITTER);
-        for (String queue : queues) {
-            if (this.messageStore.getMessageStoreConfig().isEnableLmq() && MQConstants.isLmq(queue)) {
-                String key = MultiDispatch.lmqQueueKey(queue);
-                queueOffsetOperator.increaseLmqOffset(key, (short) 1);
-            }
-        }
     }
 
     /**

@@ -26,9 +26,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -123,7 +125,10 @@ public class CommitLog implements Swappable {
         this.flushDiskWatcher = new FlushDiskWatcher();
         this.topicQueueLock = new TopicQueueLock(messageStore.getMessageStoreConfig().getTopicQueueLockNum());
         this.commitLogSize = messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
+    }
 
+    public static boolean isMultiDispatchMsg(MessageExtBrokerInner msg) {
+        return StringUtils.isNoneBlank(msg.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH)) && !msg.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX);
     }
 
     public void setFullStorePaths(Set<String> fullStorePaths) {
@@ -747,9 +752,7 @@ public class CommitLog implements Swappable {
         putMessageThreadLocal = new ThreadLocal<PutMessageThreadLocal>() {
             @Override
             protected PutMessageThreadLocal initialValue() {
-                return new PutMessageThreadLocal(
-                    defaultMessageStore.getMessageStoreConfig().getMaxMessageSize(),
-                    defaultMessageStore.getMessageStoreConfig().isEnabledAppendPropCRC());
+                return new PutMessageThreadLocal(defaultMessageStore.getMessageStoreConfig());
             }
         };
     }

@@ -42,6 +42,7 @@ import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.CleanupPolicyUtils;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.utils.MessageUtils;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
@@ -119,6 +120,8 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         if (hookResult != null) {
             return hookResult;
         }
+
+        clearReservedProperties(requestHeader);
 
         if (requestHeader.isBatch()) {
             return this.sendBatchMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
@@ -261,6 +264,12 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         msgInner.setFlag(requestHeader.getFlag());
 
         return msgInner;
+    }
+
+    private void clearReservedProperties(SendMessageRequestHeader requestHeader) {
+        String properties = requestHeader.getProperties();
+        properties = MessageUtils.deleteProperty(properties, MessageConst.PROPERTY_POP_CK);
+        requestHeader.setProperties(properties);
     }
 
     private void setMsgProperties(MessageExtBrokerInner msgInner, Map<String, String> oriProps) {
