@@ -55,6 +55,16 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
         super(messagingProcessor, grpcClientSettingsManager, grpcChannelManager);
     }
 
+    /**
+     *
+     * @param ctx
+     * @param request
+     *          request.invisible_duration =>
+     *          Required if client type is simple consumer.
+     *          useless for PushConsumer
+     *
+     * @param responseObserver responseObserver
+     */
     public void receiveMessage(ProxyContext ctx, ReceiveMessageRequest request, StreamObserver<ReceiveMessageResponse> responseObserver) {
         ReceiveMessageResponseStreamWriter writer = createWriter(responseObserver);
 
@@ -173,6 +183,13 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
             " for polling, please check network condition");
     }
 
+    /**
+     * get invisibleTime:
+     * for PushConsumer: invisibleTime = proxyConfig.defaultInvisibleTimeMills
+     *
+     * @param request request
+     * @return invisibleTime
+     */
     private long getInvisibleTime(ReceiveMessageRequest request) {
         long actualInvisibleTime = Durations.toMillis(request.getInvisibleDuration());
         ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();

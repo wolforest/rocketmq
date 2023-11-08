@@ -183,6 +183,9 @@ public class ProxyConfig implements ConfigFile {
     private long longPollingReserveTimeInMillis = 100;
 
     private long invisibleTimeMillisWhenClear = 1000L;
+    /**
+     * message invisibleTime related config
+     */
     private boolean enableProxyAutoRenew = true;
     private int maxRenewRetryTimes = 3;
     private int renewThreadPoolNums = 2;
