@@ -122,6 +122,9 @@ public interface MessagingProcessor extends StartAndShutdown {
     );
 
     /**
+     * proxy method for
+     *      -> ConsumerProcessor.popMessage()
+     *      -> MessageService.popMessage()
      *
      * @param ctx proxy context
      * @param queueSelector queue selector: by broker name for ReceiveMessageActivity

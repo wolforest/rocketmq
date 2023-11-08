@@ -73,6 +73,24 @@ public class ConsumerProcessor extends AbstractProcessor {
         this.executor = executor;
     }
 
+    /**
+     * proxy method for MessageService.popMessage()
+     *
+     * @param ctx proxy context
+     * @param queueSelector queue selector: by broker name for ReceiveMessageActivity
+     * @param consumerGroup consumer group
+     * @param topic topic
+     * @param maxMsgNums batch size
+     * @param invisibleTime invisibleTime:
+     * @param pollTime pollingTimeout
+     * @param initMode ConsumeInitMode.MAX for pop message mode
+     * @param subscriptionData subscription data
+     * @param fifo fifo setting
+     * @param popMessageResultFilter filter
+     * @param attemptId attemptId
+     * @param timeoutMillis timeout
+     * @return future
+     */
     public CompletableFuture<PopResult> popMessage(
         ProxyContext ctx,
         QueueSelector queueSelector,
@@ -102,7 +120,7 @@ public class ConsumerProcessor extends AbstractProcessor {
         return future;
     }
 
-    public CompletableFuture<PopResult> popMessage(
+    private CompletableFuture<PopResult> popMessage(
         ProxyContext ctx,
         AddressableMessageQueue messageQueue,
         String consumerGroup,
@@ -119,87 +137,123 @@ public class ConsumerProcessor extends AbstractProcessor {
     ) {
         CompletableFuture<PopResult> future = new CompletableFuture<>();
         try {
-            if (maxMsgNums > ProxyUtils.MAX_MSG_NUMS_FOR_POP_REQUEST) {
-                log.warn("change maxNums from {} to {} for pop request, with info: topic:{}, group:{}",
-                    maxMsgNums, ProxyUtils.MAX_MSG_NUMS_FOR_POP_REQUEST, topic, consumerGroup);
-                maxMsgNums = ProxyUtils.MAX_MSG_NUMS_FOR_POP_REQUEST;
-            }
+            PopMessageRequestHeader requestHeader = createPopMessageRequestHeader(
+                messageQueue, consumerGroup, topic, maxMsgNums, invisibleTime, pollTime, initMode, subscriptionData, fifo, attemptId
+            );
 
-            PopMessageRequestHeader requestHeader = new PopMessageRequestHeader();
-            requestHeader.setConsumerGroup(consumerGroup);
-            requestHeader.setTopic(topic);
-            requestHeader.setQueueId(messageQueue.getQueueId());
-            requestHeader.setMaxMsgNums(maxMsgNums);
-            requestHeader.setInvisibleTime(invisibleTime);
-            requestHeader.setPollTime(pollTime);
-            requestHeader.setInitMode(initMode);
-            requestHeader.setExpType(subscriptionData.getExpressionType());
-            requestHeader.setExp(subscriptionData.getSubString());
-            requestHeader.setOrder(fifo);
-            requestHeader.setAttemptId(attemptId);
+            future = this.serviceManager.getMessageService().popMessage(ctx, messageQueue, requestHeader, timeoutMillis);
+            handlePopFuture(future, ctx, popMessageResultFilter, requestHeader, consumerGroup, topic, subscriptionData);
 
-            future = this.serviceManager.getMessageService().popMessage(
-                    ctx,
-                    messageQueue,
-                    requestHeader,
-                    timeoutMillis)
-                .thenApplyAsync(popResult -> {
-                    if (PopStatus.FOUND.equals(popResult.getPopStatus()) &&
-                        popResult.getMsgFoundList() != null &&
-                        !popResult.getMsgFoundList().isEmpty() &&
-                        popMessageResultFilter != null) {
-
-                        List<MessageExt> messageExtList = new ArrayList<>();
-                        for (MessageExt messageExt : popResult.getMsgFoundList()) {
-                            try {
-                                fillUniqIDIfNeed(messageExt);
-                                String handleString = createHandle(messageExt.getProperty(MessageConst.PROPERTY_POP_CK), messageExt.getCommitLogOffset());
-                                if (handleString == null) {
-                                    log.error("[BUG] pop message from broker but handle is empty. requestHeader:{}, msg:{}", requestHeader, messageExt);
-                                    messageExtList.add(messageExt);
-                                    continue;
-                                }
-                                MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_POP_CK, handleString);
-
-                                PopMessageResultFilter.FilterResult filterResult =
-                                    popMessageResultFilter.filterMessage(ctx, consumerGroup, subscriptionData, messageExt);
-                                switch (filterResult) {
-                                    case NO_MATCH:
-                                        this.messagingProcessor.ackMessage(
-                                            ctx,
-                                            ReceiptHandle.decode(handleString),
-                                            messageExt.getMsgId(),
-                                            consumerGroup,
-                                            topic,
-                                            MessagingProcessor.DEFAULT_TIMEOUT_MILLS);
-                                        break;
-                                    case TO_DLQ:
-                                        this.messagingProcessor.forwardMessageToDeadLetterQueue(
-                                            ctx,
-                                            ReceiptHandle.decode(handleString),
-                                            messageExt.getMsgId(),
-                                            consumerGroup,
-                                            topic,
-                                            MessagingProcessor.DEFAULT_TIMEOUT_MILLS);
-                                        break;
-                                    case MATCH:
-                                    default:
-                                        messageExtList.add(messageExt);
-                                        break;
-                                }
-                            } catch (Throwable t) {
-                                log.error("process filterMessage failed. requestHeader:{}, msg:{}", requestHeader, messageExt, t);
-                                messageExtList.add(messageExt);
-                            }
-                        }
-                        popResult.setMsgFoundList(messageExtList);
-                    }
-                    return popResult;
-                }, this.executor);
         } catch (Throwable t) {
             future.completeExceptionally(t);
         }
         return FutureUtils.addExecutor(future, this.executor);
+    }
+
+    private PopMessageRequestHeader createPopMessageRequestHeader(
+        AddressableMessageQueue messageQueue,
+        String consumerGroup,
+        String topic,
+        int maxMsgNums,
+        long invisibleTime,
+        long pollTime,
+        int initMode,
+        SubscriptionData subscriptionData,
+        boolean fifo,
+        String attemptId
+    ) {
+        if (maxMsgNums > ProxyUtils.MAX_MSG_NUMS_FOR_POP_REQUEST) {
+            log.warn("change maxNums from {} to {} for pop request, with info: topic:{}, group:{}",
+                maxMsgNums, ProxyUtils.MAX_MSG_NUMS_FOR_POP_REQUEST, topic, consumerGroup);
+            maxMsgNums = ProxyUtils.MAX_MSG_NUMS_FOR_POP_REQUEST;
+        }
+
+        PopMessageRequestHeader requestHeader = new PopMessageRequestHeader();
+        requestHeader.setConsumerGroup(consumerGroup);
+        requestHeader.setTopic(topic);
+        requestHeader.setQueueId(messageQueue.getQueueId());
+        requestHeader.setMaxMsgNums(maxMsgNums);
+        requestHeader.setInvisibleTime(invisibleTime);
+        requestHeader.setPollTime(pollTime);
+        requestHeader.setInitMode(initMode);
+        requestHeader.setExpType(subscriptionData.getExpressionType());
+        requestHeader.setExp(subscriptionData.getSubString());
+        requestHeader.setOrder(fifo);
+        requestHeader.setAttemptId(attemptId);
+
+        return requestHeader;
+    }
+
+    private void handlePopFuture(CompletableFuture<PopResult> future, ProxyContext ctx, PopMessageResultFilter popMessageResultFilter,
+        PopMessageRequestHeader requestHeader, String consumerGroup, String topic, SubscriptionData subscriptionData) {
+        future.thenApplyAsync(popResult -> {
+            if (!PopStatus.FOUND.equals(popResult.getPopStatus())) {
+                return popResult;
+            }
+
+            if (popResult.getMsgFoundList() == null) {
+                return popResult;
+            }
+
+            if (popResult.getMsgFoundList().isEmpty()) {
+                return popResult;
+            }
+
+            if (null == popMessageResultFilter) {
+                return popResult;
+            }
+
+            List<MessageExt> messageExtList = new ArrayList<>();
+            for (MessageExt messageExt : popResult.getMsgFoundList()) {
+                parsePopMessage(ctx, popMessageResultFilter, requestHeader, consumerGroup, topic, subscriptionData, messageExt, messageExtList);
+            }
+            popResult.setMsgFoundList(messageExtList);
+            return popResult;
+        }, this.executor);
+    }
+
+    private void parsePopMessage(ProxyContext ctx, PopMessageResultFilter popMessageResultFilter, PopMessageRequestHeader requestHeader,
+        String consumerGroup, String topic, SubscriptionData subscriptionData, MessageExt messageExt, List<MessageExt> messageExtList) {
+        try {
+            fillUniqIDIfNeed(messageExt);
+            String handleString = createHandle(messageExt.getProperty(MessageConst.PROPERTY_POP_CK), messageExt.getCommitLogOffset());
+            if (handleString == null) {
+                log.error("[BUG] pop message from broker but handle is empty. requestHeader:{}, msg:{}", requestHeader, messageExt);
+                messageExtList.add(messageExt);
+                return;
+            }
+
+            MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_POP_CK, handleString);
+
+            PopMessageResultFilter.FilterResult filterResult = popMessageResultFilter.filterMessage(ctx, consumerGroup, subscriptionData, messageExt);
+            switch (filterResult) {
+                case NO_MATCH:
+                    this.messagingProcessor.ackMessage(
+                        ctx,
+                        ReceiptHandle.decode(handleString),
+                        messageExt.getMsgId(),
+                        consumerGroup,
+                        topic,
+                        MessagingProcessor.DEFAULT_TIMEOUT_MILLS);
+                    break;
+                case TO_DLQ:
+                    this.messagingProcessor.forwardMessageToDeadLetterQueue(
+                        ctx,
+                        ReceiptHandle.decode(handleString),
+                        messageExt.getMsgId(),
+                        consumerGroup,
+                        topic,
+                        MessagingProcessor.DEFAULT_TIMEOUT_MILLS);
+                    break;
+                case MATCH:
+                default:
+                    messageExtList.add(messageExt);
+                    break;
+            }
+        } catch (Throwable t) {
+            log.error("process filterMessage failed. requestHeader:{}, msg:{}", requestHeader, messageExt, t);
+            messageExtList.add(messageExt);
+        }
     }
 
     private void fillUniqIDIfNeed(MessageExt messageExt) {
