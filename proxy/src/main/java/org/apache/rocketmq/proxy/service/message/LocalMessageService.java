@@ -381,15 +381,7 @@ public class LocalMessageService implements MessageService {
                 if (startOffsetInfo == null) {
                     handleNoStartOffsetInfo(messageExt, map, responseHeader, messageQueue);
                 } else if (messageExt.getProperty(MessageConst.PROPERTY_POP_CK) == null) {
-                    String key = ExtraInfoUtil.getStartOffsetInfoMapKey(messageExt.getTopic(), messageExt.getQueueId());
-                    Long msgQueueOffset = getMsgQueueOffset(messageExt, sortMap, key, msgOffsetInfo);
-
-                    messageExt.getProperties().put(MessageConst.PROPERTY_POP_CK,
-                        ExtraInfoUtil.buildExtraInfo(startOffsetInfo.get(key), responseHeader.getPopTime(), responseHeader.getInvisibleTime(),
-                            responseHeader.getReviveQid(), messageExt.getTopic(), messageQueue.getBrokerName(), messageExt.getQueueId(), msgQueueOffset)
-                    );
-
-                    setReconsumeTimes(requestHeader, orderCountInfo, key, messageExt);
+                    handleNoPopCK(messageExt, requestHeader, responseHeader, messageQueue, sortMap, msgOffsetInfo, startOffsetInfo, orderCountInfo);
                 }
                 messageExt.getProperties().computeIfAbsent(MessageConst.PROPERTY_FIRST_POP_TIME, k -> String.valueOf(responseHeader.getPopTime()));
                 messageExt.setBrokerName(messageExt.getBrokerName());
@@ -471,6 +463,19 @@ public class LocalMessageService implements MessageService {
         requestBody.setAcks(new ArrayList<>(batchAckMap.values()));
 
         return requestBody;
+    }
+
+    private void handleNoPopCK(MessageExt messageExt, PopMessageRequestHeader requestHeader, PopMessageResponseHeader responseHeader, AddressableMessageQueue messageQueue,
+        Map<String, List<Long>> sortMap, Map<String, List<Long>> msgOffsetInfo, Map<String, Long> startOffsetInfo,  Map<String, Integer> orderCountInfo) {
+        String key = ExtraInfoUtil.getStartOffsetInfoMapKey(messageExt.getTopic(), messageExt.getQueueId());
+        Long msgQueueOffset = getMsgQueueOffset(messageExt, sortMap, key, msgOffsetInfo);
+
+        messageExt.getProperties().put(MessageConst.PROPERTY_POP_CK,
+            ExtraInfoUtil.buildExtraInfo(startOffsetInfo.get(key), responseHeader.getPopTime(), responseHeader.getInvisibleTime(),
+                responseHeader.getReviveQid(), messageExt.getTopic(), messageQueue.getBrokerName(), messageExt.getQueueId(), msgQueueOffset)
+        );
+
+        setReconsumeTimes(requestHeader, orderCountInfo, key, messageExt);
     }
 
     private void handleNoStartOffsetInfo(MessageExt messageExt, Map<String, String> map, PopMessageResponseHeader responseHeader, AddressableMessageQueue messageQueue) {
