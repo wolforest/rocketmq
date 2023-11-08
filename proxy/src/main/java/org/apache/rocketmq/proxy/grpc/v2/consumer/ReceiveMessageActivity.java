@@ -54,59 +54,37 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
         super(messagingProcessor, grpcClientSettingsManager, grpcChannelManager);
     }
 
+    private long getInvisibleTime(ReceiveMessageRequest request) {
+        long actualInvisibleTime = Durations.toMillis(request.getInvisibleDuration());
+        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
+        if (proxyConfig.isEnableProxyAutoRenew() && request.getAutoRenew()) {
+            actualInvisibleTime = proxyConfig.getDefaultInvisibleTimeMills();
+        } else {
+            validateInvisibleTime(actualInvisibleTime,
+                ConfigurationManager.getProxyConfig().getMinInvisibleTimeMillsForRecv());
+        }
+
+        return actualInvisibleTime;
+    }
+
     public void receiveMessage(ProxyContext ctx, ReceiveMessageRequest request,
         StreamObserver<ReceiveMessageResponse> responseObserver) {
         ReceiveMessageResponseStreamWriter writer = createWriter(ctx, responseObserver);
 
         try {
             Settings settings = this.grpcClientSettingsManager.getClientSettings(ctx);
-            Subscription subscription = settings.getSubscription();
-            boolean fifo = subscription.getFifo();
-            int maxAttempts = settings.getBackoffPolicy().getMaxAttempts();
-            ProxyConfig config = ConfigurationManager.getProxyConfig();
-
-            Long timeRemaining = ctx.getRemainingMs();
-            long pollingTime;
-            if (request.hasLongPollingTimeout()) {
-                pollingTime = Durations.toMillis(request.getLongPollingTimeout());
-            } else {
-                pollingTime = timeRemaining - Durations.toMillis(settings.getRequestTimeout()) / 2;
-            }
-            if (pollingTime < config.getGrpcClientConsumerMinLongPollingTimeoutMillis()) {
-                pollingTime = config.getGrpcClientConsumerMinLongPollingTimeoutMillis();
-            }
-            if (pollingTime > config.getGrpcClientConsumerMaxLongPollingTimeoutMillis()) {
-                pollingTime = config.getGrpcClientConsumerMaxLongPollingTimeoutMillis();
-            }
-
-            if (pollingTime > timeRemaining) {
-                if (timeRemaining >= config.getGrpcClientConsumerMinLongPollingTimeoutMillis()) {
-                    pollingTime = timeRemaining;
-                } else {
-                    final String clientVersion = ctx.getClientVersion();
-                    Code code =
-                        null == clientVersion || ILLEGAL_POLLING_TIME_INTRODUCED_CLIENT_VERSION.compareTo(clientVersion) > 0 ?
-                        Code.BAD_REQUEST : Code.ILLEGAL_POLLING_TIME;
-                    writer.writeAndComplete(ctx, code, "The deadline time remaining is not enough" +
-                        " for polling, please check network condition");
-                    return;
-                }
+            Long pollingTime = getPollingTime(ctx, request, settings, writer);
+            if (pollingTime == null) {
+                return;
             }
 
             validateTopicAndConsumerGroup(request.getMessageQueue().getTopic(), request.getGroup());
             String topic = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getMessageQueue().getTopic());
             String group = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getGroup());
 
-            long actualInvisibleTime = Durations.toMillis(request.getInvisibleDuration());
-            ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
-            if (proxyConfig.isEnableProxyAutoRenew() && request.getAutoRenew()) {
-                actualInvisibleTime = proxyConfig.getDefaultInvisibleTimeMills();
-            } else {
-                validateInvisibleTime(actualInvisibleTime,
-                    ConfigurationManager.getProxyConfig().getMinInvisibleTimeMillsForRecv());
-            }
-
+            long actualInvisibleTime = getInvisibleTime(request);
             FilterExpression filterExpression = request.getFilterExpression();
+
             SubscriptionData subscriptionData;
             try {
                 subscriptionData = FilterAPI.build(topic, filterExpression.getExpression(),
@@ -128,12 +106,12 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
                     pollingTime,
                     ConsumeInitMode.MAX,
                     subscriptionData,
-                    fifo,
-                    new PopMessageResultFilterImpl(maxAttempts),
+                    settings.getSubscription().getFifo(),
+                    new PopMessageResultFilterImpl(settings.getBackoffPolicy().getMaxAttempts()),
                     request.hasAttemptId() ? request.getAttemptId() : null,
-                    timeRemaining
+                    ctx.getRemainingMs()
                 ).thenAccept(popResult -> {
-                    if (!proxyConfig.isEnableProxyAutoRenew() || !request.getAutoRenew()) {
+                    if (!ConfigurationManager.getProxyConfig().isEnableProxyAutoRenew() || !request.getAutoRenew()) {
                         return;
                     }
 
@@ -199,4 +177,44 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
             }
         }
     }
+
+    private Long getPollingTime(ProxyContext ctx, ReceiveMessageRequest request, Settings settings, ReceiveMessageResponseStreamWriter writer) {
+        long pollingTime;
+        Long timeRemaining = ctx.getRemainingMs();
+        ProxyConfig config = ConfigurationManager.getProxyConfig();
+
+        if (request.hasLongPollingTimeout()) {
+            pollingTime = Durations.toMillis(request.getLongPollingTimeout());
+        } else {
+            pollingTime = timeRemaining - Durations.toMillis(settings.getRequestTimeout()) / 2;
+        }
+        if (pollingTime < config.getGrpcClientConsumerMinLongPollingTimeoutMillis()) {
+            pollingTime = config.getGrpcClientConsumerMinLongPollingTimeoutMillis();
+        }
+        if (pollingTime > config.getGrpcClientConsumerMaxLongPollingTimeoutMillis()) {
+            pollingTime = config.getGrpcClientConsumerMaxLongPollingTimeoutMillis();
+        }
+
+        if (pollingTime > timeRemaining) {
+            if (timeRemaining >= config.getGrpcClientConsumerMinLongPollingTimeoutMillis()) {
+                pollingTime = timeRemaining;
+            } else {
+                notEnoughDeadLineTime(ctx, writer);
+                return null;
+            }
+        }
+
+        return pollingTime;
+    }
+
+    private void notEnoughDeadLineTime(ProxyContext ctx, ReceiveMessageResponseStreamWriter writer) {
+        final String clientVersion = ctx.getClientVersion();
+        Code code = null == clientVersion || ILLEGAL_POLLING_TIME_INTRODUCED_CLIENT_VERSION.compareTo(clientVersion) > 0
+            ? Code.BAD_REQUEST
+            : Code.ILLEGAL_POLLING_TIME;
+
+        writer.writeAndComplete(ctx, code, "The deadline time remaining is not enough" +
+            " for polling, please check network condition");
+    }
+
 }
