@@ -21,11 +21,12 @@ import apache.rocketmq.v2.FilterExpression;
 import apache.rocketmq.v2.ReceiveMessageRequest;
 import apache.rocketmq.v2.ReceiveMessageResponse;
 import apache.rocketmq.v2.Settings;
-import apache.rocketmq.v2.Subscription;
 import com.google.protobuf.util.Durations;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.client.consumer.PopResult;
 import org.apache.rocketmq.client.consumer.PopStatus;
 import org.apache.rocketmq.common.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -54,22 +55,8 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
         super(messagingProcessor, grpcClientSettingsManager, grpcChannelManager);
     }
 
-    private long getInvisibleTime(ReceiveMessageRequest request) {
-        long actualInvisibleTime = Durations.toMillis(request.getInvisibleDuration());
-        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
-        if (proxyConfig.isEnableProxyAutoRenew() && request.getAutoRenew()) {
-            actualInvisibleTime = proxyConfig.getDefaultInvisibleTimeMills();
-        } else {
-            validateInvisibleTime(actualInvisibleTime,
-                ConfigurationManager.getProxyConfig().getMinInvisibleTimeMillsForRecv());
-        }
-
-        return actualInvisibleTime;
-    }
-
-    public void receiveMessage(ProxyContext ctx, ReceiveMessageRequest request,
-        StreamObserver<ReceiveMessageResponse> responseObserver) {
-        ReceiveMessageResponseStreamWriter writer = createWriter(ctx, responseObserver);
+    public void receiveMessage(ProxyContext ctx, ReceiveMessageRequest request, StreamObserver<ReceiveMessageResponse> responseObserver) {
+        ReceiveMessageResponseStreamWriter writer = createWriter(responseObserver);
 
         try {
             Settings settings = this.grpcClientSettingsManager.getClientSettings(ctx);
@@ -83,18 +70,12 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
             String group = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getGroup());
 
             long actualInvisibleTime = getInvisibleTime(request);
-            FilterExpression filterExpression = request.getFilterExpression();
-
-            SubscriptionData subscriptionData;
-            try {
-                subscriptionData = FilterAPI.build(topic, filterExpression.getExpression(),
-                    GrpcConverter.getInstance().buildExpressionType(filterExpression.getType()));
-            } catch (Exception e) {
-                writer.writeAndComplete(ctx, Code.ILLEGAL_FILTER_EXPRESSION, e.getMessage());
+            SubscriptionData subscriptionData = getSubscriptionData(ctx, request, topic, writer);
+            if (subscriptionData == null) {
                 return;
             }
 
-            this.messagingProcessor.popMessage(
+            CompletableFuture<PopResult> popFuture = this.messagingProcessor.popMessage(
                     ctx,
                     new ReceiveMessageQueueSelector(
                         request.getMessageQueue().getBroker().getName()
@@ -110,40 +91,15 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
                     new PopMessageResultFilterImpl(settings.getBackoffPolicy().getMaxAttempts()),
                     request.hasAttemptId() ? request.getAttemptId() : null,
                     ctx.getRemainingMs()
-                ).thenAccept(popResult -> {
-                    if (!ConfigurationManager.getProxyConfig().isEnableProxyAutoRenew() || !request.getAutoRenew()) {
-                        return;
-                    }
+                );
 
-                    if (!PopStatus.FOUND.equals(popResult.getPopStatus())) {
-                        return;
-                    }
-
-                    List<MessageExt> messageExtList = popResult.getMsgFoundList();
-                    for (MessageExt messageExt : messageExtList) {
-                        String receiptHandle = messageExt.getProperty(MessageConst.PROPERTY_POP_CK);
-                        if (receiptHandle == null) {
-                            continue;
-                        }
-
-                        MessageReceiptHandle messageReceiptHandle =
-                            new MessageReceiptHandle(group, topic, messageExt.getQueueId(), receiptHandle, messageExt.getMsgId(),
-                                messageExt.getQueueOffset(), messageExt.getReconsumeTimes());
-                        messagingProcessor.addReceiptHandle(ctx, grpcChannelManager.getChannel(ctx.getClientID()), group, messageExt.getMsgId(), messageReceiptHandle);
-                    }
-                    writer.writeAndComplete(ctx, request, popResult);
-                })
-                .exceptionally(t -> {
-                    writer.writeAndComplete(ctx, request, t);
-                    return null;
-                });
+            handlePopResult(popFuture, ctx, request, group, topic, writer);
         } catch (Throwable t) {
             writer.writeAndComplete(ctx, request, t);
         }
     }
 
-    protected ReceiveMessageResponseStreamWriter createWriter(ProxyContext ctx,
-        StreamObserver<ReceiveMessageResponse> responseObserver) {
+    protected ReceiveMessageResponseStreamWriter createWriter(StreamObserver<ReceiveMessageResponse> responseObserver) {
         return new ReceiveMessageResponseStreamWriter(
             this.messagingProcessor,
             responseObserver
@@ -217,4 +173,59 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
             " for polling, please check network condition");
     }
 
+    private long getInvisibleTime(ReceiveMessageRequest request) {
+        long actualInvisibleTime = Durations.toMillis(request.getInvisibleDuration());
+        ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
+        if (proxyConfig.isEnableProxyAutoRenew() && request.getAutoRenew()) {
+            actualInvisibleTime = proxyConfig.getDefaultInvisibleTimeMills();
+        } else {
+            validateInvisibleTime(actualInvisibleTime,
+                ConfigurationManager.getProxyConfig().getMinInvisibleTimeMillsForRecv());
+        }
+
+        return actualInvisibleTime;
+    }
+
+    private SubscriptionData getSubscriptionData(ProxyContext ctx, ReceiveMessageRequest request, String topic, ReceiveMessageResponseStreamWriter writer) {
+        FilterExpression filterExpression = request.getFilterExpression();
+
+        try {
+            return FilterAPI.build(topic, filterExpression.getExpression(),
+                GrpcConverter.getInstance().buildExpressionType(filterExpression.getType()));
+        } catch (Exception e) {
+            writer.writeAndComplete(ctx, Code.ILLEGAL_FILTER_EXPRESSION, e.getMessage());
+            return null;
+        }
+
+    }
+
+    private void handlePopResult(CompletableFuture<PopResult> popFuture, ProxyContext ctx, ReceiveMessageRequest request, String group, String topic, ReceiveMessageResponseStreamWriter writer) {
+        popFuture.thenAccept(popResult -> {
+            if (!ConfigurationManager.getProxyConfig().isEnableProxyAutoRenew() || !request.getAutoRenew()) {
+                return;
+            }
+
+            if (!PopStatus.FOUND.equals(popResult.getPopStatus())) {
+                return;
+            }
+
+            List<MessageExt> messageExtList = popResult.getMsgFoundList();
+            for (MessageExt messageExt : messageExtList) {
+                String receiptHandle = messageExt.getProperty(MessageConst.PROPERTY_POP_CK);
+                if (receiptHandle == null) {
+                    continue;
+                }
+
+                MessageReceiptHandle messageReceiptHandle =
+                    new MessageReceiptHandle(group, topic, messageExt.getQueueId(), receiptHandle, messageExt.getMsgId(),
+                        messageExt.getQueueOffset(), messageExt.getReconsumeTimes());
+                messagingProcessor.addReceiptHandle(ctx, grpcChannelManager.getChannel(ctx.getClientID()), group, messageExt.getMsgId(), messageReceiptHandle);
+            }
+            writer.writeAndComplete(ctx, request, popResult);
+
+        }).exceptionally(t -> {
+            writer.writeAndComplete(ctx, request, t);
+            return null;
+        });
+    }
 }
