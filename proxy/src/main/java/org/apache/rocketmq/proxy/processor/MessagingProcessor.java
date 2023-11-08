@@ -121,6 +121,23 @@ public interface MessagingProcessor extends StartAndShutdown {
         long timeoutMillis
     );
 
+    /**
+     *
+     * @param ctx proxy context
+     * @param queueSelector queue selector: by broker name for ReceiveMessageActivity
+     * @param consumerGroup consumer group
+     * @param topic topic
+     * @param maxMsgNums batch size
+     * @param invisibleTime invisibleTime:
+     * @param pollTime pollingTimeout
+     * @param initMode ConsumeInitMode.MAX for pop message mode
+     * @param subscriptionData subscription data
+     * @param fifo fifo setting
+     * @param popMessageResultFilter filter
+     * @param attemptId attemptId
+     * @param timeoutMillis timeout
+     * @return future
+     */
     CompletableFuture<PopResult> popMessage(
         ProxyContext ctx,
         QueueSelector queueSelector,
