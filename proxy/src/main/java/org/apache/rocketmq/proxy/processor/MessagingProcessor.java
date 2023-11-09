@@ -124,6 +124,9 @@ public interface MessagingProcessor extends StartAndShutdown {
     /**
      * proxy method for
      *      -> ConsumerProcessor.popMessage()
+     *          -> ack message
+     *          -> forward message to dead letter queue
+     *          -> send to consumer
      *      -> MessageService.popMessage()
      *
      * @param ctx proxy context

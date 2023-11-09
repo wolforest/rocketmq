@@ -43,6 +43,14 @@ public class MessageExt extends Message {
     private String msgId;
     private long commitLogOffset;
     private int bodyCRC;
+
+    /**
+     *
+     * in pop message mode:
+     *  - client can change this value while retrying
+     *  - broker also change this value to revive the message
+     *  - message will send to DLG after reconsumeTimes greater than a special value
+     */
     private int reconsumeTimes;
 
     private long preparedTransactionOffset;

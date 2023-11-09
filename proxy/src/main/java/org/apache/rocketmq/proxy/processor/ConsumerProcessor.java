@@ -276,24 +276,25 @@ public class ConsumerProcessor extends AbstractProcessor {
         CompletableFuture<AckResult> future = new CompletableFuture<>();
         try {
             this.validateReceiptHandle(handle);
-
-            AckMessageRequestHeader ackMessageRequestHeader = new AckMessageRequestHeader();
-            ackMessageRequestHeader.setConsumerGroup(consumerGroup);
-            ackMessageRequestHeader.setTopic(handle.getRealTopic(topic, consumerGroup));
-            ackMessageRequestHeader.setQueueId(handle.getQueueId());
-            ackMessageRequestHeader.setExtraInfo(handle.getReceiptHandle());
-            ackMessageRequestHeader.setOffset(handle.getOffset());
+            AckMessageRequestHeader header = buildAckHeader(handle, consumerGroup, topic);
 
             future = this.serviceManager.getMessageService().ackMessage(
-                ctx,
-                handle,
-                messageId,
-                ackMessageRequestHeader,
-                timeoutMillis);
+                ctx, handle, messageId, header, timeoutMillis);
         } catch (Throwable t) {
             future.completeExceptionally(t);
         }
         return FutureUtils.addExecutor(future, this.executor);
+    }
+
+    private AckMessageRequestHeader buildAckHeader(ReceiptHandle handle, String consumerGroup, String topic) {
+        AckMessageRequestHeader header = new AckMessageRequestHeader();
+        header.setConsumerGroup(consumerGroup);
+        header.setTopic(handle.getRealTopic(topic, consumerGroup));
+        header.setQueueId(handle.getQueueId());
+        header.setExtraInfo(handle.getReceiptHandle());
+        header.setOffset(handle.getOffset());
+
+        return header;
     }
 
     public CompletableFuture<List<BatchAckResult>> batchAckMessage(
