@@ -370,20 +370,20 @@ public class ConsumerProcessor extends AbstractProcessor {
         try {
             this.validateReceiptHandle(handle);
 
-            ChangeInvisibleTimeRequestHeader changeInvisibleTimeRequestHeader = new ChangeInvisibleTimeRequestHeader();
-            changeInvisibleTimeRequestHeader.setConsumerGroup(groupName);
-            changeInvisibleTimeRequestHeader.setTopic(handle.getRealTopic(topicName, groupName));
-            changeInvisibleTimeRequestHeader.setQueueId(handle.getQueueId());
-            changeInvisibleTimeRequestHeader.setExtraInfo(handle.getReceiptHandle());
-            changeInvisibleTimeRequestHeader.setOffset(handle.getOffset());
-            changeInvisibleTimeRequestHeader.setInvisibleTime(invisibleTime);
+            ChangeInvisibleTimeRequestHeader requestHeader = new ChangeInvisibleTimeRequestHeader();
+            requestHeader.setConsumerGroup(groupName);
+            requestHeader.setTopic(handle.getRealTopic(topicName, groupName));
+            requestHeader.setQueueId(handle.getQueueId());
+            requestHeader.setExtraInfo(handle.getReceiptHandle());
+            requestHeader.setOffset(handle.getOffset());
+            requestHeader.setInvisibleTime(invisibleTime);
             long commitLogOffset = handle.getCommitLogOffset();
 
             future = this.serviceManager.getMessageService().changeInvisibleTime(
                     ctx,
                     handle,
                     messageId,
-                    changeInvisibleTimeRequestHeader,
+                    requestHeader,
                     timeoutMillis)
                 .thenApplyAsync(ackResult -> {
                     if (StringUtils.isNotBlank(ackResult.getExtraInfo())) {
@@ -416,22 +416,33 @@ public class ConsumerProcessor extends AbstractProcessor {
         try {
             AddressableMessageQueue addressableMessageQueue = serviceManager.getTopicRouteService()
                 .buildAddressableMessageQueue(ctx, messageQueue);
-            PullMessageRequestHeader requestHeader = new PullMessageRequestHeader();
-            requestHeader.setConsumerGroup(consumerGroup);
-            requestHeader.setTopic(addressableMessageQueue.getTopic());
-            requestHeader.setQueueId(addressableMessageQueue.getQueueId());
-            requestHeader.setQueueOffset(queueOffset);
-            requestHeader.setMaxMsgNums(maxMsgNums);
-            requestHeader.setSysFlag(sysFlag);
-            requestHeader.setCommitOffset(commitOffset);
-            requestHeader.setSuspendTimeoutMillis(suspendTimeoutMillis);
-            requestHeader.setSubscription(subscriptionData.getSubString());
-            requestHeader.setExpressionType(subscriptionData.getExpressionType());
+            PullMessageRequestHeader requestHeader = buildPullHeader(addressableMessageQueue, consumerGroup,
+                queueOffset, maxMsgNums, sysFlag, commitOffset, suspendTimeoutMillis, subscriptionData);
+
             future = serviceManager.getMessageService().pullMessage(ctx, addressableMessageQueue, requestHeader, timeoutMillis);
         } catch (Throwable t) {
             future.completeExceptionally(t);
         }
         return FutureUtils.addExecutor(future, this.executor);
+    }
+
+    private PullMessageRequestHeader buildPullHeader(AddressableMessageQueue addressableMessageQueue,
+        String consumerGroup, long queueOffset, int maxMsgNums, int sysFlag, long commitOffset,
+        long suspendTimeoutMillis, SubscriptionData subscriptionData) {
+
+        PullMessageRequestHeader requestHeader = new PullMessageRequestHeader();
+        requestHeader.setConsumerGroup(consumerGroup);
+        requestHeader.setTopic(addressableMessageQueue.getTopic());
+        requestHeader.setQueueId(addressableMessageQueue.getQueueId());
+        requestHeader.setQueueOffset(queueOffset);
+        requestHeader.setMaxMsgNums(maxMsgNums);
+        requestHeader.setSysFlag(sysFlag);
+        requestHeader.setCommitOffset(commitOffset);
+        requestHeader.setSuspendTimeoutMillis(suspendTimeoutMillis);
+        requestHeader.setSubscription(subscriptionData.getSubString());
+        requestHeader.setExpressionType(subscriptionData.getExpressionType());
+
+        return requestHeader;
     }
 
     public CompletableFuture<Void> updateConsumerOffset(ProxyContext ctx, MessageQueue messageQueue,
