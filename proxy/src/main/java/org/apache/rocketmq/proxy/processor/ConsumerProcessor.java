@@ -257,12 +257,16 @@ public class ConsumerProcessor extends AbstractProcessor {
     }
 
     private void fillUniqIDIfNeed(MessageExt messageExt) {
-        if (StringUtils.isBlank(MessageClientIDSetter.getUniqID(messageExt))) {
-            if (messageExt instanceof MessageClientExt) {
-                MessageClientExt clientExt = (MessageClientExt) messageExt;
-                MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, clientExt.getOffsetMsgId());
-            }
+        if (!StringUtils.isBlank(MessageClientIDSetter.getUniqID(messageExt))) {
+            return;
         }
+
+        if (!(messageExt instanceof MessageClientExt)) {
+            return;
+        }
+
+        MessageClientExt clientExt = (MessageClientExt) messageExt;
+        MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, clientExt.getOffsetMsgId());
     }
 
     public CompletableFuture<AckResult> ackMessage(
