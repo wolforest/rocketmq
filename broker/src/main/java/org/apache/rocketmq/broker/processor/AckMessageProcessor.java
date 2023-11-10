@@ -25,7 +25,7 @@ import org.apache.rocketmq.broker.metrics.PopMetricsManager;
 import org.apache.rocketmq.broker.service.pop.QueueLockManager;
 import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.PopAckConstants;
+import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.help.FAQUrl;
@@ -216,7 +216,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         }
 
         QueueLockManager queueLockManager = this.brokerController.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
-        String lockKey = topic + PopAckConstants.SPLIT + consumeGroup + PopAckConstants.SPLIT + qId;
+        String lockKey = topic + PopConstants.SPLIT + consumeGroup + PopConstants.SPLIT + qId;
 
         lockQueue(queueLockManager, lockKey);
         try {
@@ -373,10 +373,10 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(getRqid(requestHeader, batchAck));
         if (null != batchAck) {
-            msgInner.setTags(PopAckConstants.BATCH_ACK_TAG);
+            msgInner.setTags(PopConstants.BATCH_ACK_TAG);
             msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genBatchAckUniqueId((BatchAckMsg) ackMsg));
         } else {
-            msgInner.setTags(PopAckConstants.ACK_TAG);
+            msgInner.setTags(PopConstants.ACK_TAG);
             msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genAckUniqueId(ackMsg));
         }
         msgInner.setBornTimestamp(System.currentTimeMillis());

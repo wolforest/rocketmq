@@ -27,7 +27,7 @@ import org.apache.rocketmq.broker.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
 import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.BrokerConfig;
-import org.apache.rocketmq.common.PopAckConstants;
+import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class PopReviveServiceTest {
 
-    private static final String REVIVE_TOPIC = PopAckConstants.REVIVE_TOPIC + "test";
+    private static final String REVIVE_TOPIC = PopConstants.REVIVE_TOPIC + "test";
     private static final int REVIVE_QUEUE_ID = 0;
     private static final String GROUP = "group";
     private static final String TOPIC = "topic";
@@ -110,7 +110,7 @@ public class PopReviveServiceTest {
         brokerConfig.setEnableSkipLongAwaitingAck(true);
         long maxReviveOffset = 4;
 
-        when(consumerOffsetManager.queryOffset(PopAckConstants.REVIVE_GROUP, REVIVE_TOPIC, REVIVE_QUEUE_ID))
+        when(consumerOffsetManager.queryOffset(PopConstants.REVIVE_GROUP, REVIVE_TOPIC, REVIVE_QUEUE_ID))
             .thenReturn(0L);
         List<MessageExt> reviveMessageExtList = new ArrayList<>();
         long basePopTime = System.currentTimeMillis();
@@ -147,7 +147,7 @@ public class PopReviveServiceTest {
         brokerConfig.setReviveAckWaitMs(TimeUnit.SECONDS.toMillis(2));
         long maxReviveOffset = 4;
 
-        when(consumerOffsetManager.queryOffset(PopAckConstants.REVIVE_GROUP, REVIVE_TOPIC, REVIVE_QUEUE_ID))
+        when(consumerOffsetManager.queryOffset(PopConstants.REVIVE_GROUP, REVIVE_TOPIC, REVIVE_QUEUE_ID))
             .thenReturn(0L);
         List<MessageExt> reviveMessageExtList = new ArrayList<>();
         long basePopTime = System.currentTimeMillis() - brokerConfig.getReviveAckWaitMs() * 2;
@@ -184,7 +184,7 @@ public class PopReviveServiceTest {
         brokerConfig.setReviveAckWaitMs(TimeUnit.SECONDS.toMillis(2));
         long maxReviveOffset = 4;
 
-        when(consumerOffsetManager.queryOffset(PopAckConstants.REVIVE_GROUP, REVIVE_TOPIC, REVIVE_QUEUE_ID))
+        when(consumerOffsetManager.queryOffset(PopConstants.REVIVE_GROUP, REVIVE_TOPIC, REVIVE_QUEUE_ID))
             .thenReturn(0L);
         List<MessageExt> reviveMessageExtList = new ArrayList<>();
         long basePopTime = System.currentTimeMillis() - brokerConfig.getReviveAckWaitMs() * 2;
@@ -241,11 +241,11 @@ public class PopReviveServiceTest {
         msgInner.setTopic(REVIVE_TOPIC);
         msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(REVIVE_QUEUE_ID);
-        msgInner.setTags(PopAckConstants.CK_TAG);
+        msgInner.setTags(PopConstants.CK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());
         msgInner.setBornHost(STORE_HOST);
         msgInner.setStoreHost(STORE_HOST);
-        msgInner.setDeliverTimeMs(ck.getReviveTime() - PopAckConstants.ackTimeInterval);
+        msgInner.setDeliverTimeMs(ck.getReviveTime() - PopConstants.ackTimeInterval);
         msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genCkUniqueId(ck));
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
 
@@ -276,7 +276,7 @@ public class PopReviveServiceTest {
         msgInner.setTopic(reviveTopic);
         msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(reviveQid);
-        msgInner.setTags(PopAckConstants.ACK_TAG);
+        msgInner.setTags(PopConstants.ACK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());
         msgInner.setBornHost(host);
         msgInner.setStoreHost(host);

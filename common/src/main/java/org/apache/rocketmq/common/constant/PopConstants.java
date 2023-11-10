@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common;
+package org.apache.rocketmq.common.constant;
 
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.constant.MQConstants;
 
 /**
  *
  * @renamed from PopAckConstants to PopConstants
  */
-public class PopAckConstants {
+public class PopConstants {
     public static long ackTimeInterval = 1000;
     public static final long SECOND = 1000;
 
@@ -45,7 +44,7 @@ public class PopAckConstants {
      * @return revive topic
      */
     public static String buildClusterReviveTopic(String clusterName) {
-        return PopAckConstants.REVIVE_TOPIC + clusterName;
+        return PopConstants.REVIVE_TOPIC + clusterName;
     }
 
     public static boolean isStartWithRevivePrefix(String topicName) {

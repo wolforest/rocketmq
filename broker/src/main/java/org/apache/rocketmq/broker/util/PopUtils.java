@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.util;
 
-import org.apache.rocketmq.common.PopAckConstants;
+import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.store.pop.AckMsg;
 import org.apache.rocketmq.store.pop.BatchAckMsg;
 import org.apache.rocketmq.store.pop.PopCheckPoint;
@@ -24,30 +24,30 @@ import org.apache.rocketmq.store.pop.PopCheckPoint;
 public class PopUtils {
     public static String genAckUniqueId(AckMsg ackMsg) {
         return ackMsg.getTopic()
-            + PopAckConstants.SPLIT + ackMsg.getQueueId()
-            + PopAckConstants.SPLIT + ackMsg.getAckOffset()
-            + PopAckConstants.SPLIT + ackMsg.getConsumerGroup()
-            + PopAckConstants.SPLIT + ackMsg.getPopTime()
-            + PopAckConstants.SPLIT + ackMsg.getBrokerName()
-            + PopAckConstants.SPLIT + PopAckConstants.ACK_TAG;
+            + PopConstants.SPLIT + ackMsg.getQueueId()
+            + PopConstants.SPLIT + ackMsg.getAckOffset()
+            + PopConstants.SPLIT + ackMsg.getConsumerGroup()
+            + PopConstants.SPLIT + ackMsg.getPopTime()
+            + PopConstants.SPLIT + ackMsg.getBrokerName()
+            + PopConstants.SPLIT + PopConstants.ACK_TAG;
     }
 
     public static String genBatchAckUniqueId(BatchAckMsg batchAckMsg) {
         return batchAckMsg.getTopic()
-            + PopAckConstants.SPLIT + batchAckMsg.getQueueId()
-            + PopAckConstants.SPLIT + batchAckMsg.getAckOffsetList().toString()
-            + PopAckConstants.SPLIT + batchAckMsg.getConsumerGroup()
-            + PopAckConstants.SPLIT + batchAckMsg.getPopTime()
-            + PopAckConstants.SPLIT + PopAckConstants.BATCH_ACK_TAG;
+            + PopConstants.SPLIT + batchAckMsg.getQueueId()
+            + PopConstants.SPLIT + batchAckMsg.getAckOffsetList().toString()
+            + PopConstants.SPLIT + batchAckMsg.getConsumerGroup()
+            + PopConstants.SPLIT + batchAckMsg.getPopTime()
+            + PopConstants.SPLIT + PopConstants.BATCH_ACK_TAG;
     }
 
     public static String genCkUniqueId(PopCheckPoint ck) {
         return ck.getTopic()
-            + PopAckConstants.SPLIT + ck.getQueueId()
-            + PopAckConstants.SPLIT + ck.getStartOffset()
-            + PopAckConstants.SPLIT + ck.getCId()
-            + PopAckConstants.SPLIT + ck.getPopTime()
-            + PopAckConstants.SPLIT + ck.getBrokerName()
-            + PopAckConstants.SPLIT + PopAckConstants.CK_TAG;
+            + PopConstants.SPLIT + ck.getQueueId()
+            + PopConstants.SPLIT + ck.getStartOffset()
+            + PopConstants.SPLIT + ck.getCId()
+            + PopConstants.SPLIT + ck.getPopTime()
+            + PopConstants.SPLIT + ck.getBrokerName()
+            + PopConstants.SPLIT + PopConstants.CK_TAG;
     }
 }

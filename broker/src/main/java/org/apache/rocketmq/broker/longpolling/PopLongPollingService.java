@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.PopAckConstants;
+import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -333,7 +333,7 @@ public class PopLongPollingService extends ServiceThread {
             if (entry.getKey() == null) {
                 continue;
             }
-            String[] keyArray = entry.getKey().split(PopAckConstants.SPLIT);
+            String[] keyArray = entry.getKey().split(PopConstants.SPLIT);
             if (keyArray.length != 3) {
                 continue;
             }

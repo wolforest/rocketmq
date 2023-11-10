@@ -25,7 +25,7 @@ import org.apache.rocketmq.broker.longpolling.PopRequest;
 import org.apache.rocketmq.broker.processor.NotificationProcessor;
 import org.apache.rocketmq.broker.processor.PopMessageProcessor;
 import org.apache.rocketmq.broker.util.PopUtils;
-import org.apache.rocketmq.common.PopAckConstants;
+import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
@@ -50,7 +50,7 @@ public class PopServiceManager {
 
     public PopServiceManager(final BrokerController brokerController, PopMessageProcessor popMessageProcessor, NotificationProcessor notificationProcessor) {
         this.brokerController = brokerController;
-        this.reviveTopic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
+        this.reviveTopic = PopConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
 
         this.popPollingService = new PopLongPollingService(brokerController, popMessageProcessor);
         this.notificationPollingService = new PopLongPollingService(brokerController, notificationProcessor);
@@ -93,11 +93,11 @@ public class PopServiceManager {
         msgInner.setTopic(brokerController.getBrokerNettyServer().getPopServiceManager().getReviveTopic());
         msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(reviveQid);
-        msgInner.setTags(PopAckConstants.CK_TAG);
+        msgInner.setTags(PopConstants.CK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());
         msgInner.setBornHost(this.brokerController.getStoreHost());
         msgInner.setStoreHost(this.brokerController.getStoreHost());
-        msgInner.setDeliverTimeMs(ck.getReviveTime() - PopAckConstants.ackTimeInterval);
+        msgInner.setDeliverTimeMs(ck.getReviveTime() - PopConstants.ackTimeInterval);
         msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genCkUniqueId(ck));
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
 

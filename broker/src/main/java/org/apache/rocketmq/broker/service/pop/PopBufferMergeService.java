@@ -29,7 +29,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.metrics.PopMetricsManager;
 import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.PopAckConstants;
+import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -67,7 +67,7 @@ public class PopBufferMergeService extends ServiceThread {
 
     public PopBufferMergeService(BrokerController brokerController) {
         this.brokerController = brokerController;
-        this.reviveTopic = PopAckConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
+        this.reviveTopic = PopConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
     }
 
     private boolean isShouldRunning() {
@@ -186,7 +186,7 @@ public class PopBufferMergeService extends ServiceThread {
             if (entry.getKey() == null) {
                 continue;
             }
-            String[] keyArray = entry.getKey().split(PopAckConstants.SPLIT);
+            String[] keyArray = entry.getKey().split(PopConstants.SPLIT);
             if (keyArray == null || keyArray.length != 3) {
                 continue;
             }
@@ -699,7 +699,7 @@ public class PopBufferMergeService extends ServiceThread {
         msgInner.setTopic(this.reviveTopic);
         msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(pointWrapper.getReviveQueueId());
-        msgInner.setTags(PopAckConstants.ACK_TAG);
+        msgInner.setTags(PopConstants.ACK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());
         msgInner.setBornHost(brokerController.getStoreHost());
         msgInner.setStoreHost(brokerController.getStoreHost());
@@ -739,7 +739,7 @@ public class PopBufferMergeService extends ServiceThread {
         msgInner.setTopic(this.reviveTopic);
         msgInner.setBody(JSON.toJSONString(batchAckMsg).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(pointWrapper.getReviveQueueId());
-        msgInner.setTags(PopAckConstants.BATCH_ACK_TAG);
+        msgInner.setTags(PopConstants.BATCH_ACK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());
         msgInner.setBornHost(brokerController.getStoreHost());
         msgInner.setStoreHost(brokerController.getStoreHost());
@@ -772,12 +772,12 @@ public class PopBufferMergeService extends ServiceThread {
         msgInner.setTopic(this.reviveTopic);
         msgInner.setBody((pointWrapper.getReviveQueueId() + "-" + pointWrapper.getReviveQueueOffset()).getBytes(StandardCharsets.UTF_8));
         msgInner.setQueueId(pointWrapper.getReviveQueueId());
-        msgInner.setTags(PopAckConstants.CK_TAG);
+        msgInner.setTags(PopConstants.CK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());
         msgInner.setBornHost(brokerController.getStoreHost());
         msgInner.setStoreHost(brokerController.getStoreHost());
 
-        msgInner.setDeliverTimeMs(point.getReviveTime() - PopAckConstants.ackTimeInterval);
+        msgInner.setDeliverTimeMs(point.getReviveTime() - PopConstants.ackTimeInterval);
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
         PutMessageResult putMessageResult = brokerController.getEscapeBridge().putMessageToSpecificQueue(msgInner);
         if (putMessageResult.getPutMessageStatus() != PutMessageStatus.PUT_OK
@@ -859,7 +859,7 @@ public class PopBufferMergeService extends ServiceThread {
             this.bits = new AtomicInteger(0);
             this.toStoreBits = new AtomicInteger(0);
             this.nextBeginOffset = nextBeginOffset;
-            this.lockKey = ck.getTopic() + PopAckConstants.SPLIT + ck.getCId() + PopAckConstants.SPLIT + ck.getQueueId();
+            this.lockKey = ck.getTopic() + PopConstants.SPLIT + ck.getCId() + PopConstants.SPLIT + ck.getQueueId();
             this.mergeKey = point.getTopic() + point.getCId() + point.getQueueId() + point.getStartOffset() + point.getPopTime() + point.getBrokerName();
             this.justOffset = false;
         }
@@ -873,7 +873,7 @@ public class PopBufferMergeService extends ServiceThread {
             this.bits = new AtomicInteger(0);
             this.toStoreBits = new AtomicInteger(0);
             this.nextBeginOffset = nextBeginOffset;
-            this.lockKey = ck.getTopic() + PopAckConstants.SPLIT + ck.getCId() + PopAckConstants.SPLIT + ck.getQueueId();
+            this.lockKey = ck.getTopic() + PopConstants.SPLIT + ck.getCId() + PopConstants.SPLIT + ck.getQueueId();
             this.mergeKey = point.getTopic() + point.getCId() + point.getQueueId() + point.getStartOffset() + point.getPopTime() + point.getBrokerName();
             this.justOffset = justOffset;
         }

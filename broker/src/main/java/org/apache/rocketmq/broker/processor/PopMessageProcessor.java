@@ -41,7 +41,7 @@ import org.apache.rocketmq.broker.pagecache.ManyMessageTransfer;
 import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.service.pop.QueueLockManager;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.PopAckConstants;
+import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -484,7 +484,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             ? KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup())
             : requestHeader.getTopic();
 
-        String lockKey = topic + PopAckConstants.SPLIT + requestHeader.getConsumerGroup() + PopAckConstants.SPLIT + queueId;
+        String lockKey = topic + PopConstants.SPLIT + requestHeader.getConsumerGroup() + PopConstants.SPLIT + queueId;
         boolean isOrder = requestHeader.isOrder();
         long offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), false, lockKey, false);
         CompletableFuture<Long> future = new CompletableFuture<>();
@@ -723,7 +723,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private Long resetPopOffset(String topic, String group, int queueId) {
-        String lockKey = topic + PopAckConstants.SPLIT + group + PopAckConstants.SPLIT + queueId;
+        String lockKey = topic + PopConstants.SPLIT + group + PopConstants.SPLIT + queueId;
         Long resetOffset = this.brokerController.getConsumerOffsetManager().queryThenEraseResetOffset(topic, group, queueId);
 
         if (resetOffset == null) {

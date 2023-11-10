@@ -17,6 +17,7 @@
 package org.apache.rocketmq.common;
 
 import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.constant.PopConstants;
 
 public class KeyBuilder {
     public static final int POP_ORDER_REVIVE_QUEUE = 999;
@@ -44,10 +45,10 @@ public class KeyBuilder {
      * @renamed from buildPollingKey to buildConsumeKey
      */
     public static String buildConsumeKey(String topic, String group, int queueId) {
-        return topic + PopAckConstants.SPLIT + group + PopAckConstants.SPLIT + queueId;
+        return topic + PopConstants.SPLIT + group + PopConstants.SPLIT + queueId;
     }
 
     public static String buildPollingNotificationKey(String topic, int queueId) {
-        return topic + PopAckConstants.SPLIT + queueId;
+        return topic + PopConstants.SPLIT + queueId;
     }
 }
