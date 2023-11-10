@@ -21,8 +21,15 @@ import org.apache.rocketmq.common.constant.MQConstants;
 public class KeyBuilder {
     public static final int POP_ORDER_REVIVE_QUEUE = 999;
 
-    public static String buildPopRetryTopic(String topic, String cid) {
-        return MQConstants.RETRY_GROUP_TOPIC_PREFIX + cid + "_" + topic;
+    /**
+     * create retryTopicName by original topic, group
+     *
+     * @param topic original topic
+     * @param group original group
+     * @return retryTopicName
+     */
+    public static String buildPopRetryTopic(String topic, String group) {
+        return MQConstants.RETRY_GROUP_TOPIC_PREFIX + group + "_" + topic;
     }
 
     public static String parseNormalTopic(String topic, String cid) {
@@ -33,8 +40,8 @@ public class KeyBuilder {
         }
     }
 
-    public static String buildPollingKey(String topic, String cid, int queueId) {
-        return topic + PopAckConstants.SPLIT + cid + PopAckConstants.SPLIT + queueId;
+    public static String buildPollingKey(String topic, String group, int queueId) {
+        return topic + PopAckConstants.SPLIT + group + PopAckConstants.SPLIT + queueId;
     }
 
     public static String buildPollingNotificationKey(String topic, int queueId) {

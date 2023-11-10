@@ -19,6 +19,10 @@ package org.apache.rocketmq.common;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.constant.MQConstants;
 
+/**
+ *
+ * @renamed from PopAckConstants to PopConstants
+ */
 public class PopAckConstants {
     public static long ackTimeInterval = 1000;
     public static final long SECOND = 1000;

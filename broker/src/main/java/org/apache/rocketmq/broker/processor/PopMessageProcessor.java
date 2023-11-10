@@ -108,6 +108,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         StringBuilder startOffsetInfo = new StringBuilder(64);
         StringBuilder msgOffsetInfo = new StringBuilder(64);
+        // if not consume orderly, orderCountInfo = null
         StringBuilder orderCountInfo = initOrderCountInfo(requestHeader);
 
         initRequestAndResponse(request, response, requestHeader);
@@ -320,8 +321,18 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return getMessageFuture;
     }
 
+    /**
+     * TODO:
+     *  - when did the retryTopic create?
+     *  - How many read queue nums does retryTopic have?
+     *  - What does retryTopic queue id look like?
+     *  - Why use random value to get queue id?
+     *  - How and When did message enqueue retryTopic?
+     *
+     */
     private CompletableFuture<Long> popRetryMessage(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, int randomQ, CompletableFuture<Long> getMessageFuture) {
+
         TopicConfig retryTopicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup()));
         if (retryTopicConfig == null) {
             return getMessageFuture;
@@ -446,11 +457,29 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return orderCountInfo;
     }
 
+    /**
+     *
+     * @param attemptId request attempt id
+     * @param isRetry isRetry flag
+     * @param getMessageResult getMessageResult
+     * @param requestHeader requestHeader
+     * @param queueId queueId: retry topic queueId | pop queueId
+     * @param restNum restNum
+     * @param reviveQid revive Queue id
+     * @param channel netty channel
+     * @param popTime popTime
+     * @param messageFilter filter
+     * @param startOffsetInfo startOffsetInfo
+     * @param msgOffsetInfo msgOffsetInfo
+     * @param orderCountInfo orderCountInfo : useless for non ordered Message
+     * @return future<consumeOffset>
+     */
     private CompletableFuture<Long> popMsgFromQueue(String attemptId, boolean isRetry, GetMessageResult getMessageResult,
         PopMessageRequestHeader requestHeader, int queueId, long restNum, int reviveQid,
         Channel channel, long popTime, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder orderCountInfo) {
 
+        //TODO: move it out of this method
         String topic = isRetry
             ? KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup())
             : requestHeader.getTopic();
