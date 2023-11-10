@@ -718,10 +718,24 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return offset;
     }
 
-    private boolean appendCheckPoint(final PopMessageRequestHeader requestHeader,
-        final String topic, final int reviveQid, final int queueId, final long offset,
-        final GetMessageResult getMessageTmpResult, final long popTime, final String brokerName) {
+    private boolean appendCheckPoint(final PopMessageRequestHeader requestHeader, final String topic, final int reviveQid,
+        final int queueId, final long offset, final GetMessageResult getMessageTmpResult, final long popTime, final String brokerName) {
+
+        final PopCheckPoint ck = buildCheckPoint(requestHeader, topic, queueId, offset, getMessageTmpResult, popTime, brokerName);
+
         // add check point msg to revive log
+        PopBufferMergeService ackService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        boolean addBufferSuc = ackService.addCheckPoint(ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset());
+        if (addBufferSuc) {
+            return true;
+        }
+
+        return ackService.addCkJustOffset(ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset());
+    }
+
+    private PopCheckPoint buildCheckPoint(final PopMessageRequestHeader requestHeader, final String topic, final int queueId,
+        final long offset, final GetMessageResult getMessageTmpResult, final long popTime, final String brokerName) {
+
         final PopCheckPoint ck = new PopCheckPoint();
         ck.setBitMap(0);
         ck.setNum((byte) getMessageTmpResult.getMessageMapedList().size());
@@ -732,21 +746,12 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         ck.setTopic(topic);
         ck.setQueueId(queueId);
         ck.setBrokerName(brokerName);
+
         for (Long msgQueueOffset : getMessageTmpResult.getMessageQueueOffset()) {
             ck.addDiff((int) (msgQueueOffset - offset));
         }
 
-        PopBufferMergeService popBufferMergeService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
-        final boolean addBufferSuc = popBufferMergeService.addCheckPoint(
-            ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset()
-        );
-
-        if (addBufferSuc) {
-            return true;
-        }
-        return popBufferMergeService.addCkJustOffset(
-            ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset()
-        );
+        return ck;
     }
 
     private Long resetPopOffset(String topic, String group, int queueId) {
