@@ -41,7 +41,6 @@ import org.apache.rocketmq.broker.pagecache.ManyMessageTransfer;
 import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.service.pop.QueueLockManager;
 import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -680,7 +679,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             return this.brokerController.getMessageStore().getMinOffsetInQueue(topic, queueId);
         }
 
-        long offset = getInitOffset(topic, queueId);
+        long offset = getMaxOffset(topic, queueId);
 
         if (init) {
             this.brokerController.getConsumerOffsetManager().commitOffset(
@@ -689,7 +688,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return offset;
     }
 
-    private long getInitOffset(String topic, int queueId) {
+    private long getMaxOffset(String topic, int queueId) {
         if (this.brokerController.getBrokerConfig().isInitPopOffsetByCheckMsgInMem() &&
             this.brokerController.getMessageStore().getMinOffsetInQueue(topic, queueId) <= 0 &&
             this.brokerController.getMessageStore().checkInMemByConsumeOffset(topic, queueId, 0, 1)) {
