@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
-import org.apache.rocketmq.common.ConfigManager;
+import org.apache.rocketmq.common.config.ConfigManager;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.filter.ExpressionType;
 import org.apache.rocketmq.filter.FilterFactory;

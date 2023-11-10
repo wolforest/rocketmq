@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.broker.plugin.BrokerAttachedPlugin;
 import org.apache.rocketmq.broker.schedule.DelayOffsetSerializeWrapper;
 import org.apache.rocketmq.client.exception.MQBrokerException;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.MQConstants;

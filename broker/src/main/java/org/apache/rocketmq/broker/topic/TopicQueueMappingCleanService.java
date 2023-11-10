@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageQueue;

@@ -20,7 +20,7 @@ package org.apache.rocketmq.store.stats;
 import java.util.HashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.statistics.StatisticsItem;

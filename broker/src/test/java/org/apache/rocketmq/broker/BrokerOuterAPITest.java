@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;

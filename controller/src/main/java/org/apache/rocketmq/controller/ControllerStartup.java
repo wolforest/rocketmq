@@ -27,7 +27,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.ControllerConfig;
+import org.apache.rocketmq.common.config.ControllerConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.PropertyUtils;

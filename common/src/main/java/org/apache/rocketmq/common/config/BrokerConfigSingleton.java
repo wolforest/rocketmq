@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.common;
+package org.apache.rocketmq.common.config;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 

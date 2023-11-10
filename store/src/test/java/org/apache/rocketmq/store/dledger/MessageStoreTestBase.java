@@ -22,7 +22,7 @@ import java.io.File;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.store.DefaultMessageStore;

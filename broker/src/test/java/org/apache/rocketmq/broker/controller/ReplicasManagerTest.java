@@ -23,7 +23,7 @@ import org.apache.rocketmq.broker.service.BrokerClusterService;
 import org.apache.rocketmq.broker.service.BrokerMessageService;
 import org.apache.rocketmq.broker.slave.SlaveSynchronize;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.remoting.protocol.body.SyncStateSet;

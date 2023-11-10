@@ -66,7 +66,7 @@ Method deleteSubscriptionGroup(java.lang.String,java.lang.String) : public throw
 Method deleteTopicInBroker(java.lang.String,java.util.Set) : public throws (void)
 Method deleteTopicInNameServer(java.lang.String,java.lang.String,java.util.Set) : public throws (void)
 Method earliestMsgStoreTime(org.apache.rocketmq.common.message.MessageQueue) : public throws (long)
-Method examineBrokerClusterAclConfig(java.lang.String) : public throws (org.apache.rocketmq.common.AclConfig)
+Method examineBrokerClusterAclConfig(java.lang.String) : public throws (org.apache.rocketmq.common.config.AclConfig)
 Method examineBrokerClusterAclVersionInfo(java.lang.String) : public throws (org.apache.rocketmq.remoting.protocol.body.ClusterAclVersionInfo)
 Method examineBrokerClusterInfo() : public throws (org.apache.rocketmq.remoting.protocol.body.ClusterInfo)
 Method examineConsumeStats(java.lang.String) : public throws (org.apache.rocketmq.remoting.protocol.admin.ConsumeStats)

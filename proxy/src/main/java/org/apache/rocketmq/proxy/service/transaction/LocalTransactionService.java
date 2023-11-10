@@ -17,7 +17,7 @@
 package org.apache.rocketmq.proxy.service.transaction;
 
 import java.util.List;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 
 /**

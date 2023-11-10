@@ -27,7 +27,7 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.TransactionCheckListener;
 import org.apache.rocketmq.client.producer.TransactionListener;
 import org.apache.rocketmq.client.producer.TransactionMQProducer;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.topic.TopicConfig;

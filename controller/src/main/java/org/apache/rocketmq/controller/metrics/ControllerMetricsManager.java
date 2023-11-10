@@ -42,7 +42,7 @@ import io.opentelemetry.sdk.metrics.export.MetricExporter;
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 import io.opentelemetry.sdk.resources.Resource;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.ControllerConfig;
+import org.apache.rocketmq.common.config.ControllerConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.metrics.MetricsExporterType;
 import org.apache.rocketmq.common.metrics.NopLongCounter;

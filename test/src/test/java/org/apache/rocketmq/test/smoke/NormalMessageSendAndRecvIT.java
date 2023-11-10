@@ -19,7 +19,7 @@ package org.apache.rocketmq.test.smoke;
 
 import com.google.common.collect.ImmutableList;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.message.MessageClientExt;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageQueue;

@@ -25,7 +25,7 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.SystemClock;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.DefaultMessageStore;

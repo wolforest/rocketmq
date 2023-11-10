@@ -24,7 +24,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.rebalance.RebalanceLockManager;
 import org.apache.rocketmq.broker.controller.ReplicasManager;
 import org.apache.rocketmq.broker.slave.SlaveSynchronize;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ChannelUtil;
 import org.apache.rocketmq.common.constant.MQConstants;

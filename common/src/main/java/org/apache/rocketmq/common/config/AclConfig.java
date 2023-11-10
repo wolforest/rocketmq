@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common;
+package org.apache.rocketmq.common.config;
 
 import java.util.List;
+import org.apache.rocketmq.common.PlainAccessConfig;
 
 public class AclConfig {
 

@@ -25,7 +25,7 @@ import org.apache.rocketmq.broker.client.net.Broker2Client;
 import org.apache.rocketmq.broker.failover.EscapeBridge;
 import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.service.pop.PopServiceManager;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;

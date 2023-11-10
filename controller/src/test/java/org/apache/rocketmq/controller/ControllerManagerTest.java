@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.controller;
 
-import org.apache.rocketmq.common.ControllerConfig;
+import org.apache.rocketmq.common.config.ControllerConfig;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.controller.impl.DLedgerController;
 import org.apache.rocketmq.remoting.RemotingClient;

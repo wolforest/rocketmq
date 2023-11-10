@@ -18,6 +18,7 @@ package org.apache.rocketmq.common;/*
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import org.apache.rocketmq.common.config.ConfigManager;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.junit.Test;
 

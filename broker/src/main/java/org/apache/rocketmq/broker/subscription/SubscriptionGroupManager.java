@@ -27,7 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
 import org.apache.rocketmq.client.Validators;
-import org.apache.rocketmq.common.ConfigManager;
+import org.apache.rocketmq.common.config.ConfigManager;
 import org.apache.rocketmq.common.SubscriptionGroupAttributes;
 import org.apache.rocketmq.common.attribute.AttributeUtil;
 import org.apache.rocketmq.common.constant.LoggerName;

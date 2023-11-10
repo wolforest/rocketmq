@@ -31,7 +31,7 @@ import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.service.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.topic.TopicConfig;

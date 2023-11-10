@@ -18,7 +18,7 @@
 package org.apache.rocketmq.store.ha.autoswitch;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOTinyUtils;

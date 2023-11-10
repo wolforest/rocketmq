@@ -22,7 +22,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;

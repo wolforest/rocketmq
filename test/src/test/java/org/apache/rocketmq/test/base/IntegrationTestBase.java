@@ -20,7 +20,7 @@ package org.apache.rocketmq.test.base;
 import com.google.common.truth.Truth;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.topic.TopicAttributes;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.attribute.TopicMessageType;

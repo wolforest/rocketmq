@@ -21,7 +21,7 @@ import com.google.common.net.HostAndPort;
 import java.util.HashMap;
 import java.util.List;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.constant.MQConstants;

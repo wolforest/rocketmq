@@ -37,7 +37,7 @@ import org.apache.rocketmq.acl.common.AclConstants;
 import org.apache.rocketmq.acl.common.AclException;
 import org.apache.rocketmq.acl.common.AclUtils;
 import org.apache.rocketmq.acl.common.Permission;
-import org.apache.rocketmq.common.AclConfig;
+import org.apache.rocketmq.common.config.AclConfig;
 import org.apache.rocketmq.common.PlainAccessConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.topic.TopicValidator;

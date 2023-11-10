@@ -25,7 +25,7 @@ import org.apache.rocketmq.broker.mqtrace.ConsumeMessageHook;
 import org.apache.rocketmq.broker.mqtrace.SendMessageContext;
 import org.apache.rocketmq.broker.mqtrace.SendMessageHook;
 import org.apache.rocketmq.common.AbortProcessException;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.topic.TopicFilterType;

@@ -26,7 +26,7 @@ import org.apache.rocketmq.broker.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
 import org.apache.rocketmq.broker.util.PopUtils;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.message.MessageConst;

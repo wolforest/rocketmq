@@ -18,7 +18,7 @@
 package org.apache.rocketmq.container;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.common.utils.StringUtils;

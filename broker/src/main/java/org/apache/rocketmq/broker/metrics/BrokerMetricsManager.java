@@ -50,7 +50,7 @@ import java.util.function.Supplier;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ConsumerManager;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.attribute.TopicMessageType;

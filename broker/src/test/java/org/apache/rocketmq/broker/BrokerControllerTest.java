@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.broker;
 
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.future.FutureTaskExt;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;

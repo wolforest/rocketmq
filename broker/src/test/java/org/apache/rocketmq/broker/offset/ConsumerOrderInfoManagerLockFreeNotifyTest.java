@@ -23,7 +23,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.service.pop.PopServiceManager;
 import org.apache.rocketmq.broker.service.BrokerNettyServer;
 import org.apache.rocketmq.broker.processor.PopMessageProcessor;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
 import org.junit.Test;

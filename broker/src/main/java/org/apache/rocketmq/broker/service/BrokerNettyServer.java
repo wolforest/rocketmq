@@ -55,7 +55,7 @@ import org.apache.rocketmq.broker.processor.QueryAssignmentProcessor;
 import org.apache.rocketmq.broker.processor.QueryMessageProcessor;
 import org.apache.rocketmq.broker.processor.ReplyMessageProcessor;
 import org.apache.rocketmq.broker.processor.SendMessageProcessor;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ServiceProvider;

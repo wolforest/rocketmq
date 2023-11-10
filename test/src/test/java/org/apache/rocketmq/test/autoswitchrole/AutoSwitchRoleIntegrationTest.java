@@ -19,7 +19,7 @@ package org.apache.rocketmq.test.autoswitchrole;
 
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.controller.ReplicasManager;
-import org.apache.rocketmq.common.ControllerConfig;
+import org.apache.rocketmq.common.config.ControllerConfig;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.apache.rocketmq.controller.ControllerManager;

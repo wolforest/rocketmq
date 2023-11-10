@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.common;
 
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

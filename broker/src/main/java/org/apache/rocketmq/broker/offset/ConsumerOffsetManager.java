@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.offset;
 import com.google.common.base.Strings;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
-import org.apache.rocketmq.common.ConfigManager;
+import org.apache.rocketmq.common.config.ConfigManager;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;

@@ -42,7 +42,7 @@ import org.apache.rocketmq.broker.subscription.RocksDBSubscriptionGroupManager;
 import org.apache.rocketmq.broker.topic.RocksDBTopicConfigManager;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
 import org.apache.rocketmq.common.BoundaryType;
-import org.apache.rocketmq.common.BrokerConfig;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.topic.TopicFilterType;
