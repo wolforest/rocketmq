@@ -19,7 +19,7 @@ package org.apache.rocketmq.remoting.protocol.statictopic;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.common.topic.TopicConfig;
 
 public class TopicConfigAndQueueMapping extends TopicConfig {
     private TopicQueueMappingDetail mappingDetail;

@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.kv;
 
-import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.attribute.CleanupPolicy;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.CleanupPolicyUtils;

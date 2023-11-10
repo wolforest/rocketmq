@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.topic;
 import java.io.File;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.config.RocksDBConfigManager;
 import org.apache.rocketmq.common.utils.DataConverter;
 

@@ -18,7 +18,7 @@ package org.apache.rocketmq.common.message;
 
 import java.nio.ByteBuffer;
 
-import org.apache.rocketmq.common.TopicFilterType;
+import org.apache.rocketmq.common.topic.TopicFilterType;
 import org.apache.rocketmq.common.utils.MessageUtils;
 
 public class MessageExtBrokerInner extends MessageExt {

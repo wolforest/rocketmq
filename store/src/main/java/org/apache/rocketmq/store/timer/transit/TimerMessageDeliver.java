@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.timer.transit;
 
-import org.apache.rocketmq.common.TopicFilterType;
+import org.apache.rocketmq.common.topic.TopicFilterType;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;

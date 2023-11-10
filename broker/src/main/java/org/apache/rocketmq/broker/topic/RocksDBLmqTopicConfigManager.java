@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.topic;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.constant.MQConstants;
 

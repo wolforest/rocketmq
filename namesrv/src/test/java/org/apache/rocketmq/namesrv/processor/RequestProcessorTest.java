@@ -18,7 +18,7 @@ package org.apache.rocketmq.namesrv.processor;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.utils.BinaryUtil;
 import org.apache.rocketmq.common.utils.PropertyUtils;

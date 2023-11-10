@@ -19,6 +19,8 @@ package org.apache.rocketmq.common;
 
 import org.apache.rocketmq.common.attribute.TopicMessageType;
 import org.apache.rocketmq.common.constant.PermName;
+import org.apache.rocketmq.common.topic.TopicConfig;
+import org.apache.rocketmq.common.topic.TopicFilterType;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

@@ -45,7 +45,7 @@ import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.PlainAccessConfig;
-import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.attribute.AttributeParser;
 import org.apache.rocketmq.common.constant.FIleReadaheadMode;
 import org.apache.rocketmq.common.message.Message;

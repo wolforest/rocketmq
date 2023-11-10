@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common;
+package org.apache.rocketmq.common.topic;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
@@ -25,7 +25,7 @@ import java.util.Objects;
 import org.apache.rocketmq.common.attribute.TopicMessageType;
 import org.apache.rocketmq.common.constant.PermName;
 
-import static org.apache.rocketmq.common.TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE;
+import static org.apache.rocketmq.common.topic.TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE;
 
 public class TopicConfig {
     private static final String SEPARATOR = " ";
