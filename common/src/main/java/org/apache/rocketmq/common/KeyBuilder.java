@@ -33,12 +33,12 @@ public class KeyBuilder {
         return MQConstants.RETRY_GROUP_TOPIC_PREFIX + group + "_" + topic;
     }
 
-    public static String parseNormalTopic(String topic, String cid) {
-        if (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
-            return topic.substring((MQConstants.RETRY_GROUP_TOPIC_PREFIX + cid + "_").length());
-        } else {
+    public static String parseNormalTopic(String topic, String group) {
+        if (!topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
             return topic;
         }
+
+        return topic.substring((MQConstants.RETRY_GROUP_TOPIC_PREFIX + group + "_").length());
     }
 
     /**
