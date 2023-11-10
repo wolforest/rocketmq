@@ -62,20 +62,12 @@ public class PopBufferMergeService extends ServiceThread {
     private final int countOfSecond1 = (int) (1000 / interval);
     private final int countOfSecond30 = (int) (30 * 1000 / interval);
 
-    private final List<Byte> batchAckIndexList = new ArrayList(32);
+    private final List<Byte> batchAckIndexList = new ArrayList<>(32);
     private volatile boolean master = false;
 
     public PopBufferMergeService(BrokerController brokerController) {
         this.brokerController = brokerController;
         this.reviveTopic = KeyBuilder.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
-    }
-
-    private boolean isShouldRunning() {
-        if (this.brokerController.getBrokerConfig().isEnableSlaveActingMaster()) {
-            return true;
-        }
-        this.master = brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE;
-        return this.master;
     }
 
     @Override
@@ -127,42 +119,11 @@ public class PopBufferMergeService extends ServiceThread {
         }
     }
 
-    private int scanCommitOffset() {
-        Iterator<Map.Entry<String, QueueWithTime<PopCheckPointWrapper>>> iterator = this.commitOffsets.entrySet().iterator();
-        int count = 0;
-        while (iterator.hasNext()) {
-            Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry = iterator.next();
-            LinkedBlockingDeque<PopCheckPointWrapper> queue = entry.getValue().get();
-            PopCheckPointWrapper pointWrapper;
-            while ((pointWrapper = queue.peek()) != null) {
-                // 1. just offset & stored, not processed by scan
-                // 2. ck is buffer(acked)
-                // 3. ck is buffer(not all acked), all ak are stored and ck is stored
-                if (pointWrapper.isJustOffset() && pointWrapper.isCkStored() || isCkDone(pointWrapper)
-                    || isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored()) {
-                    if (commitOffset(pointWrapper)) {
-                        queue.poll();
-                    } else {
-                        break;
-                    }
-                } else {
-                    if (System.currentTimeMillis() - pointWrapper.getCk().getPopTime()
-                        > brokerController.getBrokerConfig().getPopCkStayBufferTime() * 2) {
-                        POP_LOGGER.warn("[PopBuffer] ck offset long time not commit, {}", pointWrapper);
-                    }
-                    break;
-                }
-            }
-            final int qs = queue.size();
-            count += qs;
-            if (qs > 5000 && scanTimes % countOfSecond1 == 0) {
-                POP_LOGGER.info("[PopBuffer] offset queue size too long, {}, {}",
-                    entry.getKey(), qs);
-            }
-        }
-        return count;
-    }
-
+    /**
+     *
+     * @param lockKey topic@group@queueId
+     * @return offset
+     */
     public long getLatestOffset(String lockKey) {
         QueueWithTime<PopCheckPointWrapper> queue = this.commitOffsets.get(lockKey);
         if (queue == null) {
@@ -177,6 +138,245 @@ public class PopBufferMergeService extends ServiceThread {
 
     public long getLatestOffset(String topic, String group, int queueId) {
         return getLatestOffset(KeyBuilder.buildConsumeKey(topic, group, queueId));
+    }
+
+    /**
+     * put to store && add to buffer.
+     *
+     * @param point check point
+     * @param reviveQueueId revive queue id
+     * @param reviveQueueOffset revive queue offset
+     * @param nextBeginOffset next begin offset
+     * @return boolean
+     */
+    public boolean addCkJustOffset(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
+        PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, reviveQueueOffset, point, nextBeginOffset, true);
+
+        if (this.buffer.containsKey(pointWrapper.getMergeKey())) {
+            // when mergeKey conflict
+            // will cause PopBufferMergeService.scanCommitOffset cannot poll PopCheckPointWrapper
+            POP_LOGGER.warn("[PopBuffer]mergeKey conflict when add ckJustOffset. ck:{}, mergeKey:{}", pointWrapper, pointWrapper.getMergeKey());
+            return false;
+        }
+
+        this.putCkToStore(pointWrapper, !checkQueueOk(pointWrapper));
+
+        putOffsetQueue(pointWrapper);
+        this.buffer.put(pointWrapper.getMergeKey(), pointWrapper);
+        this.counter.incrementAndGet();
+        if (brokerController.getBrokerConfig().isEnablePopLog()) {
+            POP_LOGGER.info("[PopBuffer]add ck just offset, {}", pointWrapper);
+        }
+        return  true;
+    }
+
+    public void addCkMock(String group, String topic, int queueId, long startOffset, long invisibleTime,
+        long popTime, int reviveQueueId, long nextBeginOffset, String brokerName) {
+        final PopCheckPoint ck = new PopCheckPoint();
+        ck.setBitMap(0);
+        ck.setNum((byte) 0);
+        ck.setPopTime(popTime);
+        ck.setInvisibleTime(invisibleTime);
+        ck.setStartOffset(startOffset);
+        ck.setCId(group);
+        ck.setTopic(topic);
+        ck.setQueueId(queueId);
+        ck.setBrokerName(brokerName);
+
+        PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, Long.MAX_VALUE, ck, nextBeginOffset, true);
+        pointWrapper.setCkStored(true);
+
+        putOffsetQueue(pointWrapper);
+        if (brokerController.getBrokerConfig().isEnablePopLog()) {
+            POP_LOGGER.info("[PopBuffer]add ck just offset, mocked, {}", pointWrapper);
+        }
+    }
+
+    /**
+     * add pop checkPoint to buffer(memory)
+     * 1. checkPoints will be stored periodically
+     *    when this.run() method is executing
+     * 2. while method run executing
+     *    checkPoints will be stored after ackMsg
+     *    to make sure every message consumed by consumer
+     *
+     * @param point PopCheckPoint
+     * @param reviveQueueId reviveQueueId
+     * @param reviveQueueOffset reviveQueueOffset
+     * @param nextBeginOffset nextBeginOffset
+     * @return boolean add status
+     */
+    public boolean addCheckPoint(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
+        // key: point.getT() + point.getC() + point.getQ() + point.getSo() + point.getPt()
+        if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) {
+            return false;
+        }
+        if (!serving) {
+            return false;
+        }
+
+        long now = System.currentTimeMillis();
+        if (point.getReviveTime() - now < brokerController.getBrokerConfig().getPopCkStayBufferTimeOut() + 1500) {
+            if (brokerController.getBrokerConfig().isEnablePopLog()) {
+                POP_LOGGER.warn("[PopBuffer]add ck, timeout, {}, {}", point, now);
+            }
+            return false;
+        }
+
+        if (this.counter.get() > brokerController.getBrokerConfig().getPopCkMaxBufferSize()) {
+            POP_LOGGER.warn("[PopBuffer]add ck, max size, {}, {}", point, this.counter.get());
+            return false;
+        }
+
+        PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, reviveQueueOffset, point, nextBeginOffset);
+        if (!checkQueueOk(pointWrapper)) {
+            return false;
+        }
+
+        if (this.buffer.containsKey(pointWrapper.getMergeKey())) {
+            // when mergeKey conflict
+            // will cause PopBufferMergeService.scanCommitOffset cannot poll PopCheckPointWrapper
+            POP_LOGGER.warn("[PopBuffer]mergeKey conflict when add ck. ck:{}, mergeKey:{}", pointWrapper, pointWrapper.getMergeKey());
+            return false;
+        }
+
+        putOffsetQueue(pointWrapper);
+        this.buffer.put(pointWrapper.getMergeKey(), pointWrapper);
+        this.counter.incrementAndGet();
+        if (brokerController.getBrokerConfig().isEnablePopLog()) {
+            POP_LOGGER.info("[PopBuffer]add ck, {}", pointWrapper);
+        }
+        return true;
+    }
+
+    /**
+     * add ackMsg to buffer
+     * ackMsgs will be stored in buffer(memory)
+     * and persist periodically
+     *
+     * @param reviveQid reviveQid
+     * @param ackMsg AckMsg
+     * @return adding status
+     */
+    public boolean addAckMsg(int reviveQid, AckMsg ackMsg) {
+        if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) {
+            return false;
+        }
+        if (!serving) {
+            return false;
+        }
+        try {
+            PopCheckPointWrapper pointWrapper = this.buffer.get(ackMsg.getTopic() + ackMsg.getConsumerGroup() + ackMsg.getQueueId() + ackMsg.getStartOffset() + ackMsg.getPopTime() + ackMsg.getBrokerName());
+            if (pointWrapper == null) {
+                if (brokerController.getBrokerConfig().isEnablePopLog()) {
+                    POP_LOGGER.warn("[PopBuffer]add ack fail, rqId={}, no ck, {}", reviveQid, ackMsg);
+                }
+                return false;
+            }
+
+            if (pointWrapper.isJustOffset()) {
+                return false;
+            }
+
+            PopCheckPoint point = pointWrapper.getCk();
+            long now = System.currentTimeMillis();
+
+            if (point.getReviveTime() - now < brokerController.getBrokerConfig().getPopCkStayBufferTimeOut() + 1500) {
+                if (brokerController.getBrokerConfig().isEnablePopLog()) {
+                    POP_LOGGER.warn("[PopBuffer]add ack fail, rqId={}, almost timeout for revive, {}, {}, {}", reviveQid, pointWrapper, ackMsg, now);
+                }
+                return false;
+            }
+
+            if (now - point.getPopTime() > brokerController.getBrokerConfig().getPopCkStayBufferTime() - 1500) {
+                if (brokerController.getBrokerConfig().isEnablePopLog()) {
+                    POP_LOGGER.warn("[PopBuffer]add ack fail, rqId={}, stay too long, {}, {}, {}", reviveQid, pointWrapper, ackMsg, now);
+                }
+                return false;
+            }
+
+            if (ackMsg instanceof BatchAckMsg) {
+                for (Long ackOffset : ((BatchAckMsg) ackMsg).getAckOffsetList()) {
+                    int indexOfAck = point.indexOfAck(ackOffset);
+                    if (indexOfAck > -1) {
+                        markBitCAS(pointWrapper.getBits(), indexOfAck);
+                    } else {
+                        POP_LOGGER.error("[PopBuffer]Invalid index of ack, reviveQid={}, {}, {}", reviveQid, ackMsg, point);
+                    }
+                }
+            } else {
+                int indexOfAck = point.indexOfAck(ackMsg.getAckOffset());
+                if (indexOfAck > -1) {
+                    markBitCAS(pointWrapper.getBits(), indexOfAck);
+                } else {
+                    POP_LOGGER.error("[PopBuffer]Invalid index of ack, reviveQid={}, {}, {}", reviveQid, ackMsg, point);
+                    return true;
+                }
+            }
+
+            if (brokerController.getBrokerConfig().isEnablePopLog()) {
+                POP_LOGGER.info("[PopBuffer]add ack, rqId={}, {}, {}", reviveQid, pointWrapper, ackMsg);
+            }
+
+//            // check ak done
+//            if (isCkDone(pointWrapper)) {
+//                // cancel ck for timer
+//                cancelCkTimer(pointWrapper);
+//            }
+            return true;
+        } catch (Throwable e) {
+            POP_LOGGER.error("[PopBuffer]add ack error, rqId=" + reviveQid + ", " + ackMsg, e);
+        }
+
+        return false;
+    }
+
+    public void clearOffsetQueue(String lockKey) {
+        this.commitOffsets.remove(lockKey);
+    }
+
+    private boolean isShouldRunning() {
+        if (this.brokerController.getBrokerConfig().isEnableSlaveActingMaster()) {
+            return true;
+        }
+        this.master = brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE;
+        return this.master;
+    }
+
+    private int scanCommitOffset() {
+        Iterator<Map.Entry<String, QueueWithTime<PopCheckPointWrapper>>> iterator = this.commitOffsets.entrySet().iterator();
+        int count = 0;
+        while (iterator.hasNext()) {
+            Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry = iterator.next();
+            LinkedBlockingDeque<PopCheckPointWrapper> queue = entry.getValue().get();
+            PopCheckPointWrapper pointWrapper;
+            while ((pointWrapper = queue.peek()) != null) {
+                // 1. just offset & stored, not processed by scan
+                // 2. ck is buffer(ack)
+                // 3. ck is buffer(not all ack), all ak are stored and ck is stored
+                if (pointWrapper.isJustOffset() && pointWrapper.isCkStored() || isCkDone(pointWrapper)
+                    || isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored()) {
+                    if (commitOffset(pointWrapper)) {
+                        queue.poll();
+                    } else {
+                        break;
+                    }
+                } else {
+                    if (System.currentTimeMillis() - pointWrapper.getCk().getPopTime()
+                        > brokerController.getBrokerConfig().getPopCkStayBufferTime() * 2L) {
+                        POP_LOGGER.warn("[PopBuffer] ck offset long time not commit, {}", pointWrapper);
+                    }
+                    break;
+                }
+            }
+            final int qs = queue.size();
+            count += qs;
+            if (qs > 5000 && scanTimes % countOfSecond1 == 0) {
+                POP_LOGGER.info("[PopBuffer] offset queue size too long, {}, {}",
+                    entry.getKey(), qs);
+            }
+        }
+        return count;
     }
 
     private void scanGarbage() {
@@ -385,9 +585,7 @@ public class PopBufferMergeService extends ServiceThread {
 
     public int getOffsetTotalSize() {
         int count = 0;
-        Iterator<Map.Entry<String, QueueWithTime<PopCheckPointWrapper>>> iterator = this.commitOffsets.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry = iterator.next();
+        for (Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry : this.commitOffsets.entrySet()) {
             LinkedBlockingDeque<PopCheckPointWrapper> queue = entry.getValue().get();
             count += queue.size();
         }
@@ -462,200 +660,6 @@ public class PopBufferMergeService extends ServiceThread {
         return queue.get().size() < brokerController.getBrokerConfig().getPopCkOffsetMaxQueueSize();
     }
 
-    /**
-     * put to store && add to buffer.
-     *
-     * @param point check point
-     * @param reviveQueueId revive queue id
-     * @param reviveQueueOffset revive queue offset
-     * @param nextBeginOffset next begin offset
-     * @return boolean
-     */
-    public boolean addCkJustOffset(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
-        PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, reviveQueueOffset, point, nextBeginOffset, true);
-
-        if (this.buffer.containsKey(pointWrapper.getMergeKey())) {
-            // when mergeKey conflict
-            // will cause PopBufferMergeService.scanCommitOffset cannot poll PopCheckPointWrapper
-            POP_LOGGER.warn("[PopBuffer]mergeKey conflict when add ckJustOffset. ck:{}, mergeKey:{}", pointWrapper, pointWrapper.getMergeKey());
-            return false;
-        }
-
-        this.putCkToStore(pointWrapper, !checkQueueOk(pointWrapper));
-
-        putOffsetQueue(pointWrapper);
-        this.buffer.put(pointWrapper.getMergeKey(), pointWrapper);
-        this.counter.incrementAndGet();
-        if (brokerController.getBrokerConfig().isEnablePopLog()) {
-            POP_LOGGER.info("[PopBuffer]add ck just offset, {}", pointWrapper);
-        }
-        return  true;
-    }
-
-    public void addCkMock(String group, String topic, int queueId, long startOffset, long invisibleTime,
-        long popTime, int reviveQueueId, long nextBeginOffset, String brokerName) {
-        final PopCheckPoint ck = new PopCheckPoint();
-        ck.setBitMap(0);
-        ck.setNum((byte) 0);
-        ck.setPopTime(popTime);
-        ck.setInvisibleTime(invisibleTime);
-        ck.setStartOffset(startOffset);
-        ck.setCId(group);
-        ck.setTopic(topic);
-        ck.setQueueId(queueId);
-        ck.setBrokerName(brokerName);
-
-        PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, Long.MAX_VALUE, ck, nextBeginOffset, true);
-        pointWrapper.setCkStored(true);
-
-        putOffsetQueue(pointWrapper);
-        if (brokerController.getBrokerConfig().isEnablePopLog()) {
-            POP_LOGGER.info("[PopBuffer]add ck just offset, mocked, {}", pointWrapper);
-        }
-    }
-
-    /**
-     * add pop checkPoint to buffer(memory)
-     * 1. checkPoints will be stored periodically
-     *    when this.run() method is executing
-     * 2. while method run executing
-     *    checkPoints will be stored after ackMsg
-     *    to make sure every message consumed by consumer
-     *
-     * @param point PopCheckPoint
-     * @param reviveQueueId reviveQueueId
-     * @param reviveQueueOffset reviveQueueOffset
-     * @param nextBeginOffset nextBeginOffset
-     * @return boolean add status
-     */
-    public boolean addCheckPoint(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
-        // key: point.getT() + point.getC() + point.getQ() + point.getSo() + point.getPt()
-        if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) {
-            return false;
-        }
-        if (!serving) {
-            return false;
-        }
-
-        long now = System.currentTimeMillis();
-        if (point.getReviveTime() - now < brokerController.getBrokerConfig().getPopCkStayBufferTimeOut() + 1500) {
-            if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                POP_LOGGER.warn("[PopBuffer]add ck, timeout, {}, {}", point, now);
-            }
-            return false;
-        }
-
-        if (this.counter.get() > brokerController.getBrokerConfig().getPopCkMaxBufferSize()) {
-            POP_LOGGER.warn("[PopBuffer]add ck, max size, {}, {}", point, this.counter.get());
-            return false;
-        }
-
-        PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, reviveQueueOffset, point, nextBeginOffset);
-        if (!checkQueueOk(pointWrapper)) {
-            return false;
-        }
-
-        if (this.buffer.containsKey(pointWrapper.getMergeKey())) {
-            // when mergeKey conflict
-            // will cause PopBufferMergeService.scanCommitOffset cannot poll PopCheckPointWrapper
-            POP_LOGGER.warn("[PopBuffer]mergeKey conflict when add ck. ck:{}, mergeKey:{}", pointWrapper, pointWrapper.getMergeKey());
-            return false;
-        }
-
-        putOffsetQueue(pointWrapper);
-        this.buffer.put(pointWrapper.getMergeKey(), pointWrapper);
-        this.counter.incrementAndGet();
-        if (brokerController.getBrokerConfig().isEnablePopLog()) {
-            POP_LOGGER.info("[PopBuffer]add ck, {}", pointWrapper);
-        }
-        return true;
-    }
-
-    /**
-     * add ackMsg to buffer
-     * ackMsgs will be stored in buffer(memory)
-     * and persist periodically
-     *
-     * @param reviveQid reviveQid
-     * @param ackMsg AckMsg
-     * @return adding status
-     */
-    public boolean addAckMsg(int reviveQid, AckMsg ackMsg) {
-        if (!brokerController.getBrokerConfig().isEnablePopBufferMerge()) {
-            return false;
-        }
-        if (!serving) {
-            return false;
-        }
-        try {
-            PopCheckPointWrapper pointWrapper = this.buffer.get(ackMsg.getTopic() + ackMsg.getConsumerGroup() + ackMsg.getQueueId() + ackMsg.getStartOffset() + ackMsg.getPopTime() + ackMsg.getBrokerName());
-            if (pointWrapper == null) {
-                if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                    POP_LOGGER.warn("[PopBuffer]add ack fail, rqId={}, no ck, {}", reviveQid, ackMsg);
-                }
-                return false;
-            }
-
-            if (pointWrapper.isJustOffset()) {
-                return false;
-            }
-
-            PopCheckPoint point = pointWrapper.getCk();
-            long now = System.currentTimeMillis();
-
-            if (point.getReviveTime() - now < brokerController.getBrokerConfig().getPopCkStayBufferTimeOut() + 1500) {
-                if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                    POP_LOGGER.warn("[PopBuffer]add ack fail, rqId={}, almost timeout for revive, {}, {}, {}", reviveQid, pointWrapper, ackMsg, now);
-                }
-                return false;
-            }
-
-            if (now - point.getPopTime() > brokerController.getBrokerConfig().getPopCkStayBufferTime() - 1500) {
-                if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                    POP_LOGGER.warn("[PopBuffer]add ack fail, rqId={}, stay too long, {}, {}, {}", reviveQid, pointWrapper, ackMsg, now);
-                }
-                return false;
-            }
-
-            if (ackMsg instanceof BatchAckMsg) {
-                for (Long ackOffset : ((BatchAckMsg) ackMsg).getAckOffsetList()) {
-                    int indexOfAck = point.indexOfAck(ackOffset);
-                    if (indexOfAck > -1) {
-                        markBitCAS(pointWrapper.getBits(), indexOfAck);
-                    } else {
-                        POP_LOGGER.error("[PopBuffer]Invalid index of ack, reviveQid={}, {}, {}", reviveQid, ackMsg, point);
-                    }
-                }
-            } else {
-                int indexOfAck = point.indexOfAck(ackMsg.getAckOffset());
-                if (indexOfAck > -1) {
-                    markBitCAS(pointWrapper.getBits(), indexOfAck);
-                } else {
-                    POP_LOGGER.error("[PopBuffer]Invalid index of ack, reviveQid={}, {}, {}", reviveQid, ackMsg, point);
-                    return true;
-                }
-            }
-
-            if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                POP_LOGGER.info("[PopBuffer]add ack, rqId={}, {}, {}", reviveQid, pointWrapper, ackMsg);
-            }
-
-//            // check ak done
-//            if (isCkDone(pointWrapper)) {
-//                // cancel ck for timer
-//                cancelCkTimer(pointWrapper);
-//            }
-            return true;
-        } catch (Throwable e) {
-            POP_LOGGER.error("[PopBuffer]add ack error, rqId=" + reviveQid + ", " + ackMsg, e);
-        }
-
-        return false;
-    }
-
-    public void clearOffsetQueue(String lockKey) {
-        this.commitOffsets.remove(lockKey);
-    }
 
     private void putCkToStore(final PopCheckPointWrapper pointWrapper, final boolean runInCurrent) {
         if (pointWrapper.getReviveQueueOffset() >= 0) {

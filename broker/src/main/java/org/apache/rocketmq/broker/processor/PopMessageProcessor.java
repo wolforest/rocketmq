@@ -483,6 +483,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             ? KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup())
             : requestHeader.getTopic();
 
+        // originally initialize offset and getPopOffset here, move to try lock block
         long offset;
         CompletableFuture<Long> future = new CompletableFuture<>();
         String lockKey = KeyBuilder.buildConsumeKey(topic, requestHeader.getConsumerGroup(), queueId);
@@ -490,7 +491,9 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         // try lock
         QueueLockManager queueLockManager = brokerController.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
         if (!queueLockManager.tryLock(lockKey)) {
+            // move from offset initialization
             offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), false, lockKey, false);
+
             restNum = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
             future.complete(restNum);
             return future;
@@ -507,11 +510,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             }
 
             if (requestHeader.isOrder()) {
-                this.brokerController.getPopInflightMessageCounter().clearInFlightMessageNum(
-                    topic,
-                    requestHeader.getConsumerGroup(),
-                    queueId
-                );
+                this.brokerController.getPopInflightMessageCounter().clearInFlightMessageNum(topic, requestHeader.getConsumerGroup(), queueId);
             }
 
             if (getMessageResult.getMessageMapedList().size() >= requestHeader.getMaxMsgNums()) {
@@ -659,6 +658,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
 
         if (checkResetOffset) {
+            // admin related feature, can ignore
             Long resetOffset = resetPopOffset(topic, group, queueId);
             if (resetOffset != null) {
                 return resetOffset;
@@ -669,9 +669,9 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         long bufferOffset = popBufferMergeService.getLatestOffset(lockKey);
         if (bufferOffset < 0) {
             return offset;
-        } else {
-            return Math.max(bufferOffset, offset);
         }
+
+        return Math.max(bufferOffset, offset);
     }
 
     private long getInitOffset(String topic, String group, int queueId, int initMode, boolean init) {

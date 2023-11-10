@@ -500,7 +500,7 @@ public class BrokerMetricsManager {
                         .put(LABEL_CONSUMER_GROUP, attr.group)
                         .put(LABEL_LANGUAGE, attr.language.name().toLowerCase())
                         .put(LABEL_VERSION, MQVersion.getVersionDesc(attr.version).toLowerCase())
-                        .put(LABEL_CONSUME_MODE, attr.consumeMode.getTypeCN().toLowerCase())
+                        .put(LABEL_CONSUME_MODE, attr.consumeType.getTypeCN().toLowerCase())
                         .put(LABEL_PROTOCOL_TYPE, PROTOCOL_TYPE_REMOTING)
                         .put(LABEL_IS_SYSTEM, isSystemGroup(attr.group))
                         .build();
