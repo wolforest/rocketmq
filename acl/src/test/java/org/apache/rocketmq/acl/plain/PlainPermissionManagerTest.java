@@ -23,7 +23,7 @@ import org.apache.rocketmq.acl.common.AclException;
 import org.apache.rocketmq.acl.common.AclUtils;
 import org.apache.rocketmq.acl.common.Permission;
 import org.apache.rocketmq.common.config.AclConfig;
-import org.apache.rocketmq.common.PlainAccessConfig;
+import org.apache.rocketmq.common.config.PlainAccessConfig;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Lists;

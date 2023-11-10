@@ -19,7 +19,7 @@ package org.apache.rocketmq.acl.common;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.acl.plain.PlainAccessData;
-import org.apache.rocketmq.common.PlainAccessConfig;
+import org.apache.rocketmq.common.config.PlainAccessConfig;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.junit.Assert;
 import org.junit.Test;

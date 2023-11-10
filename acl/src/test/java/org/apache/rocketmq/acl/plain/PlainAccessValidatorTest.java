@@ -35,7 +35,7 @@ import org.apache.rocketmq.acl.common.AclException;
 import org.apache.rocketmq.acl.common.AclUtils;
 import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.common.config.AclConfig;
-import org.apache.rocketmq.common.PlainAccessConfig;
+import org.apache.rocketmq.common.config.PlainAccessConfig;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.protocol.DataVersion;

@@ -48,7 +48,7 @@ import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.common.BoundaryType;
 import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.Pair;
-import org.apache.rocketmq.common.PlainAccessConfig;
+import org.apache.rocketmq.common.config.PlainAccessConfig;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.topic.TopicConfig;

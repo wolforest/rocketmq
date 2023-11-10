@@ -49,7 +49,7 @@ import org.apache.rocketmq.acl.common.AuthorizationHeader;
 import org.apache.rocketmq.acl.common.Permission;
 import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.common.constant.MQVersion;
-import org.apache.rocketmq.common.PlainAccessConfig;
+import org.apache.rocketmq.common.config.PlainAccessConfig;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;

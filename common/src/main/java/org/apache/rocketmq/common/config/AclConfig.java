@@ -17,7 +17,6 @@
 package org.apache.rocketmq.common.config;
 
 import java.util.List;
-import org.apache.rocketmq.common.PlainAccessConfig;
 
 public class AclConfig {
 
