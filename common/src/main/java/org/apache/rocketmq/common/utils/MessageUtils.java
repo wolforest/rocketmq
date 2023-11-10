@@ -51,47 +51,50 @@ public class MessageUtils {
     }
 
     public static String deleteProperty(String propertiesString, String name) {
-        if (propertiesString != null) {
-            int idx0 = 0;
-            int idx1;
-            int idx2;
-            idx1 = propertiesString.indexOf(name, idx0);
-            if (idx1 != -1) {
-                // cropping may be required
-                StringBuilder stringBuilder = new StringBuilder(propertiesString.length());
-                while (true) {
-                    int startIdx = idx0;
-                    while (true) {
-                        idx1 = propertiesString.indexOf(name, startIdx);
-                        if (idx1 == -1) {
-                            break;
-                        }
-                        startIdx = idx1 + name.length();
-                        if (idx1 == 0 || propertiesString.charAt(idx1 - 1) == PROPERTY_SEPARATOR) {
-                            if (propertiesString.length() > idx1 + name.length()
-                                && propertiesString.charAt(idx1 + name.length()) == NAME_VALUE_SEPARATOR) {
-                                break;
-                            }
-                        }
-                    }
-                    if (idx1 == -1) {
-                        // there are no characters that need to be skipped. Append all remaining characters.
-                        stringBuilder.append(propertiesString, idx0, propertiesString.length());
-                        break;
-                    }
-                    // there are characters that need to be cropped
-                    stringBuilder.append(propertiesString, idx0, idx1);
-                    // move idx2 to the end of the cropped character
-                    idx2 = propertiesString.indexOf(PROPERTY_SEPARATOR, idx1 + name.length() + 1);
-                    // all subsequent characters will be cropped
-                    if (idx2 == -1) {
-                        break;
-                    }
-                    idx0 = idx2 + 1;
-                }
-                return stringBuilder.toString();
-            }
+        if (propertiesString == null) {
+            return null;
         }
-        return propertiesString;
+
+        int idx0 = 0;
+        int idx1;
+        int idx2;
+        idx1 = propertiesString.indexOf(name, idx0);
+        if (idx1 == -1) {
+            return propertiesString;
+        }
+
+        // cropping may be required
+        StringBuilder stringBuilder = new StringBuilder(propertiesString.length());
+        while (true) {
+            int startIdx = idx0;
+            while (true) {
+                idx1 = propertiesString.indexOf(name, startIdx);
+                if (idx1 == -1) {
+                    break;
+                }
+                startIdx = idx1 + name.length();
+                if (idx1 == 0 || propertiesString.charAt(idx1 - 1) == PROPERTY_SEPARATOR) {
+                    if (propertiesString.length() > idx1 + name.length()
+                        && propertiesString.charAt(idx1 + name.length()) == NAME_VALUE_SEPARATOR) {
+                        break;
+                    }
+                }
+            }
+            if (idx1 == -1) {
+                // there are no characters that need to be skipped. Append all remaining characters.
+                stringBuilder.append(propertiesString, idx0, propertiesString.length());
+                break;
+            }
+            // there are characters that need to be cropped
+            stringBuilder.append(propertiesString, idx0, idx1);
+            // move idx2 to the end of the cropped character
+            idx2 = propertiesString.indexOf(PROPERTY_SEPARATOR, idx1 + name.length() + 1);
+            // all subsequent characters will be cropped
+            if (idx2 == -1) {
+                break;
+            }
+            idx0 = idx2 + 1;
+        }
+        return stringBuilder.toString();
     }
 }
