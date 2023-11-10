@@ -18,8 +18,6 @@ package org.apache.rocketmq.common.config;
 
 import java.io.IOException;
 import java.util.Map;
-
-import org.apache.rocketmq.common.config.RocksDBConfigManager;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
