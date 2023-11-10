@@ -37,16 +37,6 @@ public class PopConstants {
     public static final String BATCH_ACK_TAG = "bAck";
     public static final String SPLIT = "@";
 
-    /**
-     * Build cluster revive topic
-     *
-     * @param clusterName cluster name
-     * @return revive topic
-     */
-    public static String buildClusterReviveTopic(String clusterName) {
-        return PopConstants.REVIVE_TOPIC + clusterName;
-    }
-
     public static boolean isStartWithRevivePrefix(String topicName) {
         return topicName != null && topicName.startsWith(REVIVE_TOPIC);
     }

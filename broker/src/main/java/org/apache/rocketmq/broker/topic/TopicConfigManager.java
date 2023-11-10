@@ -33,7 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.ConfigManager;
-import org.apache.rocketmq.common.constant.PopConstants;
+import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.TopicAttributes;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.attribute.Attribute;
@@ -106,7 +106,7 @@ public class TopicConfigManager extends ConfigManager {
             1, 1);
 
         // PopAckConstants.REVIVE_TOPIC
-        addSystemTopic(PopConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName()),
+        addSystemTopic(KeyBuilder.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName()),
             this.brokerController.getBrokerConfig().getReviveQueueNum(),
             this.brokerController.getBrokerConfig().getReviveQueueNum());
 

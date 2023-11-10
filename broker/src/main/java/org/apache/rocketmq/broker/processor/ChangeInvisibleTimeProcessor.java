@@ -22,6 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.metrics.PopMetricsManager;
 import org.apache.rocketmq.broker.util.PopUtils;
+import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -52,7 +53,7 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
 
     public ChangeInvisibleTimeProcessor(final BrokerController brokerController) {
         this.brokerController = brokerController;
-        this.reviveTopic = PopConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
+        this.reviveTopic = KeyBuilder.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
     }
 
     @Override

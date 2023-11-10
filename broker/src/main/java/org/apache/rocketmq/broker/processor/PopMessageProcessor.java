@@ -479,13 +479,12 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         Channel channel, long popTime, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder orderCountInfo) {
 
-        //TODO: move it out of this method
+        //move it out of this method
         String topic = isRetry
             ? KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup())
             : requestHeader.getTopic();
 
-        String lockKey = topic + PopConstants.SPLIT + requestHeader.getConsumerGroup() + PopConstants.SPLIT + queueId;
-        boolean isOrder = requestHeader.isOrder();
+        String lockKey = KeyBuilder.buildConsumeKey(topic, requestHeader.getConsumerGroup(), queueId);
         long offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), false, lockKey, false);
         CompletableFuture<Long> future = new CompletableFuture<>();
 
@@ -499,13 +498,13 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         try {
             future.whenComplete((result, throwable) -> queueLockManager.unLock(lockKey));
             offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), true, lockKey, true);
-            if (isOrder && brokerController.getConsumerOrderInfoManager().checkBlock(attemptId, topic,
+            if (requestHeader.isOrder() && brokerController.getConsumerOrderInfoManager().checkBlock(attemptId, topic,
                 requestHeader.getConsumerGroup(), queueId, requestHeader.getInvisibleTime())) {
                 future.complete(this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum);
                 return future;
             }
 
-            if (isOrder) {
+            if (requestHeader.isOrder()) {
                 this.brokerController.getPopInflightMessageCounter().clearInFlightMessageNum(
                     topic,
                     requestHeader.getConsumerGroup(),
@@ -567,7 +566,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
                     BrokerMetricsManager.messagesOutTotal.add(result.getMessageCount(), attributes);
                     BrokerMetricsManager.throughputOutTotal.add(result.getBufferTotalSize(), attributes);
 
-                    if (isOrder) {
+                    if (requestHeader.isOrder()) {
                         this.brokerController.getConsumerOrderInfoManager().update(requestHeader.getAttemptId(), isRetry, topic, requestHeader.getConsumerGroup(), queueId, popTime, requestHeader.getInvisibleTime(), result.getMessageQueueOffset(), orderCountInfo);
                         this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic, queueId, finalOffset);
                     } else {

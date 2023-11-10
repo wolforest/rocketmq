@@ -25,6 +25,7 @@ import org.apache.rocketmq.broker.longpolling.PopRequest;
 import org.apache.rocketmq.broker.processor.NotificationProcessor;
 import org.apache.rocketmq.broker.processor.PopMessageProcessor;
 import org.apache.rocketmq.broker.util.PopUtils;
+import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -50,7 +51,7 @@ public class PopServiceManager {
 
     public PopServiceManager(final BrokerController brokerController, PopMessageProcessor popMessageProcessor, NotificationProcessor notificationProcessor) {
         this.brokerController = brokerController;
-        this.reviveTopic = PopConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
+        this.reviveTopic = KeyBuilder.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
 
         this.popPollingService = new PopLongPollingService(brokerController, popMessageProcessor);
         this.notificationPollingService = new PopLongPollingService(brokerController, notificationProcessor);

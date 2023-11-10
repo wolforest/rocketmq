@@ -51,4 +51,14 @@ public class KeyBuilder {
     public static String buildPollingNotificationKey(String topic, int queueId) {
         return topic + PopConstants.SPLIT + queueId;
     }
+
+    /**
+     * Build cluster revive topic
+     *
+     * @param clusterName cluster name
+     * @return revive topic
+     */
+    public static String buildClusterReviveTopic(String clusterName) {
+        return PopConstants.REVIVE_TOPIC + clusterName;
+    }
 }

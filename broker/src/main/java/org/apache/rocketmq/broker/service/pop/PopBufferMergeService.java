@@ -67,7 +67,7 @@ public class PopBufferMergeService extends ServiceThread {
 
     public PopBufferMergeService(BrokerController brokerController) {
         this.brokerController = brokerController;
-        this.reviveTopic = PopConstants.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
+        this.reviveTopic = KeyBuilder.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
     }
 
     private boolean isShouldRunning() {
