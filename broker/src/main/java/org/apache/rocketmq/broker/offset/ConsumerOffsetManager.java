@@ -280,6 +280,7 @@ public class ConsumerOffsetManager extends ConfigManager {
         // topic@group
         String key = topic + TOPIC_GROUP_SEPARATOR + group;
 
+        // useServerSideResetOffset default value is false
         if (this.brokerController.getBrokerConfig().isUseServerSideResetOffset()) {
             Map<Integer, Long> reset = resetOffsetTable.get(key);
             if (null != reset && reset.containsKey(queueId)) {
