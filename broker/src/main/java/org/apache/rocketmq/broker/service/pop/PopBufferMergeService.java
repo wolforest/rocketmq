@@ -176,7 +176,7 @@ public class PopBufferMergeService extends ServiceThread {
     }
 
     public long getLatestOffset(String topic, String group, int queueId) {
-        return getLatestOffset(KeyBuilder.buildPollingKey(topic, group, queueId));
+        return getLatestOffset(KeyBuilder.buildConsumeKey(topic, group, queueId));
     }
 
     private void scanGarbage() {

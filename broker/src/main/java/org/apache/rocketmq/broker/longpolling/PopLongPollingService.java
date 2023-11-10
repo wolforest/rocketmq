@@ -175,7 +175,7 @@ public class PopLongPollingService extends ServiceThread {
     }
 
     public boolean notifyMessageArriving(final String topic, final String cid, final int queueId) {
-        ConcurrentSkipListSet<PopRequest> remotingCommands = pollingMap.get(KeyBuilder.buildPollingKey(topic, cid, queueId));
+        ConcurrentSkipListSet<PopRequest> remotingCommands = pollingMap.get(KeyBuilder.buildConsumeKey(topic, cid, queueId));
         if (remotingCommands == null || remotingCommands.isEmpty()) {
             return false;
         }
@@ -259,7 +259,7 @@ public class PopLongPollingService extends ServiceThread {
             }
             return POLLING_TIMEOUT;
         }
-        String key = KeyBuilder.buildPollingKey(requestHeader.getTopic(), requestHeader.getConsumerGroup(),
+        String key = KeyBuilder.buildConsumeKey(requestHeader.getTopic(), requestHeader.getConsumerGroup(),
             requestHeader.getQueueId());
         ConcurrentSkipListSet<PopRequest> queue = pollingMap.get(key);
         if (queue == null) {

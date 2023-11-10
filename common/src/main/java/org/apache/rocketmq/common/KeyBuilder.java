@@ -40,7 +40,10 @@ public class KeyBuilder {
         }
     }
 
-    public static String buildPollingKey(String topic, String group, int queueId) {
+    /**
+     * @renamed from buildPollingKey to buildConsumeKey
+     */
+    public static String buildConsumeKey(String topic, String group, int queueId) {
         return topic + PopAckConstants.SPLIT + group + PopAckConstants.SPLIT + queueId;
     }
 

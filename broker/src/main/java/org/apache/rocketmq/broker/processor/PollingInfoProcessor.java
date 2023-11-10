@@ -105,7 +105,7 @@ public class PollingInfoProcessor implements NettyRequestProcessor {
             response.setRemark("subscription group no permission, " + requestHeader.getConsumerGroup());
             return response;
         }
-        String key = KeyBuilder.buildPollingKey(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
+        String key = KeyBuilder.buildConsumeKey(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
         ConcurrentSkipListSet<PopRequest> queue = this.brokerController.getBrokerNettyServer().getPopServiceManager().getPopPollingMap().get(key);
         if (queue != null) {
             responseHeader.setPollingNum(queue.size());
