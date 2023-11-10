@@ -484,12 +484,14 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             ? KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup())
             : requestHeader.getTopic();
 
-        String lockKey = KeyBuilder.buildConsumeKey(topic, requestHeader.getConsumerGroup(), queueId);
-        long offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), false, lockKey, false);
+        long offset;
         CompletableFuture<Long> future = new CompletableFuture<>();
+        String lockKey = KeyBuilder.buildConsumeKey(topic, requestHeader.getConsumerGroup(), queueId);
 
+        // try lock
         QueueLockManager queueLockManager = brokerController.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
         if (!queueLockManager.tryLock(lockKey)) {
+            offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), false, lockKey, false);
             restNum = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
             future.complete(restNum);
             return future;
@@ -498,6 +500,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         try {
             future.whenComplete((result, throwable) -> queueLockManager.unLock(lockKey));
             offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), true, lockKey, true);
+
             if (requestHeader.isOrder() && brokerController.getConsumerOrderInfoManager().checkBlock(attemptId, topic,
                 requestHeader.getConsumerGroup(), queueId, requestHeader.getInvisibleTime())) {
                 future.complete(this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum);
@@ -635,11 +638,24 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             });
     }
 
+    /**
+     * get consume offset for pop mode
+     *
+     * @param topic topic
+     * @param group group
+     * @param queueId queueId
+     * @param initMode initMode ConsumeInitMode.MAX for pop mode
+     * @param init flag of whether commit offset the first time pop message
+     * @param lockKey lockKey
+     * @param checkResetOffset flag of whether resetPopOffset
+     * @return offset
+     */
     private long getPopOffset(String topic, String group, int queueId, int initMode, boolean init, String lockKey,
         boolean checkResetOffset) {
 
         long offset = this.brokerController.getConsumerOffsetManager().queryOffset(group, topic, queueId);
         if (offset < 0) {
+            //the first time consume, pop the latest message
             offset = this.getInitOffset(topic, group, queueId, initMode, init);
         }
 
@@ -722,7 +738,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private Long resetPopOffset(String topic, String group, int queueId) {
-        String lockKey = topic + PopConstants.SPLIT + group + PopConstants.SPLIT + queueId;
+        String lockKey = KeyBuilder.buildConsumeKey(topic, group, queueId);
         Long resetOffset = this.brokerController.getConsumerOffsetManager().queryThenEraseResetOffset(topic, group, queueId);
 
         if (resetOffset == null) {

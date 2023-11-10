@@ -223,6 +223,15 @@ public class ConsumerOffsetManager extends ConfigManager {
         return retMap;
     }
 
+    /**
+     * put offset info to memory(offsetTable),  and update dataVersion
+     *
+     * @param clientHost just for logging
+     * @param group group
+     * @param topic topic
+     * @param queueId queueId
+     * @param offset offset
+     */
     public void commitOffset(final String clientHost, final String group, final String topic, final int queueId,
         final long offset) {
         // topic@group
@@ -243,8 +252,10 @@ public class ConsumerOffsetManager extends ConfigManager {
             }
         }
         if (versionChangeCounter.incrementAndGet() % brokerController.getBrokerConfig().getConsumerOffsetUpdateVersionStep() == 0) {
-            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-            dataVersion.nextVersion(stateMachineVersion);
+            long version = brokerController.getMessageStore() != null
+                ? brokerController.getMessageStore().getStateMachineVersion()
+                : 0;
+            dataVersion.nextVersion(version);
         }
     }
 
@@ -487,11 +498,12 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     public Long queryThenEraseResetOffset(String topic, String group, Integer queueId) {
         String key = topic + TOPIC_GROUP_SEPARATOR + group;
+
         ConcurrentMap<Integer, Long> map = resetOffsetTable.get(key);
         if (null == map) {
             return null;
-        } else {
-            return map.remove(queueId);
         }
+
+        return map.remove(queueId);
     }
 }
