@@ -46,9 +46,13 @@ import org.apache.rocketmq.store.pop.AckMsg;
 import org.apache.rocketmq.store.pop.BatchAckMsg;
 import org.apache.rocketmq.store.pop.PopCheckPoint;
 
+/**
+ * manage checkPoint and ack info of pop message
+ */
 public class PopBufferMergeService extends ServiceThread {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
     ConcurrentHashMap<String/*mergeKey*/, PopCheckPointWrapper> buffer = new ConcurrentHashMap<>(1024 * 16);
+
     ConcurrentHashMap<String/*topic@cid@queueId*/, QueueWithTime<PopCheckPointWrapper>> commitOffsets = new ConcurrentHashMap<>();
     private volatile boolean serving = true;
     private final AtomicInteger counter = new AtomicInteger(0);
@@ -149,7 +153,7 @@ public class PopBufferMergeService extends ServiceThread {
      * @param nextBeginOffset next begin offset
      * @return boolean
      */
-    public boolean addCkJustOffset(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
+    public boolean storeCheckPoint(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
         PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, reviveQueueOffset, point, nextBeginOffset, true);
 
         if (this.buffer.containsKey(pointWrapper.getMergeKey())) {
@@ -170,7 +174,14 @@ public class PopBufferMergeService extends ServiceThread {
         return  true;
     }
 
-    public void addCkMock(String group, String topic, int queueId, long startOffset, long invisibleTime,
+    /**
+     * add check point when pop message is:
+     * - NO_MATCHED_MESSAGE
+     * - OFFSET_FOUND_NULL
+     * - MESSAGE_WAS_REMOVING
+     * - NO_MATCHED_LOGIC_QUEUE
+     */
+    public void mockCheckPoint(String group, String topic, int queueId, long startOffset, long invisibleTime,
         long popTime, int reviveQueueId, long nextBeginOffset, String brokerName) {
         final PopCheckPoint ck = new PopCheckPoint();
         ck.setBitMap(0);
@@ -193,7 +204,7 @@ public class PopBufferMergeService extends ServiceThread {
     }
 
     /**
-     * add pop checkPoint to buffer(memory)
+     * add pop checkPoint to buffer(memory), after stored in memory:
      * 1. checkPoints will be stored periodically
      *    when this.run() method is executing
      * 2. while method run executing
@@ -660,7 +671,6 @@ public class PopBufferMergeService extends ServiceThread {
         return queue.get().size() < brokerController.getBrokerConfig().getPopCkOffsetMaxQueueSize();
     }
 
-
     private void putCkToStore(final PopCheckPointWrapper pointWrapper, final boolean runInCurrent) {
         if (pointWrapper.getReviveQueueOffset() >= 0) {
             return;
@@ -845,7 +855,7 @@ public class PopBufferMergeService extends ServiceThread {
         // -1: not stored, >=0: stored, Long.MAX: storing.
         private volatile long reviveQueueOffset;
         private final PopCheckPoint ck;
-        // bit for concurrent
+        // bits for concurrent
         private final AtomicInteger bits;
         // bit for stored buffer ak
         private final AtomicInteger toStoreBits;

@@ -293,9 +293,17 @@ public class BrokerConfig extends BrokerIdentity {
     private boolean enableSkipLongAwaitingAck = false;
     private long reviveAckWaitMs = TimeUnit.MINUTES.toMillis(3);
     private boolean enablePopLog = false;
+
+    /**
+     * switch of pop buffer merge feature
+     * default value should be true
+     */
     private boolean enablePopBufferMerge = false;
     private int popCkStayBufferTime = 10 * 1000;
     private int popCkStayBufferTimeOut = 3 * 1000;
+    /**
+     * max check point number store in memory
+     */
     private int popCkMaxBufferSize = 200000;
     private int popCkOffsetMaxQueueSize = 20000;
     private boolean enablePopBatchAck = false;

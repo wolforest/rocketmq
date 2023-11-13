@@ -26,13 +26,15 @@ public class TimeUtils {
 
     public static boolean isItTimeToDo(final String when) {
         String[] whiles = when.split(";");
-        if (whiles.length > 0) {
-            Calendar now = Calendar.getInstance();
-            for (String w : whiles) {
-                int nowHour = Integer.parseInt(w);
-                if (nowHour == now.get(Calendar.HOUR_OF_DAY)) {
-                    return true;
-                }
+        if (whiles.length <= 0) {
+            return false;
+        }
+
+        Calendar now = Calendar.getInstance();
+        for (String w : whiles) {
+            int nowHour = Integer.parseInt(w);
+            if (nowHour == now.get(Calendar.HOUR_OF_DAY)) {
+                return true;
             }
         }
 

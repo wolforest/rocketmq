@@ -608,7 +608,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             && result.getNextBeginOffset() > -1) {
 
             PopBufferMergeService popBufferMergeService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
-            popBufferMergeService.addCkMock(requestHeader.getConsumerGroup(), topic, queueId, finalOffset,
+            popBufferMergeService.mockCheckPoint(requestHeader.getConsumerGroup(), topic, queueId, finalOffset,
                 requestHeader.getInvisibleTime(), popTime, reviveQid, result.getNextBeginOffset(), brokerController.getBrokerConfig().getBrokerName());
 //                this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic,
 //                        queueId, getMessageTmpResult.getNextBeginOffset());
@@ -725,12 +725,11 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         // add check point msg to revive log
         PopBufferMergeService ackService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
-        boolean addBufferSuc = ackService.addCheckPoint(ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset());
-        if (addBufferSuc) {
+        if (ackService.addCheckPoint(ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset())) {
             return true;
         }
 
-        return ackService.addCkJustOffset(ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset());
+        return ackService.storeCheckPoint(ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset());
     }
 
     private PopCheckPoint buildCheckPoint(final PopMessageRequestHeader requestHeader, final String topic, final int queueId,

@@ -20,6 +20,9 @@ import com.alibaba.fastjson.annotation.JSONField;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * state check info for multi-messages pop from consume queue
+ */
 public class PopCheckPoint implements Comparable<PopCheckPoint> {
     @JSONField(name = "so")
     private long startOffset;
@@ -27,14 +30,28 @@ public class PopCheckPoint implements Comparable<PopCheckPoint> {
     private long popTime;
     @JSONField(name = "it")
     private long invisibleTime;
+    /**
+     * store ack states of messages
+     * one byte for each message
+     *
+     * @renamed from bitMap to stateMap
+     */
     @JSONField(name = "bm")
     private int bitMap;
+    /**
+     * total number of messages
+     */
     @JSONField(name = "n")
     private byte num;
     @JSONField(name = "q")
     private int queueId;
     @JSONField(name = "t")
     private String topic;
+    /**
+     * consume group
+     *
+     * @renamed from cid to consumeGroup
+     */
     @JSONField(name = "c")
     private String cid;
     @JSONField(name = "ro")
