@@ -92,7 +92,15 @@ public class PopBufferMergeService extends ServiceThread {
     private final int countOfSecond1 = (int) (1000 / interval);
     private final int countOfSecond30 = (int) (30 * 1000 / interval);
 
+    /**
+     * this is a temporary Byte List, can be replaced by local var,
+     * defined as instance property to avoid create a lot of local vars.
+     */
     private final List<Byte> batchAckIndexList = new ArrayList<>(32);
+
+    /**
+     * whether in the master flag
+     */
     private volatile boolean master = false;
 
     public PopBufferMergeService(BrokerController brokerController) {
