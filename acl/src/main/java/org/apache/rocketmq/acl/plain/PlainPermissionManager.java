@@ -41,7 +41,7 @@ import org.apache.rocketmq.common.config.AclConfig;
 import org.apache.rocketmq.common.config.PlainAccessConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -81,8 +81,8 @@ public class PlainPermissionManager {
     private final PermissionChecker permissionChecker = new PlainPermissionChecker();
 
     public PlainPermissionManager() {
-        this.defaultAclDir = IOTinyUtils.dealFilePath(fileHome + File.separator + "conf" + File.separator + "acl");
-        this.defaultAclFile = IOTinyUtils.dealFilePath(fileHome + File.separator + System.getProperty("rocketmq.acl.plain.file", "conf" + File.separator + "plain_acl.yml"));
+        this.defaultAclDir = IOUtils.dealFilePath(fileHome + File.separator + "conf" + File.separator + "acl");
+        this.defaultAclFile = IOUtils.dealFilePath(fileHome + File.separator + System.getProperty("rocketmq.acl.plain.file", "conf" + File.separator + "plain_acl.yml"));
         load();
         watch();
     }
@@ -128,7 +128,7 @@ public class PlainPermissionManager {
         }
 
         for (int i = 0; i < fileList.size(); i++) {
-            final String currentFile = IOTinyUtils.dealFilePath(fileList.get(i));
+            final String currentFile = IOUtils.dealFilePath(fileList.get(i));
             PlainAccessData plainAclConfData = AclUtils.getYamlDataObject(currentFile,
                 PlainAccessData.class);
             if (plainAclConfData == null) {
@@ -207,7 +207,7 @@ public class PlainPermissionManager {
     }
 
     public void load(String aclFilePath) {
-        aclFilePath = IOTinyUtils.dealFilePath(aclFilePath);
+        aclFilePath = IOUtils.dealFilePath(aclFilePath);
         Map<String, PlainAccessResource> plainAccessResourceMap = new HashMap<>();
         List<RemoteAddressStrategy> globalWhiteRemoteAddressStrategy = new ArrayList<>();
 
@@ -351,7 +351,7 @@ public class PlainPermissionManager {
             aclPlainAccessResourceMap.put(aclFileName, accountMap);
             return AclUtils.writeDataObject(aclFileName, updateAclConfigFileVersion(aclFileName, aclAccessConfigMap));
         } else {
-            String fileName = IOTinyUtils.dealFilePath(defaultAclFile);
+            String fileName = IOUtils.dealFilePath(defaultAclFile);
             //Create acl access config elements on the default acl file
             if (aclPlainAccessResourceMap.get(defaultAclFile) == null || aclPlainAccessResourceMap.get(defaultAclFile).size() == 0) {
                 try {

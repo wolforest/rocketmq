@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.GetMessageStatus;
@@ -281,7 +281,7 @@ public class ScheduleMessageServiceTest {
         messageStore.shutdown();
         messageStore.destroy();
         File file = new File(messageStoreConfig.getStorePathRootDir());
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     public MessageExtBrokerInner buildMessage() {

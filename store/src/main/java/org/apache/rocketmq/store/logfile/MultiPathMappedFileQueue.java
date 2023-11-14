@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 public class MultiPathMappedFileQueue extends MappedFileQueue {
@@ -42,7 +42,7 @@ public class MultiPathMappedFileQueue extends MappedFileQueue {
     }
 
     private Set<String> getPaths() {
-        String[] paths = config.getStorePathCommitLog().trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+        String[] paths = config.getStorePathCommitLog().trim().split(IOUtils.MULTI_PATH_SPLITTER);
         return new HashSet<>(Arrays.asList(paths));
     }
 
@@ -51,7 +51,7 @@ public class MultiPathMappedFileQueue extends MappedFileQueue {
         if (StringUtils.isBlank(pathStr)) {
             return Collections.emptySet();
         }
-        String[] paths = pathStr.trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+        String[] paths = pathStr.trim().split(IOUtils.MULTI_PATH_SPLITTER);
         return new HashSet<>(Arrays.asList(paths));
     }
 
@@ -97,9 +97,9 @@ public class MultiPathMappedFileQueue extends MappedFileQueue {
         String[] paths = availableStorePath.toArray(new String[]{});
         Arrays.sort(paths);
         String nextFilePath = paths[(int) (fileIdx % paths.length)] + File.separator
-                + IOTinyUtils.offset2FileName(createOffset);
+                + IOUtils.offset2FileName(createOffset);
         String nextNextFilePath = paths[(int) ((fileIdx + 1) % paths.length)] + File.separator
-                + IOTinyUtils.offset2FileName(createOffset + this.mappedFileSize);
+                + IOUtils.offset2FileName(createOffset + this.mappedFileSize);
         return doCreateMappedFile(nextFilePath, nextNextFilePath);
     }
 

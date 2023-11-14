@@ -19,7 +19,7 @@ package org.apache.rocketmq.store;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
 import org.apache.rocketmq.store.logfile.MappedFile;
@@ -478,12 +478,12 @@ public class MappedFileQueueTest {
 
         TimeUnit.SECONDS.sleep(3);
         File file = new File(localStorePath);
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     @After
     public void destroy() {
         File file = new File(storePath);
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 }

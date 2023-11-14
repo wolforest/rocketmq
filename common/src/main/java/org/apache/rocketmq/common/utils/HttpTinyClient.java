@@ -47,9 +47,9 @@ public class HttpTinyClient {
             String resp = null;
 
             if (HttpURLConnection.HTTP_OK == respCode) {
-                resp = IOTinyUtils.toString(conn.getInputStream(), encoding);
+                resp = IOUtils.toString(conn.getInputStream(), encoding);
             } else {
-                resp = IOTinyUtils.toString(conn.getErrorStream(), encoding);
+                resp = IOUtils.toString(conn.getErrorStream(), encoding);
             }
             return new HttpResult(respCode, resp);
         } finally {
@@ -112,9 +112,9 @@ public class HttpTinyClient {
             String resp = null;
 
             if (HttpURLConnection.HTTP_OK == respCode) {
-                resp = IOTinyUtils.toString(conn.getInputStream(), encoding);
+                resp = IOUtils.toString(conn.getInputStream(), encoding);
             } else {
-                resp = IOTinyUtils.toString(conn.getErrorStream(), encoding);
+                resp = IOUtils.toString(conn.getErrorStream(), encoding);
             }
             return new HttpResult(respCode, resp);
         } finally {

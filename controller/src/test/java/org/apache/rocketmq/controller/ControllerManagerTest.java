@@ -17,7 +17,7 @@
 package org.apache.rocketmq.controller;
 
 import org.apache.rocketmq.common.config.ControllerConfig;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.controller.impl.DLedgerController;
 import org.apache.rocketmq.remoting.RemotingClient;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -88,7 +88,7 @@ public class ControllerManagerTest {
 
     @Before
     public void startup() {
-        IOTinyUtils.deleteFile(new File(STORE_BASE_PATH));
+        IOUtils.deleteFile(new File(STORE_BASE_PATH));
         this.controllers = new ArrayList<>();
         this.remotingClient = new NettyRemotingClient(new NettyClientConfig());
         this.remotingClient.start();
@@ -247,7 +247,7 @@ public class ControllerManagerTest {
         for (ControllerManager controller : this.controllers) {
             controller.shutdown();
         }
-        IOTinyUtils.deleteFile(new File(STORE_BASE_PATH));
+        IOUtils.deleteFile(new File(STORE_BASE_PATH));
         this.remotingClient.shutdown();
         this.remotingClient1.shutdown();
     }

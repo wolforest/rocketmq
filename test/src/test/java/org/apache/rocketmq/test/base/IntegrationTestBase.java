@@ -25,7 +25,7 @@ import org.apache.rocketmq.common.topic.TopicAttributes;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.attribute.TopicMessageType;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.namesrv.NamesrvController;
@@ -84,7 +84,7 @@ public class IntegrationTestBase {
                         }
                     }
                     for (File file : TMPE_FILES) {
-                        IOTinyUtils.deleteFile(file);
+                        IOUtils.deleteFile(file);
                     }
                     MQAdminTestUtils.shutdownAdmin();
                 } catch (Exception e) {
@@ -197,7 +197,7 @@ public class IntegrationTestBase {
         if (!file.exists()) {
             return;
         }
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     public static void initMQAdmin(String nsAddr) {

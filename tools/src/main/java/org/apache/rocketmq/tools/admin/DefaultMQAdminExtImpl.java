@@ -62,7 +62,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.message.MessageRequestMode;
 import org.apache.rocketmq.common.namesrv.NamesrvUtil;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -1353,7 +1353,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                 result.add(mt);
                 continue;
             } catch (Exception e) {
-                mt.setExceptionDesc(IOTinyUtils.exceptionSimpleDesc(e));
+                mt.setExceptionDesc(IOUtils.exceptionSimpleDesc(e));
                 result.add(mt);
                 continue;
             }
@@ -1387,7 +1387,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                         result.add(mt);
                         continue;
                     } catch (Exception e) {
-                        mt.setExceptionDesc(IOTinyUtils.exceptionSimpleDesc(e));
+                        mt.setExceptionDesc(IOUtils.exceptionSimpleDesc(e));
                         result.add(mt);
                         continue;
                     }
@@ -1446,7 +1446,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                         countDownLatch.countDown();
                         return;
                     } catch (Exception e) {
-                        mt.setExceptionDesc(IOTinyUtils.exceptionSimpleDesc(e));
+                        mt.setExceptionDesc(IOUtils.exceptionSimpleDesc(e));
                         result.add(mt);
                         countDownLatch.countDown();
                         return;
@@ -1477,7 +1477,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                                 countDownLatch.countDown();
                                 return;
                             } catch (Exception e) {
-                                mt.setExceptionDesc(IOTinyUtils.exceptionSimpleDesc(e));
+                                mt.setExceptionDesc(IOUtils.exceptionSimpleDesc(e));
                                 result.add(mt);
                                 countDownLatch.countDown();
                                 return;

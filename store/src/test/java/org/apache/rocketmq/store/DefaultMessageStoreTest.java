@@ -48,7 +48,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.config.BrokerRole;
@@ -127,7 +127,7 @@ public class DefaultMessageStoreTest {
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         File file = new File(messageStoreConfig.getStorePathRootDir());
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     private MessageStore buildMessageStore() throws Exception {
@@ -705,7 +705,7 @@ public class DefaultMessageStoreTest {
         //add abort file
         String fileName = StorePathConfigHelper.getAbortFile(((DefaultMessageStore) messageStore).getMessageStoreConfig().getStorePathRootDir());
         File file = new File(fileName);
-        IOTinyUtils.ensureDirOK(file.getParent());
+        IOUtils.ensureDirOK(file.getParent());
         file.createNewFile();
 
         messageStore = buildMessageStore(storeRootDir);

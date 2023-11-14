@@ -49,7 +49,7 @@ import org.apache.rocketmq.common.metrics.NopLongCounter;
 import org.apache.rocketmq.common.metrics.NopLongHistogram;
 import org.apache.rocketmq.common.metrics.NopLongUpDownCounter;
 import org.apache.rocketmq.common.metrics.NopObservableLongGauge;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.controller.ControllerManager;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -234,11 +234,11 @@ public class ControllerMetricsManager {
             .ofLongs()
             .buildWithCallback(measurement -> {
                 String path = config.getControllerStorePath();
-                if (!IOTinyUtils.isPathExists(path)) {
+                if (!IOUtils.isPathExists(path)) {
                     return;
                 }
                 File file = new File(path);
-                Long diskUsage = IOTinyUtils.calculateFileSizeInPath(file);
+                Long diskUsage = IOUtils.calculateFileSizeInPath(file);
                 if (diskUsage == -1) {
                     logger.error("calculateFileSizeInPath error, path: {}", path);
                     return;

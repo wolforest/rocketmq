@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -189,7 +189,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         this.offsetInFileName = Long.parseLong(this.file.getName());
         boolean ok = false;
 
-        IOTinyUtils.ensureDirOK(this.file.getParent());
+        IOUtils.ensureDirOK(this.file.getParent());
 
         try {
             this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();
@@ -568,8 +568,8 @@ public class DefaultMappedFile extends AbstractMappedFile {
             return true;
         }
 
-        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
-        IOTinyUtils.cleanBuffer(this.mappedByteBufferWaitToClean);
+        IOUtils.cleanBuffer(this.mappedByteBuffer);
+        IOUtils.cleanBuffer(this.mappedByteBufferWaitToClean);
         this.mappedByteBufferWaitToClean = null;
         TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(this.fileSize * (-1));
         TOTAL_MAPPED_FILES.decrementAndGet();
@@ -708,7 +708,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
             if (!force && gapTime < minGapTime) {
                 Thread.sleep(minGapTime - gapTime);
             }
-            IOTinyUtils.cleanBuffer(this.mappedByteBufferWaitToClean);
+            IOUtils.cleanBuffer(this.mappedByteBufferWaitToClean);
             mappedByteBufferWaitToClean = null;
             log.info("cleanSwapedMap file " + this.fileName + " success.");
         } catch (Exception e) {
@@ -824,7 +824,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
         // Windows can't move the file when mmap.
         long position = this.fileChannel.position();
-        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
+        IOUtils.cleanBuffer(this.mappedByteBuffer);
         this.fileChannel.close();
         Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
 
@@ -855,7 +855,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
         // Windows can't move the file when mmap.
         long position = this.fileChannel.position();
-        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
+        IOUtils.cleanBuffer(this.mappedByteBuffer);
         this.fileChannel.close();
         Files.move(Paths.get(fileName), parentPath, StandardCopyOption.ATOMIC_MOVE);
 

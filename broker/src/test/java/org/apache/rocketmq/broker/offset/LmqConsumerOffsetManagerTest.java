@@ -22,7 +22,7 @@ import org.apache.rocketmq.broker.subscription.LmqSubscriptionGroupManager;
 import org.apache.rocketmq.broker.topic.LmqTopicConfigManager;
 import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.topic.TopicConfig;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
@@ -102,7 +102,7 @@ public class LmqConsumerOffsetManagerTest {
 
     @After
     public void destroy() {
-        IOTinyUtils.deleteFile(new File(new MessageStoreConfig().getStorePathRootDir()));
+        IOUtils.deleteFile(new File(new MessageStoreConfig().getStorePathRootDir()));
     }
 
 }

@@ -38,7 +38,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class IOTinyUtilsTest {
+public class IOUtilsTest {
 
     /**
      * https://bazel.build/reference/test-encyclopedia#filesystem
@@ -49,7 +49,7 @@ public class IOTinyUtilsTest {
     public void init() {
         File dir = new File(testRootDir);
         if (dir.exists()) {
-            IOTinyUtils.deleteFile(dir);
+            IOUtils.deleteFile(dir);
         }
 
         dir.mkdirs();
@@ -58,7 +58,7 @@ public class IOTinyUtilsTest {
     @After
     public void destroy() {
         File file = new File(testRootDir);
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     @Test
@@ -66,16 +66,16 @@ public class IOTinyUtilsTest {
         byte[] b = "testToString".getBytes(StandardCharsets.UTF_8);
         InputStream is = new ByteArrayInputStream(b);
 
-        String str = IOTinyUtils.toString(is, null);
+        String str = IOUtils.toString(is, null);
         assertEquals("testToString", str);
 
         is = new ByteArrayInputStream(b);
-        str = IOTinyUtils.toString(is, StandardCharsets.UTF_8.name());
+        str = IOUtils.toString(is, StandardCharsets.UTF_8.name());
         assertEquals("testToString", str);
 
         is = new ByteArrayInputStream(b);
         Reader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
-        str = IOTinyUtils.toString(isr);
+        str = IOUtils.toString(isr);
         assertEquals("testToString", str);
     }
 
@@ -86,7 +86,7 @@ public class IOTinyUtilsTest {
         Reader reader = new CharArrayReader(arr);
         Writer writer = new CharArrayWriter();
 
-        long count = IOTinyUtils.copy(reader, writer);
+        long count = IOUtils.copy(reader, writer);
         assertEquals(arr.length, count);
     }
 
@@ -98,7 +98,7 @@ public class IOTinyUtilsTest {
         }
 
         StringReader reader = new StringReader(sb.toString());
-        List<String> lines = IOTinyUtils.readLines(reader);
+        List<String> lines = IOUtils.readLines(reader);
 
         assertEquals(10, lines.size());
     }
@@ -111,9 +111,9 @@ public class IOTinyUtilsTest {
         }
 
         StringReader reader = new StringReader(sb.toString());
-        Method method = IOTinyUtils.class.getDeclaredMethod("toBufferedReader", new Class[]{Reader.class});
+        Method method = IOUtils.class.getDeclaredMethod("toBufferedReader", new Class[]{Reader.class});
         method.setAccessible(true);
-        Object bReader = method.invoke(IOTinyUtils.class, reader);
+        Object bReader = method.invoke(IOUtils.class, reader);
 
         assertTrue(bReader instanceof BufferedReader);
     }
@@ -123,7 +123,7 @@ public class IOTinyUtilsTest {
         File file = new File(testRootDir, "testWriteStringToFile");
         assertTrue(!file.exists());
 
-        IOTinyUtils.writeStringToFile(file, "testWriteStringToFile", StandardCharsets.UTF_8.name());
+        IOUtils.writeStringToFile(file, "testWriteStringToFile", StandardCharsets.UTF_8.name());
 
         assertTrue(file.exists());
     }
@@ -131,14 +131,14 @@ public class IOTinyUtilsTest {
     @Test
     public void testCleanDirectory() throws Exception {
         for (int i = 0; i < 10; i++) {
-            IOTinyUtils.writeStringToFile(new File(testRootDir, "testCleanDirectory" + i), "testCleanDirectory", StandardCharsets.UTF_8.name());
+            IOUtils.writeStringToFile(new File(testRootDir, "testCleanDirectory" + i), "testCleanDirectory", StandardCharsets.UTF_8.name());
         }
 
         File dir = new File(testRootDir);
         assertTrue(dir.exists() && dir.isDirectory());
         assertTrue(dir.listFiles().length > 0);
 
-        IOTinyUtils.cleanDirectory(new File(testRootDir));
+        IOUtils.cleanDirectory(new File(testRootDir));
 
         assertTrue(dir.listFiles().length == 0);
     }
@@ -146,14 +146,14 @@ public class IOTinyUtilsTest {
     @Test
     public void testDelete() throws Exception {
         for (int i = 0; i < 10; i++) {
-            IOTinyUtils.writeStringToFile(new File(testRootDir, "testDelete" + i), "testCleanDirectory", StandardCharsets.UTF_8.name());
+            IOUtils.writeStringToFile(new File(testRootDir, "testDelete" + i), "testCleanDirectory", StandardCharsets.UTF_8.name());
         }
 
         File dir = new File(testRootDir);
         assertTrue(dir.exists() && dir.isDirectory());
         assertTrue(dir.listFiles().length > 0);
 
-        IOTinyUtils.delete(new File(testRootDir));
+        IOUtils.delete(new File(testRootDir));
 
         assertTrue(!dir.exists());
     }
@@ -163,9 +163,9 @@ public class IOTinyUtilsTest {
         File source = new File(testRootDir, "source");
         String target = testRootDir + File.separator + "dest";
 
-        IOTinyUtils.writeStringToFile(source, "testCopyFile", StandardCharsets.UTF_8.name());
+        IOUtils.writeStringToFile(source, "testCopyFile", StandardCharsets.UTF_8.name());
 
-        IOTinyUtils.copyFile(source.getCanonicalPath(), target);
+        IOUtils.copyFile(source.getCanonicalPath(), target);
 
         File dest = new File(target);
         assertTrue(dest.exists());
@@ -187,7 +187,7 @@ public class IOTinyUtilsTest {
         File baseFile = new File(basePath);
         try {
             // test empty path
-            assertEquals(0, IOTinyUtils.calculateFileSizeInPath(baseFile));
+            assertEquals(0, IOUtils.calculateFileSizeInPath(baseFile));
 
             // create baseDir
             assertTrue(baseFile.mkdirs());
@@ -196,7 +196,7 @@ public class IOTinyUtilsTest {
             assertTrue(file0.createNewFile());
             writeFixedBytesToFile(file0, 1313);
 
-            assertEquals(1313, IOTinyUtils.calculateFileSizeInPath(baseFile));
+            assertEquals(1313, IOUtils.calculateFileSizeInPath(baseFile));
 
             // build a file tree like above
             File dir1 = new File(baseFile, "dir_1");
@@ -217,9 +217,9 @@ public class IOTinyUtilsTest {
             assertTrue(file120.createNewFile());
             writeFixedBytesToFile(file120, 1313);
 
-            assertEquals(1313 * 4, IOTinyUtils.calculateFileSizeInPath(baseFile));
+            assertEquals(1313 * 4, IOUtils.calculateFileSizeInPath(baseFile));
         } finally {
-            IOTinyUtils.delete(baseFile);
+            IOUtils.delete(baseFile);
         }
     }
 

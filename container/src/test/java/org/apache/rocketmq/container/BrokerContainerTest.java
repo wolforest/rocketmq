@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.constant.PermName;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
@@ -353,7 +353,7 @@ public class BrokerContainerTest {
     @After
     public void destroy() {
         for (File file : TMP_FILE_LIST) {
-            IOTinyUtils.deleteFile(file);
+            IOUtils.deleteFile(file);
         }
     }
 

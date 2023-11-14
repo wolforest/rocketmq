@@ -26,7 +26,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -373,9 +373,9 @@ public class ConsumeQueueService {
         String batchConsumeQueueDir = StorePathConfigHelper.getStorePathBatchConsumeQueue(
             messageStore.getMessageStoreConfig().getStorePathRootDir()) + File.separator + topic;
 
-        IOTinyUtils.deleteEmptyDirectory(new File(consumeQueueDir));
-        IOTinyUtils.deleteEmptyDirectory(new File(consumeQueueExtDir));
-        IOTinyUtils.deleteEmptyDirectory(new File(batchConsumeQueueDir));
+        IOUtils.deleteEmptyDirectory(new File(consumeQueueDir));
+        IOUtils.deleteEmptyDirectory(new File(consumeQueueExtDir));
+        IOUtils.deleteEmptyDirectory(new File(batchConsumeQueueDir));
     }
 
     public int cleanUnusedTopic(final Set<String> retainTopics) {

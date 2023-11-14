@@ -17,7 +17,7 @@
 package org.apache.rocketmq.store.timer;
 
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -52,7 +52,7 @@ public class TimerCheckpoint {
 
     public TimerCheckpoint(final String scpPath) throws IOException {
         File file = new File(scpPath);
-        IOTinyUtils.ensureDirOK(file.getParent());
+        IOUtils.ensureDirOK(file.getParent());
         boolean fileExists = file.exists();
 
         this.randomAccessFile = new RandomAccessFile(file, "rw");
@@ -94,7 +94,7 @@ public class TimerCheckpoint {
         this.flush();
 
         // unmap mappedByteBuffer
-        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
+        IOUtils.cleanBuffer(this.mappedByteBuffer);
 
         try {
             this.fileChannel.close();

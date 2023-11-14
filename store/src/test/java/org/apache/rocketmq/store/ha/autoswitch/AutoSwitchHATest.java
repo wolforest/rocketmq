@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
@@ -517,7 +517,7 @@ public class AutoSwitchHATest {
             messageStore3.destroy();
         }
         File file = new File(storePathRootParentDir);
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     private DefaultMessageStore buildMessageStore(MessageStoreConfig messageStoreConfig,

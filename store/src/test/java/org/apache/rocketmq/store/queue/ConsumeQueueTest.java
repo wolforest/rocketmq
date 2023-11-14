@@ -20,7 +20,7 @@ import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.MessageFilter;
@@ -215,7 +215,7 @@ public class ConsumeQueueTest extends QueueTestBase {
                 master.shutdown();
                 master.destroy();
             }
-            IOTinyUtils.deleteFile(new File(STORE_PATH));
+            IOUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
@@ -261,7 +261,7 @@ public class ConsumeQueueTest extends QueueTestBase {
         } finally {
             messageStore.shutdown();
             messageStore.destroy();
-            IOTinyUtils.deleteFile(new File(STORE_PATH));
+            IOUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
@@ -300,7 +300,7 @@ public class ConsumeQueueTest extends QueueTestBase {
         } finally {
             messageStore.shutdown();
             messageStore.destroy();
-            IOTinyUtils.deleteFile(new File(STORE_PATH));
+            IOUtils.deleteFile(new File(STORE_PATH));
         }
     }
 }

@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.future.FutureTaskExt;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -146,7 +146,7 @@ public class BrokerFastFailure {
                 rt.returnResponse(RemotingSysResponseCode.SYSTEM_BUSY, String.format("[TIMEOUT_CLEAN_QUEUE]broker busy, start flow control for a while, period in queue: %sms, size of queue: %d", behind, blockingQueue.size()));
                 if (System.currentTimeMillis() - jstackTime > 15000) {
                     jstackTime = System.currentTimeMillis();
-                    LOGGER.warn("broker jstack \n " + IOTinyUtils.jstack());
+                    LOGGER.warn("broker jstack \n " + IOUtils.jstack());
                 }
             } catch (Throwable ignored) {
             }

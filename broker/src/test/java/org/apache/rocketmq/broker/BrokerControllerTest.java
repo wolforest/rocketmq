@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker;
 
 import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.future.FutureTaskExt;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.netty.RequestTask;
@@ -69,7 +69,7 @@ public class BrokerControllerTest {
 
     @After
     public void destroy() {
-        IOTinyUtils.deleteFile(new File(messageStoreConfig.getStorePathRootDir()));
+        IOUtils.deleteFile(new File(messageStoreConfig.getStorePathRootDir()));
     }
 
     @Test

@@ -20,7 +20,7 @@ import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -162,7 +162,7 @@ public class StoreTestBase {
 
     public static boolean makeSureFileExists(String fileName) throws Exception {
         File file = new File(fileName);
-        IOTinyUtils.ensureDirOK(file.getParent());
+        IOUtils.ensureDirOK(file.getParent());
         return file.createNewFile();
     }
 
@@ -171,7 +171,7 @@ public class StoreTestBase {
     }
 
     public static void deleteFile(File file) {
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     @After

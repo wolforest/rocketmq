@@ -21,7 +21,7 @@ import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
@@ -457,7 +457,7 @@ public class ConsumeQueueTest {
         } finally {
             master.shutdown();
             master.destroy();
-            IOTinyUtils.deleteFile(new File(STORE_PATH));
+            IOUtils.deleteFile(new File(STORE_PATH));
         }
     }
 

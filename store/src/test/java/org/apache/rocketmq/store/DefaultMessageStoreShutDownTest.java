@@ -18,7 +18,7 @@
 package org.apache.rocketmq.store;
 
 import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.config.FlushDiskType;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
@@ -62,7 +62,7 @@ public class DefaultMessageStoreShutDownTest {
     public void destroy() {
         messageStore.destroy();
         File file = new File(messageStore.getMessageStoreConfig().getStorePathRootDir());
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     public DefaultMessageStore buildMessageStore() throws Exception {

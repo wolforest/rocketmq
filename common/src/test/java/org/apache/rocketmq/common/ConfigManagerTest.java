@@ -19,7 +19,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import org.apache.rocketmq.common.config.ConfigManager;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.junit.Test;
 
@@ -35,10 +35,10 @@ public class ConfigManagerTest {
         ConfigManager testConfigManager = buildTestConfigManager();
         File file = createAndWriteFile(testConfigManager.configFilePath());
         assertTrue(testConfigManager.load());
-        IOTinyUtils.delete(file);
+        IOUtils.delete(file);
         File fileBak = createAndWriteFile(testConfigManager.configFilePath() + ".bak");
         assertTrue(testConfigManager.load());
-        IOTinyUtils.delete(fileBak);
+        IOUtils.delete(fileBak);
     }
 
     @Test

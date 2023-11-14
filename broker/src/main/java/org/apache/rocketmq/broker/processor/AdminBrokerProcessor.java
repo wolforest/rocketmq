@@ -55,7 +55,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.stats.StatsItem;
 import org.apache.rocketmq.common.stats.StatsSnapshot;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NumberUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
@@ -2478,12 +2478,12 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         } catch (RemotingTimeoutException e) {
             response.setCode(ResponseCode.CONSUME_MSG_TIMEOUT);
             response
-                .setRemark(String.format("consumer <%s> <%s> Timeout: %s", consumerGroup, clientId, IOTinyUtils.exceptionSimpleDesc(e)));
+                .setRemark(String.format("consumer <%s> <%s> Timeout: %s", consumerGroup, clientId, IOUtils.exceptionSimpleDesc(e)));
             return response;
         } catch (Exception e) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(
-                String.format("invoke consumer <%s> <%s> Exception: %s", consumerGroup, clientId, IOTinyUtils.exceptionSimpleDesc(e)));
+                String.format("invoke consumer <%s> <%s> Exception: %s", consumerGroup, clientId, IOUtils.exceptionSimpleDesc(e)));
             return response;
         }
     }

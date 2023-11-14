@@ -26,7 +26,7 @@ import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.queue.MultiDispatchUtils;
 import org.junit.After;
@@ -65,7 +65,7 @@ public class MultiDispatchTest {
 
     @After
     public void destroy() {
-        IOTinyUtils.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "unitteststore1"));
+        IOUtils.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "unitteststore1"));
     }
 
     @Test

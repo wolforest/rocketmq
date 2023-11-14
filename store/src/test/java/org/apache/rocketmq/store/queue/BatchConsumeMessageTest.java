@@ -25,7 +25,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
@@ -75,7 +75,7 @@ public class BatchConsumeMessageTest extends QueueTestBase {
         messageStore.destroy();
 
         File file = new File(messageStore.getMessageStoreConfig().getStorePathRootDir());
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     @Test

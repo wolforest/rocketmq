@@ -23,7 +23,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.config.ConfigRocksDBStorage;
 import org.apache.rocketmq.common.utils.DataConverter;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
@@ -71,7 +71,7 @@ public class ExportMetadataInRocksDBCommand implements SubCommand {
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) throws SubCommandException {
         String path = commandLine.getOptionValue("path").trim();
-        if (StringUtils.isEmpty(path) || !IOTinyUtils.isPathExists(path)) {
+        if (StringUtils.isEmpty(path) || !IOUtils.isPathExists(path)) {
             System.out.print("RocksDB path is invalid.\n");
             return;
         }

@@ -19,7 +19,7 @@ package org.apache.rocketmq.common.thread;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -114,7 +114,7 @@ public class ThreadPoolMonitor {
                     if (monitor.needPrintJstack(threadPoolWrapper.getThreadPoolExecutor(), value) &&
                         System.currentTimeMillis() - jstackTime > jstackPeriodTime) {
                         jstackTime = System.currentTimeMillis();
-                        jstackLogger.warn("jstack start\n{}", IOTinyUtils.jstack());
+                        jstackLogger.warn("jstack start\n{}", IOUtils.jstack());
                     }
                 }
             }

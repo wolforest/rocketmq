@@ -40,7 +40,7 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.CleanupPolicyUtils;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.MessageUtils;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
@@ -719,16 +719,16 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         } else {
             storePath = this.brokerController.getMessageStoreConfig().getStorePathCommitLog();
         }
-        String[] paths = storePath.trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+        String[] paths = storePath.trim().split(IOUtils.MULTI_PATH_SPLITTER);
         for (String storePathPhysic : paths) {
-            physicRatio = Math.min(physicRatio, IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathPhysic));
+            physicRatio = Math.min(physicRatio, IOUtils.getDiskPartitionSpaceUsedPercent(storePathPhysic));
         }
 
         String storePathLogis = StorePathConfigHelper.getStorePathConsumeQueue(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
-        double logisRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathLogis);
+        double logisRatio = IOUtils.getDiskPartitionSpaceUsedPercent(storePathLogis);
 
         String storePathIndex = StorePathConfigHelper.getStorePathIndex(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
-        double indexRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathIndex);
+        double indexRatio = IOUtils.getDiskPartitionSpaceUsedPercent(storePathIndex);
 
         return String.format("CL: %5.2f CQ: %5.2f INDEX: %5.2f", physicRatio, logisRatio, indexRatio);
     }

@@ -18,7 +18,7 @@ package org.apache.rocketmq.store.queue;
 
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.attribute.CQType;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
@@ -66,7 +66,7 @@ public class ConsumeQueueStoreTest extends QueueTestBase {
         messageStore.shutdown();
         messageStore.destroy();
         File file = new File(messageStore.getMessageStoreConfig().getStorePathRootDir());
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     @Test
@@ -100,7 +100,7 @@ public class ConsumeQueueStoreTest extends QueueTestBase {
         messageStore.shutdown();
         messageStore.destroy();
         File file = new File(messageStore.getMessageStoreConfig().getStorePathRootDir());
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
 }

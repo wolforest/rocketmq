@@ -36,7 +36,7 @@ import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.running.RunningStats;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.ProcessUtils;
 import org.apache.rocketmq.common.utils.ServiceProvider;
 import org.apache.rocketmq.common.utils.StringUtils;
@@ -547,10 +547,10 @@ public class DefaultMessageStore implements MessageStore {
         {
             double minPhysicsUsedRatio = Double.MAX_VALUE;
             String commitLogStorePath = getStorePathPhysic();
-            String[] paths = commitLogStorePath.trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+            String[] paths = commitLogStorePath.trim().split(IOUtils.MULTI_PATH_SPLITTER);
             for (String clPath : paths) {
-                double physicRatio = IOTinyUtils.isPathExists(clPath) ?
-                    IOTinyUtils.getDiskPartitionSpaceUsedPercent(clPath) : -1;
+                double physicRatio = IOUtils.isPathExists(clPath) ?
+                    IOUtils.getDiskPartitionSpaceUsedPercent(clPath) : -1;
                 result.put(RunningStats.commitLogDiskRatio.name() + "_" + clPath, String.valueOf(physicRatio));
                 minPhysicsUsedRatio = Math.min(minPhysicsUsedRatio, physicRatio);
             }
@@ -558,7 +558,7 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         {
-            double logicsRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(getStorePathLogic());
+            double logicsRatio = IOUtils.getDiskPartitionSpaceUsedPercent(getStorePathLogic());
             result.put(RunningStats.consumeQueueDiskRatio.name(), String.valueOf(logicsRatio));
         }
 
@@ -1005,9 +1005,9 @@ public class DefaultMessageStore implements MessageStore {
 
     private void initLockFile() throws IOException {
         File file = new File(StorePathConfigHelper.getLockFile(messageStoreConfig.getStorePathRootDir()));
-        IOTinyUtils.ensureDirOK(file.getParent());
-        IOTinyUtils.ensureDirOK(getStorePathPhysic());
-        IOTinyUtils.ensureDirOK(getStorePathLogic());
+        IOUtils.ensureDirOK(file.getParent());
+        IOUtils.ensureDirOK(getStorePathPhysic());
+        IOUtils.ensureDirOK(getStorePathLogic());
         lockFile = new RandomAccessFile(file, "rw");
     }
 
@@ -1198,7 +1198,7 @@ public class DefaultMessageStore implements MessageStore {
     private void createTempFile() throws IOException {
         String fileName = StorePathConfigHelper.getAbortFile(this.messageStoreConfig.getStorePathRootDir());
         File file = new File(fileName);
-        IOTinyUtils.ensureDirOK(file.getParent());
+        IOUtils.ensureDirOK(file.getParent());
         boolean result = file.createNewFile();
         LOGGER.info(fileName + (result ? " create OK" : " already exists"));
         StringUtils.string2File(Long.toString(ProcessUtils.getPID()), file.getAbsolutePath());
@@ -1232,7 +1232,7 @@ public class DefaultMessageStore implements MessageStore {
                         long lockTime = System.currentTimeMillis() - DefaultMessageStore.this.commitLog.getBeginTimeInLock();
                         if (lockTime > 1000 && lockTime < 10000000) {
 
-                            String stack = IOTinyUtils.jstack();
+                            String stack = IOUtils.jstack();
                             final String fileName = System.getProperty("user.home") + File.separator + "debug/lock/stack-"
                                 + DefaultMessageStore.this.commitLog.getBeginTimeInLock() + "-" + lockTime;
                             StringUtils.string2FileNotSafe(stack, fileName);

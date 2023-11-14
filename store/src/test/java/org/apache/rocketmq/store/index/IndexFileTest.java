@@ -20,7 +20,7 @@
  */
 package org.apache.rocketmq.store.index;
 
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.junit.Test;
 
 import java.io.File;
@@ -46,7 +46,7 @@ public class IndexFileTest {
         assertThat(putResult).isFalse();
         indexFile.destroy(0);
         File file = new File("100");
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
     @Test
@@ -68,6 +68,6 @@ public class IndexFileTest {
         assertThat(phyOffsets.size()).isEqualTo(1);
         indexFile.destroy(0);
         File file = new File("200");
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 }

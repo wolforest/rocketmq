@@ -20,7 +20,7 @@
  */
 package org.apache.rocketmq.store;
 
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.junit.After;
@@ -57,6 +57,6 @@ public class MappedFileTest {
     @After
     public void destroy() {
         File file = new File("target/unit_test_store_MappedFileTest");
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 }

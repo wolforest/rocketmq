@@ -22,7 +22,7 @@ import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.commitlog.AppendMessageCallback;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.commitlog.DefaultAppendMessageCallback;
@@ -68,7 +68,7 @@ public class AppendCallbackTest {
 
     @After
     public void destroy() {
-        IOTinyUtils.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore"));
+        IOUtils.deleteFile(new File(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "unitteststore"));
     }
 
     @Test

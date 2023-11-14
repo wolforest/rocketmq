@@ -19,7 +19,7 @@ package org.apache.rocketmq.container;
 
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -100,7 +100,7 @@ public class BrokerContainerStartupTest {
     @After
     public void destroy() {
         for (File file : TMP_FILE_LIST) {
-            IOTinyUtils.deleteFile(file);
+            IOUtils.deleteFile(file);
         }
     }
 
@@ -130,14 +130,14 @@ public class BrokerContainerStartupTest {
 
     @Before
     public void clear() {
-        IOTinyUtils.deleteFile(new File(storePathRootDir));
+        IOUtils.deleteFile(new File(storePathRootDir));
     }
 
     @After
     public void tearDown() {
         File configFile = new File(storePathRootDir);
-        IOTinyUtils.deleteFile(configFile);
-        IOTinyUtils.deleteEmptyDirectory(configFile);
-        IOTinyUtils.deleteEmptyDirectory(configFile.getParentFile());
+        IOUtils.deleteFile(configFile);
+        IOUtils.deleteEmptyDirectory(configFile);
+        IOUtils.deleteEmptyDirectory(configFile.getParentFile());
     }
 }

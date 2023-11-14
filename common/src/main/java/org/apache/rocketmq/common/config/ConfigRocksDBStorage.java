@@ -17,7 +17,7 @@
 package org.apache.rocketmq.common.config;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;
 import org.rocksdb.ColumnFamilyDescriptor;
@@ -106,7 +106,7 @@ public class ConfigRocksDBStorage extends AbstractRocksDBStorage {
     @Override
     protected boolean postLoad() {
         try {
-            IOTinyUtils.ensureDirOK(this.dbPath);
+            IOUtils.ensureDirOK(this.dbPath);
 
             initOptions();
 
@@ -209,7 +209,7 @@ public class ConfigRocksDBStorage extends AbstractRocksDBStorage {
             return "";
         }
         rootPath = rootPath + File.separator + "logs";
-        IOTinyUtils.ensureDirOK(rootPath);
+        IOUtils.ensureDirOK(rootPath);
         return rootPath + File.separator + "rocketmqlogs" + File.separator;
     }
 

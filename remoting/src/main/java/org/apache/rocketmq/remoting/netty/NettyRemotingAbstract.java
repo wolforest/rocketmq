@@ -28,7 +28,7 @@ import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.ChannelEventListener;
@@ -357,7 +357,7 @@ public abstract class NettyRemotingAbstract {
 
                 if (!cmd.isOnewayRPC()) {
                     response = RemotingCommand.createResponseCommand(RemotingSysResponseCode.SYSTEM_ERROR,
-                        IOTinyUtils.exceptionSimpleDesc(e));
+                        IOUtils.exceptionSimpleDesc(e));
                     response.setOpaque(opaque);
                     writeResponse(ctx.channel(), cmd, response);
                 }

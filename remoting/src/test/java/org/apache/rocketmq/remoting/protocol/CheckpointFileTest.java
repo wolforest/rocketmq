@@ -18,7 +18,7 @@
 package org.apache.rocketmq.remoting.protocol;
 
 import org.apache.rocketmq.common.utils.CheckpointFile;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -72,8 +72,8 @@ public class CheckpointFileTest {
 
     @After
     public void destroy() {
-        IOTinyUtils.deleteFile(new File(FILE_PATH));
-        IOTinyUtils.deleteFile(new File(FILE_PATH + ".bak"));
+        IOUtils.deleteFile(new File(FILE_PATH));
+        IOUtils.deleteFile(new File(FILE_PATH + ".bak"));
     }
 
     @Test
@@ -88,7 +88,7 @@ public class CheckpointFileTest {
     @Test
     public void testAbNormalWriteAndRead() throws IOException {
         this.checkpoint.write(entryList);
-        IOTinyUtils.deleteFile(new File(FILE_PATH));
+        IOUtils.deleteFile(new File(FILE_PATH));
         List<EpochEntry> listFromFile = checkpoint.read();
         Assert.assertEquals(entryList, listFromFile);
         checkpoint.write(entryList);

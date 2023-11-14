@@ -17,7 +17,7 @@
 package org.apache.rocketmq.store.index;
 
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
@@ -90,7 +90,7 @@ public class IndexFile {
 
     public void shutdown() {
         this.flush();
-        IOTinyUtils.cleanBuffer(this.mappedByteBuffer);
+        IOUtils.cleanBuffer(this.mappedByteBuffer);
     }
 
     public void flush() {

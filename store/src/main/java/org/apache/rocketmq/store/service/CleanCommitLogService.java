@@ -17,7 +17,7 @@
 package org.apache.rocketmq.store.service;
 
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -169,7 +169,7 @@ public class CleanCommitLogService {
 
     private String[] getCommitLogStorePath() {
         String commitLogStorePath = messageStore.getMessageStoreConfig().getStorePathCommitLog();
-        return commitLogStorePath.trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+        return commitLogStorePath.trim().split(IOUtils.MULTI_PATH_SPLITTER);
     }
 
     private boolean isSpaceToDelete() {
@@ -180,7 +180,7 @@ public class CleanCommitLogService {
         String[] storePaths = getCommitLogStorePath();
 
         for (String storePathPhysic : storePaths) {
-            double physicRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathPhysic);
+            double physicRatio = IOUtils.getDiskPartitionSpaceUsedPercent(storePathPhysic);
             if (minPhysicRatio > physicRatio) {
                 minPhysicRatio = physicRatio;
                 minStorePath = storePathPhysic;
@@ -212,7 +212,7 @@ public class CleanCommitLogService {
 
         String storePathLogics = StorePathConfigHelper
             .getStorePathConsumeQueue(messageStore.getMessageStoreConfig().getStorePathRootDir());
-        double logicsRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathLogics);
+        double logicsRatio = IOUtils.getDiskPartitionSpaceUsedPercent(storePathLogics);
         if (logicsRatio > getDiskSpaceWarningLevelRatio()) {
             boolean diskOK = messageStore.getRunningFlags().getAndMakeDiskFull();
             if (diskOK) {
@@ -247,7 +247,7 @@ public class CleanCommitLogService {
             return false;
         } else {
             long majorFileSize = messageStore.getMajorFileSize();
-            long partitionLogicalSize = IOTinyUtils.getDiskPartitionTotalSpace(minStorePath) / replicasPerPartition;
+            long partitionLogicalSize = IOUtils.getDiskPartitionTotalSpace(minStorePath) / replicasPerPartition;
             double logicalRatio = 1.0 * majorFileSize / partitionLogicalSize;
 
             if (logicalRatio > messageStore.getMessageStoreConfig().getLogicalDiskSpaceCleanForciblyThreshold()) {
@@ -278,11 +278,11 @@ public class CleanCommitLogService {
     public double calcStorePathPhysicRatio() {
         Set<String> fullStorePath = new HashSet<>();
         String storePath = messageStore.getStorePathPhysic();
-        String[] paths = storePath.trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+        String[] paths = storePath.trim().split(IOUtils.MULTI_PATH_SPLITTER);
         double minPhysicRatio = 100;
         for (String path : paths) {
-            double physicRatio = IOTinyUtils.isPathExists(path) ?
-                IOTinyUtils.getDiskPartitionSpaceUsedPercent(path) : -1;
+            double physicRatio = IOUtils.isPathExists(path) ?
+                IOUtils.getDiskPartitionSpaceUsedPercent(path) : -1;
             minPhysicRatio = Math.min(minPhysicRatio, physicRatio);
             if (physicRatio > getDiskSpaceCleanForciblyRatio()) {
                 fullStorePath.add(path);

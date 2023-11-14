@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.rocketmq.common.config.AbstractRocksDBStorage;
 import org.apache.rocketmq.common.utils.DataConverter;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.MessageStore;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
@@ -67,7 +67,7 @@ public class ConsumeQueueRocksDBStorage extends AbstractRocksDBStorage {
     @Override
     protected boolean postLoad() {
         try {
-            IOTinyUtils.ensureDirOK(this.dbPath);
+            IOUtils.ensureDirOK(this.dbPath);
 
             initOptions();
 

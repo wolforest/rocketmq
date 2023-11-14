@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.store.ha.autoswitch;
 
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 
 import java.io.File;
 import org.apache.rocketmq.common.utils.StringUtils;
@@ -35,7 +35,7 @@ public abstract class MetadataFile {
     public abstract void clearInMem();
 
     public void writeToFile() throws Exception {
-        IOTinyUtils.deleteFile(new File(filePath));
+        IOUtils.deleteFile(new File(filePath));
         StringUtils.string2File(encodeToStr(), this.filePath);
     }
 
@@ -50,7 +50,7 @@ public abstract class MetadataFile {
 
     public void clear() {
         clearInMem();
-        IOTinyUtils.deleteFile(new File(filePath));
+        IOUtils.deleteFile(new File(filePath));
     }
 
     public String getFilePath() {

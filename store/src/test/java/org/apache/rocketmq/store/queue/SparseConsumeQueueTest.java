@@ -22,7 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ThreadLocalRandom;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.commitlog.CommitLog;
@@ -78,8 +78,8 @@ public class SparseConsumeQueueTest {
     public void testLoad() throws IOException {
         scq = new SparseConsumeQueue(topic, queueId, path, BatchConsumeQueue.CQ_STORE_UNIT_SIZE, defaultMessageStore);
 
-        String file1 = IOTinyUtils.offset2FileName(111111);
-        String file2 = IOTinyUtils.offset2FileName(222222);
+        String file1 = IOUtils.offset2FileName(111111);
+        String file2 = IOUtils.offset2FileName(222222);
 
         long phyOffset = 10;
         long queueOffset = 1;
@@ -124,7 +124,7 @@ public class SparseConsumeQueueTest {
            ...
          */
         for (int i = 0; i < 5; i++) {
-            String fileName = IOTinyUtils.offset2FileName(i * fileSize);
+            String fileName = IOUtils.offset2FileName(i * fileSize);
             fillByteBufSeq(bb, 10, basePhyOffset, baseQueueOffset);
             Files.createDirectories(Paths.get(path, topic, String.valueOf(queueId)));
             Files.write(Paths.get(path, topic, String.valueOf(queueId), fileName), bb.array(),
@@ -157,7 +157,7 @@ public class SparseConsumeQueueTest {
     public void testCreateFile() throws IOException {
         scq = new SparseConsumeQueue(topic, queueId, path, BatchConsumeQueue.CQ_STORE_UNIT_SIZE, defaultMessageStore);
         long physicalOffset = Math.abs(ThreadLocalRandom.current().nextLong());
-        String formatName = IOTinyUtils.offset2FileName(physicalOffset);
+        String formatName = IOUtils.offset2FileName(physicalOffset);
         scq.createFile(physicalOffset);
 
         assertTrue(Files.exists(Paths.get(path, topic, String.valueOf(queueId), formatName)));

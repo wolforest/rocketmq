@@ -17,7 +17,7 @@
 package org.apache.rocketmq.store.rocksdb;
 
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -58,7 +58,7 @@ public class RocksDBCleanConsumeQueueService extends CleanConsumeQueueService {
 
         String storePathLogics = StorePathConfigHelper
             .getStorePathConsumeQueue(this.messageStore.getMessageStoreConfig().getStorePathRootDir());
-        double logicsRatio = IOTinyUtils.getDiskPartitionSpaceUsedPercent(storePathLogics);
+        double logicsRatio = IOUtils.getDiskPartitionSpaceUsedPercent(storePathLogics);
         if (logicsRatio > diskSpaceWarningLevelRatio) {
             boolean diskOk = this.messageStore.getRunningFlags().getAndMakeLogicDiskFull();
             if (diskOk) {

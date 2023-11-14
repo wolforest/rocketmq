@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.store;
 
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.queue.ConsumeQueueExt;
 import org.apache.rocketmq.store.queue.CqExtUnit;
 import org.junit.After;
@@ -98,7 +98,7 @@ public class ConsumeQueueExtTest {
             putSth(consumeQueueExt, true, false, UNIT_COUNT);
         } finally {
             consumeQueueExt.destroy();
-            IOTinyUtils.deleteFile(new File(STORE_PATH));
+            IOUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
@@ -126,7 +126,7 @@ public class ConsumeQueueExtTest {
             }
         } finally {
             consumeQueueExt.destroy();
-            IOTinyUtils.deleteFile(new File(STORE_PATH));
+            IOUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
@@ -148,7 +148,7 @@ public class ConsumeQueueExtTest {
             assertThat(unit).isNull();
         } finally {
             consumeQueueExt.destroy();
-            IOTinyUtils.deleteFile(new File(STORE_PATH));
+            IOUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
@@ -186,7 +186,7 @@ public class ConsumeQueueExtTest {
         } finally {
             putCqExt.destroy();
             loadCqExt.destroy();
-            IOTinyUtils.deleteFile(new File(STORE_PATH));
+            IOUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
@@ -209,7 +209,7 @@ public class ConsumeQueueExtTest {
             assertThat(expectMinAddress).isEqualTo(minAddress);
         } finally {
             consumeQueueExt.destroy();
-            IOTinyUtils.deleteFile(new File(STORE_PATH));
+            IOUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
@@ -232,12 +232,12 @@ public class ConsumeQueueExtTest {
             assertThat(expectMaxAddress).isEqualTo(maxAddress);
         } finally {
             consumeQueueExt.destroy();
-            IOTinyUtils.deleteFile(new File(STORE_PATH));
+            IOUtils.deleteFile(new File(STORE_PATH));
         }
     }
 
     @After
     public void destroy() {
-        IOTinyUtils.deleteFile(new File(STORE_PATH));
+        IOUtils.deleteFile(new File(STORE_PATH));
     }
 }

@@ -20,7 +20,7 @@
  */
 package org.apache.rocketmq.store;
 
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.junit.After;
 import org.junit.Test;
 
@@ -50,6 +50,6 @@ public class StoreCheckpointTest {
     @After
     public void destroy() {
         File file = new File("target/checkpoint_test");
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 }

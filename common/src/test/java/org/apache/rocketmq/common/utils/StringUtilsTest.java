@@ -58,10 +58,10 @@ public class StringUtilsTest {
     public void testGetDiskPartitionSpaceUsedPercent() {
         String tmpDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test";
 
-        assertThat(IOTinyUtils.getDiskPartitionSpaceUsedPercent(null)).isCloseTo(-1, within(0.000001));
-        assertThat(IOTinyUtils.getDiskPartitionSpaceUsedPercent("")).isCloseTo(-1, within(0.000001));
-        assertThat(IOTinyUtils.getDiskPartitionSpaceUsedPercent("nonExistingPath")).isCloseTo(-1, within(0.000001));
-        assertThat(IOTinyUtils.getDiskPartitionSpaceUsedPercent(tmpDir)).isNotCloseTo(-1, within(0.000001));
+        assertThat(IOUtils.getDiskPartitionSpaceUsedPercent(null)).isCloseTo(-1, within(0.000001));
+        assertThat(IOUtils.getDiskPartitionSpaceUsedPercent("")).isCloseTo(-1, within(0.000001));
+        assertThat(IOUtils.getDiskPartitionSpaceUsedPercent("nonExistingPath")).isCloseTo(-1, within(0.000001));
+        assertThat(IOUtils.getDiskPartitionSpaceUsedPercent(tmpDir)).isNotCloseTo(-1, within(0.000001));
     }
 
     @Test
@@ -85,9 +85,9 @@ public class StringUtilsTest {
 
     @Test
     public void testCleanBuffer() {
-        IOTinyUtils.cleanBuffer(null);
-        IOTinyUtils.cleanBuffer(ByteBuffer.allocate(10));
-        IOTinyUtils.cleanBuffer(ByteBuffer.allocate(0));
+        IOUtils.cleanBuffer(null);
+        IOUtils.cleanBuffer(ByteBuffer.allocate(10));
+        IOUtils.cleanBuffer(ByteBuffer.allocate(0));
     }
 
 }

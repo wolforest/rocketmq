@@ -31,7 +31,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.commitlog.AppendMessageCallback;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.commitlog.DefaultAppendMessageCallback;
@@ -72,7 +72,7 @@ public class AppendPropCRCTest {
 
     @After
     public void destroy() {
-        IOTinyUtils.deleteFile(new File(System.getProperty("user.home") + File.separator + "unitteststore"));
+        IOUtils.deleteFile(new File(System.getProperty("user.home") + File.separator + "unitteststore"));
     }
 
     @Test

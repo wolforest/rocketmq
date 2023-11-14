@@ -21,7 +21,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.controller.ReplicasManager;
 import org.apache.rocketmq.common.config.ControllerConfig;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.controller.ControllerManager;
 import org.apache.rocketmq.namesrv.NamesrvController;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -307,7 +307,7 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
     public void shutdownAndClearBroker() throws InterruptedException {
         for (BrokerController controller : brokerList) {
             controller.shutdown();
-            IOTinyUtils.deleteFile(new File(controller.getMessageStoreConfig().getStorePathRootDir()));
+            IOUtils.deleteFile(new File(controller.getMessageStoreConfig().getStorePathRootDir()));
         }
         brokerList.clear();
     }
@@ -321,7 +321,7 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
             controllerManager.shutdown();
         }
         File file = new File(STORE_PATH_ROOT_PARENT_DIR);
-        IOTinyUtils.deleteFile(file);
+        IOUtils.deleteFile(file);
     }
 
 }

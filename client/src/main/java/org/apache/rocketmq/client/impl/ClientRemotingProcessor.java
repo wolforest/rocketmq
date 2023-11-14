@@ -30,7 +30,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -142,7 +142,7 @@ public class ClientRemotingProcessor implements NettyRequestProcessor {
                 requestHeader.getConsumerGroup());
             this.mqClientFactory.rebalanceImmediately();
         } catch (Exception e) {
-            logger.error("notifyConsumerIdsChanged exception", IOTinyUtils.exceptionSimpleDesc(e));
+            logger.error("notifyConsumerIdsChanged exception", IOUtils.exceptionSimpleDesc(e));
         }
         return null;
     }
@@ -188,7 +188,7 @@ public class ClientRemotingProcessor implements NettyRequestProcessor {
         if (null != consumerRunningInfo) {
             if (requestHeader.isJstackEnable()) {
                 Map<Thread, StackTraceElement[]> map = Thread.getAllStackTraces();
-                String jstack = IOTinyUtils.jstack(map);
+                String jstack = IOUtils.jstack(map);
                 consumerRunningInfo.setJstack(jstack);
             }
 

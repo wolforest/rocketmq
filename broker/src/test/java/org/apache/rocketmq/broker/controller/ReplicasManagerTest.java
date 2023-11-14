@@ -25,7 +25,7 @@ import org.apache.rocketmq.broker.slave.SlaveSynchronize;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
 import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.Pair;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.protocol.body.SyncStateSet;
 import org.apache.rocketmq.remoting.protocol.header.controller.ElectMasterResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.GetMetaDataResponseHeader;
@@ -135,7 +135,7 @@ public class ReplicasManagerTest {
 
     @Before
     public void before() throws Exception {
-        IOTinyUtils.deleteFile(new File(STORE_BASE_PATH));
+        IOUtils.deleteFile(new File(STORE_BASE_PATH));
         autoSwitchHAService = new AutoSwitchHAService();
         messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setStorePathRootDir(STORE_PATH);
@@ -188,7 +188,7 @@ public class ReplicasManagerTest {
     public void after() {
         replicasManager.shutdown();
         brokerController.shutdown();
-        IOTinyUtils.deleteFile(new File(STORE_BASE_PATH));
+        IOUtils.deleteFile(new File(STORE_BASE_PATH));
     }
 
     @Test

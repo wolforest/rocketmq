@@ -184,7 +184,7 @@ public class StringUtils {
         if (fileParent != null) {
             fileParent.mkdirs();
         }
-        IOTinyUtils.writeStringToFile(file, str, "UTF-8");
+        IOUtils.writeStringToFile(file, str, "UTF-8");
     }
 
     public static String file2String(final String fileName) throws IOException {

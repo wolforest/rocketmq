@@ -68,7 +68,7 @@ import org.apache.rocketmq.common.message.MessageType;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.ChannelUtil;
 import org.apache.rocketmq.common.utils.CorrelationIdUtil;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -452,7 +452,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
                 String remark = null;
                 if (exception != null) {
-                    remark = "checkLocalTransactionState Exception: " + IOTinyUtils.exceptionSimpleDesc(exception);
+                    remark = "checkLocalTransactionState Exception: " + IOUtils.exceptionSimpleDesc(exception);
                 }
                 doExecuteEndTransactionHook(msg, uniqueKey, brokerAddr, localTransactionState, true);
 

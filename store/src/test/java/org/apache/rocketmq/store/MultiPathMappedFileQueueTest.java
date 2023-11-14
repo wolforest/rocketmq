@@ -19,7 +19,7 @@ package org.apache.rocketmq.store;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.MappedFile;
 import org.apache.rocketmq.store.logfile.MappedFileQueue;
@@ -36,11 +36,11 @@ public class MultiPathMappedFileQueueTest {
         final byte[] fixedMsg = new byte[1024];
 
         MessageStoreConfig config = new MessageStoreConfig();
-        config.setStorePathCommitLog("target/unit_test_store/a/" + IOTinyUtils.MULTI_PATH_SPLITTER
-                + "target/unit_test_store/b/" + IOTinyUtils.MULTI_PATH_SPLITTER
+        config.setStorePathCommitLog("target/unit_test_store/a/" + IOUtils.MULTI_PATH_SPLITTER
+                + "target/unit_test_store/b/" + IOUtils.MULTI_PATH_SPLITTER
                 + "target/unit_test_store/c/");
         MappedFileQueue mappedFileQueue = new MultiPathMappedFileQueue(config, 1024, null, null);
-        String[] storePaths = config.getStorePathCommitLog().trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+        String[] storePaths = config.getStorePathCommitLog().trim().split(IOUtils.MULTI_PATH_SPLITTER);
         for (int i = 0; i < 1024; i++) {
             MappedFile mappedFile = mappedFileQueue.getLastMappedFile(fixedMsg.length * i);
             assertThat(mappedFile).isNotNull();
@@ -58,11 +58,11 @@ public class MultiPathMappedFileQueueTest {
             //create old mapped files
             final byte[] fixedMsg = new byte[1024];
             MessageStoreConfig config = new MessageStoreConfig();
-            config.setStorePathCommitLog("target/unit_test_store/a/" + IOTinyUtils.MULTI_PATH_SPLITTER
-                    + "target/unit_test_store/b/" + IOTinyUtils.MULTI_PATH_SPLITTER
+            config.setStorePathCommitLog("target/unit_test_store/a/" + IOUtils.MULTI_PATH_SPLITTER
+                    + "target/unit_test_store/b/" + IOUtils.MULTI_PATH_SPLITTER
                     + "target/unit_test_store/c/");
             MappedFileQueue mappedFileQueue = new MultiPathMappedFileQueue(config, 1024, null, null);
-            String[] storePaths = config.getStorePathCommitLog().trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+            String[] storePaths = config.getStorePathCommitLog().trim().split(IOUtils.MULTI_PATH_SPLITTER);
             for (int i = 0; i < 1024; i++) {
                 MappedFile mappedFile = mappedFileQueue.getLastMappedFile(fixedMsg.length * i);
                 assertThat(mappedFile).isNotNull();
@@ -76,7 +76,7 @@ public class MultiPathMappedFileQueueTest {
         // test load and readonly
         MessageStoreConfig config = new MessageStoreConfig();
         config.setStorePathCommitLog("target/unit_test_store/b/");
-        config.setReadOnlyCommitLogStorePaths("target/unit_test_store/a" + IOTinyUtils.MULTI_PATH_SPLITTER
+        config.setReadOnlyCommitLogStorePaths("target/unit_test_store/a" + IOUtils.MULTI_PATH_SPLITTER
                 + "target/unit_test_store/c");
         MultiPathMappedFileQueue mappedFileQueue = new MultiPathMappedFileQueue(config, 1024, null, null);
 
@@ -85,7 +85,7 @@ public class MultiPathMappedFileQueueTest {
         assertThat(mappedFileQueue.getMappedFiles().size()).isEqualTo(1024);
         for (int i = 0; i < 1024; i++) {
             assertThat(mappedFileQueue.getMappedFiles().get(i).getFile().getName())
-                    .isEqualTo(IOTinyUtils.offset2FileName(1024 * i));
+                    .isEqualTo(IOUtils.offset2FileName(1024 * i));
         }
         mappedFileQueue.destroy();
 
@@ -96,11 +96,11 @@ public class MultiPathMappedFileQueueTest {
         final byte[] fixedMsg = new byte[1024];
 
         MessageStoreConfig config = new MessageStoreConfig();
-        config.setStorePathCommitLog("target/unit_test_store/a/" + IOTinyUtils.MULTI_PATH_SPLITTER
-                + "target/unit_test_store/b/" + IOTinyUtils.MULTI_PATH_SPLITTER
+        config.setStorePathCommitLog("target/unit_test_store/a/" + IOUtils.MULTI_PATH_SPLITTER
+                + "target/unit_test_store/b/" + IOUtils.MULTI_PATH_SPLITTER
                 + "target/unit_test_store/c/");
         MappedFileQueue mappedFileQueue = new MultiPathMappedFileQueue(config, 1024, null, null);
-        String[] storePaths = config.getStorePathCommitLog().trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+        String[] storePaths = config.getStorePathCommitLog().trim().split(IOUtils.MULTI_PATH_SPLITTER);
         for (int i = 0; i < 1024; i++) {
             MappedFile mappedFile = mappedFileQueue.getLastMappedFile(fixedMsg.length * i);
             assertThat(mappedFile).isNotNull();
@@ -109,9 +109,9 @@ public class MultiPathMappedFileQueueTest {
             assertThat(mappedFile.getFileName().startsWith(storePaths[idx])).isTrue();
 
             if (i == 500) {
-                config.setStorePathCommitLog("target/unit_test_store/a/" + IOTinyUtils.MULTI_PATH_SPLITTER
+                config.setStorePathCommitLog("target/unit_test_store/a/" + IOUtils.MULTI_PATH_SPLITTER
                         + "target/unit_test_store/b/");
-                storePaths = config.getStorePathCommitLog().trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+                storePaths = config.getStorePathCommitLog().trim().split(IOUtils.MULTI_PATH_SPLITTER);
             }
         }
         mappedFileQueue.shutdown(1000);
@@ -124,11 +124,11 @@ public class MultiPathMappedFileQueueTest {
 
         Set<String> fullStorePath = new HashSet<>();
         MessageStoreConfig config = new MessageStoreConfig();
-        config.setStorePathCommitLog("target/unit_test_store/a/" + IOTinyUtils.MULTI_PATH_SPLITTER
-                + "target/unit_test_store/b/" + IOTinyUtils.MULTI_PATH_SPLITTER
+        config.setStorePathCommitLog("target/unit_test_store/a/" + IOUtils.MULTI_PATH_SPLITTER
+                + "target/unit_test_store/b/" + IOUtils.MULTI_PATH_SPLITTER
                 + "target/unit_test_store/c/");
         MappedFileQueue mappedFileQueue = new MultiPathMappedFileQueue(config, 1024, null, () -> fullStorePath);
-        String[] storePaths = config.getStorePathCommitLog().trim().split(IOTinyUtils.MULTI_PATH_SPLITTER);
+        String[] storePaths = config.getStorePathCommitLog().trim().split(IOUtils.MULTI_PATH_SPLITTER);
         assertThat(storePaths.length).isEqualTo(3);
 
         MappedFile mappedFile = mappedFileQueue.getLastMappedFile(0);

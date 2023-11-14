@@ -21,7 +21,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.MessageStore;
@@ -95,7 +95,7 @@ public class MessageOperator {
     }
 
     public void clean() {
-        IOTinyUtils.cleanBuffer(this.bufferLocal.get());
+        IOUtils.cleanBuffer(this.bufferLocal.get());
         this.bufferLocal.remove();
     }
 

@@ -33,7 +33,7 @@ import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.container.BrokerContainer;
 import org.apache.rocketmq.container.BrokerContainerConfig;
@@ -232,7 +232,7 @@ public class ContainerIntegrationTestBase {
                 }
 
                 for (final File file : TMP_FILE_LIST) {
-                    IOTinyUtils.deleteFile(file);
+                    IOUtils.deleteFile(file);
                 }
             }
         }));
