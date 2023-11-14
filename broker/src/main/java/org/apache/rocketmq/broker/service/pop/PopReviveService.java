@@ -164,21 +164,23 @@ public class PopReviveService extends ServiceThread {
     }
 
     private void addRetryTopicIfNoExit(String topic, String consumerGroup) {
-        if (brokerController != null) {
-            TopicConfig topicConfig = brokerController.getTopicConfigManager().selectTopicConfig(topic);
-            if (topicConfig != null) {
-                return;
-            }
-            topicConfig = new TopicConfig(topic);
-            topicConfig.setReadQueueNums(PopConstants.retryQueueNum);
-            topicConfig.setWriteQueueNums(PopConstants.retryQueueNum);
-            topicConfig.setTopicFilterType(TopicFilterType.SINGLE_TAG);
-            topicConfig.setPerm(6);
-            topicConfig.setTopicSysFlag(0);
-            brokerController.getTopicConfigManager().updateTopicConfig(topicConfig);
-
-            initPopRetryOffset(topic, consumerGroup);
+        if (brokerController == null) {
+            return;
         }
+
+        TopicConfig topicConfig = brokerController.getTopicConfigManager().selectTopicConfig(topic);
+        if (topicConfig != null) {
+            return;
+        }
+        topicConfig = new TopicConfig(topic);
+        topicConfig.setReadQueueNums(PopConstants.retryQueueNum);
+        topicConfig.setWriteQueueNums(PopConstants.retryQueueNum);
+        topicConfig.setTopicFilterType(TopicFilterType.SINGLE_TAG);
+        topicConfig.setPerm(6);
+        topicConfig.setTopicSysFlag(0);
+        brokerController.getTopicConfigManager().updateTopicConfig(topicConfig);
+
+        initPopRetryOffset(topic, consumerGroup);
     }
 
     protected List<MessageExt> getReviveMessage(long offset, int queueId) {
