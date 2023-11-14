@@ -490,17 +490,28 @@ public class PopBufferMergeService extends ServiceThread {
 
     private boolean validatePointWrapper(Iterator<Map.Entry<String, PopCheckPointWrapper>> iterator, PopCheckPointWrapper pointWrapper) {
         // just process offset(already stored at pull thread), or buffer ck(not stored and ack finish)
-        if (pointWrapper.isJustOffset() && pointWrapper.isCkStored() || isCkDone(pointWrapper)
-            || isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored()) {
-            if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                POP_LOGGER.info("[PopBuffer]ck done, {}", pointWrapper);
-            }
-            iterator.remove();
-            counter.decrementAndGet();
-            return false;
+        if (!isPointValid(pointWrapper)) {
+            return true;
         }
 
-        return true;
+        if (brokerController.getBrokerConfig().isEnablePopLog()) {
+            POP_LOGGER.info("[PopBuffer]ck done, {}", pointWrapper);
+        }
+        iterator.remove();
+        counter.decrementAndGet();
+        return false;
+    }
+
+    private boolean isPointValid(PopCheckPointWrapper pointWrapper) {
+        if (pointWrapper.isJustOffset() && pointWrapper.isCkStored()) {
+            return true;
+        }
+
+        if (isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored()) {
+            return true;
+        }
+
+        return isCkDone(pointWrapper);
     }
 
     private int storeAckInfo(int count, PopCheckPointWrapper pointWrapper) {
