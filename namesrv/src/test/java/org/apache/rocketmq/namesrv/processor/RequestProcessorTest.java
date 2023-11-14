@@ -20,7 +20,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
-import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.namesrv.NamesrvController;
@@ -575,7 +575,7 @@ public class RequestProcessorTest {
             RegisterBrokerBody requestBody = new RegisterBrokerBody();
             requestBody.setTopicConfigSerializeWrapper(topicConfigWrapper);
             body = requestBody.encode(false);
-            final int bodyCrc32 = BinaryUtil.crc32(body);
+            final int bodyCrc32 = BinaryUtils.crc32(body);
             header.setBodyCrc32(bodyCrc32);
         }
         header.setBrokerName("broker");

@@ -86,7 +86,7 @@ public class CheckpointFile<T> {
                     entryContent.append(System.lineSeparator());
                 }
             }
-            int crc32 = BinaryUtil.crc32(entryContent.toString().getBytes(StandardCharsets.UTF_8));
+            int crc32 = BinaryUtils.crc32(entryContent.toString().getBytes(StandardCharsets.UTF_8));
 
             String content = entries.size() + System.lineSeparator() +
                 crc32 + System.lineSeparator() + entryContent;
@@ -119,7 +119,7 @@ public class CheckpointFile<T> {
                     }
                     line = reader.readLine();
                 }
-                int truthCrc32 = BinaryUtil.crc32(sb.toString().getBytes(StandardCharsets.UTF_8));
+                int truthCrc32 = BinaryUtils.crc32(sb.toString().getBytes(StandardCharsets.UTF_8));
 
                 if (result.size() != expectedLines) {
                     final String err = String.format(

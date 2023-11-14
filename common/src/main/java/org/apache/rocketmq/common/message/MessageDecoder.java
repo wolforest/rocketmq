@@ -33,7 +33,7 @@ import java.util.Map;
 import org.apache.rocketmq.common.compression.Compressor;
 import org.apache.rocketmq.common.compression.CompressorFactory;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 
 public class MessageDecoder {
@@ -324,7 +324,7 @@ public class MessageDecoder {
         int bornhostLength = (sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 8 : 20;
         byte[] newBody = messageExt.getBody();
         if (needCompress && (sysFlag & MessageSysFlag.COMPRESSED_FLAG) == MessageSysFlag.COMPRESSED_FLAG) {
-            newBody = BinaryUtil.compress(body, 5);
+            newBody = BinaryUtils.compress(body, 5);
         }
         int bodyLength = newBody.length;
         int storeSize = messageExt.getStoreSize();
@@ -511,7 +511,7 @@ public class MessageDecoder {
 
                     if (checkCRC) {
                         //crc body
-                        int crc = BinaryUtil.crc32(body, 0, bodyLen);
+                        int crc = BinaryUtils.crc32(body, 0, bodyLen);
                         if (crc != bodyCRC) {
                             throw new Exception("Msg crc is error!");
                         }

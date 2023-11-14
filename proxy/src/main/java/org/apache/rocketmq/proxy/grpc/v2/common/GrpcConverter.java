@@ -41,7 +41,7 @@ import org.apache.rocketmq.common.filter.ExpressionType;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -150,7 +150,7 @@ public class GrpcConverter {
         }
 
         // body_digest & body_encoding
-        String md5Result = BinaryUtil.generateMd5(messageExt.getBody());
+        String md5Result = BinaryUtils.generateMd5(messageExt.getBody());
         Digest digest = Digest.newBuilder()
             .setType(DigestType.MD5)
             .setChecksum(md5Result)

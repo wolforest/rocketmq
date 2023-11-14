@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.common.utils;
 
+import io.netty.channel.Channel;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -388,5 +389,25 @@ public class NetworkUtil {
         }
 
         return inetAddressList;
+    }
+
+    public static String getRemoteIp(Channel channel) {
+        InetSocketAddress inetSocketAddress = (InetSocketAddress) channel.remoteAddress();
+        if (inetSocketAddress == null) {
+            return "";
+        }
+        final InetAddress inetAddr = inetSocketAddress.getAddress();
+        return inetAddr != null ? inetAddr.getHostAddress() : inetSocketAddress.getHostName();
+    }
+
+    public static String brokerVIPChannel(final boolean isChange, final String brokerAddr) {
+        if (!isChange) {
+            return brokerAddr;
+        }
+
+        int split = brokerAddr.lastIndexOf(":");
+        String ip = brokerAddr.substring(0, split);
+        String port = brokerAddr.substring(split + 1);
+        return ip + ":" + (Integer.parseInt(port) - 2);
     }
 }

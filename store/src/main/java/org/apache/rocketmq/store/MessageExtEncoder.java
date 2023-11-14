@@ -26,7 +26,7 @@ import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.message.MessageVersion;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.commitlog.CommitLog;
@@ -315,7 +315,7 @@ public class MessageExtEncoder {
             // 5 BODY
             int bodyLen = messagesByteBuff.getInt();
             int bodyPos = messagesByteBuff.position();
-            int bodyCrc = BinaryUtil.crc32(messagesByteBuff.array(), bodyPos, bodyLen);
+            int bodyCrc = BinaryUtils.crc32(messagesByteBuff.array(), bodyPos, bodyLen);
             messagesByteBuff.position(bodyPos + bodyLen);
             // 6 properties
             short propertiesLen = messagesByteBuff.getShort();

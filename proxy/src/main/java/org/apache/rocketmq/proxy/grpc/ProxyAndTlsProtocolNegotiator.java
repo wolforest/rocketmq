@@ -45,7 +45,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.constant.HAProxyConstants;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
@@ -194,7 +194,7 @@ public class ProxyAndTlsProtocolNegotiator implements InternalProtocolNegotiator
                 if (CollectionUtils.isNotEmpty(msg.tlvs())) {
                     msg.tlvs().forEach(tlv -> {
                         byte[] valueBytes = ByteBufUtil.getBytes(tlv.content());
-                        if (!BinaryUtil.isAscii(valueBytes)) {
+                        if (!BinaryUtils.isAscii(valueBytes)) {
                             return;
                         }
                         Attributes.Key<String> key = AttributeKeys.valueOf(

@@ -22,7 +22,7 @@ import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.constant.MQVersion.Version;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.namesrv.NamesrvUtil;
-import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -317,7 +317,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
     private boolean checksum(ChannelHandlerContext ctx, RemotingCommand request,
         RegisterBrokerRequestHeader requestHeader) {
         if (requestHeader.getBodyCrc32() != 0) {
-            final int crc32 = BinaryUtil.crc32(request.getBody());
+            final int crc32 = BinaryUtils.crc32(request.getBody());
             if (crc32 != requestHeader.getBodyCrc32()) {
                 log.warn(String.format("receive registerBroker request,crc32 not match,from %s",
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel())));

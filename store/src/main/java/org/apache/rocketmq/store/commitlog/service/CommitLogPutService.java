@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.message.MessageVersion;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -421,7 +421,7 @@ public class CommitLogPutService {
         }
 
         // Set the message body CRC (consider the most appropriate setting on the client)
-        msg.setBodyCRC(BinaryUtil.crc32(msg.getBody()));
+        msg.setBodyCRC(BinaryUtils.crc32(msg.getBody()));
         if (enabledAppendPropCRC) {
             // delete crc32 properties if exist
             msg.deleteProperty(MessageConst.PROPERTY_CRC32);

@@ -44,8 +44,7 @@ import org.apache.rocketmq.common.namesrv.DefaultTopAddressing;
 import org.apache.rocketmq.common.namesrv.TopAddressing;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.BinaryUtil;
-import org.apache.rocketmq.common.utils.ChannelUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -499,7 +498,7 @@ public class BrokerOuterAPI {
             requestBody.setTopicConfigSerializeWrapper(TopicConfigAndMappingSerializeWrapper.from(topicConfigWrapper));
             requestBody.setFilterServerList(filterServerList);
             final byte[] body = requestBody.encode(compressed);
-            final int bodyCrc32 = BinaryUtil.crc32(body);
+            final int bodyCrc32 = BinaryUtils.crc32(body);
             requestHeader.setBodyCrc32(bodyCrc32);
             final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
             for (final String namesrvAddr : nameServerAddressList) {
@@ -738,7 +737,7 @@ public class BrokerOuterAPI {
         RemotingTimeoutException, InterruptedException, MQBrokerException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_TOPIC_CONFIG, null);
 
-        RemotingCommand response = this.remotingClient.invokeSync(ChannelUtil.brokerVIPChannel(true, addr), request, 3000);
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(true, addr), request, 3000);
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return TopicConfigSerializeWrapper.decode(response.getBody(), TopicConfigAndMappingSerializeWrapper.class);
@@ -752,7 +751,7 @@ public class BrokerOuterAPI {
         RemotingTimeoutException, InterruptedException, MQBrokerException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_TIMER_CHECK_POINT, null);
 
-        RemotingCommand response = this.remotingClient.invokeSync(ChannelUtil.brokerVIPChannel(true, addr), request, 3000);
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(true, addr), request, 3000);
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return TimerCheckpoint.decode(ByteBuffer.wrap(response.getBody()));
@@ -766,7 +765,7 @@ public class BrokerOuterAPI {
         RemotingTimeoutException, InterruptedException, MQBrokerException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_TIMER_METRICS, null);
 
-        RemotingCommand response = this.remotingClient.invokeSync(ChannelUtil.brokerVIPChannel(true, addr), request, 3000);
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(true, addr), request, 3000);
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return TimerMetrics.TimerMetricsSerializeWrapper.decode(response.getBody(), TimerMetrics.TimerMetricsSerializeWrapper.class);

@@ -39,7 +39,7 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.message.MessageVersion;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.PlatformUtils;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
@@ -408,7 +408,7 @@ public class CommitLog implements Swappable {
                         ByteBuffer tmpBuffer = byteBuffer.duplicate();
                         tmpBuffer.position(tmpBuffer.position() - totalSize);
                         tmpBuffer.limit(tmpBuffer.position() + totalSize - CommitLog.CRC32_RESERVED_LEN);
-                        int crc = BinaryUtil.crc32(tmpBuffer);
+                        int crc = BinaryUtils.crc32(tmpBuffer);
                         if (crc != expectedCRC) {
                             log.warn(
                                 "CommitLog#checkAndDispatchMessage: failed to check message CRC, expected "
@@ -517,7 +517,7 @@ public class CommitLog implements Swappable {
             return null;
         }
 
-        int crc = BinaryUtil.crc32(bytesContent, 0, bodyLen);
+        int crc = BinaryUtils.crc32(bytesContent, 0, bodyLen);
         if (crc == bodyCRC) {
             return null;
         }

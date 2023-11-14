@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -197,7 +197,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
             int checkSize = msgLen - crc32ReservedLength;
             ByteBuffer tmpBuffer = preEncodeBuffer.duplicate();
             tmpBuffer.limit(tmpBuffer.position() + checkSize);
-            int crc32 = BinaryUtil.crc32(tmpBuffer);
+            int crc32 = BinaryUtils.crc32(tmpBuffer);
             tmpBuffer.limit(tmpBuffer.position() + crc32ReservedLength);
             MessageDecoder.createCrc32(tmpBuffer, crc32);
         }
@@ -292,7 +292,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
                 int checkSize = msgLen - crc32ReservedLength;
                 ByteBuffer tmpBuffer = messagesByteBuff.duplicate();
                 tmpBuffer.position(msgPos).limit(msgPos + checkSize);
-                int crc32 = BinaryUtil.crc32(tmpBuffer);
+                int crc32 = BinaryUtils.crc32(tmpBuffer);
                 messagesByteBuff.position(msgPos + checkSize);
                 MessageDecoder.createCrc32(messagesByteBuff, crc32);
             }

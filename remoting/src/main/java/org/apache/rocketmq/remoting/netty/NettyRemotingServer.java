@@ -72,7 +72,7 @@ import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.HAProxyConstants;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.BinaryUtil;
+import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -795,7 +795,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 if (CollectionUtils.isNotEmpty(msg.tlvs())) {
                     msg.tlvs().forEach(tlv -> {
                         byte[] valueBytes = ByteBufUtil.getBytes(tlv.content());
-                        if (!BinaryUtil.isAscii(valueBytes)) {
+                        if (!BinaryUtils.isAscii(valueBytes)) {
                             return;
                         }
                         AttributeKey<String> key = AttributeKeys.valueOf(

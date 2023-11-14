@@ -28,7 +28,7 @@ import java.util.zip.CRC32;
 import java.util.zip.DeflaterOutputStream;
 import org.apache.commons.codec.binary.Hex;
 
-public class BinaryUtil {
+public class BinaryUtils {
     public static byte[] calculateMd5(byte[] binaryData) {
         MessageDigest messageDigest = null;
         try {
