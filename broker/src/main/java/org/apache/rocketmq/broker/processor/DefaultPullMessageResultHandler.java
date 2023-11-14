@@ -40,7 +40,7 @@ import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.constant.MQConstants;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -289,7 +289,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
             msgInner.setQueueId(0);
             msgInner.setSysFlag(0);
             msgInner.setBornTimestamp(System.currentTimeMillis());
-            msgInner.setBornHost(NetworkUtil.string2SocketAddress(this.brokerController.getBrokerAddr()));
+            msgInner.setBornHost(NetworkUtils.string2SocketAddress(this.brokerController.getBrokerAddr()));
             msgInner.setStoreHost(msgInner.getBornHost());
 
             msgInner.setReconsumeTimes(0);

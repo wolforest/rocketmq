@@ -25,7 +25,7 @@ public class ChannelUtilTest {
 
     @Test
     public void testBrokerVIPChannel() {
-        assertThat(NetworkUtil.brokerVIPChannel(true, "127.0.0.1:10911")).isEqualTo("127.0.0.1:10909");
+        assertThat(NetworkUtils.brokerVIPChannel(true, "127.0.0.1:10911")).isEqualTo("127.0.0.1:10909");
     }
 
 }

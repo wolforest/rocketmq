@@ -28,7 +28,7 @@ import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.MQConstants;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -165,7 +165,7 @@ public class BrokerStartup {
             try {
                 String[] addrArray = namesrvAddr.split(";");
                 for (String addr : addrArray) {
-                    NetworkUtil.string2SocketAddress(addr);
+                    NetworkUtils.string2SocketAddress(addr);
                 }
             } catch (Exception e) {
                 System.out.printf("The Name Server Address[%s] illegal, please set it as follows, " +
@@ -282,8 +282,8 @@ public class BrokerStartup {
         if (properties == null) {
             return;
         }
-        String rmqAddressServerDomain = properties.getProperty("rmqAddressServerDomain", NetworkUtil.WS_DOMAIN_NAME);
-        String rmqAddressServerSubGroup = properties.getProperty("rmqAddressServerSubGroup", NetworkUtil.WS_DOMAIN_SUBGROUP);
+        String rmqAddressServerDomain = properties.getProperty("rmqAddressServerDomain", NetworkUtils.WS_DOMAIN_NAME);
+        String rmqAddressServerSubGroup = properties.getProperty("rmqAddressServerSubGroup", NetworkUtils.WS_DOMAIN_SUBGROUP);
         System.setProperty("rocketmq.namesrv.domain", rmqAddressServerDomain);
         System.setProperty("rocketmq.namesrv.domain.subgroup", rmqAddressServerSubGroup);
     }

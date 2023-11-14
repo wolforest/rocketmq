@@ -34,7 +34,7 @@ import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.grpc.v2.channel.GrpcClientChannel;
 import org.apache.rocketmq.proxy.grpc.v2.common.GrpcClientSettingsManager;
@@ -136,7 +136,7 @@ public class ProxyClientRemotingProcessorTest {
         @Override
         public Channel channel() {
             Channel channel = mock(Channel.class);
-            when(channel.remoteAddress()).thenReturn(NetworkUtil.string2SocketAddress("127.0.0.1:10911"));
+            when(channel.remoteAddress()).thenReturn(NetworkUtils.string2SocketAddress("127.0.0.1:10911"));
             return channel;
         }
     }

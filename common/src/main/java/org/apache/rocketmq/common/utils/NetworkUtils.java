@@ -39,7 +39,10 @@ import org.apache.rocketmq.common.help.FAQUrl;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
-public class NetworkUtil {
+/**
+ * @renamed from NetworkUtil to NetworkUtils
+ */
+public class NetworkUtils {
     public static final String OS_NAME = System.getProperty("os.name");
     public static final String LOCALHOST = localhost();
     public static final String DEFAULT_NAMESRV_ADDR_LOOKUP = "jmenv.tbsite.net";

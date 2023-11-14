@@ -34,7 +34,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.DataConverter;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.pop.AckMsg;
@@ -64,7 +64,7 @@ public class PopReviveServiceTest {
     private static final int REVIVE_QUEUE_ID = 0;
     private static final String GROUP = "group";
     private static final String TOPIC = "topic";
-    private static final SocketAddress STORE_HOST = NetworkUtil.string2SocketAddress("127.0.0.1:8080");
+    private static final SocketAddress STORE_HOST = NetworkUtils.string2SocketAddress("127.0.0.1:8080");
 
     @Mock
     private MessageStore messageStore;

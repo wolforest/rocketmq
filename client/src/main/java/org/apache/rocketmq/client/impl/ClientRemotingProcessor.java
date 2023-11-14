@@ -31,7 +31,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -239,11 +239,11 @@ public class ClientRemotingProcessor implements NettyRequestProcessor {
             msg.setStoreTimestamp(requestHeader.getStoreTimestamp());
 
             if (requestHeader.getBornHost() != null) {
-                msg.setBornHost(NetworkUtil.string2SocketAddress(requestHeader.getBornHost()));
+                msg.setBornHost(NetworkUtils.string2SocketAddress(requestHeader.getBornHost()));
             }
 
             if (requestHeader.getStoreHost() != null) {
-                msg.setStoreHost(NetworkUtil.string2SocketAddress(requestHeader.getStoreHost()));
+                msg.setStoreHost(NetworkUtils.string2SocketAddress(requestHeader.getStoreHost()));
             }
 
             byte[] body = request.getBody();

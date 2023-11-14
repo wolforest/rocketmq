@@ -34,7 +34,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.constant.MQConstants;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.proxy.service.route.AddressableMessageQueue;
 import org.apache.rocketmq.proxy.service.transaction.TransactionData;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -206,7 +206,7 @@ public class ProducerProcessorTest extends BaseProcessorTest {
         int msgIDLength = 4 + 4 + 8;
         ByteBuffer byteBufferMsgId = ByteBuffer.allocate(msgIDLength);
         return MessageDecoder.createMessageId(byteBufferMsgId,
-            MessageExt.socketAddress2ByteBuffer(NetworkUtil.string2SocketAddress("127.0.0.1:10911")),
+            MessageExt.socketAddress2ByteBuffer(NetworkUtils.string2SocketAddress("127.0.0.1:10911")),
             commitLogOffset);
     }
 }

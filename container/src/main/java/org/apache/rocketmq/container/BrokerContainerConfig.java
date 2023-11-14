@@ -20,7 +20,7 @@ package org.apache.rocketmq.container;
 import org.apache.rocketmq.common.annotation.ImportantField;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 
 public class BrokerContainerConfig {
 
@@ -36,7 +36,7 @@ public class BrokerContainerConfig {
     private boolean fetchNamesrvAddrByAddressServer = false;
 
     @ImportantField
-    private String brokerContainerIP = NetworkUtil.getLocalAddress();
+    private String brokerContainerIP = NetworkUtils.getLocalAddress();
 
     private String brokerConfigPaths = null;
     

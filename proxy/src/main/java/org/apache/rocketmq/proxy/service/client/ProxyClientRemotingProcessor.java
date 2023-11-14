@@ -25,7 +25,7 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.proxy.common.utils.ProxyUtils;
@@ -63,7 +63,7 @@ public class ProxyClientRemotingProcessor extends ClientRemotingProcessor {
                 CheckTransactionStateRequestHeader requestHeader =
                     (CheckTransactionStateRequestHeader) request.decodeCommandCustomHeader(CheckTransactionStateRequestHeader.class);
                 request.writeCustomHeader(requestHeader);
-                request.addExtField(ProxyUtils.BROKER_ADDR, NetworkUtil.socketAddress2String(ctx.channel().remoteAddress()));
+                request.addExtField(ProxyUtils.BROKER_ADDR, NetworkUtils.socketAddress2String(ctx.channel().remoteAddress()));
                 Channel channel = this.producerManager.getAvailableChannel(group);
                 if (channel != null) {
                     channel.writeAndFlush(request);

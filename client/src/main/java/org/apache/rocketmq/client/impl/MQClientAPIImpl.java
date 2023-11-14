@@ -63,7 +63,7 @@ import org.apache.rocketmq.common.namesrv.TopAddressing;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.constant.MQConstants;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -255,7 +255,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         final ClientRemotingProcessor clientRemotingProcessor,
         RPCHook rpcHook, final ClientConfig clientConfig, final ChannelEventListener channelEventListener) {
         this.clientConfig = clientConfig;
-        topAddressing = new DefaultTopAddressing(NetworkUtil.getWSAddr(), clientConfig.getUnitName());
+        topAddressing = new DefaultTopAddressing(NetworkUtils.getWSAddr(), clientConfig.getUnitName());
         topAddressing.registerChangeCallBack(this);
         this.remotingClient = new NettyRemotingClient(nettyClientConfig, channelEventListener);
         this.clientRemotingProcessor = clientRemotingProcessor;
@@ -347,7 +347,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_ASSIGNMENT, null);
         request.setBody(requestBody.encode());
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -368,7 +368,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         byte[] body = RemotingSerializable.encode(config);
         request.setBody(body);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -401,7 +401,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_AND_CREATE_TOPIC, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -430,7 +430,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_AND_CREATE_ACL_CONFIG, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -451,7 +451,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_ACL_CONFIG, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -474,7 +474,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_GLOBAL_WHITE_ADDRS_CONFIG, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -493,7 +493,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         RemotingSendRequestException, RemotingConnectException, MQBrokerException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_CLUSTER_ACL_INFO, null);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -1231,7 +1231,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setOffset(phyoffset);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.VIEW_MESSAGE_BY_ID, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -1261,7 +1261,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setTimestamp(timestamp);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.SEARCH_OFFSET_BY_TIMESTAMP, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -1294,7 +1294,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setTimestamp(timestamp);
         requestHeader.setBoundaryType(boundaryType);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.SEARCH_OFFSET_BY_TIMESTAMP, requestHeader);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -1318,7 +1318,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setBname(messageQueue.getBrokerName());
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_MAX_OFFSET, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -1344,7 +1344,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setConsumerGroup(consumerGroup);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CONSUMER_LIST_BY_GROUP, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -1370,7 +1370,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setBname(messageQueue.getBrokerName());
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_MIN_OFFSET, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -1395,7 +1395,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setBname(mq.getBrokerName());
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_EARLIEST_MSG_STORETIME, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -1419,7 +1419,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     ) throws RemotingException, MQBrokerException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CONSUMER_OFFSET, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -1445,7 +1445,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     ) throws RemotingException, MQBrokerException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_CONSUMER_OFFSET, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -1467,7 +1467,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_CONSUMER_OFFSET, requestHeader);
 
-        this.remotingClient.invokeOneway(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
+        this.remotingClient.invokeOneway(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
     }
 
     public int sendHeartbeat(
@@ -1562,7 +1562,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     ) throws RemotingException, MQBrokerException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_MESSAGE, requestHeader);
         request.addExtField(MQConstants.UNIQUE_MSG_QUERY_FLAG, isUnqiueKey.toString());
-        this.remotingClient.invokeAsync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis,
+        this.remotingClient.invokeAsync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis,
             invokeCallback);
     }
 
@@ -1595,7 +1595,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setMaxReconsumeTimes(maxConsumeRetryTimes);
         requestHeader.setBname(brokerName);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -1616,7 +1616,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.LOCK_BATCH_MQ, null);
 
         request.setBody(requestBody.encode());
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -1645,7 +1645,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
             this.remotingClient.invokeOneway(addr, request, timeoutMillis);
         } else {
             RemotingCommand response = this.remotingClient
-                .invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
+                .invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
             switch (response.getCode()) {
                 case ResponseCode.SUCCESS: {
                     return;
@@ -1666,7 +1666,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_TOPIC_STATS_INFO, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -1696,7 +1696,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CONSUME_STATS, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -1719,7 +1719,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_PRODUCER_CONNECTION_LIST, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -1739,7 +1739,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_PRODUCER_INFO, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -1761,7 +1761,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CONSUMER_CONNECTION_LIST, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -1779,7 +1779,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_RUNTIME_INFO, null);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -1844,7 +1844,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         if (str != null && str.length() > 0) {
             request.setBody(str.getBytes(MQConstants.DEFAULT_CHARSET));
             RemotingCommand response = this.remotingClient
-                .invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
+                .invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
             switch (response.getCode()) {
                 case ResponseCode.SUCCESS: {
                     return;
@@ -1882,7 +1882,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         if (str != null && str.length() > 0) {
             request.setBody(str.getBytes(MQConstants.DEFAULT_CHARSET));
             RemotingCommand response = this.remotingClient.invokeSync(
-                NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
+                NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
             switch (response.getCode()) {
                 case ResponseCode.SUCCESS: {
                     return;
@@ -1900,7 +1900,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         if (consumerGroup != null && consumerGroup.length() > 0) {
             request.setBody(consumerGroup.getBytes(MQConstants.DEFAULT_CHARSET));
             RemotingCommand response = this.remotingClient.invokeSync(
-                NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
+                NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
             switch (response.getCode()) {
                 case ResponseCode.SUCCESS: {
                     return;
@@ -2077,7 +2077,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         DeleteTopicRequestHeader requestHeader = new DeleteTopicRequestHeader();
         requestHeader.setTopic(topic);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_TOPIC_IN_BROKER, requestHeader);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2137,7 +2137,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setCleanOffset(removeOffset);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_SUBSCRIPTIONGROUP, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2270,7 +2270,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
             requestHeader);
 
         RemotingCommand response = remotingClient.invokeSync(
-            NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
+            NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
                 if (null != response.getBody()) {
@@ -2305,7 +2305,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         if (isC) {
             request.setLanguage(LanguageCode.CPP);
         }
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2332,7 +2332,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setClientAddr(clientAddr);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.INVOKE_BROKER_TO_GET_CONSUMER_STATUS, requestHeader);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2356,7 +2356,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setTopic(topic);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_TOPIC_CONSUME_BY_WHO, requestHeader);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2377,7 +2377,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setGroup(group);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_TOPICS_BY_CONSUMER, requestHeader);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2400,7 +2400,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setTopic(topic);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_SUBSCRIPTION_BY_CONSUMER, requestHeader);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2424,7 +2424,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setGroup(group);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CONSUME_TIME_SPAN, requestHeader);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2490,7 +2490,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     public TopicList getSystemTopicListFromBroker(final String addr, final long timeoutMillis)
         throws RemotingException, MQClientException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_SYSTEM_TOPIC_LIST_FROM_BROKER, null);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2512,7 +2512,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         long timeoutMillis) throws MQClientException, RemotingConnectException,
         RemotingSendRequestException, RemotingTimeoutException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CLEAN_EXPIRED_CONSUMEQUEUE, null);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2528,7 +2528,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
     public boolean deleteExpiredCommitLog(final String addr, long timeoutMillis) throws MQClientException,
         RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_EXPIRED_COMMITLOG, null);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2545,7 +2545,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         long timeoutMillis) throws MQClientException, RemotingConnectException,
         RemotingSendRequestException, RemotingTimeoutException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CLEAN_UNUSED_TOPIC, null);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2568,7 +2568,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CONSUMER_RUNNING_INFO, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2600,7 +2600,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CONSUME_MESSAGE_DIRECTLY, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2635,7 +2635,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
             requestHeader.setFilterGroups(sb.toString());
         }
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CORRECTION_OFFSET, requestHeader);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2749,7 +2749,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setTopic(topic);
         requestHeader.setOffline(isOffline);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CLONE_GROUP_OFFSET, requestHeader);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2772,7 +2772,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.VIEW_BROKER_STATS_DATA, requestHeader);
         RemotingCommand response = this.remotingClient
-            .invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
+            .invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2801,7 +2801,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_CONSUME_STATS, requestHeader);
         RemotingCommand response = this.remotingClient
-            .invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
+            .invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2822,7 +2822,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException, MQBrokerException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_SUBSCRIPTIONGROUP_CONFIG, null);
         RemotingCommand response = this.remotingClient
-            .invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
+            .invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2841,7 +2841,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         header.setGroup(group);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_SUBSCRIPTIONGROUP_CONFIG, header);
         RemotingCommand response = this.remotingClient
-            .invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
+            .invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -2858,7 +2858,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_TOPIC_CONFIG, null);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2947,7 +2947,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestHeader.setConsumerGroup(consumerGroup);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CONSUME_QUEUE, requestHeader);
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
 
         assert response != null;
 
@@ -2972,7 +2972,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         request.setBody(requestBody.encode());
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
 
         assert response != null;
 
@@ -2988,7 +2988,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.RESUME_CHECK_HALF_MESSAGE, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -3014,7 +3014,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         requestBody.setPopShareQueueNum(popShareQueueNum);
         request.setBody(requestBody.encode());
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
         assert response != null;
         if (ResponseCode.SUCCESS != response.getCode()) {
             throw new MQClientException(response.getCode(), response.getRemark());
@@ -3029,7 +3029,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         header.setLo(true);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_TOPIC_CONFIG, header);
         RemotingCommand response = this.remotingClient
-            .invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
+            .invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), brokerAddr), request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -3062,7 +3062,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_AND_CREATE_STATIC_TOPIC, requestHeader);
         request.setBody(topicQueueMappingDetail.encode());
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -3090,7 +3090,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         long timeoutMillis) throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_AND_GET_GROUP_FORBIDDEN, requestHeader);
 
-        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtil.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
+        RemotingCommand response = this.remotingClient.invokeSync(NetworkUtils.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {

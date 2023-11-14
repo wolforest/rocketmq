@@ -20,7 +20,7 @@ package org.apache.rocketmq.broker;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Properties;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -43,11 +43,11 @@ public class BrokerStartupTest {
             Assert.assertEquals("value2", System.getProperty("rocketmq.namesrv.domain.subgroup"));
         }
         {
-            properties.put("rmqAddressServerDomain", NetworkUtil.WS_DOMAIN_NAME);
-            properties.put("rmqAddressServerSubGroup", NetworkUtil.WS_DOMAIN_SUBGROUP);
+            properties.put("rmqAddressServerDomain", NetworkUtils.WS_DOMAIN_NAME);
+            properties.put("rmqAddressServerSubGroup", NetworkUtils.WS_DOMAIN_SUBGROUP);
             method.invoke(null, properties);
-            Assert.assertEquals(NetworkUtil.WS_DOMAIN_NAME, System.getProperty("rocketmq.namesrv.domain"));
-            Assert.assertEquals(NetworkUtil.WS_DOMAIN_SUBGROUP, System.getProperty("rocketmq.namesrv.domain.subgroup"));
+            Assert.assertEquals(NetworkUtils.WS_DOMAIN_NAME, System.getProperty("rocketmq.namesrv.domain"));
+            Assert.assertEquals(NetworkUtils.WS_DOMAIN_SUBGROUP, System.getProperty("rocketmq.namesrv.domain.subgroup"));
         }
 
 

@@ -25,7 +25,7 @@ import java.nio.channels.SocketChannel;
 import java.util.List;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettySystemConfig;
@@ -233,7 +233,7 @@ public class AutoSwitchHAConnection implements HAConnection {
         private volatile long lastReadTimestamp = System.currentTimeMillis();
 
         public ReadSocketService(final SocketChannel socketChannel) throws IOException {
-            this.selector = NetworkUtil.openSelector();
+            this.selector = NetworkUtils.openSelector();
             this.socketChannel = socketChannel;
             this.socketChannel.register(this.selector, SelectionKey.OP_READ);
             this.setDaemon(true);
@@ -459,7 +459,7 @@ public class AutoSwitchHAConnection implements HAConnection {
         protected long transferOffset = 0;
 
         public AbstractWriteSocketService(final SocketChannel socketChannel) throws IOException {
-            this.selector = NetworkUtil.openSelector();
+            this.selector = NetworkUtils.openSelector();
             this.socketChannel = socketChannel;
             this.socketChannel.register(this.selector, SelectionKey.OP_WRITE);
             this.setDaemon(true);

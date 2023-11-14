@@ -17,7 +17,7 @@
 package org.apache.rocketmq.common.message;
 
 import org.apache.rocketmq.common.utils.NetworkPortUtils;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 
 import java.nio.ByteBuffer;
@@ -36,7 +36,7 @@ public class MessageClientIDSetter {
     static {
         byte[] ip;
         try {
-            ip = NetworkUtil.getIP();
+            ip = NetworkUtils.getIP();
         } catch (Exception e) {
             ip = createFakeIP();
         }
@@ -93,9 +93,9 @@ public class MessageClientIDSetter {
     public static String getIPStrFromID(String msgID) {
         byte[] ipBytes = getIPFromID(msgID);
         if (ipBytes.length == 16) {
-            return NetworkUtil.ipToIPv6Str(ipBytes);
+            return NetworkUtils.ipToIPv6Str(ipBytes);
         } else {
-            return NetworkUtil.ipToIPv4Str(ipBytes);
+            return NetworkUtils.ipToIPv4Str(ipBytes);
         }
     }
 

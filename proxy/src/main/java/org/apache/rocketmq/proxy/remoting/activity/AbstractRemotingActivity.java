@@ -25,7 +25,7 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.proxy.common.ProxyContext;
@@ -127,7 +127,7 @@ public abstract class AbstractRemotingActivity implements NettyRequestProcessor 
         context.setAction(RemotingHelper.getRequestCodeDesc(request.getCode()))
             .setProtocolType(ChannelProtocolType.REMOTING.getName())
             .setChannel(channel)
-            .setLocalAddress(NetworkUtil.socketAddress2String(ctx.channel().localAddress()))
+            .setLocalAddress(NetworkUtils.socketAddress2String(ctx.channel().localAddress()))
             .setRemoteAddress(RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
 
         Optional.ofNullable(RemotingHelper.getAttributeValue(AttributeKeys.LANGUAGE_CODE_KEY, channel))

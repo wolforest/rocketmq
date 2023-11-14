@@ -27,7 +27,7 @@ import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.future.FutureTaskExt;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -226,7 +226,7 @@ public class NamesrvController {
             nettyServerConfig.setListenPort(this.remotingServer.localListenPort());
         }
 
-        this.remotingClient.updateNameServerAddressList(Collections.singletonList(NetworkUtil.getLocalAddress()
+        this.remotingClient.updateNameServerAddressList(Collections.singletonList(NetworkUtils.getLocalAddress()
             + ":" + nettyServerConfig.getListenPort()));
         this.remotingClient.start();
 

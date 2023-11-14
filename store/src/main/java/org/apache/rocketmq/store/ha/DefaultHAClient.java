@@ -27,7 +27,7 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -75,7 +75,7 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
     private FlowMonitor flowMonitor;
 
     public DefaultHAClient(DefaultMessageStore defaultMessageStore) throws IOException {
-        this.selector = NetworkUtil.openSelector();
+        this.selector = NetworkUtils.openSelector();
         this.defaultMessageStore = defaultMessageStore;
         this.flowMonitor = new FlowMonitor(defaultMessageStore.getMessageStoreConfig());
     }
@@ -252,7 +252,7 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
         if (null == socketChannel) {
             String addr = this.masterHaAddress.get();
             if (addr != null) {
-                SocketAddress socketAddress = NetworkUtil.string2SocketAddress(addr);
+                SocketAddress socketAddress = NetworkUtils.string2SocketAddress(addr);
                 this.socketChannel = RemotingHelper.connect(socketAddress);
                 if (this.socketChannel != null) {
                     this.socketChannel.register(this.selector, SelectionKey.OP_READ);

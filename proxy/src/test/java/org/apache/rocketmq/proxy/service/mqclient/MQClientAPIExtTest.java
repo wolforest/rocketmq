@@ -47,7 +47,7 @@ import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.remoting.InvokeCallback;
 import org.apache.rocketmq.remoting.RemotingClient;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -341,8 +341,8 @@ public class MQClientAPIExtTest {
     protected MessageExt createMessage() {
         MessageExt messageExt = new MessageExt();
         messageExt.setTopic("topic");
-        messageExt.setBornHost(NetworkUtil.string2SocketAddress("127.0.0.2:8888"));
-        messageExt.setStoreHost(NetworkUtil.string2SocketAddress("127.0.0.1:10911"));
+        messageExt.setBornHost(NetworkUtils.string2SocketAddress("127.0.0.2:8888"));
+        messageExt.setStoreHost(NetworkUtils.string2SocketAddress("127.0.0.1:10911"));
         messageExt.setBody(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
         MessageClientIDSetter.setUniqID(messageExt);
         return messageExt;

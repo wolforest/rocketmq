@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -147,7 +147,7 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
     }
 
     public void init() throws IOException {
-        this.selector = NetworkUtil.openSelector();
+        this.selector = NetworkUtils.openSelector();
         this.flowMonitor = new FlowMonitor(this.messageStore.getMessageStoreConfig());
         this.haReader = new HAClientReader();
         haReader.registerHook(readSize -> {
@@ -345,7 +345,7 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
         if (null == this.socketChannel) {
             String addr = this.masterHaAddress.get();
             if (StringUtils.isNotEmpty(addr)) {
-                SocketAddress socketAddress = NetworkUtil.string2SocketAddress(addr);
+                SocketAddress socketAddress = NetworkUtils.string2SocketAddress(addr);
                 this.socketChannel = RemotingHelper.connect(socketAddress);
                 if (this.socketChannel != null) {
                     this.socketChannel.register(this.selector, SelectionKey.OP_READ);

@@ -23,10 +23,10 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class NetworkUtilTest {
+public class NetworkUtilsTest {
     @Test
     public void testGetLocalAddress() {
-        String localAddress = NetworkUtil.getLocalAddress();
+        String localAddress = NetworkUtils.getLocalAddress();
         assertThat(localAddress).isNotNull();
         assertThat(localAddress.length()).isGreaterThan(0);
         assertThat(localAddress).isNotEqualTo(InetAddress.getLoopbackAddress().getHostAddress());
@@ -34,13 +34,13 @@ public class NetworkUtilTest {
 
     @Test
     public void testConvert2IpStringWithIp() {
-        String result = NetworkUtil.convert2IpString("127.0.0.1:9876");
+        String result = NetworkUtils.convert2IpString("127.0.0.1:9876");
         assertThat(result).isEqualTo("127.0.0.1:9876");
     }
 
     @Test
     public void testConvert2IpStringWithHost() {
-        String result = NetworkUtil.convert2IpString("localhost:9876");
+        String result = NetworkUtils.convert2IpString("localhost:9876");
         assertThat(result).isEqualTo("127.0.0.1:9876");
     }
 
@@ -53,20 +53,20 @@ public class NetworkUtilTest {
     public void testIPv6Check() throws UnknownHostException {
         InetAddress nonInternal = InetAddress.getByName("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
         InetAddress internal = InetAddress.getByName("FE80:0000:0000:0000:0000:0000:0000:FFFF");
-        assertThat(NetworkUtil.isInternalV6IP(nonInternal)).isFalse();
-        assertThat(NetworkUtil.isInternalV6IP(internal)).isTrue();
-        assertThat(NetworkUtil.ipToIPv6Str(nonInternal.getAddress()).toUpperCase()).isEqualTo("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
+        assertThat(NetworkUtils.isInternalV6IP(nonInternal)).isFalse();
+        assertThat(NetworkUtils.isInternalV6IP(internal)).isTrue();
+        assertThat(NetworkUtils.ipToIPv6Str(nonInternal.getAddress()).toUpperCase()).isEqualTo("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
     }
 
     @Test
     public void testGetLocalhostByNetworkInterface() throws Exception {
-        assertThat(NetworkUtil.LOCALHOST).isNotNull();
-        assertThat(NetworkUtil.getLocalhostByNetworkInterface()).isNotNull();
+        assertThat(NetworkUtils.LOCALHOST).isNotNull();
+        assertThat(NetworkUtils.getLocalhostByNetworkInterface()).isNotNull();
     }
 
     @Test
     public void testGetLocalInetAddress() throws Exception {
-        List<String> localInetAddress = NetworkUtil.getLocalInetAddress();
+        List<String> localInetAddress = NetworkUtils.getLocalInetAddress();
         String local = InetAddress.getLocalHost().getHostAddress();
         assertThat(localInetAddress).contains("127.0.0.1");
         assertThat(local).isNotNull();

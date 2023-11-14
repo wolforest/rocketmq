@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.metrics.MetricsExporterType;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 
 import java.util.concurrent.TimeUnit;
 
@@ -60,8 +60,8 @@ public class BrokerConfig extends BrokerIdentity {
     private int listenPort = 6888;
 
     @ImportantField
-    private String brokerIP1 = NetworkUtil.getLocalAddress();
-    private String brokerIP2 = NetworkUtil.getLocalAddress();
+    private String brokerIP1 = NetworkUtils.getLocalAddress();
+    private String brokerIP2 = NetworkUtils.getLocalAddress();
 
     @ImportantField
     private boolean recoverConcurrently = false;

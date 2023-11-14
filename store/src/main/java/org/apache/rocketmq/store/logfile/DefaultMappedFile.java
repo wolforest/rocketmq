@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -806,7 +806,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         String newFileName = this.fileName + ".delete";
         try {
             Path newFilePath = Paths.get(newFileName);
-            if (NetworkUtil.isWindowsPlatform() && mappedByteBuffer != null) {
+            if (NetworkUtils.isWindowsPlatform() && mappedByteBuffer != null) {
                 renameToDeleteInWindows(newFileName, newFilePath);
             } else {
                 Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
@@ -841,7 +841,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         String baseName = currentPath.getFileName().toString();
         Path parentPath = currentPath.getParent().getParent().resolve(baseName);
 
-        if (NetworkUtil.isWindowsPlatform() && mappedByteBuffer != null) {
+        if (NetworkUtils.isWindowsPlatform() && mappedByteBuffer != null) {
             moveToParentInWindows(parentPath);
         } else {
             Files.move(Paths.get(fileName), parentPath, StandardCopyOption.ATOMIC_MOVE);

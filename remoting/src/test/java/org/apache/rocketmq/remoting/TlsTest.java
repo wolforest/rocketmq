@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.remoting;
 
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.remoting.common.TlsMode;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -379,7 +379,7 @@ public class TlsTest {
 
     private boolean isHostConnectable(String addr) {
         try (Socket socket = new Socket()) {
-            socket.connect(NetworkUtil.string2SocketAddress(addr));
+            socket.connect(NetworkUtils.string2SocketAddress(addr));
             return true;
         } catch (IOException ignored) {
         }

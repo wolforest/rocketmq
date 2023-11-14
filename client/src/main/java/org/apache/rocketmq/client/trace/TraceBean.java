@@ -18,10 +18,10 @@ package org.apache.rocketmq.client.trace;
 
 import org.apache.rocketmq.client.producer.LocalTransactionState;
 import org.apache.rocketmq.common.message.MessageType;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 
 public class TraceBean {
-    private static final String LOCAL_ADDRESS = NetworkUtil.ipToIPv4Str(NetworkUtil.getIP());
+    private static final String LOCAL_ADDRESS = NetworkUtils.ipToIPv4Str(NetworkUtils.getIP());
     private String topic = "";
     private String msgId = "";
     private String offsetMsgId = "";

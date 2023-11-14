@@ -25,7 +25,7 @@ import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyMessageEncoder;
 import io.netty.handler.codec.haproxy.HAProxyProtocolVersion;
 import io.netty.handler.codec.haproxy.HAProxyProxiedProtocol;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyRemotingClient;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
@@ -107,7 +107,7 @@ public class ProxyProtocolTest {
 
     private boolean isHostConnectable(String addr) {
         try (Socket socket = new Socket()) {
-            socket.connect(NetworkUtil.string2SocketAddress(addr));
+            socket.connect(NetworkUtils.string2SocketAddress(addr));
             return true;
         } catch (IOException ignored) {
         }

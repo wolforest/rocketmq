@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.proxy.common.ProxyContext;
@@ -58,16 +58,16 @@ public abstract class ProxyChannel extends SimpleChannel {
         String localAddress) {
         super(parent, remoteAddress, localAddress);
         this.proxyRelayService = proxyRelayService;
-        this.remoteSocketAddress = NetworkUtil.string2SocketAddress(remoteAddress);
-        this.localSocketAddress = NetworkUtil.string2SocketAddress(localAddress);
+        this.remoteSocketAddress = NetworkUtils.string2SocketAddress(remoteAddress);
+        this.localSocketAddress = NetworkUtils.string2SocketAddress(localAddress);
     }
 
     protected ProxyChannel(ProxyRelayService proxyRelayService, Channel parent, ChannelId id, String remoteAddress,
         String localAddress) {
         super(parent, id, remoteAddress, localAddress);
         this.proxyRelayService = proxyRelayService;
-        this.remoteSocketAddress = NetworkUtil.string2SocketAddress(remoteAddress);
-        this.localSocketAddress = NetworkUtil.string2SocketAddress(localAddress);
+        this.remoteSocketAddress = NetworkUtils.string2SocketAddress(remoteAddress);
+        this.localSocketAddress = NetworkUtils.string2SocketAddress(localAddress);
     }
 
     @Override

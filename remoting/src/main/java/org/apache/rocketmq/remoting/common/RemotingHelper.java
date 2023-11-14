@@ -23,7 +23,7 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
@@ -106,7 +106,7 @@ public class RemotingHelper {
         final long timeoutMillis) throws InterruptedException, RemotingConnectException,
         RemotingSendRequestException, RemotingTimeoutException, RemotingCommandException {
         long beginTime = System.currentTimeMillis();
-        SocketAddress socketAddress = NetworkUtil.string2SocketAddress(addr);
+        SocketAddress socketAddress = NetworkUtils.string2SocketAddress(addr);
         SocketChannel socketChannel = connect(socketAddress);
         if (null == socketChannel) {
             throw new RemotingConnectException(addr);

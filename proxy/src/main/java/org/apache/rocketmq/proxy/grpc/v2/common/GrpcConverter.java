@@ -42,7 +42,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.BinaryUtils;
-import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
@@ -198,7 +198,7 @@ public class GrpcConverter {
         // store_host
         SocketAddress storeHost = messageExt.getStoreHost();
         if (storeHost != null) {
-            systemPropertiesBuilder.setStoreHost(NetworkUtil.socketAddress2String(storeHost));
+            systemPropertiesBuilder.setStoreHost(NetworkUtils.socketAddress2String(storeHost));
         }
 
         // delivery_timestamp
