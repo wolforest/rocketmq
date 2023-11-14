@@ -60,6 +60,7 @@ public class PopBufferMergeService extends ServiceThread {
      *
      * use cases:
      * - scan
+     * - addAckMsg: mark ack state of Check Point
      *
      * Key: topic + group + queueId + startOffset + popTime + brokerName
      */
