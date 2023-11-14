@@ -15,28 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.common;
+package org.apache.rocketmq.common.utils;
 
-import java.io.File;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
-import org.apache.rocketmq.common.utils.IOTinyUtils;
-import org.apache.rocketmq.common.utils.NetworkPortUtils;
-import org.apache.rocketmq.common.utils.NetworkUtil;
-import org.apache.rocketmq.common.utils.PropertyUtils;
-import org.apache.rocketmq.common.utils.StringUtils;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
 import static org.junit.Assert.assertEquals;
 
-public class UtilAllTest {
+public class PropertyUtilsTest {
 
     @Test
     public void testProperties2Object() {
@@ -88,49 +75,6 @@ public class UtilAllTest {
         p2.setProperty("b", "2");
 
         assertThat(PropertyUtils.isPropertiesEqual(p1, p2)).isTrue();
-    }
-
-    @Test
-    public void testGetPid() {
-        assertThat(NetworkPortUtils.getPid()).isGreaterThan(0);
-    }
-
-    @Test
-    public void testGetDiskPartitionSpaceUsedPercent() {
-        String tmpDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test";
-
-        assertThat(IOTinyUtils.getDiskPartitionSpaceUsedPercent(null)).isCloseTo(-1, within(0.000001));
-        assertThat(IOTinyUtils.getDiskPartitionSpaceUsedPercent("")).isCloseTo(-1, within(0.000001));
-        assertThat(IOTinyUtils.getDiskPartitionSpaceUsedPercent("nonExistingPath")).isCloseTo(-1, within(0.000001));
-        assertThat(IOTinyUtils.getDiskPartitionSpaceUsedPercent(tmpDir)).isNotCloseTo(-1, within(0.000001));
-    }
-
-    @Test
-    public void testIsBlank() {
-        assertThat(StringUtils.isBlank("Hello ")).isFalse();
-        assertThat(StringUtils.isBlank(" Hello")).isFalse();
-        assertThat(StringUtils.isBlank("He llo")).isFalse();
-        assertThat(StringUtils.isBlank("  ")).isTrue();
-        assertThat(StringUtils.isBlank("Hello")).isFalse();
-    }
-
-    @Test
-    public void testIPv6Check() throws UnknownHostException {
-        InetAddress nonInternal = InetAddress.getByName("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
-        InetAddress internal = InetAddress.getByName("FE80:0000:0000:0000:0000:0000:0000:FFFF");
-        assertThat(NetworkUtil.isInternalV6IP(nonInternal)).isFalse();
-        assertThat(NetworkUtil.isInternalV6IP(internal)).isTrue();
-        assertThat(NetworkUtil.ipToIPv6Str(nonInternal.getAddress()).toUpperCase()).isEqualTo("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
-    }
-
-    @Test
-    public void testJoin() {
-        List<String> list = Arrays.asList("groupA=DENY", "groupB=PUB|SUB", "groupC=SUB");
-        String comma = ",";
-        assertEquals("groupA=DENY,groupB=PUB|SUB,groupC=SUB", StringUtils.join(list, comma));
-        assertEquals(null, StringUtils.join(null, comma));
-        List<String> objects = Collections.emptyList();
-        assertEquals("", StringUtils.join(objects, comma));
     }
 
     static class DemoConfig {
@@ -203,10 +147,5 @@ public class UtilAllTest {
         }
     }
 
-    @Test
-    public void testCleanBuffer() {
-        IOTinyUtils.cleanBuffer(null);
-        IOTinyUtils.cleanBuffer(ByteBuffer.allocate(10));
-        IOTinyUtils.cleanBuffer(ByteBuffer.allocate(0));
-    }
+
 }

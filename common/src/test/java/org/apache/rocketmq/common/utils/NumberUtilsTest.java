@@ -14,28 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.rocketmq.common.utils;
 
-package org.apache.rocketmq.common;
-
-import java.net.InetAddress;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.common.constant.MQConstants;
-import org.apache.rocketmq.common.utils.NetworkUtil;
-import org.apache.rocketmq.common.utils.NumberUtils;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MixAllTest {
-    @Test
-    public void testGetLocalInetAddress() throws Exception {
-        List<String> localInetAddress = NetworkUtil.getLocalInetAddress();
-        String local = InetAddress.getLocalHost().getHostAddress();
-        assertThat(localInetAddress).contains("127.0.0.1");
-        assertThat(local).isNotNull();
-    }
-
+public class NumberUtilsTest {
     @Test
     public void testCompareAndIncreaseOnly() {
         AtomicLong target = new AtomicLong(5);
@@ -46,21 +32,4 @@ public class MixAllTest {
         assertThat(target.get()).isEqualTo(6);
     }
 
-    @Test
-    public void testGetLocalhostByNetworkInterface() throws Exception {
-        assertThat(NetworkUtil.LOCALHOST).isNotNull();
-        assertThat(NetworkUtil.getLocalhostByNetworkInterface()).isNotNull();
-    }
-
-    @Test
-    public void testIsLmq() {
-        String testLmq = null;
-        assertThat(MQConstants.isLmq(testLmq)).isFalse();
-        testLmq = "lmq";
-        assertThat(MQConstants.isLmq(testLmq)).isFalse();
-        testLmq = "%LMQ%queue123";
-        assertThat(MQConstants.isLmq(testLmq)).isTrue();
-        testLmq = "%LMQ%GID_TEST";
-        assertThat(MQConstants.isLmq(testLmq)).isTrue();
-    }
 }
