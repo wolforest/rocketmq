@@ -65,9 +65,9 @@ import static org.apache.rocketmq.broker.metrics.BrokerMetricsConstant.LABEL_TOP
 public class PopReviveService extends ServiceThread {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
 
-    private int queueId;
-    private BrokerController brokerController;
-    private String reviveTopic;
+    private final int queueId;
+    private final BrokerController brokerController;
+    private final String reviveTopic;
     private long currentReviveMessageTimestamp = -1;
     private volatile boolean shouldRunPopRevive = false;
 
@@ -463,7 +463,7 @@ public class PopReviveService extends ServiceThread {
         return point;
     }
 
-    protected void mergeAndRevive(ConsumeReviveObj consumeReviveObj) throws Throwable {
+    protected void mergeAndRevive(ConsumeReviveObj consumeReviveObj) {
         ArrayList<PopCheckPoint> sortList = consumeReviveObj.genSortList();
         POP_LOGGER.info("reviveQueueId={}, ck listSize={}", queueId, sortList.size());
         if (sortList.size() != 0) {
