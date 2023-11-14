@@ -283,22 +283,24 @@ public class PopReviveService extends ServiceThread {
         List<MessageExt> foundList = new ArrayList<>();
         try {
             List<ByteBuffer> messageBufferList = getMessageResult.getMessageBufferList();
-            if (messageBufferList != null) {
-                for (int i = 0; i < messageBufferList.size(); i++) {
-                    ByteBuffer bb = messageBufferList.get(i);
-                    if (bb == null) {
-                        POP_LOGGER.error("bb is null {}", getMessageResult);
-                        continue;
-                    }
-                    MessageExt msgExt = MessageDecoder.decode(bb, true, deCompressBody);
-                    if (msgExt == null) {
-                        POP_LOGGER.error("decode msgExt is null {}", getMessageResult);
-                        continue;
-                    }
-                    // use CQ offset, not offset in Message
-                    msgExt.setQueueOffset(getMessageResult.getMessageQueueOffset().get(i));
-                    foundList.add(msgExt);
+            if (messageBufferList == null) {
+                return foundList;
+            }
+
+            for (int i = 0; i < messageBufferList.size(); i++) {
+                ByteBuffer bb = messageBufferList.get(i);
+                if (bb == null) {
+                    POP_LOGGER.error("bb is null {}", getMessageResult);
+                    continue;
                 }
+                MessageExt msgExt = MessageDecoder.decode(bb, true, deCompressBody);
+                if (msgExt == null) {
+                    POP_LOGGER.error("decode msgExt is null {}", getMessageResult);
+                    continue;
+                }
+                // use CQ offset, not offset in Message
+                msgExt.setQueueOffset(getMessageResult.getMessageQueueOffset().get(i));
+                foundList.add(msgExt);
             }
         } finally {
             getMessageResult.release();
