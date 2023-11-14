@@ -22,20 +22,20 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class ConcurrentHashMapUtilsTest {
+public class MapUtilsTest {
 
     @Test
     public void computeIfAbsent() {
 
         ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
         map.put("123", "1111");
-        String value = ConcurrentHashMapUtils.computeIfAbsent(map, "123", k -> "234");
+        String value = MapUtils.computeIfAbsent(map, "123", k -> "234");
         assertEquals("1111", value);
-        String value1 = ConcurrentHashMapUtils.computeIfAbsent(map, "1232", k -> "2342");
+        String value1 = MapUtils.computeIfAbsent(map, "1232", k -> "2342");
         assertEquals("2342", value1);
-        String value2 = ConcurrentHashMapUtils.computeIfAbsent(map, "123", k -> "2342");
+        String value2 = MapUtils.computeIfAbsent(map, "123", k -> "2342");
         assertEquals("1111", value2);
 //        map.computeIfAbsent("AaAa", key->map.computeIfAbsent("BBBB",key2->"42"));
-        ConcurrentHashMapUtils.computeIfAbsent(map, "AaAa", key -> map.computeIfAbsent("BBBB", key2 -> "42"));
+        MapUtils.computeIfAbsent(map, "AaAa", key -> map.computeIfAbsent("BBBB", key2 -> "42"));
     }
 }

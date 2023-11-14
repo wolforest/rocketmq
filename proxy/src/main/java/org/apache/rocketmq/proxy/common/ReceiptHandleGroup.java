@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.rocketmq.common.consumer.ReceiptHandle;
-import org.apache.rocketmq.common.utils.ConcurrentHashMapUtils;
+import org.apache.rocketmq.common.utils.MapUtils;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 
 public class ReceiptHandleGroup {
@@ -143,7 +143,7 @@ public class ReceiptHandleGroup {
 
     public void put(String msgID, MessageReceiptHandle value) {
         long timeout = ConfigurationManager.getProxyConfig().getLockTimeoutMsInHandleGroup();
-        Map<HandleKey, HandleData> handleMap = ConcurrentHashMapUtils.computeIfAbsent((ConcurrentHashMap<String, Map<HandleKey, HandleData>>) this.receiptHandleMap,
+        Map<HandleKey, HandleData> handleMap = MapUtils.computeIfAbsent((ConcurrentHashMap<String, Map<HandleKey, HandleData>>) this.receiptHandleMap,
             msgID, msgIDKey -> new ConcurrentHashMap<>());
         handleMap.compute(new HandleKey(value.getOriginalReceiptHandle()), (handleKey, handleData) -> {
             if (handleData == null || handleData.needRemove) {

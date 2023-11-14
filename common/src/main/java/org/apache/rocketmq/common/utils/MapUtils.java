@@ -20,7 +20,10 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
-public abstract class ConcurrentHashMapUtils {
+/**
+ * @renamed from ConcurrentHashMapUtils to MapUtils
+ */
+public abstract class MapUtils {
 
     private static boolean isJdk8;
 
