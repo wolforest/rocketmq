@@ -437,16 +437,17 @@ public class PopReviveService extends ServiceThread {
     private boolean mockCkForAck(MessageExt messageExt, AckMsg ackMsg, String mergeKey, HashMap<String, PopCheckPoint> mockPointMap) {
         long ackWaitTime = System.currentTimeMillis() - messageExt.getDeliverTimeMs();
         long reviveAckWaitMs = brokerController.getBrokerConfig().getReviveAckWaitMs();
-        if (ackWaitTime > reviveAckWaitMs) {
-            // will use the reviveOffset of popCheckPoint to commit offset in mergeAndRevive
-            PopCheckPoint mockPoint = createMockCkForAck(ackMsg, messageExt.getQueueOffset());
-            POP_LOGGER.warn(
-                    "ack wait for {}ms cannot find ck, skip this ack. mergeKey:{}, ack:{}, mockCk:{}",
-                    reviveAckWaitMs, mergeKey, ackMsg, mockPoint);
-            mockPointMap.put(mergeKey, mockPoint);
-            return true;
+        if (ackWaitTime <= reviveAckWaitMs) {
+            return false;
         }
-        return false;
+
+        // will use the reviveOffset of popCheckPoint to commit offset in mergeAndRevive
+        PopCheckPoint mockPoint = createMockCkForAck(ackMsg, messageExt.getQueueOffset());
+        POP_LOGGER.warn(
+                "ack wait for {}ms cannot find ck, skip this ack. mergeKey:{}, ack:{}, mockCk:{}",
+                reviveAckWaitMs, mergeKey, ackMsg, mockPoint);
+        mockPointMap.put(mergeKey, mockPoint);
+        return true;
     }
 
     private PopCheckPoint createMockCkForAck(AckMsg ackMsg, long reviveOffset) {
