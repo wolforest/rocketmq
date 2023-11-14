@@ -401,30 +401,32 @@ public class PopBufferMergeService extends ServiceThread {
         while (iterator.hasNext()) {
             Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry = iterator.next();
             LinkedBlockingDeque<PopCheckPointWrapper> queue = entry.getValue().get();
-            PopCheckPointWrapper pointWrapper;
-            while ((pointWrapper = queue.peek()) != null) {
-                if (isPointValid(pointWrapper)) {
-                    if (commitOffset(pointWrapper)) {
-                        queue.poll();
-                    } else {
-                        break;
-                    }
-                } else {
-                    if (System.currentTimeMillis() - pointWrapper.getCk().getPopTime()
-                        > brokerController.getBrokerConfig().getPopCkStayBufferTime() * 2L) {
-                        POP_LOGGER.warn("[PopBuffer] ck offset long time not commit, {}", pointWrapper);
-                    }
-                    break;
-                }
-            }
+
+            scanCommitOffset(queue);
+
             final int qs = queue.size();
             count += qs;
             if (qs > 5000 && scanTimes % countOfSecond1 == 0) {
-                POP_LOGGER.info("[PopBuffer] offset queue size too long, {}, {}",
-                    entry.getKey(), qs);
+                POP_LOGGER.info("[PopBuffer] offset queue size too long, {}, {}", entry.getKey(), qs);
             }
         }
         return count;
+    }
+
+    private void scanCommitOffset(LinkedBlockingDeque<PopCheckPointWrapper> queue) {
+        PopCheckPointWrapper pointWrapper;
+        while ((pointWrapper = queue.peek()) != null) {
+            if (isPointValid(pointWrapper)) {
+                if (!commitOffset(pointWrapper)) {
+                    break;
+                }
+
+                queue.poll();
+            } else if (System.currentTimeMillis() - pointWrapper.getCk().getPopTime()
+                > brokerController.getBrokerConfig().getPopCkStayBufferTime() * 2L) {
+                POP_LOGGER.warn("[PopBuffer] ck offset long time not commit, {}", pointWrapper);
+            }
+        }
     }
 
     private void scanGarbage() {
@@ -435,9 +437,10 @@ public class PopBufferMergeService extends ServiceThread {
                 continue;
             }
             String[] keyArray = entry.getKey().split(PopConstants.SPLIT);
-            if (keyArray == null || keyArray.length != 3) {
+            if (keyArray.length != 3) {
                 continue;
             }
+
             String topic = keyArray[0];
             String cid = keyArray[1];
             if (brokerController.getTopicConfigManager().selectTopicConfig(topic) == null) {
