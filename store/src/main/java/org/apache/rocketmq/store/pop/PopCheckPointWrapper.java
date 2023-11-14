@@ -31,7 +31,13 @@ public class PopCheckPointWrapper {
     private final long nextBeginOffset;
     private final String lockKey;
     private final String mergeKey;
+    /**
+     * with default config, this property is uesless
+     */
     private final boolean justOffset;
+    /**
+     * flag whether check point has stored in revive queue
+     */
     private volatile boolean ckStored = false;
 
     public PopCheckPointWrapper(int reviveQueueId, long reviveQueueOffset, PopCheckPoint point,

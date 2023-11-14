@@ -486,6 +486,7 @@ public class PopBufferMergeService extends ServiceThread {
                 continue;
             }
 
+            // with default config, justOffset is always true
             if (pointWrapper.isJustOffset()) {
                 // just offset should be in store.
                 if (pointWrapper.getReviveQueueOffset() < 0) {
