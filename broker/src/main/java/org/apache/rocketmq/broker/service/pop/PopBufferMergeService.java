@@ -45,6 +45,8 @@ import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.pop.AckMsg;
 import org.apache.rocketmq.store.pop.BatchAckMsg;
 import org.apache.rocketmq.store.pop.PopCheckPoint;
+import org.apache.rocketmq.store.pop.PopCheckPointWrapper;
+import org.apache.rocketmq.store.pop.QueueWithTime;
 
 /**
  * manage checkPoint and ack info of pop message
@@ -95,12 +97,7 @@ public class PopBufferMergeService extends ServiceThread {
         while (!this.isStopped()) {
             try {
                 if (!shouldRun()) {
-                    // slave
-                    this.waitForRunning(interval * 200 * 5);
-                    POP_LOGGER.info("Broker is {}, {}, clear all data",
-                        brokerController.getMessageStoreConfig().getBrokerRole(), this.master);
-                    this.buffer.clear();
-                    this.commitOffsets.clear();
+                    clearBuffer();
                     continue;
                 }
 
@@ -370,6 +367,15 @@ public class PopBufferMergeService extends ServiceThread {
 
         this.master = brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE;
         return this.master;
+    }
+
+    private void clearBuffer() {
+        // slave
+        this.waitForRunning(interval * 200 * 5);
+        POP_LOGGER.info("Broker is {}, {}, clear all data",
+            brokerController.getMessageStoreConfig().getBrokerRole(), this.master);
+        this.buffer.clear();
+        this.commitOffsets.clear();
     }
 
     private int scanCommitOffset() {
@@ -871,134 +877,6 @@ public class PopBufferMergeService extends ServiceThread {
             }
         }
         return true;
-    }
-
-    public class QueueWithTime<T> {
-        private final LinkedBlockingDeque<T> queue;
-        private long time;
-
-        public QueueWithTime() {
-            this.queue = new LinkedBlockingDeque<>();
-            this.time = System.currentTimeMillis();
-        }
-
-        public void setTime(long popTime) {
-            this.time = popTime;
-        }
-
-        public long getTime() {
-            return time;
-        }
-
-        public LinkedBlockingDeque<T> get() {
-            return queue;
-        }
-    }
-
-    public class PopCheckPointWrapper {
-        private final int reviveQueueId;
-        // -1: not stored, >=0: stored, Long.MAX: storing.
-        private volatile long reviveQueueOffset;
-        private final PopCheckPoint ck;
-        // bits for concurrent
-        private final AtomicInteger bits;
-        // bit for stored buffer ak
-        private final AtomicInteger toStoreBits;
-        private final long nextBeginOffset;
-        private final String lockKey;
-        private final String mergeKey;
-        private final boolean justOffset;
-        private volatile boolean ckStored = false;
-
-        public PopCheckPointWrapper(int reviveQueueId, long reviveQueueOffset, PopCheckPoint point,
-            long nextBeginOffset) {
-            this.reviveQueueId = reviveQueueId;
-            this.reviveQueueOffset = reviveQueueOffset;
-            this.ck = point;
-            this.bits = new AtomicInteger(0);
-            this.toStoreBits = new AtomicInteger(0);
-            this.nextBeginOffset = nextBeginOffset;
-            this.lockKey = ck.getTopic() + PopConstants.SPLIT + ck.getCId() + PopConstants.SPLIT + ck.getQueueId();
-            this.mergeKey = point.getTopic() + point.getCId() + point.getQueueId() + point.getStartOffset() + point.getPopTime() + point.getBrokerName();
-            this.justOffset = false;
-        }
-
-        public PopCheckPointWrapper(int reviveQueueId, long reviveQueueOffset, PopCheckPoint point,
-            long nextBeginOffset,
-            boolean justOffset) {
-            this.reviveQueueId = reviveQueueId;
-            this.reviveQueueOffset = reviveQueueOffset;
-            this.ck = point;
-            this.bits = new AtomicInteger(0);
-            this.toStoreBits = new AtomicInteger(0);
-            this.nextBeginOffset = nextBeginOffset;
-            this.lockKey = ck.getTopic() + PopConstants.SPLIT + ck.getCId() + PopConstants.SPLIT + ck.getQueueId();
-            this.mergeKey = point.getTopic() + point.getCId() + point.getQueueId() + point.getStartOffset() + point.getPopTime() + point.getBrokerName();
-            this.justOffset = justOffset;
-        }
-
-        public int getReviveQueueId() {
-            return reviveQueueId;
-        }
-
-        public long getReviveQueueOffset() {
-            return reviveQueueOffset;
-        }
-
-        public boolean isCkStored() {
-            return ckStored;
-        }
-
-        public void setReviveQueueOffset(long reviveQueueOffset) {
-            this.reviveQueueOffset = reviveQueueOffset;
-        }
-
-        public PopCheckPoint getCk() {
-            return ck;
-        }
-
-        public AtomicInteger getBits() {
-            return bits;
-        }
-
-        public AtomicInteger getToStoreBits() {
-            return toStoreBits;
-        }
-
-        public long getNextBeginOffset() {
-            return nextBeginOffset;
-        }
-
-        public String getLockKey() {
-            return lockKey;
-        }
-
-        public String getMergeKey() {
-            return mergeKey;
-        }
-
-        public boolean isJustOffset() {
-            return justOffset;
-        }
-
-        public void setCkStored(boolean ckStored) {
-            this.ckStored = ckStored;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("CkWrap{");
-            sb.append("rq=").append(reviveQueueId);
-            sb.append(", rqo=").append(reviveQueueOffset);
-            sb.append(", ck=").append(ck);
-            sb.append(", bits=").append(bits);
-            sb.append(", sBits=").append(toStoreBits);
-            sb.append(", nbo=").append(nextBeginOffset);
-            sb.append(", cks=").append(ckStored);
-            sb.append(", jo=").append(justOffset);
-            sb.append('}');
-            return sb.toString();
-        }
     }
 
 }
