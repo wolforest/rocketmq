@@ -94,7 +94,7 @@ public class PopBufferMergeService extends ServiceThread {
         // scan
         while (!this.isStopped()) {
             try {
-                if (!isShouldRunning()) {
+                if (!shouldRun()) {
                     // slave
                     this.waitForRunning(interval * 200 * 5);
                     POP_LOGGER.info("Broker is {}, {}, clear all data",
@@ -122,7 +122,7 @@ public class PopBufferMergeService extends ServiceThread {
 
         this.serving = false;
         ThreadUtils.sleep(2000);
-        if (!isShouldRunning()) {
+        if (!shouldRun()) {
             return;
         }
         while (this.buffer.size() > 0 || getOffsetTotalSize() > 0) {
@@ -355,13 +355,15 @@ public class PopBufferMergeService extends ServiceThread {
     }
 
     /**
+     * @renamed from isShouldRunning to shouldRun
+     *
      * service will run in follow cases:
      * - is Master
      * - is Slave and with enableSlaveActingMaster = true
      *
      * @return service running flag:
      */
-    private boolean isShouldRunning() {
+    private boolean shouldRun() {
         if (this.brokerController.getBrokerConfig().isEnableSlaveActingMaster()) {
             return true;
         }
@@ -378,11 +380,7 @@ public class PopBufferMergeService extends ServiceThread {
             LinkedBlockingDeque<PopCheckPointWrapper> queue = entry.getValue().get();
             PopCheckPointWrapper pointWrapper;
             while ((pointWrapper = queue.peek()) != null) {
-                // 1. just offset & stored, not processed by scan
-                // 2. ck is buffer(ack)
-                // 3. ck is buffer(not all ack), all ak are stored and ck is stored
-                if (pointWrapper.isJustOffset() && pointWrapper.isCkStored() || isCkDone(pointWrapper)
-                    || isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored()) {
+                if (isPointValid(pointWrapper)) {
                     if (commitOffset(pointWrapper)) {
                         queue.poll();
                     } else {
@@ -502,6 +500,11 @@ public class PopBufferMergeService extends ServiceThread {
         return false;
     }
 
+    /**
+     * 1. just offset & stored, not processed by scan
+     * 2. ck is buffer(ack)
+     * 3. ck is buffer(not all ack), all ak are stored and ck is stored
+     */
     private boolean isPointValid(PopCheckPointWrapper pointWrapper) {
         if (pointWrapper.isJustOffset() && pointWrapper.isCkStored()) {
             return true;
