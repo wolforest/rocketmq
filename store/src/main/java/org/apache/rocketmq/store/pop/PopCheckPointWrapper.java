@@ -42,8 +42,8 @@ public class PopCheckPointWrapper {
         this.bits = new AtomicInteger(0);
         this.toStoreBits = new AtomicInteger(0);
         this.nextBeginOffset = nextBeginOffset;
-        this.lockKey = ck.getTopic() + PopConstants.SPLIT + ck.getCId() + PopConstants.SPLIT + ck.getQueueId();
-        this.mergeKey = point.getTopic() + point.getCId() + point.getQueueId() + point.getStartOffset() + point.getPopTime() + point.getBrokerName();
+        this.lockKey = PopKeyBuilder.buildLockKey(point);
+        this.mergeKey = PopKeyBuilder.buildKey(point);
         this.justOffset = false;
     }
 

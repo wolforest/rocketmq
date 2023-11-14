@@ -46,6 +46,7 @@ import org.apache.rocketmq.store.pop.AckMsg;
 import org.apache.rocketmq.store.pop.BatchAckMsg;
 import org.apache.rocketmq.store.pop.PopCheckPoint;
 import org.apache.rocketmq.store.pop.PopCheckPointWrapper;
+import org.apache.rocketmq.store.pop.PopKeyBuilder;
 import org.apache.rocketmq.store.pop.QueueWithTime;
 
 /**
@@ -55,12 +56,27 @@ public class PopBufferMergeService extends ServiceThread {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
     /**
      *
+     * @renamed from buffer to checkPointMap
+     *
+     * use cases:
+     * - scan
+     *
      * Key: topic + group + queueId + startOffset + popTime + brokerName
      */
     ConcurrentHashMap<String/*mergeKey*/, PopCheckPointWrapper> buffer = new ConcurrentHashMap<>(1024 * 16);
 
     /**
+     * manager check point for given consumer and given queue
+     * @renamed from commitOffsets checkPointQueueMap
      *
+     * use cases:
+     * - getLatestOffset: get consumer next start offset of given queue
+     * - scanGarbage
+     * - getOffsetTotalSize: get total popping num
+     * - isQueueFull
+     *
+     * Key: topic@cid@queueId
+     * Value: check point queue of specific consumer and queue
      */
     ConcurrentHashMap<String/*topic@cid@queueId*/, QueueWithTime<PopCheckPointWrapper>> commitOffsets = new ConcurrentHashMap<>();
     private volatile boolean serving = true;
@@ -169,6 +185,7 @@ public class PopBufferMergeService extends ServiceThread {
 
         this.enqueueReviveQueue(pointWrapper, isQueueFull(pointWrapper));
 
+        // put pointWrapper to commitOffsets and buffer
         putOffsetQueue(pointWrapper);
         this.buffer.put(pointWrapper.getMergeKey(), pointWrapper);
         this.counter.incrementAndGet();
@@ -282,7 +299,7 @@ public class PopBufferMergeService extends ServiceThread {
             return false;
         }
         try {
-            PopCheckPointWrapper pointWrapper = this.buffer.get(ackMsg.getTopic() + ackMsg.getConsumerGroup() + ackMsg.getQueueId() + ackMsg.getStartOffset() + ackMsg.getPopTime() + ackMsg.getBrokerName());
+            PopCheckPointWrapper pointWrapper = this.buffer.get(PopKeyBuilder.buildKey(ackMsg));
             if (pointWrapper == null) {
                 if (brokerController.getBrokerConfig().isEnablePopLog()) {
                     POP_LOGGER.warn("[PopBuffer]add ack fail, rqId={}, no ck, {}", reviveQid, ackMsg);
