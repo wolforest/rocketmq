@@ -26,6 +26,7 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Supplier;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -234,5 +235,9 @@ public class StringUtils {
         }
 
         return null;
+    }
+
+    public static String UUID() {
+        return UUID.randomUUID().toString();
     }
 }
