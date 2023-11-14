@@ -116,6 +116,9 @@ public class PopBufferMergeService extends ServiceThread {
         return PopBufferMergeService.class.getSimpleName();
     }
 
+    /**
+     * with default config, this method is useless, will do nothing but empty loop
+     */
     @Override
     public void run() {
         // scan
@@ -195,8 +198,12 @@ public class PopBufferMergeService extends ServiceThread {
         this.enqueueReviveQueue(pointWrapper, isQueueFull(pointWrapper));
 
         // put pointWrapper to commitOffsets and buffer
+        // with default config, the following two operations are useless,
+        // and they are better to be deleted
         putOffsetQueue(pointWrapper);
         this.buffer.put(pointWrapper.getMergeKey(), pointWrapper);
+
+
         this.counter.incrementAndGet();
         if (brokerController.getBrokerConfig().isEnablePopLog()) {
             POP_LOGGER.info("[PopBuffer]add ck just offset, {}", pointWrapper);
@@ -234,6 +241,8 @@ public class PopBufferMergeService extends ServiceThread {
     }
 
     /**
+     * with default config, this method is useless, always return false
+     *
      * add pop checkPoint to buffer(memory), after stored in memory:
      * 1. checkPoints will be stored periodically
      *    when this.run() method is executing
@@ -469,6 +478,7 @@ public class PopBufferMergeService extends ServiceThread {
         }
     }
 
+    // with default config, this method will do nothing
     private void scan() {
         long startTime = System.currentTimeMillis();
         int count = 0, countCk = 0;
@@ -477,6 +487,8 @@ public class PopBufferMergeService extends ServiceThread {
             Map.Entry<String, PopCheckPointWrapper> entry = iterator.next();
             PopCheckPointWrapper pointWrapper = entry.getValue();
 
+            // with default config, validatePointWrapper will always return false
+            // and the while process will always stop here
             if (!validatePointWrapper(iterator, pointWrapper)) {
                 continue;
             }
@@ -536,11 +548,17 @@ public class PopBufferMergeService extends ServiceThread {
     }
 
     /**
+     * with default config, always return true
+     *
      * 1. just offset & stored, not processed by scan
      * 2. ck is buffer(ack)
      * 3. ck is buffer(not all ack), all ak are stored and ck is stored
      */
     private boolean isPointValid(PopCheckPointWrapper pointWrapper) {
+        // with default config, justOffset is always true,
+        // and all the check point will be enqueue to revive queue
+        // and ckStored will be marked as true
+        // so this method will always return true with default config
         if (pointWrapper.isJustOffset() && pointWrapper.isCkStored()) {
             return true;
         }
