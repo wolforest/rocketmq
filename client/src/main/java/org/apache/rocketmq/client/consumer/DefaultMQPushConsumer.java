@@ -155,6 +155,11 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     private MessageListener messageListener;
 
     /**
+     * Listener to call if message queue assignment is changed.
+     */
+    private MessageQueueListener messageQueueListener;
+
+    /**
      * @deprecated to be deleted
      * Offset Storage
      */
@@ -987,6 +992,14 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
     public TraceDispatcher getTraceDispatcher() {
         return traceDispatcher;
+    }
+
+    public MessageQueueListener getMessageQueueListener() {
+        return messageQueueListener;
+    }
+
+    public void setMessageQueueListener(MessageQueueListener messageQueueListener) {
+        this.messageQueueListener = messageQueueListener;
     }
 
     public int getPopBatchNums() {

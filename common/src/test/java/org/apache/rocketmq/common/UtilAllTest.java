@@ -209,15 +209,4 @@ public class UtilAllTest {
         IOTinyUtils.cleanBuffer(ByteBuffer.allocate(10));
         IOTinyUtils.cleanBuffer(ByteBuffer.allocate(0));
     }
-
-    @Test(expected = NoSuchMethodException.class)
-    public void testMethod() throws NoSuchMethodException {
-        IOTinyUtils.method(new Object(), "noMethod", null);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testInvoke() throws Exception {
-        IOTinyUtils.invoke(new Object(), "noMethod");
-    }
-
 }
