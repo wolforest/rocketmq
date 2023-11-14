@@ -51,6 +51,10 @@ import org.apache.rocketmq.store.pop.QueueWithTime;
 
 /**
  * manage checkPoint and ack info of pop message
+ *
+ * with default config:
+ * - this class is just the proxy of revive queue operations
+ * - the check point operations are useless
  */
 public class PopBufferMergeService extends ServiceThread {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
