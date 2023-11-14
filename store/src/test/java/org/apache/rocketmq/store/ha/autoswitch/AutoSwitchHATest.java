@@ -22,7 +22,7 @@ import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.PlatformUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.GetMessageStatus;
@@ -307,7 +307,7 @@ public class AutoSwitchHATest {
     public void testChangeRoleManyTimes() throws Exception {
 
         // Skip MacOSX platform for now as this test case is not stable on it.
-        Assume.assumeFalse(PlatformUtils.isMac());
+        Assume.assumeFalse(SystemUtils.isMac());
 
         // Step1, change store1 to master, store2 to follower
         init(defaultMappedFileSize);

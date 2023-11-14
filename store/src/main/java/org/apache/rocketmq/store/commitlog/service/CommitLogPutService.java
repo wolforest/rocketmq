@@ -25,7 +25,7 @@ import org.apache.rocketmq.common.message.MessageVersion;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
-import org.apache.rocketmq.common.utils.PlatformUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.AppendMessageResult;
@@ -456,7 +456,7 @@ public class CommitLogPutService {
     }
 
     private boolean isCloseReadAhead() {
-        return !PlatformUtils.isWindows() && !defaultMessageStore.getMessageStoreConfig().isDataReadAheadEnable();
+        return !SystemUtils.isWindows() && !defaultMessageStore.getMessageStoreConfig().isDataReadAheadEnable();
     }
 
     private int calcNeedAckNums(int inSyncReplicas) {

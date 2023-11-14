@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.common.utils;
 
-public class PlatformUtils {
+public class SystemUtils {
     private static final String OS = System.getProperty("os.name").toLowerCase();
 
     public static boolean isWindows() {

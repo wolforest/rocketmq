@@ -22,7 +22,7 @@ import com.sun.jna.Pointer;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.SystemClock;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.utils.PlatformUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -65,7 +65,7 @@ public class ColdDataCheckService extends ServiceThread {
         log.info("{} service started", this.getServiceName());
         while (!this.isStopped()) {
             try {
-                if (PlatformUtils.isWindows() || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable() || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable()) {
+                if (SystemUtils.isWindows() || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable() || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable()) {
                     pageCacheMap.clear();
                     this.waitForRunning(180 * 1000);
                     continue;
@@ -117,7 +117,7 @@ public class ColdDataCheckService extends ServiceThread {
     }
 
     private void scanFilesInPageCache() {
-        if (PlatformUtils.isWindows() || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable() || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable() || pageSize <= 0) {
+        if (SystemUtils.isWindows() || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable() || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable() || pageSize <= 0) {
             return;
         }
         try {
@@ -172,7 +172,7 @@ public class ColdDataCheckService extends ServiceThread {
     private void initPageSize() {
         if (pageSize < 0 && defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
             try {
-                if (!PlatformUtils.isWindows()) {
+                if (!SystemUtils.isWindows()) {
                     pageSize = LibC.INSTANCE.getpagesize();
                 } else {
                     defaultMessageStore.getMessageStoreConfig().setColdDataFlowControlEnable(false);

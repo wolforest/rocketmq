@@ -31,7 +31,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.PlatformUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.GetMessageStatus;
@@ -238,7 +238,7 @@ public class DLedgerCommitlogTest extends MessageStoreTestBase {
 
     @Test
     public void testAsyncPutAndGetMessage() throws Exception {
-        Assume.assumeFalse(PlatformUtils.isWindows());
+        Assume.assumeFalse(SystemUtils.isWindows());
         String base = createBaseDir();
         String peers = String.format("n0-localhost:%d", nextPort());
         String group = UUID.randomUUID().toString();

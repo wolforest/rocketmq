@@ -22,7 +22,7 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.PlatformUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
@@ -298,7 +298,7 @@ public class ConsumeQueueTest {
 
     @Test
     public void testPutMessagePositionInfoWrapper_MultiQueue() throws Exception {
-        Assume.assumeFalse(PlatformUtils.isWindows());
+        Assume.assumeFalse(SystemUtils.isWindows());
         DefaultMessageStore messageStore = null;
         try {
             messageStore = genForMultiQueue();

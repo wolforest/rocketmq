@@ -29,7 +29,7 @@ import org.apache.rocketmq.common.attribute.BooleanAttribute;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.attribute.EnumAttribute;
 import org.apache.rocketmq.common.attribute.LongRangeAttribute;
-import org.apache.rocketmq.common.utils.PlatformUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
@@ -370,6 +370,6 @@ public class RocksdbTopicConfigManagerTest {
     }
 
     private boolean notToBeExecuted() {
-        return PlatformUtils.isMac();
+        return SystemUtils.isMac();
     }
 }

@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.PlatformUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.store.CommitLogDispatcher;
 import org.apache.rocketmq.store.DefaultMessageStore;
@@ -175,7 +175,7 @@ public class MessageStoreWithFilterTest {
         });
         master.getDispatcherList().addFirst(new CommitLogDispatcherCalcBitMap(brokerConfig, filterManager));
 
-        if (PlatformUtils.isWindows()) {
+        if (SystemUtils.isWindows()) {
             Assume.assumeTrue(master.load());
         } else {
             assertThat(master.load()).isTrue();

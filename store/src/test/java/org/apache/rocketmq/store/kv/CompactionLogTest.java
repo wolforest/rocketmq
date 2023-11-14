@@ -23,7 +23,7 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.PlatformUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.store.AppendMessageResult;
 import org.apache.rocketmq.store.AppendMessageStatus;
 import org.apache.rocketmq.store.commitlog.CommitLog;
@@ -233,7 +233,7 @@ public class CompactionLogTest {
 
     @Test
     public void testReplaceFiles() throws IOException, IllegalAccessException {
-        Assume.assumeFalse(PlatformUtils.isWindows());
+        Assume.assumeFalse(SystemUtils.isWindows());
         CompactionLog clog = mock(CompactionLog.class);
         doCallRealMethod().when(clog).replaceFiles(anyList(), any(CompactionLog.TopicPartitionLog.class),
             any(CompactionLog.TopicPartitionLog.class));

@@ -41,7 +41,7 @@ import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.PlatformUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -916,7 +916,7 @@ public class CommitLog implements Swappable {
     }
 
     public void scanFileAndSetReadMode(int mode) {
-        if (PlatformUtils.isWindows()) {
+        if (SystemUtils.isWindows()) {
             log.info("windows os stop scanFileAndSetReadMode");
             return;
         }
