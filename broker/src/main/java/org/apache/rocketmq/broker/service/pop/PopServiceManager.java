@@ -41,13 +41,14 @@ public class PopServiceManager {
     private final BrokerController brokerController;
 
     private final String reviveTopic;
+    private final QueueLockManager queueLockManager;
 
     private final PopReviveService[] popReviveServices;
-    private final PopLongPollingService popPollingService;
-
-    private final PopLongPollingService notificationPollingService;
     private final PopBufferMergeService popBufferMergeService;
-    private final QueueLockManager queueLockManager;
+
+    private final PopLongPollingService popPollingService;
+    private final PopLongPollingService notificationPollingService;
+
 
     public PopServiceManager(final BrokerController brokerController, PopMessageProcessor popMessageProcessor, NotificationProcessor notificationProcessor) {
         this.brokerController = brokerController;

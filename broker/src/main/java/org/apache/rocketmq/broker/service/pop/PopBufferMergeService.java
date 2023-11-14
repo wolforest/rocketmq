@@ -51,8 +51,15 @@ import org.apache.rocketmq.store.pop.PopCheckPoint;
  */
 public class PopBufferMergeService extends ServiceThread {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
+    /**
+     *
+     * Key: topic + group + queueId + startOffset + popTime + brokerName
+     */
     ConcurrentHashMap<String/*mergeKey*/, PopCheckPointWrapper> buffer = new ConcurrentHashMap<>(1024 * 16);
 
+    /**
+     *
+     */
     ConcurrentHashMap<String/*topic@cid@queueId*/, QueueWithTime<PopCheckPointWrapper>> commitOffsets = new ConcurrentHashMap<>();
     private volatile boolean serving = true;
     private final AtomicInteger counter = new AtomicInteger(0);
@@ -163,7 +170,7 @@ public class PopBufferMergeService extends ServiceThread {
             return false;
         }
 
-        this.putCkToStore(pointWrapper, !checkQueueOk(pointWrapper));
+        this.enqueueReviveQueue(pointWrapper, isQueueFull(pointWrapper));
 
         putOffsetQueue(pointWrapper);
         this.buffer.put(pointWrapper.getMergeKey(), pointWrapper);
@@ -240,7 +247,8 @@ public class PopBufferMergeService extends ServiceThread {
         }
 
         PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, reviveQueueOffset, point, nextBeginOffset);
-        if (!checkQueueOk(pointWrapper)) {
+        // check whether queue size exceed max size
+        if (isQueueFull(pointWrapper)) {
             return false;
         }
 
@@ -346,10 +354,18 @@ public class PopBufferMergeService extends ServiceThread {
         this.commitOffsets.remove(lockKey);
     }
 
+    /**
+     * service will run in follow cases:
+     * - is Master
+     * - is Slave and with enableSlaveActingMaster = true
+     *
+     * @return service running flag:
+     */
     private boolean isShouldRunning() {
         if (this.brokerController.getBrokerConfig().isEnableSlaveActingMaster()) {
             return true;
         }
+
         this.master = brokerController.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE;
         return this.master;
     }
@@ -442,7 +458,7 @@ public class PopBufferMergeService extends ServiceThread {
             if (pointWrapper.isJustOffset()) {
                 // just offset should be in store.
                 if (pointWrapper.getReviveQueueOffset() < 0) {
-                    putCkToStore(pointWrapper, false);
+                    enqueueReviveQueue(pointWrapper, false);
                     countCk++;
                 }
                 continue;
@@ -454,7 +470,7 @@ public class PopBufferMergeService extends ServiceThread {
 
             // put buffer ak to store, make sure store check point before storing ack msg
             if (pointWrapper.getReviveQueueOffset() < 0) {
-                putCkToStore(pointWrapper, false);
+                enqueueReviveQueue(pointWrapper, false);
                 countCk++;
             }
 
@@ -654,7 +670,7 @@ public class PopBufferMergeService extends ServiceThread {
         QueueWithTime<PopCheckPointWrapper> queue = this.commitOffsets.get(pointWrapper.getLockKey());
         if (queue == null) {
             queue = new QueueWithTime<>();
-            QueueWithTime old = this.commitOffsets.putIfAbsent(pointWrapper.getLockKey(), queue);
+            QueueWithTime<PopCheckPointWrapper> old = this.commitOffsets.putIfAbsent(pointWrapper.getLockKey(), queue);
             if (old != null) {
                 queue = old;
             }
@@ -663,20 +679,35 @@ public class PopBufferMergeService extends ServiceThread {
         return queue.get().offer(pointWrapper);
     }
 
-    private boolean checkQueueOk(PopCheckPointWrapper pointWrapper) {
+    /**
+     * @renamed from checkQueueOk to isQueueFull
+     */
+    private boolean isQueueFull(PopCheckPointWrapper pointWrapper) {
         QueueWithTime<PopCheckPointWrapper> queue = this.commitOffsets.get(pointWrapper.getLockKey());
         if (queue == null) {
-            return true;
+            return false;
         }
-        return queue.get().size() < brokerController.getBrokerConfig().getPopCkOffsetMaxQueueSize();
+        return queue.get().size() >= brokerController.getBrokerConfig().getPopCkOffsetMaxQueueSize();
     }
 
-    private void putCkToStore(final PopCheckPointWrapper pointWrapper, final boolean runInCurrent) {
+    /**
+     * convert check point to msg, and enqueue msg to revive queue
+     * @renamed from putCkToStore to enqueueReviveQueue
+     *
+     * @param pointWrapper check point with wrapper
+     * @param runInCurrent runInCurrent
+     */
+    private void enqueueReviveQueue(final PopCheckPointWrapper pointWrapper, final boolean runInCurrent) {
         if (pointWrapper.getReviveQueueOffset() >= 0) {
             return;
         }
+
+        //build msg for revive topic from checkPoint
         MessageExtBrokerInner msgInner = brokerController.getBrokerNettyServer().getPopServiceManager().buildCkMsg(pointWrapper.getCk(), pointWrapper.getReviveQueueId());
+
+        //put msg to revive topic through escapeBridge
         PutMessageResult putMessageResult = brokerController.getEscapeBridge().putMessageToSpecificQueue(msgInner);
+
         PopMetricsManager.incPopReviveCkPutCount(pointWrapper.getCk(), putMessageResult.getPutMessageStatus());
         if (putMessageResult.getPutMessageStatus() != PutMessageStatus.PUT_OK
             && putMessageResult.getPutMessageStatus() != PutMessageStatus.FLUSH_DISK_TIMEOUT
