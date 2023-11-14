@@ -481,8 +481,6 @@ public class PopBufferMergeService extends ServiceThread {
                 continue;
             }
 
-            boolean removeCk = getRemoveCk(pointWrapper);
-
             // double check
             if (isCkDone(pointWrapper)) {
                 continue;
@@ -497,7 +495,8 @@ public class PopBufferMergeService extends ServiceThread {
                 continue;
             }
 
-            if (!removeCk) {
+            boolean removeFlag = getRemoveFlag(pointWrapper);
+            if (!removeFlag) {
                 continue;
             }
 
@@ -610,7 +609,10 @@ public class PopBufferMergeService extends ServiceThread {
         counter.decrementAndGet();
     }
 
-    private boolean getRemoveCk(PopCheckPointWrapper pointWrapper) {
+    /**
+     * @renamed from getRemoveCK to getRemoveFlag
+     */
+    private boolean getRemoveFlag(PopCheckPointWrapper pointWrapper) {
         PopCheckPoint point = pointWrapper.getCk();
         long now = System.currentTimeMillis();
 
