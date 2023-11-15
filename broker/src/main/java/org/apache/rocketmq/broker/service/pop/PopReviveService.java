@@ -294,32 +294,28 @@ public class PopReviveService extends ServiceThread {
         GetMessageResult getMessageResult = this.brokerController.getMessageStore().getMessage(group, topic, queueId, offset, nums, null);
 
         if (getMessageResult == null) {
-            long maxQueueOffset = brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
-            if (maxQueueOffset > offset) {
-                POP_LOGGER.error("get message from store return null. topic={}, groupId={}, requestOffset={}, maxQueueOffset={}", topic, group, offset, maxQueueOffset);
-            }
-            return null;
+            return formatNullResult(group, topic, offset);
         }
 
+        return formatGetResult(group, topic, offset, deCompressBody, getMessageResult);
+    }
+
+    private PullResult formatNullResult(String group, String topic, long offset) {
+        long maxQueueOffset = brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
+        if (maxQueueOffset > offset) {
+            POP_LOGGER.error("get message from store return null. topic={}, groupId={}, requestOffset={}, maxQueueOffset={}", topic, group, offset, maxQueueOffset);
+        }
+        return null;
+    }
+
+    private PullResult formatGetResult(String group, String topic, long offset, boolean deCompressBody, GetMessageResult getMessageResult) {
         PullStatus pullStatus = PullStatus.NO_NEW_MSG;
         List<MessageExt> foundList = null;
         switch (getMessageResult.getStatus()) {
             case FOUND:
                 pullStatus = PullStatus.FOUND;
                 foundList = decodeMsgList(getMessageResult, deCompressBody);
-                brokerController.getBrokerStatsManager().incGroupGetNums(group, topic, getMessageResult.getMessageCount());
-                brokerController.getBrokerStatsManager().incGroupGetSize(group, topic, getMessageResult.getBufferTotalSize());
-                brokerController.getBrokerStatsManager().incBrokerGetNums(topic, getMessageResult.getMessageCount());
-                brokerController.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId,
-                    brokerController.getMessageStore().now() - foundList.get(foundList.size() - 1).getStoreTimestamp());
-
-                Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
-                    .put(LABEL_TOPIC, topic)
-                    .put(LABEL_CONSUMER_GROUP, group)
-                    .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(topic) || MQConstants.isSysConsumerGroup(group))
-                    .build();
-                BrokerMetricsManager.messagesOutTotal.add(getMessageResult.getMessageCount(), attributes);
-                BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);
+                incGetMessageMatrix(group, topic, getMessageResult, foundList);
 
                 break;
             case NO_MATCHED_MESSAGE:
@@ -350,6 +346,22 @@ public class PopReviveService extends ServiceThread {
         }
 
         return new PullResult(pullStatus, getMessageResult.getNextBeginOffset(), getMessageResult.getMinOffset(), getMessageResult.getMaxOffset(), foundList);
+    }
+
+    private void incGetMessageMatrix(String group, String topic, GetMessageResult getMessageResult, List<MessageExt> foundList) {
+        brokerController.getBrokerStatsManager().incGroupGetNums(group, topic, getMessageResult.getMessageCount());
+        brokerController.getBrokerStatsManager().incGroupGetSize(group, topic, getMessageResult.getBufferTotalSize());
+        brokerController.getBrokerStatsManager().incBrokerGetNums(topic, getMessageResult.getMessageCount());
+        brokerController.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId,
+            brokerController.getMessageStore().now() - foundList.get(foundList.size() - 1).getStoreTimestamp());
+
+        Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
+            .put(LABEL_TOPIC, topic)
+            .put(LABEL_CONSUMER_GROUP, group)
+            .put(LABEL_IS_SYSTEM, TopicValidator.isSystemTopic(topic) || MQConstants.isSysConsumerGroup(group))
+            .build();
+        BrokerMetricsManager.messagesOutTotal.add(getMessageResult.getMessageCount(), attributes);
+        BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);
     }
 
     private List<MessageExt> decodeMsgList(GetMessageResult getMessageResult, boolean deCompressBody) {
