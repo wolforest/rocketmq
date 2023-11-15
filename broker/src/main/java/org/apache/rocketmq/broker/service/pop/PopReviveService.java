@@ -402,7 +402,7 @@ public class PopReviveService extends ServiceThread {
             }
 
             context.setNoMsgCount(0);
-            if (System.currentTimeMillis() - context.getStartScanTime() > brokerController.getBrokerConfig().getReviveScanTime()) {
+            if (System.currentTimeMillis() - context.getStartTime() > brokerController.getBrokerConfig().getReviveScanTime()) {
                 POP_LOGGER.info("reviveQueueId={}, scan timeout ", queueId);
                 break;
             }

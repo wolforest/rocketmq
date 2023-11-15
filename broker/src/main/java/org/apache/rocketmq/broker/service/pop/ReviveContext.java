@@ -23,7 +23,10 @@ public class ReviveContext {
     private final ConsumeReviveObj consumeReviveObj;
     private final HashMap<String, PopCheckPoint> mockPointMap;
 
-    private final long startScanTime;
+    /**
+     * @renamed from startScanTime to startTime
+     */
+    private final long startTime;
     private long endTime;
     private long firstRt;
 
@@ -37,7 +40,7 @@ public class ReviveContext {
         this.consumeReviveObj = new ConsumeReviveObj();
         this.mockPointMap = new HashMap<>();
 
-        this.startScanTime = System.currentTimeMillis();
+        this.startTime = System.currentTimeMillis();
         this.endTime = 0;
         this.firstRt = 0;
         this.noMsgCount = 0;
@@ -81,8 +84,8 @@ public class ReviveContext {
         return mockPointMap;
     }
 
-    public long getStartScanTime() {
-        return startScanTime;
+    public long getStartTime() {
+        return startTime;
     }
 
     public long getEndTime() {
