@@ -17,4 +17,6 @@
 package org.apache.rocketmq.broker.service.pop;
 
 public class ReviveContext {
+    private ConsumeReviveObj consumeReviveObj;
+
 }

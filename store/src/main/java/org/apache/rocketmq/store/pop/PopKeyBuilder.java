@@ -41,4 +41,20 @@ public class PopKeyBuilder {
             + point.getPopTime()
             + point.getBrokerName();
     }
+
+    public static String buildReviveKey(AckMsg ackMsg) {
+        return ackMsg.getTopic()
+            + ackMsg.getConsumerGroup()
+            + ackMsg.getQueueId()
+            + ackMsg.getStartOffset()
+            + ackMsg.getPopTime();
+    }
+
+    public static String buildReviveKey(PopCheckPoint point) {
+        return point.getTopic()
+            + point.getCId()
+            + point.getQueueId()
+            + point.getStartOffset()
+            + point.getPopTime();
+    }
 }
