@@ -95,8 +95,7 @@ public class PopReviveService extends ServiceThread {
                 if (!shouldRun()) continue;
 
                 POP_LOGGER.info("start revive topic={}, reviveQueueId={}", reviveTopic, queueId);
-                ConsumeReviveObj consumeReviveObj = new ConsumeReviveObj();
-                consumeReviveMessage(consumeReviveObj);
+                ConsumeReviveObj consumeReviveObj = consumeReviveMessage();
 
                 if (!shouldRunPopRevive) {
                     POP_LOGGER.info("slave skip scan, revive topic={}, reviveQueueId={}", reviveTopic, queueId);
@@ -382,7 +381,9 @@ public class PopReviveService extends ServiceThread {
         return foundList;
     }
 
-    protected void consumeReviveMessage(ConsumeReviveObj consumeReviveObj) {
+    protected ConsumeReviveObj consumeReviveMessage() {
+        ConsumeReviveObj consumeReviveObj = new ConsumeReviveObj();
+
         HashMap<String, PopCheckPoint> map = consumeReviveObj.getMap();
         HashMap<String, PopCheckPoint> mockPointMap = new HashMap<>();
         long startScanTime = System.currentTimeMillis();
@@ -507,6 +508,8 @@ public class PopReviveService extends ServiceThread {
         }
         consumeReviveObj.getMap().putAll(mockPointMap);
         consumeReviveObj.setEndTime(endTime);
+
+        return consumeReviveObj;
     }
 
     private boolean mockCkForAck(MessageExt messageExt, AckMsg ackMsg, String mergeKey, HashMap<String, PopCheckPoint> mockPointMap) {

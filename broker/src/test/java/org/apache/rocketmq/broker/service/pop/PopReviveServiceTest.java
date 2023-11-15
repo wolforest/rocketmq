@@ -129,8 +129,7 @@ public class PopReviveServiceTest {
         }
         doReturn(reviveMessageExtList, new ArrayList<>()).when(popReviveService).getReviveMessage(anyLong(), anyInt());
 
-        ConsumeReviveObj consumeReviveObj = new ConsumeReviveObj();
-        popReviveService.consumeReviveMessage(consumeReviveObj);
+        ConsumeReviveObj consumeReviveObj = popReviveService.consumeReviveMessage();
 
         assertEquals(1, consumeReviveObj.getMap().size());
 
@@ -166,8 +165,7 @@ public class PopReviveServiceTest {
         }
         doReturn(reviveMessageExtList, new ArrayList<>()).when(popReviveService).getReviveMessage(anyLong(), anyInt());
 
-        ConsumeReviveObj consumeReviveObj = new ConsumeReviveObj();
-        popReviveService.consumeReviveMessage(consumeReviveObj);
+        ConsumeReviveObj consumeReviveObj = popReviveService.consumeReviveMessage();
 
         assertEquals(4, consumeReviveObj.getMap().size());
 
@@ -197,8 +195,7 @@ public class PopReviveServiceTest {
         }
         doReturn(reviveMessageExtList, new ArrayList<>()).when(popReviveService).getReviveMessage(anyLong(), anyInt());
 
-        ConsumeReviveObj consumeReviveObj = new ConsumeReviveObj();
-        popReviveService.consumeReviveMessage(consumeReviveObj);
+        ConsumeReviveObj consumeReviveObj = popReviveService.consumeReviveMessage();
 
         assertEquals(1, consumeReviveObj.getMap().size());
 
