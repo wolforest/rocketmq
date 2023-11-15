@@ -538,13 +538,14 @@ public class PopReviveService extends ServiceThread {
             if (mockCkForAck(messageExt, ackMsg, mergeKey, context.getMockPointMap()) && context.getFirstRt() == 0) {
                 context.setFirstRt(context.getMockPointMap().get(mergeKey).getReviveTime());
             }
+            return true;
+        }
+
+        int indexOfAck = point.indexOfAck(ackMsg.getAckOffset());
+        if (indexOfAck > -1) {
+            point.setBitMap(DataConverter.setBit(point.getBitMap(), indexOfAck, true));
         } else {
-            int indexOfAck = point.indexOfAck(ackMsg.getAckOffset());
-            if (indexOfAck > -1) {
-                point.setBitMap(DataConverter.setBit(point.getBitMap(), indexOfAck, true));
-            } else {
-                POP_LOGGER.error("invalid ack index, {}, {}", ackMsg, point);
-            }
+            POP_LOGGER.error("invalid ack index, {}, {}", ackMsg, point);
         }
         return true;
     }
@@ -566,15 +567,16 @@ public class PopReviveService extends ServiceThread {
             if (mockCkForAck(messageExt, bAckMsg, mergeKey, context.getMockPointMap()) && context.getFirstRt() == 0) {
                 context.setFirstRt(context.getMockPointMap().get(mergeKey).getReviveTime());
             }
-        } else {
-            List<Long> ackOffsetList = bAckMsg.getAckOffsetList();
-            for (Long ackOffset : ackOffsetList) {
-                int indexOfAck = point.indexOfAck(ackOffset);
-                if (indexOfAck > -1) {
-                    point.setBitMap(DataConverter.setBit(point.getBitMap(), indexOfAck, true));
-                } else {
-                    POP_LOGGER.error("invalid batch ack index, {}, {}", bAckMsg, point);
-                }
+            return true;
+        }
+
+        List<Long> ackOffsetList = bAckMsg.getAckOffsetList();
+        for (Long ackOffset : ackOffsetList) {
+            int indexOfAck = point.indexOfAck(ackOffset);
+            if (indexOfAck > -1) {
+                point.setBitMap(DataConverter.setBit(point.getBitMap(), indexOfAck, true));
+            } else {
+                POP_LOGGER.error("invalid batch ack index, {}, {}", bAckMsg, point);
             }
         }
 
