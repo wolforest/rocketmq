@@ -39,14 +39,14 @@ public class ReviveContext {
 
         this.startScanTime = System.currentTimeMillis();
         this.endTime = 0;
-
         this.firstRt = 0;
         this.noMsgCount = 0;
 
         this.consumeOffset = consumeOffset;
         this.oldOffset = Math.max(reviveOffset, consumeOffset);
-        this.offset = oldOffset + 1;
         this.consumeReviveObj.setOldOffset(oldOffset);
+
+        this.offset = oldOffset + 1;
     }
 
     public void increaseNoMsgCount() {

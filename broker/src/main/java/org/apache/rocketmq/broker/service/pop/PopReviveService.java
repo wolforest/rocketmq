@@ -392,115 +392,144 @@ public class PopReviveService extends ServiceThread {
                 POP_LOGGER.info("slave skip scan, revive topic={}, reviveQueueId={}", reviveTopic, queueId);
                 break;
             }
-            List<MessageExt> messageExts = getReviveMessage(context.getOffset(), queueId);
-            if (messageExts == null || messageExts.isEmpty()) {
-                long old = context.getEndTime();
-                long timerDelay = brokerController.getMessageStore().getTimerMessageStore().getTimerState().getDequeueBehind();
-                long commitLogDelay = brokerController.getMessageStore().getTimerMessageStore().getEnqueueBehind();
-                // move endTime
-                if (context.getEndTime() != 0 && System.currentTimeMillis() - context.getEndTime() > 3 * PopConstants.SECOND && timerDelay <= 0 && commitLogDelay <= 0) {
-                    context.setEndTime(System.currentTimeMillis());
-                }
-                POP_LOGGER.info("reviveQueueId={}, offset is {}, can not get new msg, old endTime {}, new endTime {}, timerDelay={}, commitLogDelay={} ",
-                    queueId, context.getOffset(), old, context.getEndTime(), timerDelay, commitLogDelay);
-                if (context.getEndTime() - context.getFirstRt() > PopConstants.ackTimeInterval + PopConstants.SECOND) {
+
+            List<MessageExt> messageList = getReviveMessage(context.getOffset(), queueId);
+            if (messageList == null || messageList.isEmpty()) {
+                if (!handleEmptyReviveMessage(context)) {
                     break;
                 }
-                context.increaseNoMsgCount();
-                // Fixme: why sleep is useful here?
-                ThreadUtils.sleep(100);
-                if (context.getNoMsgCount() * 100L > 4 * PopConstants.SECOND) {
-                    break;
-                } else {
-                    continue;
-                }
-            } else {
-                context.setNoMsgCount(0);
+                continue;
             }
+
+            context.setNoMsgCount(0);
             if (System.currentTimeMillis() - context.getStartScanTime() > brokerController.getBrokerConfig().getReviveScanTime()) {
                 POP_LOGGER.info("reviveQueueId={}, scan timeout ", queueId);
                 break;
             }
-            for (MessageExt messageExt : messageExts) {
-                if (PopConstants.CK_TAG.equals(messageExt.getTags())) {
-                    String raw = new String(messageExt.getBody(), DataConverter.CHARSET_UTF8);
-                    if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                        POP_LOGGER.info("reviveQueueId={},find ck, offset:{}, raw : {}", messageExt.getQueueId(), messageExt.getQueueOffset(), raw);
-                    }
-                    PopCheckPoint point = JSON.parseObject(raw, PopCheckPoint.class);
-                    if (point.getTopic() == null || point.getCId() == null) {
-                        continue;
-                    }
-                    context.getMap().put(PopKeyBuilder.buildReviveKey(point), point);
-                    PopMetricsManager.incPopReviveCkGetCount(point, queueId);
-                    point.setReviveOffset(messageExt.getQueueOffset());
-                    if (context.getFirstRt() == 0) {
-                        context.setFirstRt(point.getReviveTime());
-                    }
-                } else if (PopConstants.ACK_TAG.equals(messageExt.getTags())) {
-                    String raw = new String(messageExt.getBody(), DataConverter.CHARSET_UTF8);
-                    if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                        POP_LOGGER.info("reviveQueueId={}, find ack, offset:{}, raw : {}", messageExt.getQueueId(), messageExt.getQueueOffset(), raw);
-                    }
-                    AckMsg ackMsg = JSON.parseObject(raw, AckMsg.class);
-                    PopMetricsManager.incPopReviveAckGetCount(ackMsg, queueId);
-                    String mergeKey = PopKeyBuilder.buildReviveKey(ackMsg);
-                    PopCheckPoint point = context.getMap().get(mergeKey);
-                    if (point == null) {
-                        if (!brokerController.getBrokerConfig().isEnableSkipLongAwaitingAck()) {
-                            continue;
-                        }
-                        if (mockCkForAck(messageExt, ackMsg, mergeKey, context.getMockPointMap()) && context.getFirstRt() == 0) {
-                            context.setFirstRt(context.getMockPointMap().get(mergeKey).getReviveTime());
-                        }
-                    } else {
-                        int indexOfAck = point.indexOfAck(ackMsg.getAckOffset());
-                        if (indexOfAck > -1) {
-                            point.setBitMap(DataConverter.setBit(point.getBitMap(), indexOfAck, true));
-                        } else {
-                            POP_LOGGER.error("invalid ack index, {}, {}", ackMsg, point);
-                        }
-                    }
-                } else if (PopConstants.BATCH_ACK_TAG.equals(messageExt.getTags())) {
-                    String raw = new String(messageExt.getBody(), DataConverter.CHARSET_UTF8);
-                    if (brokerController.getBrokerConfig().isEnablePopLog()) {
-                        POP_LOGGER.info("reviveQueueId={}, find batch ack, offset:{}, raw : {}", messageExt.getQueueId(), messageExt.getQueueOffset(), raw);
-                    }
 
-                    BatchAckMsg bAckMsg = JSON.parseObject(raw, BatchAckMsg.class);
-                    PopMetricsManager.incPopReviveAckGetCount(bAckMsg, queueId);
-                    String mergeKey = PopKeyBuilder.buildReviveKey(bAckMsg);
-                    PopCheckPoint point = context.getMap().get(mergeKey);
-                    if (point == null) {
-                        if (!brokerController.getBrokerConfig().isEnableSkipLongAwaitingAck()) {
-                            continue;
-                        }
-                        if (mockCkForAck(messageExt, bAckMsg, mergeKey, context.getMockPointMap()) && context.getFirstRt() == 0) {
-                            context.setFirstRt(context.getMockPointMap().get(mergeKey).getReviveTime());
-                        }
-                    } else {
-                        List<Long> ackOffsetList = bAckMsg.getAckOffsetList();
-                        for (Long ackOffset : ackOffsetList) {
-                            int indexOfAck = point.indexOfAck(ackOffset);
-                            if (indexOfAck > -1) {
-                                point.setBitMap(DataConverter.setBit(point.getBitMap(), indexOfAck, true));
-                            } else {
-                                POP_LOGGER.error("invalid batch ack index, {}, {}", bAckMsg, point);
-                            }
-                        }
-                    }
-                }
-                long deliverTime = messageExt.getDeliverTimeMs();
-                if (deliverTime > context.getEndTime()) {
-                    context.setEndTime(deliverTime);
-                }
-            }
-            context.setOffset(context.getOffset() + messageExts.size());
+            parseReviveMessages(context, messageList);
+            context.setOffset(context.getOffset() + messageList.size());
         }
+
         context.getConsumeReviveObj().getMap().putAll(context.getMockPointMap());
         context.getConsumeReviveObj().setEndTime(context.getEndTime());
 
         return context.getConsumeReviveObj();
+    }
+
+    private boolean handleEmptyReviveMessage(ReviveContext context) {
+        long old = context.getEndTime();
+        long timerDelay = brokerController.getMessageStore().getTimerMessageStore().getTimerState().getDequeueBehind();
+        long commitLogDelay = brokerController.getMessageStore().getTimerMessageStore().getEnqueueBehind();
+        // move endTime
+        if (context.getEndTime() != 0 && System.currentTimeMillis() - context.getEndTime() > 3 * PopConstants.SECOND && timerDelay <= 0 && commitLogDelay <= 0) {
+            context.setEndTime(System.currentTimeMillis());
+        }
+        POP_LOGGER.info("reviveQueueId={}, offset is {}, can not get new msg, old endTime {}, new endTime {}, timerDelay={}, commitLogDelay={} ",
+            queueId, context.getOffset(), old, context.getEndTime(), timerDelay, commitLogDelay);
+        if (context.getEndTime() - context.getFirstRt() > PopConstants.ackTimeInterval + PopConstants.SECOND) {
+            return false;
+        }
+        context.increaseNoMsgCount();
+        // Fixme: why sleep is useful here?
+        ThreadUtils.sleep(100);
+        return context.getNoMsgCount() * 100L <= 4 * PopConstants.SECOND;
+    }
+
+    private void parseReviveMessages(ReviveContext context, List<MessageExt> messageExts) {
+        for (MessageExt messageExt : messageExts) {
+
+            if (PopConstants.CK_TAG.equals(messageExt.getTags())) {
+                if (!parseCheckPointMessage(context, messageExt)) continue;
+            } else if (PopConstants.ACK_TAG.equals(messageExt.getTags())) {
+                if (!parseAckMessage(context, messageExt)) continue;
+            } else if (PopConstants.BATCH_ACK_TAG.equals(messageExt.getTags())) {
+                if (!parseBatchAckMessage(context, messageExt)) continue;
+            }
+
+            long deliverTime = messageExt.getDeliverTimeMs();
+            if (deliverTime > context.getEndTime()) {
+                context.setEndTime(deliverTime);
+            }
+        }
+    }
+
+    private boolean parseCheckPointMessage(ReviveContext context, MessageExt messageExt) {
+        String raw = new String(messageExt.getBody(), DataConverter.CHARSET_UTF8);
+        if (brokerController.getBrokerConfig().isEnablePopLog()) {
+            POP_LOGGER.info("reviveQueueId={},find ck, offset:{}, raw : {}", messageExt.getQueueId(), messageExt.getQueueOffset(), raw);
+        }
+        PopCheckPoint point = JSON.parseObject(raw, PopCheckPoint.class);
+        if (point.getTopic() == null || point.getCId() == null) {
+            return false;
+        }
+        context.getMap().put(PopKeyBuilder.buildReviveKey(point), point);
+        PopMetricsManager.incPopReviveCkGetCount(point, queueId);
+        point.setReviveOffset(messageExt.getQueueOffset());
+        if (context.getFirstRt() == 0) {
+            context.setFirstRt(point.getReviveTime());
+        }
+
+        return true;
+    }
+
+    private boolean parseAckMessage(ReviveContext context, MessageExt messageExt) {
+        String raw = new String(messageExt.getBody(), DataConverter.CHARSET_UTF8);
+        if (brokerController.getBrokerConfig().isEnablePopLog()) {
+            POP_LOGGER.info("reviveQueueId={}, find ack, offset:{}, raw : {}", messageExt.getQueueId(), messageExt.getQueueOffset(), raw);
+        }
+        AckMsg ackMsg = JSON.parseObject(raw, AckMsg.class);
+        PopMetricsManager.incPopReviveAckGetCount(ackMsg, queueId);
+        String mergeKey = PopKeyBuilder.buildReviveKey(ackMsg);
+        PopCheckPoint point = context.getMap().get(mergeKey);
+        if (point == null) {
+            if (!brokerController.getBrokerConfig().isEnableSkipLongAwaitingAck()) {
+                return false;
+            }
+            if (mockCkForAck(messageExt, ackMsg, mergeKey, context.getMockPointMap()) && context.getFirstRt() == 0) {
+                context.setFirstRt(context.getMockPointMap().get(mergeKey).getReviveTime());
+            }
+        } else {
+            int indexOfAck = point.indexOfAck(ackMsg.getAckOffset());
+            if (indexOfAck > -1) {
+                point.setBitMap(DataConverter.setBit(point.getBitMap(), indexOfAck, true));
+            } else {
+                POP_LOGGER.error("invalid ack index, {}, {}", ackMsg, point);
+            }
+        }
+        return true;
+    }
+
+    private boolean parseBatchAckMessage(ReviveContext context, MessageExt messageExt) {
+        String raw = new String(messageExt.getBody(), DataConverter.CHARSET_UTF8);
+        if (brokerController.getBrokerConfig().isEnablePopLog()) {
+            POP_LOGGER.info("reviveQueueId={}, find batch ack, offset:{}, raw : {}", messageExt.getQueueId(), messageExt.getQueueOffset(), raw);
+        }
+
+        BatchAckMsg bAckMsg = JSON.parseObject(raw, BatchAckMsg.class);
+        PopMetricsManager.incPopReviveAckGetCount(bAckMsg, queueId);
+        String mergeKey = PopKeyBuilder.buildReviveKey(bAckMsg);
+        PopCheckPoint point = context.getMap().get(mergeKey);
+        if (point == null) {
+            if (!brokerController.getBrokerConfig().isEnableSkipLongAwaitingAck()) {
+                return false;
+            }
+            if (mockCkForAck(messageExt, bAckMsg, mergeKey, context.getMockPointMap()) && context.getFirstRt() == 0) {
+                context.setFirstRt(context.getMockPointMap().get(mergeKey).getReviveTime());
+            }
+        } else {
+            List<Long> ackOffsetList = bAckMsg.getAckOffsetList();
+            for (Long ackOffset : ackOffsetList) {
+                int indexOfAck = point.indexOfAck(ackOffset);
+                if (indexOfAck > -1) {
+                    point.setBitMap(DataConverter.setBit(point.getBitMap(), indexOfAck, true));
+                } else {
+                    POP_LOGGER.error("invalid batch ack index, {}, {}", bAckMsg, point);
+                }
+            }
+        }
+
+        return true;
     }
 
     private boolean mockCkForAck(MessageExt messageExt, AckMsg ackMsg, String mergeKey, HashMap<String, PopCheckPoint> mockPointMap) {
