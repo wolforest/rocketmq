@@ -177,20 +177,36 @@ public class PopReviveService extends ServiceThread {
         return shouldRunPopRevive;
     }
 
-    private boolean reviveRetry(PopCheckPoint popCheckPoint, MessageExt messageExt) {
-        MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
+    private void initMsgTopic(PopCheckPoint popCheckPoint, MessageExtBrokerInner msgInner) {
         if (!popCheckPoint.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
             msgInner.setTopic(KeyBuilder.buildPopRetryTopic(popCheckPoint.getTopic(), popCheckPoint.getCId()));
         } else {
             msgInner.setTopic(popCheckPoint.getTopic());
         }
-        msgInner.setBody(messageExt.getBody());
-        msgInner.setQueueId(0);
+    }
+
+    private void initMsgTag(MessageExt messageExt, MessageExtBrokerInner msgInner) {
         if (messageExt.getTags() != null) {
             msgInner.setTags(messageExt.getTags());
         } else {
             MessageAccessor.setProperties(msgInner, new HashMap<>());
         }
+    }
+
+    private void initMsgProperties(PopCheckPoint popCheckPoint, MessageExt messageExt, MessageExtBrokerInner msgInner) {
+        if (messageExt.getReconsumeTimes() == 0 || msgInner.getProperties().get(MessageConst.PROPERTY_FIRST_POP_TIME) == null) {
+            msgInner.getProperties().put(MessageConst.PROPERTY_FIRST_POP_TIME, String.valueOf(popCheckPoint.getPopTime()));
+        }
+        msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
+    }
+
+    private MessageExtBrokerInner createMessageExtBrokerInner(PopCheckPoint popCheckPoint, MessageExt messageExt) {
+        MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
+        initMsgTopic(popCheckPoint, msgInner);
+        initMsgTag(messageExt, msgInner);
+
+        msgInner.setBody(messageExt.getBody());
+        msgInner.setQueueId(0);
         msgInner.setBornTimestamp(messageExt.getBornTimestamp());
         msgInner.setFlag(messageExt.getFlag());
         msgInner.setSysFlag(messageExt.getSysFlag());
@@ -198,37 +214,58 @@ public class PopReviveService extends ServiceThread {
         msgInner.setStoreHost(brokerController.getStoreHost());
         msgInner.setReconsumeTimes(messageExt.getReconsumeTimes() + 1);
         msgInner.getProperties().putAll(messageExt.getProperties());
-        if (messageExt.getReconsumeTimes() == 0 || msgInner.getProperties().get(MessageConst.PROPERTY_FIRST_POP_TIME) == null) {
-            msgInner.getProperties().put(MessageConst.PROPERTY_FIRST_POP_TIME, String.valueOf(popCheckPoint.getPopTime()));
-        }
-        msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
+
+        initMsgProperties(popCheckPoint, messageExt, msgInner);
+
+        return msgInner;
+    }
+
+    private boolean reviveRetry(PopCheckPoint popCheckPoint, MessageExt messageExt) {
+        MessageExtBrokerInner msgInner = createMessageExtBrokerInner(popCheckPoint, messageExt);
+
         addRetryTopicIfNoExit(msgInner.getTopic(), popCheckPoint.getCId());
         PutMessageResult putMessageResult = brokerController.getEscapeBridge().putMessageToSpecificQueue(msgInner);
-        PopMetricsManager.incPopReviveRetryMessageCount(popCheckPoint, putMessageResult.getPutMessageStatus());
-        if (brokerController.getBrokerConfig().isEnablePopLog()) {
-            POP_LOGGER.info("reviveQueueId={},retry msg, ck={}, msg queueId {}, offset {}, reviveDelay={}, result is {} ",
-                queueId, popCheckPoint, messageExt.getQueueId(), messageExt.getQueueOffset(),
-                (System.currentTimeMillis() - popCheckPoint.getReviveTime()) / 1000, putMessageResult);
-        }
+        incRetryCount(popCheckPoint, messageExt, putMessageResult);
+
         if (putMessageResult.getAppendMessageResult() == null ||
             putMessageResult.getAppendMessageResult().getStatus() != AppendMessageStatus.PUT_OK) {
             POP_LOGGER.error("reviveQueueId={}, revive error, msg is: {}", queueId, msgInner);
             return false;
         }
+
+        incRetryMatrix(popCheckPoint, msgInner, putMessageResult);
+        invokeArrivingCallback(popCheckPoint);
+        return true;
+    }
+
+    private void incRetryCount(PopCheckPoint popCheckPoint, MessageExt messageExt, PutMessageResult putMessageResult) {
+        PopMetricsManager.incPopReviveRetryMessageCount(popCheckPoint, putMessageResult.getPutMessageStatus());
+        if (!brokerController.getBrokerConfig().isEnablePopLog()) {
+            return;
+        }
+
+        POP_LOGGER.info("reviveQueueId={},retry msg, ck={}, msg queueId {}, offset {}, reviveDelay={}, result is {} ",
+            queueId, popCheckPoint, messageExt.getQueueId(), messageExt.getQueueOffset(),
+            (System.currentTimeMillis() - popCheckPoint.getReviveTime()) / 1000, putMessageResult);
+    }
+
+    private void incRetryMatrix(PopCheckPoint popCheckPoint, MessageExtBrokerInner msgInner, PutMessageResult putMessageResult) {
         this.brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(popCheckPoint);
         this.brokerController.getBrokerStatsManager().incBrokerPutNums(popCheckPoint.getTopic(), 1);
         this.brokerController.getBrokerStatsManager().incTopicPutNums(msgInner.getTopic());
         this.brokerController.getBrokerStatsManager().incTopicPutSize(msgInner.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
-        if (brokerController.getBrokerNettyServer().getPopServiceManager() != null) {
-            brokerController.getBrokerNettyServer().getPopServiceManager().popArriving(
-                KeyBuilder.parseNormalTopic(popCheckPoint.getTopic(), popCheckPoint.getCId()),
-                popCheckPoint.getCId(),
-                -1
-            );
-            brokerController.getBrokerNettyServer().getPopServiceManager().notificationArriving(
-                KeyBuilder.parseNormalTopic(popCheckPoint.getTopic(), popCheckPoint.getCId()), -1);
+    }
+
+    private void invokeArrivingCallback(PopCheckPoint popCheckPoint) {
+        if (brokerController.getBrokerNettyServer().getPopServiceManager() == null) {
+            return;
         }
-        return true;
+
+        PopServiceManager manager = brokerController.getBrokerNettyServer().getPopServiceManager();
+        String topic = KeyBuilder.parseNormalTopic(popCheckPoint.getTopic(), popCheckPoint.getCId());
+
+        manager.popArriving(topic, popCheckPoint.getCId(), -1);
+        manager.notificationArriving(topic, -1);
     }
 
     private void initPopRetryOffset(String topic, String consumerGroup) {
