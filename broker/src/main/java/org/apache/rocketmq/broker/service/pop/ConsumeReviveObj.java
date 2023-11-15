@@ -21,12 +21,7 @@ import java.util.HashMap;
 import org.apache.rocketmq.store.pop.PopCheckPoint;
 
 public class ConsumeReviveObj {
-
-
     private final HashMap<String, PopCheckPoint> map = new HashMap<>();
-
-
-
     private ArrayList<PopCheckPoint> sortList;
 
     private long oldOffset;
