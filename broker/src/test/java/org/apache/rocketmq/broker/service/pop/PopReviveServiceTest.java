@@ -129,10 +129,10 @@ public class PopReviveServiceTest {
         }
         doReturn(reviveMessageExtList, new ArrayList<>()).when(popReviveService).getReviveMessage(anyLong(), anyInt());
 
-        PopReviveService.ConsumeReviveObj consumeReviveObj = new PopReviveService.ConsumeReviveObj();
+        ConsumeReviveObj consumeReviveObj = new ConsumeReviveObj();
         popReviveService.consumeReviveMessage(consumeReviveObj);
 
-        assertEquals(1, consumeReviveObj.map.size());
+        assertEquals(1, consumeReviveObj.getMap().size());
 
         ArgumentCaptor<Long> commitOffsetCaptor = ArgumentCaptor.forClass(Long.class);
         doNothing().when(consumerOffsetManager).commitOffset(anyString(), anyString(), anyString(), anyInt(), commitOffsetCaptor.capture());
@@ -166,10 +166,10 @@ public class PopReviveServiceTest {
         }
         doReturn(reviveMessageExtList, new ArrayList<>()).when(popReviveService).getReviveMessage(anyLong(), anyInt());
 
-        PopReviveService.ConsumeReviveObj consumeReviveObj = new PopReviveService.ConsumeReviveObj();
+        ConsumeReviveObj consumeReviveObj = new ConsumeReviveObj();
         popReviveService.consumeReviveMessage(consumeReviveObj);
 
-        assertEquals(4, consumeReviveObj.map.size());
+        assertEquals(4, consumeReviveObj.getMap().size());
 
         ArgumentCaptor<Long> commitOffsetCaptor = ArgumentCaptor.forClass(Long.class);
         doNothing().when(consumerOffsetManager).commitOffset(anyString(), anyString(), anyString(), anyInt(), commitOffsetCaptor.capture());
@@ -197,10 +197,10 @@ public class PopReviveServiceTest {
         }
         doReturn(reviveMessageExtList, new ArrayList<>()).when(popReviveService).getReviveMessage(anyLong(), anyInt());
 
-        PopReviveService.ConsumeReviveObj consumeReviveObj = new PopReviveService.ConsumeReviveObj();
+        ConsumeReviveObj consumeReviveObj = new ConsumeReviveObj();
         popReviveService.consumeReviveMessage(consumeReviveObj);
 
-        assertEquals(1, consumeReviveObj.map.size());
+        assertEquals(1, consumeReviveObj.getMap().size());
 
         ArgumentCaptor<Long> commitOffsetCaptor = ArgumentCaptor.forClass(Long.class);
         doNothing().when(consumerOffsetManager).commitOffset(anyString(), anyString(), anyString(), anyInt(), commitOffsetCaptor.capture());
