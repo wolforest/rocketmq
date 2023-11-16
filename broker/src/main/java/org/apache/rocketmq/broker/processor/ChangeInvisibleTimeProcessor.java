@@ -22,6 +22,8 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.metrics.PopMetricsManager;
 import org.apache.rocketmq.broker.offset.ConsumerOffsetManager;
+import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
+import org.apache.rocketmq.broker.service.pop.PopServiceManager;
 import org.apache.rocketmq.broker.service.pop.QueueLockManager;
 import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.KeyBuilder;
@@ -209,7 +211,26 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
     }
 
     private void ackOrigin(final ChangeInvisibleTimeRequestHeader requestHeader, String[] extraInfo) {
-        MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
+        AckMsg ackMsg = createAckMsg(requestHeader, extraInfo);
+
+        int rqId = ExtraInfoUtil.getReviveQid(extraInfo);
+
+        this.brokerController.getBrokerStatsManager().incBrokerAckNums(1);
+        this.brokerController.getBrokerStatsManager().incGroupAckNums(requestHeader.getConsumerGroup(), requestHeader.getTopic(), 1);
+
+        PopBufferMergeService ackService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        if (ackService.addAckMsg(rqId, ackMsg)) {
+            return;
+        }
+
+        MessageExtBrokerInner msgInner = createMessage(ackMsg, rqId, extraInfo);
+        PutMessageResult putMessageResult = this.brokerController.getEscapeBridge().putMessageToSpecificQueue(msgInner);
+        logPutMessageResult(putMessageResult, ackMsg);
+
+        PopMetricsManager.incPopReviveAckPutCount(ackMsg, putMessageResult.getPutMessageStatus());
+    }
+
+    private AckMsg createAckMsg(ChangeInvisibleTimeRequestHeader requestHeader, String[] extraInfo) {
         AckMsg ackMsg = new AckMsg();
 
         ackMsg.setAckOffset(requestHeader.getOffset());
@@ -220,15 +241,11 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
         ackMsg.setPopTime(ExtraInfoUtil.getPopTime(extraInfo));
         ackMsg.setBrokerName(ExtraInfoUtil.getBrokerName(extraInfo));
 
-        int rqId = ExtraInfoUtil.getReviveQid(extraInfo);
+        return ackMsg;
+    }
 
-        this.brokerController.getBrokerStatsManager().incBrokerAckNums(1);
-        this.brokerController.getBrokerStatsManager().incGroupAckNums(requestHeader.getConsumerGroup(), requestHeader.getTopic(), 1);
-
-        if (brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService().addAckMsg(rqId, ackMsg)) {
-            return;
-        }
-
+    private MessageExtBrokerInner createMessage(AckMsg ackMsg, int rqId, String[] extraInfo) {
+        MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
         msgInner.setTopic(reviveTopic);
         msgInner.setBody(JSON.toJSONString(ackMsg).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(rqId);
@@ -240,15 +257,27 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
         msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genAckUniqueId(ackMsg));
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
 
-        PutMessageResult putMessageResult = this.brokerController.getEscapeBridge().putMessageToSpecificQueue(msgInner);
+        return msgInner;
+    }
 
-        if (putMessageResult.getPutMessageStatus() != PutMessageStatus.PUT_OK
-            && putMessageResult.getPutMessageStatus() != PutMessageStatus.FLUSH_DISK_TIMEOUT
-            && putMessageResult.getPutMessageStatus() != PutMessageStatus.FLUSH_SLAVE_TIMEOUT
-            && putMessageResult.getPutMessageStatus() != PutMessageStatus.SLAVE_NOT_AVAILABLE) {
-            POP_LOGGER.error("change Invisible, put ack msg fail: {}, {}", ackMsg, putMessageResult);
+    private void logPutMessageResult(PutMessageResult putMessageResult, AckMsg ackMsg) {
+        if (putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
+            return;
         }
-        PopMetricsManager.incPopReviveAckPutCount(ackMsg, putMessageResult.getPutMessageStatus());
+
+        if (putMessageResult.getPutMessageStatus() == PutMessageStatus.FLUSH_DISK_TIMEOUT) {
+            return;
+        }
+
+        if (putMessageResult.getPutMessageStatus() == PutMessageStatus.FLUSH_SLAVE_TIMEOUT) {
+            return;
+        }
+
+        if (putMessageResult.getPutMessageStatus() == PutMessageStatus.SLAVE_NOT_AVAILABLE) {
+            return;
+        }
+
+        POP_LOGGER.error("change Invisible, put ack msg fail: {}, {}", ackMsg, putMessageResult);
     }
 
     private PutMessageResult appendCheckPoint(final ChangeInvisibleTimeRequestHeader requestHeader, int reviveQid,
