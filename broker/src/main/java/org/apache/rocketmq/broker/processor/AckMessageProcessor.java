@@ -22,6 +22,8 @@ import io.netty.channel.ChannelHandlerContext;
 import java.util.BitSet;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.metrics.PopMetricsManager;
+import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
+import org.apache.rocketmq.broker.service.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.service.pop.QueueLockManager;
 import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.KeyBuilder;
@@ -177,25 +179,29 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         BatchAckMsg ackMsg = new BatchAckMsg();
         int rqId = getRqid(requestHeader, batchAck);
 
-        int ackCount = ackMsg(requestHeader, response, channel, batchAck, brokerName, ackMsg);
-        if (ackCount < 1) {
+        int msgCount = commitMsg(requestHeader, response, channel, batchAck, brokerName, ackMsg);
+        if (msgCount < 1) {
             return;
         }
 
-        this.brokerController.getBrokerStatsManager().incBrokerAckNums(ackCount);
-        this.brokerController.getBrokerStatsManager().incGroupAckNums(ackMsg.getConsumerGroup(), ackMsg.getTopic(), ackCount);
-        if (this.brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService().addAckMsg(rqId, ackMsg)) {
-            brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(ackMsg.getTopic(), ackMsg.getConsumerGroup(), ackMsg.getPopTime(), ackMsg.getQueueId(), ackCount);
+        this.brokerController.getBrokerStatsManager().incBrokerAckNums(msgCount);
+        this.brokerController.getBrokerStatsManager().incGroupAckNums(ackMsg.getConsumerGroup(), ackMsg.getTopic(), msgCount);
+
+        PopInflightMessageCounter messageCounter = brokerController.getPopInflightMessageCounter();
+        PopBufferMergeService ackService = this.brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        if (ackService.addAckMsg(rqId, ackMsg)) {
+            messageCounter.decrementInFlightMessageNum(ackMsg.getTopic(), ackMsg.getConsumerGroup(), ackMsg.getPopTime(), ackMsg.getQueueId(), msgCount);
             return;
         }
 
+        // double ack, if the foregoing ack failed, convert ack to msg and put the message to revive queue
         MessageExtBrokerInner msgInner = initMessageInner(ackMsg, requestHeader, batchAck);
         PutMessageResult putMessageResult = this.brokerController.getEscapeBridge().putMessageToSpecificQueue(msgInner);
         logPutMessageResult(putMessageResult);
 
 
         PopMetricsManager.incPopReviveAckPutCount(ackMsg, putMessageResult.getPutMessageStatus());
-        brokerController.getPopInflightMessageCounter().decrementInFlightMessageNum(ackMsg.getTopic(), ackMsg.getConsumerGroup(), ackMsg.getPopTime(), ackMsg.getQueueId(), ackCount);
+        messageCounter.decrementInFlightMessageNum(ackMsg.getTopic(), ackMsg.getConsumerGroup(), ackMsg.getPopTime(), ackMsg.getQueueId(), msgCount);
     }
 
     private void initAckMsg(AckMessageRequestHeader requestHeader, String[] extraInfo, AckMsg ackMsg) {
@@ -208,7 +214,10 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         ackMsg.setBrokerName(ExtraInfoUtil.getBrokerName(extraInfo));
     }
 
-    private void ackOrderly(String topic, String consumeGroup, int qId, long ackOffset, long popTime, long invisibleTime, Channel channel, RemotingCommand response) {
+    /**
+     * @renamed  from ackOrderly to commitOrderly
+     */
+    private void commitOrderly(String topic, String consumeGroup, int qId, long ackOffset, long popTime, long invisibleTime, Channel channel, RemotingCommand response) {
 
         long oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(consumeGroup, topic, qId);
         if (ackOffset < oldOffset) {
@@ -268,7 +277,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         response.setRemark(errorInfo);
     }
 
-    private int ackSingleMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, AckMsg ackMsg) {
+    private int commitSingleMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, AckMsg ackMsg) {
         // single ack
         String[] extraInfo = ExtraInfoUtil.split(requestHeader.getExtraInfo());
         initAckMsg(requestHeader, extraInfo, ackMsg);
@@ -277,12 +286,12 @@ public class AckMessageProcessor implements NettyRequestProcessor {
             return 1;
         }
 
-        ackOrderly(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId(), requestHeader.getOffset(),
+        commitOrderly(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId(), requestHeader.getOffset(),
             ExtraInfoUtil.getPopTime(extraInfo), ExtraInfoUtil.getInvisibleTime(extraInfo), channel, response);
         return -1;
     }
 
-    private int ackBatchMsg(final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
+    private int commitBatchMsg(final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
         // batch ack
         String topic = ExtraInfoUtil.getRealTopic(batchAck.getTopic(), batchAck.getConsumerGroup(), ExtraInfoUtil.RETRY_TOPIC.equals(batchAck.getRetry()));
 
@@ -319,7 +328,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
                 continue;
             }
             if (batchAck.getReviveQueueId() == KeyBuilder.POP_ORDER_REVIVE_QUEUE) {
-                ackOrderly(topic, batchAck.getConsumerGroup(), batchAck.getQueueId(), offset, batchAck.getPopTime(), batchAck.getInvisibleTime(), channel, response);
+                commitOrderly(topic, batchAck.getConsumerGroup(), batchAck.getQueueId(), offset, batchAck.getPopTime(), batchAck.getInvisibleTime(), channel, response);
             } else {
                 batchAckMsg.getAckOffsetList().add(offset);
             }
@@ -338,12 +347,12 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         ackMsg.setBrokerName(brokerName);
     }
 
-    private int ackMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
+    private int commitMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
         int ackCount = 0;
         if (batchAck == null) {
-            ackCount = ackSingleMsg(requestHeader, response, channel, ackMsg);
+            ackCount = commitSingleMsg(requestHeader, response, channel, ackMsg);
         } else {
-            ackCount = ackBatchMsg(response, channel, batchAck, brokerName, ackMsg);
+            ackCount = commitBatchMsg(response, channel, batchAck, brokerName, ackMsg);
         }
 
         return ackCount;
