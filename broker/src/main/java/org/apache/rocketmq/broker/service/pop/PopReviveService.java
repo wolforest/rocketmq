@@ -621,9 +621,9 @@ public class PopReviveService extends ServiceThread {
         for (PopCheckPoint popCheckPoint : sortList) {
             if (shouldBreakRevive(consumeReviveObj, popCheckPoint)) break;
 
-            Long skipOffset = shouldSkipRevive(popCheckPoint);
-            if (skipOffset != null) {
-                newOffset = skipOffset;
+            Long reviveOffset = getReviveOffset(popCheckPoint);
+            if (reviveOffset != null) {
+                newOffset = reviveOffset;
                 continue;
             }
 
@@ -655,7 +655,7 @@ public class PopReviveService extends ServiceThread {
         return consumeReviveObj.getEndTime() - popCheckPoint.getReviveTime() <= (PopConstants.ackTimeInterval + PopConstants.SECOND);
     }
 
-    private Long shouldSkipRevive(PopCheckPoint popCheckPoint) {
+    private Long getReviveOffset(PopCheckPoint popCheckPoint) {
         // check normal topic, skip ck , if normal topic is not exist
         String topic = KeyBuilder.removeRetryPrefix(popCheckPoint.getTopic(), popCheckPoint.getCId());
         if (brokerController.getTopicConfigManager().selectTopicConfig(topic) == null) {
