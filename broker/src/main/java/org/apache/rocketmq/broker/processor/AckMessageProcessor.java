@@ -390,11 +390,22 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     }
 
     private void logPutMessageResult(PutMessageResult putMessageResult) {
-        if (putMessageResult.getPutMessageStatus() != PutMessageStatus.PUT_OK
-            && putMessageResult.getPutMessageStatus() != PutMessageStatus.FLUSH_DISK_TIMEOUT
-            && putMessageResult.getPutMessageStatus() != PutMessageStatus.FLUSH_SLAVE_TIMEOUT
-            && putMessageResult.getPutMessageStatus() != PutMessageStatus.SLAVE_NOT_AVAILABLE) {
-            POP_LOGGER.error("put ack msg error:" + putMessageResult);
+        if (putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
+            return;
         }
+
+        if (putMessageResult.getPutMessageStatus() == PutMessageStatus.FLUSH_DISK_TIMEOUT) {
+            return;
+        }
+
+        if (putMessageResult.getPutMessageStatus() == PutMessageStatus.FLUSH_SLAVE_TIMEOUT) {
+            return;
+        }
+
+        if (putMessageResult.getPutMessageStatus() == PutMessageStatus.SLAVE_NOT_AVAILABLE) {
+            return;
+        }
+
+        POP_LOGGER.error("put ack msg error:" + putMessageResult);
     }
 }
