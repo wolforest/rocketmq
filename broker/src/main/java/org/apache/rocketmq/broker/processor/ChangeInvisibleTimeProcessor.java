@@ -48,6 +48,12 @@ import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.pop.AckMsg;
 import org.apache.rocketmq.store.pop.PopCheckPoint;
 
+/**
+ * process nack(not ack) request
+ * - ack orderly message
+ * - add copied message with body is check point
+ * - ack the not ack message
+ */
 public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
     private final BrokerController brokerController;
@@ -233,7 +239,9 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
         msgInner.setDeliverTimeMs(ExtraInfoUtil.getPopTime(extraInfo) + ExtraInfoUtil.getInvisibleTime(extraInfo));
         msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genAckUniqueId(ackMsg));
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
+
         PutMessageResult putMessageResult = this.brokerController.getEscapeBridge().putMessageToSpecificQueue(msgInner);
+
         if (putMessageResult.getPutMessageStatus() != PutMessageStatus.PUT_OK
             && putMessageResult.getPutMessageStatus() != PutMessageStatus.FLUSH_DISK_TIMEOUT
             && putMessageResult.getPutMessageStatus() != PutMessageStatus.FLUSH_SLAVE_TIMEOUT
@@ -246,7 +254,7 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
     private PutMessageResult appendCheckPoint(final ChangeInvisibleTimeRequestHeader requestHeader, int reviveQid,
         int queueId, long offset, long popTime, String brokerName) {
         PopCheckPoint ck = createPopCheckPoint(requestHeader, queueId, offset, popTime, brokerName);
-        MessageExtBrokerInner msgInner = createMessage(reviveQid, ck);
+        MessageExtBrokerInner msgInner = createCheckPointMessage(reviveQid, ck);
 
         // add check point msg to revive log
         PutMessageResult putMessageResult = this.brokerController.getEscapeBridge().putMessageToSpecificQueue(msgInner);
@@ -278,7 +286,7 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
         return ck;
     }
 
-    private MessageExtBrokerInner createMessage(int reviveQid, PopCheckPoint ck) {
+    private MessageExtBrokerInner createCheckPointMessage(int reviveQid, PopCheckPoint ck) {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
         msgInner.setTopic(reviveTopic);
         msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.CHARSET_UTF8));
