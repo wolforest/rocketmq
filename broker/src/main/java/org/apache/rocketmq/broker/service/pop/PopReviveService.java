@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.metrics.PopMetricsManager;
@@ -708,6 +709,12 @@ public class PopReviveService extends ServiceThread {
         }
 
         inflightReviveRequestMap.put(popCheckPoint, new Pair<>(System.currentTimeMillis(), false));
+        List<CompletableFuture<Pair<Long, Boolean>>> futureList = getMessageFuture(popCheckPoint);
+
+        reviveAndCleanInflightMap(futureList, popCheckPoint);
+    }
+
+    private List<CompletableFuture<Pair<Long, Boolean>>> getMessageFuture(PopCheckPoint popCheckPoint) {
         List<CompletableFuture<Pair<Long, Boolean>>> futureList = new ArrayList<>(popCheckPoint.getNum());
 
         for (int j = 0; j < popCheckPoint.getNum(); j++) {
@@ -718,57 +725,78 @@ public class PopReviveService extends ServiceThread {
 
             // retry msg
             long msgOffset = popCheckPoint.ackOffsetByIndex((byte) j);
-            CompletableFuture<Pair<Long, Boolean>> future = getMessageAsync(popCheckPoint.getTopic(), msgOffset, popCheckPoint.getQueueId(), popCheckPoint.getBrokerName())
-                .thenApply(resultPair -> {
-                    GetMessageStatus getMessageStatus = resultPair.getObject1();
-                    MessageExt message = resultPair.getObject2();
-                    if (message == null) {
-                        POP_LOGGER.warn("reviveQueueId={}, can not get biz msg topic is {}, offset is {}, then continue",
-                            queueId, popCheckPoint.getTopic(), msgOffset);
-                        switch (getMessageStatus) {
-                            case MESSAGE_WAS_REMOVING:
-                            case OFFSET_TOO_SMALL:
-                            case NO_MATCHED_LOGIC_QUEUE:
-                            case NO_MESSAGE_IN_QUEUE:
-                                return new Pair<>(msgOffset, true);
-                            default:
-                                return new Pair<>(msgOffset, false);
+            CompletableFuture<Pair<Long, Boolean>> future = getMessageAsync(
+                popCheckPoint.getTopic(), msgOffset, popCheckPoint.getQueueId(), popCheckPoint.getBrokerName()
+            ).thenApply(createCallback(popCheckPoint, msgOffset));
 
-                        }
-                    }
-                    //skip ck from last epoch
-                    if (popCheckPoint.getPopTime() < message.getStoreTimestamp()) {
-                        POP_LOGGER.warn("reviveQueueId={}, skip ck from last epoch {}", queueId, popCheckPoint);
-                        return new Pair<>(msgOffset, true);
-                    }
-                    boolean result = reviveRetry(popCheckPoint, message);
-                    return new Pair<>(msgOffset, result);
-                });
             futureList.add(future);
         }
-        CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0]))
-            .whenComplete((v, e) -> {
-                for (CompletableFuture<Pair<Long, Boolean>> future : futureList) {
-                    Pair<Long, Boolean> pair = future.getNow(new Pair<>(0L, false));
-                    if (!pair.getObject2()) {
-                        rePutCK(popCheckPoint, pair);
-                    }
-                }
 
-                if (inflightReviveRequestMap.containsKey(popCheckPoint)) {
-                    inflightReviveRequestMap.get(popCheckPoint).setObject2(true);
+        return futureList;
+    }
+
+    private Function<Pair<GetMessageStatus, MessageExt>, Pair<Long, Boolean>> createCallback(PopCheckPoint popCheckPoint, long msgOffset) {
+        return resultPair -> {
+            GetMessageStatus getMessageStatus = resultPair.getObject1();
+            MessageExt message = resultPair.getObject2();
+            if (message == null) {
+                POP_LOGGER.warn("reviveQueueId={}, can not get biz msg topic is {}, offset is {}, then continue",
+                    queueId, popCheckPoint.getTopic(), msgOffset);
+                switch (getMessageStatus) {
+                    case MESSAGE_WAS_REMOVING:
+                    case OFFSET_TOO_SMALL:
+                    case NO_MATCHED_LOGIC_QUEUE:
+                    case NO_MESSAGE_IN_QUEUE:
+                        return new Pair<>(msgOffset, true);
+                    default:
+                        return new Pair<>(msgOffset, false);
+
                 }
-                for (Map.Entry<PopCheckPoint, Pair<Long, Boolean>> entry : inflightReviveRequestMap.entrySet()) {
-                    PopCheckPoint oldCK = entry.getKey();
-                    Pair<Long, Boolean> pair = entry.getValue();
-                    if (pair.getObject2()) {
-                        brokerController.getConsumerOffsetManager().commitOffset(PopConstants.LOCAL_HOST, PopConstants.REVIVE_GROUP, reviveTopic, queueId, oldCK.getReviveOffset());
-                        inflightReviveRequestMap.remove(oldCK);
-                    } else {
-                        break;
-                    }
+            }
+            //skip ck from last epoch
+            if (popCheckPoint.getPopTime() < message.getStoreTimestamp()) {
+                POP_LOGGER.warn("reviveQueueId={}, skip ck from last epoch {}", queueId, popCheckPoint);
+                return new Pair<>(msgOffset, true);
+            }
+            boolean result = reviveRetry(popCheckPoint, message);
+            return new Pair<>(msgOffset, result);
+        };
+    }
+
+    private void reviveAndCleanInflightMap(List<CompletableFuture<Pair<Long, Boolean>>> futureList, PopCheckPoint popCheckPoint) {
+        CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0])).whenComplete((v, e) -> {
+            for (CompletableFuture<Pair<Long, Boolean>> future : futureList) {
+                Pair<Long, Boolean> pair = future.getNow(new Pair<>(0L, false));
+                // reput expired message to revive queue
+                if (!pair.getObject2()) {
+                    rePutCK(popCheckPoint, pair);
                 }
-            });
+            }
+
+            // remove check point from inflight revive request map
+            if (inflightReviveRequestMap.containsKey(popCheckPoint)) {
+                inflightReviveRequestMap.get(popCheckPoint).setObject2(true);
+            }
+
+            cleanInflightMap();
+        });
+    }
+
+    /**
+     * delete finished check point in the inflight map,
+     * until meet one unfinished
+     */
+    private void cleanInflightMap() {
+        for (Map.Entry<PopCheckPoint, Pair<Long, Boolean>> entry : inflightReviveRequestMap.entrySet()) {
+            Pair<Long, Boolean> pair = entry.getValue();
+            if (!pair.getObject2()) {
+                break;
+            }
+
+            PopCheckPoint oldCK = entry.getKey();
+            brokerController.getConsumerOffsetManager().commitOffset(PopConstants.LOCAL_HOST, PopConstants.REVIVE_GROUP, reviveTopic, queueId, oldCK.getReviveOffset());
+            inflightReviveRequestMap.remove(oldCK);
+        }
     }
 
     private void resetReviveOffset(ConsumeReviveObj consumeReviveObj, long newOffset) {
