@@ -1695,7 +1695,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 continue;
             }
 
-            String normalTopic = KeyBuilder.parseNormalTopic(msg.getTopic(), consumerGroup);
+            String normalTopic = KeyBuilder.removeRetryPrefix(msg.getTopic(), consumerGroup);
             if (normalTopic != null && !normalTopic.isEmpty()) {
                 msg.setTopic(normalTopic);
             }

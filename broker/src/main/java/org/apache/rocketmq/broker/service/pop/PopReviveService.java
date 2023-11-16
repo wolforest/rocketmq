@@ -262,7 +262,7 @@ public class PopReviveService extends ServiceThread {
         }
 
         PopServiceManager manager = brokerController.getBrokerNettyServer().getPopServiceManager();
-        String topic = KeyBuilder.parseNormalTopic(popCheckPoint.getTopic(), popCheckPoint.getCId());
+        String topic = KeyBuilder.removeRetryPrefix(popCheckPoint.getTopic(), popCheckPoint.getCId());
 
         manager.popArriving(topic, popCheckPoint.getCId(), -1);
         manager.notificationArriving(topic, -1);
@@ -657,11 +657,12 @@ public class PopReviveService extends ServiceThread {
 
     private Long shouldSkipRevive(PopCheckPoint popCheckPoint) {
         // check normal topic, skip ck , if normal topic is not exist
-        String normalTopic = KeyBuilder.parseNormalTopic(popCheckPoint.getTopic(), popCheckPoint.getCId());
-        if (brokerController.getTopicConfigManager().selectTopicConfig(normalTopic) == null) {
+        String topic = KeyBuilder.removeRetryPrefix(popCheckPoint.getTopic(), popCheckPoint.getCId());
+        if (brokerController.getTopicConfigManager().selectTopicConfig(topic) == null) {
             POP_LOGGER.warn("reviveQueueId={}, can not get normal topic {}, then continue", queueId, popCheckPoint.getTopic());
             return popCheckPoint.getReviveOffset();
         }
+
         if (null == brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(popCheckPoint.getCId())) {
             POP_LOGGER.warn("reviveQueueId={}, can not get cid {}, then continue", queueId, popCheckPoint.getCId());
             return popCheckPoint.getReviveOffset();

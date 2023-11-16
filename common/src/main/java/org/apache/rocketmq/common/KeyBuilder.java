@@ -33,7 +33,15 @@ public class KeyBuilder {
         return MQConstants.RETRY_GROUP_TOPIC_PREFIX + group + "_" + topic;
     }
 
-    public static String parseNormalTopic(String topic, String group) {
+    /**
+     * remove retry topic prefix and group
+     * @renamed from parseNormalTopic removeRetryPrefix
+     *
+     * @param topic topic
+     * @param group group
+     * @return topic name
+     */
+    public static String removeRetryPrefix(String topic, String group) {
         if (!topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
             return topic;
         }
