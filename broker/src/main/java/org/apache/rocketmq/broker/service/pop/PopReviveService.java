@@ -78,6 +78,9 @@ public class PopReviveService extends ServiceThread {
     private long currentReviveMessageTimestamp = -1;
     private volatile boolean shouldRunPopRevive = false;
 
+    /**
+     *
+     */
     private final NavigableMap<PopCheckPoint/* oldCK */, Pair<Long/* timestamp */, Boolean/* result */>> inflightReviveRequestMap = Collections.synchronizedNavigableMap(new TreeMap<>());
     private long reviveOffset;
 
@@ -627,7 +630,7 @@ public class PopReviveService extends ServiceThread {
                 continue;
             }
 
-            removeInvalidCheckPoint();
+            reputExpiredCheckPoint();
             reviveMsgFromCk(popCheckPoint);
 
             newOffset = popCheckPoint.getReviveOffset();
@@ -671,14 +674,20 @@ public class PopReviveService extends ServiceThread {
         return null;
     }
 
-    private void removeInvalidCheckPoint() {
+    /**
+     * reput timeout check point to revive queue
+     */
+    private void reputExpiredCheckPoint() {
         while (inflightReviveRequestMap.size() > 3) {
             waitForRunning(100);
+
             Pair<Long, Boolean> pair = inflightReviveRequestMap.firstEntry().getValue();
+            // if check point result is true, continue
             if (pair.getObject2()) {
                 continue;
             }
 
+            // if check point is not timeout, continue
             if (System.currentTimeMillis() - pair.getObject1() <= 1000 * 30) {
                 continue;
             }
