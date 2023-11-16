@@ -56,6 +56,9 @@ public class PopCheckPoint implements Comparable<PopCheckPoint> {
     private String cid;
     @JSONField(name = "ro")
     private long reviveOffset;
+    /**
+     *
+     */
     @JSONField(name = "d")
     private List<Integer> queueOffsetDiff;
     @JSONField(name = "bn")
