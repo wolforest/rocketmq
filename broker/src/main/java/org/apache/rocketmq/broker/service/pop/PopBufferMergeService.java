@@ -51,6 +51,7 @@ import org.apache.rocketmq.store.pop.QueueWithTime;
 
 /**
  * manage checkPoint and ack info of pop message
+ * @renamed from PopBufferMergeService to PopAckService
  *
  * with default config:
  * - this class is just the proxy of revive queue operations
