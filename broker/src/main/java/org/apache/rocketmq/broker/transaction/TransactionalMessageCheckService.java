@@ -136,6 +136,16 @@ public class TransactionalMessageCheckService extends ServiceThread {
         }
     }
 
+    /**
+     * check given MessageQueue,
+     * check the messages one by one(by call checkMessage())
+     *
+     * @param messageQueue message queue
+     * @param transactionTimeout timeout
+     * @param transactionCheckMax max check times
+     * @param listener listener
+     * @throws InterruptedException e
+     */
     private void checkMessageQueue(MessageQueue messageQueue, long transactionTimeout, int transactionCheckMax, AbstractTransactionalMessageCheckListener listener) throws InterruptedException {
         CheckContext context =  buildCheckContext(messageQueue, transactionTimeout, transactionCheckMax, listener);
         if (context.getHalfOffset() < 0 || context.getOpOffset() < 0) {
@@ -160,8 +170,8 @@ public class TransactionalMessageCheckService extends ServiceThread {
             }
 
             if (context.getRemoveMap().containsKey(context.getCounter())) {
-                removeOffset(context);
-            } else if (!checkOffset(context)) {
+                removeMessage(context);
+            } else if (!checkMessage(context)) {
                 break;
             }
 
@@ -183,7 +193,14 @@ public class TransactionalMessageCheckService extends ServiceThread {
         return context;
     }
 
-    private void removeOffset(CheckContext context) {
+    /**
+     * remove message which has been committed/rollback from task queue
+     * - remove opOffset from opMsaMap
+     * - add opOffset to DoneOpOffset
+     *
+     * @param context context
+     */
+    private void removeMessage(CheckContext context) {
         log.debug("Half offset {} has been committed/rolled back", context.getCounter());
         Long removedOpOffset = context.getRemoveMap().remove(context.getCounter());
         context.getOpMsgMap().get(removedOpOffset).remove(context.getCounter());
@@ -195,7 +212,19 @@ public class TransactionalMessageCheckService extends ServiceThread {
         context.getDoneOpOffset().add(removedOpOffset);
     }
 
-    private boolean checkOffset(CheckContext context) throws InterruptedException {
+    /**
+     * check message
+     * - skip or discard
+     * - put half message back to checking queue
+     * - ...
+     *
+     * @param context context
+     * @return check status
+     *      - true: the message has been checked, and process can continue
+     *      - false: checking process should be terminated, ...
+     * @throws InterruptedException e
+     */
+    private boolean checkMessage(CheckContext context) throws InterruptedException {
         GetResult getResult = getHalfMsg(context.getMessageQueue(), context.getCounter());
         context.setMsgExt(getResult.getMsg());
         if (context.getMsgExt() == null) {
