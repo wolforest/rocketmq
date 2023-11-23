@@ -16,14 +16,6 @@
  */
 package org.apache.rocketmq.broker.transaction;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.transaction.queue.CheckContext;
 import org.apache.rocketmq.broker.transaction.queue.GetResult;
@@ -31,8 +23,8 @@ import org.apache.rocketmq.broker.transaction.queue.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.transaction.queue.TransactionalMessageUtil;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
-import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -47,6 +39,15 @@ import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Transaction check service
@@ -189,6 +190,12 @@ public class TransactionalMessageCheckService extends ServiceThread {
         context.getDoneOpOffset().add(removedOpOffset);
     }
 
+    /**
+     *
+     * @param context
+     * @return false:will break
+     * @throws InterruptedException
+     */
     private boolean checkOffset(CheckContext context) throws InterruptedException {
         GetResult getResult = getHalfMsg(context.getMessageQueue(), context.getCounter());
         context.setMsgExt(getResult.getMsg());
@@ -547,6 +554,11 @@ public class TransactionalMessageCheckService extends ServiceThread {
         MessageExt msgExt, String checkImmunityTimeStr) {
         String prepareQueueOffsetStr = msgExt.getUserProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET);
         if (null == prepareQueueOffsetStr) {
+            /*
+                如果PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET属性值为空,说明这条消息从未经历过Rpc远程事务检查。
+                需要把这条消息重新放回Half_Topic的队尾，因为即将跳过这条消息，去检查下一条Half_Message。
+                putImmunityMsgBackToHalfQueue将会为消息添加PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET属性。
+             */
             return putImmunityMsgBackToHalfQueue(msgExt);
         }
 
@@ -556,6 +568,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         }
 
         if (!removeMap.containsKey(prepareQueueOffset)) {
+            //依然没有收到commit/rollback确认消息，消息再次被放回队尾，等待下次检查
             return putImmunityMsgBackToHalfQueue(msgExt);
         }
 
