@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
@@ -213,7 +214,7 @@ public class ConsumerProgressSubCommand implements SubCommand {
                 TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
                 for (String topic : topicList.getTopicList()) {
                     if (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
-                        String consumerGroup = topic.substring(MQConstants.RETRY_GROUP_TOPIC_PREFIX.length());
+                        String consumerGroup = KeyBuilder.parseGroup(topic);
                         try {
                             ConsumeStats consumeStats = null;
                             try {

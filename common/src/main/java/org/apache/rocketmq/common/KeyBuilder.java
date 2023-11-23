@@ -21,6 +21,8 @@ import org.apache.rocketmq.common.constant.PopConstants;
 
 public class KeyBuilder {
     public static final int POP_ORDER_REVIVE_QUEUE = 999;
+    private static final String POP_RETRY_SEPARATOR_V1 = "_";
+    private static final String POP_RETRY_SEPARATOR_V2 = ":";
 
     /**
      * create retryTopicName by original topic, group
@@ -30,7 +32,50 @@ public class KeyBuilder {
      * @return retryTopicName
      */
     public static String buildPopRetryTopic(String topic, String group) {
-        return MQConstants.RETRY_GROUP_TOPIC_PREFIX + group + "_" + topic;
+        return MQConstants.RETRY_GROUP_TOPIC_PREFIX + group + POP_RETRY_SEPARATOR_V2 + topic;
+    }
+
+    public static String buildPopRetryTopicV1(String topic, String group) {
+        return MQConstants.RETRY_GROUP_TOPIC_PREFIX + group + POP_RETRY_SEPARATOR_V1 + topic;
+    }
+
+    public static String parseNormalTopic(String topic, String cid) {
+        if (!topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
+            return topic;
+        }
+
+        if (topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX + cid + POP_RETRY_SEPARATOR_V2)) {
+            return topic.substring((MQConstants.RETRY_GROUP_TOPIC_PREFIX + cid + POP_RETRY_SEPARATOR_V2).length());
+        }
+        return topic.substring((MQConstants.RETRY_GROUP_TOPIC_PREFIX + cid + POP_RETRY_SEPARATOR_V1).length());
+    }
+
+    public static String parseNormalTopic(String retryTopic) {
+        if (!isPopRetryTopicV2(retryTopic)) {
+            return retryTopic;
+        }
+
+        String[] result = retryTopic.split(POP_RETRY_SEPARATOR_V2);
+        if (result.length == 2) {
+            return result[1];
+        }
+        return retryTopic;
+    }
+
+    public static String parseGroup(String retryTopic) {
+        if (!isPopRetryTopicV2(retryTopic)) {
+            return retryTopic.substring(MQConstants.RETRY_GROUP_TOPIC_PREFIX.length());
+        }
+
+        String[] result = retryTopic.split(POP_RETRY_SEPARATOR_V2);
+        if (result.length == 2) {
+            return result[0].substring(MQConstants.RETRY_GROUP_TOPIC_PREFIX.length());
+        }
+        return retryTopic.substring(MQConstants.RETRY_GROUP_TOPIC_PREFIX.length());
+    }
+
+    public static boolean isPopRetryTopicV2(String retryTopic) {
+        return retryTopic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX) && retryTopic.contains(POP_RETRY_SEPARATOR_V2);
     }
 
     /**

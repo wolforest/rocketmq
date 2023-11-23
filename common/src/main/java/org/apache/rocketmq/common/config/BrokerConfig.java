@@ -310,6 +310,9 @@ public class BrokerConfig extends BrokerIdentity {
     private boolean enableNotifyAfterPopOrderLockRelease = true;
     private boolean initPopOffsetByCheckMsgInMem = true;
 
+    // read message from pop retry topic v1, for the compatibility, will be removed in the future version
+    private boolean retrieveMessageFromPopRetryTopicV1 = true;
+
     private boolean realTimeNotifyConsumerChange = true;
 
     private boolean litePullMessageEnable = true;
@@ -1271,6 +1274,18 @@ public class BrokerConfig extends BrokerIdentity {
 
     public int getTransactionOpMsgMaxSize() {
         return transactionOpMsgMaxSize;
+    }
+
+    public void setInitPopOffsetByCheckMsgInMem(boolean initPopOffsetByCheckMsgInMem) {
+        this.initPopOffsetByCheckMsgInMem = initPopOffsetByCheckMsgInMem;
+    }
+
+    public boolean isRetrieveMessageFromPopRetryTopicV1() {
+        return retrieveMessageFromPopRetryTopicV1;
+    }
+
+    public void setRetrieveMessageFromPopRetryTopicV1(boolean retrieveMessageFromPopRetryTopicV1) {
+        this.retrieveMessageFromPopRetryTopicV1 = retrieveMessageFromPopRetryTopicV1;
     }
 
     public void setTransactionOpMsgMaxSize(int transactionOpMsgMaxSize) {
