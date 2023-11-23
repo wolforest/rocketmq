@@ -137,12 +137,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
     }
 
     private void checkMessageQueue(MessageQueue messageQueue, long transactionTimeout, int transactionCheckMax, AbstractTransactionalMessageCheckListener listener) throws InterruptedException {
-        CheckContext context = new CheckContext(messageQueue, transactionTimeout, transactionCheckMax, listener);
-
-        context.setOpQueue(getOpQueue(messageQueue));
-        context.setHalfOffset(transactionalMessageBridge.fetchConsumeOffset(messageQueue));
-        context.setOpOffset(transactionalMessageBridge.fetchConsumeOffset(context.getOpQueue()));
-        log.info("Before check, the queue={} msgOffset={} opOffset={}", messageQueue, context.getHalfOffset(), context.getOpOffset());
+        CheckContext context =  buildCheckContext(messageQueue, transactionTimeout, transactionCheckMax, listener);
         if (context.getHalfOffset() < 0 || context.getOpOffset() < 0) {
             log.error("MessageQueue: {} illegal offset read: {}, op offset: {},skip this queue", messageQueue, context.getHalfOffset(), context.getOpOffset());
             return;
@@ -166,8 +161,8 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
             if (context.getRemoveMap().containsKey(context.getCounter())) {
                 removeOffset(context);
-            } else {
-                if (!checkOffset(context)) break;
+            } else if (!checkOffset(context)) {
+                break;
             }
 
             context.setNewOffset(context.getCounter() + 1);
@@ -175,6 +170,17 @@ public class TransactionalMessageCheckService extends ServiceThread {
         }
 
         updateOffset(context);
+    }
+
+    private CheckContext buildCheckContext(MessageQueue messageQueue, long transactionTimeout, int transactionCheckMax, AbstractTransactionalMessageCheckListener listener) {
+        CheckContext context = new CheckContext(messageQueue, transactionTimeout, transactionCheckMax, listener);
+
+        context.setOpQueue(getOpQueue(messageQueue));
+        context.setHalfOffset(transactionalMessageBridge.fetchConsumeOffset(messageQueue));
+        context.setOpOffset(transactionalMessageBridge.fetchConsumeOffset(context.getOpQueue()));
+        log.info("Before check, the queue={} msgOffset={} opOffset={}", messageQueue, context.getHalfOffset(), context.getOpOffset());
+
+        return context;
     }
 
     private void removeOffset(CheckContext context) {
