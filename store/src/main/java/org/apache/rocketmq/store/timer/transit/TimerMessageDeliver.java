@@ -206,7 +206,7 @@ public class TimerMessageDeliver extends AbstractStateService {
         return msgInner;
     }
 
-    //0 succ; 1 fail, need retry; 2 fail, do not retry;
+    //0 success; 1 fail, need retry; 2 fail, do not retry;
     public int doPut(MessageExtBrokerInner message, boolean roll) throws Exception {
 
         if (!roll && null != message.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY)) {
@@ -214,12 +214,7 @@ public class TimerMessageDeliver extends AbstractStateService {
             return PUT_NO_RETRY;
         }
 
-        PutMessageResult putMessageResult = null;
-        if (escapeBridgeHook != null) {
-            putMessageResult = escapeBridgeHook.apply(message);
-        } else {
-            putMessageResult = messageOperator.putMessage(message);
-        }
+        PutMessageResult putMessageResult = putMessage(message);
 
         int retryNum = 0;
         while (retryNum < 3) {
@@ -250,12 +245,19 @@ public class TimerMessageDeliver extends AbstractStateService {
                 }
             }
             Thread.sleep(50);
-            putMessageResult = messageOperator.putMessage(message);
+
+            putMessageResult = putMessage(message);
             LOGGER.warn("Retrying to do put timer msg retryNum:{} putRes:{} msg:{}", retryNum, putMessageResult, message);
         }
         return PUT_NO_RETRY;
     }
 
-
+    private PutMessageResult putMessage(MessageExtBrokerInner message) {
+        if (escapeBridgeHook != null) {
+            return escapeBridgeHook.apply(message);
+        } else {
+            return messageOperator.putMessage(message);
+        }
+    }
 }
 
