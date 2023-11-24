@@ -214,8 +214,8 @@ public class TransactionalMessageCheckService extends ServiceThread {
             return true;
         }
 
-        if (needDiscard(context.getMsgExt(), context.getTransactionCheckMax()) || needSkip(context.getMsgExt())) {
-            skipOrDiscard(context);
+        if (isOverMaxCheckTimes(context.getMsgExt(), context.getTransactionCheckMax()) || isExpiring(context.getMsgExt())) {
+            discard(context);
             return true;
         }
 
@@ -310,7 +310,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         }
     }
 
-    private void skipOrDiscard(CheckContext context) {
+    private void discard(CheckContext context) {
         context.getListener().resolveDiscardMsg(context.getMsgExt());
         context.setNewOffset(context.getCounter() + 1);
         context.incCounter();
@@ -404,7 +404,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
             System.currentTimeMillis() - msgTime, context.getPutInQueueCount());
     }
 
-    private boolean needDiscard(MessageExt msgExt, int transactionCheckMax) {
+    private boolean isOverMaxCheckTimes(MessageExt msgExt, int transactionCheckMax) {
         String checkTimes = msgExt.getProperty(MessageConst.PROPERTY_TRANSACTION_CHECK_TIMES);
         int checkTime = 1;
         if (null != checkTimes) {
@@ -419,7 +419,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         return false;
     }
 
-    private boolean needSkip(MessageExt msgExt) {
+    private boolean isExpiring(MessageExt msgExt) {
         long valueOfCurrentMinusBorn = System.currentTimeMillis() - msgExt.getBornTimestamp();
         if (valueOfCurrentMinusBorn
             > transactionalMessageBridge.getBrokerController().getMessageStoreConfig().getFileReservedTime()
