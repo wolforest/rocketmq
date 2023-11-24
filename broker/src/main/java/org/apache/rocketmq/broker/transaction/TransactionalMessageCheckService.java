@@ -598,9 +598,9 @@ public class TransactionalMessageCheckService extends ServiceThread {
         String prepareQueueOffsetStr = msgExt.getUserProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET);
         if (null == prepareQueueOffsetStr) {
             /*
-                It's means this message has never been checked by Rpc transaction-check.
-                We need re-put this message back at the end of the Half_Topic.
-                Because about to skip the current offset to check for the next message.
+                This message has never been checked by Rpc transaction-checker.
+                We need re-put this message back to the end of the Half_Topic.
+                so that we can skip the current offset(message) to check for the following message.
                 PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET will be added to the message by putImmunityMsgBackToHalfQueue.
              */
             return putImmunityMsgBackToHalfQueue(msgExt);
@@ -614,7 +614,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         if (!removeMap.containsKey(prepareQueueOffset)) {
             /*
                 The commit/rollback confirmation message is still not received,
-                The message is again put back to the end of the queue for the next check
+                The message is again put back to the end of the queue for the future checking
              */
             return putImmunityMsgBackToHalfQueue(msgExt);
 
@@ -633,7 +633,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
     /**
      * Write messageExt to Half topic again
      *
-     * @param messageExt Message will be write back to queue
+     * @param messageExt Message will be put back to queue
      * @return Put result is used to determine the specific results of storage.
      */
     private PutMessageResult putBackToHalfQueueReturnResult(MessageExt messageExt) {
