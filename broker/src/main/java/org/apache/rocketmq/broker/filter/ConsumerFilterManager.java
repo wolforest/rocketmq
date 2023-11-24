@@ -236,54 +236,58 @@ public class ConsumerFilterManager extends ConfigManager {
     @Override
     public void decode(final String jsonString) {
         ConsumerFilterManager load = RemotingSerializable.fromJson(jsonString, ConsumerFilterManager.class);
-        if (load != null && load.filterDataByTopic != null) {
-            boolean bloomChanged = false;
-            for (Entry<String, FilterDataMapByTopic> entry : load.filterDataByTopic.entrySet()) {
-                FilterDataMapByTopic dataMapByTopic = entry.getValue();
-                if (dataMapByTopic == null) {
-                    continue;
-                }
+        if (load == null || load.filterDataByTopic == null) {
+            return;
+        }
 
-                for (Entry<String, ConsumerFilterData> groupEntry : dataMapByTopic.getGroupFilterData().entrySet()) {
-
-                    ConsumerFilterData filterData = groupEntry.getValue();
-
-                    if (filterData == null) {
-                        continue;
-                    }
-
-                    try {
-                        filterData.setCompiledExpression(
-                                FilterFactory.INSTANCE.get(filterData.getExpressionType()).compile(filterData.getExpression())
-                        );
-                    } catch (Exception e) {
-                        log.error("load filter data error, " + filterData, e);
-                    }
-
-                    // check whether bloom filter is changed
-                    // if changed, ignore the bit map calculated before.
-                    if (!this.bloomFilter.isValid(filterData.getBloomFilterData())) {
-                        bloomChanged = true;
-                        log.info("Bloom filter is changed!So ignore all filter data persisted! {}, {}", this.bloomFilter, filterData.getBloomFilterData());
-                        break;
-                    }
-
-                    log.info("load exist consumer filter data: {}", filterData);
-
-                    if (filterData.getDeadTime() == 0) {
-                        // we think all consumers are dead when load
-                        long deadTime = System.currentTimeMillis() - 30 * 1000;
-                        filterData.setDeadTime(
-                                deadTime <= filterData.getBornTime() ? filterData.getBornTime() : deadTime
-                        );
-                    }
-                }
+        boolean bloomChanged = false;
+        for (Entry<String, FilterDataMapByTopic> entry : load.filterDataByTopic.entrySet()) {
+            FilterDataMapByTopic dataMapByTopic = entry.getValue();
+            if (dataMapByTopic == null) {
+                continue;
             }
 
-            if (!bloomChanged) {
-                this.filterDataByTopic = load.filterDataByTopic;
+            bloomChanged = decode(bloomChanged, dataMapByTopic);
+        }
+
+        if (!bloomChanged) {
+            this.filterDataByTopic = load.filterDataByTopic;
+        }
+    }
+
+    private boolean decode(boolean bloomChanged, FilterDataMapByTopic dataMapByTopic ) {
+        for (Entry<String, ConsumerFilterData> groupEntry : dataMapByTopic.getGroupFilterData().entrySet()) {
+            ConsumerFilterData filterData = groupEntry.getValue();
+            if (filterData == null) {
+                continue;
+            }
+
+            try {
+                filterData.setCompiledExpression(
+                    FilterFactory.INSTANCE.get(filterData.getExpressionType()).compile(filterData.getExpression())
+                );
+            } catch (Exception e) {
+                log.error("load filter data error, " + filterData, e);
+            }
+
+            // check whether bloom filter is changed
+            // if changed, ignore the bit map calculated before.
+            if (!this.bloomFilter.isValid(filterData.getBloomFilterData())) {
+                bloomChanged = true;
+                log.info("Bloom filter is changed!So ignore all filter data persisted! {}, {}", this.bloomFilter, filterData.getBloomFilterData());
+                break;
+            }
+
+            log.info("load exist consumer filter data: {}", filterData);
+
+            if (filterData.getDeadTime() == 0) {
+                // we think all consumers are dead when load
+                long deadTime = System.currentTimeMillis() - 30 * 1000;
+                filterData.setDeadTime(Math.max(deadTime, filterData.getBornTime()));
             }
         }
+
+        return bloomChanged;
     }
 
     @Override
