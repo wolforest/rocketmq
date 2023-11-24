@@ -231,6 +231,8 @@ public class TimerMessageDeliver extends AbstractStateService {
         return PUT_NO_RETRY;
     }
 
+
+
     private int checkPutResult(PutMessageResult putMessageResult, MessageExtBrokerInner message) {
         if (null == putMessageResult || null == putMessageResult.getPutMessageStatus()) {
             return TimerState.PUT_FAILED;
@@ -238,11 +240,7 @@ public class TimerMessageDeliver extends AbstractStateService {
 
         switch (putMessageResult.getPutMessageStatus()) {
             case PUT_OK:
-                if (brokerStatsManager != null) {
-                    this.brokerStatsManager.incTopicPutNums(message.getTopic(), 1, 1);
-                    this.brokerStatsManager.incTopicPutSize(message.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
-                    this.brokerStatsManager.incBrokerPutNums(message.getTopic(), 1);
-                }
+                incPutMatrix(putMessageResult, message);
                 return TimerState.PUT_OK;
             case SERVICE_NOT_AVAILABLE:
                 return TimerState.PUT_NEED_RETRY;
@@ -260,12 +258,22 @@ public class TimerMessageDeliver extends AbstractStateService {
         }
     }
 
+    private void incPutMatrix(PutMessageResult putMessageResult, MessageExtBrokerInner message) {
+        if (brokerStatsManager == null) {
+            return;
+        }
+
+        this.brokerStatsManager.incTopicPutNums(message.getTopic(), 1, 1);
+        this.brokerStatsManager.incTopicPutSize(message.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
+        this.brokerStatsManager.incBrokerPutNums(message.getTopic(), 1);
+    }
+
     private PutMessageResult putMessage(MessageExtBrokerInner message) {
         if (escapeBridgeHook != null) {
             return escapeBridgeHook.apply(message);
-        } else {
-            return messageOperator.putMessage(message);
         }
+
+        return messageOperator.putMessage(message);
     }
 }
 
