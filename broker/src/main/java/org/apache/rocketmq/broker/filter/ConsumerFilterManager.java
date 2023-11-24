@@ -262,13 +262,7 @@ public class ConsumerFilterManager extends ConfigManager {
                 continue;
             }
 
-            try {
-                filterData.setCompiledExpression(
-                    FilterFactory.INSTANCE.get(filterData.getExpressionType()).compile(filterData.getExpression())
-                );
-            } catch (Exception e) {
-                log.error("load filter data error, " + filterData, e);
-            }
+            setCompiledExpression(filterData);
 
             // check whether bloom filter is changed
             // if changed, ignore the bit map calculated before.
@@ -279,15 +273,30 @@ public class ConsumerFilterManager extends ConfigManager {
             }
 
             log.info("load exist consumer filter data: {}", filterData);
-
-            if (filterData.getDeadTime() == 0) {
-                // we think all consumers are dead when load
-                long deadTime = System.currentTimeMillis() - 30 * 1000;
-                filterData.setDeadTime(Math.max(deadTime, filterData.getBornTime()));
-            }
+            setDeadTime(filterData);
         }
 
         return bloomChanged;
+    }
+
+    private void setCompiledExpression(ConsumerFilterData filterData) {
+        try {
+            filterData.setCompiledExpression(
+                FilterFactory.INSTANCE.get(filterData.getExpressionType()).compile(filterData.getExpression())
+            );
+        } catch (Exception e) {
+            log.error("load filter data error, " + filterData, e);
+        }
+    }
+
+    private void setDeadTime(ConsumerFilterData filterData) {
+        if (filterData.getDeadTime() != 0) {
+            return;
+        }
+
+        // we think all consumers are dead when load
+        long deadTime = System.currentTimeMillis() - 30 * 1000;
+        filterData.setDeadTime(Math.max(deadTime, filterData.getBornTime()));
     }
 
     @Override
