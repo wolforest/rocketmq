@@ -236,8 +236,8 @@ public class TransactionalMessageCheckService extends ServiceThread {
             return true;
         }
 
-        if (needDiscard(context.getMsgExt(), context.getTransactionCheckMax()) || needSkip(context.getMsgExt())) {
-            skipOrDiscard(context);
+        if (isOverMaxCheckTimes(context.getMsgExt(), context.getTransactionCheckMax()) || isExpiring(context.getMsgExt())) {
+            discard(context);
             return true;
         }
 
@@ -259,7 +259,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         }
 
         if (!isNeedCheck(context, valueOfCurrentMinusBorn, checkImmunityTime)) {
-            noNeedCheck(context);
+            fillMoreOpRemoveMap(context);
             return true;
         }
 
@@ -332,7 +332,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         }
     }
 
-    private void skipOrDiscard(CheckContext context) {
+    private void discard(CheckContext context) {
         context.getListener().resolveDiscardMsg(context.getMsgExt());
         context.setNewOffset(context.getCounter() + 1);
         context.incCounter();
@@ -385,7 +385,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         context.getListener().resolveHalfMsg(context.getMsgExt());
     }
 
-    private void noNeedCheck(CheckContext context) {
+    private void fillMoreOpRemoveMap(CheckContext context) {
         long tmpOffset = context.getPullResult() != null ? context.getPullResult().getNextBeginOffset() : context.getNextOpOffset();
         context.setNextOpOffset(tmpOffset);
 
@@ -426,7 +426,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
             System.currentTimeMillis() - msgTime, context.getPutInQueueCount());
     }
 
-    private boolean needDiscard(MessageExt msgExt, int transactionCheckMax) {
+    private boolean isOverMaxCheckTimes(MessageExt msgExt, int transactionCheckMax) {
         String checkTimes = msgExt.getProperty(MessageConst.PROPERTY_TRANSACTION_CHECK_TIMES);
         int checkTime = 1;
         if (null != checkTimes) {
@@ -441,7 +441,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         return false;
     }
 
-    private boolean needSkip(MessageExt msgExt) {
+    private boolean isExpiring(MessageExt msgExt) {
         long valueOfCurrentMinusBorn = System.currentTimeMillis() - msgExt.getBornTimestamp();
         if (valueOfCurrentMinusBorn
             > transactionalMessageBridge.getBrokerController().getMessageStoreConfig().getFileReservedTime()
@@ -485,12 +485,12 @@ public class TransactionalMessageCheckService extends ServiceThread {
     /**
      * Read op message, parse op message, and fill removeMap
      *
-     * @param removeMap Half message to be remove, key:halfOffset, value: opOffset.
+     * @param removeMap<halfOffset,opOffset> Half message to be remove, key:halfOffset, value: opOffset.
      * @param opQueue Op message queue.
      * @param pullOffsetOfOp The start offset of op message queue.
      * @param miniOffset The current minimum offset of half message queue.
      * @param opMsgMap Map<queueOffset, HashSet<offsetValue>> Half message offset in op message
-     * @param doneOpOffset Stored op messages that have been processed.
+     * @param doneOpOffset<op_offset> Stored op messages that have been processed.
      * @return Op message result.
      */
     private PullResult fillOpRemoveMap(HashMap<Long, Long> removeMap, MessageQueue opQueue,
@@ -582,6 +582,11 @@ public class TransactionalMessageCheckService extends ServiceThread {
         MessageExt msgExt, String checkImmunityTimeStr) {
         String prepareQueueOffsetStr = msgExt.getUserProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET);
         if (null == prepareQueueOffsetStr) {
+            /*
+                如果PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET属性值为空,说明这条消息从未经历过Rpc远程事务检查。
+                需要把这条消息重新放回Half_Topic的队尾，因为即将跳过这条消息，去检查下一条Half_Message。
+                putImmunityMsgBackToHalfQueue将会为消息添加PROPERTY_TRANSACTION_PREPARED_QUEUE_OFFSET属性。
+             */
             return putImmunityMsgBackToHalfQueue(msgExt);
         }
 
@@ -591,6 +596,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         }
 
         if (!removeMap.containsKey(prepareQueueOffset)) {
+            //依然没有收到commit/rollback确认消息，消息再次被放回队尾，等待下次检查
             return putImmunityMsgBackToHalfQueue(msgExt);
         }
 
