@@ -19,6 +19,12 @@ package org.apache.rocketmq.broker.plugin;
 
 import java.util.Map;
 
+/**
+ * unknown usage, useless in opensource version.
+ * can't find plugins initialize processes.
+ *
+ * @renamed from BrokerAttachedPlugin to BrokerPlugin
+ */
 public interface BrokerAttachedPlugin {
 
     /**

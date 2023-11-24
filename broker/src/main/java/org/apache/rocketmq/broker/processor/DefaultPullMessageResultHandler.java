@@ -28,7 +28,6 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.longpolling.PullRequest;
 import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.pagecache.ManyMessageTransfer;
-import org.apache.rocketmq.broker.plugin.PullMessageResultHandler;
 import org.apache.rocketmq.common.AbortProcessException;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.topic.TopicFilterType;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.plugin;
+package org.apache.rocketmq.broker.processor;
 
 import io.netty.channel.Channel;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -26,6 +26,10 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.MessageFilter;
 
+/**
+ * only one class(DefaultPullMessageResultHandler) implements this interface
+ * only used in PullMessageProcessor
+ */
 public interface PullMessageResultHandler {
 
     /**
