@@ -231,8 +231,6 @@ public class TimerMessageDeliver extends AbstractStateService {
         return PUT_NO_RETRY;
     }
 
-
-
     private int checkPutResult(PutMessageResult putMessageResult, MessageExtBrokerInner message) {
         if (null == putMessageResult || null == putMessageResult.getPutMessageStatus()) {
             return TimerState.PUT_FAILED;
