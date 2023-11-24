@@ -16,11 +16,6 @@
  */
 package org.apache.rocketmq.broker.transaction.queue;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.transaction.OperationResult;
 import org.apache.rocketmq.broker.transaction.TransactionalMessageService;
@@ -34,6 +29,12 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.header.EndTransactionRequestHeader;
 import org.apache.rocketmq.store.PutMessageResult;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class TransactionalMessageServiceImpl implements TransactionalMessageService {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
@@ -87,6 +88,11 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
             }
         }
 
+        /*
+            OP_Message的body是Half_Message的offset
+            每条Half_Message批量保存多个offset，以逗号分隔
+            默认4096个offset
+         */
         String data = messageExt.getQueueOffset() + TransactionalMessageUtil.OFFSET_SEPARATOR;
         try {
             boolean res = mqContext.getContextQueue().offer(data, 100, TimeUnit.MILLISECONDS);
