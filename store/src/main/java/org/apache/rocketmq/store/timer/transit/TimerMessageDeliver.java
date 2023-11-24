@@ -44,7 +44,6 @@ import java.util.function.Function;
 import static org.apache.rocketmq.store.timer.TimerMessageStore.DEQUEUE_PUT;
 import static org.apache.rocketmq.store.timer.TimerState.PUT_NEED_RETRY;
 import static org.apache.rocketmq.store.timer.TimerState.PUT_NO_RETRY;
-import static org.apache.rocketmq.store.timer.TimerState.PUT_OK;
 
 /**
  * put timer message back to commitLog
@@ -218,38 +217,47 @@ public class TimerMessageDeliver extends AbstractStateService {
 
         int retryNum = 0;
         while (retryNum < 3) {
-            if (null == putMessageResult || null == putMessageResult.getPutMessageStatus()) {
-                retryNum++;
-            } else {
-                switch (putMessageResult.getPutMessageStatus()) {
-                    case PUT_OK:
-                        if (brokerStatsManager != null) {
-                            this.brokerStatsManager.incTopicPutNums(message.getTopic(), 1, 1);
-                            this.brokerStatsManager.incTopicPutSize(message.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
-                            this.brokerStatsManager.incBrokerPutNums(message.getTopic(), 1);
-                        }
-                        return PUT_OK;
-                    case SERVICE_NOT_AVAILABLE:
-                        return PUT_NEED_RETRY;
-                    case MESSAGE_ILLEGAL:
-                    case PROPERTIES_SIZE_EXCEEDED:
-                        return PUT_NO_RETRY;
-                    case CREATE_MAPPED_FILE_FAILED:
-                    case FLUSH_DISK_TIMEOUT:
-                    case FLUSH_SLAVE_TIMEOUT:
-                    case OS_PAGE_CACHE_BUSY:
-                    case SLAVE_NOT_AVAILABLE:
-                    case UNKNOWN_ERROR:
-                    default:
-                        retryNum++;
-                }
+            int checkStatus = checkPutResult(putMessageResult, message);
+            if (checkStatus != TimerState.PUT_FAILED) {
+                return checkStatus;
             }
+
+            retryNum++;
             Thread.sleep(50);
 
             putMessageResult = putMessage(message);
             LOGGER.warn("Retrying to do put timer msg retryNum:{} putRes:{} msg:{}", retryNum, putMessageResult, message);
         }
         return PUT_NO_RETRY;
+    }
+
+    private int checkPutResult(PutMessageResult putMessageResult, MessageExtBrokerInner message) {
+        if (null == putMessageResult || null == putMessageResult.getPutMessageStatus()) {
+            return TimerState.PUT_FAILED;
+        }
+
+        switch (putMessageResult.getPutMessageStatus()) {
+            case PUT_OK:
+                if (brokerStatsManager != null) {
+                    this.brokerStatsManager.incTopicPutNums(message.getTopic(), 1, 1);
+                    this.brokerStatsManager.incTopicPutSize(message.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
+                    this.brokerStatsManager.incBrokerPutNums(message.getTopic(), 1);
+                }
+                return TimerState.PUT_OK;
+            case SERVICE_NOT_AVAILABLE:
+                return TimerState.PUT_NEED_RETRY;
+            case MESSAGE_ILLEGAL:
+            case PROPERTIES_SIZE_EXCEEDED:
+                return TimerState.PUT_NO_RETRY;
+            case CREATE_MAPPED_FILE_FAILED:
+            case FLUSH_DISK_TIMEOUT:
+            case FLUSH_SLAVE_TIMEOUT:
+            case OS_PAGE_CACHE_BUSY:
+            case SLAVE_NOT_AVAILABLE:
+            case UNKNOWN_ERROR:
+            default:
+                return TimerState.PUT_FAILED;
+        }
     }
 
     private PutMessageResult putMessage(MessageExtBrokerInner message) {
