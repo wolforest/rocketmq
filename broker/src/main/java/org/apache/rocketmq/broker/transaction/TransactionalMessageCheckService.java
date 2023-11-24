@@ -113,6 +113,11 @@ public class TransactionalMessageCheckService extends ServiceThread {
      * Move from TransactionalMessageServiceImpl.check()
      * should be private, there are some test cases call this method
      *
+     * checking process:
+     * - check()
+     * - loop -> checkMessageQueue()
+     * - loop -> checkMessage()
+     *
      * @param transactionTimeout timeout
      * @param transactionCheckMax max check times
      * @param listener listener
