@@ -237,7 +237,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         }
 
         if (!isNeedCheck(context, valueOfCurrentMinusBorn, checkImmunityTime)) {
-            noNeedCheck(context);
+            fillMoreOpRemoveMap(context);
             return true;
         }
 
@@ -363,7 +363,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         context.getListener().resolveHalfMsg(context.getMsgExt());
     }
 
-    private void noNeedCheck(CheckContext context) {
+    private void fillMoreOpRemoveMap(CheckContext context) {
         long tmpOffset = context.getPullResult() != null ? context.getPullResult().getNextBeginOffset() : context.getNextOpOffset();
         context.setNextOpOffset(tmpOffset);
 
