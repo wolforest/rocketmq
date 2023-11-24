@@ -457,12 +457,12 @@ public class TransactionalMessageCheckService extends ServiceThread {
     /**
      * Read op message, parse op message, and fill removeMap
      *
-     * @param removeMap Half message to be remove, key:halfOffset, value: opOffset.
+     * @param removeMap<halfOffset,opOffset> Half message to be remove, key:halfOffset, value: opOffset.
      * @param opQueue Op message queue.
      * @param pullOffsetOfOp The start offset of op message queue.
      * @param miniOffset The current minimum offset of half message queue.
      * @param opMsgMap Map<queueOffset, HashSet<offsetValue>> Half message offset in op message
-     * @param doneOpOffset Stored op messages that have been processed.
+     * @param doneOpOffset<op_offset> Stored op messages that have been processed.
      * @return Op message result.
      */
     private PullResult fillOpRemoveMap(HashMap<Long, Long> removeMap, MessageQueue opQueue,
