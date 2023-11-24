@@ -23,6 +23,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.mqtrace.SendMessageContext;
 import org.apache.rocketmq.common.AbortProcessException;
+import org.apache.rocketmq.common.KeyBuilder;
 import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.topic.TopicFilterType;
@@ -192,7 +193,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             return true;
         }
 
-        String groupName = newTopic.substring(MQConstants.RETRY_GROUP_TOPIC_PREFIX.length());
+        String groupName = KeyBuilder.parseGroup(newTopic);
         SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(groupName);
         if (null == subscriptionGroupConfig) {
             response.setCodeAndRemark(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST, "subscription group not exist, " + groupName + " " + FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST));

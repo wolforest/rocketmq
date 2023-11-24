@@ -238,7 +238,6 @@ public class PopReviveService extends ServiceThread {
         }
 
         incRetryMatrix(popCheckPoint, msgInner, putMessageResult);
-        invokeArrivingCallback(popCheckPoint);
         return true;
     }
 
@@ -258,18 +257,6 @@ public class PopReviveService extends ServiceThread {
         this.brokerController.getBrokerStatsManager().incBrokerPutNums(popCheckPoint.getTopic(), 1);
         this.brokerController.getBrokerStatsManager().incTopicPutNums(msgInner.getTopic());
         this.brokerController.getBrokerStatsManager().incTopicPutSize(msgInner.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
-    }
-
-    private void invokeArrivingCallback(PopCheckPoint popCheckPoint) {
-        if (brokerController.getBrokerNettyServer().getPopServiceManager() == null) {
-            return;
-        }
-
-        PopServiceManager manager = brokerController.getBrokerNettyServer().getPopServiceManager();
-        String topic = KeyBuilder.removeRetryPrefix(popCheckPoint.getTopic(), popCheckPoint.getCId());
-
-        manager.popArriving(topic, popCheckPoint.getCId(), -1);
-        manager.notificationArriving(topic, -1);
     }
 
     private void initPopRetryOffset(String topic, String consumerGroup) {

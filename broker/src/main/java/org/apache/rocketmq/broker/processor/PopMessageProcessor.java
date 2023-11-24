@@ -333,14 +333,24 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, int randomQ, CompletableFuture<Long> getMessageFuture) {
 
         TopicConfig retryTopicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup()));
-        if (retryTopicConfig == null) {
-            return getMessageFuture;
+        if (retryTopicConfig != null) {
+            for (int i = 0; i < retryTopicConfig.getReadQueueNums(); i++) {
+                int queueId = (randomQ + i) % retryTopicConfig.getReadQueueNums();
+                getMessageFuture = getMessageFuture.thenCompose(restNum -> popMsgFromQueue(requestHeader.getAttemptId(), true, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter,
+                    startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
+            }
         }
 
-        for (int i = 0; i < retryTopicConfig.getReadQueueNums(); i++) {
-            int queueId = (randomQ + i) % retryTopicConfig.getReadQueueNums();
-            getMessageFuture = getMessageFuture.thenCompose(restNum -> popMsgFromQueue(requestHeader.getAttemptId(), true, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter,
-                startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
+        if (brokerController.getBrokerConfig().isRetrieveMessageFromPopRetryTopicV1()) {
+            TopicConfig retryTopicConfigV1 =
+                this.brokerController.getTopicConfigManager().selectTopicConfig(KeyBuilder.buildPopRetryTopicV1(requestHeader.getTopic(), requestHeader.getConsumerGroup()));
+            if (retryTopicConfigV1 != null) {
+                for (int i = 0; i < retryTopicConfigV1.getReadQueueNums(); i++) {
+                    int queueId = (randomQ + i) % retryTopicConfigV1.getReadQueueNums();
+                    getMessageFuture = getMessageFuture.thenCompose(restNum -> popMsgFromQueue(requestHeader.getAttemptId(), true, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter,
+                        startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
+                }
+            }
         }
 
         return getMessageFuture;

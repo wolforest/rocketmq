@@ -149,11 +149,11 @@ public class PopServiceManager {
     }
 
     public void notificationArriving(final String topic, final int queueId) {
-        notificationPollingService.notifyMessageArriving(topic, queueId);
+        notificationPollingService.notifyMessageArrivingWithRetryTopic(topic, queueId);
     }
 
     public void popArriving(final String topic, final int queueId) {
-        popPollingService.notifyMessageArriving(topic, queueId);
+        popPollingService.notifyMessageArrivingWithRetryTopic(topic, queueId);
     }
 
     public boolean popArriving(final String topic, final String cid, final int queueId) {
