@@ -114,6 +114,11 @@ public class TransactionalMessageCheckService extends ServiceThread {
      * Move from TransactionalMessageServiceImpl.check()
      * should be private, there are some test cases call this method
      *
+     * checking process:
+     * - check()
+     * - loop -> checkMessageQueue()
+     * - loop -> checkMessage()
+     *
      * @param transactionTimeout timeout
      * @param transactionCheckMax max check times
      * @param listener listener
@@ -386,6 +391,9 @@ public class TransactionalMessageCheckService extends ServiceThread {
         context.getListener().resolveHalfMsg(context.getMsgExt());
     }
 
+    /**
+     * @renamed from noNeedCheck to fillMoreOpRemoveMap
+     */
     private void fillMoreOpRemoveMap(CheckContext context) {
         long tmpOffset = context.getPullResult() != null ? context.getPullResult().getNextBeginOffset() : context.getNextOpOffset();
         context.setNextOpOffset(tmpOffset);
@@ -427,6 +435,9 @@ public class TransactionalMessageCheckService extends ServiceThread {
             System.currentTimeMillis() - msgTime, context.getPutInQueueCount());
     }
 
+    /**
+     * @renamed  from needDiscard to isOverMaxCheckTimes
+     */
     private boolean isOverMaxCheckTimes(MessageExt msgExt, int transactionCheckMax) {
         String checkTimes = msgExt.getProperty(MessageConst.PROPERTY_TRANSACTION_CHECK_TIMES);
         int checkTime = 1;
@@ -442,6 +453,9 @@ public class TransactionalMessageCheckService extends ServiceThread {
         return false;
     }
 
+    /**
+     * @renamed from needSkip to isExpiring
+     */
     private boolean isExpiring(MessageExt msgExt) {
         long valueOfCurrentMinusBorn = System.currentTimeMillis() - msgExt.getBornTimestamp();
         if (valueOfCurrentMinusBorn
