@@ -112,26 +112,35 @@ public class ConsumerFilterManager extends ConfigManager {
             );
         }
 
+        setDeadTime(consumerGroup, subList);
+    }
+
+    private void setDeadTime(String consumerGroup, Collection<SubscriptionData> subList) {
         // make illegal topic dead.
         Collection<ConsumerFilterData> groupFilterData = getByGroup(consumerGroup);
-
-        Iterator<ConsumerFilterData> iterator = groupFilterData.iterator();
-        while (iterator.hasNext()) {
-            ConsumerFilterData filterData = iterator.next();
-
-            boolean exist = false;
-            for (SubscriptionData subscriptionData : subList) {
-                if (subscriptionData.getTopic().equals(filterData.getTopic())) {
-                    exist = true;
-                    break;
-                }
+        for (ConsumerFilterData filterData : groupFilterData) {
+            boolean exist = checkDeadExist(subList, filterData);
+            if (exist || filterData.isDead()) {
+                continue;
             }
 
-            if (!exist && !filterData.isDead()) {
-                filterData.setDeadTime(System.currentTimeMillis());
-                log.info("Consumer filter changed: {}, make illegal topic dead:{}", consumerGroup, filterData);
-            }
+            filterData.setDeadTime(System.currentTimeMillis());
+            log.info("Consumer filter changed: {}, make illegal topic dead:{}", consumerGroup, filterData);
         }
+    }
+
+    private boolean checkDeadExist(Collection<SubscriptionData> subList, ConsumerFilterData filterData) {
+        boolean exist = false;
+        for (SubscriptionData subscriptionData : subList) {
+            if (!subscriptionData.getTopic().equals(filterData.getTopic())) {
+                continue;
+            }
+
+            exist = true;
+            break;
+        }
+
+        return exist;
     }
 
     public boolean register(final String topic, final String consumerGroup, final String expression,
