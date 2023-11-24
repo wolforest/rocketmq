@@ -177,22 +177,21 @@ public class ConsumerFilterManager extends ConfigManager {
     public Collection<ConsumerFilterData> getByGroup(final String consumerGroup) {
         Collection<ConsumerFilterData> ret = new HashSet<>();
 
-        Iterator<FilterDataMapByTopic> topicIterator = this.filterDataByTopic.values().iterator();
-        while (topicIterator.hasNext()) {
-            FilterDataMapByTopic filterDataMapByTopic = topicIterator.next();
-
-            Iterator<ConsumerFilterData> filterDataIterator = filterDataMapByTopic.getGroupFilterData().values().iterator();
-
-            while (filterDataIterator.hasNext()) {
-                ConsumerFilterData filterData = filterDataIterator.next();
-
-                if (filterData.getConsumerGroup().equals(consumerGroup)) {
-                    ret.add(filterData);
-                }
-            }
+        for (FilterDataMapByTopic filterDataMapByTopic : this.filterDataByTopic.values()) {
+            getByGroup(consumerGroup, ret, filterDataMapByTopic);
         }
 
         return ret;
+    }
+
+    private void getByGroup(final String consumerGroup, Collection<ConsumerFilterData> ret, FilterDataMapByTopic filterDataMapByTopic) {
+        for (ConsumerFilterData filterData : filterDataMapByTopic.getGroupFilterData().values()) {
+            if (!filterData.getConsumerGroup().equals(consumerGroup)) {
+                continue;
+            }
+
+            ret.add(filterData);
+        }
     }
 
     public final Collection<ConsumerFilterData> get(final String topic) {
