@@ -17,6 +17,7 @@
 package org.apache.rocketmq.store.pop;
 
 import org.apache.rocketmq.common.KeyBuilder;
+import org.apache.rocketmq.common.constant.PopConstants;
 
 public class PopKeyBuilder {
 
@@ -56,5 +57,43 @@ public class PopKeyBuilder {
             + point.getQueueId()
             + point.getStartOffset()
             + point.getPopTime();
+    }
+
+    /**
+     * moved from org.apache.rocketmq.broker.util.PopUtils
+     */
+    public static String genAckUniqueId(AckMsg ackMsg) {
+        return ackMsg.getTopic()
+            + PopConstants.SPLIT + ackMsg.getQueueId()
+            + PopConstants.SPLIT + ackMsg.getAckOffset()
+            + PopConstants.SPLIT + ackMsg.getConsumerGroup()
+            + PopConstants.SPLIT + ackMsg.getPopTime()
+            + PopConstants.SPLIT + ackMsg.getBrokerName()
+            + PopConstants.SPLIT + PopConstants.ACK_TAG;
+    }
+
+    /**
+     * moved from org.apache.rocketmq.broker.util.PopUtils
+     */
+    public static String genBatchAckUniqueId(BatchAckMsg batchAckMsg) {
+        return batchAckMsg.getTopic()
+            + PopConstants.SPLIT + batchAckMsg.getQueueId()
+            + PopConstants.SPLIT + batchAckMsg.getAckOffsetList().toString()
+            + PopConstants.SPLIT + batchAckMsg.getConsumerGroup()
+            + PopConstants.SPLIT + batchAckMsg.getPopTime()
+            + PopConstants.SPLIT + PopConstants.BATCH_ACK_TAG;
+    }
+
+    /**
+     * moved from org.apache.rocketmq.broker.util.PopUtils
+     */
+    public static String genCkUniqueId(PopCheckPoint ck) {
+        return ck.getTopic()
+            + PopConstants.SPLIT + ck.getQueueId()
+            + PopConstants.SPLIT + ck.getStartOffset()
+            + PopConstants.SPLIT + ck.getCId()
+            + PopConstants.SPLIT + ck.getPopTime()
+            + PopConstants.SPLIT + ck.getBrokerName()
+            + PopConstants.SPLIT + PopConstants.CK_TAG;
     }
 }

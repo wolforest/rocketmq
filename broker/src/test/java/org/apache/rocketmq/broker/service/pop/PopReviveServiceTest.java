@@ -25,7 +25,6 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
-import org.apache.rocketmq.broker.util.PopUtils;
 import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.constant.PopConstants;
 import org.apache.rocketmq.common.topic.TopicConfig;
@@ -39,6 +38,7 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.pop.AckMsg;
 import org.apache.rocketmq.store.pop.PopCheckPoint;
+import org.apache.rocketmq.store.pop.PopKeyBuilder;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.timer.TimerState;
 import org.junit.Before;
@@ -243,7 +243,7 @@ public class PopReviveServiceTest {
         msgInner.setBornHost(STORE_HOST);
         msgInner.setStoreHost(STORE_HOST);
         msgInner.setDeliverTimeMs(ck.getReviveTime() - PopConstants.ackTimeInterval);
-        msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopUtils.genCkUniqueId(ck));
+        msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopKeyBuilder.genCkUniqueId(ck));
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
 
         msgInner.setQueueOffset(ck.getReviveOffset());
@@ -259,7 +259,7 @@ public class PopReviveServiceTest {
             REVIVE_QUEUE_ID,
             STORE_HOST,
             deliverMs,
-            PopUtils.genAckUniqueId(ackMsg)
+            PopKeyBuilder.genAckUniqueId(ackMsg)
         );
         messageExtBrokerInner.setQueueOffset(reviveOffset);
         messageExtBrokerInner.setDeliverTimeMs(deliverMs);
