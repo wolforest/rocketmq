@@ -211,12 +211,7 @@ public class ConsumerOffsetManager extends ConfigManager {
             String topic = arr[0];
             String group = arr[1];
 
-            Set<String> topics = retMap.get(group);
-            if (topics == null) {
-                topics = new HashSet<>(8);
-                retMap.put(group, topics);
-            }
-
+            Set<String> topics = retMap.computeIfAbsent(group, k -> new HashSet<>(8));
             topics.add(topic);
         }
 
@@ -289,11 +284,13 @@ public class ConsumerOffsetManager extends ConfigManager {
         }
 
         ConcurrentMap<Integer, Long> map = this.offsetTable.get(key);
-        if (null != map) {
-            Long offset = map.get(queueId);
-            if (offset != null) {
-                return offset;
-            }
+        if (null == map) {
+            return -1L;
+        }
+
+        Long offset = map.get(queueId);
+        if (offset != null) {
+            return offset;
         }
 
         return -1L;
@@ -424,9 +421,11 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     public void cloneOffset(final String srcGroup, final String destGroup, final String topic) {
         ConcurrentMap<Integer, Long> offsets = this.offsetTable.get(topic + TOPIC_GROUP_SEPARATOR + srcGroup);
-        if (offsets != null) {
-            this.offsetTable.put(topic + TOPIC_GROUP_SEPARATOR + destGroup, new ConcurrentHashMap<>(offsets));
+        if (offsets == null) {
+            return;
         }
+
+        this.offsetTable.put(topic + TOPIC_GROUP_SEPARATOR + destGroup, new ConcurrentHashMap<>(offsets));
     }
 
     public DataVersion getDataVersion() {
