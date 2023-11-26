@@ -89,9 +89,9 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
         }
 
         /*
-            OP_Message的body是Half_Message的offset
-            每条Half_Message批量保存多个offset，以逗号分隔
-            默认4096个offset
+            the body of OP_Message is the offset of Half_Message
+            every Half_Message store a lot of offset, split by comma
+            default number of offset is 4096
          */
         String data = messageExt.getQueueOffset() + TransactionalMessageUtil.OFFSET_SEPARATOR;
         try {

@@ -255,7 +255,7 @@ public class ConsumerFilterManager extends ConfigManager {
         }
     }
 
-    private boolean decode(boolean bloomChanged, FilterDataMapByTopic dataMapByTopic ) {
+    private boolean decode(boolean bloomChanged, FilterDataMapByTopic dataMapByTopic) {
         for (Entry<String, ConsumerFilterData> groupEntry : dataMapByTopic.getGroupFilterData().entrySet()) {
             ConsumerFilterData filterData = groupEntry.getValue();
             if (filterData == null) {
