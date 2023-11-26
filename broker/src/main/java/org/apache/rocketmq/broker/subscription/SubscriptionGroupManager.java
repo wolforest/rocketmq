@@ -18,7 +18,6 @@ package org.apache.rocketmq.broker.subscription;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,12 +26,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
 import org.apache.rocketmq.client.Validators;
-import org.apache.rocketmq.common.config.ConfigManager;
 import org.apache.rocketmq.common.SubscriptionGroupAttributes;
 import org.apache.rocketmq.common.attribute.AttributeUtil;
+import org.apache.rocketmq.common.config.ConfigManager;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
@@ -173,8 +172,8 @@ public class SubscriptionGroupManager extends ConfigManager {
     /**
      * set the bit value to 1 at the specific index (from 0)
      *
-     * @param group
-     * @param topic
+     * @param group group
+     * @param topic topic
      * @param forbiddenIndex from 0
      */
     public void setForbidden(String group, String topic, int forbiddenIndex) {
@@ -186,8 +185,8 @@ public class SubscriptionGroupManager extends ConfigManager {
     /**
      * clear the bit value to 0 at the specific index (from 0)
      *
-     * @param group
-     * @param topic
+     * @param group group
+     * @param topic topic
      * @param forbiddenIndex from 0
      */
     public void clearForbidden(String group, String topic, int forbiddenIndex) {
@@ -312,9 +311,7 @@ public class SubscriptionGroupManager extends ConfigManager {
     }
 
     private void printLoadDataWhenFirstBoot(final SubscriptionGroupManager sgm) {
-        Iterator<Entry<String, SubscriptionGroupConfig>> it = sgm.getSubscriptionGroupTable().entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, SubscriptionGroupConfig> next = it.next();
+        for (Entry<String, SubscriptionGroupConfig> next : sgm.getSubscriptionGroupTable().entrySet()) {
             log.info("load exist subscription group, {}", next.getValue().toString());
         }
     }
