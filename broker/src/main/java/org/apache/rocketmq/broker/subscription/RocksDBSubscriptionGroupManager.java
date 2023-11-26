@@ -66,16 +66,19 @@ public class RocksDBSubscriptionGroupManager extends SubscriptionGroupManager {
     protected SubscriptionGroupConfig putSubscriptionGroupConfigIfAbsent(SubscriptionGroupConfig subscriptionGroupConfig) {
         String groupName = subscriptionGroupConfig.getGroupName();
         SubscriptionGroupConfig oldConfig = this.subscriptionGroupTable.putIfAbsent(groupName, subscriptionGroupConfig);
-        if (oldConfig == null) {
-            try {
-                byte[] keyBytes = groupName.getBytes(DataConverter.CHARSET_UTF8);
-                byte[] valueBytes = JSON.toJSONBytes(subscriptionGroupConfig, SerializerFeature.BrowserCompatible);
-                this.rocksDBConfigManager.put(keyBytes, keyBytes.length, valueBytes);
-            } catch (Exception e) {
-                log.error("kv put sub Failed, {}", subscriptionGroupConfig.toString());
-            }
+        if (oldConfig != null) {
+            return oldConfig;
         }
-        return oldConfig;
+
+        try {
+            byte[] keyBytes = groupName.getBytes(DataConverter.CHARSET_UTF8);
+            byte[] valueBytes = JSON.toJSONBytes(subscriptionGroupConfig, SerializerFeature.BrowserCompatible);
+            this.rocksDBConfigManager.put(keyBytes, keyBytes.length, valueBytes);
+        } catch (Exception e) {
+            log.error("kv put sub Failed, {}", subscriptionGroupConfig.toString());
+        }
+
+        return null;
     }
 
     @Override
