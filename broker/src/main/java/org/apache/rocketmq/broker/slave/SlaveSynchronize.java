@@ -69,6 +69,27 @@ public class SlaveSynchronize {
         }
     }
 
+    public void syncTimerCheckPoint() {
+        String masterAddrBak = this.masterAddr;
+        if (null == masterAddrBak) {
+            return;
+        }
+
+        try {
+            if (null == brokerController.getMessageStore().getTimerMessageStore()) {
+                return;
+            }
+
+            TimerCheckpoint checkpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(masterAddrBak);
+            if (null != this.brokerController.getTimerCheckpoint()) {
+                this.brokerController.getTimerCheckpoint().setLastReadTimeMs(checkpoint.getLastReadTimeMs());
+                this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(checkpoint.getMasterTimerQueueOffset());
+            }
+        } catch (Exception e) {
+            LOGGER.error("syncTimerCheckPoint Exception, {}", masterAddrBak, e);
+        }
+    }
+
     private void syncTopicConfig() {
         String masterAddrBak = this.masterAddr;
         if (null == masterAddrBak || masterAddrBak.equals(brokerController.getBrokerAddr())) {
@@ -87,12 +108,7 @@ public class SlaveSynchronize {
                 ConcurrentMap<String, TopicConfig> newTopicConfigTable = topicWrapper.getTopicConfigTable();
                 //delete
                 ConcurrentMap<String, TopicConfig> topicConfigTable = this.brokerController.getTopicConfigManager().getTopicConfigTable();
-                for (Iterator<Map.Entry<String, TopicConfig>> it = topicConfigTable.entrySet().iterator(); it.hasNext(); ) {
-                    Map.Entry<String, TopicConfig> item = it.next();
-                    if (!newTopicConfigTable.containsKey(item.getKey())) {
-                        it.remove();
-                    }
-                }
+                topicConfigTable.entrySet().removeIf(item -> !newTopicConfigTable.containsKey(item.getKey()));
                 //update
                 topicConfigTable.putAll(newTopicConfigTable);
 
@@ -106,12 +122,7 @@ public class SlaveSynchronize {
                 ConcurrentMap<String, TopicConfig> newTopicConfigTable = topicWrapper.getTopicConfigTable();
                 //delete
                 ConcurrentMap<String, TopicConfig> topicConfigTable = this.brokerController.getTopicConfigManager().getTopicConfigTable();
-                for (Iterator<Map.Entry<String, TopicConfig>> it = topicConfigTable.entrySet().iterator(); it.hasNext(); ) {
-                    Map.Entry<String, TopicConfig> item = it.next();
-                    if (!newTopicConfigTable.containsKey(item.getKey())) {
-                        it.remove();
-                    }
-                }
+                topicConfigTable.entrySet().removeIf(item -> !newTopicConfigTable.containsKey(item.getKey()));
                 //update
                 topicConfigTable.putAll(newTopicConfigTable);
 
@@ -217,27 +228,6 @@ public class SlaveSynchronize {
             LOGGER.info("Update slave Message Request Mode from master, {}", masterAddrBak);
         } catch (Exception e) {
             LOGGER.error("SyncMessageRequestMode Exception, {}", masterAddrBak, e);
-        }
-    }
-
-    public void syncTimerCheckPoint() {
-        String masterAddrBak = this.masterAddr;
-        if (null == masterAddrBak) {
-            return;
-        }
-
-        try {
-            if (null == brokerController.getMessageStore().getTimerMessageStore()) {
-                return;
-            }
-
-            TimerCheckpoint checkpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(masterAddrBak);
-            if (null != this.brokerController.getTimerCheckpoint()) {
-                this.brokerController.getTimerCheckpoint().setLastReadTimeMs(checkpoint.getLastReadTimeMs());
-                this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(checkpoint.getMasterTimerQueueOffset());
-            }
-        } catch (Exception e) {
-            LOGGER.error("syncTimerCheckPoint Exception, {}", masterAddrBak, e);
         }
     }
 
