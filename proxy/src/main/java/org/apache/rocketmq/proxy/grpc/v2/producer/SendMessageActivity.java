@@ -143,31 +143,37 @@ public class SendMessageActivity extends AbstractMessingActivity {
     }
 
     protected void validateMessageKey(String key) {
-        if (StringUtils.isNotEmpty(key)) {
-            if (StringUtils.isBlank(key)) {
-                throw new GrpcProxyException(Code.ILLEGAL_MESSAGE_KEY, "key cannot be the char sequence of whitespace");
-            }
-            if (GrpcValidator.getInstance().containControlCharacter(key)) {
-                throw new GrpcProxyException(Code.ILLEGAL_MESSAGE_KEY, "key cannot contain control character");
-            }
+        if (StringUtils.isEmpty(key)) {
+            return;
+        }
+
+        if (StringUtils.isBlank(key)) {
+            throw new GrpcProxyException(Code.ILLEGAL_MESSAGE_KEY, "key cannot be the char sequence of whitespace");
+        }
+        if (GrpcValidator.getInstance().containControlCharacter(key)) {
+            throw new GrpcProxyException(Code.ILLEGAL_MESSAGE_KEY, "key cannot contain control character");
         }
     }
 
     protected void validateMessageGroup(String messageGroup) {
-        if (StringUtils.isNotEmpty(messageGroup)) {
-            if (StringUtils.isBlank(messageGroup)) {
-                throw new GrpcProxyException(Code.ILLEGAL_MESSAGE_GROUP, "message group cannot be the char sequence of whitespace");
-            }
-            int maxSize = ConfigurationManager.getProxyConfig().getMaxMessageGroupSize();
-            if (maxSize <= 0) {
-                return;
-            }
-            if (messageGroup.getBytes(StandardCharsets.UTF_8).length >= maxSize) {
-                throw new GrpcProxyException(Code.ILLEGAL_MESSAGE_GROUP, "message group exceed the max size " + maxSize);
-            }
-            if (GrpcValidator.getInstance().containControlCharacter(messageGroup)) {
-                throw new GrpcProxyException(Code.ILLEGAL_MESSAGE_GROUP, "message group cannot contain control character");
-            }
+        if (StringUtils.isEmpty(messageGroup)) {
+            return;
+        }
+
+        if (StringUtils.isBlank(messageGroup)) {
+            throw new GrpcProxyException(Code.ILLEGAL_MESSAGE_GROUP, "message group cannot be the char sequence of whitespace");
+        }
+
+        int maxSize = ConfigurationManager.getProxyConfig().getMaxMessageGroupSize();
+        if (maxSize <= 0) {
+            return;
+        }
+
+        if (messageGroup.getBytes(StandardCharsets.UTF_8).length >= maxSize) {
+            throw new GrpcProxyException(Code.ILLEGAL_MESSAGE_GROUP, "message group exceed the max size " + maxSize);
+        }
+        if (GrpcValidator.getInstance().containControlCharacter(messageGroup)) {
+            throw new GrpcProxyException(Code.ILLEGAL_MESSAGE_GROUP, "message group cannot contain control character");
         }
     }
 
