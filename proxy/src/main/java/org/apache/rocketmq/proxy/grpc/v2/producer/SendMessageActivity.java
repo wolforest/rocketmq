@@ -24,7 +24,6 @@ import apache.rocketmq.v2.SendMessageRequest;
 import apache.rocketmq.v2.SendMessageResponse;
 import apache.rocketmq.v2.SendResultEntry;
 import com.google.common.collect.Maps;
-import com.google.common.hash.Hashing;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.util.Durations;
@@ -53,9 +52,6 @@ import org.apache.rocketmq.proxy.grpc.v2.common.GrpcProxyException;
 import org.apache.rocketmq.proxy.grpc.v2.common.GrpcValidator;
 import org.apache.rocketmq.proxy.grpc.v2.common.ResponseBuilder;
 import org.apache.rocketmq.proxy.processor.MessagingProcessor;
-import org.apache.rocketmq.proxy.processor.QueueSelector;
-import org.apache.rocketmq.proxy.service.route.AddressableMessageQueue;
-import org.apache.rocketmq.proxy.service.route.MessageQueueView;
 
 public class SendMessageActivity extends AbstractMessingActivity {
 
@@ -314,8 +310,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         }
     }
 
-    protected SendMessageResponse convertToSendMessageResponse(ProxyContext ctx, SendMessageRequest request,
-        List<SendResult> resultList) {
+    protected SendMessageResponse convertToSendMessageResponse(ProxyContext ctx, SendMessageRequest request, List<SendResult> resultList) {
         SendMessageResponse.Builder builder = SendMessageResponse.newBuilder();
 
         Set<Code> responseCodes = new HashSet<>();
@@ -363,38 +358,6 @@ public class SendMessageActivity extends AbstractMessingActivity {
             builder.setStatus(ResponseBuilder.getInstance().buildStatus(Code.INTERNAL_SERVER_ERROR, "send status is empty"));
         }
         return builder.build();
-    }
-
-    protected static class SendMessageQueueSelector implements QueueSelector {
-
-        private final SendMessageRequest request;
-
-        public SendMessageQueueSelector(SendMessageRequest request) {
-            this.request = request;
-        }
-
-        @Override
-        public AddressableMessageQueue select(ProxyContext ctx, MessageQueueView messageQueueView) {
-            try {
-                apache.rocketmq.v2.Message message = request.getMessages(0);
-                String shardingKey = null;
-                if (request.getMessagesCount() == 1) {
-                    shardingKey = message.getSystemProperties().getMessageGroup();
-                }
-                AddressableMessageQueue targetMessageQueue;
-                if (StringUtils.isNotEmpty(shardingKey)) {
-                    // With shardingKey
-                    List<AddressableMessageQueue> writeQueues = messageQueueView.getWriteSelector().getQueues();
-                    int bucket = Hashing.consistentHash(shardingKey.hashCode(), writeQueues.size());
-                    targetMessageQueue = writeQueues.get(bucket);
-                } else {
-                    targetMessageQueue = messageQueueView.getWriteSelector().selectOneByPipeline(false);
-                }
-                return targetMessageQueue;
-            } catch (Exception e) {
-                return null;
-            }
-        }
     }
 
 }

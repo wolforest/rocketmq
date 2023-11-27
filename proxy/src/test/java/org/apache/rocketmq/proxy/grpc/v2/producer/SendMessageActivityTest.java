@@ -285,7 +285,7 @@ public class SendMessageActivityTest extends BaseActivityTest {
         topicRouteData.setBrokerDatas(Lists.newArrayList(brokerData));
 
         MessageQueueView messageQueueView = new MessageQueueView(TOPIC, topicRouteData, null);
-        SendMessageActivity.SendMessageQueueSelector selector1 = new SendMessageActivity.SendMessageQueueSelector(
+        SendMessageQueueSelector selector1 = new SendMessageQueueSelector(
             SendMessageRequest.newBuilder()
                 .addMessages(Message.newBuilder()
                     .setSystemProperties(SystemProperties.newBuilder()
@@ -301,7 +301,7 @@ public class SendMessageActivityTest extends BaseActivityTest {
         when(topicRouteService.getMqFaultStrategy()).thenReturn(mqFaultStrategy);
         when(mqFaultStrategy.isSendLatencyFaultEnable()).thenReturn(false);
 
-        SendMessageActivity.SendMessageQueueSelector selector2 = new SendMessageActivity.SendMessageQueueSelector(
+        SendMessageQueueSelector selector2 = new SendMessageQueueSelector(
             SendMessageRequest.newBuilder()
                 .addMessages(Message.newBuilder()
                     .setSystemProperties(SystemProperties.newBuilder()
@@ -311,7 +311,7 @@ public class SendMessageActivityTest extends BaseActivityTest {
                 .build()
         );
 
-        SendMessageActivity.SendMessageQueueSelector selector3 = new SendMessageActivity.SendMessageQueueSelector(
+        SendMessageQueueSelector selector3 = new SendMessageQueueSelector(
             SendMessageRequest.newBuilder()
                 .addMessages(Message.newBuilder()
                     .setSystemProperties(SystemProperties.newBuilder()
@@ -342,7 +342,7 @@ public class SendMessageActivityTest extends BaseActivityTest {
         topicRouteData.setBrokerDatas(Lists.newArrayList(brokerData));
 
 
-        SendMessageActivity.SendMessageQueueSelector selector = new SendMessageActivity.SendMessageQueueSelector(
+        SendMessageQueueSelector selector = new SendMessageQueueSelector(
             SendMessageRequest.newBuilder()
                 .addMessages(Message.newBuilder().build())
                 .build()
@@ -375,7 +375,7 @@ public class SendMessageActivityTest extends BaseActivityTest {
         BrokerData brokerData2 = createBrokerData(CLUSTER_NAME, BROKER_NAME2, BROKER_ADDR2);
         topicRouteData.setBrokerDatas(Lists.newArrayList(brokerData, brokerData2));
 
-        SendMessageActivity.SendMessageQueueSelector selector = new SendMessageActivity.SendMessageQueueSelector(
+        SendMessageQueueSelector selector = new SendMessageQueueSelector(
                 SendMessageRequest.newBuilder()
                         .addMessages(Message.newBuilder().build())
                         .build()
