@@ -317,40 +317,53 @@ public class SendMessageActivity extends AbstractMessingActivity {
 
         Set<Code> responseCodes = new HashSet<>();
         for (SendResult result : resultList) {
-            SendResultEntry resultEntry;
-            switch (result.getSendStatus()) {
-                case FLUSH_DISK_TIMEOUT:
-                    resultEntry = SendResultEntry.newBuilder()
-                        .setStatus(ResponseBuilder.getInstance().buildStatus(Code.MASTER_PERSISTENCE_TIMEOUT, "send message failed, sendStatus=" + result.getSendStatus()))
-                        .build();
-                    break;
-                case FLUSH_SLAVE_TIMEOUT:
-                    resultEntry = SendResultEntry.newBuilder()
-                        .setStatus(ResponseBuilder.getInstance().buildStatus(Code.SLAVE_PERSISTENCE_TIMEOUT, "send message failed, sendStatus=" + result.getSendStatus()))
-                        .build();
-                    break;
-                case SLAVE_NOT_AVAILABLE:
-                    resultEntry = SendResultEntry.newBuilder()
-                        .setStatus(ResponseBuilder.getInstance().buildStatus(Code.HA_NOT_AVAILABLE, "send message failed, sendStatus=" + result.getSendStatus()))
-                        .build();
-                    break;
-                case SEND_OK:
-                    resultEntry = SendResultEntry.newBuilder()
-                        .setStatus(ResponseBuilder.getInstance().buildStatus(Code.OK, Code.OK.name()))
-                        .setOffset(result.getQueueOffset())
-                        .setMessageId(StringUtils.defaultString(result.getMsgId()))
-                        .setTransactionId(StringUtils.defaultString(result.getTransactionId()))
-                        .build();
-                    break;
-                default:
-                    resultEntry = SendResultEntry.newBuilder()
-                        .setStatus(ResponseBuilder.getInstance().buildStatus(Code.INTERNAL_SERVER_ERROR, "send message failed, sendStatus=" + result.getSendStatus()))
-                        .build();
-                    break;
-            }
+            SendResultEntry resultEntry = createSendResultEntry(result);
             builder.addEntries(resultEntry);
             responseCodes.add(resultEntry.getStatus().getCode());
         }
+
+        setStatus(builder, responseCodes);
+        return builder.build();
+    }
+
+    private SendResultEntry createSendResultEntry(SendResult result) {
+        SendResultEntry resultEntry;
+        switch (result.getSendStatus()) {
+            case FLUSH_DISK_TIMEOUT:
+                resultEntry = SendResultEntry.newBuilder()
+                    .setStatus(ResponseBuilder.getInstance().buildStatus(Code.MASTER_PERSISTENCE_TIMEOUT, "send message failed, sendStatus=" + result.getSendStatus()))
+                    .build();
+                break;
+            case FLUSH_SLAVE_TIMEOUT:
+                resultEntry = SendResultEntry.newBuilder()
+                    .setStatus(ResponseBuilder.getInstance().buildStatus(Code.SLAVE_PERSISTENCE_TIMEOUT, "send message failed, sendStatus=" + result.getSendStatus()))
+                    .build();
+                break;
+            case SLAVE_NOT_AVAILABLE:
+                resultEntry = SendResultEntry.newBuilder()
+                    .setStatus(ResponseBuilder.getInstance().buildStatus(Code.HA_NOT_AVAILABLE, "send message failed, sendStatus=" + result.getSendStatus()))
+                    .build();
+                break;
+            case SEND_OK:
+                resultEntry = SendResultEntry.newBuilder()
+                    .setStatus(ResponseBuilder.getInstance().buildStatus(Code.OK, Code.OK.name()))
+                    .setOffset(result.getQueueOffset())
+                    .setMessageId(StringUtils.defaultString(result.getMsgId()))
+                    .setTransactionId(StringUtils.defaultString(result.getTransactionId()))
+                    .build();
+                break;
+            default:
+                resultEntry = SendResultEntry.newBuilder()
+                    .setStatus(ResponseBuilder.getInstance().buildStatus(Code.INTERNAL_SERVER_ERROR, "send message failed, sendStatus=" + result.getSendStatus()))
+                    .build();
+                break;
+        }
+
+        return resultEntry;
+    }
+
+
+    private void setStatus(SendMessageResponse.Builder builder, Set<Code> responseCodes) {
         if (responseCodes.size() > 1) {
             builder.setStatus(ResponseBuilder.getInstance().buildStatus(Code.MULTIPLE_RESULTS, Code.MULTIPLE_RESULTS.name()));
         } else if (responseCodes.size() == 1) {
@@ -359,9 +372,6 @@ public class SendMessageActivity extends AbstractMessingActivity {
         } else {
             builder.setStatus(ResponseBuilder.getInstance().buildStatus(Code.INTERNAL_SERVER_ERROR, "send status is empty"));
         }
-        return builder.build();
     }
-
-
 
 }
