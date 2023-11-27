@@ -109,78 +109,94 @@ public class RouteActivity extends AbstractMessingActivity {
             .build();
     }
 
-    public CompletableFuture<QueryAssignmentResponse> queryAssignment(ProxyContext ctx,
-        QueryAssignmentRequest request) {
+    public CompletableFuture<QueryAssignmentResponse> queryAssignment(ProxyContext ctx, QueryAssignmentRequest request) {
         CompletableFuture<QueryAssignmentResponse> future = new CompletableFuture<>();
 
         try {
             validateTopicAndConsumerGroup(request.getTopic(), request.getGroup());
             List<org.apache.rocketmq.proxy.common.Address> addressList = this.convertToAddressList(request.getEndpoints());
+            String topic = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getTopic());
 
-            ProxyTopicRouteData proxyTopicRouteData = this.messagingProcessor.getTopicRouteDataForProxy(
-                ctx,
-                addressList,
-                GrpcConverter.getInstance().wrapResourceWithNamespace(request.getTopic()));
+            ProxyTopicRouteData routeData = this.messagingProcessor.getTopicRouteDataForProxy(ctx, addressList, topic);
 
-            boolean fifo = false;
-            SubscriptionGroupConfig config = this.messagingProcessor.getSubscriptionGroupConfig(ctx,
-                GrpcConverter.getInstance().wrapResourceWithNamespace(request.getGroup()));
-            if (config != null && config.isConsumeMessageOrderly()) {
-                fifo = true;
-            }
+            boolean fifo = getFifo(ctx, request);
+            List<Assignment> assignments = getAssignmentList(fifo, routeData, request);
 
-            List<Assignment> assignments = new ArrayList<>();
-            Map<String, Map<Long, Broker>> brokerMap = buildBrokerMap(proxyTopicRouteData.getBrokerDatas());
-            for (QueueData queueData : proxyTopicRouteData.getQueueDatas()) {
-                if (PermName.isReadable(queueData.getPerm()) && queueData.getReadQueueNums() > 0) {
-                    Map<Long, Broker> brokerIdMap = brokerMap.get(queueData.getBrokerName());
-                    if (brokerIdMap != null) {
-                        Broker broker = brokerIdMap.get(MQConstants.MASTER_ID);
-                        Permission permission = this.convertToPermission(queueData.getPerm());
-                        if (fifo) {
-                            for (int i = 0; i < queueData.getReadQueueNums(); i++) {
-                                MessageQueue defaultMessageQueue = MessageQueue.newBuilder()
-                                    .setTopic(request.getTopic())
-                                    .setId(i)
-                                    .setPermission(permission)
-                                    .setBroker(broker)
-                                    .build();
-                                assignments.add(Assignment.newBuilder()
-                                    .setMessageQueue(defaultMessageQueue)
-                                    .build());
-                            }
-                        } else {
-                            MessageQueue defaultMessageQueue = MessageQueue.newBuilder()
-                                .setTopic(request.getTopic())
-                                .setId(-1)
-                                .setPermission(permission)
-                                .setBroker(broker)
-                                .build();
-                            assignments.add(Assignment.newBuilder()
-                                .setMessageQueue(defaultMessageQueue)
-                                .build());
-                        }
-
-                    }
-                }
-            }
-
-            QueryAssignmentResponse response;
-            if (assignments.isEmpty()) {
-                response = QueryAssignmentResponse.newBuilder()
-                    .setStatus(ResponseBuilder.getInstance().buildStatus(Code.FORBIDDEN, "no readable queue"))
-                    .build();
-            } else {
-                response = QueryAssignmentResponse.newBuilder()
-                    .addAllAssignments(assignments)
-                    .setStatus(ResponseBuilder.getInstance().buildStatus(Code.OK, Code.OK.name()))
-                    .build();
-            }
+            QueryAssignmentResponse response = buildAssignmentResponse(assignments);
             future.complete(response);
         } catch (Throwable t) {
             future.completeExceptionally(t);
         }
         return future;
+    }
+
+    private boolean getFifo(ProxyContext ctx, QueryAssignmentRequest request) {
+        boolean fifo = false;
+        SubscriptionGroupConfig config = this.messagingProcessor.getSubscriptionGroupConfig(ctx,
+            GrpcConverter.getInstance().wrapResourceWithNamespace(request.getGroup()));
+        if (config != null && config.isConsumeMessageOrderly()) {
+            fifo = true;
+        }
+
+        return fifo;
+    }
+
+    private List<Assignment> getAssignmentList(boolean fifo, ProxyTopicRouteData proxyTopicRouteData, QueryAssignmentRequest request) {
+        List<Assignment> assignments = new ArrayList<>();
+        Map<String, Map<Long, Broker>> brokerMap = buildBrokerMap(proxyTopicRouteData.getBrokerDatas());
+        for (QueueData queueData : proxyTopicRouteData.getQueueDatas()) {
+            if (!PermName.isReadable(queueData.getPerm()) || queueData.getReadQueueNums() <= 0) {
+                continue;
+            }
+
+            Map<Long, Broker> brokerIdMap = brokerMap.get(queueData.getBrokerName());
+            if (brokerIdMap == null) {
+                continue;
+            }
+
+            addAssignments(assignments, request, brokerIdMap, queueData, fifo);
+        }
+
+        return assignments;
+    }
+
+    private void addAssignments(List<Assignment> assignments, QueryAssignmentRequest request, Map<Long, Broker> brokerIdMap, QueueData queueData, boolean fifo) {
+        Broker broker = brokerIdMap.get(MQConstants.MASTER_ID);
+        Permission permission = this.convertToPermission(queueData.getPerm());
+        if (!fifo) {
+            addAssignment(assignments, request, -1, permission, broker);
+            return;
+        }
+
+        for (int i = 0; i < queueData.getReadQueueNums(); i++) {
+            addAssignment(assignments, request, i, permission, broker);
+        }
+    }
+
+    private void addAssignment(List<Assignment> assignments, QueryAssignmentRequest request, int id, Permission permission, Broker broker) {
+        MessageQueue defaultMessageQueue = MessageQueue.newBuilder()
+            .setTopic(request.getTopic())
+            .setId(id)
+            .setPermission(permission)
+            .setBroker(broker)
+            .build();
+
+        assignments.add(Assignment.newBuilder()
+            .setMessageQueue(defaultMessageQueue)
+            .build());
+    }
+
+    private QueryAssignmentResponse buildAssignmentResponse(List<Assignment> assignments) {
+        if (assignments.isEmpty()) {
+            return QueryAssignmentResponse.newBuilder()
+                .setStatus(ResponseBuilder.getInstance().buildStatus(Code.FORBIDDEN, "no readable queue"))
+                .build();
+        }
+
+        return QueryAssignmentResponse.newBuilder()
+            .addAllAssignments(assignments)
+            .setStatus(ResponseBuilder.getInstance().buildStatus(Code.OK, Code.OK.name()))
+            .build();
     }
 
     protected Permission convertToPermission(int perm) {
