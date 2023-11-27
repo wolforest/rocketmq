@@ -294,20 +294,22 @@ public class SendMessageActivity extends AbstractMessingActivity {
     }
 
     protected void fillDelayMessageProperty(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader) {
-        if (message.getSystemProperties().hasDeliveryTimestamp()) {
-            Timestamp deliveryTimestamp = message.getSystemProperties().getDeliveryTimestamp();
-            long deliveryTimestampMs = Timestamps.toMillis(deliveryTimestamp);
-            validateDelayTime(deliveryTimestampMs);
-
-            ProxyConfig config = ConfigurationManager.getProxyConfig();
-            if (config.isUseDelayLevel()) {
-                int delayLevel = config.computeDelayLevel(deliveryTimestampMs);
-                MessageAccessor.putProperty(messageWithHeader, MessageConst.PROPERTY_DELAY_TIME_LEVEL, String.valueOf(delayLevel));
-            }
-
-            String timestampString = String.valueOf(deliveryTimestampMs);
-            MessageAccessor.putProperty(messageWithHeader, MessageConst.PROPERTY_TIMER_DELIVER_MS, timestampString);
+        if (!message.getSystemProperties().hasDeliveryTimestamp()) {
+            return;
         }
+
+        Timestamp deliveryTimestamp = message.getSystemProperties().getDeliveryTimestamp();
+        long deliveryTimestampMs = Timestamps.toMillis(deliveryTimestamp);
+        validateDelayTime(deliveryTimestampMs);
+
+        ProxyConfig config = ConfigurationManager.getProxyConfig();
+        if (config.isUseDelayLevel()) {
+            int delayLevel = config.computeDelayLevel(deliveryTimestampMs);
+            MessageAccessor.putProperty(messageWithHeader, MessageConst.PROPERTY_DELAY_TIME_LEVEL, String.valueOf(delayLevel));
+        }
+
+        String timestampString = String.valueOf(deliveryTimestampMs);
+        MessageAccessor.putProperty(messageWithHeader, MessageConst.PROPERTY_TIMER_DELIVER_MS, timestampString);
     }
 
     protected SendMessageResponse convertToSendMessageResponse(ProxyContext ctx, SendMessageRequest request, List<SendResult> resultList) {
@@ -359,5 +361,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         }
         return builder.build();
     }
+
+
 
 }
