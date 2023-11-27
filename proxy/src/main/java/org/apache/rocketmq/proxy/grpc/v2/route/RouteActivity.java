@@ -64,36 +64,49 @@ public class RouteActivity extends AbstractMessingActivity {
         CompletableFuture<QueryRouteResponse> future = new CompletableFuture<>();
         try {
             validateTopic(request.getTopic());
-            List<org.apache.rocketmq.proxy.common.Address> addressList = this.convertToAddressList(request.getEndpoints());
-
-            String topicName = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getTopic());
-            ProxyTopicRouteData proxyTopicRouteData = this.messagingProcessor.getTopicRouteDataForProxy(
-                ctx, addressList, topicName);
-
-            List<MessageQueue> messageQueueList = new ArrayList<>();
-            Map<String, Map<Long, Broker>> brokerMap = buildBrokerMap(proxyTopicRouteData.getBrokerDatas());
-
-            TopicMessageType topicMessageType = messagingProcessor.getMetadataService().getTopicMessageType(ctx, topicName);
-            for (QueueData queueData : proxyTopicRouteData.getQueueDatas()) {
-                String brokerName = queueData.getBrokerName();
-                Map<Long, Broker> brokerIdMap = brokerMap.get(brokerName);
-                if (brokerIdMap == null) {
-                    break;
-                }
-                for (Broker broker : brokerIdMap.values()) {
-                    messageQueueList.addAll(this.genMessageQueueFromQueueData(queueData, request.getTopic(), topicMessageType, broker));
-                }
-            }
-
-            QueryRouteResponse response = QueryRouteResponse.newBuilder()
-                .setStatus(ResponseBuilder.getInstance().buildStatus(Code.OK, Code.OK.name()))
-                .addAllMessageQueues(messageQueueList)
-                .build();
+            List<MessageQueue> messageQueueList = getMessageQueueList(ctx, request);
+            QueryRouteResponse response = buildRouteResponse(messageQueueList);
             future.complete(response);
         } catch (Throwable t) {
             future.completeExceptionally(t);
         }
         return future;
+    }
+
+    private List<MessageQueue> getMessageQueueList(ProxyContext ctx, QueryRouteRequest request) throws Exception {
+        List<org.apache.rocketmq.proxy.common.Address> addressList = this.convertToAddressList(request.getEndpoints());
+        String topicName = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getTopic());
+        ProxyTopicRouteData proxyTopicRouteData = this.messagingProcessor.getTopicRouteDataForProxy(ctx, addressList, topicName);
+
+        List<MessageQueue> messageQueueList = new ArrayList<>();
+        Map<String, Map<Long, Broker>> brokerMap = buildBrokerMap(proxyTopicRouteData.getBrokerDatas());
+        TopicMessageType topicMessageType = messagingProcessor.getMetadataService().getTopicMessageType(ctx, topicName);
+
+        for (QueueData queueData : proxyTopicRouteData.getQueueDatas()) {
+            parseQueueData(queueData, topicMessageType, request, brokerMap, messageQueueList);
+        }
+
+        return messageQueueList;
+    }
+
+    private void parseQueueData(QueueData queueData, TopicMessageType topicMessageType, QueryRouteRequest request,
+        Map<String, Map<Long, Broker>> brokerMap, List<MessageQueue> messageQueueList) {
+        String brokerName = queueData.getBrokerName();
+        Map<Long, Broker> brokerIdMap = brokerMap.get(brokerName);
+        if (brokerIdMap == null) {
+            return;
+        }
+
+        for (Broker broker : brokerIdMap.values()) {
+            messageQueueList.addAll(this.genMessageQueueFromQueueData(queueData, request.getTopic(), topicMessageType, broker));
+        }
+    }
+
+    private QueryRouteResponse buildRouteResponse(List<MessageQueue> messageQueueList) {
+        return QueryRouteResponse.newBuilder()
+            .setStatus(ResponseBuilder.getInstance().buildStatus(Code.OK, Code.OK.name()))
+            .addAllMessageQueues(messageQueueList)
+            .build();
     }
 
     public CompletableFuture<QueryAssignmentResponse> queryAssignment(ProxyContext ctx,
