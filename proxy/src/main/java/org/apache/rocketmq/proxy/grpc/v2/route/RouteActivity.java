@@ -267,8 +267,7 @@ public class RouteActivity extends AbstractMessingActivity {
         return brokerMap;
     }
 
-    protected List<MessageQueue> genMessageQueueFromQueueData(QueueData queueData, Resource topic,
-        TopicMessageType topicMessageType, Broker broker) {
+    protected List<MessageQueue> genMessageQueueFromQueueData(QueueData queueData, Resource topic, TopicMessageType topicMessageType, Broker broker) {
         List<MessageQueue> messageQueueList = new ArrayList<>();
 
         int r = 0;
@@ -285,35 +284,56 @@ public class RouteActivity extends AbstractMessingActivity {
         }
 
         // r here means readOnly queue nums, w means writeOnly queue nums, while rw means both readable and writable queue nums.
-        int queueIdIndex = 0;
-        for (int i = 0; i < r; i++) {
+        int queueIdIndex = addReadOnlyQueue(messageQueueList, topic, topicMessageType, broker, r);
+        queueIdIndex += addWriteOnlyQueue(messageQueueList, topic, topicMessageType, broker, w);
+        queueIdIndex += addReadWriteQueue(messageQueueList, topic, topicMessageType, broker, rw);
+
+        return messageQueueList;
+    }
+
+    private int addReadOnlyQueue(List<MessageQueue> messageQueueList, Resource topic, TopicMessageType topicMessageType, Broker broker, int num) {
+        int counter = 0;
+
+        for (int i = 0; i < num; i++) {
             MessageQueue messageQueue = MessageQueue.newBuilder().setBroker(broker).setTopic(topic)
-                .setId(queueIdIndex++)
+                .setId(counter++)
                 .setPermission(Permission.READ)
                 .addAllAcceptMessageTypes(parseTopicMessageType(topicMessageType))
                 .build();
             messageQueueList.add(messageQueue);
         }
 
-        for (int i = 0; i < w; i++) {
+        return counter;
+    }
+
+    private int addWriteOnlyQueue(List<MessageQueue> messageQueueList, Resource topic, TopicMessageType topicMessageType, Broker broker, int num) {
+        int counter = 0;
+
+        for (int i = 0; i < num; i++) {
             MessageQueue messageQueue = MessageQueue.newBuilder().setBroker(broker).setTopic(topic)
-                .setId(queueIdIndex++)
+                .setId(counter++)
                 .setPermission(Permission.WRITE)
                 .addAllAcceptMessageTypes(parseTopicMessageType(topicMessageType))
                 .build();
             messageQueueList.add(messageQueue);
         }
 
-        for (int i = 0; i < rw; i++) {
+        return counter;
+    }
+
+    private int addReadWriteQueue(List<MessageQueue> messageQueueList, Resource topic, TopicMessageType topicMessageType, Broker broker, int num) {
+        int counter = 0;
+
+        for (int i = 0; i < num; i++) {
             MessageQueue messageQueue = MessageQueue.newBuilder().setBroker(broker).setTopic(topic)
-                .setId(queueIdIndex++)
+                .setId(counter++)
                 .setPermission(Permission.READ_WRITE)
                 .addAllAcceptMessageTypes(parseTopicMessageType(topicMessageType))
                 .build();
             messageQueueList.add(messageQueue);
         }
 
-        return messageQueueList;
+        return counter;
     }
 
     private List<MessageType> parseTopicMessageType(TopicMessageType topicMessageType) {
