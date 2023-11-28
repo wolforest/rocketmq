@@ -73,6 +73,27 @@ public class RouteActivity extends AbstractMessingActivity {
         return future;
     }
 
+    public CompletableFuture<QueryAssignmentResponse> queryAssignment(ProxyContext ctx, QueryAssignmentRequest request) {
+        CompletableFuture<QueryAssignmentResponse> future = new CompletableFuture<>();
+
+        try {
+            validateTopicAndConsumerGroup(request.getTopic(), request.getGroup());
+            List<org.apache.rocketmq.proxy.common.Address> addressList = this.convertToAddressList(request.getEndpoints());
+            String topic = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getTopic());
+
+            ProxyTopicRouteData routeData = this.messagingProcessor.getTopicRouteDataForProxy(ctx, addressList, topic);
+
+            boolean fifo = getFifo(ctx, request);
+            List<Assignment> assignments = getAssignmentList(fifo, routeData, request);
+
+            QueryAssignmentResponse response = buildAssignmentResponse(assignments);
+            future.complete(response);
+        } catch (Throwable t) {
+            future.completeExceptionally(t);
+        }
+        return future;
+    }
+
     private List<MessageQueue> getMessageQueueList(ProxyContext ctx, QueryRouteRequest request) throws Exception {
         List<org.apache.rocketmq.proxy.common.Address> addressList = this.convertToAddressList(request.getEndpoints());
         String topicName = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getTopic());
@@ -108,28 +129,7 @@ public class RouteActivity extends AbstractMessingActivity {
             .addAllMessageQueues(messageQueueList)
             .build();
     }
-
-    public CompletableFuture<QueryAssignmentResponse> queryAssignment(ProxyContext ctx, QueryAssignmentRequest request) {
-        CompletableFuture<QueryAssignmentResponse> future = new CompletableFuture<>();
-
-        try {
-            validateTopicAndConsumerGroup(request.getTopic(), request.getGroup());
-            List<org.apache.rocketmq.proxy.common.Address> addressList = this.convertToAddressList(request.getEndpoints());
-            String topic = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getTopic());
-
-            ProxyTopicRouteData routeData = this.messagingProcessor.getTopicRouteDataForProxy(ctx, addressList, topic);
-
-            boolean fifo = getFifo(ctx, request);
-            List<Assignment> assignments = getAssignmentList(fifo, routeData, request);
-
-            QueryAssignmentResponse response = buildAssignmentResponse(assignments);
-            future.complete(response);
-        } catch (Throwable t) {
-            future.completeExceptionally(t);
-        }
-        return future;
-    }
-
+    
     private boolean getFifo(ProxyContext ctx, QueryAssignmentRequest request) {
         boolean fifo = false;
         SubscriptionGroupConfig config = this.messagingProcessor.getSubscriptionGroupConfig(ctx,
@@ -224,6 +224,7 @@ public class RouteActivity extends AbstractMessingActivity {
             if (useEndpointPort) {
                 port = address.getPort();
             }
+
             addressList.add(new org.apache.rocketmq.proxy.common.Address(
                 org.apache.rocketmq.proxy.common.Address.AddressScheme.valueOf(endpoints.getScheme().name()),
                 HostAndPort.fromParts(address.getHost(), port)));
