@@ -233,38 +233,56 @@ public class RouteActivity extends AbstractMessingActivity {
 
     }
 
-    protected Map<String /*brokerName*/, Map<Long /*brokerID*/, Broker>> buildBrokerMap(
-        List<ProxyTopicRouteData.ProxyBrokerData> brokerDataList) {
+    protected Map<String /*brokerName*/, Map<Long /*brokerID*/, Broker>> buildBrokerMap(List<ProxyTopicRouteData.ProxyBrokerData> brokerDataList) {
         Map<String, Map<Long, Broker>> brokerMap = new HashMap<>();
+
         for (ProxyTopicRouteData.ProxyBrokerData brokerData : brokerDataList) {
-            Map<Long, Broker> brokerIdMap = new HashMap<>();
-            String brokerName = brokerData.getBrokerName();
-            for (Map.Entry<Long, List<org.apache.rocketmq.proxy.common.Address>> entry : brokerData.getBrokerAddrs().entrySet()) {
-                Long brokerId = entry.getKey();
-                List<Address> addressList = new ArrayList<>();
-                AddressScheme addressScheme = AddressScheme.IPv4;
-                for (org.apache.rocketmq.proxy.common.Address address : entry.getValue()) {
-                    addressScheme = AddressScheme.valueOf(address.getAddressScheme().name());
-                    addressList.add(Address.newBuilder()
-                        .setHost(address.getHostAndPort().getHost())
-                        .setPort(address.getHostAndPort().getPort())
-                        .build());
-                }
-
-                Broker broker = Broker.newBuilder()
-                    .setName(brokerName)
-                    .setId(Math.toIntExact(brokerId))
-                    .setEndpoints(Endpoints.newBuilder()
-                        .setScheme(addressScheme)
-                        .addAllAddresses(addressList)
-                        .build())
-                    .build();
-
-                brokerIdMap.put(brokerId, broker);
-            }
-            brokerMap.put(brokerName, brokerIdMap);
+            Map<Long, Broker> brokerIdMap = getBrokerIdMap(brokerData);
+            brokerMap.put(brokerData.getBrokerName(), brokerIdMap);
         }
+
         return brokerMap;
+    }
+
+    private Map<Long, Broker> getBrokerIdMap(ProxyTopicRouteData.ProxyBrokerData brokerData) {
+        String brokerName = brokerData.getBrokerName();
+        Map<Long, Broker> brokerIdMap = new HashMap<>();
+        for (Map.Entry<Long, List<org.apache.rocketmq.proxy.common.Address>> entry : brokerData.getBrokerAddrs().entrySet()) {
+            Long brokerId = entry.getKey();
+            List<Address> addressList = new ArrayList<>();
+            AddressScheme scheme = addAddress(addressList, entry);
+
+            Broker broker = createBroker(brokerName, brokerId, scheme, addressList);
+            brokerIdMap.put(brokerId, broker);
+        }
+
+        return brokerIdMap;
+    }
+
+    private AddressScheme addAddress(List<Address> addressList, Map.Entry<Long, List<org.apache.rocketmq.proxy.common.Address>> entry) {
+        AddressScheme addressScheme = AddressScheme.IPv4;
+        for (org.apache.rocketmq.proxy.common.Address address : entry.getValue()) {
+            addressScheme = AddressScheme.valueOf(address.getAddressScheme().name());
+            addressList.add(Address.newBuilder()
+                .setHost(address.getHostAndPort().getHost())
+                .setPort(address.getHostAndPort().getPort())
+                .build());
+        }
+
+        return addressScheme;
+    }
+
+    private Broker createBroker(String brokerName, Long brokerId, AddressScheme addressScheme, List<Address> addressList) {
+        Endpoints endpoints = Endpoints.newBuilder()
+            .setScheme(addressScheme)
+            .addAllAddresses(addressList)
+            .build();
+
+        return Broker.newBuilder()
+            .setName(brokerName)
+            .setId(Math.toIntExact(brokerId))
+            .setEndpoints(endpoints)
+            .build();
     }
 
     protected List<MessageQueue> genMessageQueueFromQueueData(QueueData queueData, Resource topic, TopicMessageType topicMessageType, Broker broker) {
