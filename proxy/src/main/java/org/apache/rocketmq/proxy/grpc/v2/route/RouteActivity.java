@@ -284,16 +284,15 @@ public class RouteActivity extends AbstractMessingActivity {
         }
 
         // r here means readOnly queue nums, w means writeOnly queue nums, while rw means both readable and writable queue nums.
-        int queueIdIndex = addReadOnlyQueue(messageQueueList, topic, topicMessageType, broker, r);
-        queueIdIndex += addWriteOnlyQueue(messageQueueList, topic, topicMessageType, broker, w);
-        queueIdIndex += addReadWriteQueue(messageQueueList, topic, topicMessageType, broker, rw);
+        addReadOnlyQueue(messageQueueList, topic, topicMessageType, broker, r);
+        addWriteOnlyQueue(messageQueueList, topic, topicMessageType, broker, w);
+        addReadWriteQueue(messageQueueList, topic, topicMessageType, broker, rw);
 
         return messageQueueList;
     }
 
-    private int addReadOnlyQueue(List<MessageQueue> messageQueueList, Resource topic, TopicMessageType topicMessageType, Broker broker, int num) {
+    private void addReadOnlyQueue(List<MessageQueue> messageQueueList, Resource topic, TopicMessageType topicMessageType, Broker broker, int num) {
         int counter = 0;
-
         for (int i = 0; i < num; i++) {
             MessageQueue messageQueue = MessageQueue.newBuilder().setBroker(broker).setTopic(topic)
                 .setId(counter++)
@@ -303,12 +302,10 @@ public class RouteActivity extends AbstractMessingActivity {
             messageQueueList.add(messageQueue);
         }
 
-        return counter;
     }
 
-    private int addWriteOnlyQueue(List<MessageQueue> messageQueueList, Resource topic, TopicMessageType topicMessageType, Broker broker, int num) {
+    private void addWriteOnlyQueue(List<MessageQueue> messageQueueList, Resource topic, TopicMessageType topicMessageType, Broker broker, int num) {
         int counter = 0;
-
         for (int i = 0; i < num; i++) {
             MessageQueue messageQueue = MessageQueue.newBuilder().setBroker(broker).setTopic(topic)
                 .setId(counter++)
@@ -317,13 +314,10 @@ public class RouteActivity extends AbstractMessingActivity {
                 .build();
             messageQueueList.add(messageQueue);
         }
-
-        return counter;
     }
 
-    private int addReadWriteQueue(List<MessageQueue> messageQueueList, Resource topic, TopicMessageType topicMessageType, Broker broker, int num) {
+    private void addReadWriteQueue(List<MessageQueue> messageQueueList, Resource topic, TopicMessageType topicMessageType, Broker broker, int num) {
         int counter = 0;
-
         for (int i = 0; i < num; i++) {
             MessageQueue messageQueue = MessageQueue.newBuilder().setBroker(broker).setTopic(topic)
                 .setId(counter++)
@@ -332,8 +326,6 @@ public class RouteActivity extends AbstractMessingActivity {
                 .build();
             messageQueueList.add(messageQueue);
         }
-
-        return counter;
     }
 
     private List<MessageType> parseTopicMessageType(TopicMessageType topicMessageType) {
