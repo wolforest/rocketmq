@@ -57,9 +57,20 @@ public class LocalTopicRouteService extends TopicRouteService {
         return new MessageQueueView(topic, toTopicRouteData(topicConfig), null);
     }
 
+    /**
+     * get route info by topic
+     * @renamed from getTopicRouteForProxy to getRouteByTopic
+     *
+     * @param ctx proxy context
+     * @param requestHostAndPortList broker endpoints from request(client config), it is useless here
+     * @param topicName topic
+     * @return route data
+     * @throws Exception e
+     */
     @Override
     public ProxyTopicRouteData getTopicRouteForProxy(ProxyContext ctx, List<Address> requestHostAndPortList,
         String topicName) throws Exception {
+
         MessageQueueView messageQueueView = getAllMessageQueueView(ctx, topicName);
         TopicRouteData topicRouteData = messageQueueView.getTopicRouteData();
 
@@ -70,17 +81,22 @@ public class LocalTopicRouteService extends TopicRouteService {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
             proxyBrokerData.setCluster(brokerData.getCluster());
             proxyBrokerData.setBrokerName(brokerData.getBrokerName());
-            for (Long brokerId : brokerData.getBrokerAddrs().keySet()) {
-                String brokerAddr = brokerData.getBrokerAddrs().get(brokerId);
-                HostAndPort brokerHostAndPort = HostAndPort.fromString(brokerAddr);
-                HostAndPort grpcHostAndPort = HostAndPort.fromParts(brokerHostAndPort.getHost(), grpcPort);
+            addBrokerAddrs(proxyBrokerData, brokerData);
 
-                proxyBrokerData.getBrokerAddrs().put(brokerId, Lists.newArrayList(new Address(Address.AddressScheme.IPv4, grpcHostAndPort)));
-            }
             proxyTopicRouteData.getBrokerDatas().add(proxyBrokerData);
         }
 
         return proxyTopicRouteData;
+    }
+
+    private void addBrokerAddrs(ProxyTopicRouteData.ProxyBrokerData proxyBrokerData, BrokerData brokerData) {
+        for (Long brokerId : brokerData.getBrokerAddrs().keySet()) {
+            String brokerAddr = brokerData.getBrokerAddrs().get(brokerId);
+            HostAndPort brokerHostAndPort = HostAndPort.fromString(brokerAddr);
+            HostAndPort grpcHostAndPort = HostAndPort.fromParts(brokerHostAndPort.getHost(), grpcPort);
+
+            proxyBrokerData.getBrokerAddrs().put(brokerId, Lists.newArrayList(new Address(Address.AddressScheme.IPv4, grpcHostAndPort)));
+        }
     }
 
     @Override

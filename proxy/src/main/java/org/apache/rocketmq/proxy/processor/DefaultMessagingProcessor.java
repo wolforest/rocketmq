@@ -133,6 +133,14 @@ public class DefaultMessagingProcessor extends AbstractStartAndShutdown implemen
         return this.serviceManager.getMetadataService().getSubscriptionGroupConfig(ctx, consumerGroupName);
     }
 
+    /**
+     *
+     * @param ctx ctx
+     * @param requestHostAndPortList endpoints from client request(load from client config)
+     * @param topicName topic
+     * @return route data
+     * @throws Exception e
+     */
     @Override
     public ProxyTopicRouteData getTopicRouteDataForProxy(ProxyContext ctx, List<Address> requestHostAndPortList,
         String topicName) throws Exception {

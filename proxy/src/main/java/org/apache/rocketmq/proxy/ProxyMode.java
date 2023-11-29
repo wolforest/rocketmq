@@ -19,6 +19,11 @@ package org.apache.rocketmq.proxy;
 
 public enum ProxyMode {
     LOCAL("LOCAL"),
+    /**
+     * CLUSTER mode is not recommended
+     * - it's hard to add proxy instance
+     * - ... ...
+     */
     CLUSTER("CLUSTER");
 
     private final String mode;

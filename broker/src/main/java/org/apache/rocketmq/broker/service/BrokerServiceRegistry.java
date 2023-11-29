@@ -180,13 +180,12 @@ public class BrokerServiceRegistry {
             this.brokerConfig.getBrokerId());
     }
 
-    private void doRegisterBrokerAll(boolean checkOrderConfig, boolean oneway,
-        TopicConfigSerializeWrapper topicConfigWrapper) {
-
+    private void doRegisterBrokerAll(boolean checkOrderConfig, boolean oneway, TopicConfigSerializeWrapper topicConfigWrapper) {
         if (brokerController.isShutdown()) {
             LOG.info("BrokerController#doRegisterBrokerAll: broker has shutdown, no need to register any more.");
             return;
         }
+
         List<RegisterBrokerResult> registerBrokerResultList = this.brokerOuterAPI.registerBrokerAll(
             this.brokerConfig.getBrokerClusterName(),
             brokerController.getBrokerAddr(),

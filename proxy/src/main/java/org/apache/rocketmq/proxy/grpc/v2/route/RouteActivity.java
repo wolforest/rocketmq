@@ -60,6 +60,25 @@ public class RouteActivity extends AbstractMessingActivity {
         super(messagingProcessor, grpcClientSettingsManager, grpcChannelManager);
     }
 
+    /**
+     * query route info by topic
+     *
+     * @param ctx ctx
+     * @param request {
+     *        topic: xxx,
+     *        endpoints: from client config, it is a endpoint list, it's a bad design
+     *      }
+     * @return route info {
+     *     message_queues: [
+     *     {
+     *        topic: xxx,
+     *        permission: xxx,
+     *        broker: xxxx,
+     *        accept_message_type: xxx
+     *     }, ...
+     *     ]
+     * }
+     */
     public CompletableFuture<QueryRouteResponse> queryRoute(ProxyContext ctx, QueryRouteRequest request) {
         CompletableFuture<QueryRouteResponse> future = new CompletableFuture<>();
         try {
@@ -129,7 +148,7 @@ public class RouteActivity extends AbstractMessingActivity {
             .addAllMessageQueues(messageQueueList)
             .build();
     }
-    
+
     private boolean getFifo(ProxyContext ctx, QueryAssignmentRequest request) {
         boolean fifo = false;
         SubscriptionGroupConfig config = this.messagingProcessor.getSubscriptionGroupConfig(ctx,

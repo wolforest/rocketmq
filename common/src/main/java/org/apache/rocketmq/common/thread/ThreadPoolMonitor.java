@@ -106,16 +106,16 @@ public class ThreadPoolMonitor {
             List<ThreadPoolStatusMonitor> monitors = threadPoolWrapper.getStatusPrinters();
             for (ThreadPoolStatusMonitor monitor : monitors) {
                 double value = monitor.value(threadPoolWrapper.getThreadPoolExecutor());
-                waterMarkLogger.info("\t{}\t{}\t{}", threadPoolWrapper.getName(),
-                    monitor.describe(),
-                    value);
+                waterMarkLogger.info("\t{}\t{}\t{}", threadPoolWrapper.getName(), monitor.describe(), value);
 
-                if (enablePrintJstack) {
-                    if (monitor.needPrintJstack(threadPoolWrapper.getThreadPoolExecutor(), value) &&
-                        System.currentTimeMillis() - jstackTime > jstackPeriodTime) {
-                        jstackTime = System.currentTimeMillis();
-                        jstackLogger.warn("jstack start\n{}", IOUtils.jstack());
-                    }
+                if (!enablePrintJstack) {
+                    continue;
+                }
+
+                if (monitor.needPrintJstack(threadPoolWrapper.getThreadPoolExecutor(), value)
+                    && System.currentTimeMillis() - jstackTime > jstackPeriodTime) {
+                    jstackTime = System.currentTimeMillis();
+                    jstackLogger.warn("jstack start\n{}", IOUtils.jstack());
                 }
             }
         }

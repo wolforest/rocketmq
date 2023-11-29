@@ -243,12 +243,13 @@ public class TopicConfigManager extends ConfigManager {
         return topicConfig;
     }
 
-
-
     public TopicConfig createTopicIfAbsent(TopicConfig topicConfig) {
         return createTopicIfAbsent(topicConfig, true);
     }
 
+    /**
+     * useless method
+     */
     public TopicConfig createTopicIfAbsent(TopicConfig topicConfig, boolean register) {
         boolean createNew = false;
         if (topicConfig == null) {
@@ -284,20 +285,11 @@ public class TopicConfigManager extends ConfigManager {
         return getTopicConfig(topicConfig.getTopicName());
     }
 
-    public TopicConfig createTopicInSendMessageBackMethod(
-        final String topic,
-        final int clientDefaultTopicQueueNums,
-        final int perm,
-        final int topicSysFlag) {
+    public TopicConfig createTopicInSendMessageBackMethod(String topic, int clientDefaultTopicQueueNums, int perm, int topicSysFlag) {
         return createTopicInSendMessageBackMethod(topic, clientDefaultTopicQueueNums, perm, false, topicSysFlag);
     }
 
-    public TopicConfig createTopicInSendMessageBackMethod(
-        final String topic,
-        final int clientDefaultTopicQueueNums,
-        final int perm,
-        final boolean isOrder,
-        final int topicSysFlag) {
+    public TopicConfig createTopicInSendMessageBackMethod(String topic, int clientDefaultTopicQueueNums, int perm, boolean isOrder, int topicSysFlag) {
         TopicConfig topicConfig = getTopicConfig(topic);
         if (topicConfig != null) {
             if (isOrder != topicConfig.isOrder()) {
@@ -310,29 +302,35 @@ public class TopicConfigManager extends ConfigManager {
         boolean createNew = false;
 
         try {
-            if (this.topicConfigTableLock.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
-                try {
-                    topicConfig = getTopicConfig(topic);
-                    if (topicConfig != null) {
-                        return topicConfig;
-                    }
+            if (!this.topicConfigTableLock.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+                return null;
+            }
 
-                    topicConfig = new TopicConfig(topic);
-                    topicConfig.setReadQueueNums(clientDefaultTopicQueueNums);
-                    topicConfig.setWriteQueueNums(clientDefaultTopicQueueNums);
-                    topicConfig.setPerm(perm);
-                    topicConfig.setTopicSysFlag(topicSysFlag);
-                    topicConfig.setOrder(isOrder);
-
-                    log.info("create new topic {}", topicConfig);
-                    putTopicConfig(topicConfig);
-                    createNew = true;
-                    long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
-                    dataVersion.nextVersion(stateMachineVersion);
-                    this.persist();
-                } finally {
-                    this.topicConfigTableLock.unlock();
+            try {
+                topicConfig = getTopicConfig(topic);
+                if (topicConfig != null) {
+                    return topicConfig;
                 }
+
+                topicConfig = new TopicConfig(topic);
+                topicConfig.setReadQueueNums(clientDefaultTopicQueueNums);
+                topicConfig.setWriteQueueNums(clientDefaultTopicQueueNums);
+                topicConfig.setPerm(perm);
+                topicConfig.setTopicSysFlag(topicSysFlag);
+                topicConfig.setOrder(isOrder);
+
+                log.info("create new topic {}", topicConfig);
+                putTopicConfig(topicConfig);
+                createNew = true;
+
+                long stateMachineVersion = brokerController.getMessageStore() != null
+                    ? brokerController.getMessageStore().getStateMachineVersion()
+                    : 0;
+                dataVersion.nextVersion(stateMachineVersion);
+
+                this.persist();
+            } finally {
+                this.topicConfigTableLock.unlock();
             }
         } catch (InterruptedException e) {
             log.error("createTopicInSendMessageBackMethod exception", e);

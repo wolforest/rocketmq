@@ -52,9 +52,18 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public abstract class TopicRouteService extends AbstractStartAndShutdown {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.PROXY_LOGGER_NAME);
 
+    /**
+     * It can be replaced by broker.BrokerOuterAPI
+     *
+     */
     private final MQClientAPIFactory mqClientAPIFactory;
-    private MQFaultStrategy mqFaultStrategy;
+    private final MQFaultStrategy mqFaultStrategy;
 
+    /**
+     * this is a caffeine instance:
+     * load route data by calling nameServ, then cache the result
+     * and reload the route data periodically
+     */
     protected final LoadingCache<String /* topicName */, MessageQueueView> topicCache;
     protected final ScheduledExecutorService scheduledExecutorService;
     protected final ThreadPoolExecutor cacheRefreshExecutor;
@@ -75,7 +84,8 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
         );
         this.mqClientAPIFactory = mqClientAPIFactory;
 
-        this.topicCache = Caffeine.newBuilder().maximumSize(config.getTopicRouteServiceCacheMaxNum())
+        this.topicCache = Caffeine.newBuilder()
+            .maximumSize(config.getTopicRouteServiceCacheMaxNum())
             .expireAfterAccess(config.getTopicRouteServiceCacheExpiredSeconds(), TimeUnit.SECONDS)
             .refreshAfterWrite(config.getTopicRouteServiceCacheRefreshSeconds(), TimeUnit.SECONDS)
             .executor(cacheRefreshExecutor)
@@ -94,8 +104,7 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
                 }
 
                 @Override
-                public @Nullable MessageQueueView reload(@NonNull String key,
-                    @NonNull MessageQueueView oldValue) throws Exception {
+                public @Nullable MessageQueueView reload(@NonNull String key, @NonNull MessageQueueView oldValue) {
                     try {
                         return load(key);
                     } catch (Exception e) {
@@ -104,6 +113,7 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
                     }
                 }
             });
+
         ServiceDetector serviceDetector = new ServiceDetector() {
             @Override
             public boolean detect(String endpoint, long timeoutMillis) {
@@ -122,12 +132,13 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
                 }
             }
         };
+
+
         mqFaultStrategy = new MQFaultStrategy(extractClientConfigFromProxyConfig(config), new Resolver() {
             @Override
             public String resolve(String name) {
                 try {
-                    String brokerAddr = getBrokerAddr(ProxyContext.createForInner("MQFaultStrategy"), name);
-                    return brokerAddr;
+                    return getBrokerAddr(ProxyContext.createForInner("MQFaultStrategy"), name);
                 } catch (Exception e) {
                     return null;
                 }
@@ -135,6 +146,15 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
         }, serviceDetector);
         this.init();
     }
+
+    public abstract MessageQueueView getCurrentMessageQueueView(ProxyContext ctx, String topicName) throws Exception;
+
+    public abstract ProxyTopicRouteData getTopicRouteForProxy(ProxyContext ctx, List<Address> requestHostAndPortList,
+        String topicName) throws Exception;
+
+    public abstract String getBrokerAddr(ProxyContext ctx, String brokerName) throws Exception;
+
+    public abstract AddressableMessageQueue buildAddressableMessageQueue(ProxyContext ctx, MessageQueue messageQueue) throws Exception;
 
     // pickup one topic in the topic cache
     private Optional<String> pickTopic() {
@@ -193,19 +213,16 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
         return getCacheMessageQueueWrapper(this.topicCache, topicName);
     }
 
-    public abstract MessageQueueView getCurrentMessageQueueView(ProxyContext ctx, String topicName) throws Exception;
-
-    public abstract ProxyTopicRouteData getTopicRouteForProxy(ProxyContext ctx, List<Address> requestHostAndPortList,
-        String topicName) throws Exception;
-
-    public abstract String getBrokerAddr(ProxyContext ctx, String brokerName) throws Exception;
-
-    public abstract AddressableMessageQueue buildAddressableMessageQueue(ProxyContext ctx, MessageQueue messageQueue) throws Exception;
-
     protected static MessageQueueView getCacheMessageQueueWrapper(LoadingCache<String, MessageQueueView> topicCache,
         String key) throws Exception {
         MessageQueueView res = topicCache.get(key);
-        if (res != null && res.isEmptyCachedQueue()) {
+
+        if (null == res) {
+            throw new MQClientException(ResponseCode.TOPIC_NOT_EXIST,
+                "No topic route info in name server for the topic: " + key);
+        }
+
+        if (res.isEmptyCachedQueue()) {
             throw new MQClientException(ResponseCode.TOPIC_NOT_EXIST,
                 "No topic route info in name server for the topic: " + key);
         }

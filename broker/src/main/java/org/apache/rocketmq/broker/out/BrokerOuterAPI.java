@@ -226,7 +226,7 @@ public class BrokerOuterAPI {
 
     public void updateNameServerAddressList(final String addrs) {
         String[] addrArray = addrs.split(";");
-        List<String> lst = new ArrayList<String>(Arrays.asList(addrArray));
+        List<String> lst = new ArrayList<>(Arrays.asList(addrArray));
         this.remotingClient.updateNameServerAddressList(lst);
     }
 
@@ -259,9 +259,7 @@ public class BrokerOuterAPI {
         requestHeader.setBrokerName(brokerName);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_MEMBER_GROUP, requestHeader);
-
-        RemotingCommand response = null;
-        response = this.remotingClient.invokeSync(null, request, 3000);
+        RemotingCommand response = this.remotingClient.invokeSync(null, request, 3000);
         assert response != null;
 
         if (response.getCode() != SUCCESS) {
@@ -451,17 +449,17 @@ public class BrokerOuterAPI {
      * Considering compression brings much CPU overhead to name server, stream API will not support compression and
      * compression feature is deprecated.
      *
-     * @param clusterName
-     * @param brokerAddr
-     * @param brokerName
-     * @param brokerId
-     * @param haServerAddr
-     * @param topicConfigWrapper
-     * @param filterServerList
-     * @param oneway
-     * @param timeoutMills
-     * @param compressed         default false
-     * @return
+     * @param clusterName clusterName
+     * @param brokerAddr brokerAddr (ip:port)
+     * @param brokerName brokerName
+     * @param brokerId brokerId
+     * @param haServerAddr HAServerAddr(BrokerIP2:HAListenPort)
+     * @param topicConfigWrapper topic
+     * @param filterServerList filter
+     * @param oneway oneway flag
+     * @param timeoutMills timout
+     * @param compressed default false
+     * @return register result list
      */
     public List<RegisterBrokerResult> registerBrokerAll(
         final String clusterName,
@@ -478,58 +476,70 @@ public class BrokerOuterAPI {
         final Long heartbeatTimeoutMillis,
         final BrokerIdentity brokerIdentity) {
 
-        final List<RegisterBrokerResult> registerBrokerResultList = new CopyOnWriteArrayList<>();
+        final List<RegisterBrokerResult> registerResult = new CopyOnWriteArrayList<>();
         List<String> nameServerAddressList = this.remotingClient.getAvailableNameSrvList();
-        if (nameServerAddressList != null && nameServerAddressList.size() > 0) {
-
-            final RegisterBrokerRequestHeader requestHeader = new RegisterBrokerRequestHeader();
-            requestHeader.setBrokerAddr(brokerAddr);
-            requestHeader.setBrokerId(brokerId);
-            requestHeader.setBrokerName(brokerName);
-            requestHeader.setClusterName(clusterName);
-            requestHeader.setHaServerAddr(haServerAddr);
-            requestHeader.setEnableActingMaster(enableActingMaster);
-            requestHeader.setCompressed(false);
-            if (heartbeatTimeoutMillis != null) {
-                requestHeader.setHeartbeatTimeoutMillis(heartbeatTimeoutMillis);
-            }
-
-            RegisterBrokerBody requestBody = new RegisterBrokerBody();
-            requestBody.setTopicConfigSerializeWrapper(TopicConfigAndMappingSerializeWrapper.from(topicConfigWrapper));
-            requestBody.setFilterServerList(filterServerList);
-            final byte[] body = requestBody.encode(compressed);
-            final int bodyCrc32 = BinaryUtils.crc32(body);
-            requestHeader.setBodyCrc32(bodyCrc32);
-            final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
-            for (final String namesrvAddr : nameServerAddressList) {
-                brokerOuterExecutor.execute(new AbstractBrokerRunnable(brokerIdentity) {
-                    @Override
-                    public void run0() {
-                        try {
-                            RegisterBrokerResult result = registerBroker(namesrvAddr, oneway, timeoutMills, requestHeader, body);
-                            if (result != null) {
-                                registerBrokerResultList.add(result);
-                            }
-
-                            LOGGER.info("Registering current broker to name server completed. TargetHost={}", namesrvAddr);
-                        } catch (Exception e) {
-                            LOGGER.error("Failed to register current broker to name server. TargetHost={}", namesrvAddr, e);
-                        } finally {
-                            countDownLatch.countDown();
-                        }
-                    }
-                });
-            }
-
-            try {
-                if (!countDownLatch.await(timeoutMills, TimeUnit.MILLISECONDS)) {
-                    LOGGER.warn("Registration to one or more name servers does NOT complete within deadline. Timeout threshold: {}ms", timeoutMills);
-                }
-            } catch (InterruptedException ignore) {
-            }
+        if (nameServerAddressList == null || nameServerAddressList.size() <= 0) {
+            return registerResult;
         }
 
-        return registerBrokerResultList;
+        RegisterBrokerRequestHeader requestHeader = createRegisterBrokerRequestHeader(
+            clusterName, brokerAddr, brokerName, brokerId, haServerAddr, enableActingMaster, heartbeatTimeoutMillis
+        );
+
+        RegisterBrokerBody requestBody = new RegisterBrokerBody();
+        requestBody.setTopicConfigSerializeWrapper(TopicConfigAndMappingSerializeWrapper.from(topicConfigWrapper));
+        requestBody.setFilterServerList(filterServerList);
+        byte[] body = requestBody.encode(compressed);
+        int bodyCrc32 = BinaryUtils.crc32(body);
+        requestHeader.setBodyCrc32(bodyCrc32);
+
+        final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
+        for (final String namesrvAddr : nameServerAddressList) {
+            brokerOuterExecutor.execute(new AbstractBrokerRunnable(brokerIdentity) {
+                @Override
+                public void run0() {
+                    try {
+                        RegisterBrokerResult result = registerBroker(namesrvAddr, oneway, timeoutMills, requestHeader, body);
+                        if (result != null) {
+                            registerResult.add(result);
+                        }
+
+                        LOGGER.info("Registering current broker to name server completed. TargetHost={}", namesrvAddr);
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to register current broker to name server. TargetHost={}", namesrvAddr, e);
+                    } finally {
+                        countDownLatch.countDown();
+                    }
+                }
+            });
+        }
+
+        try {
+            if (!countDownLatch.await(timeoutMills, TimeUnit.MILLISECONDS)) {
+                LOGGER.warn("Registration to one or more name servers does NOT complete within deadline. Timeout threshold: {}ms", timeoutMills);
+            }
+        } catch (InterruptedException ignore) {
+        }
+
+        return registerResult;
+    }
+
+    public RegisterBrokerRequestHeader createRegisterBrokerRequestHeader(String clusterName, String brokerAddr,
+        String brokerName, long brokerId, String haServerAddr, boolean enableActingMaster, Long heartbeatTimeoutMillis) {
+
+        RegisterBrokerRequestHeader requestHeader = new RegisterBrokerRequestHeader();
+        requestHeader.setBrokerAddr(brokerAddr);
+        requestHeader.setBrokerId(brokerId);
+        requestHeader.setBrokerName(brokerName);
+        requestHeader.setClusterName(clusterName);
+        requestHeader.setHaServerAddr(haServerAddr);
+        requestHeader.setEnableActingMaster(enableActingMaster);
+        requestHeader.setCompressed(false);
+        if (heartbeatTimeoutMillis != null) {
+            requestHeader.setHeartbeatTimeoutMillis(heartbeatTimeoutMillis);
+        }
+
+        return requestHeader;
     }
 
     private RegisterBrokerResult registerBroker(
@@ -612,10 +622,7 @@ public class BrokerOuterAPI {
      * Register the topic route info of single topic to all name server nodes.
      * This method is used to replace incremental broker registration feature.
      */
-    public void registerSingleTopicAll(
-        final String brokerName,
-        final TopicConfig topicConfig,
-        final int timeoutMills) {
+    public void registerSingleTopicAll(String brokerName, TopicConfig topicConfig, int timeoutMills) {
         String topic = topicConfig.getTopicName();
         RegisterTopicRequestHeader requestHeader = new RegisterTopicRequestHeader();
         requestHeader.setTopic(topic);
