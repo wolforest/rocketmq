@@ -43,9 +43,14 @@ public class DispatchRequest {
     private final long tagsCode;
     private final long storeTimestamp;
     private final long consumeQueueOffset;
+    /**
+     * message unique key
+     * stored in message.properties["UNIQ_KEY"]
+     * MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX = "UNIQ_KEY"
+     */
+    private final String uniqKey;
     private final String keys;
     private final boolean success;
-    private final String uniqKey;
 
     private final int sysFlag;
     private final long preparedTransactionOffset;

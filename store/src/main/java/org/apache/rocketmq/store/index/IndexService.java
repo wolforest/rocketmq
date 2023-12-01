@@ -36,6 +36,11 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * build index for messages with
+ * - unique key
+ * - keys
+ */
 public class IndexService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     /**
@@ -80,7 +85,9 @@ public class IndexService {
     }
 
     /**
-     * the only entry which build index
+     * build index for messages with
+     * - unique key
+     * - keys
      *
      * @param req DispatchRequest from CommitLog
      */
@@ -110,6 +117,56 @@ public class IndexService {
         }
 
         putKeys(req, indexFile);
+    }
+
+    /**
+     *
+     * @param topic topic
+     * @param key key
+     * @param maxNum maxNum
+     * @param begin begin offset
+     * @param end end offset
+     * @return offset result
+     */
+    public QueryOffsetResult queryOffset(String topic, String key, int maxNum, long begin, long end) {
+        List<Long> phyOffsets = new ArrayList<>(maxNum);
+
+        long indexLastUpdateTimestamp = 0;
+        long indexLastUpdatePhyoffset = 0;
+        maxNum = Math.min(maxNum, this.defaultMessageStore.getMessageStoreConfig().getMaxMsgsNumBatch());
+        try {
+            this.readWriteLock.readLock().lock();
+            if (this.indexFileList.isEmpty()) {
+                return new QueryOffsetResult(phyOffsets, indexLastUpdateTimestamp, indexLastUpdatePhyoffset);
+            }
+
+            for (int i = this.indexFileList.size(); i > 0; i--) {
+                IndexFile f = this.indexFileList.get(i - 1);
+                if (i == this.indexFileList.size()) {
+                    indexLastUpdateTimestamp = f.getEndTimestamp();
+                    indexLastUpdatePhyoffset = f.getEndPhyOffset();
+                }
+
+                if (f.isTimeMatched(begin, end)) {
+                    f.selectPhyOffset(phyOffsets, buildKey(topic, key), maxNum, begin, end);
+                }
+
+                if (f.getBeginTimestamp() < begin) {
+                    break;
+                }
+
+                if (phyOffsets.size() >= maxNum) {
+                    break;
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("queryMsg exception", e);
+        } finally {
+            this.readWriteLock.readLock().unlock();
+        }
+
+        return new QueryOffsetResult(phyOffsets, indexLastUpdateTimestamp, indexLastUpdatePhyoffset);
     }
 
     private void loadFile(File file, final boolean lastExitOK) throws IOException {
@@ -216,51 +273,10 @@ public class IndexService {
         }
     }
 
-    public QueryOffsetResult queryOffset(String topic, String key, int maxNum, long begin, long end) {
-        List<Long> phyOffsets = new ArrayList<>(maxNum);
-
-        long indexLastUpdateTimestamp = 0;
-        long indexLastUpdatePhyoffset = 0;
-        maxNum = Math.min(maxNum, this.defaultMessageStore.getMessageStoreConfig().getMaxMsgsNumBatch());
-        try {
-            this.readWriteLock.readLock().lock();
-            if (this.indexFileList.isEmpty()) {
-                return new QueryOffsetResult(phyOffsets, indexLastUpdateTimestamp, indexLastUpdatePhyoffset);
-            }
-
-            for (int i = this.indexFileList.size(); i > 0; i--) {
-                IndexFile f = this.indexFileList.get(i - 1);
-                if (i == this.indexFileList.size()) {
-                    indexLastUpdateTimestamp = f.getEndTimestamp();
-                    indexLastUpdatePhyoffset = f.getEndPhyOffset();
-                }
-
-                if (f.isTimeMatched(begin, end)) {
-                    f.selectPhyOffset(phyOffsets, buildKey(topic, key), maxNum, begin, end);
-                }
-
-                if (f.getBeginTimestamp() < begin) {
-                    break;
-                }
-
-                if (phyOffsets.size() >= maxNum) {
-                    break;
-                }
-            }
-
-        } catch (Exception e) {
-            LOGGER.error("queryMsg exception", e);
-        } finally {
-            this.readWriteLock.readLock().unlock();
-        }
-
-        return new QueryOffsetResult(phyOffsets, indexLastUpdateTimestamp, indexLastUpdatePhyoffset);
-    }
 
     private String buildKey(final String topic, final String key) {
         return topic + "#" + key;
     }
-
 
     private void putKeys(DispatchRequest req, IndexFile file) {
         IndexFile indexFile = file;
@@ -299,6 +315,7 @@ public class IndexService {
 
     /**
      * Retries to get or create index file.
+     * @renamed from retryGetAndCreateIndexFile to getOrCreateIndexFile
      *
      * @return {@link IndexFile} or null on failure.
      */
