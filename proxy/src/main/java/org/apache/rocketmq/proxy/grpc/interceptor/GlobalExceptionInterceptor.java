@@ -33,13 +33,10 @@ public class GlobalExceptionInterceptor implements ServerInterceptor {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.PROXY_LOGGER_NAME);
 
     @Override
-    public <R, W> ServerCall.Listener<R> interceptCall(
-        ServerCall<R, W> call,
-        Metadata headers,
-        ServerCallHandler<R, W> next
-    ) {
+    public <R, W> ServerCall.Listener<R> interceptCall(ServerCall<R, W> call, Metadata headers, ServerCallHandler<R, W> next) {
         final ServerCall<R, W> serverCall = new ClosableServerCall<>(call);
         ServerCall.Listener<R> delegate = next.startCall(serverCall, headers);
+
         return new ForwardingServerCallListener.SimpleForwardingServerCallListener<R>(delegate) {
             @Override
             public void onMessage(R message) {
@@ -119,10 +116,12 @@ public class GlobalExceptionInterceptor implements ServerInterceptor {
 
         @Override
         public synchronized void close(final Status status, final Metadata trailers) {
-            if (!closeCalled) {
-                closeCalled = true;
-                ClosableServerCall.super.close(status, trailers);
+            if (closeCalled) {
+                return;
             }
+
+            closeCalled = true;
+            ClosableServerCall.super.close(status, trailers);
         }
     }
 }

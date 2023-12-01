@@ -33,11 +33,7 @@ import java.net.SocketAddress;
 
 public class HeaderInterceptor implements ServerInterceptor {
     @Override
-    public <R, W> ServerCall.Listener<R> interceptCall(
-        ServerCall<R, W> call,
-        Metadata headers,
-        ServerCallHandler<R, W> next
-    ) {
+    public <R, W> ServerCall.Listener<R> interceptCall(ServerCall<R, W> call, Metadata headers, ServerCallHandler<R, W> next) {
         String remoteAddress = getProxyProtocolAddress(call.getAttributes());
         if (StringUtils.isBlank(remoteAddress)) {
             SocketAddress remoteSocketAddress = call.getAttributes().get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
@@ -53,8 +49,7 @@ public class HeaderInterceptor implements ServerInterceptor {
             if (!StringUtils.startsWith(key.toString(), HAProxyConstants.PROXY_PROTOCOL_PREFIX)) {
                 continue;
             }
-            Metadata.Key<String> headerKey
-                    = Metadata.Key.of(key.toString(), Metadata.ASCII_STRING_MARSHALLER);
+            Metadata.Key<String> headerKey = Metadata.Key.of(key.toString(), Metadata.ASCII_STRING_MARSHALLER);
             String headerValue = String.valueOf(call.getAttributes().get(key));
             headers.put(headerKey, headerValue);
         }
@@ -63,16 +58,15 @@ public class HeaderInterceptor implements ServerInterceptor {
     }
 
     private String parseSocketAddress(SocketAddress socketAddress) {
-        if (socketAddress instanceof InetSocketAddress) {
-            InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
-            return HostAndPort.fromParts(
-                inetSocketAddress.getAddress()
-                    .getHostAddress(),
-                inetSocketAddress.getPort()
-            ).toString();
+        if (!(socketAddress instanceof InetSocketAddress)) {
+            return "";
         }
 
-        return "";
+        InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+        return HostAndPort.fromParts(
+            inetSocketAddress.getAddress().getHostAddress(),
+            inetSocketAddress.getPort()
+        ).toString();
     }
 
     private String getProxyProtocolAddress(Attributes attributes) {
