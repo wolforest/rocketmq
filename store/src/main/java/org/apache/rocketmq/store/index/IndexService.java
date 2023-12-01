@@ -53,8 +53,7 @@ public class IndexService {
         this.defaultMessageStore = store;
         this.hashSlotNum = store.getMessageStoreConfig().getMaxHashSlotNum();
         this.indexNum = store.getMessageStoreConfig().getMaxIndexNum();
-        this.storePath =
-            StorePathConfigHelper.getStorePathIndex(defaultMessageStore.getMessageStoreConfig().getStorePathRootDir());
+        this.storePath = StorePathConfigHelper.getStorePathIndex(defaultMessageStore.getMessageStoreConfig().getStorePathRootDir());
     }
 
     public boolean load(final boolean lastExitOK) {
@@ -85,8 +84,7 @@ public class IndexService {
         f.load();
 
         if (!lastExitOK) {
-            if (f.getEndTimestamp() > this.defaultMessageStore.getStoreCheckpoint()
-                .getIndexMsgTimestamp()) {
+            if (f.getEndTimestamp() > this.defaultMessageStore.getStoreCheckpoint().getIndexMsgTimestamp()) {
                 f.destroy(0);
                 return;
             }
@@ -105,16 +103,25 @@ public class IndexService {
     }
 
     public void deleteExpiredFile(long offset) {
-        Object[] files = null;
+        Object[] files = getFiles(offset);
+        if (null == files) {
+            return;
+        }
+
+        List<IndexFile> fileList = toFileList(files, offset);
+        this.deleteExpiredFile(fileList);
+    }
+
+    private Object[] getFiles(long offset) {
         try {
             this.readWriteLock.readLock().lock();
             if (this.indexFileList.isEmpty()) {
-                return;
+                return null;
             }
 
             long endPhyOffset = this.indexFileList.get(0).getEndPhyOffset();
             if (endPhyOffset < offset) {
-                files = this.indexFileList.toArray();
+                return this.indexFileList.toArray();
             }
         } catch (Exception e) {
             LOGGER.error("destroy exception", e);
@@ -122,10 +129,10 @@ public class IndexService {
             this.readWriteLock.readLock().unlock();
         }
 
-        if (null == files) {
-            return;
-        }
+        return null;
+    }
 
+    private List<IndexFile> toFileList(Object[] files, long offset) {
         List<IndexFile> fileList = new ArrayList<>();
         for (int i = 0; i < (files.length - 1); i++) {
             IndexFile f = (IndexFile) files[i];
@@ -136,7 +143,7 @@ public class IndexService {
             }
         }
 
-        this.deleteExpiredFile(fileList);
+        return fileList;
     }
 
     private void deleteExpiredFile(List<IndexFile> files) {
@@ -149,6 +156,7 @@ public class IndexService {
             for (IndexFile file : files) {
                 boolean destroyed = file.destroy(3000);
                 destroyed = destroyed && this.indexFileList.remove(file);
+
                 if (!destroyed) {
                     LOGGER.error("deleteExpiredFile remove failed.");
                     break;
@@ -183,29 +191,30 @@ public class IndexService {
         maxNum = Math.min(maxNum, this.defaultMessageStore.getMessageStoreConfig().getMaxMsgsNumBatch());
         try {
             this.readWriteLock.readLock().lock();
-            if (!this.indexFileList.isEmpty()) {
-                for (int i = this.indexFileList.size(); i > 0; i--) {
-                    IndexFile f = this.indexFileList.get(i - 1);
-                    boolean lastFile = i == this.indexFileList.size();
-                    if (lastFile) {
-                        indexLastUpdateTimestamp = f.getEndTimestamp();
-                        indexLastUpdatePhyoffset = f.getEndPhyOffset();
-                    }
+            if (this.indexFileList.isEmpty()) {
+                return new QueryOffsetResult(phyOffsets, indexLastUpdateTimestamp, indexLastUpdatePhyoffset);
+            }
 
-                    if (f.isTimeMatched(begin, end)) {
+            for (int i = this.indexFileList.size(); i > 0; i--) {
+                IndexFile f = this.indexFileList.get(i - 1);
+                if (i == this.indexFileList.size()) {
+                    indexLastUpdateTimestamp = f.getEndTimestamp();
+                    indexLastUpdatePhyoffset = f.getEndPhyOffset();
+                }
 
-                        f.selectPhyOffset(phyOffsets, buildKey(topic, key), maxNum, begin, end);
-                    }
+                if (f.isTimeMatched(begin, end)) {
+                    f.selectPhyOffset(phyOffsets, buildKey(topic, key), maxNum, begin, end);
+                }
 
-                    if (f.getBeginTimestamp() < begin) {
-                        break;
-                    }
+                if (f.getBeginTimestamp() < begin) {
+                    break;
+                }
 
-                    if (phyOffsets.size() >= maxNum) {
-                        break;
-                    }
+                if (phyOffsets.size() >= maxNum) {
+                    break;
                 }
             }
+
         } catch (Exception e) {
             LOGGER.error("queryMsg exception", e);
         } finally {
@@ -226,15 +235,11 @@ public class IndexService {
             return;
         }
 
-        long endPhyOffset = indexFile.getEndPhyOffset();
-        DispatchRequest msg = req;
-        String topic = msg.getTopic();
-        String keys = msg.getKeys();
-        if (msg.getCommitLogOffset() < endPhyOffset) {
+        if (req.getCommitLogOffset() < indexFile.getEndPhyOffset()) {
             return;
         }
 
-        final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
+        final int tranType = MessageSysFlag.getTransactionValue(req.getSysFlag());
         switch (tranType) {
             case MessageSysFlag.TRANSACTION_NOT_TYPE:
             case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
@@ -245,25 +250,29 @@ public class IndexService {
         }
 
         if (req.getUniqKey() != null) {
-            indexFile = putKey(indexFile, msg, buildKey(topic, req.getUniqKey()));
+            indexFile = putKey(indexFile, req, buildKey(req.getTopic(), req.getUniqKey()));
             if (indexFile == null) {
                 LOGGER.error("putKey error commitlog {} uniqkey {}", req.getCommitLogOffset(), req.getUniqKey());
                 return;
             }
         }
 
-        if (keys == null || keys.length() <= 0) {
+        putKeys(req, indexFile);
+    }
+
+    private void putKeys(DispatchRequest req, IndexFile file) {
+        IndexFile indexFile = file;
+        if (req.getKeys() == null || req.getKeys().length() <= 0) {
             return;
         }
 
-        String[] keyset = keys.split(MessageConst.KEY_SEPARATOR);
-        for (int i = 0; i < keyset.length; i++) {
-            String key = keyset[i];
+        String[] keyset = req.getKeys().split(MessageConst.KEY_SEPARATOR);
+        for (String key : keyset) {
             if (key.length() <= 0) {
                 continue;
             }
 
-            indexFile = putKey(indexFile, msg, buildKey(topic, key));
+            indexFile = putKey(indexFile, req, buildKey(req.getTopic(), key));
             if (indexFile == null) {
                 LOGGER.error("putKey error commitlog {} uniqkey {}", req.getCommitLogOffset(), req.getUniqKey());
                 return;
@@ -318,54 +327,61 @@ public class IndexService {
         long lastUpdateEndPhyOffset = 0;
         long lastUpdateIndexTimestamp = 0;
 
-        {
-            this.readWriteLock.readLock().lock();
-            if (!this.indexFileList.isEmpty()) {
-                IndexFile tmp = this.indexFileList.get(this.indexFileList.size() - 1);
-                if (!tmp.isWriteFull()) {
-                    indexFile = tmp;
-                } else {
-                    lastUpdateEndPhyOffset = tmp.getEndPhyOffset();
-                    lastUpdateIndexTimestamp = tmp.getEndTimestamp();
-                    prevIndexFile = tmp;
-                }
+        this.readWriteLock.readLock().lock();
+        if (!this.indexFileList.isEmpty()) {
+            IndexFile tmp = this.indexFileList.get(this.indexFileList.size() - 1);
+            if (!tmp.isWriteFull()) {
+                indexFile = tmp;
+            } else {
+                lastUpdateEndPhyOffset = tmp.getEndPhyOffset();
+                lastUpdateIndexTimestamp = tmp.getEndTimestamp();
+                prevIndexFile = tmp;
             }
+        }
+        this.readWriteLock.readLock().unlock();
 
-            this.readWriteLock.readLock().unlock();
+        if (indexFile != null) {
+            return indexFile;
         }
 
+        indexFile = createIndexFile(lastUpdateEndPhyOffset, lastUpdateIndexTimestamp);
         if (indexFile == null) {
-            try {
-                String fileName =
-                    this.storePath + File.separator
-                        + TimeUtils.timeMillisToHumanString(System.currentTimeMillis());
-                indexFile =
-                    new IndexFile(fileName, this.hashSlotNum, this.indexNum, lastUpdateEndPhyOffset,
-                        lastUpdateIndexTimestamp);
-                this.readWriteLock.writeLock().lock();
-                this.indexFileList.add(indexFile);
-            } catch (Exception e) {
-                LOGGER.error("getLastIndexFile exception ", e);
-            } finally {
-                this.readWriteLock.writeLock().unlock();
-            }
-
-            if (indexFile != null) {
-                final IndexFile flushThisFile = prevIndexFile;
-
-                Thread flushThread = new Thread(new AbstractBrokerRunnable(defaultMessageStore.getBrokerConfig()) {
-                    @Override
-                    public void run0() {
-                        IndexService.this.flush(flushThisFile);
-                    }
-                }, "FlushIndexFileThread");
-
-                flushThread.setDaemon(true);
-                flushThread.start();
-            }
+            return null;
         }
 
+        createFlushThread(prevIndexFile);
         return indexFile;
+    }
+
+    private void createFlushThread(IndexFile prevIndexFile) {
+        final IndexFile flushThisFile = prevIndexFile;
+
+        Thread flushThread = new Thread(new AbstractBrokerRunnable(defaultMessageStore.getBrokerConfig()) {
+            @Override
+            public void run0() {
+                IndexService.this.flush(flushThisFile);
+            }
+        }, "FlushIndexFileThread");
+
+        flushThread.setDaemon(true);
+        flushThread.start();
+    }
+
+    private IndexFile createIndexFile(long lastUpdateEndPhyOffset, long lastUpdateIndexTimestamp) {
+        try {
+            String fileName = this.storePath + File.separator + TimeUtils.timeMillisToHumanString(System.currentTimeMillis());
+            IndexFile indexFile = new IndexFile(fileName, this.hashSlotNum, this.indexNum, lastUpdateEndPhyOffset, lastUpdateIndexTimestamp);
+            this.readWriteLock.writeLock().lock();
+            this.indexFileList.add(indexFile);
+
+            return indexFile;
+        } catch (Exception e) {
+            LOGGER.error("getLastIndexFile exception ", e);
+        } finally {
+            this.readWriteLock.writeLock().unlock();
+        }
+
+        return null;
     }
 
     public void flush(final IndexFile f) {
@@ -395,17 +411,21 @@ public class IndexService {
         try {
             this.readWriteLock.writeLock().lock();
             for (IndexFile f : this.indexFileList) {
-                try {
-                    f.shutdown();
-                } catch (Exception e) {
-                    LOGGER.error("shutdown " + f.getFileName() + " exception", e);
-                }
+                shutdownIndexFile(f);
             }
             this.indexFileList.clear();
         } catch (Exception e) {
             LOGGER.error("shutdown exception", e);
         } finally {
             this.readWriteLock.writeLock().unlock();
+        }
+    }
+
+    private void shutdownIndexFile(IndexFile f) {
+        try {
+            f.shutdown();
+        } catch (Exception e) {
+            LOGGER.error("shutdown " + f.getFileName() + " exception", e);
         }
     }
 }
