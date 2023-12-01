@@ -29,6 +29,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.After;
@@ -228,6 +229,14 @@ public class IOUtilsTest {
         byte[] bytes = new byte[size];
         outputStream.write(bytes, 0, size);
         outputStream.close();
+    }
+
+    @Test
+    public void testCleanBuffer() {
+        IOUtils.cleanBuffer(null);
+        IOUtils.cleanBuffer(ByteBuffer.allocateDirect(10));
+        IOUtils.cleanBuffer(ByteBuffer.allocateDirect(0));
+        IOUtils.cleanBuffer(ByteBuffer.allocate(10));
     }
 
 }

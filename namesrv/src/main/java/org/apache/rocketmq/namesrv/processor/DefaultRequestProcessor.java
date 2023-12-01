@@ -17,6 +17,9 @@
 package org.apache.rocketmq.namesrv.processor;
 
 import io.netty.channel.ChannelHandlerContext;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.constant.MQVersion.Version;
@@ -72,9 +75,20 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
     private static Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
     protected final NamesrvController namesrvController;
+    protected Set<String> configBlackList = new HashSet<>();
 
     public DefaultRequestProcessor(NamesrvController namesrvController) {
         this.namesrvController = namesrvController;
+        initConfigBlackList();
+    }
+
+    private void initConfigBlackList() {
+        configBlackList.add("configBlackList");
+        configBlackList.add("configStorePath");
+        configBlackList.add("kvConfigPath");
+        configBlackList.add("rocketmqHome");
+        String[] configArray = namesrvController.getNamesrvConfig().getConfigBlackList().split(";");
+        configBlackList.addAll(Arrays.asList(configArray));
     }
 
     @Override
@@ -626,9 +640,9 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
                 return response;
             }
 
-            if (properties.containsKey("kvConfigPath") || properties.containsKey("configStorePath")) {
+            if (validateBlackListConfigExist(properties)) {
                 response.setCode(ResponseCode.NO_PERMISSION);
-                response.setRemark("Can not update config path");
+                response.setRemark("Can not update config in black list.");
                 return response;
             }
 
@@ -658,6 +672,15 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         response.setCode(ResponseCode.SUCCESS);
         response.setRemark(null);
         return response;
+    }
+
+    private boolean validateBlackListConfigExist(Properties properties) {
+        for (String blackConfig : configBlackList) {
+            if (properties.containsKey(blackConfig)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

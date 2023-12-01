@@ -19,8 +19,11 @@ package org.apache.rocketmq.container;
 
 import io.netty.channel.ChannelHandlerContext;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.service.SystemConfigFileHelper;
 import org.apache.rocketmq.common.config.BrokerConfig;
@@ -45,9 +48,19 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final BrokerContainer brokerContainer;
     private List<BrokerBootHook> brokerBootHookList;
+    private final Set<String> configBlackList = new HashSet<>();
 
     public BrokerContainerProcessor(BrokerContainer brokerContainer) {
         this.brokerContainer = brokerContainer;
+        initConfigBlackList();
+    }
+
+    private void initConfigBlackList() {
+        configBlackList.add("brokerConfigPaths");
+        configBlackList.add("rocketmqHome");
+        configBlackList.add("configBlackList");
+        String[] configArray = brokerContainer.getBrokerContainerConfig().getConfigBlackList().split(";");
+        configBlackList.addAll(Arrays.asList(configArray));
     }
 
     @Override
@@ -258,15 +271,22 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
             try {
                 String bodyStr = new String(body, MQConstants.DEFAULT_CHARSET);
                 Properties properties = PropertyUtils.string2Properties(bodyStr);
-                if (properties != null) {
-                    LOGGER.info("updateSharedBrokerConfig, new config: [{}] client: {} ", properties, ctx.channel().remoteAddress());
-                    this.brokerContainer.getConfiguration().update(properties);
-                } else {
+
+                if (properties == null) {
                     LOGGER.error("string2Properties error");
                     response.setCode(ResponseCode.SYSTEM_ERROR);
                     response.setRemark("string2Properties error");
                     return response;
                 }
+
+                if (validateBlackListConfigExist(properties)) {
+                    response.setCode(ResponseCode.NO_PERMISSION);
+                    response.setRemark("Can not update config in black list.");
+                    return response;
+                }
+                
+                LOGGER.info("updateBrokerContainerConfig, new config: [{}] client: {} ", properties, ctx.channel().remoteAddress());
+                this.brokerContainer.getConfiguration().update(properties);
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("", e);
                 response.setCode(ResponseCode.SYSTEM_ERROR);
@@ -278,6 +298,15 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         response.setCode(ResponseCode.SUCCESS);
         response.setRemark(null);
         return response;
+    }
+
+    private boolean validateBlackListConfigExist(Properties properties) {
+        for (String blackConfig : configBlackList) {
+            if (properties.containsKey(blackConfig)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private RemotingCommand getBrokerConfig(ChannelHandlerContext ctx, RemotingCommand request) {

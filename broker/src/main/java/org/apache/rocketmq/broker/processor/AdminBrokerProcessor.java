@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import java.util.Arrays;
 import org.apache.rocketmq.acl.AccessValidator;
 import org.apache.rocketmq.acl.plain.PlainAccessValidator;
 import org.apache.rocketmq.broker.BrokerController;
@@ -196,9 +197,11 @@ import static org.apache.rocketmq.remoting.protocol.RemotingCommand.buildErrorRe
 public class AdminBrokerProcessor implements NettyRequestProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     protected final BrokerController brokerController;
+    protected Set<String> configBlackList = new HashSet<>();
 
     public AdminBrokerProcessor(final BrokerController brokerController) {
         this.brokerController = brokerController;
+        initConfigBlackList();
     }
 
     @Override
@@ -332,11 +335,19 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         }
     }
 
+    private void initConfigBlackList() {
+        configBlackList.add("brokerConfigPath");
+        configBlackList.add("rocketmqHome");
+        configBlackList.add("configBlackList");
+        String[] configArray = brokerController.getBrokerConfig().getConfigBlackList().split(";");
+        configBlackList.addAll(Arrays.asList(configArray));
+    }
+
     /**
-     * @param ctx
-     * @param request
-     * @return
-     * @throws RemotingCommandException
+     * @param ctx ctx
+     * @param request  request
+     * @return response
+     * @throws RemotingCommandException e
      */
     private RemotingCommand getSubscriptionGroup(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
@@ -923,9 +934,9 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 if (properties != null) {
                     LOGGER.info("updateBrokerConfig, new config: [{}] client: {} ", properties, callerAddress);
 
-                    if (properties.containsKey("brokerConfigPath")) {
+                    if (validateBlackListConfigExist(properties)) {
                         response.setCode(ResponseCode.NO_PERMISSION);
-                        response.setRemark("Can not update config path");
+                        response.setRemark("Can not update config in black list.");
                         return response;
                     }
 
@@ -2799,4 +2810,14 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         }
         return false;
     }
+
+    private boolean validateBlackListConfigExist(Properties properties) {
+        for (String blackConfig:configBlackList) {
+            if (properties.containsKey(blackConfig)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

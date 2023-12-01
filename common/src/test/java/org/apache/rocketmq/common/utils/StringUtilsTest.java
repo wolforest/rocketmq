@@ -20,7 +20,6 @@ package org.apache.rocketmq.common.utils;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -82,12 +81,4 @@ public class StringUtilsTest {
         List<String> objects = Collections.emptyList();
         assertEquals("", StringUtils.join(objects, comma));
     }
-
-    @Test
-    public void testCleanBuffer() {
-        IOUtils.cleanBuffer(null);
-        IOUtils.cleanBuffer(ByteBuffer.allocate(10));
-        IOUtils.cleanBuffer(ByteBuffer.allocate(0));
-    }
-
 }

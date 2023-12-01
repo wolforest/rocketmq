@@ -339,19 +339,19 @@ public class IOUtils {
     public static String jstack(Map<Thread, StackTraceElement[]> map) {
         StringBuilder result = new StringBuilder();
         try {
-            Iterator<Map.Entry<Thread, StackTraceElement[]>> ite = map.entrySet().iterator();
-            while (ite.hasNext()) {
-                Map.Entry<Thread, StackTraceElement[]> entry = ite.next();
+            for (Map.Entry<Thread, StackTraceElement[]> entry : map.entrySet()) {
                 StackTraceElement[] elements = entry.getValue();
                 Thread thread = entry.getKey();
-                if (elements != null && elements.length > 0) {
-                    String threadName = entry.getKey().getName();
-                    result.append(String.format("%-40sTID: %d STATE: %s%n", threadName, thread.getId(), thread.getState()));
-                    for (StackTraceElement el : elements) {
-                        result.append(String.format("%-40s%s%n", threadName, el.toString()));
-                    }
-                    result.append("\n");
+                if (elements == null || elements.length <= 0) {
+                    continue;
                 }
+
+                String threadName = entry.getKey().getName();
+                result.append(String.format("%-40sTID: %d STATE: %s%n", threadName, thread.getId(), thread.getState()));
+                for (StackTraceElement el : elements) {
+                    result.append(String.format("%-40s%s%n", threadName, el.toString()));
+                }
+                result.append("\n");
             }
         } catch (Throwable e) {
             result.append(exceptionSimpleDesc(e));
@@ -360,10 +360,19 @@ public class IOUtils {
         return result.toString();
     }
 
+    /**
+     * Free direct-buffer's memory actively.
+     * @param buffer Direct buffer to free.
+     */
     public static void cleanBuffer(final ByteBuffer buffer) {
         if (null == buffer) {
             return;
         }
+
+        if (!buffer.isDirect()) {
+            return;
+        }
+
         PlatformDependent.freeDirectBuffer(buffer);
     }
 
