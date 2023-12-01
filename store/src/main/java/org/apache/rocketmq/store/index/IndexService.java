@@ -79,6 +79,39 @@ public class IndexService {
         return true;
     }
 
+    /**
+     * the only entry which build index
+     *
+     * @param req DispatchRequest from CommitLog
+     */
+    public void buildIndex(DispatchRequest req) {
+        IndexFile indexFile = retryGetAndCreateIndexFile();
+        if (indexFile == null) {
+            LOGGER.error("build index error, stop building index");
+            return;
+        }
+
+        if (req.getCommitLogOffset() < indexFile.getEndPhyOffset()) {
+            return;
+        }
+
+        final int tranType = MessageSysFlag.getTransactionValue(req.getSysFlag());
+        if (tranType == MessageSysFlag.TRANSACTION_ROLLBACK_TYPE) {
+            return;
+        }
+
+        // index uniqueKey
+        if (req.getUniqKey() != null) {
+            indexFile = putKey(indexFile, req, buildKey(req.getTopic(), req.getUniqKey()));
+            if (indexFile == null) {
+                LOGGER.error("putKey error commitlog {} uniqkey {}", req.getCommitLogOffset(), req.getUniqKey());
+                return;
+            }
+        }
+
+        putKeys(req, indexFile);
+    }
+
     private void loadFile(File file, final boolean lastExitOK) throws IOException {
         IndexFile f = new IndexFile(file.getPath(), this.hashSlotNum, this.indexNum, 0, 0);
         f.load();
@@ -228,37 +261,6 @@ public class IndexService {
         return topic + "#" + key;
     }
 
-    public void buildIndex(DispatchRequest req) {
-        IndexFile indexFile = retryGetAndCreateIndexFile();
-        if (indexFile == null) {
-            LOGGER.error("build index error, stop building index");
-            return;
-        }
-
-        if (req.getCommitLogOffset() < indexFile.getEndPhyOffset()) {
-            return;
-        }
-
-        final int tranType = MessageSysFlag.getTransactionValue(req.getSysFlag());
-        switch (tranType) {
-            case MessageSysFlag.TRANSACTION_NOT_TYPE:
-            case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
-            case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
-                break;
-            case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE:
-                return;
-        }
-
-        if (req.getUniqKey() != null) {
-            indexFile = putKey(indexFile, req, buildKey(req.getTopic(), req.getUniqKey()));
-            if (indexFile == null) {
-                LOGGER.error("putKey error commitlog {} uniqkey {}", req.getCommitLogOffset(), req.getUniqKey());
-                return;
-            }
-        }
-
-        putKeys(req, indexFile);
-    }
 
     private void putKeys(DispatchRequest req, IndexFile file) {
         IndexFile indexFile = file;

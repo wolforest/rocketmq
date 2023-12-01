@@ -212,7 +212,7 @@ public class IndexFile {
         result = result || end >= this.indexHeader.getBeginTimestamp() && end <= this.indexHeader.getEndTimestamp();
         return result;
     }
-    
+
     public void selectPhyOffset(final List<Long> phyOffsets, final String key, final int maxNum, final long begin, final long end) {
         if (!this.mappedFile.hold()) {
             return;

@@ -30,8 +30,10 @@ public class CommitLogDispatcherBuildIndex  implements CommitLogDispatcher {
 
     @Override
     public void dispatch(DispatchRequest request) {
-        if (messageStore.getMessageStoreConfig().isMessageIndexEnable()) {
-            messageStore.getIndexService().buildIndex(request);
+        if (!messageStore.getMessageStoreConfig().isMessageIndexEnable()) {
+            return;
         }
+
+        messageStore.getIndexService().buildIndex(request);
     }
 }
