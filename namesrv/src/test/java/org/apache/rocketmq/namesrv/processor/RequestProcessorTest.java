@@ -220,7 +220,7 @@ public class RequestProcessorTest {
         //update disallowed values
         properties.clear();
         properties.setProperty("configBlackList", "test;path");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = defaultRequestProcessor.processRequest(null, updateConfigRequest);
 

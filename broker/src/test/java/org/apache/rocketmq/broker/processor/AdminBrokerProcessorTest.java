@@ -380,7 +380,7 @@ public class AdminBrokerProcessorTest {
         //update disallowed value
         properties.clear();
         properties.setProperty("configBlackList", "test;path");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = adminBrokerProcessor.processRequest(ctx, updateConfigRequest);
 

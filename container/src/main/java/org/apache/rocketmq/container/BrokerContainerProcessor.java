@@ -284,7 +284,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
                     response.setRemark("Can not update config in black list.");
                     return response;
                 }
-                
+
                 LOGGER.info("updateBrokerContainerConfig, new config: [{}] client: {} ", properties, ctx.channel().remoteAddress());
                 this.brokerContainer.getConfiguration().update(properties);
             } catch (UnsupportedEncodingException e) {

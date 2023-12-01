@@ -69,7 +69,7 @@ public class ControllerRequestProcessorTest {
         // Update disallowed value
         properties.clear();
         properties.setProperty("rocketmqHome", "test/path");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = controllerRequestProcessor.processRequest(null, updateConfigRequest);
 
@@ -80,7 +80,7 @@ public class ControllerRequestProcessorTest {
         // Update disallowed value
         properties.clear();
         properties.setProperty("configBlackList", "test;path");
-        updateConfigRequest.setBody(MixAll.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = controllerRequestProcessor.processRequest(null, updateConfigRequest);
 
