@@ -38,7 +38,7 @@ import org.apache.rocketmq.proxy.ProxyMode;
 import org.apache.rocketmq.proxy.common.ProxyException;
 import org.apache.rocketmq.proxy.common.ProxyExceptionCode;
 
-public class ProxyConfig implements ConfigFile {
+public class ProxyConfig {
     private final static Logger log = LoggerFactory.getLogger(LoggerName.PROXY_LOGGER_NAME);
     public final static String DEFAULT_CONFIG_FILE_NAME = "rmq-proxy.json";
     private static final int PROCESSOR_NUMBER = Runtime.getRuntime().availableProcessors();
@@ -265,7 +265,6 @@ public class ProxyConfig implements ConfigFile {
 
     private boolean enableBatchAck = false;
 
-    @Override
     public void initData() {
         parseDelayLevel();
         if (StringUtils.isEmpty(localServeAddr)) {
