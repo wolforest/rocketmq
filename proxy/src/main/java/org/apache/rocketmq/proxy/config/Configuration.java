@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -41,28 +42,23 @@ public class Configuration {
 
         ProxyConfig proxyConfig = JSON.parseObject(proxyConfigData, ProxyConfig.class);
         proxyConfig.initData();
-        setProxyConfig(proxyConfig);
+        proxyConfigReference.set(proxyConfig);
     }
 
-    public static String loadJsonConfig() throws Exception {
-        String configFileName = ProxyConfig.DEFAULT_CONFIG_FILE_NAME;
-        String filePath = System.getProperty(CONFIG_PATH_PROPERTY);
-        if (StringUtils.isBlank(filePath)) {
-            final String testResource = "rmq-proxy-home/conf/" + configFileName;
-            try (InputStream inputStream = Configuration.class.getClassLoader().getResourceAsStream(testResource)) {
-                if (null != inputStream) {
-                    return CharStreams.toString(new InputStreamReader(inputStream, Charsets.UTF_8));
-                }
-            }
-            filePath = new File(ConfigurationManager.getProxyHome() + File.separator + "conf", configFileName).toString();
-        }
+    public ProxyConfig getProxyConfig() {
+        return proxyConfigReference.get();
+    }
 
+    private static String loadJsonConfig() throws Exception {
+        String filePath = getConfigPath();
         File file = new File(filePath);
         log.info("The current configuration file path is {}", filePath);
+
         if (!file.exists()) {
             log.warn("the config file {} not exist", filePath);
             throw new RuntimeException(String.format("the config file %s not exist", filePath));
         }
+
         long fileLength = file.length();
         if (fileLength <= 0) {
             log.warn("the config file {} length is zero", filePath);
@@ -72,11 +68,21 @@ public class Configuration {
         return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
     }
 
-    public ProxyConfig getProxyConfig() {
-        return proxyConfigReference.get();
+    private static String getConfigPath() throws IOException {
+        String configFileName = ProxyConfig.DEFAULT_CONFIG_FILE_NAME;
+        String filePath = System.getProperty(CONFIG_PATH_PROPERTY);
+        if (StringUtils.isNotBlank(filePath)) {
+            return filePath;
+        }
+
+        final String testResource = "rmq-proxy-home/conf/" + configFileName;
+        try (InputStream inputStream = Configuration.class.getClassLoader().getResourceAsStream(testResource)) {
+            if (null != inputStream) {
+                return CharStreams.toString(new InputStreamReader(inputStream, Charsets.UTF_8));
+            }
+        }
+        return new File(ConfigurationManager.getProxyHome() + File.separator + "conf", configFileName).toString();
     }
 
-    public void setProxyConfig(ProxyConfig proxyConfig) {
-        proxyConfigReference.set(proxyConfig);
-    }
+
 }

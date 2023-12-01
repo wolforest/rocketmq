@@ -53,7 +53,12 @@ public class ConfigurationManager {
     }
 
     public static String formatProxyConfig() {
-        return JSON.toJSONString(ConfigurationManager.getProxyConfig(),
-                SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue, SerializerFeature.WriteDateUseDateFormat, SerializerFeature.WriteNullListAsEmpty);
+        return JSON.toJSONString(
+            ConfigurationManager.getProxyConfig(),
+            SerializerFeature.PrettyFormat,
+            SerializerFeature.WriteMapNullValue,
+            SerializerFeature.WriteDateUseDateFormat,
+            SerializerFeature.WriteNullListAsEmpty
+        );
     }
 }
