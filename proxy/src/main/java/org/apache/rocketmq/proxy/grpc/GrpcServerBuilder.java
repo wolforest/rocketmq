@@ -75,10 +75,8 @@ public class GrpcServerBuilder {
         serverBuilder.maxInboundMessageSize(maxInboundMessageSize)
                 .maxConnectionIdle(idleTimeMills, TimeUnit.MILLISECONDS);
 
-        log.info(
-            "grpc server has built. port: {}, tlsKeyPath: {}, tlsCertPath: {}, threadPool: {}, queueCapacity: {}, "
-                + "boosLoop: {}, workerLoop: {}, maxInboundMessageSize: {}",
-            port, bossLoopNum, workerLoopNum, maxInboundMessageSize);
+        log.info("grpc server has built. port: {}, tlsKeyPath: {}, tlsCertPath: {}, threadPool: {}, queueCapacity: {}, "
+                + "boosLoop: {}, workerLoop: {}, maxInboundMessageSize: {}", port, bossLoopNum, workerLoopNum, maxInboundMessageSize);
     }
 
     public GrpcServerBuilder shutdownTime(long time, TimeUnit unit) {
@@ -108,9 +106,7 @@ public class GrpcServerBuilder {
 
     public GrpcServerBuilder configInterceptor(List<AccessValidator> accessValidators) {
         // grpc interceptors, including acl, logging etc.
-        this.serverBuilder.intercept(new AuthenticationInterceptor(accessValidators));
-
-        this.serverBuilder
+        this.serverBuilder.intercept(new AuthenticationInterceptor(accessValidators))
             .intercept(new GlobalExceptionInterceptor())
             .intercept(new ContextInterceptor())
             .intercept(new HeaderInterceptor());

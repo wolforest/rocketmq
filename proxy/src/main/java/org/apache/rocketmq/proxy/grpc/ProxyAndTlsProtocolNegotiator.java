@@ -41,6 +41,8 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactor
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.grpc.netty.shaded.io.netty.util.AsciiString;
 import io.grpc.netty.shaded.io.netty.util.CharsetUtil;
+import java.security.cert.CertificateException;
+import javax.net.ssl.SSLException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.constant.HAProxyConstants;
@@ -90,31 +92,32 @@ public class ProxyAndTlsProtocolNegotiator implements InternalProtocolNegotiator
     public void close() {
     }
 
+    private static SslContext loadInTlsTestMode(ProxyConfig proxyConfig) throws CertificateException, SSLException {
+        SelfSignedCertificate certificate = new SelfSignedCertificate();
+        return GrpcSslContexts.forServer(certificate.certificate(), certificate.privateKey())
+            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+            .clientAuth(ClientAuth.NONE)
+            .build();
+    }
+
     private static SslContext loadSslContext() {
         try {
             ProxyConfig proxyConfig = ConfigurationManager.getProxyConfig();
             if (proxyConfig.isTlsTestModeEnable()) {
-                SelfSignedCertificate selfSignedCertificate = new SelfSignedCertificate();
-                return GrpcSslContexts.forServer(selfSignedCertificate.certificate(),
-                                selfSignedCertificate.privateKey())
+                return loadInTlsTestMode(proxyConfig);
+            }
+            String tlsKeyPath = ConfigurationManager.getProxyConfig().getTlsKeyPath();
+            String tlsCertPath = ConfigurationManager.getProxyConfig().getTlsCertPath();
+
+            try (InputStream keyInputStream = Files.newInputStream(Paths.get(tlsKeyPath));
+                 InputStream certificateStream = Files.newInputStream(Paths.get(tlsCertPath))) {
+
+                SslContext res = GrpcSslContexts.forServer(certificateStream, keyInputStream)
                         .trustManager(InsecureTrustManagerFactory.INSTANCE)
                         .clientAuth(ClientAuth.NONE)
                         .build();
-            } else {
-                String tlsKeyPath = ConfigurationManager.getProxyConfig().getTlsKeyPath();
-                String tlsCertPath = ConfigurationManager.getProxyConfig().getTlsCertPath();
-                try (InputStream serverKeyInputStream = Files.newInputStream(
-                        Paths.get(tlsKeyPath));
-                     InputStream serverCertificateStream = Files.newInputStream(
-                             Paths.get(tlsCertPath))) {
-                    SslContext res = GrpcSslContexts.forServer(serverCertificateStream,
-                                    serverKeyInputStream)
-                            .trustManager(InsecureTrustManagerFactory.INSTANCE)
-                            .clientAuth(ClientAuth.NONE)
-                            .build();
-                    log.info("grpc load TLS configured OK");
-                    return res;
-                }
+                log.info("grpc load TLS configured OK");
+                return res;
             }
         } catch (Exception e) {
             log.error("grpc tls set failed. msg: {}, e:", e.getMessage(), e);
@@ -174,7 +177,7 @@ public class ProxyAndTlsProtocolNegotiator implements InternalProtocolNegotiator
          * The definition of key refers to the implementation of nginx
          * <a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#var_proxy_protocol_addr">ngx_http_core_module</a>
          *
-         * @param msg
+         * @param msg msg
          */
         private void handleWithMessage(HAProxyMessage msg) {
             try {
@@ -191,23 +194,29 @@ public class ProxyAndTlsProtocolNegotiator implements InternalProtocolNegotiator
                 if (msg.destinationPort() > 0) {
                     builder.set(AttributeKeys.PROXY_PROTOCOL_SERVER_PORT, String.valueOf(msg.destinationPort()));
                 }
-                if (CollectionUtils.isNotEmpty(msg.tlvs())) {
-                    msg.tlvs().forEach(tlv -> {
-                        byte[] valueBytes = ByteBufUtil.getBytes(tlv.content());
-                        if (!BinaryUtils.isAscii(valueBytes)) {
-                            return;
-                        }
-                        Attributes.Key<String> key = AttributeKeys.valueOf(
-                                HAProxyConstants.PROXY_PROTOCOL_TLV_PREFIX + String.format("%02x", tlv.typeByteValue()));
-                        String value = StringUtils.trim(new String(valueBytes, CharsetUtil.UTF_8));
-                        builder.set(key, value);
-                    });
-                }
-                pne = InternalProtocolNegotiationEvent
-                        .withAttributes(InternalProtocolNegotiationEvent.getDefault(), builder.build());
+
+                handleTLVS(msg, builder);
+                pne = InternalProtocolNegotiationEvent.withAttributes(InternalProtocolNegotiationEvent.getDefault(), builder.build());
             } finally {
                 msg.release();
             }
+        }
+
+        private void handleTLVS(HAProxyMessage msg, Attributes.Builder builder) {
+            if (CollectionUtils.isEmpty(msg.tlvs())) {
+                return;
+            }
+
+            msg.tlvs().forEach(tlv -> {
+                byte[] valueBytes = ByteBufUtil.getBytes(tlv.content());
+                if (!BinaryUtils.isAscii(valueBytes)) {
+                    return;
+                }
+                Attributes.Key<String> key = AttributeKeys.valueOf(
+                    HAProxyConstants.PROXY_PROTOCOL_TLV_PREFIX + String.format("%02x", tlv.typeByteValue()));
+                String value = StringUtils.trim(new String(valueBytes, CharsetUtil.UTF_8));
+                builder.set(key, value);
+            });
         }
     }
 
