@@ -49,6 +49,11 @@ public class DispatchRequest {
      * MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX = "UNIQ_KEY"
      */
     private final String uniqKey;
+    /**
+     * message keys
+     * stored in message.properties["KEYS"]
+     * MessageConst.PROPERTY_KEYS = "KEYS"
+     */
     private final String keys;
     private final boolean success;
 
