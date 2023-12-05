@@ -92,14 +92,16 @@ public class HeartbeatSyncer extends AbstractSystemMessageSyncer {
     }
 
     protected void processConsumerGroupEvent(ConsumerGroupEvent event, String group, Object... args) {
-        if (event == ConsumerGroupEvent.CLIENT_UNREGISTER) {
-            if (args == null || args.length < 1) {
-                return;
-            }
-            if (args[0] instanceof ClientChannelInfo) {
-                ClientChannelInfo clientChannelInfo = (ClientChannelInfo) args[0];
-                remoteChannelMap.remove(buildKey(group, clientChannelInfo.getChannel()));
-            }
+        if (event != ConsumerGroupEvent.CLIENT_UNREGISTER) {
+            return;
+        }
+
+        if (args == null || args.length < 1) {
+            return;
+        }
+        if (args[0] instanceof ClientChannelInfo) {
+            ClientChannelInfo clientChannelInfo = (ClientChannelInfo) args[0];
+            remoteChannelMap.remove(buildKey(group, clientChannelInfo.getChannel()));
         }
     }
 
