@@ -2161,14 +2161,14 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         // brokerName
         request.getExtFields().put("brokerName", this.brokerController.getBrokerConfig().getBrokerName());
         // topicSysFlag
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(requestHeader.getTopic())) {
+        if (StringUtils.isNotEmpty(requestHeader.getTopic())) {
             TopicConfig topicConfig = this.brokerController.getTopicConfigManager().getTopicConfigTable().get(requestHeader.getTopic());
             if (topicConfig != null) {
                 request.addExtField("topicSysFlag", String.valueOf(topicConfig.getTopicSysFlag()));
             }
         }
         // groupSysFlag
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(requestHeader.getConsumerGroup())) {
+        if (StringUtils.isNotEmpty(requestHeader.getConsumerGroup())) {
             SubscriptionGroupConfig groupConfig = brokerController.getSubscriptionGroupManager().getSubscriptionGroupTable().get(requestHeader.getConsumerGroup());
             if (groupConfig != null) {
                 request.addExtField("groupSysFlag", String.valueOf(groupConfig.getGroupSysFlag()));

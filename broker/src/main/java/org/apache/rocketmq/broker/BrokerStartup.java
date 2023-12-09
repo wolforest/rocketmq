@@ -21,7 +21,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.service.BrokerShutdownThread;
 import org.apache.rocketmq.broker.service.SystemConfigFileHelper;
 import org.apache.rocketmq.common.config.BrokerConfig;
@@ -30,6 +29,7 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.common.utils.PropertyUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -161,17 +161,19 @@ public class BrokerStartup {
     private static void validateNamesrvAddr(BrokerConfig brokerConfig) {
         // Validate namesrvAddr
         String namesrvAddr = brokerConfig.getNamesrvAddr();
-        if (StringUtils.isNotBlank(namesrvAddr)) {
-            try {
-                String[] addrArray = namesrvAddr.split(";");
-                for (String addr : addrArray) {
-                    NetworkUtils.string2SocketAddress(addr);
-                }
-            } catch (Exception e) {
-                System.out.printf("The Name Server Address[%s] illegal, please set it as follows, " +
-                    "\"127.0.0.1:9876;192.168.0.1:9876\"%n", namesrvAddr);
-                System.exit(-3);
+        if (StringUtils.isBlank(namesrvAddr)) {
+            return;
+        }
+
+        try {
+            String[] addrArray = namesrvAddr.split(";");
+            for (String addr : addrArray) {
+                NetworkUtils.string2SocketAddress(addr);
             }
+        } catch (Exception e) {
+            System.out.printf("The Name Server Address[%s] illegal, please set it as follows, " +
+                "\"127.0.0.1:9876;192.168.0.1:9876\"%n", namesrvAddr);
+            System.exit(-3);
         }
     }
 

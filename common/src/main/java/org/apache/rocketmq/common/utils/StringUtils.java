@@ -244,4 +244,28 @@ public class StringUtils {
     public static boolean equals(final CharSequence cs1, final CharSequence cs2) {
         return org.apache.commons.lang3.StringUtils.equals(cs1, cs2);
     }
+
+    public static boolean isEmpty(final CharSequence cs) {
+        return org.apache.commons.lang3.StringUtils.isEmpty(cs);
+    }
+
+    public static boolean isNotEmpty(final CharSequence cs) {
+        return org.apache.commons.lang3.StringUtils.isNotEmpty(cs);
+    }
+
+    public static boolean isNoneEmpty(final CharSequence cs) {
+        return org.apache.commons.lang3.StringUtils.isNoneEmpty(cs);
+    }
+
+    public static boolean isBlank(final CharSequence cs) {
+        return org.apache.commons.lang3.StringUtils.isBlank(cs);
+    }
+
+    public static boolean isNotBlank(final CharSequence cs) {
+        return org.apache.commons.lang3.StringUtils.isNotBlank(cs);
+    }
+
+    public static boolean isNumeric(final CharSequence cs) {
+        return org.apache.commons.lang3.StringUtils.isNumeric(cs);
+    }
 }
