@@ -18,12 +18,12 @@ package org.apache.rocketmq.broker.slave;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.loadbalance.MessageRequestModeManager;
 import org.apache.rocketmq.broker.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.topic.TopicConfig;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerOffsetSerializeWrapper;
@@ -162,20 +162,21 @@ public class SlaveSynchronize {
         }
 
         try {
-            String delayOffset =
-                this.brokerController.getBrokerOuterAPI().getAllDelayOffset(masterAddrBak);
-            if (delayOffset != null) {
-
-                String fileName =
-                    StorePathConfigHelper.getDelayOffsetStorePath(this.brokerController
-                        .getMessageStoreConfig().getStorePathRootDir());
-                try {
-                    org.apache.rocketmq.common.utils.StringUtils.string2File(delayOffset, fileName);
-                    this.brokerController.getScheduleMessageService().loadWhenSyncDelayOffset();
-                } catch (IOException e) {
-                    LOGGER.error("Persist file Exception, {}", fileName, e);
-                }
+            String delayOffset = this.brokerController.getBrokerOuterAPI().getAllDelayOffset(masterAddrBak);
+            if (delayOffset == null) {
+                return;
             }
+
+            String dir = this.brokerController.getMessageStoreConfig().getStorePathRootDir();
+            String fileName = StorePathConfigHelper.getDelayOffsetStorePath(dir);
+
+            try {
+                StringUtils.string2File(delayOffset, fileName);
+                this.brokerController.getScheduleMessageService().loadWhenSyncDelayOffset();
+            } catch (IOException e) {
+                LOGGER.error("Persist file Exception, {}", fileName, e);
+            }
+
             LOGGER.info("Update slave delay offset from master, {}", masterAddrBak);
         } catch (Exception e) {
             LOGGER.error("SyncDelayOffset Exception, {}", masterAddrBak, e);

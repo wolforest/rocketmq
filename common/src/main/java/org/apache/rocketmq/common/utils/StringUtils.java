@@ -240,4 +240,8 @@ public class StringUtils {
     public static String UUID() {
         return UUID.randomUUID().toString();
     }
+
+    public static boolean equals(final CharSequence cs1, final CharSequence cs2) {
+        return org.apache.commons.lang3.StringUtils.equals(cs1, cs2);
+    }
 }
