@@ -77,10 +77,15 @@ public class SlaveSynchronize {
                 return;
             }
 
+            if (brokerController.getMessageStore().getTimerMessageStore().getTimerState().isShouldRunningDequeue()) {
+                return;
+            }
+
             TimerCheckpoint checkpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(masterAddrBak);
             if (null != this.brokerController.getTimerCheckpoint()) {
                 this.brokerController.getTimerCheckpoint().setLastReadTimeMs(checkpoint.getLastReadTimeMs());
                 this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(checkpoint.getMasterTimerQueueOffset());
+                this.brokerController.getTimerCheckpoint().getDataVersion().assignNewOne(checkpoint.getDataVersion());
             }
         } catch (Exception e) {
             LOGGER.error("syncTimerCheckPoint Exception, {}", masterAddrBak, e);

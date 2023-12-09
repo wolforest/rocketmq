@@ -179,7 +179,7 @@ public class TimerMessageDeliver extends AbstractStateService {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
         msgInner.setBody(msgExt.getBody());
         msgInner.setFlag(msgExt.getFlag());
-        MessageAccessor.setProperties(msgInner, msgExt.getProperties());
+        MessageAccessor.setProperties(msgInner, MessageAccessor.deepCopyProperties(msgExt.getProperties()));
         TopicFilterType topicFilterType = MessageExt.parseTopicFilterType(msgInner.getSysFlag());
         long tagsCodeValue = MessageExtBrokerInner.tagsString2tagsCode(topicFilterType, msgInner.getTags());
         msgInner.setTagsCode(tagsCodeValue);
@@ -262,7 +262,12 @@ public class TimerMessageDeliver extends AbstractStateService {
         }
 
         this.brokerStatsManager.incTopicPutNums(message.getTopic(), 1, 1);
-        this.brokerStatsManager.incTopicPutSize(message.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
+
+        if (putMessageResult.getAppendMessageResult() != null) {
+            this.brokerStatsManager.incTopicPutSize(message.getTopic(),
+                putMessageResult.getAppendMessageResult().getWroteBytes());
+        }
+
         this.brokerStatsManager.incBrokerPutNums(message.getTopic(), 1);
     }
 
