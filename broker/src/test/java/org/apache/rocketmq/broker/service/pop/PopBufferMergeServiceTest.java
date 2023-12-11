@@ -17,12 +17,12 @@
 package org.apache.rocketmq.broker.service.pop;
 
 import io.netty.channel.Channel;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.schedule.ScheduleMessageService;
 import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.topic.TopicConfig;
+import org.apache.rocketmq.common.utils.ReflectUtils;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
@@ -56,7 +56,7 @@ public class PopBufferMergeServiceTest {
 
     @Before
     public void init() throws Exception {
-        FieldUtils.writeField(brokerController.getBrokerConfig(), "enablePopBufferMerge", true, true);
+        ReflectUtils.writeField(brokerController.getBrokerConfig(), "enablePopBufferMerge", true, true);
         brokerController.setMessageStore(messageStore);
         scheduleMessageService = new ScheduleMessageService(brokerController);
         scheduleMessageService.parseDelayLevel();
