@@ -19,8 +19,8 @@ package org.apache.rocketmq.client;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
-import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.common.utils.NetworkUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
@@ -134,7 +134,7 @@ public class ClientConfig {
 
     public void changeInstanceNameToPID() {
         if (this.instanceName.equals("DEFAULT")) {
-            this.instanceName = NetworkPortUtils.getPid() + "#" + System.nanoTime();
+            this.instanceName = SystemUtils.getPid() + "#" + System.nanoTime();
         }
     }
 

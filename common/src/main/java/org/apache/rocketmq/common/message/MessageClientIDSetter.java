@@ -16,7 +16,6 @@
  */
 package org.apache.rocketmq.common.message;
 
-import org.apache.rocketmq.common.utils.NetworkPortUtils;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 
@@ -24,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.rocketmq.common.utils.SystemUtils;
 
 public class MessageClientIDSetter {
     
@@ -43,7 +43,7 @@ public class MessageClientIDSetter {
         LEN = ip.length + 2 + 4 + 4 + 2;
         ByteBuffer tempBuffer = ByteBuffer.allocate(ip.length + 2 + 4);
         tempBuffer.put(ip);
-        tempBuffer.putShort((short) NetworkPortUtils.getPid());
+        tempBuffer.putShort((short) SystemUtils.getPid());
         tempBuffer.putInt(MessageClientIDSetter.class.getClassLoader().hashCode());
         FIX_STRING = StringUtils.bytes2string(tempBuffer.array()).toCharArray();
         setStartTime(System.currentTimeMillis());

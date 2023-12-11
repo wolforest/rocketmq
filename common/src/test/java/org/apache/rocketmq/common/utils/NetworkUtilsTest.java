@@ -46,7 +46,7 @@ public class NetworkUtilsTest {
 
     @Test
     public void testGetPid() {
-        assertThat(NetworkPortUtils.getPid()).isGreaterThan(0);
+        assertThat(SystemUtils.getPid()).isGreaterThan(0);
     }
 
     @Test

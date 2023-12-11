@@ -37,9 +37,9 @@ import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.running.RunningStats;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.ProcessUtils;
 import org.apache.rocketmq.common.utils.ServiceProvider;
 import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -1201,7 +1201,12 @@ public class DefaultMessageStore implements MessageStore {
         IOUtils.ensureDirOK(file.getParent());
         boolean result = file.createNewFile();
         LOGGER.info(fileName + (result ? " create OK" : " already exists"));
-        StringUtils.string2File(Long.toString(ProcessUtils.getPID()), file.getAbsolutePath());
+
+        int pid = SystemUtils.getPid();
+        if (pid < 0) {
+            pid = 0;
+        }
+        StringUtils.string2File(Integer.toString(pid), file.getAbsolutePath());
     }
 
     private void addScheduleTask() {

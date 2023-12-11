@@ -16,8 +16,28 @@
  */
 package org.apache.rocketmq.common.utils;
 
+import java.lang.management.ManagementFactory;
+import java.util.function.Supplier;
+
 public class SystemUtils {
+    public static final String OS_NAME = System.getProperty("os.name");
     private static final String OS = System.getProperty("os.name").toLowerCase();
+    private static int pid;
+    static boolean isLinuxPlatform = false;
+    static boolean isWindowsPlatform = false;
+
+    static {
+        Supplier<Integer> supplier = () -> {
+            // format: "pid@hostname"
+            String currentJVM = ManagementFactory.getRuntimeMXBean().getName();
+            try {
+                return Integer.parseInt(currentJVM.substring(0, currentJVM.indexOf('@')));
+            } catch (Exception e) {
+                return -1;
+            }
+        };
+        SystemUtils.pid = supplier.get();
+    }
 
     public static boolean isWindows() {
         return OS.indexOf("win") >= 0;
@@ -36,4 +56,17 @@ public class SystemUtils {
     public static boolean isSolaris() {
         return OS.indexOf("sunos") >= 0;
     }
+
+    public static int getPid() {
+        return pid;
+    }
+
+    public static boolean isWindowsPlatform() {
+        return isWindowsPlatform;
+    }
+
+    public static boolean isLinuxPlatform() {
+        return isLinuxPlatform;
+    }
+
 }

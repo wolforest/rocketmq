@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.help.FAQUrl;
@@ -43,34 +44,28 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
  * @renamed from NetworkUtil to NetworkUtils
  */
 public class NetworkUtils {
-    public static final String OS_NAME = System.getProperty("os.name");
     public static final String LOCALHOST = localhost();
     public static final String DEFAULT_NAMESRV_ADDR_LOOKUP = "jmenv.tbsite.net";
     public static final String WS_DOMAIN_NAME = System.getProperty("rocketmq.namesrv.domain", DEFAULT_NAMESRV_ADDR_LOOKUP);
     public static final String WS_DOMAIN_SUBGROUP = System.getProperty("rocketmq.namesrv.domain.subgroup", "nsaddr");
     public static final List<String> LOCAL_INET_ADDRESS = getLocalInetAddress();
     private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
-    private static boolean isLinuxPlatform = false;
-    private static boolean isWindowsPlatform = false;
+    private static AtomicInteger port = new AtomicInteger(uniquePort());
 
     static {
-        if (OS_NAME != null && OS_NAME.toLowerCase().contains("linux")) {
-            isLinuxPlatform = true;
+        if (SystemUtils.OS_NAME != null && SystemUtils.OS_NAME.toLowerCase().contains("linux")) {
+            SystemUtils.isLinuxPlatform = true;
         }
 
-        if (OS_NAME != null && OS_NAME.toLowerCase().contains("windows")) {
-            isWindowsPlatform = true;
+        if (SystemUtils.OS_NAME != null && SystemUtils.OS_NAME.toLowerCase().contains("windows")) {
+            SystemUtils.isWindowsPlatform = true;
         }
-    }
-
-    public static boolean isWindowsPlatform() {
-        return isWindowsPlatform;
     }
 
     public static Selector openSelector() throws IOException {
         Selector result = null;
 
-        if (isLinuxPlatform()) {
+        if (SystemUtils.isLinuxPlatform()) {
             try {
                 final Class<?> providerClazz = Class.forName("sun.nio.ch.EPollSelectorProvider");
                 if (providerClazz != null) {
@@ -96,10 +91,6 @@ public class NetworkUtils {
         }
 
         return result;
-    }
-
-    public static boolean isLinuxPlatform() {
-        return isLinuxPlatform;
     }
 
     public static String getLocalAddress() {
@@ -182,7 +173,7 @@ public class NetworkUtils {
 
     private static boolean isBridge(NetworkInterface networkInterface) {
         try {
-            if (isLinuxPlatform()) {
+            if (SystemUtils.isLinuxPlatform()) {
                 String interfaceName = networkInterface.getName();
                 File file = new File("/sys/class/net/" + interfaceName + "/bridge");
                 return file.exists();
@@ -413,4 +404,42 @@ public class NetworkUtils {
         String port = brokerAddr.substring(split + 1);
         return ip + ":" + (Integer.parseInt(port) - 2);
     }
+
+    public static int nextPort() {
+        return port.addAndGet(5);
+    }
+
+    private static int uniquePort() {
+        int minPort = 5000;
+        int step = 500;
+        int forkNumber = getForkNumber();
+        if (forkNumber != 0) {
+            return minPort + forkNumber * step;
+        }
+        int processId = SystemUtils.getPid();
+        if (processId < 0) {
+            throw new IllegalArgumentException("can't find process ID");
+        }
+
+        // it's unreliable,Just for single run
+        int firstNumber = processId;
+        while (firstNumber >= 10) {
+            firstNumber /= 10;
+        }
+        int lastNumber = processId % 10;
+        return minPort + (firstNumber * 10 + lastNumber) * step;
+    }
+
+    private static int getForkNumber() {
+        String forkNumberString = System.getProperty("forkNumber");
+        if (forkNumberString == null) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(forkNumberString);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
 }

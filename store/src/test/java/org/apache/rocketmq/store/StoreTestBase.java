@@ -21,7 +21,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.NetworkPortUtils;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.junit.After;
@@ -50,7 +50,7 @@ public class StoreTestBase {
     protected Set<String> baseDirs = new HashSet<>();
 
     public static synchronized int nextPort() {
-        return NetworkPortUtils.nextPort();
+        return NetworkUtils.nextPort();
     }
 
     protected MessageExtBatch buildBatchMessage(int size) {

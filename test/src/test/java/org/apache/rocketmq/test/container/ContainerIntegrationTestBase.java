@@ -34,7 +34,7 @@ import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.NetworkPortUtils;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.container.BrokerContainer;
 import org.apache.rocketmq.container.BrokerContainerConfig;
 import org.apache.rocketmq.container.InnerSalveBrokerController;
@@ -320,9 +320,9 @@ public class ContainerIntegrationTestBase {
     }
 
     private static int generatePort(int base, int range) {
-        int result = NetworkPortUtils.nextPort();
+        int result = NetworkUtils.nextPort();
         while (PORTS_IN_USE.contains(result) || PORTS_IN_USE.contains(result - 2)) {
-            result = NetworkPortUtils.nextPort();
+            result = NetworkUtils.nextPort();
         }
         PORTS_IN_USE.add(result);
         PORTS_IN_USE.add(result - 2);

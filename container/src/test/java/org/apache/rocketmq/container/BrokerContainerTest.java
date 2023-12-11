@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.NetworkPortUtils;
+import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
@@ -293,11 +293,11 @@ public class BrokerContainerTest {
         brokerContainer.start();
 
         BrokerConfig masterBrokerConfig = new BrokerConfig();
-        masterBrokerConfig.setListenPort(NetworkPortUtils.nextPort());
+        masterBrokerConfig.setListenPort(NetworkUtils.nextPort());
         String baseDir = createBaseDir("unnittest-master").getAbsolutePath();
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setStorePathRootDir(baseDir);
-        messageStoreConfig.setHaListenPort(NetworkPortUtils.nextPort());
+        messageStoreConfig.setHaListenPort(NetworkUtils.nextPort());
         messageStoreConfig.setStorePathCommitLog(baseDir + File.separator + "commitlog");
         InnerBrokerController master = brokerContainer.addBroker(masterBrokerConfig, messageStoreConfig);
         assertThat(master).isNotNull();
@@ -341,9 +341,9 @@ public class BrokerContainerTest {
     }
 
     public static int generatePort() {
-        int result = NetworkPortUtils.nextPort();
+        int result = NetworkUtils.nextPort();
         while (PORTS_IN_USE.contains(result) || PORTS_IN_USE.contains(result - 2)) {
-            result = NetworkPortUtils.nextPort();
+            result = NetworkUtils.nextPort();
         }
         PORTS_IN_USE.add(result);
         PORTS_IN_USE.add(result - 2);
