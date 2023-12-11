@@ -146,6 +146,7 @@ public class IndexFile {
         this.mappedByteBuffer.putLong(absIndexPos + 4, phyOffset);
         this.mappedByteBuffer.putInt(absIndexPos + 4 + 8, (int) timeDiff);
         this.mappedByteBuffer.putInt(absIndexPos + 4 + 8 + 4, slotValue);
+
         this.mappedByteBuffer.putInt(absSlotPos, this.indexHeader.getIndexCount());
     }
 
@@ -224,12 +225,13 @@ public class IndexFile {
 
         try {
             int slotValue = this.mappedByteBuffer.getInt(absSlotPos);
-            if (slotValue <= INVALID_INDEX || slotValue > this.indexHeader.getIndexCount()
+            if (slotValue <= INVALID_INDEX
+                || slotValue > this.indexHeader.getIndexCount()
                 || this.indexHeader.getIndexCount() <= 1) {
                 return;
             }
 
-            addPhyOffset(phyOffsets, maxNum, begin, end, slotValue, slotValue);
+            addPhyOffset(phyOffsets, maxNum, begin, end, slotValue, keyHash);
         } catch (Exception e) {
             log.error("selectPhyOffset exception ", e);
         } finally {
@@ -265,7 +267,8 @@ public class IndexFile {
 
             if (prevIndexRead <= INVALID_INDEX
                 || prevIndexRead > this.indexHeader.getIndexCount()
-                || prevIndexRead == nextIndexToRead || timeRead < begin) {
+                || prevIndexRead == nextIndexToRead
+                || timeRead < begin) {
                 break;
             }
 
