@@ -268,4 +268,12 @@ public class StringUtils {
     public static boolean isNumeric(final CharSequence cs) {
         return org.apache.commons.lang3.StringUtils.isNumeric(cs);
     }
+
+    public static String randomAlphabetic(final int count) {
+        return org.apache.commons.lang3.RandomStringUtils.randomAlphabetic(count);
+    }
+
+    public static String randomAlphabetic(final int minLengthInclusive, final int maxLengthExclusive) {
+        return org.apache.commons.lang3.RandomStringUtils.randomAlphabetic(minLengthInclusive, maxLengthExclusive);
+    }
 }
