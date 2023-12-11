@@ -17,10 +17,7 @@
 
 package org.apache.rocketmq.broker.filter;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.rocketmq.common.utils.BuilderUtils;
 import org.apache.rocketmq.filter.expression.Expression;
 import org.apache.rocketmq.filter.util.BloomFilterData;
 
@@ -133,16 +130,16 @@ public class ConsumerFilterData {
 
     @Override
     public boolean equals(Object o) {
-        return EqualsBuilder.reflectionEquals(this, o, Collections.<String>emptyList());
+        return BuilderUtils.reflectionEquals(this, o, Collections.<String>emptyList());
     }
 
     @Override
     public int hashCode() {
-        return HashCodeBuilder.reflectionHashCode(this, Collections.<String>emptyList());
+        return BuilderUtils.reflectionHashCode(this, Collections.<String>emptyList());
     }
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+        return BuilderUtils.toString(this, BuilderUtils.SHORT_PREFIX_STYLE);
     }
 }
