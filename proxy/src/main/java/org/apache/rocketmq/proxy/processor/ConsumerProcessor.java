@@ -184,7 +184,7 @@ public class ConsumerProcessor extends AbstractProcessor {
         return requestHeader;
     }
 
-    private void handlePopFuture(CompletableFuture<PopResult> future, ProxyContext ctx, PopMessageResultFilter popMessageResultFilter,
+    private void handlePopFuture(CompletableFuture<PopResult> future, ProxyContext ctx, PopMessageResultFilter filter,
         PopMessageRequestHeader requestHeader, String consumerGroup, String topic, SubscriptionData subscriptionData) {
         future.thenApplyAsync(popResult -> {
             if (!PopStatus.FOUND.equals(popResult.getPopStatus())) {
@@ -199,20 +199,20 @@ public class ConsumerProcessor extends AbstractProcessor {
                 return popResult;
             }
 
-            if (null == popMessageResultFilter) {
+            if (null == filter) {
                 return popResult;
             }
 
             List<MessageExt> messageExtList = new ArrayList<>();
             for (MessageExt messageExt : popResult.getMsgFoundList()) {
-                parsePopMessage(ctx, popMessageResultFilter, requestHeader, consumerGroup, topic, subscriptionData, messageExt, messageExtList);
+                parsePopMessage(ctx, filter, requestHeader, consumerGroup, topic, subscriptionData, messageExt, messageExtList);
             }
             popResult.setMsgFoundList(messageExtList);
             return popResult;
         }, this.executor);
     }
 
-    private void parsePopMessage(ProxyContext ctx, PopMessageResultFilter popMessageResultFilter, PopMessageRequestHeader requestHeader,
+    private void parsePopMessage(ProxyContext ctx, PopMessageResultFilter filter, PopMessageRequestHeader requestHeader,
         String consumerGroup, String topic, SubscriptionData subscriptionData, MessageExt messageExt, List<MessageExt> messageExtList) {
         try {
             fillUniqIDIfNeed(messageExt);
@@ -225,7 +225,7 @@ public class ConsumerProcessor extends AbstractProcessor {
 
             MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_POP_CK, handleString);
 
-            PopMessageResultFilter.FilterResult filterResult = popMessageResultFilter.filterMessage(ctx, consumerGroup, subscriptionData, messageExt);
+            PopMessageResultFilter.FilterResult filterResult = filter.filterMessage(ctx, consumerGroup, subscriptionData, messageExt);
             switch (filterResult) {
                 case NO_MATCH:
                     this.messagingProcessor.ackMessage(

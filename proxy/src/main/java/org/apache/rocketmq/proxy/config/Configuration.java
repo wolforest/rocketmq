@@ -50,7 +50,35 @@ public class Configuration {
     }
 
     private static String loadJsonConfig() throws Exception {
-        String filePath = getConfigPath();
+        String configFileName = ProxyConfig.DEFAULT_CONFIG_FILE_NAME;
+        String filePath = System.getProperty(CONFIG_PATH_PROPERTY);
+
+        if (StringUtils.isBlank(filePath)) {
+            String testConfig = loadTestConfig(configFileName);
+            if (testConfig != null) {
+                return testConfig;
+            }
+        }
+
+        if (StringUtils.isBlank(filePath)) {
+            filePath = new File(ConfigurationManager.getProxyHome() + File.separator + "conf", configFileName).toString();
+        }
+
+        return loadFileConfig(filePath);
+    }
+
+    private static String loadTestConfig(String configFileName) throws IOException {
+        final String testResource = "rmq-proxy-home/conf/" + configFileName;
+        try (InputStream inputStream = Configuration.class.getClassLoader().getResourceAsStream(testResource)) {
+            if (null != inputStream) {
+                return CharStreams.toString(new InputStreamReader(inputStream, Charsets.UTF_8));
+            }
+        }
+
+        return null;
+    }
+
+    private static String loadFileConfig(String filePath) throws IOException {
         File file = new File(filePath);
         log.info("The current configuration file path is {}", filePath);
 
@@ -67,22 +95,5 @@ public class Configuration {
 
         return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
     }
-
-    private static String getConfigPath() throws IOException {
-        String configFileName = ProxyConfig.DEFAULT_CONFIG_FILE_NAME;
-        String filePath = System.getProperty(CONFIG_PATH_PROPERTY);
-        if (StringUtils.isNotBlank(filePath)) {
-            return filePath;
-        }
-
-        final String testResource = "rmq-proxy-home/conf/" + configFileName;
-        try (InputStream inputStream = Configuration.class.getClassLoader().getResourceAsStream(testResource)) {
-            if (null != inputStream) {
-                return CharStreams.toString(new InputStreamReader(inputStream, Charsets.UTF_8));
-            }
-        }
-        return new File(ConfigurationManager.getProxyHome() + File.separator + "conf", configFileName).toString();
-    }
-
 
 }

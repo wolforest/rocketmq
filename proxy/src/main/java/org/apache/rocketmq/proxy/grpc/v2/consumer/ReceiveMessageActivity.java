@@ -219,10 +219,12 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
     private void handlePopResult(CompletableFuture<PopResult> popFuture, ProxyContext ctx, ReceiveMessageRequest request, String group, String topic, ReceiveMessageResponseStreamWriter writer) {
         popFuture.thenAccept(popResult -> {
             if (!ConfigurationManager.getProxyConfig().isEnableProxyAutoRenew() || !request.getAutoRenew()) {
+                writer.writeAndComplete(ctx, request, popResult);
                 return;
             }
 
             if (!PopStatus.FOUND.equals(popResult.getPopStatus())) {
+                writer.writeAndComplete(ctx, request, popResult);
                 return;
             }
 

@@ -143,8 +143,7 @@ public class ProxyStartup {
     }
 
     protected static CommandLineArgument parseCommandLineArgument(String[] args) {
-        CommandLine commandLine = ServerUtil.parseCmdLine("mqproxy", args,
-            buildCommandlineOptions(), new DefaultParser());
+        CommandLine commandLine = ServerUtil.parseCmdLine("mqproxy", args, buildCommandlineOptions(), new DefaultParser());
         if (commandLine == null) {
             throw new RuntimeException("parse command line argument failed");
         }

@@ -30,7 +30,6 @@ import org.apache.rocketmq.store.ha.HAConnectionState;
 import org.apache.rocketmq.store.service.ReputMessageService;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -66,9 +65,9 @@ public class HATest {
     private MessageStore slaveMessageStore;
     private MessageStoreConfig masterMessageStoreConfig;
     private MessageStoreConfig slaveStoreConfig;
-    private BrokerStatsManager brokerStatsManager = new BrokerStatsManager("simpleTest", true);
-    private String storePathRootParentDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + UUID.randomUUID();
-    private String storePathRootDir = storePathRootParentDir + File.separator + "store";
+    private final BrokerStatsManager brokerStatsManager = new BrokerStatsManager("simpleTest", true);
+    private final String storePathRootParentDir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + UUID.randomUUID();
+    private final String storePathRootDir = storePathRootParentDir + File.separator + "store";
 
     @Before
     public void init() throws Exception {
@@ -166,7 +165,10 @@ public class HATest {
     @Test
     public void testSemiSyncReplicaWhenSlaveActingMaster() throws Exception {
         // SKip MacOS
-        Assume.assumeFalse(SystemUtils.isMac());
+        if (SystemUtils.isMac()) {
+            return;
+        }
+
         long totalMsgs = 5;
         queueTotal = 1;
         messageBody = storeMessage.getBytes();
