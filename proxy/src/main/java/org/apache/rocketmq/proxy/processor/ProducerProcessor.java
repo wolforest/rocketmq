@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
@@ -46,6 +48,8 @@ import org.apache.rocketmq.proxy.processor.validator.DefaultTopicMessageTypeVali
 import org.apache.rocketmq.proxy.processor.validator.TopicMessageTypeValidator;
 import org.apache.rocketmq.proxy.service.ServiceManager;
 import org.apache.rocketmq.proxy.service.route.AddressableMessageQueue;
+import org.apache.rocketmq.proxy.service.route.MessageQueueView;
+import org.apache.rocketmq.proxy.service.route.TopicRouteService;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
@@ -67,18 +71,19 @@ public class ProducerProcessor extends AbstractProcessor {
     public CompletableFuture<List<SendResult>> sendMessage(ProxyContext ctx, QueueSelector queueSelector,
         String producerGroup, int sysFlag, List<Message> messageList, long timeoutMillis) {
         CompletableFuture<List<SendResult>> future = new CompletableFuture<>();
-        long beginTimestampFirst = System.currentTimeMillis();
+        AddressableMessageQueue messageQueue = null;
         try {
             Message message = messageList.get(0);
-            String topic = message.getTopic();
-
             validateTopic(ctx, message);
-            AddressableMessageQueue messageQueue = getMessageQueue(ctx, queueSelector, topic);
+            messageQueue = getMessageQueue(ctx, queueSelector, message.getTopic());
+
             initUniqueId(messageList);
             SendMessageRequestHeader requestHeader = buildSendMessageRequestHeader(messageList, producerGroup, sysFlag, messageQueue.getQueueId());
 
-            future = this.serviceManager.getMessageService().sendMessage(ctx, messageQueue, messageList, requestHeader, timeoutMillis);
-            addSendCallback(future, ctx, producerGroup, beginTimestampFirst, messageList, requestHeader, messageQueue);
+            long beginTimestampFirst = System.currentTimeMillis();
+            future = this.serviceManager.getMessageService().sendMessage(ctx, messageQueue, messageList, requestHeader, timeoutMillis)
+                .thenApplyAsync(sendCallback(ctx, producerGroup, messageList, requestHeader, messageQueue), this.executor)
+                .whenComplete(completeCallback(beginTimestampFirst, messageQueue));
 
         } catch (Throwable t) {
             future.completeExceptionally(t);
@@ -87,8 +92,6 @@ public class ProducerProcessor extends AbstractProcessor {
     }
 
     private void validateTopic(ProxyContext ctx, Message message) {
-        String topic = message.getTopic();
-
         if (!ConfigurationManager.getProxyConfig().isEnableTopicMessageTypeCheck()) {
             return;
         }
@@ -97,6 +100,7 @@ public class ProducerProcessor extends AbstractProcessor {
             return;
         }
 
+        String topic = message.getTopic();
         if (NamespaceUtil.isRetryTopic(topic) || NamespaceUtil.isDLQTopic(topic)) {
             return;
         }
@@ -107,8 +111,8 @@ public class ProducerProcessor extends AbstractProcessor {
     }
 
     private AddressableMessageQueue getMessageQueue(ProxyContext ctx, QueueSelector queueSelector, String topic) throws Exception {
-        AddressableMessageQueue messageQueue;
-        messageQueue = queueSelector.select(ctx, this.serviceManager.getTopicRouteService().getCurrentMessageQueueView(ctx, topic));
+        MessageQueueView view = this.serviceManager.getTopicRouteService().getCurrentMessageQueueView(ctx, topic);
+        AddressableMessageQueue messageQueue = queueSelector.select(ctx, view);
         if (messageQueue == null) {
             throw new ProxyException(ProxyExceptionCode.FORBIDDEN, "no writable queue");
         }
@@ -122,28 +126,41 @@ public class ProducerProcessor extends AbstractProcessor {
         }
     }
 
-    private void addSendCallback(CompletableFuture<List<SendResult>> future, ProxyContext ctx, String producerGroup, long beginTimestampFirst,
-        List<Message> messageList, SendMessageRequestHeader requestHeader, AddressableMessageQueue finalMessageQueue) {
-        future.thenApplyAsync(sendResultList -> {
+    private Function<List<SendResult>, List<SendResult>> sendCallback(ProxyContext ctx, String producerGroup, List<Message> messageList, SendMessageRequestHeader requestHeader, AddressableMessageQueue messageQueue) {
+        return sendResultList -> {
             for (SendResult sendResult : sendResultList) {
                 int tranType = MessageSysFlag.getTransactionValue(requestHeader.getSysFlag());
-                if (SendStatus.SEND_OK.equals(sendResult.getSendStatus()) &&
-                    tranType == MessageSysFlag.TRANSACTION_PREPARED_TYPE &&
-                    StringUtils.isNotBlank(sendResult.getTransactionId())) {
-                    fillTransactionData(ctx, producerGroup, finalMessageQueue, sendResult, messageList);
+
+                if (!SendStatus.SEND_OK.equals(sendResult.getSendStatus())) {
+                    continue;
                 }
+
+                if (tranType != MessageSysFlag.TRANSACTION_PREPARED_TYPE) {
+                    continue;
+                }
+
+                if (StringUtils.isBlank(sendResult.getTransactionId())) {
+                    continue;
+                }
+
+                fillTransactionData(ctx, producerGroup, messageQueue, sendResult, messageList);
             }
             return sendResultList;
-        }, this.executor);
-        
-        future.whenComplete((result, exception) -> {
+        };
+    }
+
+    private BiConsumer<List<SendResult>, Throwable> completeCallback(long beginTimestampFirst, AddressableMessageQueue messageQueue) {
+        return (result, exception) -> {
             long endTimestamp = System.currentTimeMillis();
+            long latency = endTimestamp - beginTimestampFirst;
+            TopicRouteService route = this.serviceManager.getTopicRouteService();
+
             if (exception != null) {
-                this.serviceManager.getTopicRouteService().updateFaultItem(finalMessageQueue.getBrokerName(), endTimestamp - beginTimestampFirst, true, false);
+                route.updateFaultItem(messageQueue.getBrokerName(), latency, true, false);
             } else {
-                this.serviceManager.getTopicRouteService().updateFaultItem(finalMessageQueue.getBrokerName(),endTimestamp - beginTimestampFirst, false, true);
+                route.updateFaultItem(messageQueue.getBrokerName(), latency, false, true);
             }
-        });
+        };
     }
 
     protected void fillTransactionData(ProxyContext ctx, String producerGroup, AddressableMessageQueue messageQueue, SendResult sendResult, List<Message> messageList) {

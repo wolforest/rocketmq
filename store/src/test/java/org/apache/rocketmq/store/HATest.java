@@ -30,6 +30,7 @@ import org.apache.rocketmq.store.ha.HAConnectionState;
 import org.apache.rocketmq.store.service.ReputMessageService;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -165,9 +166,7 @@ public class HATest {
     @Test
     public void testSemiSyncReplicaWhenSlaveActingMaster() throws Exception {
         // SKip MacOS
-        if (SystemUtils.isMac()) {
-            return;
-        }
+        Assume.assumeFalse(SystemUtils.isMac());
 
         long totalMsgs = 5;
         queueTotal = 1;

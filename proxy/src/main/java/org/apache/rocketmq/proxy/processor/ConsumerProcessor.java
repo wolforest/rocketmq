@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.consumer.AckResult;
@@ -120,7 +121,7 @@ public class ConsumerProcessor extends AbstractProcessor {
         return future;
     }
 
-    private CompletableFuture<PopResult> popMessage(
+    public CompletableFuture<PopResult> popMessage(
         ProxyContext ctx,
         AddressableMessageQueue messageQueue,
         String consumerGroup,
@@ -141,8 +142,8 @@ public class ConsumerProcessor extends AbstractProcessor {
                 messageQueue, consumerGroup, topic, maxMsgNums, invisibleTime, pollTime, initMode, subscriptionData, fifo, attemptId
             );
 
-            future = this.serviceManager.getMessageService().popMessage(ctx, messageQueue, requestHeader, timeoutMillis);
-            handlePopFuture(future, ctx, popMessageResultFilter, requestHeader, consumerGroup, topic, subscriptionData);
+            future = this.serviceManager.getMessageService().popMessage(ctx, messageQueue, requestHeader, timeoutMillis)
+                    .thenApplyAsync(popCallback(ctx, popMessageResultFilter, requestHeader, consumerGroup, topic, subscriptionData), this.executor);
 
         } catch (Throwable t) {
             future.completeExceptionally(t);
@@ -184,9 +185,8 @@ public class ConsumerProcessor extends AbstractProcessor {
         return requestHeader;
     }
 
-    private void handlePopFuture(CompletableFuture<PopResult> future, ProxyContext ctx, PopMessageResultFilter filter,
-        PopMessageRequestHeader requestHeader, String consumerGroup, String topic, SubscriptionData subscriptionData) {
-        future.thenApplyAsync(popResult -> {
+    private Function<PopResult, PopResult> popCallback(ProxyContext ctx, PopMessageResultFilter filter, PopMessageRequestHeader requestHeader, String consumerGroup, String topic, SubscriptionData subscriptionData) {
+        return popResult -> {
             if (!PopStatus.FOUND.equals(popResult.getPopStatus())) {
                 return popResult;
             }
@@ -209,7 +209,7 @@ public class ConsumerProcessor extends AbstractProcessor {
             }
             popResult.setMsgFoundList(messageExtList);
             return popResult;
-        }, this.executor);
+        };
     }
 
     private void parsePopMessage(ProxyContext ctx, PopMessageResultFilter filter, PopMessageRequestHeader requestHeader,
@@ -224,8 +224,8 @@ public class ConsumerProcessor extends AbstractProcessor {
             }
 
             MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_POP_CK, handleString);
-
             PopMessageResultFilter.FilterResult filterResult = filter.filterMessage(ctx, consumerGroup, subscriptionData, messageExt);
+
             switch (filterResult) {
                 case NO_MATCH:
                     this.messagingProcessor.ackMessage(

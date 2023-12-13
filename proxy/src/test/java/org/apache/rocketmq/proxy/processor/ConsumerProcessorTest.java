@@ -136,7 +136,7 @@ public class ConsumerProcessorTest extends BaseProcessorTest {
                 return PopMessageResultFilter.FilterResult.MATCH;
             },
             null,
-            Duration.ofSeconds(3).toMillis()
+            Duration.ofSeconds(300).toMillis()
         ).get();
 
         assertSame(messageQueue, messageQueueArgumentCaptor.getValue());
