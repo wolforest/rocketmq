@@ -18,7 +18,7 @@
 package org.apache.rocketmq.store.plugin;
 
 import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.utils.PropertyUtils;
+import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.remoting.Configuration;
 import org.apache.rocketmq.store.MessageArrivingListener;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
@@ -59,7 +59,7 @@ public class MessageStorePluginContext {
     }
 
     public void registerConfiguration(Object config) {
-        PropertyUtils.properties2Object(configuration.getAllConfigs(), config);
+        BeanUtils.properties2Object(configuration.getAllConfigs(), config);
         configuration.registerConfig(config);
     }
 }

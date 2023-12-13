@@ -20,7 +20,7 @@ package org.apache.rocketmq.controller;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import org.apache.rocketmq.common.config.ControllerConfig;
-import org.apache.rocketmq.common.utils.PropertyUtils;
+import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.controller.processor.ControllerRequestProcessor;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
@@ -48,7 +48,7 @@ public class ControllerRequestProcessorTest {
 
         // Update allowed value
         properties.setProperty("notifyBrokerRoleChanged", "true");
-        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(BeanUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         RemotingCommand response = controllerRequestProcessor.processRequest(null, updateConfigRequest);
 
@@ -58,7 +58,7 @@ public class ControllerRequestProcessorTest {
         // Update disallowed value
         properties.clear();
         properties.setProperty("configStorePath", "test/path");
-        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(BeanUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = controllerRequestProcessor.processRequest(null, updateConfigRequest);
 
@@ -69,7 +69,7 @@ public class ControllerRequestProcessorTest {
         // Update disallowed value
         properties.clear();
         properties.setProperty("rocketmqHome", "test/path");
-        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(BeanUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = controllerRequestProcessor.processRequest(null, updateConfigRequest);
 
@@ -80,7 +80,7 @@ public class ControllerRequestProcessorTest {
         // Update disallowed value
         properties.clear();
         properties.setProperty("configBlackList", "test;path");
-        updateConfigRequest.setBody(PropertyUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
+        updateConfigRequest.setBody(BeanUtils.properties2String(properties).getBytes(StandardCharsets.UTF_8));
 
         response = controllerRequestProcessor.processRequest(null, updateConfigRequest);
 

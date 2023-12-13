@@ -49,7 +49,7 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.PropertyUtils;
+import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.FlushDiskType;
@@ -952,7 +952,7 @@ public class DefaultMessageStoreTest {
         Properties properties = new Properties();
         properties.setProperty("enableBatchPush", "true");
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        PropertyUtils.properties2Object(properties, messageStoreConfig);
+        BeanUtils.properties2Object(properties, messageStoreConfig);
         assertThat(messageStoreConfig.isEnableBatchPush()).isTrue();
     }
 

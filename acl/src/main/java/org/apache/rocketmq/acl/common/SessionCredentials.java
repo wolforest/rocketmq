@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
-import org.apache.rocketmq.common.utils.PropertyUtils;
+import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 
 public class SessionCredentials {
@@ -46,7 +46,7 @@ public class SessionCredentials {
         } catch (IOException ignore) {
         }
         if (keyContent != null) {
-            Properties prop = PropertyUtils.string2Properties(keyContent);
+            Properties prop = BeanUtils.string2Properties(keyContent);
             if (prop != null) {
                 this.updateContent(prop);
             }

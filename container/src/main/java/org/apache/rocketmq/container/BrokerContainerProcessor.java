@@ -30,7 +30,7 @@ import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.BrokerIdentity;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.MQConstants;
-import org.apache.rocketmq.common.utils.PropertyUtils;
+import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -144,7 +144,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
     private static BrokerConfig getBrokerConfig(Properties brokerProperties, String filePath) {
         BrokerConfig brokerConfig = new BrokerConfig();
 
-        PropertyUtils.properties2Object(brokerProperties, brokerConfig);
+        BeanUtils.properties2Object(brokerProperties, brokerConfig);
         if (filePath != null && !filePath.isEmpty()) {
             brokerConfig.setBrokerConfigPath(filePath);
         }
@@ -155,7 +155,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
     private static MessageStoreConfig getMessageStoreConfig(Properties brokerProperties, BrokerConfig brokerConfig) {
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
 
-        PropertyUtils.properties2Object(brokerProperties, messageStoreConfig);
+        BeanUtils.properties2Object(brokerProperties, messageStoreConfig);
         messageStoreConfig.setHaListenPort(brokerConfig.getListenPort() + 1);
 
         return messageStoreConfig;
@@ -270,7 +270,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         if (body != null) {
             try {
                 String bodyStr = new String(body, MQConstants.DEFAULT_CHARSET);
-                Properties properties = PropertyUtils.string2Properties(bodyStr);
+                Properties properties = BeanUtils.string2Properties(bodyStr);
 
                 if (properties == null) {
                     LOGGER.error("string2Properties error");

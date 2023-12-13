@@ -20,7 +20,7 @@ package org.apache.rocketmq.container;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.config.BrokerConfig;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.PropertyUtils;
+import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
@@ -77,13 +77,13 @@ public class BrokerContainerStartupTest {
         brokerConfig.setBrokerConfigPath(brokerConfigPath);
         File file = new File(brokerConfigPath);
         TMP_FILE_LIST.add(file);
-        Properties brokerConfigProp = PropertyUtils.object2Properties(brokerConfig);
-        Properties storeConfigProp = PropertyUtils.object2Properties(storeConfig);
+        Properties brokerConfigProp = BeanUtils.object2Properties(brokerConfig);
+        Properties storeConfigProp = BeanUtils.object2Properties(storeConfig);
 
         for (Object key : storeConfigProp.keySet()) {
             brokerConfigProp.put(key, storeConfigProp.get(key));
         }
-        StringUtils.string2File(PropertyUtils.properties2String(brokerConfigProp), brokerConfigPath);
+        StringUtils.string2File(BeanUtils.properties2String(brokerConfigProp), brokerConfigPath);
 
         brokerContainerConfigPath = BASE_TMP_PATH + SHARED_BROKER_NAME_PREFIX + System.currentTimeMillis();
         BrokerContainerConfig brokerContainerConfig = new BrokerContainerConfig();
@@ -93,8 +93,8 @@ public class BrokerContainerStartupTest {
         }
         File file1 = new File(brokerContainerConfigPath);
         TMP_FILE_LIST.add(file1);
-        Properties brokerContainerConfigProp = PropertyUtils.object2Properties(brokerContainerConfig);
-        StringUtils.string2File(PropertyUtils.properties2String(brokerContainerConfigProp), brokerContainerConfigPath);
+        Properties brokerContainerConfigProp = BeanUtils.object2Properties(brokerContainerConfig);
+        StringUtils.string2File(BeanUtils.properties2String(brokerContainerConfigProp), brokerContainerConfigPath);
     }
 
     @After

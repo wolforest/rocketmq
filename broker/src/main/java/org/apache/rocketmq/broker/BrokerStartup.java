@@ -28,7 +28,7 @@ import org.apache.rocketmq.common.constant.MQVersion;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtils;
-import org.apache.rocketmq.common.utils.PropertyUtils;
+import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -129,10 +129,10 @@ public class BrokerStartup {
 
         if (properties != null) {
             properties2SystemEnv(properties);
-            PropertyUtils.properties2Object(properties, brokerConfig);
-            PropertyUtils.properties2Object(properties, nettyServerConfig);
-            PropertyUtils.properties2Object(properties, nettyClientConfig);
-            PropertyUtils.properties2Object(properties, messageStoreConfig);
+            BeanUtils.properties2Object(properties, brokerConfig);
+            BeanUtils.properties2Object(properties, nettyServerConfig);
+            BeanUtils.properties2Object(properties, nettyClientConfig);
+            BeanUtils.properties2Object(properties, messageStoreConfig);
         }
 
         return properties;
@@ -150,7 +150,7 @@ public class BrokerStartup {
     }
 
     private static void commandLineToBrokerConfig(CommandLine commandLine, BrokerConfig brokerConfig) {
-        PropertyUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
+        BeanUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
         if (null == brokerConfig.getRocketmqHome()) {
             System.out.printf("Please set the %s variable in your environment " +
                 "to match the location of the RocketMQ installation", MQConstants.ROCKETMQ_HOME_ENV);
@@ -242,25 +242,25 @@ public class BrokerStartup {
     private static void printConfigInfo(CommandLine commandLine, BrokerConfig brokerConfig, NettyServerConfig nettyServerConfig, NettyClientConfig nettyClientConfig, MessageStoreConfig messageStoreConfig) {
         if (commandLine.hasOption('p')) {
             Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
-            PropertyUtils.printObjectProperties(console, brokerConfig);
-            PropertyUtils.printObjectProperties(console, nettyServerConfig);
-            PropertyUtils.printObjectProperties(console, nettyClientConfig);
-            PropertyUtils.printObjectProperties(console, messageStoreConfig);
+            BeanUtils.printObjectProperties(console, brokerConfig);
+            BeanUtils.printObjectProperties(console, nettyServerConfig);
+            BeanUtils.printObjectProperties(console, nettyClientConfig);
+            BeanUtils.printObjectProperties(console, messageStoreConfig);
             System.exit(0);
         } else if (commandLine.hasOption('m')) {
             Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
-            PropertyUtils.printObjectProperties(console, brokerConfig, true);
-            PropertyUtils.printObjectProperties(console, nettyServerConfig, true);
-            PropertyUtils.printObjectProperties(console, nettyClientConfig, true);
-            PropertyUtils.printObjectProperties(console, messageStoreConfig, true);
+            BeanUtils.printObjectProperties(console, brokerConfig, true);
+            BeanUtils.printObjectProperties(console, nettyServerConfig, true);
+            BeanUtils.printObjectProperties(console, nettyClientConfig, true);
+            BeanUtils.printObjectProperties(console, messageStoreConfig, true);
             System.exit(0);
         }
 
         log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-        PropertyUtils.printObjectProperties(log, brokerConfig);
-        PropertyUtils.printObjectProperties(log, nettyServerConfig);
-        PropertyUtils.printObjectProperties(log, nettyClientConfig);
-        PropertyUtils.printObjectProperties(log, messageStoreConfig);
+        BeanUtils.printObjectProperties(log, brokerConfig);
+        BeanUtils.printObjectProperties(log, nettyServerConfig);
+        BeanUtils.printObjectProperties(log, nettyClientConfig);
+        BeanUtils.printObjectProperties(log, messageStoreConfig);
     }
 
     private static Runnable buildShutdownHook(BrokerController brokerController) {

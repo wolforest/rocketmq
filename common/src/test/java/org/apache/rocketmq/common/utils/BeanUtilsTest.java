@@ -23,7 +23,7 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
-public class PropertyUtilsTest {
+public class BeanUtilsTest {
 
     @Test
     public void testProperties2Object() {
@@ -33,7 +33,7 @@ public class PropertyUtilsTest {
         properties.setProperty("demoLength", "456");
         properties.setProperty("demoOK", "true");
         properties.setProperty("demoName", "TestDemo");
-        PropertyUtils.properties2Object(properties, demoConfig);
+        BeanUtils.properties2Object(properties, demoConfig);
         assertThat(demoConfig.getDemoLength()).isEqualTo(456);
         assertThat(demoConfig.getDemoWidth()).isEqualTo(123);
         assertThat(demoConfig.isDemoOK()).isTrue();
@@ -51,7 +51,7 @@ public class PropertyUtilsTest {
         demoConfig.setSubField0("1");
         demoConfig.setSubField1(false);
 
-        Properties properties = PropertyUtils.object2Properties(demoConfig);
+        Properties properties = BeanUtils.object2Properties(demoConfig);
         assertThat(properties.getProperty("demoLength")).isEqualTo("123");
         assertThat(properties.getProperty("demoWidth")).isEqualTo("456");
         assertThat(properties.getProperty("demoOK")).isEqualTo("true");
@@ -60,7 +60,7 @@ public class PropertyUtilsTest {
         assertThat(properties.getProperty("subField0")).isEqualTo("1");
         assertThat(properties.getProperty("subField1")).isEqualTo("false");
 
-        properties = PropertyUtils.object2Properties(new Object());
+        properties = BeanUtils.object2Properties(new Object());
         assertEquals(0, properties.size());
     }
 
@@ -74,7 +74,7 @@ public class PropertyUtilsTest {
         p2.setProperty("a", "1");
         p2.setProperty("b", "2");
 
-        assertThat(PropertyUtils.isPropertiesEqual(p1, p2)).isTrue();
+        assertThat(BeanUtils.isPropertiesEqual(p1, p2)).isTrue();
     }
 
     static class DemoConfig {
