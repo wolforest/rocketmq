@@ -29,7 +29,7 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
 import java.net.SocketAddress;
-import org.apache.commons.lang3.NotImplementedException;
+import org.apache.rocketmq.common.lang.NotImplementedException;
 
 public class SimpleChannelHandlerContext implements ChannelHandlerContext {
 
