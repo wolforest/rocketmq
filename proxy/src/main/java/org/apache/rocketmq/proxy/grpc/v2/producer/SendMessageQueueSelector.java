@@ -19,7 +19,7 @@ package org.apache.rocketmq.proxy.grpc.v2.producer;
 import apache.rocketmq.v2.SendMessageRequest;
 import com.google.common.hash.Hashing;
 import java.util.List;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.processor.QueueSelector;
 import org.apache.rocketmq.proxy.service.route.AddressableMessageQueue;

@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.proxy.processor.channel;
 
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -32,7 +32,7 @@ public class RemoteChannelTest {
         String remoteAddress = "10.152.39.53:9768";
         String localAddress = "11.193.0.1:1210";
         ChannelProtocolType type = ChannelProtocolType.REMOTING;
-        String extendAttribute = RandomStringUtils.randomAlphabetic(10);
+        String extendAttribute = StringUtils.randomAlphabetic(10);
         RemoteChannel remoteChannel = new RemoteChannel(remoteProxyIp, remoteAddress, localAddress, type, extendAttribute);
 
         String encodedData = remoteChannel.encode();

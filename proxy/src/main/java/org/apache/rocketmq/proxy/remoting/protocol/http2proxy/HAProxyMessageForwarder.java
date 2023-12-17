@@ -31,11 +31,11 @@ import io.netty.util.Attribute;
 import io.netty.util.DefaultAttributeMap;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.rocketmq.acl.common.AclUtils;
 import org.apache.rocketmq.common.constant.HAProxyConstants;
 import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.utils.ReflectUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.AttributeKeys;
@@ -50,7 +50,7 @@ public class HAProxyMessageForwarder extends ChannelInboundHandlerAdapter {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_REMOTING_NAME);
 
     private static final Field FIELD_ATTRIBUTE =
-            FieldUtils.getField(DefaultAttributeMap.class, "attributes", true);
+            ReflectUtils.getField(DefaultAttributeMap.class, "attributes", true);
 
     private final Channel outboundChannel;
 
@@ -80,7 +80,7 @@ public class HAProxyMessageForwarder extends ChannelInboundHandlerAdapter {
             return;
         }
 
-        Attribute<?>[] attributes = (Attribute<?>[]) FieldUtils.readField(FIELD_ATTRIBUTE, inboundChannel);
+        Attribute<?>[] attributes = (Attribute<?>[]) ReflectUtils.readField(FIELD_ATTRIBUTE, inboundChannel);
         if (ArrayUtils.isEmpty(attributes)) {
             return;
         }

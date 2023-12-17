@@ -20,7 +20,7 @@ package org.apache.rocketmq.proxy.remoting.channel;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelId;
 import java.util.HashSet;
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.remoting.RemotingProxyOutClient;
 import org.apache.rocketmq.proxy.service.channel.SimpleChannel;
@@ -57,7 +57,7 @@ public class RemotingChannelManagerTest {
     @Test
     public void testCreateChannel() {
         String group = "group";
-        String clientId = RandomStringUtils.randomAlphabetic(10);
+        String clientId = StringUtils.randomAlphabetic(10);
 
         Channel producerChannel = createMockChannel();
         RemotingChannel producerRemotingChannel = this.remotingChannelManager.createProducerChannel(ctx, producerChannel, group, clientId);
@@ -75,7 +75,7 @@ public class RemotingChannelManagerTest {
     @Test
     public void testRemoveProducerChannel() {
         String group = "group";
-        String clientId = RandomStringUtils.randomAlphabetic(10);
+        String clientId = StringUtils.randomAlphabetic(10);
 
         {
             Channel producerChannel = createMockChannel();
@@ -94,7 +94,7 @@ public class RemotingChannelManagerTest {
     @Test
     public void testRemoveConsumerChannel() {
         String group = "group";
-        String clientId = RandomStringUtils.randomAlphabetic(10);
+        String clientId = StringUtils.randomAlphabetic(10);
 
         {
             Channel consumerChannel = createMockChannel();
@@ -114,7 +114,7 @@ public class RemotingChannelManagerTest {
     public void testRemoveChannel() {
         String consumerGroup = "consumerGroup";
         String producerGroup = "producerGroup";
-        String clientId = RandomStringUtils.randomAlphabetic(10);
+        String clientId = StringUtils.randomAlphabetic(10);
 
         Channel consumerChannel = createMockChannel();
         RemotingChannel consumerRemotingChannel = this.remotingChannelManager.createConsumerChannel(ctx, consumerChannel, consumerGroup, clientId, new HashSet<>());
@@ -128,7 +128,7 @@ public class RemotingChannelManagerTest {
     }
 
     private Channel createMockChannel() {
-        return new MockChannel(RandomStringUtils.randomAlphabetic(10));
+        return new MockChannel(StringUtils.randomAlphabetic(10));
     }
 
     private class MockChannel extends SimpleChannel {

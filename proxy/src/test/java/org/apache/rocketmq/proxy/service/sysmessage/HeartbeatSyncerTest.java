@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.rocketmq.broker.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.client.ConsumerGroupEvent;
 import org.apache.rocketmq.broker.client.ConsumerManager;
@@ -45,6 +44,7 @@ import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.config.InitConfigTest;
@@ -116,7 +116,7 @@ public class HeartbeatSyncerTest extends InitConfigTest {
     @Before
     public void before() throws Throwable {
         super.before();
-        this.clientId = RandomStringUtils.randomAlphabetic(10);
+        this.clientId = StringUtils.randomAlphabetic(10);
         when(mqClientAPIFactory.getClient()).thenReturn(mqClientAPIExt);
 
         {
@@ -190,7 +190,7 @@ public class HeartbeatSyncerTest extends InitConfigTest {
 
         String localServeAddr = ConfigurationManager.getProxyConfig().getLocalServeAddr();
         // change local serve addr, to simulate other proxy receive messages
-        heartbeatSyncer.localProxyId = RandomStringUtils.randomAlphabetic(10);
+        heartbeatSyncer.localProxyId = StringUtils.randomAlphabetic(10);
         ArgumentCaptor<ClientChannelInfo> syncChannelInfoArgumentCaptor = ArgumentCaptor.forClass(ClientChannelInfo.class);
         doReturn(true).when(consumerManager).registerConsumer(anyString(), syncChannelInfoArgumentCaptor.capture(), any(), any(), any(), any(), anyBoolean());
 
@@ -212,7 +212,7 @@ public class HeartbeatSyncerTest extends InitConfigTest {
         doNothing().when(consumerManager).unregisterConsumer(anyString(), syncUnRegisterChannelInfoArgumentCaptor.capture(), anyBoolean());
 
         // change local serve addr, to simulate other proxy receive messages
-        heartbeatSyncer.localProxyId = RandomStringUtils.randomAlphabetic(10);
+        heartbeatSyncer.localProxyId = StringUtils.randomAlphabetic(10);
         heartbeatSyncer.consumeMessage(Lists.newArrayList(convertFromMessage(messageArgumentCaptor.getAllValues().get(1))), null);
         assertSame(channelInfoList.get(0).getChannel(), syncUnRegisterChannelInfoArgumentCaptor.getValue().getChannel());
     }
@@ -272,7 +272,7 @@ public class HeartbeatSyncerTest extends InitConfigTest {
             verify(consumerManager, never()).registerConsumer(anyString(), any(), any(), any(), any(), any(), anyBoolean());
 
             // change local serve addr, to simulate other proxy receive messages
-            heartbeatSyncer.localProxyId = RandomStringUtils.randomAlphabetic(10);
+            heartbeatSyncer.localProxyId = StringUtils.randomAlphabetic(10);
             ArgumentCaptor<ClientChannelInfo> syncChannelInfoArgumentCaptor = ArgumentCaptor.forClass(ClientChannelInfo.class);
             doReturn(true).when(consumerManager).registerConsumer(anyString(), syncChannelInfoArgumentCaptor.capture(), any(), any(), any(), any(), anyBoolean());
 
@@ -310,7 +310,7 @@ public class HeartbeatSyncerTest extends InitConfigTest {
             doNothing().when(consumerManager).unregisterConsumer(anyString(), syncUnRegisterChannelInfoArgumentCaptor.capture(), anyBoolean());
 
             // change local serve addr, to simulate other proxy receive messages
-            heartbeatSyncer.localProxyId = RandomStringUtils.randomAlphabetic(10);
+            heartbeatSyncer.localProxyId = StringUtils.randomAlphabetic(10);
             heartbeatSyncer.consumeMessage(convertFromMessage(messageArgumentCaptor.getAllValues()), null);
             List<ClientChannelInfo> channelInfoList = syncUnRegisterChannelInfoArgumentCaptor.getAllValues();
             assertNotSame(channelInfoList.get(0).getChannel(), channelInfoList.get(1).getChannel());
@@ -377,7 +377,7 @@ public class HeartbeatSyncerTest extends InitConfigTest {
         await().atMost(Duration.ofSeconds(3)).until(() -> messageArgumentCaptor.getAllValues().size() == 1);
 
         // change local serve addr, to simulate other proxy receive messages
-        heartbeatSyncer.localProxyId = RandomStringUtils.randomAlphabetic(10);
+        heartbeatSyncer.localProxyId = StringUtils.randomAlphabetic(10);
         ArgumentCaptor<ClientChannelInfo> channelInfoArgumentCaptor = ArgumentCaptor.forClass(ClientChannelInfo.class);
         doReturn(true).when(consumerManager).registerConsumer(anyString(), channelInfoArgumentCaptor.capture(), any(), any(), any(), any(), anyBoolean());
 
@@ -400,7 +400,7 @@ public class HeartbeatSyncerTest extends InitConfigTest {
     }
 
     private Channel createMockChannel() {
-        return new MockChannel(RandomStringUtils.randomAlphabetic(10));
+        return new MockChannel(StringUtils.randomAlphabetic(10));
     }
 
     private class MockChannel extends SimpleChannel {

@@ -22,7 +22,7 @@ import apache.rocketmq.v2.EndTransactionResponse;
 import apache.rocketmq.v2.TransactionResolution;
 import apache.rocketmq.v2.TransactionSource;
 import java.util.concurrent.CompletableFuture;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.grpc.v2.AbstractMessingActivity;
 import org.apache.rocketmq.proxy.grpc.v2.channel.GrpcChannelManager;

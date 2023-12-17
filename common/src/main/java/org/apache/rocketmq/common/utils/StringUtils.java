@@ -245,6 +245,30 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.equals(cs1, cs2);
     }
 
+    public static boolean startsWith(final CharSequence str, final CharSequence prefix) {
+        return org.apache.commons.lang3.StringUtils.startsWith(str, prefix);
+    }
+
+    public static String trim(final String str) {
+        return org.apache.commons.lang3.StringUtils.trim(str);
+    }
+
+    public static String defaultString(final String str) {
+        return org.apache.commons.lang3.StringUtils.defaultString(str);
+    }
+
+    public static String defaultString(final String str, final String str2) {
+        return org.apache.commons.lang3.StringUtils.defaultString(str, str2);
+    }
+
+    public static String substringAfter(final String str, final String str2) {
+        return org.apache.commons.lang3.StringUtils.substringAfter(str, str2);
+    }
+
+    public static String upperCase(final String str) {
+        return org.apache.commons.lang3.StringUtils.upperCase(str);
+    }
+
     public static boolean isEmpty(final CharSequence cs) {
         return org.apache.commons.lang3.StringUtils.isEmpty(cs);
     }

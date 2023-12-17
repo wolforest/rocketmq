@@ -19,8 +19,8 @@ package org.apache.rocketmq.proxy.config;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.utils.StringUtils;
 
 public class ConfigurationManager {
     public static final String RMQ_PROXY_HOME = "RMQ_PROXY_HOME";

@@ -16,9 +16,18 @@
  */
 package org.apache.rocketmq.common.utils;
 
+import java.lang.reflect.Field;
+
 public class ReflectUtils {
     public static void writeField(final Object target, final String fieldName, final Object value, final boolean forceAccess) throws IllegalAccessException {
         org.apache.commons.lang3.reflect.FieldUtils.writeField(target, fieldName, value, forceAccess);
+    }
 
+    public static Field getField(final Class<?> cls, final String fieldName, final boolean forceAccess) {
+        return org.apache.commons.lang3.reflect.FieldUtils.getField(cls, fieldName, forceAccess);
+    }
+
+    public static Object readField(final Field field, final Object target) throws IllegalAccessException {
+        return org.apache.commons.lang3.reflect.FieldUtils.readField(field, target);
     }
 }

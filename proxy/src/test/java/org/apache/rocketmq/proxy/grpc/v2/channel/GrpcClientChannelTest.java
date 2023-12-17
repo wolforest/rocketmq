@@ -20,7 +20,7 @@ package org.apache.rocketmq.proxy.grpc.v2.channel;
 import apache.rocketmq.v2.Publishing;
 import apache.rocketmq.v2.Resource;
 import apache.rocketmq.v2.Settings;
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.InitConfigTest;
 import org.apache.rocketmq.proxy.grpc.v2.common.GrpcClientSettingsManager;
@@ -56,7 +56,7 @@ public class GrpcClientChannelTest extends InitConfigTest {
     @Before
     public void before() throws Throwable {
         super.before();
-        this.clientId = RandomStringUtils.randomAlphabetic(10);
+        this.clientId = StringUtils.randomAlphabetic(10);
         this.grpcClientChannel = new GrpcClientChannel(proxyRelayService, grpcClientSettingsManager, grpcChannelManager,
             ProxyContext.create().setRemoteAddress("10.152.39.53:9768").setLocalAddress("11.193.0.1:1210"),
             this.clientId);

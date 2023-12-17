@@ -20,8 +20,8 @@ package org.apache.rocketmq.proxy.remoting.channel;
 import io.netty.channel.Channel;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.rocketmq.common.utils.NetworkUtils;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.proxy.config.InitConfigTest;
 import org.apache.rocketmq.proxy.grpc.v2.channel.GrpcClientChannel;
 import org.apache.rocketmq.proxy.processor.channel.ChannelProtocolType;
@@ -60,7 +60,7 @@ public class RemotingChannelTest extends InitConfigTest {
     @Before
     public void before() throws Throwable {
         super.before();
-        this.clientId = RandomStringUtils.randomAlphabetic(10);
+        this.clientId = StringUtils.randomAlphabetic(10);
         when(parent.remoteAddress()).thenReturn(NetworkUtils.string2SocketAddress(remoteAddress));
         when(parent.localAddress()).thenReturn(NetworkUtils.string2SocketAddress(localAddress));
         this.subscriptionData = new HashSet<>();
