@@ -46,7 +46,7 @@ import org.apache.rocketmq.common.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
-import org.apache.rocketmq.srvutil.AclFileWatchService;
+import org.apache.rocketmq.common.thread.AclFileWatchService;
 
 public class PlainPermissionManager {
 

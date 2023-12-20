@@ -38,8 +38,8 @@ import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.srvutil.ServerUtil;
-import org.apache.rocketmq.srvutil.ShutdownHookThread;
+import org.apache.rocketmq.common.utils.ServerUtil;
+import org.apache.rocketmq.common.thread.ShutdownHookThread;
 
 public class NamesrvStartup {
 

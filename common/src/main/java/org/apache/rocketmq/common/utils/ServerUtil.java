@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.srvutil;
+package org.apache.rocketmq.common.utils;
 
 import java.util.Properties;
 import org.apache.commons.cli.CommandLine;

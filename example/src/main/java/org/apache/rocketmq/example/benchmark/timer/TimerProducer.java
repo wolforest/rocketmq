@@ -31,7 +31,7 @@ import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.srvutil.ServerUtil;
+import org.apache.rocketmq.common.utils.ServerUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;

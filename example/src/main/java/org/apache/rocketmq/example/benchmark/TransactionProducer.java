@@ -35,7 +35,7 @@ import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.SerializeType;
-import org.apache.rocketmq.srvutil.ServerUtil;
+import org.apache.rocketmq.common.utils.ServerUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;

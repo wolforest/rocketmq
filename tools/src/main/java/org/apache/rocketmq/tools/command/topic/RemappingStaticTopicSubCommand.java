@@ -32,7 +32,7 @@ import org.apache.rocketmq.remoting.protocol.statictopic.TopicConfigAndQueueMapp
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingUtils;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicRemappingDetailWrapper;
 import org.apache.rocketmq.remoting.rpc.ClientMetadata;
-import org.apache.rocketmq.srvutil.ServerUtil;
+import org.apache.rocketmq.common.utils.ServerUtil;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.MQAdminUtils;
 import org.apache.rocketmq.tools.command.SubCommand;

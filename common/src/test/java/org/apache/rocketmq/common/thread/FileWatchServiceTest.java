@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.srvutil;
+package org.apache.rocketmq.common.thread;
 
 import java.io.File;
 import java.io.IOException;

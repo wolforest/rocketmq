@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.srvutil;
+package org.apache.rocketmq.common.thread;
 
 import com.google.common.base.Strings;
 import org.apache.rocketmq.common.LifecycleAwareServiceThread;

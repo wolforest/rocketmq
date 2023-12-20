@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.srvutil;
+package org.apache.rocketmq.common.thread;
 
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 
