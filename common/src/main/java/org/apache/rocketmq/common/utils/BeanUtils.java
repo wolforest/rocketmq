@@ -148,41 +148,57 @@ public class BeanUtils {
         Method[] methods = object.getClass().getMethods();
         for (Method method : methods) {
             String mn = method.getName();
-            if (mn.startsWith("set")) {
-                try {
-                    String tmp = mn.substring(4);
-                    String first = mn.substring(3, 4);
+            if (!mn.startsWith("set")) {
+                continue;
+            }
 
-                    String key = first.toLowerCase() + tmp;
-                    String property = p.getProperty(key);
-                    if (property != null) {
-                        Class<?>[] pt = method.getParameterTypes();
-                        if (pt != null && pt.length > 0) {
-                            String cn = pt[0].getSimpleName();
-                            Object arg = null;
-                            if (cn.equals("int") || cn.equals("Integer")) {
-                                arg = Integer.parseInt(property);
-                            } else if (cn.equals("long") || cn.equals("Long")) {
-                                arg = Long.parseLong(property);
-                            } else if (cn.equals("double") || cn.equals("Double")) {
-                                arg = Double.parseDouble(property);
-                            } else if (cn.equals("boolean") || cn.equals("Boolean")) {
-                                arg = Boolean.parseBoolean(property);
-                            } else if (cn.equals("float") || cn.equals("Float")) {
-                                arg = Float.parseFloat(property);
-                            } else if (cn.equals("String")) {
-                                property = property.trim();
-                                arg = property;
-                            } else {
-                                continue;
-                            }
-                            method.invoke(object, arg);
-                        }
-                    }
-                } catch (Throwable ignored) {
+            try {
+                String tmp = mn.substring(4);
+                String first = mn.substring(3, 4);
+
+                String key = first.toLowerCase() + tmp;
+                String property = p.getProperty(key);
+                if (property == null) {
+                    continue;
                 }
+
+                Class<?>[] pt = method.getParameterTypes();
+                if (pt.length <= 0) {
+                    continue;
+                }
+
+                String cn = pt[0].getSimpleName();
+                Object arg = getArg(cn, property);
+                if (arg == null) {
+                    continue;
+                }
+
+                method.invoke(object, arg);
+            } catch (Throwable ignored) {
             }
         }
+    }
+
+    private static Object getArg(String cn, String property) {
+        Object arg;
+        if (cn.equals("int") || cn.equals("Integer")) {
+            arg = Integer.parseInt(property);
+        } else if (cn.equals("long") || cn.equals("Long")) {
+            arg = Long.parseLong(property);
+        } else if (cn.equals("double") || cn.equals("Double")) {
+            arg = Double.parseDouble(property);
+        } else if (cn.equals("boolean") || cn.equals("Boolean")) {
+            arg = Boolean.parseBoolean(property);
+        } else if (cn.equals("float") || cn.equals("Float")) {
+            arg = Float.parseFloat(property);
+        } else if (cn.equals("String")) {
+            property = property.trim();
+            arg = property;
+        } else {
+            return null;
+        }
+
+        return arg;
     }
 
     public static boolean isPropertiesEqual(final Properties p1, final Properties p2) {

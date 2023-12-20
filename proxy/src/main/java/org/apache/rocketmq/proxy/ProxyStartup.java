@@ -66,7 +66,7 @@ public class ProxyStartup {
     }
 
     /**
-     * command line args:
+     * command line args, require none of them:
      * - h: help
      * - n: namesrvAddr
      * - bc: brokerConfigPath
