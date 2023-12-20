@@ -65,6 +65,16 @@ public class ProxyStartup {
         }
     }
 
+    /**
+     * command line args:
+     * - h: help
+     * - n: namesrvAddr
+     * - bc: brokerConfigPath
+     * - pc: proxyConfigPath
+     * - pm: proxyMode
+     *
+     * @param args CommandLineArgument
+     */
     public static void main(String[] args) {
         try {
             // parse argument from command line

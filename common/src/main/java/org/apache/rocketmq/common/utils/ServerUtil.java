@@ -70,13 +70,15 @@ public class ServerUtil {
         Properties properties = new Properties();
         Option[] opts = commandLine.getOptions();
 
-        if (opts != null) {
-            for (Option opt : opts) {
-                String name = opt.getLongOpt();
-                String value = commandLine.getOptionValue(name);
-                if (value != null) {
-                    properties.setProperty(name, value);
-                }
+        if (opts == null) {
+            return properties;
+        }
+
+        for (Option opt : opts) {
+            String name = opt.getLongOpt();
+            String value = commandLine.getOptionValue(name);
+            if (value != null) {
+                properties.setProperty(name, value);
             }
         }
 
