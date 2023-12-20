@@ -17,8 +17,7 @@
 package org.apache.rocketmq.store.service;
 
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -30,8 +29,8 @@ public class DelayLevelService {
     private final DefaultMessageStore messageStore;
     private int maxDelayLevel;
 
-    private final ConcurrentMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
-        new ConcurrentHashMap<>(32);
+    private final ConcurrentSkipListMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
+        new ConcurrentSkipListMap<>();
 
     public DelayLevelService(DefaultMessageStore messageStore) {
         this.messageStore = messageStore;

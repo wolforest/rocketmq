@@ -111,7 +111,7 @@ public class ColdDataCheckService extends ServiceThread {
             return true;
         }
 
-        int pos = (int)(offset % defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog());
+        int pos = (int) (offset % defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog());
         int realIndex = pos / pageSize / sampleSteps;
         return bytes.length - 1 >= realIndex && bytes[realIndex] != 0;
     }
@@ -155,8 +155,8 @@ public class ColdDataCheckService extends ServiceThread {
 
     private byte[] checkFileInPageCache(MappedFile mappedFile) {
         long fileSize = mappedFile.getFileSize();
-        final long address = ((DirectBuffer)mappedFile.getMappedByteBuffer()).address();
-        int pageNums = (int)(fileSize + this.pageSize - 1) / this.pageSize;
+        final long address = ((DirectBuffer) mappedFile.getMappedByteBuffer()).address();
+        int pageNums = (int) (fileSize + this.pageSize - 1) / this.pageSize;
         byte[] pageCacheRst = new byte[pageNums];
         int mincore = LibC.INSTANCE.mincore(new Pointer(address), new NativeLong(fileSize), pageCacheRst);
         if (mincore != 0) {
@@ -194,7 +194,7 @@ public class ColdDataCheckService extends ServiceThread {
             return false;
         }
         try {
-            ConsumeQueue consumeQueue = (ConsumeQueue)defaultMessageStore.findConsumeQueue(topic, queueId);
+            ConsumeQueue consumeQueue = (ConsumeQueue) defaultMessageStore.findConsumeQueue(topic, queueId);
             if (null == consumeQueue) {
                 return false;
             }

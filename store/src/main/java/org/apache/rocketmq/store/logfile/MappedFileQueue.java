@@ -414,6 +414,7 @@ public class MappedFileQueue implements Swappable {
         }
 
         ListIterator<MappedFile> iterator = this.mappedFiles.listIterator(mappedFiles.size());
+        List<MappedFile> toRemoves = new ArrayList<>();
 
         while (iterator.hasPrevious()) {
             mappedFileLast = iterator.previous();
@@ -424,9 +425,14 @@ public class MappedFileQueue implements Swappable {
                 mappedFileLast.setCommittedPosition(where);
                 break;
             } else {
-                iterator.remove();
+                toRemoves.add(mappedFileLast);
             }
         }
+
+        if (!toRemoves.isEmpty()) {
+            this.mappedFiles.removeAll(toRemoves);
+        }
+
         return true;
     }
 

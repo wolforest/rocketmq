@@ -122,8 +122,6 @@ public class DefaultMessageStore implements MessageStore {
     // CommitLog
     protected CommitLog commitLog;
 
-
-
     protected CleanCommitLogService cleanCommitLogService;
 
     protected ConsumeQueueStoreInterface consumeQueueStore;
@@ -161,8 +159,6 @@ public class DefaultMessageStore implements MessageStore {
 
     boolean shutDownNormal = false;
     private volatile boolean shutdown = true;
-
-
 
     protected boolean notifyMessageArriveInBatch = false;
 

@@ -307,6 +307,7 @@ public class CommitLog implements Swappable {
 
     /**
      * When the normal exit, data recovery, all memory data have been flush
+     *
      * @throws RocksDBException only in rocksdb mode
      */
     public void recoverNormally(long maxPhyOffsetOfConsumeQueue) throws RocksDBException {
@@ -598,11 +599,12 @@ public class CommitLog implements Swappable {
 
     private long getConfirmOffsetInControllerMode(boolean directly) {
         if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE && !this.defaultMessageStore.getRunningFlags().isFenced()) {
-            if (((AutoSwitchHAService) this.defaultMessageStore.getHaService()).getLocalSyncStateSet().size() == 1) {
+            if (((AutoSwitchHAService) this.defaultMessageStore.getHaService()).getLocalSyncStateSet().size() == 1
+                || !this.defaultMessageStore.getMessageStoreConfig().isAllAckInSyncStateSet()) {
                 return this.defaultMessageStore.getMaxPhyOffset();
             }
             // First time it will compute the confirmOffset.
-            if (!directly && this.confirmOffset < 0) {
+            if (this.confirmOffset < 0) {
                 setConfirmOffset(((AutoSwitchHAService) this.defaultMessageStore.getHaService()).computeConfirmOffset());
                 log.info("Init the confirmOffset to {}.", this.confirmOffset);
             }
@@ -935,7 +937,7 @@ public class CommitLog implements Swappable {
             log.error("setFileReadMode mappedFile is null");
             return -1;
         }
-        final long address = ((DirectBuffer)mappedFile.getMappedByteBuffer()).address();
+        final long address = ((DirectBuffer) mappedFile.getMappedByteBuffer()).address();
         int madvise = LibC.INSTANCE.madvise(new Pointer(address), new NativeLong(mappedFile.getFileSize()), mode);
         if (madvise != 0) {
             log.error("setFileReadMode error fileName: {}, madvise: {}, mode:{}", mappedFile.getFileName(), madvise, mode);
