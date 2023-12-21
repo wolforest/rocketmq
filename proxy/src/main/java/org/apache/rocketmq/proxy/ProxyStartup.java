@@ -143,6 +143,7 @@ public class ProxyStartup {
 
     protected static void initConfiguration(CommandLineArgument commandLineArgument) throws Exception {
         if (StringUtils.isNotBlank(commandLineArgument.getProxyConfigPath())) {
+            // init proxy rmq-proxy.json path
             System.setProperty(Configuration.CONFIG_PATH_PROPERTY, commandLineArgument.getProxyConfigPath());
         }
         ConfigurationManager.initEnv();
