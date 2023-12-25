@@ -66,7 +66,24 @@ public class BrokerStartup {
         }
     }
 
-    public static BrokerController buildBrokerController(String[] args) throws Exception {
+    public static BrokerController createBrokerController(String[] args) {
+        try {
+            BrokerController controller = buildBrokerController(args);
+            boolean initResult = controller.initialize();
+            if (!initResult) {
+                controller.shutdown();
+                System.exit(-3);
+            }
+            Runtime.getRuntime().addShutdownHook(new Thread(buildShutdownHook(controller)));
+            return controller;
+        } catch (Throwable e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+        return null;
+    }
+
+    private static BrokerController buildBrokerController(String[] args) throws Exception {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
 
         final BrokerConfig brokerConfig = new BrokerConfig();
@@ -97,23 +114,9 @@ public class BrokerStartup {
         return controller;
     }
 
-    public static BrokerController createBrokerController(String[] args) {
-        try {
-            BrokerController controller = buildBrokerController(args);
-            boolean initResult = controller.initialize();
-            if (!initResult) {
-                controller.shutdown();
-                System.exit(-3);
-            }
-            Runtime.getRuntime().addShutdownHook(new Thread(buildShutdownHook(controller)));
-            return controller;
-        } catch (Throwable e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
-        return null;
-    }
-
+    /**
+     * load broker config data if command line parameter c is set.
+     */
     private static Properties initProperties(CommandLine commandLine, BrokerConfig brokerConfig, NettyServerConfig nettyServerConfig, NettyClientConfig nettyClientConfig, MessageStoreConfig messageStoreConfig) throws Exception {
         Properties properties = null;
         if (!commandLine.hasOption('c')) {
@@ -140,8 +143,7 @@ public class BrokerStartup {
 
     private static CommandLine initCommandLine(String[] args) {
         Options options = ServerUtil.buildCommandlineOptions(new Options());
-        CommandLine commandLine = ServerUtil.parseCmdLine(
-            "mqbroker", args, buildCommandlineOptions(options), new DefaultParser());
+        CommandLine commandLine = ServerUtil.parseCmdLine("mqbroker", args, buildCommandlineOptions(options), new DefaultParser());
         if (null == commandLine) {
             System.exit(-1);
         }
@@ -151,11 +153,12 @@ public class BrokerStartup {
 
     private static void commandLineToBrokerConfig(CommandLine commandLine, BrokerConfig brokerConfig) {
         BeanUtils.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
-        if (null == brokerConfig.getRocketmqHome()) {
-            System.out.printf("Please set the %s variable in your environment " +
-                "to match the location of the RocketMQ installation", MQConstants.ROCKETMQ_HOME_ENV);
-            System.exit(-2);
+        if (null != brokerConfig.getRocketmqHome()) {
+            return;
         }
+
+        System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation", MQConstants.ROCKETMQ_HOME_ENV);
+        System.exit(-2);
     }
 
     private static void validateNamesrvAddr(BrokerConfig brokerConfig) {
@@ -171,8 +174,7 @@ public class BrokerStartup {
                 NetworkUtils.string2SocketAddress(addr);
             }
         } catch (Exception e) {
-            System.out.printf("The Name Server Address[%s] illegal, please set it as follows, " +
-                "\"127.0.0.1:9876;192.168.0.1:9876\"%n", namesrvAddr);
+            System.out.printf("The Name Server Address[%s] illegal, please set it as follows, \"127.0.0.1:9876;192.168.0.1:9876\"%n", namesrvAddr);
             System.exit(-3);
         }
     }
@@ -239,28 +241,30 @@ public class BrokerStartup {
         }
     }
 
-    private static void printConfigInfo(CommandLine commandLine, BrokerConfig brokerConfig, NettyServerConfig nettyServerConfig, NettyClientConfig nettyClientConfig, MessageStoreConfig messageStoreConfig) {
+    private static void printConfigInfo(CommandLine commandLine, BrokerConfig brokerConfig, NettyServerConfig serverConfig, NettyClientConfig clientConfig, MessageStoreConfig storeConfig) {
         if (commandLine.hasOption('p')) {
             Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
             BeanUtils.printObjectProperties(console, brokerConfig);
-            BeanUtils.printObjectProperties(console, nettyServerConfig);
-            BeanUtils.printObjectProperties(console, nettyClientConfig);
-            BeanUtils.printObjectProperties(console, messageStoreConfig);
+            BeanUtils.printObjectProperties(console, serverConfig);
+            BeanUtils.printObjectProperties(console, clientConfig);
+            BeanUtils.printObjectProperties(console, storeConfig);
             System.exit(0);
-        } else if (commandLine.hasOption('m')) {
+        }
+
+        if (commandLine.hasOption('m')) {
             Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
             BeanUtils.printObjectProperties(console, brokerConfig, true);
-            BeanUtils.printObjectProperties(console, nettyServerConfig, true);
-            BeanUtils.printObjectProperties(console, nettyClientConfig, true);
-            BeanUtils.printObjectProperties(console, messageStoreConfig, true);
+            BeanUtils.printObjectProperties(console, serverConfig, true);
+            BeanUtils.printObjectProperties(console, clientConfig, true);
+            BeanUtils.printObjectProperties(console, storeConfig, true);
             System.exit(0);
         }
 
         log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
         BeanUtils.printObjectProperties(log, brokerConfig);
-        BeanUtils.printObjectProperties(log, nettyServerConfig);
-        BeanUtils.printObjectProperties(log, nettyClientConfig);
-        BeanUtils.printObjectProperties(log, messageStoreConfig);
+        BeanUtils.printObjectProperties(log, serverConfig);
+        BeanUtils.printObjectProperties(log, clientConfig);
+        BeanUtils.printObjectProperties(log, storeConfig);
     }
 
     private static Runnable buildShutdownHook(BrokerController brokerController) {
@@ -284,6 +288,7 @@ public class BrokerStartup {
         if (properties == null) {
             return;
         }
+
         String rmqAddressServerDomain = properties.getProperty("rmqAddressServerDomain", NetworkUtils.WS_DOMAIN_NAME);
         String rmqAddressServerSubGroup = properties.getProperty("rmqAddressServerSubGroup", NetworkUtils.WS_DOMAIN_SUBGROUP);
         System.setProperty("rocketmq.namesrv.domain", rmqAddressServerDomain);
