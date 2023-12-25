@@ -86,9 +86,14 @@ public class BeanUtils {
         StringBuilder sb = new StringBuilder();
         Set<Map.Entry<Object, Object>> entrySet = isSort ? new TreeMap<>(properties).entrySet() : properties.entrySet();
         for (Map.Entry<Object, Object> entry : entrySet) {
-            if (entry.getValue() != null) {
-                sb.append(entry.getKey().toString() + "=" + entry.getValue().toString() + "\n");
+            if (entry.getValue() == null) {
+                continue;
             }
+
+            sb.append(entry.getKey().toString())
+                .append("=")
+                .append(entry.getValue().toString())
+                .append("\n");
         }
         return sb.toString();
     }
@@ -111,29 +116,7 @@ public class BeanUtils {
 
         Class<?> objectClass = object.getClass();
         while (true) {
-            Field[] fields = objectClass.getDeclaredFields();
-            for (Field field : fields) {
-                if (Modifier.isStatic(field.getModifiers())) {
-                    continue;
-                }
-
-                String name = field.getName();
-                if (name.startsWith("this")) {
-                    continue;
-                }
-
-                Object value = null;
-                try {
-                    field.setAccessible(true);
-                    value = field.get(object);
-                } catch (IllegalAccessException e) {
-                    log.error("Failed to handle properties", e);
-                }
-
-                if (value != null) {
-                    properties.setProperty(name, value.toString());
-                }
-            }
+            object2Properties(object, objectClass, properties);
 
             if (objectClass == Object.class || objectClass.getSuperclass() == Object.class) {
                 break;
@@ -142,6 +125,32 @@ public class BeanUtils {
         }
 
         return properties;
+    }
+
+    private static void object2Properties(final Object object, final Class<?> objectClass, Properties properties) {
+        Field[] fields = objectClass.getDeclaredFields();
+        for (Field field : fields) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+
+            String name = field.getName();
+            if (name.startsWith("this")) {
+                continue;
+            }
+
+            Object value = null;
+            try {
+                field.setAccessible(true);
+                value = field.get(object);
+            } catch (IllegalAccessException e) {
+                log.error("Failed to handle properties", e);
+            }
+
+            if (value != null) {
+                properties.setProperty(name, value.toString());
+            }
+        }
     }
 
     public static void properties2Object(final Properties p, final Object object) {
