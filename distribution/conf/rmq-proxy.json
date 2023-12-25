@@ -1,3 +1,4 @@
 {
-  "rocketMQClusterName": "DefaultCluster"
+  "rocketMQClusterName": "DefaultCluster",
+  "proxyMode": "local"
 }
