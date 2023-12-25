@@ -152,7 +152,6 @@ public class LocalMessageService implements MessageService {
     @Override
     public CompletableFuture<PopResult> popMessage(ProxyContext ctx, AddressableMessageQueue messageQueue,
         PopMessageRequestHeader requestHeader, long timeoutMillis) {
-        requestHeader.setBornTime(System.currentTimeMillis());
 
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         processPopRequest(ctx, requestHeader, future);
