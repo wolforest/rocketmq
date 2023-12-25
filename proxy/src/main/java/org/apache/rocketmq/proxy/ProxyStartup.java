@@ -240,7 +240,7 @@ public class ProxyStartup {
             }
 
             @Override
-            public void shutdown() throws Exception {
+            public void shutdown() {
                 brokerController.shutdown();
             }
 
