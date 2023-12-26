@@ -1,4 +1,4 @@
-package org.apache.rocketmq.apitest;
+package org.apache.rocketmq.apitest.manager;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -7,6 +7,7 @@ import com.google.common.io.CharStreams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.client.apis.ClientConfiguration;
 import org.apache.rocketmq.client.apis.SessionCredentialsProvider;
 import org.apache.rocketmq.client.apis.StaticSessionCredentialsProvider;
@@ -30,6 +31,10 @@ public class ConfigManager {
     }
 
     public static ClientConfiguration buildClientConfig(String accountName) {
+        if (accountName == null) {
+            accountName = DEFAULT_ACCOUNT;
+        }
+
         JSONObject account = config.getJSONObject("accounts").getJSONObject(accountName);
         if (account == null) {
             throw new IllegalArgumentException("can't found account info: " + accountName);

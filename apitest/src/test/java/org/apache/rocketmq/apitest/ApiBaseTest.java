@@ -1,5 +1,6 @@
 package org.apache.rocketmq.apitest;
 
+import org.apache.rocketmq.apitest.manager.ConfigManager;
 import org.junit.After;
 import org.junit.Before;
 
