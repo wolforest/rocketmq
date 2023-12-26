@@ -1,3 +1,9 @@
 {
-  "testMode": "ok"
+  "endpoint": "127.0.0.1:63704",
+  "accounts": {
+    "default": {
+      "accessKey": "rocketmq2",
+      "secretKey": "12345678"
+    }
+  }
 }
