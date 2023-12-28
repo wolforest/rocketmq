@@ -1,5 +1,5 @@
 {
-  "endpoint": "127.0.0.1:63704",
+  "endpoint": "127.0.0.1:8081",
   "accounts": {
     "default": {
       "accessKey": "rocketmq2",
