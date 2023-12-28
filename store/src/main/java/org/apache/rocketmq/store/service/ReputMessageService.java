@@ -114,7 +114,7 @@ public class ReputMessageService extends ServiceThread {
         return this.reputFromOffset < messageStore.getConfirmOffset();
     }
 
-    protected void doReput() {
+    public void doReput() {
         loadReputOffset();
         for (boolean doNext = true; this.isCommitLogAvailable() && doNext; ) {
             SelectMappedBufferResult result = messageStore.getCommitLog().getData(reputFromOffset);
