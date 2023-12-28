@@ -60,7 +60,7 @@ public class BinaryUtils {
             return false;
         }
         for (byte b : subject) {
-            if ((b & 0x80) != 0) {
+            if (b < 32 || b > 126) {
                 return false;
             }
         }

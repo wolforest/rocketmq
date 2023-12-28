@@ -1123,6 +1123,14 @@ public class DefaultLitePullConsumerImpl implements MQConsumerInner {
     }
 
     @Override
+    public boolean tryRebalance() {
+        if (this.rebalanceImpl != null) {
+            return this.rebalanceImpl.doRebalance(false);
+        }
+        return false;
+    }
+
+    @Override
     public void persistConsumerOffset() {
         try {
             checkServiceState();
