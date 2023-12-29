@@ -62,7 +62,7 @@ public class ConfigManager {
         return ClientConfiguration.newBuilder()
             .setEndpoints(config.getString("endpoint"))
             .enableSsl(false)
-            .setCredentialProvider(sessionCredentialsProvider)
+            //.setCredentialProvider(sessionCredentialsProvider)
             .build();
     }
 

@@ -31,6 +31,7 @@ import org.apache.rocketmq.client.apis.consumer.PushConsumer;
 import org.apache.rocketmq.client.apis.message.Message;
 import org.apache.rocketmq.client.apis.producer.Producer;
 import org.apache.rocketmq.client.apis.producer.SendReceipt;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,6 +72,7 @@ public class PubSubTest extends ApiBaseTest {
             try {
                 SendReceipt sendReceipt = producer.send(message);
                 assertNotNull(sendReceipt);
+                System.out.println("pub message: " + message);
             } catch (Throwable t) {
                 LOG.error("Failed to send message: {}", i, t);
             }
@@ -104,12 +106,16 @@ public class PubSubTest extends ApiBaseTest {
     }
 
     private void stopConsumer() throws IOException {
+        ThreadUtils.sleep(5000);
+        System.out.println("stop consumer");
+
         if (consumer != null) {
             consumer.close();
         }
     }
 
     private void stopProducer() throws IOException {
+        System.out.println("stop producer");
         if (producer != null) {
             producer.close();
         }
@@ -117,6 +123,7 @@ public class PubSubTest extends ApiBaseTest {
 
     private MessageListener createListener() {
         return message -> {
+            System.out.println("Consume message={}" + message);
             LOG.info("Consume message={}", message);
             return ConsumeResult.SUCCESS;
         };
