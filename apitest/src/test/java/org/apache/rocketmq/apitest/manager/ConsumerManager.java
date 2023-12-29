@@ -16,13 +16,14 @@
  */
 package org.apache.rocketmq.apitest.manager;
 
-import java.util.Map;
 import org.apache.rocketmq.client.apis.ClientConfiguration;
 import org.apache.rocketmq.client.apis.consumer.FilterExpression;
 import org.apache.rocketmq.client.apis.consumer.MessageListener;
 import org.apache.rocketmq.client.apis.consumer.PushConsumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 public class ConsumerManager {
     private static final Logger LOG = LoggerFactory.getLogger(ConsumerManager.class);

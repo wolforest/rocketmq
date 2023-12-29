@@ -16,10 +16,6 @@
  */
 package org.apache.rocketmq.apitest.pubsub;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Map;
 import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.apitest.manager.ClientManager;
 import org.apache.rocketmq.apitest.manager.ConsumerManager;
@@ -32,11 +28,16 @@ import org.apache.rocketmq.client.apis.message.Message;
 import org.apache.rocketmq.client.apis.producer.Producer;
 import org.apache.rocketmq.client.apis.producer.SendReceipt;
 import org.apache.rocketmq.common.utils.ThreadUtils;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -107,7 +108,7 @@ public class PubSubTest extends ApiBaseTest {
 
     private void stopConsumer() throws IOException {
         ThreadUtils.sleep(5000);
-        System.out.println("stop consumer");
+        LOG.info("stop consumer");
 
         if (consumer != null) {
             consumer.close();
@@ -115,7 +116,7 @@ public class PubSubTest extends ApiBaseTest {
     }
 
     private void stopProducer() throws IOException {
-        System.out.println("stop producer");
+        LOG.info("stop producer");
         if (producer != null) {
             producer.close();
         }
@@ -123,7 +124,7 @@ public class PubSubTest extends ApiBaseTest {
 
     private MessageListener createListener() {
         return message -> {
-            System.out.println("Consume message={}" + message);
+            LOG.info("Consume message={}" + message);
             LOG.info("Consume message={}", message);
             return ConsumeResult.SUCCESS;
         };
