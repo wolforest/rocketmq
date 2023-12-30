@@ -58,7 +58,7 @@ public class PubSubTest extends ApiBaseTest {
         super.before();
 
         createProducer();
-        startConsumer();
+        //startConsumer();
     }
 
     @Test
@@ -67,13 +67,13 @@ public class PubSubTest extends ApiBaseTest {
             return;
         }
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100; i++) {
             Message message = createMessage(i);
 
             try {
                 SendReceipt sendReceipt = producer.send(message);
                 assertNotNull(sendReceipt);
-                System.out.println("pub message: " + message);
+                LOG.info("pub message: {}", message);
             } catch (Throwable t) {
                 LOG.error("Failed to send message: {}", i, t);
             }
@@ -103,28 +103,33 @@ public class PubSubTest extends ApiBaseTest {
     }
 
     private void startConsumer() {
+        LOG.info("create consumer");
         consumer = ConsumerManager.buildPushConsumer(CONSUMER_GROUP, createFilter(), createListener());
     }
 
     private void stopConsumer() throws IOException {
-        ThreadUtils.sleep(5000);
+        if (consumer == null) {
+            return;
+        }
+
+        ThreadUtils.sleep(30000);
         LOG.info("stop consumer");
 
-        if (consumer != null) {
-            consumer.close();
-        }
+        consumer.close();
     }
 
     private void stopProducer() throws IOException {
-        LOG.info("stop producer");
-        if (producer != null) {
-            producer.close();
+        if (producer == null) {
+            return;
         }
+
+        LOG.info("stop producer");
+        producer.close();
     }
 
     private MessageListener createListener() {
+        LOG.info("create consume listener");
         return message -> {
-            LOG.info("Consume message={}" + message);
             LOG.info("Consume message={}", message);
             return ConsumeResult.SUCCESS;
         };

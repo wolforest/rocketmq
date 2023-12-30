@@ -28,6 +28,11 @@
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-common</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-tools</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-core</artifactId>
