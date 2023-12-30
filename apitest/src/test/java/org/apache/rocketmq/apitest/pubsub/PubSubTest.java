@@ -73,7 +73,7 @@ public class PubSubTest extends ApiBaseTest {
             try {
                 SendReceipt sendReceipt = producer.send(message);
                 assertNotNull(sendReceipt);
-                LOG.info("pub message: {}", message);
+                LOG.info("pub message: {}", sendReceipt);
             } catch (Throwable t) {
                 LOG.error("Failed to send message: {}", i, t);
             }
