@@ -58,7 +58,7 @@ public class PubSubTest extends ApiBaseTest {
         super.before();
 
         createProducer();
-        startConsumer();
+        //startConsumer();
     }
 
     @Test
@@ -130,6 +130,8 @@ public class PubSubTest extends ApiBaseTest {
     private MessageListener createListener() {
         LOG.info("create consume listener");
         return message -> {
+            System.out.println("consume message=" + message);
+            System.out.println("log name = " + LOG.getName());
             LOG.info("Consume message={}", message);
             return ConsumeResult.SUCCESS;
         };

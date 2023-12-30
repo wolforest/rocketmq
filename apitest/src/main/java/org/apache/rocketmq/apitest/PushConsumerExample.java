@@ -22,11 +22,8 @@ import java.util.Collections;
 import org.apache.rocketmq.client.apis.ClientConfiguration;
 import org.apache.rocketmq.client.apis.ClientException;
 import org.apache.rocketmq.client.apis.ClientServiceProvider;
-import org.apache.rocketmq.client.apis.SessionCredentialsProvider;
-import org.apache.rocketmq.client.apis.StaticSessionCredentialsProvider;
 import org.apache.rocketmq.client.apis.consumer.ConsumeResult;
 import org.apache.rocketmq.client.apis.consumer.FilterExpression;
-import org.apache.rocketmq.client.apis.consumer.FilterExpressionType;
 import org.apache.rocketmq.client.apis.consumer.PushConsumer;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -40,22 +37,12 @@ public class PushConsumerExample {
     public static void main(String[] args) throws ClientException, InterruptedException, IOException {
         final ClientServiceProvider provider = ClientServiceProvider.loadService();
 
-        // Credential provider is optional for client configuration.
-        String accessKey = "yourAccessKey";
-        String secretKey = "yourSecretKey";
-        SessionCredentialsProvider sessionCredentialsProvider =
-            new StaticSessionCredentialsProvider(accessKey, secretKey);
-
         String endpoints = "192.168.50.159:8080";
         ClientConfiguration clientConfiguration = ClientConfiguration.newBuilder()
             .setEndpoints(endpoints)
-            // On some Windows platforms, you may encounter SSL compatibility issues. Try turning off the SSL option in
-            // client configuration to solve the problem please if SSL is not essential.
             .enableSsl(false)
-            //.setCredentialProvider(sessionCredentialsProvider)
             .build();
-        String tag = "*";
-        FilterExpression filterExpression = new FilterExpression(tag, FilterExpressionType.TAG);
+        FilterExpression filterExpression = new FilterExpression();
         String consumerGroup = "MQ_TEST_GROUP";
         String topic = "MQ_TEST_TOPIC";
         // In most case, you don't need to create too many consumers, singleton pattern is recommended.
@@ -67,13 +54,13 @@ public class PushConsumerExample {
             .setSubscriptionExpressions(Collections.singletonMap(topic, filterExpression))
             .setMessageListener(messageView -> {
                 // Handle the received message and return consume result.
-                log.error("Consume message={}", messageView);
                 System.out.println("consume message= " + messageView);
+                log.error("Consume message={}", messageView);
                 return ConsumeResult.SUCCESS;
             })
             .build();
         // Block the main thread, no need for production environment.
-        Thread.sleep(10000);
+        Thread.sleep(5000);
         // Close the push consumer when you don't need it anymore.
         // You could close it manually or add this into the JVM shutdown hook.
         pushConsumer.close();
