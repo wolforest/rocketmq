@@ -58,7 +58,7 @@ public class PubSubTest extends ApiBaseTest {
         super.before();
 
         createProducer();
-        //startConsumer();
+        startConsumer();
     }
 
     @Test
