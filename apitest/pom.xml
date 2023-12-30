@@ -30,6 +30,16 @@
         </dependency>
 
         <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.truth</groupId>
+            <artifactId>truth</artifactId>
+        </dependency>
+
+
+        <dependency>
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-tools</artifactId>
         </dependency>
