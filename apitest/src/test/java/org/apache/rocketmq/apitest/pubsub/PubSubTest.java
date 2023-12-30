@@ -58,7 +58,7 @@ public class PubSubTest extends ApiBaseTest {
         super.before();
 
         createProducer();
-        //startConsumer();
+        startConsumer();
     }
 
     @Test
@@ -67,7 +67,7 @@ public class PubSubTest extends ApiBaseTest {
             return;
         }
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             Message message = createMessage(i);
 
             try {
@@ -112,7 +112,7 @@ public class PubSubTest extends ApiBaseTest {
             return;
         }
 
-        ThreadUtils.sleep(30000);
+        ThreadUtils.sleep(5000);
         LOG.info("stop consumer");
 
         consumer.close();
@@ -130,8 +130,6 @@ public class PubSubTest extends ApiBaseTest {
     private MessageListener createListener() {
         LOG.info("create consume listener");
         return message -> {
-            System.out.println("consume message=" + message);
-            System.out.println("log name = " + LOG.getName());
             LOG.info("Consume message={}", message);
             return ConsumeResult.SUCCESS;
         };

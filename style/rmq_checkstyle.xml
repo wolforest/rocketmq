@@ -38,10 +38,10 @@
         <property name="fileExtensions" value="properties"/>
     </module>
 
-<!--    <module name="RegexpSingleline">-->
-<!--        <property name="format" value="System\.out\.println"/>-->
-<!--        <property name="message" value="Prohibit invoking System.out.println in source code !"/>-->
-<!--    </module>-->
+    <module name="RegexpSingleline">
+        <property name="format" value="System\.out\.println"/>
+        <property name="message" value="Prohibit invoking System.out.println in source code !"/>
+    </module>
 
     <module name="RegexpSingleline">
         <property name="format" value="//FIXME"/>

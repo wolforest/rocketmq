@@ -53,8 +53,8 @@ public class PushConsumerExample {
             // Set the subscription for the consumer.
             .setSubscriptionExpressions(Collections.singletonMap(topic, filterExpression))
             .setMessageListener(messageView -> {
+                System.out.println("consume message: " + messageView);
                 // Handle the received message and return consume result.
-                System.out.println("consume message= " + messageView);
                 log.error("Consume message={}", messageView);
                 return ConsumeResult.SUCCESS;
             })
