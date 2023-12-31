@@ -1,5 +1,7 @@
 {
-  "endpoint": "192.168.50.159:8080",
+  "proxyAddr": "192.168.50.159:8080",
+  "nameAddr": "127.0.0.1:9876",
+  "brokerAddr": "127.0.0.1:10911",
   "accounts": {
     "default": {
       "accessKey": "rocketmq2",

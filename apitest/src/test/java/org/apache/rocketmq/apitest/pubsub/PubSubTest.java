@@ -61,6 +61,18 @@ public class PubSubTest extends ApiBaseTest {
         startConsumer();
     }
 
+    @After
+    public void after() {
+        try {
+            stopConsumer();
+            stopProducer();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        super.after();
+    }
+
     @Test
     public void testSendOk() {
         if (producer == null) {
@@ -77,19 +89,6 @@ public class PubSubTest extends ApiBaseTest {
             } catch (Throwable t) {
                 LOG.error("Failed to send message: {}", i, t);
             }
-        }
-    }
-
-
-    @After
-    public void after() {
-        super.after();
-
-        try {
-            stopConsumer();
-            stopProducer();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 

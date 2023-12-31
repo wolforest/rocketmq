@@ -21,10 +21,12 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 
+import static org.apache.rocketmq.common.utils.NameServerAddressUtils.NAMESRV_ADDR_PROPERTY;
+
 public class ClientManager {
     private static MQAdminExt CLIENT = null;
 
-    private static ClientServiceProvider provider = ClientServiceProvider.loadService();
+    private static final ClientServiceProvider provider = ClientServiceProvider.loadService();
 
     public static ClientServiceProvider getProvider() {
         return provider;
@@ -36,6 +38,7 @@ public class ClientManager {
 
     public static void start() throws MQClientException {
         if (CLIENT == null) {
+            System.setProperty(NAMESRV_ADDR_PROPERTY, ConfigManager.getConfig().getString("nameAddr"));
             CLIENT = new DefaultMQAdminExt();
         }
 

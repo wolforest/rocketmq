@@ -16,5 +16,44 @@
  */
 package org.apache.rocketmq.apitest.admin;
 
-public class TopicTest {
+import org.apache.rocketmq.apitest.ApiBaseTest;
+import org.apache.rocketmq.apitest.manager.TopicManager;
+import org.apache.rocketmq.common.topic.TopicConfig;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
+public class TopicTest extends ApiBaseTest {
+    private static final Logger LOG = LoggerFactory.getLogger(TopicTest.class);
+
+    @Before
+    public void before() throws Throwable {
+        super.before();
+    }
+
+    @After
+    public void after() {
+        super.after();
+    }
+
+    @Test
+    public void testCreateTopic() {
+        String topic = TopicManager.createUniqueTopic();
+        TopicManager.createTopic(topic);
+
+        TopicConfig topicConfig = TopicManager.findTopic(topic);
+        assertNotNull(topicConfig);
+        assertEquals(topic, topicConfig.getTopicName());
+
+        TopicManager.deleteTopic(topic);
+
+        TopicConfig config2 = TopicManager.findTopic(topic);
+        assertNull(config2);
+    }
 }

@@ -30,8 +30,11 @@ import org.apache.rocketmq.client.apis.StaticSessionCredentialsProvider;
 import org.apache.rocketmq.common.utils.StringUtils;
 
 public class ConfigManager {
-    protected static final String BASE_CONFIG = "api-test.json";
-    private static final String DEFAULT_ACCOUNT = "default";
+    public static final String BASE_CONFIG = "api-test.json";
+    public static final String DEFAULT_ACCOUNT = "default";
+    public static final String DEFAULT_CLUSTER = "defaultCluster";
+    public static final int DEFAULT_QUEUE_NUM = 8;
+
     private static JSONObject config;
 
     public static void init() throws Exception {
@@ -60,7 +63,7 @@ public class ConfigManager {
             new StaticSessionCredentialsProvider(account.getString("accessKey"), account.getString("secretKey"));
 
         return ClientConfiguration.newBuilder()
-            .setEndpoints(config.getString("endpoint"))
+            .setEndpoints(config.getString("proxyAddr"))
             .enableSsl(false)
             //.setCredentialProvider(sessionCredentialsProvider)
             .build();
