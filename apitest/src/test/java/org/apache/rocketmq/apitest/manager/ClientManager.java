@@ -17,11 +17,33 @@
 package org.apache.rocketmq.apitest.manager;
 
 import org.apache.rocketmq.client.apis.ClientServiceProvider;
+import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
 
 public class ClientManager {
+    private static MQAdminExt CLIENT = null;
+
     private static ClientServiceProvider provider = ClientServiceProvider.loadService();
 
     public static ClientServiceProvider getProvider() {
         return provider;
     }
+
+    public static MQAdminExt getClient() {
+        return CLIENT;
+    }
+
+    public static void start() throws MQClientException {
+        if (CLIENT == null) {
+            CLIENT = new DefaultMQAdminExt();
+        }
+
+        CLIENT.start();
+    }
+
+    public static void shutdown() {
+        CLIENT.shutdown();
+    }
+
 }

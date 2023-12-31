@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.apitest;
 
+import org.apache.rocketmq.apitest.manager.ClientManager;
 import org.apache.rocketmq.apitest.manager.ConfigManager;
 import org.junit.After;
 import org.junit.Before;
@@ -24,10 +25,11 @@ public class ApiBaseTest {
     @Before
     public void before() throws Throwable {
         ConfigManager.init();
+        ClientManager.start();
     }
 
     @After
     public void after() {
-
+        ClientManager.shutdown();
     }
 }
