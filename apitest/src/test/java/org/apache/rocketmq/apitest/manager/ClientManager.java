@@ -37,11 +37,12 @@ public class ClientManager {
     }
 
     public static void start() throws MQClientException {
-        if (CLIENT == null) {
-            System.setProperty(NAMESRV_ADDR_PROPERTY, ConfigManager.getConfig().getString("nameAddr"));
-            CLIENT = new DefaultMQAdminExt();
+        if (CLIENT != null) {
+            return;
         }
 
+        System.setProperty(NAMESRV_ADDR_PROPERTY, ConfigManager.getConfig().getString("nameAddr"));
+        CLIENT = new DefaultMQAdminExt();
         CLIENT.start();
     }
 

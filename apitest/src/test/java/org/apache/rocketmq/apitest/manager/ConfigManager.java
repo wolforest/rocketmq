@@ -35,9 +35,13 @@ public class ConfigManager {
     public static final String DEFAULT_CLUSTER = "defaultCluster";
     public static final int DEFAULT_QUEUE_NUM = 8;
 
-    private static JSONObject config;
+    private static JSONObject config = null;
 
     public static void init() throws Exception {
+        if (null != config) {
+            return;
+        }
+
         config = loadConfig(BASE_CONFIG);
     }
 

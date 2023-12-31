@@ -30,6 +30,6 @@ public class ApiBaseTest {
 
     @After
     public void after() {
-        ClientManager.shutdown();
+        //ClientManager.shutdown();
     }
 }

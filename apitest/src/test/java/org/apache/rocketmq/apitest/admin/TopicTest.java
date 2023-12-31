@@ -18,6 +18,7 @@ package org.apache.rocketmq.apitest.admin;
 
 import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.apitest.manager.TopicManager;
+import org.apache.rocketmq.common.attribute.TopicMessageType;
 import org.apache.rocketmq.common.topic.TopicConfig;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -43,13 +44,46 @@ public class TopicTest extends ApiBaseTest {
     }
 
     @Test
-    public void testCreateTopic() {
+    public void testNormalTopic() {
         String topic = TopicManager.createUniqueTopic();
         TopicManager.createTopic(topic);
 
         TopicConfig topicConfig = TopicManager.findTopic(topic);
         assertNotNull(topicConfig);
         assertEquals(topic, topicConfig.getTopicName());
+        assertEquals(TopicMessageType.NORMAL, topicConfig.getTopicMessageType());
+
+        TopicManager.deleteTopic(topic);
+
+        TopicConfig config2 = TopicManager.findTopic(topic);
+        assertNull(config2);
+    }
+
+    @Test
+    public void testDelayTopic() {
+        String topic = TopicManager.createUniqueTopic();
+        TopicManager.createDelayTopic(topic);
+
+        TopicConfig topicConfig = TopicManager.findTopic(topic);
+        assertNotNull(topicConfig);
+        assertEquals(topic, topicConfig.getTopicName());
+        assertEquals(TopicMessageType.DELAY, topicConfig.getTopicMessageType());
+
+        TopicManager.deleteTopic(topic);
+
+        TopicConfig config2 = TopicManager.findTopic(topic);
+        assertNull(config2);
+    }
+
+    @Test
+    public void testTransactionTopic() {
+        String topic = TopicManager.createUniqueTopic();
+        TopicManager.createTransactionalTopic(topic);
+
+        TopicConfig topicConfig = TopicManager.findTopic(topic);
+        assertNotNull(topicConfig);
+        assertEquals(topic, topicConfig.getTopicName());
+        assertEquals(TopicMessageType.TRANSACTION, topicConfig.getTopicMessageType());
 
         TopicManager.deleteTopic(topic);
 
