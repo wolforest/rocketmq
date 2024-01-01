@@ -78,7 +78,7 @@ public class ConfigManager {
             throw new IllegalArgumentException("fileName can't be blank");
         }
 
-        try (InputStream inputStream = ApiBaseTest.class.getClassLoader().getResourceAsStream(fileName)) {
+        try (InputStream inputStream = ConfigManager.class.getClassLoader().getResourceAsStream(fileName)) {
             if (inputStream == null) {
                 throw new IOException("config file not exists: " + fileName);
             }
