@@ -21,7 +21,7 @@ import io.opentelemetry.api.common.Attributes;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.mqtrace.SendMessageContext;
-import org.apache.rocketmq.common.lang.AbortProcessException;
+import org.apache.rocketmq.common.app.AbortProcessException;
 import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;

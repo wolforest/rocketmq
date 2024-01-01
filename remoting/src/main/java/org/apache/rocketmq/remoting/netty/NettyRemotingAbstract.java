@@ -23,7 +23,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.opentelemetry.api.common.AttributesBuilder;
-import org.apache.rocketmq.common.lang.AbortProcessException;
+import org.apache.rocketmq.common.app.AbortProcessException;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
