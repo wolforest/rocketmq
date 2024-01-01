@@ -116,7 +116,7 @@ public class ConsistentHashRouter<T extends Node> {
         public MD5Hash() {
             try {
                 instance = MessageDigest.getInstance("MD5");
-            } catch (NoSuchAlgorithmException e) {
+            } catch (NoSuchAlgorithmException ignored) {
             }
         }
 
