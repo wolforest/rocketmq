@@ -27,7 +27,7 @@ public interface Compressor {
      * @param src bytes ready to compress
      * @param level compression level used to balance compression rate and time consumption
      * @return compressed byte data
-     * @throws IOException
+     * @throws IOException e
      */
     byte[] compress(byte[] src, int level) throws IOException;
 
@@ -36,7 +36,7 @@ public interface Compressor {
      *
      * @param src bytes ready to decompress
      * @return decompressed byte data
-     * @throws IOException
+     * @throws IOException e
      */
     byte[] decompress(byte[] src) throws IOException;
 }

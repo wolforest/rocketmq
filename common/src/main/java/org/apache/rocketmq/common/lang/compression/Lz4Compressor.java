@@ -31,7 +31,7 @@ public class Lz4Compressor implements Compressor {
 
     @Override
     public byte[] compress(byte[] src, int level) throws IOException {
-        byte[] result = src;
+        byte[] result;
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(src.length);
         LZ4FrameOutputStream outputStream = new LZ4FrameOutputStream(byteArrayOutputStream);
         try {
@@ -53,7 +53,6 @@ public class Lz4Compressor implements Compressor {
 
     @Override
     public byte[] decompress(byte[] src) throws IOException {
-        byte[] result = src;
         byte[] uncompressData = new byte[src.length];
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(src);
         LZ4FrameInputStream lz4InputStream = new LZ4FrameInputStream(byteArrayInputStream);
@@ -69,9 +68,7 @@ public class Lz4Compressor implements Compressor {
             }
             resultOutputStream.flush();
             resultOutputStream.close();
-            result = resultOutputStream.toByteArray();
-        } catch (IOException e) {
-            throw e;
+            return resultOutputStream.toByteArray();
         } finally {
             try {
                 lz4InputStream.close();
@@ -80,7 +77,5 @@ public class Lz4Compressor implements Compressor {
                 log.warn("Failed to close the lz4 compress stream ", e);
             }
         }
-
-        return result;
     }
 }
