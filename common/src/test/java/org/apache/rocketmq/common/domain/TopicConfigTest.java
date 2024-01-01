@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.common.domain;
 
-import org.apache.rocketmq.common.lang.attribute.TopicMessageType;
+import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.common.domain.constant.PermName;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.topic.TopicFilterType;

@@ -22,7 +22,6 @@ import com.alibaba.fastjson.annotation.JSONField;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.apache.rocketmq.common.lang.attribute.TopicMessageType;
 import org.apache.rocketmq.common.domain.constant.PermName;
 
 import static org.apache.rocketmq.common.domain.topic.TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE;

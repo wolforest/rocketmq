@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.rocketmq.common.lang.attribute.Attribute;
 import org.apache.rocketmq.common.lang.attribute.EnumAttribute;
-import org.apache.rocketmq.common.lang.attribute.TopicMessageType;
 
 import static com.google.common.collect.Sets.newHashSet;
 

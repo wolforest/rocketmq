@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.common.lang.attribute;
+package org.apache.rocketmq.common.domain.topic;
 
 import com.google.common.collect.Sets;
 import java.util.Map;

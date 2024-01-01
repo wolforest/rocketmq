@@ -41,7 +41,7 @@ import org.apache.rocketmq.common.app.config.PlainAccessConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.lang.lock.UnlockCallback;
 import org.apache.rocketmq.common.lang.attribute.AttributeParser;
-import org.apache.rocketmq.common.lang.attribute.TopicMessageType;
+import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.common.domain.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.domain.constant.FIleReadaheadMode;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
