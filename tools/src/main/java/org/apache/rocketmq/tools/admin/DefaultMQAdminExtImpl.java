@@ -46,7 +46,7 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.MQClientManager;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.common.lang.BoundaryType;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.app.config.PlainAccessConfig;
 import org.apache.rocketmq.common.lang.thread.ServiceState;

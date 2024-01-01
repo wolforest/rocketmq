@@ -18,6 +18,7 @@
 package org.apache.rocketmq.common.app;
 
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

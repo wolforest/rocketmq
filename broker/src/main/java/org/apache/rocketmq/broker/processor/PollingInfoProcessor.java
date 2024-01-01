@@ -21,7 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.longpolling.PopRequest;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.PermName;

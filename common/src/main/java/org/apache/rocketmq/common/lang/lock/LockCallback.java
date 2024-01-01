@@ -14,10 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common.lang;
+package org.apache.rocketmq.common.lang.lock;
 
-public interface UnlockCallback {
-    void onSuccess();
+import java.util.Set;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
+
+public interface LockCallback {
+    void onSuccess(final Set<MessageQueue> lockOKMQSet);
 
     void onException(final Throwable e);
 }

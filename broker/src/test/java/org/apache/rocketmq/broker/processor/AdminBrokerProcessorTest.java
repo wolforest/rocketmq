@@ -43,7 +43,7 @@ import org.apache.rocketmq.broker.topic.RocksDBTopicConfigManager;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
 import org.apache.rocketmq.common.lang.BoundaryType;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.topic.TopicFilterType;
 import org.apache.rocketmq.common.domain.topic.TopicQueueId;

@@ -19,7 +19,7 @@ package org.apache.rocketmq.common.domain.consumer;
 
 import java.util.Arrays;
 import java.util.List;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 
 public class ReceiptHandle {

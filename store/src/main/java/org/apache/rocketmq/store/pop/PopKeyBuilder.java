@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.pop;
 
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.constant.PopConstants;
 
 public class PopKeyBuilder {

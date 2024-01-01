@@ -48,7 +48,7 @@ import org.apache.rocketmq.acl.common.AuthenticationHeader;
 import org.apache.rocketmq.acl.common.AuthorizationHeader;
 import org.apache.rocketmq.acl.common.Permission;
 import org.apache.rocketmq.acl.common.SessionCredentials;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.common.app.config.PlainAccessConfig;
 import org.apache.rocketmq.common.domain.constant.MQConstants;

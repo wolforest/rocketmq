@@ -20,7 +20,7 @@ package org.apache.rocketmq.broker.subscription;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.domain.SubscriptionGroupAttributes;
+import org.apache.rocketmq.common.domain.consumer.SubscriptionGroupAttributes;
 import org.apache.rocketmq.common.lang.attribute.BooleanAttribute;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;

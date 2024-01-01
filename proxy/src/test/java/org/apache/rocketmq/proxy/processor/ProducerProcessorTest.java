@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.lang.attribute.TopicMessageType;
 import org.apache.rocketmq.common.domain.message.Message;
 import org.apache.rocketmq.common.domain.message.MessageAccessor;

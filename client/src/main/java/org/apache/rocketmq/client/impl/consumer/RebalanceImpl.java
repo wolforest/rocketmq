@@ -31,7 +31,7 @@ import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.FindBrokerResult;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.domain.message.MessageQueueAssignment;

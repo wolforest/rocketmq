@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common.domain;
+package org.apache.rocketmq.common.domain.consumer;
 
 import java.util.HashMap;
 import java.util.Map;

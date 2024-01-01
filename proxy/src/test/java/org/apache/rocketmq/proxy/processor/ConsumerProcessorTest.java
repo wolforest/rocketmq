@@ -33,7 +33,7 @@ import org.apache.rocketmq.client.consumer.AckStatus;
 import org.apache.rocketmq.client.consumer.PopResult;
 import org.apache.rocketmq.client.consumer.PopStatus;
 import org.apache.rocketmq.client.exception.MQBrokerException;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.domain.consumer.ReceiptHandle;
 import org.apache.rocketmq.common.domain.filter.ExpressionType;

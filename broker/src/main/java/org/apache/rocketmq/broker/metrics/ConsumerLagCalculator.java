@@ -32,7 +32,7 @@ import org.apache.rocketmq.broker.service.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.topic.TopicConfigManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;

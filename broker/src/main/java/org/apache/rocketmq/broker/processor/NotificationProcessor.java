@@ -23,7 +23,7 @@ import java.util.Random;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.longpolling.PollingHeader;
 import org.apache.rocketmq.broker.longpolling.PollingResult;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.PermName;

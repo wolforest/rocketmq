@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
 import org.apache.rocketmq.client.Validators;
-import org.apache.rocketmq.common.domain.SubscriptionGroupAttributes;
+import org.apache.rocketmq.common.domain.consumer.SubscriptionGroupAttributes;
 import org.apache.rocketmq.common.lang.attribute.AttributeUtil;
 import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.common.domain.constant.LoggerName;

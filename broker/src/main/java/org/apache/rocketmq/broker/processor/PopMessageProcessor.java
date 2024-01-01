@@ -40,7 +40,7 @@ import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.pagecache.ManyMessageTransfer;
 import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.service.pop.QueueLockManager;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.domain.constant.LoggerName;

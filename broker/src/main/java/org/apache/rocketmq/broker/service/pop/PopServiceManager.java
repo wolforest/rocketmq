@@ -24,7 +24,7 @@ import org.apache.rocketmq.broker.longpolling.PopLongPollingService;
 import org.apache.rocketmq.broker.longpolling.PopRequest;
 import org.apache.rocketmq.broker.processor.NotificationProcessor;
 import org.apache.rocketmq.broker.processor.PopMessageProcessor;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.constant.PopConstants;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageConst;

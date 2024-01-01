@@ -18,6 +18,7 @@
 package org.apache.rocketmq.common.lang;
 
 import java.util.concurrent.TimeUnit;
+import org.apache.rocketmq.common.lang.lock.CountDownLatch2;
 import org.junit.Test;
 
 import static org.hamcrest.core.Is.is;

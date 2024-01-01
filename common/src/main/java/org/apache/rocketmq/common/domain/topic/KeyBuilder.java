@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common.app;
+package org.apache.rocketmq.common.domain.topic;
 
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.domain.constant.PopConstants;

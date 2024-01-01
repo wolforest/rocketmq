@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.common.lang.CountDownLatch2;
+import org.apache.rocketmq.common.lang.lock.CountDownLatch2;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 

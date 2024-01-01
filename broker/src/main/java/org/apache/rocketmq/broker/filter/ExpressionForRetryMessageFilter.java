@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.filter;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;

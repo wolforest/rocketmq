@@ -33,7 +33,7 @@ import org.apache.rocketmq.broker.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.metrics.PopMetricsManager;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.domain.constant.PopConstants;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;

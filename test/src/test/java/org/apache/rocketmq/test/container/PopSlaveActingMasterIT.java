@@ -26,7 +26,7 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.app.BrokerIdentity;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.domain.message.Message;
 import org.apache.rocketmq.common.domain.message.MessageExt;

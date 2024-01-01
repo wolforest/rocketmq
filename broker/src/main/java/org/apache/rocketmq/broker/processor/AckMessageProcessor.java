@@ -25,7 +25,7 @@ import org.apache.rocketmq.broker.metrics.PopMetricsManager;
 import org.apache.rocketmq.broker.service.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.service.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.service.pop.QueueLockManager;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.constant.PopConstants;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;

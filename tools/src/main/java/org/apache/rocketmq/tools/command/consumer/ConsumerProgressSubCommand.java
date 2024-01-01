@@ -25,7 +25,7 @@ import java.util.Map;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;

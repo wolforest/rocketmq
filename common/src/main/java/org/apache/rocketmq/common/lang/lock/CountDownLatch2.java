@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.common.lang;
+package org.apache.rocketmq.common.lang.lock;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;

@@ -60,7 +60,7 @@ import org.apache.rocketmq.client.impl.FindBrokerResult;
 import org.apache.rocketmq.client.impl.MQClientManager;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.stat.ConsumerStatsManager;
-import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.lang.thread.ServiceState;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
