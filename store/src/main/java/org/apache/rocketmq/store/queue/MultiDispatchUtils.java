@@ -19,9 +19,9 @@ package org.apache.rocketmq.store.queue;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.topic.TopicValidator;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 

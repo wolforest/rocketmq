@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.remoting.protocol.admin;
 
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;

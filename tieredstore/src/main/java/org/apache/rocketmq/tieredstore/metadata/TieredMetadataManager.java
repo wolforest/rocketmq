@@ -27,8 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import org.apache.rocketmq.common.config.ConfigManager;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.app.config.ConfigManager;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.tieredstore.common.FileSegmentType;
 import org.apache.rocketmq.tieredstore.common.TieredMessageStoreConfig;
 

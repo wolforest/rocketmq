@@ -17,22 +17,22 @@
 
 package org.apache.rocketmq.client.consumer;
 
-import org.apache.rocketmq.common.filter.ExpressionType;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
 
 /**
  * Message selector: select message at server.
  * <p>
  * Now, support:
- * <li>Tag: {@link org.apache.rocketmq.common.filter.ExpressionType#TAG}
+ * <li>Tag: {@link ExpressionType#TAG}
  * </li>
- * <li>SQL92: {@link org.apache.rocketmq.common.filter.ExpressionType#SQL92}
+ * <li>SQL92: {@link ExpressionType#SQL92}
  * </li>
  * </p>
  */
 public class MessageSelector {
 
     /**
-     * @see org.apache.rocketmq.common.filter.ExpressionType
+     * @see ExpressionType
      */
     private String type;
 

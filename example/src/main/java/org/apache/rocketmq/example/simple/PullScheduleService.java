@@ -23,7 +23,7 @@ import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullTaskCallback;
 import org.apache.rocketmq.client.consumer.PullTaskContext;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 
 public class PullScheduleService {

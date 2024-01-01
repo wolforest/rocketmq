@@ -22,8 +22,8 @@ import java.util.Map;
 import org.apache.rocketmq.acl.AccessResource;
 import org.apache.rocketmq.acl.AccessValidator;
 import org.apache.rocketmq.acl.common.AuthenticationHeader;
-import org.apache.rocketmq.common.config.AclConfig;
-import org.apache.rocketmq.common.config.PlainAccessConfig;
+import org.apache.rocketmq.common.app.config.AclConfig;
+import org.apache.rocketmq.common.app.config.PlainAccessConfig;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 

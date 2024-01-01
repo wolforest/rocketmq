@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.test.client.producer.exception.msg;
 
-import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.domain.message.Message;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.test.base.BaseConf;

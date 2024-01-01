@@ -27,6 +27,7 @@ import java.util.zip.CRC32;
 
 import java.util.zip.DeflaterOutputStream;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.rocketmq.common.lang.compression.Compressor;
 
 public class BinaryUtils {
     public static byte[] calculateMd5(byte[] binaryData) {
@@ -96,7 +97,7 @@ public class BinaryUtils {
     }
 
     /**
-     * use {@link org.apache.rocketmq.common.compression.Compressor#compress(byte[], int)} instead.
+     * use {@link Compressor#compress(byte[], int)} instead.
      */
     public static byte[] compress(final byte[] src, final int level) throws IOException {
         byte[] result = src;

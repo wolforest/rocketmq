@@ -16,8 +16,8 @@
  */
 package org.apache.rocketmq.tieredstore.file;
 
-import org.apache.rocketmq.common.BoundaryType;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.lang.BoundaryType;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.tieredstore.TieredStoreTestUtil;
 import org.apache.rocketmq.tieredstore.common.FileSegmentType;
 import org.apache.rocketmq.tieredstore.common.TieredMessageStoreConfig;

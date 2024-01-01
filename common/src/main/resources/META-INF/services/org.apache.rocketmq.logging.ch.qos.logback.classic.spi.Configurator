@@ -1,1 +1,1 @@
-org.apache.rocketmq.common.logging.DefaultJoranConfiguratorExt
+org.apache.rocketmq.common.app.logging.DefaultJoranConfiguratorExt

@@ -18,7 +18,7 @@
 package org.apache.rocketmq.remoting.protocol.body;
 
 import java.util.Date;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
 
 public class QueueTimeSpan {

@@ -23,7 +23,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.config.PlainAccessConfig;
+import org.apache.rocketmq.common.app.config.PlainAccessConfig;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.common.utils.ServerUtil;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;

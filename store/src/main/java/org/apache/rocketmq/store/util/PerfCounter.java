@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.util;
 
-import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 

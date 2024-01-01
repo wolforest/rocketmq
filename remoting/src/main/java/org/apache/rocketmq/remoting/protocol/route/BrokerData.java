@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 
 /**
  * The class describes that a typical broker cluster's (in replication) details: the cluster (in sharding) name

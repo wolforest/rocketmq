@@ -19,10 +19,10 @@ package org.apache.rocketmq.client.consumer.rebalance;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.apache.rocketmq.common.consistenthash.ConsistentHashRouter;
-import org.apache.rocketmq.common.consistenthash.HashFunction;
-import org.apache.rocketmq.common.consistenthash.Node;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.lang.consistenthash.ConsistentHashRouter;
+import org.apache.rocketmq.common.lang.consistenthash.HashFunction;
+import org.apache.rocketmq.common.lang.consistenthash.Node;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 /**
  * Consistent Hashing queue algorithm

@@ -17,25 +17,25 @@
 
 package org.apache.rocketmq.store.stats;
 
-import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.apache.rocketmq.common.stats.Stats.BROKER_PUT_NUMS;
-import static org.apache.rocketmq.common.stats.Stats.GROUP_GET_FALL_SIZE;
-import static org.apache.rocketmq.common.stats.Stats.GROUP_GET_FALL_TIME;
-import static org.apache.rocketmq.common.stats.Stats.GROUP_GET_LATENCY;
-import static org.apache.rocketmq.common.stats.Stats.GROUP_GET_NUMS;
-import static org.apache.rocketmq.common.stats.Stats.GROUP_GET_SIZE;
-import static org.apache.rocketmq.common.stats.Stats.QUEUE_GET_NUMS;
-import static org.apache.rocketmq.common.stats.Stats.QUEUE_GET_SIZE;
-import static org.apache.rocketmq.common.stats.Stats.QUEUE_PUT_NUMS;
-import static org.apache.rocketmq.common.stats.Stats.QUEUE_PUT_SIZE;
-import static org.apache.rocketmq.common.stats.Stats.SNDBCK_PUT_NUMS;
-import static org.apache.rocketmq.common.stats.Stats.TOPIC_PUT_NUMS;
-import static org.apache.rocketmq.common.stats.Stats.TOPIC_PUT_SIZE;
+import static org.apache.rocketmq.common.app.stats.Stats.BROKER_PUT_NUMS;
+import static org.apache.rocketmq.common.app.stats.Stats.GROUP_GET_FALL_SIZE;
+import static org.apache.rocketmq.common.app.stats.Stats.GROUP_GET_FALL_TIME;
+import static org.apache.rocketmq.common.app.stats.Stats.GROUP_GET_LATENCY;
+import static org.apache.rocketmq.common.app.stats.Stats.GROUP_GET_NUMS;
+import static org.apache.rocketmq.common.app.stats.Stats.GROUP_GET_SIZE;
+import static org.apache.rocketmq.common.app.stats.Stats.QUEUE_GET_NUMS;
+import static org.apache.rocketmq.common.app.stats.Stats.QUEUE_GET_SIZE;
+import static org.apache.rocketmq.common.app.stats.Stats.QUEUE_PUT_NUMS;
+import static org.apache.rocketmq.common.app.stats.Stats.QUEUE_PUT_SIZE;
+import static org.apache.rocketmq.common.app.stats.Stats.SNDBCK_PUT_NUMS;
+import static org.apache.rocketmq.common.app.stats.Stats.TOPIC_PUT_NUMS;
+import static org.apache.rocketmq.common.app.stats.Stats.TOPIC_PUT_SIZE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class BrokerStatsManagerTest {

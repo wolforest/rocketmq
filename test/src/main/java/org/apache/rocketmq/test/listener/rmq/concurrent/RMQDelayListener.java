@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.test.listener.AbstractListener;
 import org.apache.rocketmq.test.util.RandomUtil;
 import org.apache.rocketmq.test.util.data.collect.DataCollector;

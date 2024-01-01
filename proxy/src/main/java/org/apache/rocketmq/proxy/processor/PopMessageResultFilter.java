@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.proxy.processor;
 
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 

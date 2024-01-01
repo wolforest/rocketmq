@@ -17,8 +17,8 @@
 
 package org.apache.rocketmq.client.trace;
 
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageType;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageType;
 import org.junit.Assert;
 import org.junit.Test;
 

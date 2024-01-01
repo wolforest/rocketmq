@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.common.Pair;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.lang.Pair;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 
 /**
  * Broker replicas info, mapping from brokerAddress to {brokerId, brokerHaAddress}.

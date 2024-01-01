@@ -23,7 +23,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 /**
  * An allocate strategy proxy for based on machine room nearside priority. An actual allocate strategy can be

@@ -17,7 +17,7 @@
 package org.apache.rocketmq.store.pop;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.rocketmq.common.constant.PopConstants;
+import org.apache.rocketmq.common.domain.constant.PopConstants;
 
 public class PopCheckPointWrapper {
     private final int reviveQueueId;

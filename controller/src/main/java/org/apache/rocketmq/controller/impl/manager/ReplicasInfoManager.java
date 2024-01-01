@@ -28,9 +28,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.config.ControllerConfig;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.app.config.ControllerConfig;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.controller.elect.ElectPolicy;
 import org.apache.rocketmq.controller.helper.BrokerValidPredicate;
 import org.apache.rocketmq.controller.impl.event.AlterSyncStateSetEvent;

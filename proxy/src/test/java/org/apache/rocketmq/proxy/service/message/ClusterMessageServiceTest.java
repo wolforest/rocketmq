@@ -17,8 +17,8 @@
 package org.apache.rocketmq.proxy.service.message;
 
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.consumer.ReceiptHandle;
-import org.apache.rocketmq.common.message.MessageClientIDSetter;
+import org.apache.rocketmq.common.domain.consumer.ReceiptHandle;
+import org.apache.rocketmq.common.domain.message.MessageClientIDSetter;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.common.ProxyException;
 import org.apache.rocketmq.proxy.common.ProxyExceptionCode;

@@ -26,7 +26,7 @@ import org.apache.rocketmq.client.hook.SendMessageContext;
 import org.apache.rocketmq.client.hook.SendMessageHook;
 import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.client.trace.TraceConstants;
-import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.domain.message.Message;
 
 public class SendMessageOpenTracingHookImpl implements SendMessageHook {
 

@@ -17,7 +17,7 @@
 package org.apache.rocketmq.remoting.protocol.body;
 
 import com.alibaba.fastjson.JSON;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.junit.Test;
 
 import java.util.Arrays;

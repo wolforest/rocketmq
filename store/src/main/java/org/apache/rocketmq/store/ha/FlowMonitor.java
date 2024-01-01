@@ -19,7 +19,7 @@ package org.apache.rocketmq.store.ha;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 public class FlowMonitor extends ServiceThread {

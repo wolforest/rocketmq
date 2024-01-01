@@ -24,10 +24,10 @@ import org.apache.rocketmq.client.trace.TraceBean;
 import org.apache.rocketmq.client.trace.TraceContext;
 import org.apache.rocketmq.client.trace.TraceDispatcher;
 import org.apache.rocketmq.client.trace.TraceType;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageType;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.message.MessageType;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
 
 public class EndTransactionTraceHookImpl implements EndTransactionHook {

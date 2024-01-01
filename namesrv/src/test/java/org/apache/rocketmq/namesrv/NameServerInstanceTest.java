@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.namesrv;
 
-import org.apache.rocketmq.common.namesrv.NamesrvConfig;
+import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.junit.After;
 import org.junit.Before;

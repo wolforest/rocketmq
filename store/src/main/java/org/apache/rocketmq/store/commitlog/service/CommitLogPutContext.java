@@ -16,8 +16,8 @@
  */
 package org.apache.rocketmq.store.commitlog.service;
 
-import org.apache.rocketmq.common.message.MessageExtBatch;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.domain.message.MessageExtBatch;
+import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.AppendMessageResult;
 import org.apache.rocketmq.store.MessageExtEncoder;
 import org.apache.rocketmq.store.logfile.MappedFile;

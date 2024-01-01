@@ -17,11 +17,11 @@
 
 package org.apache.rocketmq.store;
 
-import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageDecoder;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBatch;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageDecoder;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExtBatch;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.commitlog.AppendMessageCallback;
 import org.apache.rocketmq.store.commitlog.CommitLog;

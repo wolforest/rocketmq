@@ -18,8 +18,8 @@
 package org.apache.rocketmq.client.stat;
 
 import java.util.concurrent.ScheduledExecutorService;
-import org.apache.rocketmq.common.stats.StatsItemSet;
-import org.apache.rocketmq.common.stats.StatsSnapshot;
+import org.apache.rocketmq.common.app.stats.StatsItemSet;
+import org.apache.rocketmq.common.app.stats.StatsSnapshot;
 import org.apache.rocketmq.remoting.protocol.body.ConsumeStatus;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;

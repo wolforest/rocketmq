@@ -26,7 +26,7 @@ import io.openmessaging.rocketmq.config.ClientConfig;
 import io.openmessaging.rocketmq.domain.NonStandardKeys;
 import java.lang.reflect.Field;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -38,7 +38,7 @@ import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
 
 public class PushConsumerImpl implements PushConsumer {

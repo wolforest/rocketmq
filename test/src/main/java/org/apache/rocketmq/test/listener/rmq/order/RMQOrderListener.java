@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.test.listener.AbstractListener;
 
 public class RMQOrderListener extends AbstractListener implements MessageListenerOrderly {

@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.rocksdb;
 
-import org.apache.rocketmq.common.config.ConfigRocksDBStorage;
+import org.apache.rocketmq.common.app.config.ConfigRocksDBStorage;
 import org.apache.rocketmq.store.MessageStore;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;

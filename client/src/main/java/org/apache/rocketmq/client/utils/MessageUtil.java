@@ -19,10 +19,10 @@ package org.apache.rocketmq.client.utils;
 
 import org.apache.rocketmq.client.common.ClientErrorCode;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageAccessor;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 
 public class MessageUtil {
     public static final String REPLY_MESSAGE_FLAG = "reply";

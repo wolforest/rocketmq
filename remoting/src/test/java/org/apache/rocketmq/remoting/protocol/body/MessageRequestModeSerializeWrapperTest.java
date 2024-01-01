@@ -17,7 +17,7 @@
 package org.apache.rocketmq.remoting.protocol.body;
 
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.common.message.MessageRequestMode;
+import org.apache.rocketmq.common.domain.message.MessageRequestMode;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 import org.junit.Test;
 

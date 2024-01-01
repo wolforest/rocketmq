@@ -17,8 +17,8 @@
 package org.apache.rocketmq.client.consumer;
 
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 import java.util.Collection;
 import java.util.List;

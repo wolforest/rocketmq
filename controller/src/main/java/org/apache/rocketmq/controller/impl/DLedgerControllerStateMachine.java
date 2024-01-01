@@ -22,7 +22,7 @@ import io.openmessaging.storage.dledger.snapshot.SnapshotWriter;
 import io.openmessaging.storage.dledger.statemachine.CommittedEntryIterator;
 import io.openmessaging.storage.dledger.statemachine.StateMachine;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.controller.impl.event.EventMessage;
 import org.apache.rocketmq.controller.impl.event.EventSerializer;
 import org.apache.rocketmq.controller.impl.manager.ReplicasInfoManager;

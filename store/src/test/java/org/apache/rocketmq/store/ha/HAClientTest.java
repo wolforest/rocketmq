@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.store.ha;
 
-import org.apache.rocketmq.common.config.BrokerConfig;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.junit.After;
 import org.junit.Before;

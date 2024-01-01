@@ -21,7 +21,7 @@ import java.util.List;
 
 import com.google.common.base.Preconditions;
 import org.apache.rocketmq.client.common.ThreadLocalIndex;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 

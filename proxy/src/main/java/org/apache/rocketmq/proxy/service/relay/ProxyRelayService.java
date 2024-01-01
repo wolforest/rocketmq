@@ -17,7 +17,7 @@
 package org.apache.rocketmq.proxy.service.relay;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.service.transaction.TransactionData;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;

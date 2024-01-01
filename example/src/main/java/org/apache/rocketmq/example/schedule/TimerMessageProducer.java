@@ -19,7 +19,7 @@ package org.apache.rocketmq.example.schedule;
 import java.nio.charset.StandardCharsets;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
-import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.domain.message.Message;
 
 public class TimerMessageProducer {
 

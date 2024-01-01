@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.proxy.service.route;
 
-import org.apache.rocketmq.common.constant.PermName;
+import org.apache.rocketmq.common.domain.constant.PermName;
 import org.apache.rocketmq.proxy.service.BaseServiceTest;
 import org.junit.Test;
 

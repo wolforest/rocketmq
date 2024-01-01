@@ -18,7 +18,7 @@ package org.apache.rocketmq.store.rocksdb;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.rocketmq.common.config.AbstractRocksDBStorage;
+import org.apache.rocketmq.common.app.config.AbstractRocksDBStorage;
 import org.apache.rocketmq.common.utils.DataConverter;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.MessageStore;

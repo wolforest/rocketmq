@@ -17,7 +17,7 @@
 package org.apache.rocketmq.remoting.rpc;
 
 import java.util.concurrent.Future;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 public interface RpcClient {
 

@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.test.route;
 
-import org.apache.rocketmq.common.topic.TopicConfig;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.test.base.BaseConf;
 import org.apache.rocketmq.test.util.MQAdminTestUtils;

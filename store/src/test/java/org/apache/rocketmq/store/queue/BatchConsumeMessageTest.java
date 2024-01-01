@@ -17,14 +17,14 @@
 
 package org.apache.rocketmq.store.queue;
 
-import org.apache.rocketmq.common.topic.TopicConfig;
-import org.apache.rocketmq.common.attribute.CQType;
-import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageDecoder;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.message.MessageAccessor;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.message.MessageDecoder;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
 import org.apache.rocketmq.store.DefaultMessageStore;

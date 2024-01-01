@@ -37,16 +37,16 @@ import org.apache.rocketmq.acl.common.AclConstants;
 import org.apache.rocketmq.acl.common.AclException;
 import org.apache.rocketmq.acl.common.AclUtils;
 import org.apache.rocketmq.acl.common.Permission;
-import org.apache.rocketmq.common.config.AclConfig;
-import org.apache.rocketmq.common.config.PlainAccessConfig;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.app.config.AclConfig;
+import org.apache.rocketmq.common.app.config.PlainAccessConfig;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
-import org.apache.rocketmq.common.thread.AclFileWatchService;
+import org.apache.rocketmq.common.lang.thread.AclFileWatchService;
 
 public class PlainPermissionManager {
 

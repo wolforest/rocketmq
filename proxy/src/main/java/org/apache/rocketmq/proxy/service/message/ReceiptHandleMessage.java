@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.proxy.service.message;
 
-import org.apache.rocketmq.common.consumer.ReceiptHandle;
+import org.apache.rocketmq.common.domain.consumer.ReceiptHandle;
 
 public class ReceiptHandleMessage {
 

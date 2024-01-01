@@ -25,8 +25,8 @@ import io.opentracing.tag.Tags;
 import org.apache.rocketmq.client.hook.EndTransactionContext;
 import org.apache.rocketmq.client.hook.EndTransactionHook;
 import org.apache.rocketmq.client.trace.TraceConstants;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageType;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageType;
 
 public class EndTransactionOpenTracingHookImpl implements EndTransactionHook {
 

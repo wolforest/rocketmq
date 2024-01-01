@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.tieredstore.provider;
 
-import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.junit.Assert;
 import org.junit.Test;
 

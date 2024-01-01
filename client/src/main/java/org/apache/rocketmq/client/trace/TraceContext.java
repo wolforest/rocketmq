@@ -17,7 +17,7 @@
 package org.apache.rocketmq.client.trace;
 
 import org.apache.rocketmq.client.AccessChannel;
-import org.apache.rocketmq.common.message.MessageClientIDSetter;
+import org.apache.rocketmq.common.domain.message.MessageClientIDSetter;
 
 import java.util.List;
 

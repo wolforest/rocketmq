@@ -16,10 +16,10 @@
  */
 package org.apache.rocketmq.store.timer.transit;
 
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageClientIDSetter;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.message.MessageClientIDSetter;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;

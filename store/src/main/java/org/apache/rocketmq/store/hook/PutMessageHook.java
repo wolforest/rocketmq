@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.hook;
 
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.store.PutMessageResult;
 
 public interface PutMessageHook {

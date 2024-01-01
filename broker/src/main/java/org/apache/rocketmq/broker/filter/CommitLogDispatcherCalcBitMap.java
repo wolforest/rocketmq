@@ -17,8 +17,8 @@
 
 package org.apache.rocketmq.broker.filter;
 
-import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.filter.util.BitsArray;
 import org.apache.rocketmq.logging.org.slf4j.Logger;

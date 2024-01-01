@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.timer;
 
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;

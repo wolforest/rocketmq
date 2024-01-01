@@ -18,8 +18,8 @@ package org.apache.rocketmq.namesrv.processor;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.common.topic.TopicConfig;
-import org.apache.rocketmq.common.namesrv.NamesrvConfig;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;

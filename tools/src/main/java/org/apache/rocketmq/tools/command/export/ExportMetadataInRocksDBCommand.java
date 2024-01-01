@@ -21,7 +21,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.config.ConfigRocksDBStorage;
+import org.apache.rocketmq.common.app.config.ConfigRocksDBStorage;
 import org.apache.rocketmq.common.utils.DataConverter;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.RPCHook;

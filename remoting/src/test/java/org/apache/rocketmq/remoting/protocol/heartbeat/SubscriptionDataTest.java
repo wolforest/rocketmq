@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.remoting.protocol.heartbeat;
 
-import org.apache.rocketmq.common.filter.ExpressionType;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 import org.assertj.core.util.Sets;
 import org.junit.Test;

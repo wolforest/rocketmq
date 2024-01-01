@@ -25,13 +25,15 @@ import io.openmessaging.rocketmq.domain.BytesMessageImpl;
 import io.openmessaging.rocketmq.domain.RocketMQConstants;
 import io.openmessaging.rocketmq.domain.SendResultImpl;
 import org.apache.rocketmq.client.producer.SendStatus;
-import org.apache.rocketmq.common.message.MessageAccessor;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageAccessor;
 
 import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.utils.SystemUtils;
 
 public class OMSUtil {
@@ -45,8 +47,8 @@ public class OMSUtil {
         return Integer.toString(SystemUtils.getPid()) + "%OpenMessaging" + "%" + System.nanoTime();
     }
 
-    public static org.apache.rocketmq.common.message.Message msgConvert(BytesMessage omsMessage) {
-        org.apache.rocketmq.common.message.Message rmqMessage = new org.apache.rocketmq.common.message.Message();
+    public static Message msgConvert(BytesMessage omsMessage) {
+        Message rmqMessage = new Message();
         rmqMessage.setBody(omsMessage.getBody(byte[].class));
 
         KeyValue sysHeaders = omsMessage.sysHeaders();
@@ -74,7 +76,7 @@ public class OMSUtil {
         return rmqMessage;
     }
 
-    public static BytesMessage msgConvert(org.apache.rocketmq.common.message.MessageExt rmqMsg) {
+    public static BytesMessage msgConvert(MessageExt rmqMsg) {
         BytesMessage omsMsg = new BytesMessageImpl();
         omsMsg.setBody(rmqMsg.getBody());
 

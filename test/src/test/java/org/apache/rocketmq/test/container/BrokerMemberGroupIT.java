@@ -18,7 +18,7 @@
 package org.apache.rocketmq.test.container;
 
 import java.time.Duration;
-import org.apache.rocketmq.common.config.BrokerConfig;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
 import org.junit.Ignore;
 import org.junit.Test;

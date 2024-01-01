@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.remoting.protocol.topic;
 
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 import org.junit.Test;
 

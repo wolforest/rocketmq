@@ -24,8 +24,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.List;
-import org.apache.rocketmq.common.constant.MQVersion;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQVersion;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 
 public class HttpTinyClient {
 

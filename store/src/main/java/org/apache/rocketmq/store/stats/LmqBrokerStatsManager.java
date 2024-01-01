@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.stats;
 
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 
 public class LmqBrokerStatsManager extends BrokerStatsManager {
 

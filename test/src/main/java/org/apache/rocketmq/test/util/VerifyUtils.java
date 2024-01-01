@@ -20,7 +20,7 @@ package org.apache.rocketmq.test.util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 

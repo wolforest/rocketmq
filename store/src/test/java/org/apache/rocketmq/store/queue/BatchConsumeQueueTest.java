@@ -18,7 +18,7 @@
 package org.apache.rocketmq.store.queue;
 
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.common.config.BrokerConfig;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;

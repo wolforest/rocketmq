@@ -16,16 +16,16 @@
  */
 package org.apache.rocketmq.store.queue;
 
-import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.topic.TopicAttributes;
-import org.apache.rocketmq.common.topic.TopicConfig;
-import org.apache.rocketmq.common.attribute.CQType;
-import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageDecoder;
-import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.common.domain.topic.TopicAttributes;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.message.MessageAccessor;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.message.MessageDecoder;
+import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.store.DefaultMessageStore;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.StoreTestBase;
 import org.apache.rocketmq.store.config.MessageStoreConfig;

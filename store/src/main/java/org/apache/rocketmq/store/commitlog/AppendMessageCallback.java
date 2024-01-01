@@ -17,8 +17,8 @@
 package org.apache.rocketmq.store.commitlog;
 
 import java.nio.ByteBuffer;
-import org.apache.rocketmq.common.message.MessageExtBatch;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.domain.message.MessageExtBatch;
+import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.AppendMessageResult;
 import org.apache.rocketmq.store.PutMessageContext;
 

@@ -20,9 +20,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.rocketmq.common.KeyBuilder;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.app.KeyBuilder;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 
 public class ExtraInfoUtil {
     private static final String NORMAL_TOPIC = "0";

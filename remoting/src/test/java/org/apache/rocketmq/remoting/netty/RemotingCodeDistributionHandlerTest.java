@@ -22,7 +22,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.rocketmq.common.ThreadFactoryImpl;
+import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 

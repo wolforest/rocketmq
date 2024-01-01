@@ -21,7 +21,7 @@ import java.util.Properties;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.common.utils.ServerUtil;
 import org.apache.rocketmq.tools.command.SubCommandException;

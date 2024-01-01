@@ -20,8 +20,8 @@ package org.apache.rocketmq.container.logback;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.rocketmq.common.BrokerIdentity;
-import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.app.BrokerIdentity;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 

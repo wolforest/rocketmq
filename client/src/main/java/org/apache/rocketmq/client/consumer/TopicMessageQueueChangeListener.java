@@ -17,7 +17,7 @@
 package org.apache.rocketmq.client.consumer;
 
 import java.util.Set;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 public interface TopicMessageQueueChangeListener {
     /**

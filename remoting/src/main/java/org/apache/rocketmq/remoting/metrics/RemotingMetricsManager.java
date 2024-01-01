@@ -31,8 +31,8 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
-import org.apache.rocketmq.common.Pair;
-import org.apache.rocketmq.common.metrics.NopLongHistogram;
+import org.apache.rocketmq.common.lang.Pair;
+import org.apache.rocketmq.common.app.metrics.NopLongHistogram;
 
 import static org.apache.rocketmq.remoting.metrics.RemotingMetricsConstant.HISTOGRAM_RPC_LATENCY;
 import static org.apache.rocketmq.remoting.metrics.RemotingMetricsConstant.LABEL_PROTOCOL_TYPE;

@@ -19,8 +19,8 @@ package org.apache.rocketmq.store.queue;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.common.BoundaryType;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.lang.BoundaryType;
+import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.rocksdb.RocksDBException;
 

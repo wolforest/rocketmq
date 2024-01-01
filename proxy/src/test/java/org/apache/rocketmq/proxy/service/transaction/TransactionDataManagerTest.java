@@ -20,7 +20,7 @@ package org.apache.rocketmq.proxy.service.transaction;
 import java.time.Duration;
 import java.util.Random;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.rocketmq.common.message.MessageClientIDSetter;
+import org.apache.rocketmq.common.domain.message.MessageClientIDSetter;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.proxy.config.InitConfigTest;
 import org.junit.After;

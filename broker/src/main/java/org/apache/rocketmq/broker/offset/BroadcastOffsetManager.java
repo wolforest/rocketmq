@@ -23,8 +23,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.common.lang.thread.ServiceThread;
 
 /**
  * manage the offset of broadcast.

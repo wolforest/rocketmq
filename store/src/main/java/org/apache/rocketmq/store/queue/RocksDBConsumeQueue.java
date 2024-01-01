@@ -18,11 +18,11 @@ package org.apache.rocketmq.store.queue;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import org.apache.rocketmq.common.BoundaryType;
-import org.apache.rocketmq.common.Pair;
-import org.apache.rocketmq.common.attribute.CQType;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.lang.BoundaryType;
+import org.apache.rocketmq.common.lang.Pair;
+import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DispatchRequest;

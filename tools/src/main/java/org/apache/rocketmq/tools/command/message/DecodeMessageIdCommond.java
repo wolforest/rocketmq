@@ -19,7 +19,7 @@ package org.apache.rocketmq.tools.command.message;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.message.MessageClientIDSetter;
+import org.apache.rocketmq.common.domain.message.MessageClientIDSetter;
 import org.apache.rocketmq.common.utils.DateUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;

@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.namesrv;
 
-import org.apache.rocketmq.common.namesrv.NamesrvConfig;
+import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
 import org.apache.rocketmq.namesrv.kvconfig.KVConfigManager;
 import org.apache.rocketmq.namesrv.routeinfo.RouteInfoManager;
 import org.apache.rocketmq.remoting.Configuration;

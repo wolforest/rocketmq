@@ -18,7 +18,7 @@
 package org.apache.rocketmq.store;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.rocketmq.common.ThreadFactoryImpl;
+import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;

@@ -17,7 +17,7 @@
 package org.apache.rocketmq.client.impl.consumer;
 
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 

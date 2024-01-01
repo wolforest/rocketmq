@@ -18,12 +18,12 @@ package org.apache.rocketmq.broker.transaction.queue;
 
 import java.net.InetSocketAddress;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.common.domain.message.MessageAccessor;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.store.MessageStore;

@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.kv;
 
-import org.apache.rocketmq.common.config.ConfigManager;
+import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 import java.io.File;

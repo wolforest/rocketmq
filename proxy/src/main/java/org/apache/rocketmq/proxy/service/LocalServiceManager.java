@@ -24,7 +24,7 @@ import org.apache.rocketmq.broker.client.ProducerManager;
 import org.apache.rocketmq.client.common.NameserverAccessConfig;
 import org.apache.rocketmq.client.impl.mqclient.DoNothingClientRemotingProcessor;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIFactory;
-import org.apache.rocketmq.common.ThreadFactoryImpl;
+import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.utils.AbstractStartAndShutdown;
 import org.apache.rocketmq.common.utils.StartAndShutdown;
 import org.apache.rocketmq.common.utils.ThreadUtils;

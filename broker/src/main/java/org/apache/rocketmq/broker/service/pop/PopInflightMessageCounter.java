@@ -17,8 +17,8 @@
 package org.apache.rocketmq.broker.service.pop;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.Pair;
-import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.lang.Pair;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.pop.PopCheckPoint;

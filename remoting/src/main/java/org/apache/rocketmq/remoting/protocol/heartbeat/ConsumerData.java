@@ -22,7 +22,7 @@ package org.apache.rocketmq.remoting.protocol.heartbeat;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
+import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
 
 public class ConsumerData {
     private String groupName;

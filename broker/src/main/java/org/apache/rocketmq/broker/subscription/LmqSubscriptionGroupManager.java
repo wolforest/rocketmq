@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.subscription;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 
 public class LmqSubscriptionGroupManager extends SubscriptionGroupManager {

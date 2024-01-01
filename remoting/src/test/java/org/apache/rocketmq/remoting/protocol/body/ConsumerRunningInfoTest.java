@@ -20,7 +20,7 @@ package org.apache.rocketmq.remoting.protocol.body;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 import org.apache.rocketmq.remoting.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;

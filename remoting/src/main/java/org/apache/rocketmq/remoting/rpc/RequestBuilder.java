@@ -18,7 +18,7 @@ package org.apache.rocketmq.remoting.rpc;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
 import org.apache.rocketmq.remoting.protocol.header.PullMessageRequestHeader;
 

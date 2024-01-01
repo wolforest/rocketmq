@@ -18,7 +18,7 @@ package org.apache.rocketmq.tieredstore.provider;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.tieredstore.common.FileSegmentType;
 import org.apache.rocketmq.tieredstore.common.TieredMessageStoreConfig;
 import org.apache.rocketmq.tieredstore.file.TieredCommitLog;

@@ -20,7 +20,7 @@ package org.apache.rocketmq.test.client.producer.exception.msg;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
-import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.domain.message.Message;
 import org.apache.rocketmq.test.base.BaseConf;
 import org.apache.rocketmq.test.factory.MessageFactory;
 import org.apache.rocketmq.test.factory.ProducerFactory;

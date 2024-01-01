@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.timer;
 
-import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.lang.thread.ServiceThread;
 
 public abstract class AbstractStateService extends ServiceThread {
     public static final int INITIAL = -1, START = 0, WAITING = 1, RUNNING = 2, END = 3;

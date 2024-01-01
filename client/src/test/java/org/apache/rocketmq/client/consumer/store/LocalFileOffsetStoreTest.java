@@ -23,7 +23,7 @@ import java.util.Map;
 
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

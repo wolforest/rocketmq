@@ -19,7 +19,7 @@ package org.apache.rocketmq.remoting.protocol.body;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 @Deprecated

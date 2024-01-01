@@ -18,7 +18,7 @@
 package org.apache.rocketmq.remoting.protocol.body;
 
 import java.util.Set;
-import org.apache.rocketmq.common.message.MessageQueueAssignment;
+import org.apache.rocketmq.common.domain.message.MessageQueueAssignment;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class QueryAssignmentResponseBody extends RemotingSerializable {

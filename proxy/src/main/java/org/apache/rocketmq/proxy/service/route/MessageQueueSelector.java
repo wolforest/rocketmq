@@ -32,8 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
 import org.apache.rocketmq.client.latency.MQFaultStrategy;
-import org.apache.rocketmq.common.constant.PermName;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.constant.PermName;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 

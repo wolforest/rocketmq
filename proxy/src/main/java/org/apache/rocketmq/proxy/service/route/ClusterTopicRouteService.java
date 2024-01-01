@@ -17,7 +17,7 @@
 package org.apache.rocketmq.proxy.service.route;
 
 import java.util.List;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.proxy.common.Address;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIFactory;
 import org.apache.rocketmq.proxy.common.ProxyContext;

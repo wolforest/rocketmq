@@ -16,9 +16,9 @@
  */
 package org.apache.rocketmq.common.utils;
 
-import org.apache.rocketmq.common.topic.TopicAttributes;
-import org.apache.rocketmq.common.topic.TopicConfig;
-import org.apache.rocketmq.common.attribute.CleanupPolicy;
+import org.apache.rocketmq.common.domain.topic.TopicAttributes;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.common.lang.attribute.CleanupPolicy;
 
 import java.util.Map;
 import java.util.Objects;

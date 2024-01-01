@@ -18,8 +18,8 @@ package org.apache.rocketmq.namesrv.routeinfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import org.apache.rocketmq.common.namesrv.NamesrvConfig;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.junit.After;

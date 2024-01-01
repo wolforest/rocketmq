@@ -20,7 +20,7 @@ package org.apache.rocketmq.proxy.common;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.rocketmq.common.consumer.ReceiptHandle;
+import org.apache.rocketmq.common.domain.consumer.ReceiptHandle;
 
 public class MessageReceiptHandle {
     private final String group;

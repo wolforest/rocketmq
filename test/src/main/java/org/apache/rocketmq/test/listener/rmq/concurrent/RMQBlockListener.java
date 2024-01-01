@@ -20,7 +20,7 @@ package org.apache.rocketmq.test.listener.rmq.concurrent;
 import java.util.List;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
 public class RMQBlockListener extends RMQNormalListener {
     private volatile boolean block = true;

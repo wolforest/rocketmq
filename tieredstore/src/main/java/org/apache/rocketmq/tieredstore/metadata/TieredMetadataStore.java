@@ -17,7 +17,7 @@
 package org.apache.rocketmq.tieredstore.metadata;
 
 import java.util.function.Consumer;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.tieredstore.common.FileSegmentType;
 
 /**

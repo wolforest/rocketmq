@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.namesrv.kvconfig;
 
-import org.apache.rocketmq.common.namesrv.NamesrvUtil;
+import org.apache.rocketmq.common.domain.namesrv.NamesrvUtil;
 import org.apache.rocketmq.namesrv.NameServerInstanceTest;
 import org.junit.Assert;
 import org.junit.Before;

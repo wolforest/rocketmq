@@ -16,8 +16,8 @@
  */
 package org.apache.rocketmq.store.service;
 
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.CommitLogDispatcher;

@@ -19,7 +19,7 @@ package org.apache.rocketmq.client.impl.producer;
 import java.util.Set;
 import org.apache.rocketmq.client.producer.TransactionCheckListener;
 import org.apache.rocketmq.client.producer.TransactionListener;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.remoting.protocol.header.CheckTransactionStateRequestHeader;
 
 public interface MQProducerInner {

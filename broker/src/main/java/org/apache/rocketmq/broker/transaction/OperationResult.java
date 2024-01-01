@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.transaction;
 
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
 public class OperationResult {
     private MessageExt prepareMessage;

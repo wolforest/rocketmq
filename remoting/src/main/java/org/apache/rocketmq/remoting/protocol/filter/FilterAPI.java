@@ -17,7 +17,7 @@
 package org.apache.rocketmq.remoting.protocol.filter;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.filter.ExpressionType;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 
 import java.util.Arrays;

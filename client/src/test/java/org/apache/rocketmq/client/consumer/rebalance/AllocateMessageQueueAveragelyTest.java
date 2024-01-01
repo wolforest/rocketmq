@@ -17,7 +17,7 @@
 package org.apache.rocketmq.client.consumer.rebalance;
 
 import junit.framework.TestCase;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.junit.Assert;
 
 import java.util.ArrayList;

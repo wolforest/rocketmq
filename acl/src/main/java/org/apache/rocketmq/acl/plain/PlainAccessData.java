@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.acl.plain;
 
-import org.apache.rocketmq.common.config.PlainAccessConfig;
+import org.apache.rocketmq.common.app.config.PlainAccessConfig;
 
 import java.io.Serializable;
 import java.util.ArrayList;

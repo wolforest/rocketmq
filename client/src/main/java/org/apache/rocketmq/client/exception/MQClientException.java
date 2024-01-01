@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.client.exception;
 
-import org.apache.rocketmq.common.help.FAQUrl;
+import org.apache.rocketmq.common.app.help.FAQUrl;
 import org.apache.rocketmq.common.utils.StringUtils;
 
 public class MQClientException extends Exception {

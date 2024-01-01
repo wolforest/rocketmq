@@ -17,7 +17,7 @@
 package org.apache.rocketmq.client;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.common.utils.SystemUtils;

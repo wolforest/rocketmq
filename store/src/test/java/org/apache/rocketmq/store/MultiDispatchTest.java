@@ -22,10 +22,10 @@ import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageDecoder;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.message.MessageDecoder;
+import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.queue.MultiDispatchUtils;

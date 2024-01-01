@@ -20,7 +20,7 @@ package org.apache.rocketmq.tools.command.controller;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.Pair;
+import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
 import org.apache.rocketmq.remoting.protocol.header.controller.ElectMasterResponseHeader;

@@ -17,7 +17,7 @@
 package org.apache.rocketmq.client;
 
 import java.util.List;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
 public class QueryResult {
     private final long indexLastUpdateTimestamp;

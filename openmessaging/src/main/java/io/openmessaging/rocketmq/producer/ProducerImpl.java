@@ -67,7 +67,7 @@ public class ProducerImpl extends AbstractOMSProducer implements Producer {
 
     private SendResult send(final Message message, long timeout) {
         checkMessageType(message);
-        org.apache.rocketmq.common.message.Message rmqMessage = msgConvert((BytesMessage) message);
+        org.apache.rocketmq.common.domain.message.Message rmqMessage = msgConvert((BytesMessage) message);
         try {
             org.apache.rocketmq.client.producer.SendResult rmqResult = this.rocketmqProducer.send(rmqMessage, timeout);
             if (!rmqResult.getSendStatus().equals(SendStatus.SEND_OK)) {
@@ -96,7 +96,7 @@ public class ProducerImpl extends AbstractOMSProducer implements Producer {
 
     private Promise<SendResult> sendAsync(final Message message, long timeout) {
         checkMessageType(message);
-        org.apache.rocketmq.common.message.Message rmqMessage = msgConvert((BytesMessage) message);
+        org.apache.rocketmq.common.domain.message.Message rmqMessage = msgConvert((BytesMessage) message);
         final Promise<SendResult> promise = new DefaultPromise<>();
         try {
             this.rocketmqProducer.send(rmqMessage, new SendCallback() {
@@ -120,7 +120,7 @@ public class ProducerImpl extends AbstractOMSProducer implements Producer {
     @Override
     public void sendOneway(final Message message) {
         checkMessageType(message);
-        org.apache.rocketmq.common.message.Message rmqMessage = msgConvert((BytesMessage) message);
+        org.apache.rocketmq.common.domain.message.Message rmqMessage = msgConvert((BytesMessage) message);
         try {
             this.rocketmqProducer.sendOneway(rmqMessage);
         } catch (Exception ignore) { //Ignore the oneway exception.

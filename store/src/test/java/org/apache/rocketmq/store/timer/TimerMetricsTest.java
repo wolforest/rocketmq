@@ -16,9 +16,9 @@
  */
 package org.apache.rocketmq.store.timer;
 
-import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageAccessor;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.junit.Assert;
 import org.junit.Test;
 

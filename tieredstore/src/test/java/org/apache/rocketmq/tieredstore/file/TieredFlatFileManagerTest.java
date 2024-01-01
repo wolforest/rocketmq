@@ -18,7 +18,7 @@ package org.apache.rocketmq.tieredstore.file;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.tieredstore.TieredStoreTestUtil;
 import org.apache.rocketmq.tieredstore.common.TieredMessageStoreConfig;
 import org.apache.rocketmq.tieredstore.common.TieredStoreExecutor;

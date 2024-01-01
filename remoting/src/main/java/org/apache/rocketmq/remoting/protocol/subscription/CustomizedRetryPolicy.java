@@ -19,6 +19,7 @@ package org.apache.rocketmq.remoting.protocol.subscription;
 
 import com.google.common.base.MoreObjects;
 import java.util.concurrent.TimeUnit;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
 /**
  * CustomizedRetryPolicy is aim to make group's behavior compatible with messageDelayLevel
@@ -74,7 +75,7 @@ public class CustomizedRetryPolicy implements RetryPolicy {
      * Index = reconsumeTimes + 2 is compatible logic, cause old delayLevelTable starts from index 1,
      * and old index is reconsumeTime + 3
      *
-     * @param reconsumeTimes Message reconsumeTimes {@link org.apache.rocketmq.common.message.MessageExt#getReconsumeTimes}
+     * @param reconsumeTimes Message reconsumeTimes {@link MessageExt#getReconsumeTimes}
      * @see <a href="https://github.com/apache/rocketmq/blob/3bddd514646826253a239f95959c14840a87034a/broker/src/main/java/org/apache/rocketmq/broker/processor/AbstractSendMessageProcessor.java#L210">org.apache.rocketmq.broker.processor.AbstractSendMessageProcessor</a>
      * @see <a href="https://github.com/apache/rocketmq/blob/3bddd514646826253a239f95959c14840a87034a/store/src/main/java/org/apache/rocketmq/store/DefaultMessageStore.java#L242">org.apache.rocketmq.store.DefaultMessageStore</a>
      */

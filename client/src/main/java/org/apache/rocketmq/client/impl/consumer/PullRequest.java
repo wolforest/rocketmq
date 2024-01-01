@@ -16,8 +16,8 @@
  */
 package org.apache.rocketmq.client.impl.consumer;
 
-import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.message.MessageRequestMode;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageRequestMode;
 
 public class PullRequest implements MessageRequest {
     private String consumerGroup;

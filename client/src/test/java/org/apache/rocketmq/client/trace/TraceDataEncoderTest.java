@@ -19,7 +19,7 @@ package org.apache.rocketmq.client.trace;
 
 import org.apache.rocketmq.client.AccessChannel;
 import org.apache.rocketmq.client.producer.LocalTransactionState;
-import org.apache.rocketmq.common.message.MessageType;
+import org.apache.rocketmq.common.domain.message.MessageType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.test.listener.AbstractListener;
 
 public class RMQNormalListener extends AbstractListener implements MessageListenerConcurrently {

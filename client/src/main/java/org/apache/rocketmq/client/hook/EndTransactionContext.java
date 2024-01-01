@@ -17,7 +17,7 @@
 package org.apache.rocketmq.client.hook;
 
 import org.apache.rocketmq.client.producer.LocalTransactionState;
-import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.domain.message.Message;
 
 public class EndTransactionContext {
     private String producerGroup;

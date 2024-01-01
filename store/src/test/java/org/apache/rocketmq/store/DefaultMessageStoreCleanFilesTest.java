@@ -17,10 +17,10 @@
 
 package org.apache.rocketmq.store;
 
-import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageDecoder;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.message.MessageDecoder;
+import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.commitlog.CommitLog;
 import org.apache.rocketmq.store.config.FlushDiskType;
@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.apache.rocketmq.common.message.MessageDecoder.CHARSET_UTF8;
+import static org.apache.rocketmq.common.domain.message.MessageDecoder.CHARSET_UTF8;
 import static org.apache.rocketmq.store.queue.ConsumeQueue.CQ_STORE_UNIT_SIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

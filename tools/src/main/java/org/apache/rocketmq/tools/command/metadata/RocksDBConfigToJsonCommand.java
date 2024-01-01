@@ -21,7 +21,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.config.RocksDBConfigManager;
+import org.apache.rocketmq.common.app.config.RocksDBConfigManager;
 import org.apache.rocketmq.common.utils.DataConverter;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;

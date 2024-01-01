@@ -19,8 +19,9 @@ package org.apache.rocketmq.client.consumer;
 import java.util.Set;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 
 /**
@@ -69,7 +70,7 @@ public interface MQPullConsumer extends MQConsumer {
     /**
      * Pulling the messages, not blocking
      * <p>
-     * support other message selection, such as {@link org.apache.rocketmq.common.filter.ExpressionType#SQL92}
+     * support other message selection, such as {@link ExpressionType#SQL92}
      * </p>
      *
      * @param mq from which message queue
@@ -85,7 +86,7 @@ public interface MQPullConsumer extends MQConsumer {
     /**
      * Pulling the messages in the specified timeout
      * <p>
-     * support other message selection, such as {@link org.apache.rocketmq.common.filter.ExpressionType#SQL92}
+     * support other message selection, such as {@link ExpressionType#SQL92}
      * </p>
      *
      * @param mq from which message queue

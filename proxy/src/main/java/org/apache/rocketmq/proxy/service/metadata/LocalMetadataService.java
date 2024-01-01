@@ -18,8 +18,8 @@
 package org.apache.rocketmq.proxy.service.metadata;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.topic.TopicConfig;
-import org.apache.rocketmq.common.attribute.TopicMessageType;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.common.lang.attribute.TopicMessageType;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 

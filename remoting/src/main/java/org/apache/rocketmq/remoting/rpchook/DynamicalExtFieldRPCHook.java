@@ -17,7 +17,7 @@
 package org.apache.rocketmq.remoting.rpchook;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 

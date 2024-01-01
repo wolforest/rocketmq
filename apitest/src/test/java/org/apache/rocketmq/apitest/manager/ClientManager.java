@@ -24,30 +24,30 @@ import org.apache.rocketmq.tools.admin.MQAdminExt;
 import static org.apache.rocketmq.common.utils.NameServerAddressUtils.NAMESRV_ADDR_PROPERTY;
 
 public class ClientManager {
-    private static MQAdminExt CLIENT = null;
+    private static MQAdminExt client = null;
 
-    private static final ClientServiceProvider provider = ClientServiceProvider.loadService();
+    private static final ClientServiceProvider PROVIDER = ClientServiceProvider.loadService();
 
     public static ClientServiceProvider getProvider() {
-        return provider;
+        return PROVIDER;
     }
 
     public static MQAdminExt getClient() {
-        return CLIENT;
+        return client;
     }
 
     public static void start() throws MQClientException {
-        if (CLIENT != null) {
+        if (client != null) {
             return;
         }
 
         System.setProperty(NAMESRV_ADDR_PROPERTY, ConfigManager.getConfig().getString("nameAddr"));
-        CLIENT = new DefaultMQAdminExt();
-        CLIENT.start();
+        client = new DefaultMQAdminExt();
+        client.start();
     }
 
     public static void shutdown() {
-        CLIENT.shutdown();
+        client.shutdown();
     }
 
 }

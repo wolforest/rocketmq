@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.rocketmq.common.consumer.ReceiptHandle;
+import org.apache.rocketmq.common.domain.consumer.ReceiptHandle;
 import org.apache.rocketmq.common.utils.MapUtils;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 

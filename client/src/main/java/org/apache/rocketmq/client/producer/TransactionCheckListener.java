@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.client.producer;
 
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
 /**
  * @deprecated This interface will be removed in the version 5.0.0, interface {@link TransactionListener} is recommended.

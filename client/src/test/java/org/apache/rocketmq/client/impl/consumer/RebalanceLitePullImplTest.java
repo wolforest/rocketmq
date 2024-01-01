@@ -22,9 +22,9 @@ import org.apache.rocketmq.client.consumer.store.ReadOffsetType;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.MQAdminImpl;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
-import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

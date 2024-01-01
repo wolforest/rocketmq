@@ -38,11 +38,11 @@ import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.latency.MQFaultStrategy;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
-import org.apache.rocketmq.common.constant.PermName;
-import org.apache.rocketmq.common.message.MessageClientIDSetter;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.sysflag.MessageSysFlag;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.PermName;
+import org.apache.rocketmq.common.domain.message.MessageClientIDSetter;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.proxy.common.ProxyContext;
@@ -216,7 +216,7 @@ public class SendMessageActivityTest extends BaseActivityTest {
         ConfigurationManager.getProxyConfig().initData();
         String msgId = MessageClientIDSetter.createUniqID();
 
-        org.apache.rocketmq.common.message.Message messageExt = this.sendMessageActivity.buildMessage(null,
+        org.apache.rocketmq.common.domain.message.Message messageExt = this.sendMessageActivity.buildMessage(null,
             Lists.newArrayList(
                 Message.newBuilder()
                     .setTopic(Resource.newBuilder()
@@ -258,7 +258,7 @@ public class SendMessageActivityTest extends BaseActivityTest {
                 .build())
             .setBody(ByteString.copyFromUtf8("123"))
             .build();
-        org.apache.rocketmq.common.message.Message messageExt = this.sendMessageActivity.buildMessage(null,
+        org.apache.rocketmq.common.domain.message.Message messageExt = this.sendMessageActivity.buildMessage(null,
             Lists.newArrayList(
                 message
             ),

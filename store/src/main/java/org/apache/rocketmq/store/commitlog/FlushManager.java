@@ -18,7 +18,7 @@
 package org.apache.rocketmq.store.commitlog;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.store.AppendMessageResult;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;

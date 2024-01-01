@@ -17,7 +17,7 @@
 package org.apache.rocketmq.store.hook;
 
 import java.util.List;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
 public interface SendMessageBackHook {
 

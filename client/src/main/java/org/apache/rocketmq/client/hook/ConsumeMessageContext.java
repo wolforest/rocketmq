@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.rocketmq.client.AccessChannel;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 public class ConsumeMessageContext {
     private String consumerGroup;

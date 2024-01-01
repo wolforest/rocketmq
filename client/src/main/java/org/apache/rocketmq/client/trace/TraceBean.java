@@ -17,7 +17,7 @@
 package org.apache.rocketmq.client.trace;
 
 import org.apache.rocketmq.client.producer.LocalTransactionState;
-import org.apache.rocketmq.common.message.MessageType;
+import org.apache.rocketmq.common.domain.message.MessageType;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 
 public class TraceBean {

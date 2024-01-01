@@ -17,8 +17,8 @@
 package org.apache.rocketmq.client.impl.consumer;
 
 import java.util.List;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.body.ConsumeMessageDirectlyResult;
 
 public interface ConsumeMessageService {

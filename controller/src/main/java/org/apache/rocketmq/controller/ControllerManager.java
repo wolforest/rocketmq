@@ -28,10 +28,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.config.ControllerConfig;
-import org.apache.rocketmq.common.Pair;
-import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.app.config.ControllerConfig;
+import org.apache.rocketmq.common.lang.Pair;
+import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
 
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.controller.elect.impl.DefaultElectPolicy;

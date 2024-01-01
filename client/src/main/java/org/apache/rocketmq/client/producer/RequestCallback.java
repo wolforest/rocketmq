@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.client.producer;
 
-import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.domain.message.Message;
 
 public interface RequestCallback {
     void onSuccess(final Message message);

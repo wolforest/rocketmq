@@ -22,11 +22,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.google.common.hash.Hashing;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
-import static org.apache.rocketmq.common.message.MessageDecoder.NAME_VALUE_SEPARATOR;
-import static org.apache.rocketmq.common.message.MessageDecoder.PROPERTY_SEPARATOR;
+import static org.apache.rocketmq.common.domain.message.MessageDecoder.NAME_VALUE_SEPARATOR;
+import static org.apache.rocketmq.common.domain.message.MessageDecoder.PROPERTY_SEPARATOR;
 
 public class MessageUtils {
     public static int getShardingKeyIndex(String shardingKey, int indexSize) {

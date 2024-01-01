@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.broker.filter;
 
-import org.apache.rocketmq.common.filter.ExpressionType;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.protocol.filter.FilterAPI;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;

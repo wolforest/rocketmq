@@ -17,8 +17,8 @@
 
 package org.apache.rocketmq.container;
 
-import org.apache.rocketmq.common.annotation.ImportantField;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.lang.annotation.ImportantField;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 

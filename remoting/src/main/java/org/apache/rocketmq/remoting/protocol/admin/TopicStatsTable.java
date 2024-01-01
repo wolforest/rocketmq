@@ -18,7 +18,7 @@ package org.apache.rocketmq.remoting.protocol.admin;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class TopicStatsTable extends RemotingSerializable {

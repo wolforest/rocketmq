@@ -20,17 +20,17 @@ package org.apache.rocketmq.client;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.common.topic.TopicConfig;
-import org.apache.rocketmq.common.constant.PermName;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.common.domain.constant.PermName;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 
 import java.io.File;
 import java.util.Properties;
 
-import static org.apache.rocketmq.common.topic.TopicValidator.isTopicOrGroupIllegal;
+import static org.apache.rocketmq.common.domain.topic.TopicValidator.isTopicOrGroupIllegal;
 
 /**
  * Common Validator

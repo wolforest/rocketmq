@@ -36,10 +36,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.client.producer.SendResult;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageAccessor;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
@@ -195,7 +195,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
 
     protected Map<String, String> buildMessageProperty(ProxyContext context, apache.rocketmq.v2.Message message, String producerGroup) {
         ProxyConfig config = ConfigurationManager.getProxyConfig();
-        org.apache.rocketmq.common.message.Message messageWithHeader = new org.apache.rocketmq.common.message.Message();
+        Message messageWithHeader = new Message();
         Map<String, String> userProperties = setUserProperties(message, messageWithHeader, config);
 
         long userPropertySize = calculateUserProperty(userProperties);
@@ -218,7 +218,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         return messageWithHeader.getProperties();
     }
 
-    private Map<String, String> setUserProperties(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader, ProxyConfig config) {
+    private Map<String, String> setUserProperties(apache.rocketmq.v2.Message message, Message messageWithHeader, ProxyConfig config) {
         // set user properties
         Map<String, String> userProperties = message.getUserPropertiesMap();
         if (userProperties.size() > config.getUserPropertyMaxNum()) {
@@ -248,13 +248,13 @@ public class SendMessageActivity extends AbstractMessingActivity {
         return userPropertySize;
     }
 
-    private void setReconsumeTimes(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader) {
+    private void setReconsumeTimes(apache.rocketmq.v2.Message message, Message messageWithHeader) {
         // set reconsume times
         int reconsumeTimes = message.getSystemProperties().getDeliveryAttempt();
         MessageAccessor.setReconsumeTime(messageWithHeader, String.valueOf(reconsumeTimes));
     }
 
-    private void setTransactionProperty(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader) {
+    private void setTransactionProperty(apache.rocketmq.v2.Message message, Message messageWithHeader) {
         // set transaction property
         MessageType messageType = message.getSystemProperties().getMessageType();
         if (!messageType.equals(MessageType.TRANSACTION)) {
@@ -271,7 +271,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         MessageAccessor.putProperty(messageWithHeader, MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS, String.valueOf(transactionRecoverySecond));
     }
 
-    private void setBornHost(ProxyContext context, apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader) {
+    private void setBornHost(ProxyContext context, apache.rocketmq.v2.Message message, Message messageWithHeader) {
         String bornHost = message.getSystemProperties().getBornHost();
         if (StringUtils.isBlank(bornHost)) {
             bornHost = context.getRemoteAddress();
@@ -281,7 +281,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         }
     }
 
-    private long setTag(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader) {
+    private long setTag(apache.rocketmq.v2.Message message, Message messageWithHeader) {
         // set tag
         String tag = message.getSystemProperties().getTag();
         GrpcValidator.getInstance().validateTag(tag);
@@ -289,7 +289,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         return tag.getBytes(StandardCharsets.UTF_8).length;
     }
 
-    private long setKeys(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader) {
+    private long setKeys(apache.rocketmq.v2.Message message, Message messageWithHeader) {
         // set keys
         long count = 0;
         List<String> keysList = message.getSystemProperties().getKeysList();
@@ -304,7 +304,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         return count;
     }
 
-    private void setMessageId(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader) {
+    private void setMessageId(apache.rocketmq.v2.Message message, Message messageWithHeader) {
         // set message id
         String messageId = message.getSystemProperties().getMessageId();
         if (StringUtils.isBlank(messageId)) {
@@ -313,7 +313,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         MessageAccessor.putProperty(messageWithHeader, MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, messageId);
     }
 
-    private void setGroup(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader, String producerGroup) {
+    private void setGroup(apache.rocketmq.v2.Message message, Message messageWithHeader, String producerGroup) {
         // set producer group
         MessageAccessor.putProperty(messageWithHeader, MessageConst.PROPERTY_PRODUCER_GROUP, producerGroup);
         // set message group
@@ -326,7 +326,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         MessageAccessor.putProperty(messageWithHeader, MessageConst.PROPERTY_SHARDING_KEY, messageGroup);
     }
 
-    private void setTraceContext(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader) {
+    private void setTraceContext(apache.rocketmq.v2.Message message, Message messageWithHeader) {
         // set trace context
         String traceContext = message.getSystemProperties().getTraceContext();
         if (traceContext.isEmpty()) {
@@ -336,7 +336,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         MessageAccessor.putProperty(messageWithHeader, MessageConst.PROPERTY_TRACE_CONTEXT, traceContext);
     }
 
-    private void setBornTime(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader) {
+    private void setBornTime(apache.rocketmq.v2.Message message, Message messageWithHeader) {
         Timestamp bornTimestamp = message.getSystemProperties().getBornTimestamp();
         if (!Timestamps.isValid(bornTimestamp)) {
             return;
@@ -345,7 +345,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
         MessageAccessor.putProperty(messageWithHeader, MessageConst.PROPERTY_BORN_TIMESTAMP, String.valueOf(Timestamps.toMillis(bornTimestamp)));
     }
 
-    protected void fillDelayMessageProperty(apache.rocketmq.v2.Message message, org.apache.rocketmq.common.message.Message messageWithHeader) {
+    protected void fillDelayMessageProperty(apache.rocketmq.v2.Message message, Message messageWithHeader) {
         // set delay level or deliver timestamp
         if (!message.getSystemProperties().hasDeliveryTimestamp()) {
             return;

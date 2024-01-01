@@ -18,7 +18,7 @@ package org.apache.rocketmq.remoting.netty;
 
 
 import io.netty.util.AttributeKey;
-import org.apache.rocketmq.common.constant.HAProxyConstants;
+import org.apache.rocketmq.common.domain.constant.HAProxyConstants;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
 
 import java.util.Map;

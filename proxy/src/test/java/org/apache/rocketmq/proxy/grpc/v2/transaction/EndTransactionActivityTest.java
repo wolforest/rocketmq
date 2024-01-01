@@ -26,7 +26,7 @@ import apache.rocketmq.v2.TransactionSource;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.common.message.MessageClientIDSetter;
+import org.apache.rocketmq.common.domain.message.MessageClientIDSetter;
 import org.apache.rocketmq.proxy.grpc.v2.BaseActivityTest;
 import org.apache.rocketmq.proxy.processor.TransactionStatus;
 import org.junit.Before;

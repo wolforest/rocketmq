@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.client.consumer.listener;
 
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 /**
  * Consumer Orderly consumption context

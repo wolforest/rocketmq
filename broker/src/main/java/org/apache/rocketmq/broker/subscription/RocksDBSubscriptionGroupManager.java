@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.subscription;
 import java.io.File;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.config.RocksDBConfigManager;
+import org.apache.rocketmq.common.app.config.RocksDBConfigManager;
 import org.apache.rocketmq.common.utils.DataConverter;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 

@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.store.GetMessageResult;
 import org.apache.rocketmq.store.MessageFilter;
 import org.apache.rocketmq.store.QueryMessageResult;
-import org.apache.rocketmq.common.BoundaryType;
+import org.apache.rocketmq.common.lang.BoundaryType;
 
 public interface MessageStoreFetcher {
 

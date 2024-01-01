@@ -23,9 +23,9 @@ import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.function.BiFunction;
 
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
-import org.apache.rocketmq.common.sysflag.PullSysFlag;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
+import org.apache.rocketmq.common.domain.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;

@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.client.trace;
 
-import org.apache.rocketmq.common.topic.TopicValidator;
+import org.apache.rocketmq.common.domain.topic.TopicValidator;
 
 public class TraceConstants {
 

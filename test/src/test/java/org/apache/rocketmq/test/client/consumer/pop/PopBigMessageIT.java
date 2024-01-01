@@ -23,11 +23,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.consumer.PopResult;
 import org.apache.rocketmq.client.consumer.PopStatus;
-import org.apache.rocketmq.common.compression.Compressor;
-import org.apache.rocketmq.common.compression.CompressorFactory;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.lang.compression.Compressor;
+import org.apache.rocketmq.common.lang.compression.CompressorFactory;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.junit.Test;
 
 import static org.awaitility.Awaitility.await;

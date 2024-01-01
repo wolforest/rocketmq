@@ -18,8 +18,8 @@ package org.apache.rocketmq.store.service;
 
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.common.attribute.CQType;
-import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;

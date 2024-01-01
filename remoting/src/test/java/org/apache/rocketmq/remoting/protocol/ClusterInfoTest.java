@@ -20,7 +20,7 @@ package org.apache.rocketmq.remoting.protocol;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;

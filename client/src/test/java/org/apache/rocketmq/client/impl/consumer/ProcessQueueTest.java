@@ -19,7 +19,7 @@ package org.apache.rocketmq.client.impl.consumer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.remoting.protocol.body.ProcessQueueInfo;
 import org.assertj.core.util.Lists;
 import org.junit.Test;

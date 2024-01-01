@@ -19,7 +19,7 @@ package org.apache.rocketmq.client.producer;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.domain.message.Message;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

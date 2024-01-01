@@ -19,8 +19,8 @@ package org.apache.rocketmq.test.container;
 
 import org.apache.rocketmq.client.producer.LocalTransactionState;
 import org.apache.rocketmq.client.producer.TransactionListener;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
 public class TransactionListenerImpl implements TransactionListener {
     private boolean shouldReturnUnknownState = false;

@@ -18,8 +18,8 @@ package org.apache.rocketmq.client.hook;
 
 import org.apache.rocketmq.client.impl.CommunicationMode;
 import org.apache.rocketmq.client.producer.SendResult;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 public class CheckForbiddenContext {
     private String nameSrvAddr;

@@ -19,8 +19,8 @@ package org.apache.rocketmq.client.producer.selector;
 import java.util.List;
 import java.util.Random;
 import org.apache.rocketmq.client.producer.MessageQueueSelector;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 public class SelectMessageQueueByRandom implements MessageQueueSelector {
     private Random random = new Random(System.currentTimeMillis());

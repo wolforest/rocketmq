@@ -18,7 +18,7 @@
 package org.apache.rocketmq.proxy.grpc.v2.common;
 
 import apache.rocketmq.v2.MessageQueue;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

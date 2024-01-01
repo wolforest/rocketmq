@@ -18,8 +18,8 @@
 package org.apache.rocketmq.proxy.grpc.v2;
 
 import apache.rocketmq.v2.Resource;
-import org.apache.rocketmq.common.topic.TopicValidator;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.topic.TopicValidator;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.proxy.config.InitConfigTest;
 import org.apache.rocketmq.proxy.grpc.v2.channel.GrpcChannelManager;
 import org.apache.rocketmq.proxy.grpc.v2.common.GrpcClientSettingsManager;

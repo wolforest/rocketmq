@@ -18,8 +18,8 @@ package org.apache.rocketmq.client.producer.selector;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

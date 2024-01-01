@@ -22,7 +22,7 @@ import com.google.common.net.HostAndPort;
 import io.netty.channel.ChannelHandlerContext;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.rocketmq.common.constant.MQVersion;
+import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.GetRouteInfoRequestHeader;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;

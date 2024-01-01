@@ -19,7 +19,7 @@ package org.apache.rocketmq.client.impl.consumer;
 import java.util.List;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
 public class PullResultExt extends PullResult {
     private final long suggestWhichBrokerId;

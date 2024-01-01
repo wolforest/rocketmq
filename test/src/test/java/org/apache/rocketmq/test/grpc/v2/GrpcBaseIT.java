@@ -93,9 +93,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
-import org.apache.rocketmq.common.attribute.TopicMessageType;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.lang.attribute.TopicMessageType;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.grpc.interceptor.ContextInterceptor;
@@ -108,7 +108,7 @@ import org.apache.rocketmq.test.util.MQRandomUtils;
 import org.apache.rocketmq.test.util.RandomUtils;
 import org.junit.Rule;
 
-import static org.apache.rocketmq.common.message.MessageClientIDSetter.createUniqID;
+import static org.apache.rocketmq.common.domain.message.MessageClientIDSetter.createUniqID;
 import static org.apache.rocketmq.proxy.config.ConfigurationManager.RMQ_PROXY_HOME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -499,7 +499,7 @@ public class GrpcBaseIT extends BaseConf {
 
         DefaultMQPullConsumer defaultMQPullConsumer = new DefaultMQPullConsumer(group);
         defaultMQPullConsumer.start();
-        org.apache.rocketmq.common.message.MessageQueue dlqMQ = new org.apache.rocketmq.common.message.MessageQueue(MQConstants.getDLQTopic(group), BROKER1_NAME, 0);
+        org.apache.rocketmq.common.domain.message.MessageQueue dlqMQ = new org.apache.rocketmq.common.domain.message.MessageQueue(MQConstants.getDLQTopic(group), BROKER1_NAME, 0);
         await().atMost(java.time.Duration.ofSeconds(30)).until(() -> {
             try {
                 List<Message> messageList = getMessageFromReceiveMessageResponse(receiveMessage(blockingStub, topic, group, 1));

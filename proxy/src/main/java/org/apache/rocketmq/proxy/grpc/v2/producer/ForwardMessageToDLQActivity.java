@@ -19,7 +19,7 @@ package org.apache.rocketmq.proxy.grpc.v2.producer;
 import apache.rocketmq.v2.ForwardMessageToDeadLetterQueueRequest;
 import apache.rocketmq.v2.ForwardMessageToDeadLetterQueueResponse;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.common.consumer.ReceiptHandle;
+import org.apache.rocketmq.common.domain.consumer.ReceiptHandle;
 import org.apache.rocketmq.proxy.common.MessageReceiptHandle;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.grpc.v2.AbstractMessingActivity;

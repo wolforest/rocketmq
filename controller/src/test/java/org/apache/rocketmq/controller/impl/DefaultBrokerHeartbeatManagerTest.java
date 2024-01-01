@@ -18,7 +18,7 @@ package org.apache.rocketmq.controller.impl;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.common.config.ControllerConfig;
+import org.apache.rocketmq.common.app.config.ControllerConfig;
 import org.apache.rocketmq.controller.BrokerHeartbeatManager;
 import org.apache.rocketmq.controller.impl.heartbeat.DefaultBrokerHeartbeatManager;
 import org.junit.Before;

@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.transaction.queue;
 
 import java.util.List;
 import org.apache.rocketmq.client.consumer.PullStatus;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.store.GetMessageResult;
 
 public class GetMessageContext {

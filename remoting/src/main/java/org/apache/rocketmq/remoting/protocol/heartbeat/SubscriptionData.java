@@ -23,7 +23,7 @@ package org.apache.rocketmq.remoting.protocol.heartbeat;
 import com.alibaba.fastjson.annotation.JSONField;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.rocketmq.common.filter.ExpressionType;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
 
 public class SubscriptionData implements Comparable<SubscriptionData> {
     public final static String SUB_ALL = "*";

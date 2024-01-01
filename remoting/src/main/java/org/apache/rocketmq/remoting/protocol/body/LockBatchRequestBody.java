@@ -20,7 +20,7 @@ package org.apache.rocketmq.remoting.protocol.body;
 import com.google.common.base.MoreObjects;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class LockBatchRequestBody extends RemotingSerializable {

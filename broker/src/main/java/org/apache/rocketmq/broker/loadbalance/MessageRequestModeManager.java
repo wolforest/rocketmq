@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.loadbalance;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
-import org.apache.rocketmq.common.config.ConfigManager;
+import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 import org.apache.rocketmq.remoting.protocol.body.SetMessageRequestModeRequestBody;
 

@@ -21,7 +21,7 @@ import io.netty.util.concurrent.Promise;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.InvokeCallback;
 import org.apache.rocketmq.remoting.RemotingClient;
 import org.apache.rocketmq.remoting.netty.ResponseFuture;

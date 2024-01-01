@@ -18,7 +18,7 @@ package org.apache.rocketmq.tieredstore.file;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.store.queue.ConsumeQueue;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.tieredstore.TieredStoreTestUtil;
@@ -32,7 +32,7 @@ import org.apache.rocketmq.tieredstore.provider.memory.MemoryFileSegment;
 import org.apache.rocketmq.tieredstore.util.MessageBufferUtil;
 import org.apache.rocketmq.tieredstore.util.MessageBufferUtilTest;
 import org.apache.rocketmq.tieredstore.util.TieredStoreUtil;
-import org.apache.rocketmq.common.BoundaryType;
+import org.apache.rocketmq.common.lang.BoundaryType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

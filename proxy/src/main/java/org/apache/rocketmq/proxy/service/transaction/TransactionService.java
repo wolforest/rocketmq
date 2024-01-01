@@ -17,7 +17,7 @@
 package org.apache.rocketmq.proxy.service.transaction;
 
 import java.util.List;
-import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.domain.message.Message;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 
 public interface TransactionService {

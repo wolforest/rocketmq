@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.store.plugin;
 
-import org.apache.rocketmq.common.config.BrokerConfig;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.remoting.Configuration;
 import org.apache.rocketmq.store.MessageArrivingListener;

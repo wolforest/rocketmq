@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.test.client.consumer.pop;
 
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.test.base.BaseConf;
 import org.apache.rocketmq.test.client.rmq.RMQPopClient;
 import org.apache.rocketmq.test.factory.ConsumerFactory;

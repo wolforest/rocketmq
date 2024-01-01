@@ -18,11 +18,11 @@ package org.apache.rocketmq.broker.latency;
 
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.service.BrokerNettyServer;
-import org.apache.rocketmq.common.AbstractBrokerRunnable;
-import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.ThreadFactoryImpl;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.future.FutureTaskExt;
+import org.apache.rocketmq.common.app.AbstractBrokerRunnable;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.lang.future.FutureTaskExt;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;

@@ -19,9 +19,9 @@ package org.apache.rocketmq.broker.filter;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.filter.ExpressionType;
-import org.apache.rocketmq.common.message.MessageDecoder;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
+import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.filter.util.BitsArray;
 import org.apache.rocketmq.filter.util.BloomFilter;
 import org.apache.rocketmq.logging.org.slf4j.Logger;

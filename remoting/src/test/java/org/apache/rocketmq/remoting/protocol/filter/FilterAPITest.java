@@ -19,7 +19,7 @@ package org.apache.rocketmq.remoting.protocol.filter;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.rocketmq.common.filter.ExpressionType;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.junit.Test;
 

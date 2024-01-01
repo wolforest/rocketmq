@@ -22,8 +22,8 @@ import com.google.common.base.Preconditions;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.rocketmq.common.config.BrokerConfig;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
 public class InnerSalveBrokerController extends InnerBrokerController {

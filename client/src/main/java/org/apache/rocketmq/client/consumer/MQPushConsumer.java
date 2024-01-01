@@ -20,6 +20,7 @@ import org.apache.rocketmq.client.consumer.listener.MessageListener;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
 
 /**
  * Push consumer
@@ -71,7 +72,7 @@ public interface MQPushConsumer extends MQConsumer {
      * Subscribe some topic with selector.
      * <p>
      * This interface also has the ability of {@link #subscribe(String, String)},
-     * and, support other message selection, such as {@link org.apache.rocketmq.common.filter.ExpressionType#SQL92}.
+     * and, support other message selection, such as {@link ExpressionType#SQL92}.
      * </p>
      * <p/>
      * <p>

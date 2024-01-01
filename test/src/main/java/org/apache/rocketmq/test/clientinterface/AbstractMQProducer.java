@@ -20,7 +20,8 @@ package org.apache.rocketmq.test.clientinterface;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.test.client.rmq.RMQNormalProducer;
 import org.apache.rocketmq.test.sendresult.ResultWrapper;
 import org.apache.rocketmq.test.util.RandomUtil;
@@ -98,7 +99,7 @@ public abstract class AbstractMQProducer extends MQCollector implements MQProduc
     public Object getMessageByTag(String tag) {
         Object objMsg = null;
         if (this instanceof RMQNormalProducer) {
-            org.apache.rocketmq.common.message.Message msg = new org.apache.rocketmq.common.message.Message(
+            Message msg = new Message(
                 topic, (RandomUtil.getStringByUUID() + "." + new Date()).getBytes(StandardCharsets.UTF_8));
             objMsg = msg;
             if (tag != null) {

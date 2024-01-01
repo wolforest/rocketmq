@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import org.apache.rocketmq.common.BoundaryType;
+import org.apache.rocketmq.common.lang.BoundaryType;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.logfile.MappedFile;

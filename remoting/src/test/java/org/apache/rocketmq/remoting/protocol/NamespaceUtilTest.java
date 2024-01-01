@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.remoting.protocol;
 
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.junit.Assert;
 import org.junit.Test;
 

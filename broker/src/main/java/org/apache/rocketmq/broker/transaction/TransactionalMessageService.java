@@ -18,8 +18,8 @@ package org.apache.rocketmq.broker.transaction;
 
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.broker.transaction.queue.TransactionalMessageBridge;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.remoting.protocol.header.EndTransactionRequestHeader;
 import org.apache.rocketmq.store.PutMessageResult;
 

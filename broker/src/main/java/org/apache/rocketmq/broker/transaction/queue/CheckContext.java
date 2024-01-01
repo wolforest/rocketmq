@@ -22,8 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import org.apache.rocketmq.broker.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.client.consumer.PullResult;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 public class CheckContext {
     private final MessageQueue messageQueue;

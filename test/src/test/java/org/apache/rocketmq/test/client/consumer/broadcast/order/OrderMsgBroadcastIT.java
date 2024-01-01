@@ -18,7 +18,7 @@
 package org.apache.rocketmq.test.client.consumer.broadcast.order;
 
 import java.util.List;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.test.client.consumer.broadcast.BaseBroadcast;

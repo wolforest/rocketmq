@@ -19,7 +19,7 @@ package org.apache.rocketmq.proxy.service;
 
 import java.util.HashMap;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.proxy.config.InitConfigTest;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIExt;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIFactory;

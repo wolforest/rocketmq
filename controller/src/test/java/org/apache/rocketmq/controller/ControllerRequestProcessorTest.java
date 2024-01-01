@@ -19,7 +19,7 @@ package org.apache.rocketmq.controller;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
-import org.apache.rocketmq.common.config.ControllerConfig;
+import org.apache.rocketmq.common.app.config.ControllerConfig;
 import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.controller.processor.ControllerRequestProcessor;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;

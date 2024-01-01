@@ -28,7 +28,7 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

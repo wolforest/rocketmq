@@ -17,7 +17,7 @@
 package org.apache.rocketmq.client.consumer;
 
 import java.util.Set;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 /**
  * A MessageQueueListener is implemented by the application and may be specified when a message queue changed

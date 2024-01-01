@@ -17,8 +17,8 @@
 package io.openmessaging.rocketmq.domain;
 
 import org.apache.rocketmq.client.impl.consumer.ProcessQueue;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 public class ConsumeRequest {
     private final MessageExt messageExt;

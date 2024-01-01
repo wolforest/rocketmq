@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.filter;
 
-import org.apache.rocketmq.common.filter.ExpressionType;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.filter.expression.EmptyEvaluationContext;
 import org.apache.rocketmq.filter.expression.EvaluationContext;
 import org.apache.rocketmq.filter.expression.Expression;

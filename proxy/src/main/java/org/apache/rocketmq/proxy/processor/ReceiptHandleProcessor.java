@@ -18,9 +18,9 @@
 package org.apache.rocketmq.proxy.processor;
 
 import io.netty.channel.Channel;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.consumer.ReceiptHandle;
-import org.apache.rocketmq.common.state.StateEventListener;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.consumer.ReceiptHandle;
+import org.apache.rocketmq.common.lang.state.StateEventListener;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.proxy.common.MessageReceiptHandle;

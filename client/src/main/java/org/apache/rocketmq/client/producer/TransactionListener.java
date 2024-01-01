@@ -16,8 +16,8 @@
  */
 package org.apache.rocketmq.client.producer;
 
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageExt;
 
 public interface TransactionListener {
     /**

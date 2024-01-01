@@ -19,7 +19,7 @@ package org.apache.rocketmq.client.producer;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.domain.message.Message;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
 
