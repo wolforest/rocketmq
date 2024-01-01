@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
-import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.domain.message.MessageConst;

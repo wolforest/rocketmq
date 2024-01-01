@@ -26,7 +26,7 @@ import org.apache.rocketmq.common.domain.topic.TopicAttributes;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.lang.attribute.Attribute;
 import org.apache.rocketmq.common.lang.attribute.BooleanAttribute;
-import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.lang.attribute.EnumAttribute;
 import org.apache.rocketmq.common.lang.attribute.LongRangeAttribute;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;

@@ -17,7 +17,7 @@
 package org.apache.rocketmq.store.queue;
 
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
-import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.PutMessageResult;

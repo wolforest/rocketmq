@@ -21,7 +21,7 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.rocketmq.client.consumer.PopResult;
 import org.apache.rocketmq.client.consumer.PopStatus;
-import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.common.domain.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.domain.filter.ExpressionType;

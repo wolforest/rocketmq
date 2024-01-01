@@ -26,7 +26,7 @@ import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.lang.BoundaryType;
-import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageAccessor;
 import org.apache.rocketmq.common.domain.message.MessageConst;

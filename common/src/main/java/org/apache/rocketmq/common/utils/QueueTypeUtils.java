@@ -18,7 +18,7 @@ package org.apache.rocketmq.common.utils;
 
 import org.apache.rocketmq.common.domain.topic.TopicAttributes;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
-import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.consumer.CQType;
 
 import java.util.Map;
 import java.util.Objects;

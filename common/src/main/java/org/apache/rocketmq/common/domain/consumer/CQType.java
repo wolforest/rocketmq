@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.common.lang.attribute;
+package org.apache.rocketmq.common.domain.consumer;
 
 public enum CQType {
     SimpleCQ,

@@ -19,7 +19,7 @@ package org.apache.rocketmq.test.client.consumer.pop;
 
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.client.consumer.PopResult;
-import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.common.domain.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.domain.filter.ExpressionType;

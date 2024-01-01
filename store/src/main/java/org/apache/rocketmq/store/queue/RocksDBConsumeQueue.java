@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import org.apache.rocketmq.common.lang.BoundaryType;
 import org.apache.rocketmq.common.lang.Pair;
-import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.logging.org.slf4j.Logger;

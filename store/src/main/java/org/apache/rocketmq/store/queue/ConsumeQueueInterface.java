@@ -19,7 +19,7 @@ package org.apache.rocketmq.store.queue;
 
 import org.apache.rocketmq.common.lang.BoundaryType;
 import org.apache.rocketmq.common.lang.Pair;
-import org.apache.rocketmq.common.lang.attribute.CQType;
+import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.MessageFilter;
