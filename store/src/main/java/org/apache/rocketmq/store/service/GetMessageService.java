@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
-import org.apache.rocketmq.common.lang.attribute.CleanupPolicy;
+import org.apache.rocketmq.common.app.CleanupPolicy;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.CleanupPolicyUtils;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
