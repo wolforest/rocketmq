@@ -25,6 +25,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -55,6 +56,10 @@ public class StringUtils {
     public static List<String> split(String str, String splitter) {
         if (str == null) {
             return null;
+        }
+
+        if (isBlank(str)) {
+            return Collections.emptyList();
         }
 
         String[] addrArray = str.split(splitter);

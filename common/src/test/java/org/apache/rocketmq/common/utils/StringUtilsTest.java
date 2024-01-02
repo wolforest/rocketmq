@@ -81,4 +81,13 @@ public class StringUtilsTest {
         List<String> objects = Collections.emptyList();
         assertEquals("", StringUtils.join(objects, comma));
     }
+
+    @Test
+    public void testSplit() {
+        List<String> list = Arrays.asList("groupA=DENY", "groupB=PUB|SUB", "groupC=SUB");
+        String comma = ",";
+        assertEquals(list, StringUtils.split("groupA=DENY,groupB=PUB|SUB,groupC=SUB", comma));
+        assertEquals(null, StringUtils.split(null, comma));
+        assertEquals(Collections.EMPTY_LIST, StringUtils.split("", comma));
+    }
 }
