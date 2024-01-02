@@ -22,7 +22,6 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//remoting",
-        "//srvutil",
         "//tools",
         "//client",
         "//common",
@@ -51,7 +50,6 @@ java_library(
     deps = [
         ":namesrv",
         "//remoting",
-        "//srvutil",
         "//tools",
         "//client",
         "//common",

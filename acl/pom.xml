@@ -36,10 +36,6 @@
             <artifactId>rocketmq-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>rocketmq-srvutil</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.github.aliyunmq</groupId>
             <artifactId>rocketmq-slf4j-api</artifactId>
         </dependency>

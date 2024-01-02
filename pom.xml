@@ -185,7 +185,6 @@
         <module>store</module>
         <module>namesrv</module>
         <module>remoting</module>
-        <module>srvutil</module>
         <module>filter</module>
         <module>test</module>
         <module>distribution</module>
@@ -606,11 +605,6 @@
             <dependency>
                 <groupId>org.apache.rocketmq</groupId>
                 <artifactId>rocketmq-remoting</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.rocketmq</groupId>
-                <artifactId>rocketmq-srvutil</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
