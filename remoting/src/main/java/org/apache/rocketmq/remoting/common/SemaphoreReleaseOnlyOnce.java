@@ -28,10 +28,12 @@ public class SemaphoreReleaseOnlyOnce {
     }
 
     public void release() {
-        if (this.semaphore != null) {
-            if (this.released.compareAndSet(false, true)) {
-                this.semaphore.release();
-            }
+        if (this.semaphore == null) {
+            return;
+        }
+
+        if (this.released.compareAndSet(false, true)) {
+            this.semaphore.release();
         }
     }
 
