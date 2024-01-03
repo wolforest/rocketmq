@@ -1,5 +1,5 @@
 ## 本文内容逻辑图
-![](book/cn/image/rocketmq_wolf_branch.jpg)
+![](docs/book/cn/image/rocketmq_wolf_branch.jpg)
 
 
 ## Why another RocketMQ branch?
