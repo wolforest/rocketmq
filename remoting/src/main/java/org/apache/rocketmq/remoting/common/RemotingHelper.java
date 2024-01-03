@@ -98,8 +98,7 @@ public class RemotingHelper {
         int split = addr.lastIndexOf(":");
         String host = addr.substring(0, split);
         String port = addr.substring(split + 1);
-        InetSocketAddress isa = new InetSocketAddress(host, Integer.parseInt(port));
-        return isa;
+        return new InetSocketAddress(host, Integer.parseInt(port));
     }
 
     public static RemotingCommand invokeSync(final String addr, final RemotingCommand request,
@@ -124,15 +123,14 @@ public class RemotingHelper {
             ByteBuffer byteBufferRequest = request.encode();
             while (byteBufferRequest.hasRemaining()) {
                 int length = socketChannel.write(byteBufferRequest);
-                if (length > 0) {
-                    if (byteBufferRequest.hasRemaining()) {
-                        if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
-
-                            throw new RemotingSendRequestException(addr);
-                        }
-                    }
-                } else {
+                if (length <= 0) {
                     throw new RemotingSendRequestException(addr);
+                }
+
+                if (byteBufferRequest.hasRemaining()) {
+                    if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
+                        throw new RemotingSendRequestException(addr);
+                    }
                 }
 
                 Thread.sleep(1);
@@ -143,15 +141,14 @@ public class RemotingHelper {
             ByteBuffer byteBufferSize = ByteBuffer.allocate(4);
             while (byteBufferSize.hasRemaining()) {
                 int length = socketChannel.read(byteBufferSize);
-                if (length > 0) {
-                    if (byteBufferSize.hasRemaining()) {
-                        if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
-
-                            throw new RemotingTimeoutException(addr, timeoutMillis);
-                        }
-                    }
-                } else {
+                if (length <= 0) {
                     throw new RemotingTimeoutException(addr, timeoutMillis);
+                }
+
+                if (byteBufferSize.hasRemaining()) {
+                    if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
+                        throw new RemotingTimeoutException(addr, timeoutMillis);
+                    }
                 }
 
                 Thread.sleep(1);
@@ -161,15 +158,14 @@ public class RemotingHelper {
             ByteBuffer byteBufferBody = ByteBuffer.allocate(size);
             while (byteBufferBody.hasRemaining()) {
                 int length = socketChannel.read(byteBufferBody);
-                if (length > 0) {
-                    if (byteBufferBody.hasRemaining()) {
-                        if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
-
-                            throw new RemotingTimeoutException(addr, timeoutMillis);
-                        }
-                    }
-                } else {
+                if (length <= 0) {
                     throw new RemotingTimeoutException(addr, timeoutMillis);
+                }
+
+                if (byteBufferBody.hasRemaining()) {
+                    if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
+                        throw new RemotingTimeoutException(addr, timeoutMillis);
+                    }
                 }
 
                 Thread.sleep(1);
@@ -219,6 +215,7 @@ public class RemotingHelper {
         if (!channel.hasAttr(AttributeKeys.PROXY_PROTOCOL_ADDR)) {
             return null;
         }
+
         String proxyProtocolAddr = getAttributeValue(AttributeKeys.PROXY_PROTOCOL_ADDR, channel);
         String proxyProtocolPort = getAttributeValue(AttributeKeys.PROXY_PROTOCOL_PORT, channel);
         if (StringUtils.isBlank(proxyProtocolAddr) || proxyProtocolPort == null) {
@@ -231,16 +228,16 @@ public class RemotingHelper {
         SocketAddress remote = channel.remoteAddress();
         final String addr = remote != null ? remote.toString() : "";
 
-        if (addr.length() > 0) {
-            int index = addr.lastIndexOf("/");
-            if (index >= 0) {
-                return addr.substring(index + 1);
-            }
-
-            return addr;
+        if (addr.length() <= 0) {
+            return "";
         }
 
-        return "";
+        int index = addr.lastIndexOf("/");
+        if (index >= 0) {
+            return addr.substring(index + 1);
+        }
+
+        return addr;
     }
 
     public static String parseHostFromAddress(String address) {
@@ -257,13 +254,14 @@ public class RemotingHelper {
     }
 
     public static String parseSocketAddressAddr(SocketAddress socketAddress) {
-        if (socketAddress != null) {
-            // Default toString of InetSocketAddress is "hostName/IP:port"
-            final String addr = socketAddress.toString();
-            int index = addr.lastIndexOf("/");
-            return (index != -1) ? addr.substring(index + 1) : addr;
+        if (socketAddress == null) {
+            return "";
         }
-        return "";
+
+        // Default toString of InetSocketAddress is "hostName/IP:port"
+        final String addr = socketAddress.toString();
+        int index = addr.lastIndexOf("/");
+        return (index != -1) ? addr.substring(index + 1) : addr;
     }
 
     public static Integer parseSocketAddressPort(SocketAddress socketAddress) {
@@ -328,15 +326,16 @@ public class RemotingHelper {
         final String addrRemote = RemotingHelper.parseChannelRemoteAddr(channel);
         if ("".equals(addrRemote)) {
             channel.close();
-        } else {
-            channel.close().addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    log.info("closeChannel: close the connection to remote address[{}] result: {}", addrRemote,
-                        future.isSuccess());
-                }
-            });
+            return;
         }
+
+        channel.close().addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                log.info("closeChannel: close the connection to remote address[{}] result: {}", addrRemote,
+                    future.isSuccess());
+            }
+        });
     }
 
     public static String getRequestCodeDesc(int code) {
