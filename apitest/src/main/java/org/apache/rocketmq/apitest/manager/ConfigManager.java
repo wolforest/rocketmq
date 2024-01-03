@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import org.apache.rocketmq.client.apis.ClientConfiguration;
-import org.apache.rocketmq.client.apis.SessionCredentialsProvider;
-import org.apache.rocketmq.client.apis.StaticSessionCredentialsProvider;
 import org.apache.rocketmq.common.utils.StringUtils;
 
 public class ConfigManager {
@@ -62,8 +60,8 @@ public class ConfigManager {
             throw new IllegalArgumentException("can't found account info: " + accountName);
         }
 
-        SessionCredentialsProvider sessionCredentialsProvider =
-            new StaticSessionCredentialsProvider(account.getString("accessKey"), account.getString("secretKey"));
+        //SessionCredentialsProvider sessionCredentialsProvider =
+        //    new StaticSessionCredentialsProvider(account.getString("accessKey"), account.getString("secretKey"));
 
         return ClientConfiguration.newBuilder()
             .setEndpoints(config.getString("proxyAddr"))
