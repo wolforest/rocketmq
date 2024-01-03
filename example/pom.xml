@@ -46,10 +46,6 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>rocketmq-openmessaging</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>rocketmq-acl</artifactId>
         </dependency>
         <dependency>
