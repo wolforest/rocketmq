@@ -25,7 +25,6 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.TlsMode;
-import org.apache.rocketmq.remoting.netty.FileRegionEncoder;
 import org.apache.rocketmq.remoting.netty.NettyRemotingServer;
 
 @ChannelHandler.Sharable

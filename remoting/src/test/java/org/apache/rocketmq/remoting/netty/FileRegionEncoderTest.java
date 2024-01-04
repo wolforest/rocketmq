@@ -27,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
+import org.apache.rocketmq.remoting.netty.handler.FileRegionEncoder;
 import org.junit.Assert;
 import org.junit.Test;
 
