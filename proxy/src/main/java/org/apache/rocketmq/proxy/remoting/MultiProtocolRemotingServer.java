@@ -36,6 +36,7 @@ import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
+import org.apache.rocketmq.remoting.netty.handler.HandshakeHandler;
 
 /**
  * support remoting and http2 protocol at one port
@@ -78,7 +79,7 @@ public class MultiProtocolRemotingServer extends NettyRemotingServer {
     @Override
     protected ChannelPipeline configChannel(SocketChannel ch) {
         return ch.pipeline()
-            .addLast(this.getDefaultEventExecutorGroup(), HANDSHAKE_HANDLER_NAME, new HandshakeHandler())
+            .addLast(this.getDefaultEventExecutorGroup(), HANDSHAKE_HANDLER_NAME, new HandshakeHandler(this))
             .addLast(this.getDefaultEventExecutorGroup(),
                 new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),
                 new ProtocolNegotiationHandler(this.remotingProtocolHandler)

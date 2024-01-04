@@ -18,14 +18,12 @@ package org.apache.rocketmq.remoting.netty;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -38,17 +36,9 @@ import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.ProtocolDetectionResult;
-import io.netty.handler.codec.ProtocolDetectionState;
-import io.netty.handler.codec.haproxy.HAProxyMessage;
-import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
-import io.netty.handler.codec.haproxy.HAProxyProtocolVersion;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.AttributeKey;
-import io.netty.util.CharsetUtil;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
@@ -57,7 +47,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.cert.CertificateException;
 import java.time.Duration;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -66,13 +55,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
-import org.apache.rocketmq.common.domain.constant.HAProxyConstants;
-import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -85,7 +70,7 @@ import org.apache.rocketmq.remoting.common.TlsMode;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.exception.RemotingTooMuchRequestException;
-import org.apache.rocketmq.remoting.netty.handler.HAProxyMessageHandler;
+import org.apache.rocketmq.remoting.netty.handler.HandshakeHandler;
 import org.apache.rocketmq.remoting.netty.handler.NettyDecoder;
 import org.apache.rocketmq.remoting.netty.handler.NettyEncoder;
 import org.apache.rocketmq.remoting.netty.handler.RemotingCodeDistributionHandler;
@@ -97,8 +82,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private static final Logger TRAFFIC_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_TRAFFIC_NAME);
 
     private final NettyServerConfig nettyServerConfig;
-
-
 
     private final ServerBootstrap serverBootstrap;
     // worker group
@@ -127,8 +110,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private final ConcurrentMap<Integer/*Port*/, NettyRemotingAbstract> remotingServerTable = new ConcurrentHashMap<>();
 
     public static final String HANDSHAKE_HANDLER_NAME = "handshakeHandler";
-    public static final String HA_PROXY_DECODER = "HAProxyDecoder";
-    public static final String HA_PROXY_HANDLER = "HAProxyHandler";
+
     public static final String TLS_MODE_HANDLER = "TlsModeHandler";
     public static final String TLS_HANDLER_NAME = "sslHandler";
     public static final String FILE_REGION_ENCODER_NAME = "fileRegionEncoder";
@@ -293,7 +275,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
      */
     protected ChannelPipeline configChannel(SocketChannel ch) {
         return ch.pipeline()
-            .addLast(defaultEventExecutorGroup, HANDSHAKE_HANDLER_NAME, new HandshakeHandler())
+            .addLast(defaultEventExecutorGroup, HANDSHAKE_HANDLER_NAME, new HandshakeHandler(this))
             .addLast(defaultEventExecutorGroup,
                 encoder,
                 new NettyDecoder(),
@@ -483,38 +465,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         return distributionHandler;
     }
 
-    public class HandshakeHandler extends ByteToMessageDecoder {
-
-        public HandshakeHandler() {
-        }
-
-        @Override
-        protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> out) throws Exception {
-            try {
-                ProtocolDetectionResult<HAProxyProtocolVersion> detectionResult = HAProxyMessageDecoder.detectProtocol(byteBuf);
-                if (detectionResult.state() == ProtocolDetectionState.NEEDS_MORE_DATA) {
-                    return;
-                }
-                if (detectionResult.state() == ProtocolDetectionState.DETECTED) {
-                    ctx.pipeline().addAfter(defaultEventExecutorGroup, ctx.name(), HA_PROXY_DECODER, new HAProxyMessageDecoder())
-                            .addAfter(defaultEventExecutorGroup, HA_PROXY_DECODER, HA_PROXY_HANDLER, new HAProxyMessageHandler())
-                            .addAfter(defaultEventExecutorGroup, HA_PROXY_HANDLER, TLS_MODE_HANDLER, tlsModeHandler);
-                } else {
-                    ctx.pipeline().addAfter(defaultEventExecutorGroup, ctx.name(), TLS_MODE_HANDLER, tlsModeHandler);
-                }
-
-                try {
-                    // Remove this handler
-                    ctx.pipeline().remove(this);
-                } catch (NoSuchElementException e) {
-                    log.error("Error while removing HandshakeHandler", e);
-                }
-            } catch (Exception e) {
-                log.error("process proxy protocol negotiator failed.", e);
-                throw e;
-            }
-        }
-    }
 
     @ChannelHandler.Sharable
     public class TlsModeHandler extends SimpleChannelInboundHandler<ByteBuf> {
