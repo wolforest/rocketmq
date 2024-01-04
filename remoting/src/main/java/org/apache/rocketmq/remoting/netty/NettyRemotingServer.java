@@ -92,18 +92,25 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_REMOTING_NAME);
     private static final Logger TRAFFIC_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_TRAFFIC_NAME);
 
-    private final ServerBootstrap serverBootstrap;
-    private final EventLoopGroup eventLoopGroupSelector;
-    private final EventLoopGroup eventLoopGroupBoss;
     private final NettyServerConfig nettyServerConfig;
 
+    private final ServerBootstrap serverBootstrap;
+    // worker group
+    private final EventLoopGroup eventLoopGroupSelector;
+    // boss group
+    private final EventLoopGroup eventLoopGroupBoss;
+    // childHandler.SocketChannel.pipeline()
+    private final DefaultEventExecutorGroup defaultEventExecutorGroup;
+
+    /**
+     *
+     */
     private final ExecutorService publicExecutor;
     private final ScheduledExecutorService scheduledExecutorService;
     private final ChannelEventListener channelEventListener;
 
     private final HashedWheelTimer timer = new HashedWheelTimer(r -> new Thread(r, "ServerHouseKeepingService"));
 
-    private DefaultEventExecutorGroup defaultEventExecutorGroup;
 
     /**
      * NettyRemotingServer may hold multiple SubRemotingServer, each server will be stored in this container with a
@@ -141,8 +148,16 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
         this.eventLoopGroupBoss = buildBossEventLoopGroup();
         this.eventLoopGroupSelector = buildEventLoopGroupSelector();
+        this.defaultEventExecutorGroup = buildEventExecutorGroup();
 
         loadSslContext();
+    }
+
+    private DefaultEventExecutorGroup buildEventExecutorGroup() {
+        return new DefaultEventExecutorGroup(
+            nettyServerConfig.getServerWorkerThreads(),
+            new ThreadFactoryImpl("NettyServerCodecThread_")
+        );
     }
 
     private EventLoopGroup buildEventLoopGroupSelector() {
@@ -203,9 +218,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
     @Override
     public void start() {
-        this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(nettyServerConfig.getServerWorkerThreads(),
-            new ThreadFactoryImpl("NettyServerCodecThread_"));
-
         prepareSharableHandlers();
 
         serverBootstrap.group(this.eventLoopGroupBoss, this.eventLoopGroupSelector)
@@ -279,8 +291,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 encoder,
                 new NettyDecoder(),
                 distributionHandler,
-                new IdleStateHandler(0, 0,
-                    nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),
+                new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),
                 connectionManageHandler,
                 serverHandler
             );
