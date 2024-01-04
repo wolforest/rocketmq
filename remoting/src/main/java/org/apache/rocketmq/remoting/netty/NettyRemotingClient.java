@@ -215,7 +215,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                         new NettyEncoder(),
                         new NettyDecoder(),
                         new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()),
-                        new NettyConnectManageHandler(),
+                        new ClientConnectionManager(),
                         new NettyClientHandler());
                 }
             });
@@ -341,7 +341,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                         new NettyEncoder(),
                         new NettyDecoder(),
                         new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()),
-                        new NettyConnectManageHandler(),
+                        new ClientConnectionManager(),
                         new NettyClientHandler());
                 }
             });
@@ -1093,7 +1093,10 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         }
     }
 
-    class NettyConnectManageHandler extends ChannelDuplexHandler {
+    /**
+     * @renamed from NettyConnectManageHandler ClientConnectionManager
+     */
+    class ClientConnectionManager extends ChannelDuplexHandler {
         @Override
         public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
             ChannelPromise promise) throws Exception {
