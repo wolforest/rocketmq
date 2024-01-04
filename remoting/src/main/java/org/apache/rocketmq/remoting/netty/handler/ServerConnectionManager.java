@@ -29,13 +29,16 @@ import org.apache.rocketmq.remoting.netty.NettyEvent;
 import org.apache.rocketmq.remoting.netty.NettyEventType;
 import org.apache.rocketmq.remoting.netty.NettyRemotingServer;
 
+/**
+ * @renamed from NettyConnectManageHandler to ServerConnectionManager
+ */
 @ChannelHandler.Sharable
-public class NettyConnectManageHandler extends ChannelDuplexHandler {
+public class ServerConnectionManager extends ChannelDuplexHandler {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_REMOTING_NAME);
 
     private final NettyRemotingServer server;
 
-    public NettyConnectManageHandler(NettyRemotingServer server) {
+    public ServerConnectionManager(NettyRemotingServer server) {
         this.server = server;
     }
 

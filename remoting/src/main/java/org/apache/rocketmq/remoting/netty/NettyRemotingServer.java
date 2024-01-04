@@ -61,7 +61,7 @@ import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.exception.RemotingTooMuchRequestException;
 import org.apache.rocketmq.remoting.netty.handler.HandshakeHandler;
-import org.apache.rocketmq.remoting.netty.handler.NettyConnectManageHandler;
+import org.apache.rocketmq.remoting.netty.handler.ServerConnectionManager;
 import org.apache.rocketmq.remoting.netty.handler.NettyDecoder;
 import org.apache.rocketmq.remoting.netty.handler.NettyEncoder;
 import org.apache.rocketmq.remoting.netty.handler.NettyServerHandler;
@@ -103,7 +103,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     // sharable handlers
     private TlsModeHandler tlsModeHandler;
     private NettyEncoder encoder;
-    private NettyConnectManageHandler connectionManageHandler;
+    private ServerConnectionManager connectionManageHandler;
     private NettyServerHandler serverHandler;
     private RemotingCodeDistributionHandler distributionHandler;
 
@@ -417,7 +417,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private void prepareSharableHandlers() {
         tlsModeHandler = new TlsModeHandler(TlsSystemConfig.tlsMode, this);
         encoder = new NettyEncoder();
-        connectionManageHandler = new NettyConnectManageHandler(this);
+        connectionManageHandler = new ServerConnectionManager(this);
         serverHandler = new NettyServerHandler(this);
         distributionHandler = new RemotingCodeDistributionHandler();
     }
@@ -448,7 +448,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         return encoder;
     }
 
-    public NettyConnectManageHandler getConnectionManageHandler() {
+    public ServerConnectionManager getConnectionManageHandler() {
         return connectionManageHandler;
     }
 
