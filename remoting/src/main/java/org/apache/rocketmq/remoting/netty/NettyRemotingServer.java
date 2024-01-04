@@ -85,6 +85,9 @@ import org.apache.rocketmq.remoting.common.TlsMode;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.exception.RemotingTooMuchRequestException;
+import org.apache.rocketmq.remoting.netty.handler.NettyDecoder;
+import org.apache.rocketmq.remoting.netty.handler.NettyEncoder;
+import org.apache.rocketmq.remoting.netty.handler.RemotingCodeDistributionHandler;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
 @SuppressWarnings("NullableProblems")
@@ -96,10 +99,12 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
     private final ServerBootstrap serverBootstrap;
     // worker group
+    // NettyServerConfig.serverSelectorThreads: 3
     private final EventLoopGroup eventLoopGroupSelector;
-    // boss group
+    // boss group : 1
     private final EventLoopGroup eventLoopGroupBoss;
     // childHandler.SocketChannel.pipeline()
+    // NettyServerConfig.serverWorkerThreads: 8
     private final DefaultEventExecutorGroup defaultEventExecutorGroup;
 
     /**
@@ -226,8 +231,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             .option(ChannelOption.SO_REUSEADDR, true)
             .childOption(ChannelOption.SO_KEEPALIVE, false)
             .childOption(ChannelOption.TCP_NODELAY, true)
-            .localAddress(new InetSocketAddress(this.nettyServerConfig.getBindAddress(),
-                this.nettyServerConfig.getListenPort()))
+            .localAddress(new InetSocketAddress(nettyServerConfig.getBindAddress(), nettyServerConfig.getListenPort()))
             .childHandler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel ch) {
@@ -282,7 +286,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
      * config channel in ChannelInitializer
      *
      * @param ch the SocketChannel needed to init
-     * @return the initialized ChannelPipeline, sub class can use it to extent in the future
+     * @return the initialized ChannelPipeline, child class can use it to extent in the future
      */
     protected ChannelPipeline configChannel(SocketChannel ch) {
         return ch.pipeline()

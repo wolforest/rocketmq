@@ -21,10 +21,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import java.util.function.Supplier;
 import org.apache.rocketmq.proxy.remoting.protocol.ProtocolHandler;
-import org.apache.rocketmq.remoting.netty.NettyDecoder;
-import org.apache.rocketmq.remoting.netty.NettyEncoder;
+import org.apache.rocketmq.remoting.netty.handler.NettyDecoder;
+import org.apache.rocketmq.remoting.netty.handler.NettyEncoder;
 import org.apache.rocketmq.remoting.netty.NettyRemotingServer;
-import org.apache.rocketmq.remoting.netty.RemotingCodeDistributionHandler;
+import org.apache.rocketmq.remoting.netty.handler.RemotingCodeDistributionHandler;
 
 public class RemotingProtocolHandler implements ProtocolHandler {
 
