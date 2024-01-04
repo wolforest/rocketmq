@@ -33,6 +33,7 @@ import org.apache.rocketmq.remoting.netty.NettyRemotingServer;
 public class HandshakeHandler extends ByteToMessageDecoder {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_REMOTING_NAME);
 
+    public static final String HANDSHAKE_HANDLER_NAME = "handshakeHandler";
     public static final String HA_PROXY_DECODER = "HAProxyDecoder";
     public static final String HA_PROXY_HANDLER = "HAProxyHandler";
     private final NettyRemotingServer server;
@@ -51,9 +52,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
             if (detectionResult.state() == ProtocolDetectionState.DETECTED) {
                 ctx.pipeline().addAfter(server.getDefaultEventExecutorGroup(), ctx.name(), HA_PROXY_DECODER, new HAProxyMessageDecoder())
                     .addAfter(server.getDefaultEventExecutorGroup(), HA_PROXY_DECODER, HA_PROXY_HANDLER, new HAProxyMessageHandler())
-                    .addAfter(server.getDefaultEventExecutorGroup(), HA_PROXY_HANDLER, NettyRemotingServer.TLS_MODE_HANDLER, server.getTlsModeHandler());
+                    .addAfter(server.getDefaultEventExecutorGroup(), HA_PROXY_HANDLER, TlsModeHandler.TLS_MODE_HANDLER, server.getTlsModeHandler());
             } else {
-                ctx.pipeline().addAfter(server.getDefaultEventExecutorGroup(), ctx.name(), NettyRemotingServer.TLS_MODE_HANDLER, server.getTlsModeHandler());
+                ctx.pipeline().addAfter(server.getDefaultEventExecutorGroup(), ctx.name(), TlsModeHandler.TLS_MODE_HANDLER, server.getTlsModeHandler());
             }
 
             try {

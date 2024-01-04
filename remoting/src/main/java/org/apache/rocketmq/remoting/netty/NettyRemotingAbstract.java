@@ -114,6 +114,8 @@ public abstract class NettyRemotingAbstract {
      */
     protected Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessorPair;
 
+
+
     /**
      * SSL context via which to create {@link SslHandler}.
      */
@@ -666,6 +668,10 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
+    public SslContext getSslContext() {
+        return sslContext;
+    }
+
     class NettyEventExecutor extends ServiceThread {
         private final LinkedBlockingQueue<NettyEvent> eventQueue = new LinkedBlockingQueue<>();
 
@@ -717,6 +723,7 @@ public abstract class NettyRemotingAbstract {
 
             log.info(this.getServiceName() + " service end");
         }
+
 
         @Override
         public String getServiceName() {

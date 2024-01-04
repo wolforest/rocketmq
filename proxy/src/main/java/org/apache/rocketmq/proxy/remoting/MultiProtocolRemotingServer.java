@@ -79,7 +79,7 @@ public class MultiProtocolRemotingServer extends NettyRemotingServer {
     @Override
     protected ChannelPipeline configChannel(SocketChannel ch) {
         return ch.pipeline()
-            .addLast(this.getDefaultEventExecutorGroup(), HANDSHAKE_HANDLER_NAME, new HandshakeHandler(this))
+            .addLast(this.getDefaultEventExecutorGroup(), HandshakeHandler.HANDSHAKE_HANDLER_NAME, new HandshakeHandler(this))
             .addLast(this.getDefaultEventExecutorGroup(),
                 new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),
                 new ProtocolNegotiationHandler(this.remotingProtocolHandler)
