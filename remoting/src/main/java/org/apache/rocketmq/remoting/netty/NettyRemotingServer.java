@@ -192,6 +192,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
     }
 
+    /**
+     * nettyServerConfig.useEpollNativeSelector: default false
+     */
     private boolean useEpoll() {
         return SystemUtils.isLinuxPlatform()
             && nettyServerConfig.isUseEpollNativeSelector()
