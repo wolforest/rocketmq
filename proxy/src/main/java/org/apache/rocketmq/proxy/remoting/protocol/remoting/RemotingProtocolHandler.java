@@ -24,6 +24,7 @@ import org.apache.rocketmq.proxy.remoting.protocol.ProtocolHandler;
 import org.apache.rocketmq.remoting.netty.handler.NettyDecoder;
 import org.apache.rocketmq.remoting.netty.handler.NettyEncoder;
 import org.apache.rocketmq.remoting.netty.NettyRemotingServer;
+import org.apache.rocketmq.remoting.netty.handler.NettyServerHandler;
 import org.apache.rocketmq.remoting.netty.handler.RemotingCodeDistributionHandler;
 
 public class RemotingProtocolHandler implements ProtocolHandler {
@@ -31,12 +32,12 @@ public class RemotingProtocolHandler implements ProtocolHandler {
     private final Supplier<NettyEncoder> encoderSupplier;
     private final Supplier<RemotingCodeDistributionHandler> remotingCodeDistributionHandlerSupplier;
     private final Supplier<NettyRemotingServer.NettyConnectManageHandler> connectionManageHandlerSupplier;
-    private final Supplier<NettyRemotingServer.NettyServerHandler> serverHandlerSupplier;
+    private final Supplier<NettyServerHandler> serverHandlerSupplier;
 
     public RemotingProtocolHandler(Supplier<NettyEncoder> encoderSupplier,
         Supplier<RemotingCodeDistributionHandler> remotingCodeDistributionHandlerSupplier,
         Supplier<NettyRemotingServer.NettyConnectManageHandler> connectionManageHandlerSupplier,
-        Supplier<NettyRemotingServer.NettyServerHandler> serverHandlerSupplier) {
+        Supplier<NettyServerHandler> serverHandlerSupplier) {
         this.encoderSupplier = encoderSupplier;
         this.remotingCodeDistributionHandlerSupplier = remotingCodeDistributionHandlerSupplier;
         this.connectionManageHandlerSupplier = connectionManageHandlerSupplier;

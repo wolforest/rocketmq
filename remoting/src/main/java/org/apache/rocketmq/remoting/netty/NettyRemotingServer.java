@@ -27,7 +27,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -71,6 +70,7 @@ import org.apache.rocketmq.remoting.exception.RemotingTooMuchRequestException;
 import org.apache.rocketmq.remoting.netty.handler.HandshakeHandler;
 import org.apache.rocketmq.remoting.netty.handler.NettyDecoder;
 import org.apache.rocketmq.remoting.netty.handler.NettyEncoder;
+import org.apache.rocketmq.remoting.netty.handler.NettyServerHandler;
 import org.apache.rocketmq.remoting.netty.handler.RemotingCodeDistributionHandler;
 import org.apache.rocketmq.remoting.netty.handler.TlsModeHandler;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -101,15 +101,11 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
     private final HashedWheelTimer timer = new HashedWheelTimer(r -> new Thread(r, "ServerHouseKeepingService"));
 
-
     /**
      * NettyRemotingServer may hold multiple SubRemotingServer, each server will be stored in this container with a
      * ListenPort key.
      */
     private final ConcurrentMap<Integer/*Port*/, NettyRemotingAbstract> remotingServerTable = new ConcurrentHashMap<>();
-
-
-
 
     // sharable handlers
     private TlsModeHandler tlsModeHandler;
@@ -419,7 +415,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         tlsModeHandler = new TlsModeHandler(TlsSystemConfig.tlsMode, this);
         encoder = new NettyEncoder();
         connectionManageHandler = new NettyConnectManageHandler();
-        serverHandler = new NettyServerHandler();
+        serverHandler = new NettyServerHandler(this);
         distributionHandler = new RemotingCodeDistributionHandler();
     }
 
@@ -463,38 +459,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
 
 
-    @ChannelHandler.Sharable
-    public class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
-
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg) {
-            int localPort = RemotingHelper.parseSocketAddressPort(ctx.channel().localAddress());
-            NettyRemotingAbstract remotingAbstract = NettyRemotingServer.this.remotingServerTable.get(localPort);
-            if (localPort != -1 && remotingAbstract != null) {
-                remotingAbstract.processMessageReceived(ctx, msg);
-                return;
-            }
-            // The related remoting server has been shutdown, so close the connected channel
-            RemotingHelper.closeChannel(ctx.channel());
-        }
-
-        @Override
-        public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-            Channel channel = ctx.channel();
-            if (channel.isWritable()) {
-                if (!channel.config().isAutoRead()) {
-                    channel.config().setAutoRead(true);
-                    log.info("Channel[{}] turns writable, bytes to buffer before changing channel to un-writable: {}",
-                        RemotingHelper.parseChannelRemoteAddr(channel), channel.bytesBeforeUnwritable());
-                }
-            } else {
-                channel.config().setAutoRead(false);
-                log.warn("Channel[{}] auto-read is disabled, bytes to drain before it turns writable: {}",
-                    RemotingHelper.parseChannelRemoteAddr(channel), channel.bytesBeforeWritable());
-            }
-            super.channelWritabilityChanged(ctx);
-        }
-    }
 
     @ChannelHandler.Sharable
     public class NettyConnectManageHandler extends ChannelDuplexHandler {
