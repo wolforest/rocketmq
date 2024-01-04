@@ -312,11 +312,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             }
 
             this.timer.stop();
-
             this.eventLoopGroupBoss.shutdownGracefully();
-
             this.eventLoopGroupSelector.shutdownGracefully();
-
             this.nettyEventExecutor.shutdown();
 
             if (this.defaultEventExecutorGroup != null) {
@@ -326,12 +323,18 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             log.error("NettyRemotingServer shutdown exception, ", e);
         }
 
-        if (this.publicExecutor != null) {
-            try {
-                this.publicExecutor.shutdown();
-            } catch (Exception e) {
-                log.error("NettyRemotingServer shutdown exception, ", e);
-            }
+        shutdownPublicExecutor();
+    }
+
+    private void shutdownPublicExecutor() {
+        if (this.publicExecutor == null) {
+            return;
+        }
+
+        try {
+            this.publicExecutor.shutdown();
+        } catch (Exception e) {
+            log.error("NettyRemotingServer shutdown exception, ", e);
         }
     }
 
