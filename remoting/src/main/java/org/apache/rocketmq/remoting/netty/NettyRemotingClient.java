@@ -499,38 +499,45 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     public void updateNameServerAddressList(List<String> addrs) {
         List<String> old = this.namesrvAddrList.get();
         boolean update = false;
+        if (addrs.isEmpty()) {
+            return;
+        }
 
-        if (!addrs.isEmpty()) {
-            if (null == old) {
-                update = true;
-            } else if (addrs.size() != old.size()) {
-                update = true;
-            } else {
-                for (String addr : addrs) {
-                    if (!old.contains(addr)) {
-                        update = true;
-                        break;
-                    }
+        if (null == old) {
+            update = true;
+        } else if (addrs.size() != old.size()) {
+            update = true;
+        } else {
+            for (String addr : addrs) {
+                if (!old.contains(addr)) {
+                    update = true;
+                    break;
                 }
             }
+        }
 
-            if (update) {
-                Collections.shuffle(addrs);
-                LOGGER.info("name server address updated. NEW : {} , OLD: {}", addrs, old);
-                this.namesrvAddrList.set(addrs);
+        if (!update) {
+            return;
+        }
 
-                // should close the channel if choosed addr is not exist.
-                if (this.namesrvAddrChoosed.get() != null && !addrs.contains(this.namesrvAddrChoosed.get())) {
-                    String namesrvAddr = this.namesrvAddrChoosed.get();
-                    for (String addr : this.channelTables.keySet()) {
-                        if (addr.contains(namesrvAddr)) {
-                            ChannelWrapper channelWrapper = this.channelTables.get(addr);
-                            if (channelWrapper != null) {
-                                channelWrapper.close();
-                            }
-                        }
-                    }
-                }
+        Collections.shuffle(addrs);
+        LOGGER.info("name server address updated. NEW : {} , OLD: {}", addrs, old);
+        this.namesrvAddrList.set(addrs);
+
+        // should close the channel if choosed addr is not exist.
+        if (this.namesrvAddrChoosed.get() == null || addrs.contains(this.namesrvAddrChoosed.get())) {
+            return;
+        }
+
+        String namesrvAddr = this.namesrvAddrChoosed.get();
+        for (String addr : this.channelTables.keySet()) {
+            if (!addr.contains(namesrvAddr)) {
+                continue;
+            }
+
+            ChannelWrapper channelWrapper = this.channelTables.get(addr);
+            if (channelWrapper != null) {
+                channelWrapper.close();
             }
         }
     }
