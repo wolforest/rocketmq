@@ -193,23 +193,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
     @Override
     public void start() {
-        prepareSharableHandlers();
-
-        serverBootstrap.group(this.eventLoopGroupBoss, this.eventLoopGroupSelector)
-            .channel(useEpoll() ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
-            .option(ChannelOption.SO_BACKLOG, 1024)
-            .option(ChannelOption.SO_REUSEADDR, true)
-            .childOption(ChannelOption.SO_KEEPALIVE, false)
-            .childOption(ChannelOption.TCP_NODELAY, true)
-            .localAddress(new InetSocketAddress(nettyServerConfig.getBindAddress(), nettyServerConfig.getListenPort()))
-            .childHandler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                public void initChannel(SocketChannel ch) {
-                    configChannel(ch);
-                }
-            });
-
-        addCustomConfig(serverBootstrap);
+        initBootstrap();
 
         try {
             ChannelFuture sync = serverBootstrap.bind().sync();
@@ -229,6 +213,41 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             this.nettyEventExecutor.start();
         }
 
+        initResponseTableScanTask();
+        initPrintRemotingCodeTask();
+    }
+
+    private void initBootstrap() {
+        prepareSharableHandlers();
+
+        serverBootstrap.group(this.eventLoopGroupBoss, this.eventLoopGroupSelector)
+            .channel(useEpoll() ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
+            .option(ChannelOption.SO_BACKLOG, 1024)
+            .option(ChannelOption.SO_REUSEADDR, true)
+            .childOption(ChannelOption.SO_KEEPALIVE, false)
+            .childOption(ChannelOption.TCP_NODELAY, true)
+            .localAddress(new InetSocketAddress(nettyServerConfig.getBindAddress(), nettyServerConfig.getListenPort()))
+            .childHandler(new ChannelInitializer<SocketChannel>() {
+                @Override
+                public void initChannel(SocketChannel ch) {
+                    configChannel(ch);
+                }
+            });
+
+        addCustomConfig(serverBootstrap);
+    }
+
+    private void initPrintRemotingCodeTask() {
+        scheduledExecutorService.scheduleWithFixedDelay(() -> {
+            try {
+                NettyRemotingServer.this.printRemotingCodeDistribution();
+            } catch (Throwable e) {
+                TRAFFIC_LOGGER.error("NettyRemotingServer print remoting code distribution exception", e);
+            }
+        }, 1, 1, TimeUnit.SECONDS);
+    }
+
+    private void initResponseTableScanTask() {
         TimerTask timerScanResponseTable = new TimerTask() {
             @Override
             public void run(Timeout timeout) {
@@ -242,14 +261,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             }
         };
         this.timer.newTimeout(timerScanResponseTable, 1000 * 3, TimeUnit.MILLISECONDS);
-
-        scheduledExecutorService.scheduleWithFixedDelay(() -> {
-            try {
-                NettyRemotingServer.this.printRemotingCodeDistribution();
-            } catch (Throwable e) {
-                TRAFFIC_LOGGER.error("NettyRemotingServer print remoting code distribution exception", e);
-            }
-        }, 1, 1, TimeUnit.SECONDS);
     }
 
     /**
