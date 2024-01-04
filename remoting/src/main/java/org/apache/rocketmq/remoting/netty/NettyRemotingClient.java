@@ -802,42 +802,50 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     }
 
     @Override
-    public CompletableFuture<ResponseFuture> invokeImpl(final Channel channel, final RemotingCommand request,
-        final long timeoutMillis) {
+    public CompletableFuture<ResponseFuture> invokeImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis) {
         Stopwatch stopwatch = Stopwatch.createStarted();
         return super.invokeImpl(channel, request, timeoutMillis).thenCompose(responseFuture -> {
             RemotingCommand response = responseFuture.getResponseCommand();
-            if (response.getCode() == ResponseCode.GO_AWAY) {
-                if (nettyClientConfig.isEnableReconnectForGoAway()) {
-                    ChannelWrapper channelWrapper = channelWrapperTables.computeIfPresent(channel, (channel0, channelWrapper0) -> {
-                        try {
-                            if (channelWrapper0.reconnect()) {
-                                LOGGER.info("Receive go away from channel {}, recreate the channel", channel0);
-                                channelWrapperTables.put(channelWrapper0.getChannel(), channelWrapper0);
-                            }
-                        } catch (Throwable t) {
-                            LOGGER.error("Channel {} reconnect error", channelWrapper0, t);
-                        }
-                        return channelWrapper0;
-                    });
-                    if (channelWrapper != null) {
-                        if (nettyClientConfig.isEnableTransparentRetry()) {
-                            long duration = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-                            stopwatch.stop();
-                            RemotingCommand retryRequest = RemotingCommand.createRequestCommand(request.getCode(), request.readCustomHeader());
-                            retryRequest.setBody(request.getBody());
-                            Channel retryChannel;
-                            if (channelWrapper.isOK()) {
-                                retryChannel = channelWrapper.getChannel();
-                            } else {
-                                retryChannel = waitChannelFuture(channelWrapper.getChannelAddress(), channelWrapper);
-                            }
-                            if (retryChannel != null && channel != retryChannel) {
-                                return super.invokeImpl(retryChannel, retryRequest, timeoutMillis - duration);
-                            }
-                        }
+            if (response.getCode() != ResponseCode.GO_AWAY) {
+                return CompletableFuture.completedFuture(responseFuture);
+            }
+
+            if (!nettyClientConfig.isEnableReconnectForGoAway()) {
+                return CompletableFuture.completedFuture(responseFuture);
+
+            }
+
+            ChannelWrapper channelWrapper = channelWrapperTables.computeIfPresent(channel, (channel0, channelWrapper0) -> {
+                try {
+                    if (channelWrapper0.reconnect()) {
+                        LOGGER.info("Receive go away from channel {}, recreate the channel", channel0);
+                        channelWrapperTables.put(channelWrapper0.getChannel(), channelWrapper0);
                     }
+                } catch (Throwable t) {
+                    LOGGER.error("Channel {} reconnect error", channelWrapper0, t);
                 }
+                return channelWrapper0;
+            });
+
+            if (channelWrapper == null) {
+                return CompletableFuture.completedFuture(responseFuture);
+            }
+            if (!nettyClientConfig.isEnableTransparentRetry()) {
+                return CompletableFuture.completedFuture(responseFuture);
+            }
+
+            long duration = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            stopwatch.stop();
+            RemotingCommand retryRequest = RemotingCommand.createRequestCommand(request.getCode(), request.readCustomHeader());
+            retryRequest.setBody(request.getBody());
+            Channel retryChannel;
+            if (channelWrapper.isOK()) {
+                retryChannel = channelWrapper.getChannel();
+            } else {
+                retryChannel = waitChannelFuture(channelWrapper.getChannelAddress(), channelWrapper);
+            }
+            if (retryChannel != null && channel != retryChannel) {
+                return super.invokeImpl(retryChannel, retryRequest, timeoutMillis - duration);
             }
             return CompletableFuture.completedFuture(responseFuture);
         });
