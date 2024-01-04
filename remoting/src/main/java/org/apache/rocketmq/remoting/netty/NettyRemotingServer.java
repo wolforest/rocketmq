@@ -180,13 +180,15 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         TlsMode tlsMode = TlsSystemConfig.tlsMode;
         log.info("Server is running in TLS {} mode", tlsMode.getName());
 
-        if (tlsMode != TlsMode.DISABLED) {
-            try {
-                sslContext = TlsHelper.buildSslContext(false);
-                log.info("SSLContext created for server");
-            } catch (CertificateException | IOException e) {
-                log.error("Failed to create SSLContext for server", e);
-            }
+        if (tlsMode == TlsMode.DISABLED) {
+            return;
+        }
+
+        try {
+            sslContext = TlsHelper.buildSslContext(false);
+            log.info("SSLContext created for server");
+        } catch (CertificateException | IOException e) {
+            log.error("Failed to create SSLContext for server", e);
         }
     }
 
