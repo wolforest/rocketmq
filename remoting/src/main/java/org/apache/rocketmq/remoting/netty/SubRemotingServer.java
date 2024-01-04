@@ -34,7 +34,7 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
  * SubRemotingServer will delegate all the functions to NettyRemotingServer, so the sub server can share all the
  * resources from its parent server.
  */
-class SubRemotingServer extends NettyRemotingAbstract implements RemotingServer {
+public class SubRemotingServer extends NettyRemotingAbstract implements RemotingServer {
     private volatile int listenPort;
     private volatile Channel serverChannel;
     private final NettyRemotingServer parent;

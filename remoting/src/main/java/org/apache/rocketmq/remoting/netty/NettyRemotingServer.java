@@ -85,6 +85,7 @@ import org.apache.rocketmq.remoting.common.TlsMode;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.exception.RemotingTooMuchRequestException;
+import org.apache.rocketmq.remoting.netty.handler.HAProxyMessageHandler;
 import org.apache.rocketmq.remoting.netty.handler.NettyDecoder;
 import org.apache.rocketmq.remoting.netty.handler.NettyEncoder;
 import org.apache.rocketmq.remoting.netty.handler.RemotingCodeDistributionHandler;
@@ -672,56 +673,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             }
 
             RemotingHelper.closeChannel(ctx.channel());
-        }
-    }
-
-    public static class HAProxyMessageHandler extends ChannelInboundHandlerAdapter {
-
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            if (msg instanceof HAProxyMessage) {
-                handleWithMessage((HAProxyMessage) msg, ctx.channel());
-            } else {
-                super.channelRead(ctx, msg);
-            }
-            ctx.pipeline().remove(this);
-        }
-
-        /**
-         * The definition of key refers to the implementation of nginx
-         * <a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#var_proxy_protocol_addr">ngx_http_core_module</a>
-         * @param msg
-         * @param channel
-         */
-        private void handleWithMessage(HAProxyMessage msg, Channel channel) {
-            try {
-                if (StringUtils.isNotBlank(msg.sourceAddress())) {
-                    channel.attr(AttributeKeys.PROXY_PROTOCOL_ADDR).set(msg.sourceAddress());
-                }
-                if (msg.sourcePort() > 0) {
-                    channel.attr(AttributeKeys.PROXY_PROTOCOL_PORT).set(String.valueOf(msg.sourcePort()));
-                }
-                if (StringUtils.isNotBlank(msg.destinationAddress())) {
-                    channel.attr(AttributeKeys.PROXY_PROTOCOL_SERVER_ADDR).set(msg.destinationAddress());
-                }
-                if (msg.destinationPort() > 0) {
-                    channel.attr(AttributeKeys.PROXY_PROTOCOL_SERVER_PORT).set(String.valueOf(msg.destinationPort()));
-                }
-                if (CollectionUtils.isNotEmpty(msg.tlvs())) {
-                    msg.tlvs().forEach(tlv -> {
-                        byte[] valueBytes = ByteBufUtil.getBytes(tlv.content());
-                        if (!BinaryUtils.isAscii(valueBytes)) {
-                            return;
-                        }
-                        AttributeKey<String> key = AttributeKeys.valueOf(
-                                HAProxyConstants.PROXY_PROTOCOL_TLV_PREFIX + String.format("%02x", tlv.typeByteValue()));
-                        String value = StringUtils.trim(new String(valueBytes, CharsetUtil.UTF_8));
-                        channel.attr(key).set(value);
-                    });
-                }
-            } finally {
-                msg.release();
-            }
         }
     }
 
