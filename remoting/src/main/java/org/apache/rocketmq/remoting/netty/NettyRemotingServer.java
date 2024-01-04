@@ -22,7 +22,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.epoll.Epoll;
@@ -70,7 +69,6 @@ import org.apache.rocketmq.remoting.netty.handler.RemotingCodeDistributionHandle
 import org.apache.rocketmq.remoting.netty.handler.TlsModeHandler;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
-@SuppressWarnings("NullableProblems")
 public class NettyRemotingServer extends NettyRemotingAbstract implements RemotingServer {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_REMOTING_NAME);
     private static final Logger TRAFFIC_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_TRAFFIC_NAME);
@@ -258,10 +256,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
      * config channel in ChannelInitializer
      *
      * @param ch the SocketChannel needed to init
-     * @return the initialized ChannelPipeline, child class can use it to extent in the future
      */
-    protected ChannelPipeline configChannel(SocketChannel ch) {
-        return ch.pipeline()
+    protected void configChannel(SocketChannel ch) {
+        ch.pipeline()
             .addLast(defaultEventExecutorGroup, HandshakeHandler.HANDSHAKE_HANDLER_NAME, new HandshakeHandler(this))
             .addLast(defaultEventExecutorGroup,
                 encoder,
@@ -452,21 +449,12 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         return distributionHandler;
     }
 
-
     public NettyServerConfig getNettyServerConfig() {
         return nettyServerConfig;
     }
 
     public ServerBootstrap getServerBootstrap() {
         return serverBootstrap;
-    }
-
-    public EventLoopGroup getEventLoopGroupSelector() {
-        return eventLoopGroupSelector;
-    }
-
-    public EventLoopGroup getEventLoopGroupBoss() {
-        return eventLoopGroupBoss;
     }
 
     public ExecutorService getPublicExecutor() {

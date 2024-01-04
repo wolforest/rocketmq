@@ -17,7 +17,6 @@
 
 package org.apache.rocketmq.proxy.remoting;
 
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -77,8 +76,8 @@ public class MultiProtocolRemotingServer extends NettyRemotingServer {
     }
 
     @Override
-    protected ChannelPipeline configChannel(SocketChannel ch) {
-        return ch.pipeline()
+    protected void configChannel(SocketChannel ch) {
+        ch.pipeline()
             .addLast(this.getDefaultEventExecutorGroup(), HandshakeHandler.HANDSHAKE_HANDLER_NAME, new HandshakeHandler(this))
             .addLast(this.getDefaultEventExecutorGroup(),
                 new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()),
