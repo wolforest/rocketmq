@@ -452,44 +452,48 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         }
 
         try {
-            if (this.lockChannelTables.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
-                try {
-                    boolean removeItemFromTable = true;
-                    ChannelWrapper prevCW = null;
-                    String addrRemote = null;
-                    for (Map.Entry<String, ChannelWrapper> entry : channelTables.entrySet()) {
-                        String key = entry.getKey();
-                        ChannelWrapper prev = entry.getValue();
-                        if (prev.getChannel() != null) {
-                            if (prev.getChannel() == channel) {
-                                prevCW = prev;
-                                addrRemote = key;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (null == prevCW) {
-                        LOGGER.info("eventCloseChannel: the channel[{}] has been removed from the channel table before", addrRemote);
-                        removeItemFromTable = false;
-                    }
-
-                    if (removeItemFromTable) {
-                        ChannelWrapper channelWrapper = this.channelWrapperTables.remove(channel);
-                        if (channelWrapper != null && channelWrapper.tryClose(channel)) {
-                            this.channelTables.remove(addrRemote);
-                        }
-                        LOGGER.info("closeChannel: the channel[{}] was removed from channel table", addrRemote);
-                        RemotingHelper.closeChannel(channel);
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("closeChannel: close the channel exception", e);
-                } finally {
-                    this.lockChannelTables.unlock();
-                }
-            } else {
+            if (!this.lockChannelTables.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 LOGGER.warn("closeChannel: try to lock channel table, but timeout, {}ms", LOCK_TIMEOUT_MILLIS);
+                return;
             }
+
+            try {
+                boolean removeItemFromTable = true;
+                ChannelWrapper prevCW = null;
+                String addrRemote = null;
+                for (Map.Entry<String, ChannelWrapper> entry : channelTables.entrySet()) {
+                    String key = entry.getKey();
+                    ChannelWrapper prev = entry.getValue();
+                    if (prev.getChannel() == null) {
+                        continue;
+                    }
+
+                    if (prev.getChannel() == channel) {
+                        prevCW = prev;
+                        addrRemote = key;
+                        break;
+                    }
+                }
+
+                if (null == prevCW) {
+                    LOGGER.info("eventCloseChannel: the channel[{}] has been removed from the channel table before", addrRemote);
+                    removeItemFromTable = false;
+                }
+
+                if (removeItemFromTable) {
+                    ChannelWrapper channelWrapper = this.channelWrapperTables.remove(channel);
+                    if (channelWrapper != null && channelWrapper.tryClose(channel)) {
+                        this.channelTables.remove(addrRemote);
+                    }
+                    LOGGER.info("closeChannel: the channel[{}] was removed from channel table", addrRemote);
+                    RemotingHelper.closeChannel(channel);
+                }
+            } catch (Exception e) {
+                LOGGER.error("closeChannel: close the channel exception", e);
+            } finally {
+                this.lockChannelTables.unlock();
+            }
+
         } catch (InterruptedException e) {
             LOGGER.error("closeChannel exception", e);
         }
@@ -497,22 +501,24 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 
     @Override
     public void updateNameServerAddressList(List<String> addrs) {
-        List<String> old = this.namesrvAddrList.get();
-        boolean update = false;
         if (addrs.isEmpty()) {
             return;
         }
 
+        List<String> old = this.namesrvAddrList.get();
+        boolean update = false;
         if (null == old) {
             update = true;
         } else if (addrs.size() != old.size()) {
             update = true;
         } else {
             for (String addr : addrs) {
-                if (!old.contains(addr)) {
-                    update = true;
-                    break;
+                if (old.contains(addr)) {
+                    continue;
                 }
+
+                update = true;
+                break;
             }
         }
 
@@ -548,34 +554,35 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         long beginStartTime = System.currentTimeMillis();
         final Channel channel = this.getAndCreateChannel(addr);
         String channelRemoteAddr = RemotingHelper.parseChannelRemoteAddr(channel);
-        if (channel != null && channel.isActive()) {
-            long left = timeoutMillis;
-            try {
-                long costTime = System.currentTimeMillis() - beginStartTime;
-                left -= costTime;
-                if (left <= 0) {
-                    throw new RemotingTimeoutException("invokeSync call the addr[" + channelRemoteAddr + "] timeout");
-                }
-                RemotingCommand response = this.invokeSyncImpl(channel, request, left);
-                updateChannelLastResponseTime(addr);
-                return response;
-            } catch (RemotingSendRequestException e) {
-                LOGGER.warn("invokeSync: send request exception, so close the channel[{}]", channelRemoteAddr);
-                this.closeChannel(addr, channel);
-                throw e;
-            } catch (RemotingTimeoutException e) {
-                // avoid close the success channel if left timeout is small, since it may cost too much time in get the success channel, the left timeout for read is small
-                boolean shouldClose = left > MIN_CLOSE_TIMEOUT_MILLIS || left > timeoutMillis / 4;
-                if (nettyClientConfig.isClientCloseSocketIfTimeout() && shouldClose) {
-                    this.closeChannel(addr, channel);
-                    LOGGER.warn("invokeSync: close socket because of timeout, {}ms, {}", timeoutMillis, channelRemoteAddr);
-                }
-                LOGGER.warn("invokeSync: wait response timeout exception, the channel[{}]", channelRemoteAddr);
-                throw e;
-            }
-        } else {
+
+        if (channel == null || !channel.isActive()) {
             this.closeChannel(addr, channel);
             throw new RemotingConnectException(addr);
+        }
+
+        long left = timeoutMillis;
+        try {
+            long costTime = System.currentTimeMillis() - beginStartTime;
+            left -= costTime;
+            if (left <= 0) {
+                throw new RemotingTimeoutException("invokeSync call the addr[" + channelRemoteAddr + "] timeout");
+            }
+            RemotingCommand response = this.invokeSyncImpl(channel, request, left);
+            updateChannelLastResponseTime(addr);
+            return response;
+        } catch (RemotingSendRequestException e) {
+            LOGGER.warn("invokeSync: send request exception, so close the channel[{}]", channelRemoteAddr);
+            this.closeChannel(addr, channel);
+            throw e;
+        } catch (RemotingTimeoutException e) {
+            // avoid close the success channel if left timeout is small, since it may cost too much time in get the success channel, the left timeout for read is small
+            boolean shouldClose = left > MIN_CLOSE_TIMEOUT_MILLIS || left > timeoutMillis / 4;
+            if (nettyClientConfig.isClientCloseSocketIfTimeout() && shouldClose) {
+                this.closeChannel(addr, channel);
+                LOGGER.warn("invokeSync: close socket because of timeout, {}ms, {}", timeoutMillis, channelRemoteAddr);
+            }
+            LOGGER.warn("invokeSync: wait response timeout exception, the channel[{}]", channelRemoteAddr);
+            throw e;
         }
     }
 
