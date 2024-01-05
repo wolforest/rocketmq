@@ -58,6 +58,7 @@ import org.apache.rocketmq.remoting.protocol.header.SendMessageRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.SendMessageResponseHeader;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.store.PutMessageResult;
+import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 
 import java.net.SocketAddress;
@@ -238,47 +239,43 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         if (putMessageResult != null) {
             String commercialOwner = request.getExtFields().get(BrokerStatsManager.COMMERCIAL_OWNER);
 
-            switch (putMessageResult.getPutMessageStatus()) {
-                case PUT_OK:
-                    String backTopic = msgExt.getTopic();
-                    String correctTopic = msgExt.getProperty(MessageConst.PROPERTY_RETRY_TOPIC);
-                    if (correctTopic != null) {
-                        backTopic = correctTopic;
-                    }
-                    if (TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(msgInner.getTopic())) {
-                        masterBroker.getBrokerStatsManager().incTopicPutNums(msgInner.getTopic());
-                        masterBroker.getBrokerStatsManager().incTopicPutSize(msgInner.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
-                        masterBroker.getBrokerStatsManager().incQueuePutNums(msgInner.getTopic(), msgInner.getQueueId());
-                        masterBroker.getBrokerStatsManager().incQueuePutSize(msgInner.getTopic(), msgInner.getQueueId(), putMessageResult.getAppendMessageResult().getWroteBytes());
-                    }
-                    masterBroker.getBrokerStatsManager().incSendBackNums(requestHeader.getGroup(), backTopic);
+            if (putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
+                String backTopic = msgExt.getTopic();
+                String correctTopic = msgExt.getProperty(MessageConst.PROPERTY_RETRY_TOPIC);
+                if (correctTopic != null) {
+                    backTopic = correctTopic;
+                }
+                if (TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(msgInner.getTopic())) {
+                    masterBroker.getBrokerStatsManager().incTopicPutNums(msgInner.getTopic());
+                    masterBroker.getBrokerStatsManager().incTopicPutSize(msgInner.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
+                    masterBroker.getBrokerStatsManager().incQueuePutNums(msgInner.getTopic(), msgInner.getQueueId());
+                    masterBroker.getBrokerStatsManager().incQueuePutSize(msgInner.getTopic(), msgInner.getQueueId(), putMessageResult.getAppendMessageResult().getWroteBytes());
+                }
+                masterBroker.getBrokerStatsManager().incSendBackNums(requestHeader.getGroup(), backTopic);
 
-                    if (isDLQ) {
-                        masterBroker.getBrokerStatsManager().incDLQStatValue(
-                            BrokerStatsManager.SNDBCK2DLQ_TIMES,
-                            commercialOwner,
-                            requestHeader.getGroup(),
-                            requestHeader.getOriginTopic(),
-                            BrokerStatsManager.StatsType.SEND_BACK_TO_DLQ.name(),
-                            1);
+                if (isDLQ) {
+                    masterBroker.getBrokerStatsManager().incDLQStatValue(
+                        BrokerStatsManager.SNDBCK2DLQ_TIMES,
+                        commercialOwner,
+                        requestHeader.getGroup(),
+                        requestHeader.getOriginTopic(),
+                        BrokerStatsManager.StatsType.SEND_BACK_TO_DLQ.name(),
+                        1);
 
-                        String uniqKey = msgInner.getProperties().get(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
-                        DLQ_LOG.info("send msg to DLQ {}, owner={}, originalTopic={}, consumerId={}, msgUniqKey={}, storeTimestamp={}",
-                            newTopic,
-                            commercialOwner,
-                            requestHeader.getOriginTopic(),
-                            requestHeader.getGroup(),
-                            uniqKey,
-                            putMessageResult.getAppendMessageResult().getStoreTimestamp());
-                    }
+                    String uniqKey = msgInner.getProperties().get(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
+                    DLQ_LOG.info("send msg to DLQ {}, owner={}, originalTopic={}, consumerId={}, msgUniqKey={}, storeTimestamp={}",
+                        newTopic,
+                        commercialOwner,
+                        requestHeader.getOriginTopic(),
+                        requestHeader.getGroup(),
+                        uniqKey,
+                        putMessageResult.getAppendMessageResult().getStoreTimestamp());
+                }
 
-                    response.setCode(ResponseCode.SUCCESS);
-                    response.setRemark(null);
+                response.setCode(ResponseCode.SUCCESS);
+                response.setRemark(null);
 
-                    succeeded = true;
-                    break;
-                default:
-                    break;
+                succeeded = true;
             }
 
             if (!succeeded) {

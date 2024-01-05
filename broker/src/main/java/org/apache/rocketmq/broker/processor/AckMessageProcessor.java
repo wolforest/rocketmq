@@ -348,7 +348,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     }
 
     private int commitMsg(final AckMessageRequestHeader requestHeader, final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
-        int ackCount = 0;
+        int ackCount;
         if (batchAck == null) {
             ackCount = commitSingleMsg(requestHeader, response, channel, ackMsg);
         } else {
