@@ -68,18 +68,14 @@ public class NetworkUtils {
         if (SystemUtils.isLinuxPlatform()) {
             try {
                 final Class<?> providerClazz = Class.forName("sun.nio.ch.EPollSelectorProvider");
-                if (providerClazz != null) {
-                    try {
-                        final Method method = providerClazz.getMethod("provider");
-                        if (method != null) {
-                            final SelectorProvider selectorProvider = (SelectorProvider) method.invoke(null);
-                            if (selectorProvider != null) {
-                                result = selectorProvider.openSelector();
-                            }
-                        }
-                    } catch (final Exception e) {
-                        log.warn("Open ePoll Selector for linux platform exception", e);
+                try {
+                    final Method method = providerClazz.getMethod("provider");
+                    final SelectorProvider selectorProvider = (SelectorProvider) method.invoke(null);
+                    if (selectorProvider != null) {
+                        result = selectorProvider.openSelector();
                     }
+                } catch (final Exception e) {
+                    log.warn("Open ePoll Selector for linux platform exception", e);
                 }
             } catch (final Exception e) {
                 // ignore
@@ -154,8 +150,7 @@ public class NetworkUtils {
         int split = addr.lastIndexOf(":");
         String host = addr.substring(0, split);
         String port = addr.substring(split + 1);
-        InetSocketAddress isa = new InetSocketAddress(host, Integer.parseInt(port));
-        return isa;
+        return new InetSocketAddress(host, Integer.parseInt(port));
     }
 
     public static String socketAddress2String(final SocketAddress addr) {
@@ -198,13 +193,9 @@ public class NetworkUtils {
         } else if (ip[0] == (byte) 127) {
             return true;
         } else if (ip[0] == (byte) 172) {
-            if (ip[1] >= (byte) 16 && ip[1] <= (byte) 31) {
-                return true;
-            }
+            return ip[1] >= (byte) 16 && ip[1] <= (byte) 31;
         } else if (ip[0] == (byte) 192) {
-            if (ip[1] == (byte) 168) {
-                return true;
-            }
+            return ip[1] == (byte) 168;
         }
         return false;
     }
@@ -231,9 +222,12 @@ public class NetworkUtils {
         if (ip.length != 4) {
             return null;
         }
-        return new StringBuilder().append(ip[0] & 0xFF).append(".").append(
-                        ip[1] & 0xFF).append(".").append(ip[2] & 0xFF)
-                .append(".").append(ip[3] & 0xFF).toString();
+        return new StringBuilder()
+            .append(ip[0] & 0xFF)
+            .append(".").append(ip[1] & 0xFF)
+            .append(".").append(ip[2] & 0xFF)
+            .append(".").append(ip[3] & 0xFF)
+            .toString();
     }
 
     public static String ipToIPv6Str(byte[] ip) {
@@ -256,49 +250,55 @@ public class NetworkUtils {
     }
 
     public static boolean isInternalV6IP(InetAddress inetAddr) {
-        if (inetAddr.isAnyLocalAddress() // Wild card ipv6
-                || inetAddr.isLinkLocalAddress() // Single broadcast ipv6 address: fe80:xx:xx...
-                || inetAddr.isLoopbackAddress() //Loopback ipv6 address
-                || inetAddr.isSiteLocalAddress()) { // Site local ipv6 address: fec0:xx:xx...
-            return true;
-        }
-        return false;
+        // Site local ipv6 address: fec0:xx:xx...
+        return inetAddr.isAnyLocalAddress() // Wild card ipv6
+            || inetAddr.isLinkLocalAddress() // Single broadcast ipv6 address: fe80:xx:xx...
+            || inetAddr.isLoopbackAddress() //Loopback ipv6 address
+            || inetAddr.isSiteLocalAddress();
     }
 
 
     public static byte[] getIP() {
         try {
-            Enumeration allNetInterfaces = NetworkInterface.getNetworkInterfaces();
-            InetAddress ip = null;
+            Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
             byte[] internalIP = null;
             while (allNetInterfaces.hasMoreElements()) {
-                NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement();
-                Enumeration addresses = netInterface.getInetAddresses();
+                NetworkInterface netInterface = allNetInterfaces.nextElement();
+                Enumeration<InetAddress> addresses = netInterface.getInetAddresses();
                 while (addresses.hasMoreElements()) {
-                    ip = (InetAddress) addresses.nextElement();
-                    if (ip != null && ip instanceof Inet4Address) {
+                    InetAddress ip = addresses.nextElement();
+                    if (ip instanceof Inet4Address) {
                         byte[] ipByte = ip.getAddress();
-                        if (ipByte.length == 4) {
-                            if (ipCheck(ipByte)) {
-                                if (!isInternalIP(ipByte)) {
-                                    return ipByte;
-                                } else if (internalIP == null || internalIP[0] == (byte) 127) {
-                                    internalIP = ipByte;
-                                }
-                            }
+                        if (ipByte.length != 4) {
+                            continue;
                         }
-                    } else if (ip != null && ip instanceof Inet6Address) {
+
+                        if (!ipCheck(ipByte)) {
+                            continue;
+                        }
+
+                        if (!isInternalIP(ipByte)) {
+                            return ipByte;
+                        } else if (internalIP == null || internalIP[0] == (byte) 127) {
+                            internalIP = ipByte;
+                        }
+                    } else if (ip instanceof Inet6Address) {
                         byte[] ipByte = ip.getAddress();
-                        if (ipByte.length == 16) {
-                            if (ipV6Check(ipByte)) {
-                                if (!isInternalV6IP(ip)) {
-                                    return ipByte;
-                                }
-                            }
+                        if (ipByte.length != 16) {
+                            continue;
+                        }
+
+                        if (!ipV6Check(ipByte)) {
+                            continue;
+                        }
+
+                        if (!isInternalV6IP(ip)) {
+                            return ipByte;
                         }
                     }
                 }
             }
+
             if (internalIP != null) {
                 return internalIP;
             } else {
@@ -327,7 +327,6 @@ public class NetworkUtils {
                 String candidatesHost = getLocalhostByNetworkInterface();
                 if (candidatesHost != null)
                     return candidatesHost;
-
             } catch (Exception ignored) {
             }
 
