@@ -65,7 +65,7 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
     @Override
     public RemotingCommand processRequest(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
-        SendMessageContext mqtraceContext = null;
+        SendMessageContext mqtraceContext;
         SendMessageRequestHeader requestHeader = parseRequestHeader(request);
         if (requestHeader == null) {
             return null;
@@ -197,16 +197,12 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
                 try {
                     RemotingCommand pushResponse = this.brokerController.getBroker2Client().callClient(channel, request);
                     assert pushResponse != null;
-                    switch (pushResponse.getCode()) {
-                        case ResponseCode.SUCCESS: {
-                            pushReplyResult.setPushOk(true);
-                            break;
-                        }
-                        default: {
-                            pushReplyResult.setPushOk(false);
-                            pushReplyResult.setRemark("push reply message to " + senderId + "fail.");
-                            log.warn("push reply message to <{}> return fail, response remark: {}", senderId, pushResponse.getRemark());
-                        }
+                    if (pushResponse.getCode() == ResponseCode.SUCCESS) {
+                        pushReplyResult.setPushOk(true);
+                    } else {
+                        pushReplyResult.setPushOk(false);
+                        pushReplyResult.setRemark("push reply message to " + senderId + "fail.");
+                        log.warn("push reply message to <{}> return fail, response remark: {}", senderId, pushResponse.getRemark());
                     }
                 } catch (RemotingException | InterruptedException e) {
                     pushReplyResult.setPushOk(false);
@@ -340,7 +336,7 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
         }
     }
 
-    class PushReplyResult {
+    static class PushReplyResult {
         boolean pushOk;
         String remark;
 
