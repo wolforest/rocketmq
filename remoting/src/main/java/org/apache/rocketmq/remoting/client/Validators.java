@@ -1,0 +1,130 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.rocketmq.remoting.client;
+
+import java.io.File;
+import java.util.Properties;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.domain.constant.PermName;
+import org.apache.rocketmq.common.domain.message.Message;
+import org.apache.rocketmq.common.domain.message.MessageConst;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.common.domain.topic.TopicValidator;
+import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.apache.rocketmq.remoting.protocol.ResponseCode;
+
+import static org.apache.rocketmq.common.domain.topic.TopicValidator.isTopicOrGroupIllegal;
+
+/**
+ * Common Validator
+ */
+public class Validators {
+    public static final int CHARACTER_MAX_LENGTH = 255;
+    public static final int TOPIC_MAX_LENGTH = 127;
+
+    /**
+     * Validate group
+     */
+    public static void checkGroup(String group) throws RemotingException {
+        if (org.apache.rocketmq.common.utils.StringUtils.isBlank(group)) {
+            throw new RemotingException("the specified group is blank", null);
+        }
+
+        if (group.length() > CHARACTER_MAX_LENGTH) {
+            throw new RemotingException("the specified group is longer than group max length 255.", null);
+        }
+
+
+        if (isTopicOrGroupIllegal(group)) {
+            throw new RemotingException(String.format(
+                    "the specified group[%s] contains illegal characters, allowing only %s", group,
+                    "^[%|a-zA-Z0-9_-]+$"), null);
+        }
+    }
+
+    public static void checkMessage(Message msg) throws RemotingException {
+        if (null == msg) {
+            throw new RemotingException(ResponseCode.MESSAGE_ILLEGAL, "the message is null");
+        }
+        // topic
+        Validators.checkTopic(msg.getTopic());
+        Validators.isNotAllowedSendTopic(msg.getTopic());
+
+        // body
+        if (null == msg.getBody()) {
+            throw new RemotingException(ResponseCode.MESSAGE_ILLEGAL, "the message body is null");
+        }
+
+        if (0 == msg.getBody().length) {
+            throw new RemotingException(ResponseCode.MESSAGE_ILLEGAL, "the message body length is zero");
+        }
+
+        String lmqPath = msg.getUserProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH);
+        if (StringUtils.contains(lmqPath, File.separator)) {
+            throw new RemotingException(ResponseCode.MESSAGE_ILLEGAL,
+                "INNER_MULTI_DISPATCH " + lmqPath + " can not contains " + File.separator + " character");
+        }
+    }
+
+    public static void checkTopic(String topic) throws RemotingException {
+        if (org.apache.rocketmq.common.utils.StringUtils.isBlank(topic)) {
+            throw new RemotingException("The specified topic is blank", null);
+        }
+
+        if (topic.length() > TOPIC_MAX_LENGTH) {
+            throw new RemotingException(
+                String.format("The specified topic is longer than topic max length %d.", TOPIC_MAX_LENGTH), null);
+        }
+
+        if (isTopicOrGroupIllegal(topic)) {
+            throw new RemotingException(String.format(
+                    "The specified topic[%s] contains illegal characters, allowing only %s", topic,
+                    "^[%|a-zA-Z0-9_-]+$"), null);
+        }
+    }
+
+    public static void isSystemTopic(String topic) throws RemotingException {
+        if (TopicValidator.isSystemTopic(topic)) {
+            throw new RemotingException(
+                    String.format("The topic[%s] is conflict with system topic.", topic), null);
+        }
+    }
+
+    public static void isNotAllowedSendTopic(String topic) throws RemotingException {
+        if (TopicValidator.isNotAllowedSendTopic(topic)) {
+            throw new RemotingException(
+                    String.format("Sending message to topic[%s] is forbidden.", topic), null);
+        }
+    }
+
+    public static void checkTopicConfig(final TopicConfig topicConfig) throws RemotingException {
+        if (!PermName.isValid(topicConfig.getPerm())) {
+            throw new RemotingException(ResponseCode.NO_PERMISSION,
+                String.format("topicPermission value: %s is invalid.", topicConfig.getPerm()));
+        }
+    }
+
+    public static void checkBrokerConfig(final Properties brokerConfig) throws RemotingException {
+        // TODO: use PropertyUtils.isPropertyValid() when jdk upgrade to 1.8
+        if (brokerConfig.containsKey("brokerPermission")
+            && !PermName.isValid(brokerConfig.getProperty("brokerPermission"))) {
+            throw new RemotingException(ResponseCode.NO_PERMISSION,
+                String.format("brokerPermission value: %s is invalid.", brokerConfig.getProperty("brokerPermission")));
+        }
+    }
+}
