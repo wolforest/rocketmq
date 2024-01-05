@@ -33,7 +33,6 @@ import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.domain.message.MessageRequestMode;
-import org.apache.rocketmq.common.domain.namesrv.NameServerUpdateCallback;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.common.lang.BoundaryType;
@@ -171,18 +170,16 @@ import org.apache.rocketmq.remoting.rpchook.StreamTypeRPCHook;
 
 import static org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode.SUCCESS;
 
-public class BrokerClient implements NameServerUpdateCallback {
-    private final static Logger log = LoggerFactory.getLogger(BrokerClient.class);
+public class BrokerClient {
+    private static final Logger LOG = LoggerFactory.getLogger(BrokerClient.class);
 
     static {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
     }
 
     private final RemotingClient remotingClient;
-    private String nameSrvAddr = null;
 
-    public BrokerClient(final NettyClientConfig nettyClientConfig,
-        RPCHook rpcHook, final ChannelEventListener channelEventListener) {
+    public BrokerClient(NettyClientConfig nettyClientConfig, RPCHook rpcHook, ChannelEventListener channelEventListener) {
         this.remotingClient = new NettyRemotingClient(nettyClientConfig, channelEventListener);
 
         // Inject stream rpc hook first to make reserve field signature
@@ -196,24 +193,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         return this.remotingClient.getNameServerAddressList();
     }
 
-    public RemotingClient getRemotingClient() {
-        return remotingClient;
-    }
-
-    @Override
-    public String onNameServerAddressChange(String namesrvAddress) {
-        if (namesrvAddress != null) {
-            if (!namesrvAddress.equals(this.nameSrvAddr)) {
-                log.info("name server address changed, old=" + this.nameSrvAddr + ", new=" + namesrvAddress);
-                this.updateNameServerAddressList(namesrvAddress);
-                this.nameSrvAddr = namesrvAddress;
-                return nameSrvAddr;
-            }
-        }
-        return nameSrvAddr;
-    }
-
-    public void updateNameServerAddressList(final String addrs) {
+    public void updateNameServerAddressList(String addrs) {
         String[] addrArray = addrs.split(";");
         List<String> list = Arrays.asList(addrArray);
         this.remotingClient.updateNameServerAddressList(list);
@@ -227,8 +207,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         this.remotingClient.shutdown();
     }
 
-    public void createSubscriptionGroup(final String addr, final SubscriptionGroupConfig config,
-        final long timeoutMillis) throws RemotingException, InterruptedException {
+    public void createSubscriptionGroup(String addr, SubscriptionGroupConfig config, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_AND_CREATE_SUBSCRIPTIONGROUP, null);
 
         byte[] body = RemotingSerializable.encode(config);
@@ -244,13 +223,12 @@ public class BrokerClient implements NameServerUpdateCallback {
 
     }
 
-    public void createTopic(final String addr, final String defaultTopic, final TopicConfig topicConfig,
-        final long timeoutMillis) throws RemotingException, InterruptedException {
+    public void createTopic(String addr, TopicConfig topicConfig, long timeoutMillis) throws RemotingException, InterruptedException {
         Validators.checkTopicConfig(topicConfig);
 
         CreateTopicRequestHeader requestHeader = new CreateTopicRequestHeader();
         requestHeader.setTopic(topicConfig.getTopicName());
-        requestHeader.setDefaultTopic(defaultTopic);
+        requestHeader.setDefaultTopic(topicConfig.getTopicName());
         requestHeader.setReadQueueNums(topicConfig.getReadQueueNums());
         requestHeader.setWriteQueueNums(topicConfig.getWriteQueueNums());
         requestHeader.setPerm(topicConfig.getPerm());
@@ -270,7 +248,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void createPlainAccessConfig(final String addr, final PlainAccessConfig plainAccessConfig, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public void createPlainAccessConfig(String addr, PlainAccessConfig plainAccessConfig, long timeoutMillis) throws RemotingException, InterruptedException {
         CreateAccessConfigRequestHeader requestHeader = new CreateAccessConfigRequestHeader();
         requestHeader.setAccessKey(plainAccessConfig.getAccessKey());
         requestHeader.setSecretKey(plainAccessConfig.getSecretKey());
@@ -291,7 +269,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void deleteAccessConfig(final String addr, final String accessKey, final long timeoutMillis)
+    public void deleteAccessConfig(String addr, String accessKey, long timeoutMillis)
         throws RemotingException, InterruptedException {
         DeleteAccessConfigRequestHeader requestHeader = new DeleteAccessConfigRequestHeader();
         requestHeader.setAccessKey(accessKey);
@@ -306,8 +284,8 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void updateGlobalWhiteAddrsConfig(final String addr, final String globalWhiteAddrs, String aclFileFullPath,
-        final long timeoutMillis) throws InterruptedException, RemotingException {
+    public void updateGlobalWhiteAddrsConfig(String addr, String globalWhiteAddrs, String aclFileFullPath,
+        long timeoutMillis) throws InterruptedException, RemotingException {
         UpdateGlobalWhiteAddrsConfigRequestHeader requestHeader = new UpdateGlobalWhiteAddrsConfigRequestHeader();
         requestHeader.setGlobalWhiteAddrs(globalWhiteAddrs);
         requestHeader.setAclFileFullPath(aclFileFullPath);
@@ -322,7 +300,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public ClusterAclVersionInfo getBrokerClusterAclInfo(final String addr, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public ClusterAclVersionInfo getBrokerClusterAclInfo(String addr, long timeoutMillis) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_CLUSTER_ACL_INFO, null);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -348,7 +326,7 @@ public class BrokerClient implements NameServerUpdateCallback {
 
     }
 
-    public MessageExt viewMessage(final String addr, final long offset, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public MessageExt viewMessage(String addr, long offset, long timeoutMillis) throws RemotingException, InterruptedException {
         ViewMessageRequestHeader requestHeader = new ViewMessageRequestHeader();
         requestHeader.setOffset(offset);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.VIEW_MESSAGE_BY_ID, requestHeader);
@@ -365,7 +343,7 @@ public class BrokerClient implements NameServerUpdateCallback {
     }
 
     @Deprecated
-    public long searchOffset(final String addr, final String topic, final int queueId, final long timestamp, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public long searchOffset(String addr, String topic, int queueId, long timestamp, long timeoutMillis) throws RemotingException, InterruptedException {
         SearchOffsetRequestHeader requestHeader = new SearchOffsetRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setQueueId(queueId);
@@ -382,12 +360,12 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public long searchOffset(final String addr, final MessageQueue messageQueue, final long timestamp, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public long searchOffset(String addr, MessageQueue messageQueue, long timestamp, long timeoutMillis) throws RemotingException, InterruptedException {
         // default return lower boundary offset when there are more than one offsets.
         return searchOffset(addr, messageQueue, timestamp, BoundaryType.LOWER, timeoutMillis);
     }
 
-    public long searchOffset(final String addr, final MessageQueue messageQueue, final long timestamp, final BoundaryType boundaryType, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public long searchOffset(String addr, MessageQueue messageQueue, long timestamp, BoundaryType boundaryType, long timeoutMillis) throws RemotingException, InterruptedException {
         SearchOffsetRequestHeader requestHeader = new SearchOffsetRequestHeader();
         requestHeader.setTopic(messageQueue.getTopic());
         requestHeader.setQueueId(messageQueue.getQueueId());
@@ -405,7 +383,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public long getMaxOffset(final String addr, final MessageQueue messageQueue, final long timeoutMillis)
+    public long getMaxOffset(String addr, MessageQueue messageQueue, long timeoutMillis)
         throws RemotingException, InterruptedException {
         GetMaxOffsetRequestHeader requestHeader = new GetMaxOffsetRequestHeader();
         requestHeader.setTopic(messageQueue.getTopic());
@@ -423,7 +401,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public List<String> getConsumerIdListByGroup(final String addr, final String consumerGroup, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public List<String> getConsumerIdListByGroup(String addr, String consumerGroup, long timeoutMillis) throws RemotingException, InterruptedException {
         GetConsumerListByGroupRequestHeader requestHeader = new GetConsumerListByGroupRequestHeader();
         requestHeader.setConsumerGroup(consumerGroup);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CONSUMER_LIST_BY_GROUP, requestHeader);
@@ -440,7 +418,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public long getMinOffset(final String addr, final MessageQueue messageQueue, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public long getMinOffset(String addr, MessageQueue messageQueue, long timeoutMillis) throws RemotingException, InterruptedException {
         GetMinOffsetRequestHeader requestHeader = new GetMinOffsetRequestHeader();
         requestHeader.setTopic(messageQueue.getTopic());
         requestHeader.setQueueId(messageQueue.getQueueId());
@@ -457,7 +435,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public long getEarliestMsgStoreTime(final String addr, final MessageQueue mq, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public long getEarliestMsgStoreTime(String addr, MessageQueue mq, long timeoutMillis) throws RemotingException, InterruptedException {
         GetEarliestMsgStoretimeRequestHeader requestHeader = new GetEarliestMsgStoretimeRequestHeader();
         requestHeader.setTopic(mq.getTopic());
         requestHeader.setQueueId(mq.getQueueId());
@@ -474,7 +452,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public long queryConsumerOffset(final String addr, final QueryConsumerOffsetRequestHeader requestHeader, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public long queryConsumerOffset(String addr, QueryConsumerOffsetRequestHeader requestHeader, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CONSUMER_OFFSET, requestHeader);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -494,7 +472,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void updateConsumerOffset(final String addr, final UpdateConsumerOffsetRequestHeader requestHeader, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public void updateConsumerOffset(String addr, UpdateConsumerOffsetRequestHeader requestHeader, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_CONSUMER_OFFSET, requestHeader);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -506,13 +484,13 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void updateConsumerOffsetOneway(final String addr, final UpdateConsumerOffsetRequestHeader requestHeader, final long timeoutMillis) throws RemotingConnectException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException, InterruptedException {
+    public void updateConsumerOffsetOneway(String addr, UpdateConsumerOffsetRequestHeader requestHeader, long timeoutMillis) throws RemotingConnectException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_CONSUMER_OFFSET, requestHeader);
 
         this.remotingClient.invokeOneway(addr, request, timeoutMillis);
     }
 
-    public int sendHeartbeat(final String addr, final HeartbeatData heartbeatData, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public int sendHeartbeat(String addr, HeartbeatData heartbeatData, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.HEART_BEAT, null);
         request.setLanguage(LanguageCode.JAVA);
         request.setBody(heartbeatData.encode());
@@ -525,7 +503,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public HeartbeatV2Result sendHeartbeatV2(final String addr, final HeartbeatData heartbeatData, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public HeartbeatV2Result sendHeartbeatV2(String addr, HeartbeatData heartbeatData, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.HEART_BEAT, null);
         request.setLanguage(LanguageCode.JAVA);
         request.setBody(heartbeatData.encode());
@@ -541,8 +519,8 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void unregisterClient(final String addr, final String clientID, final String producerGroup, final String consumerGroup, final long timeoutMillis) throws RemotingException, InterruptedException {
-        final UnregisterClientRequestHeader requestHeader = new UnregisterClientRequestHeader();
+    public void unregisterClient(String addr, String clientID, String producerGroup, String consumerGroup, long timeoutMillis) throws RemotingException, InterruptedException {
+        UnregisterClientRequestHeader requestHeader = new UnregisterClientRequestHeader();
         requestHeader.setClientID(clientID);
         requestHeader.setProducerGroup(producerGroup);
         requestHeader.setConsumerGroup(consumerGroup);
@@ -557,20 +535,20 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void endTransactionOneway(final String addr, final EndTransactionRequestHeader requestHeader, final String remark, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public void endTransactionOneway(String addr, EndTransactionRequestHeader requestHeader, String remark, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.END_TRANSACTION, requestHeader);
 
         request.setRemark(remark);
         this.remotingClient.invokeOneway(addr, request, timeoutMillis);
     }
 
-    public void queryMessage(final String addr, final QueryMessageRequestHeader requestHeader, final long timeoutMillis, final InvokeCallback invokeCallback, final Boolean isUniqueKey) throws RemotingException, InterruptedException {
+    public void queryMessage(String addr, QueryMessageRequestHeader requestHeader, long timeoutMillis, InvokeCallback invokeCallback, Boolean isUniqueKey) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_MESSAGE, requestHeader);
         request.addExtField(MQConstants.UNIQUE_MSG_QUERY_FLAG, isUniqueKey.toString());
         this.remotingClient.invokeAsync(addr, request, timeoutMillis, invokeCallback);
     }
 
-    public boolean registerClient(final String addr, final HeartbeatData heartbeat, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public boolean registerClient(String addr, HeartbeatData heartbeat, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.HEART_BEAT, null);
 
         request.setBody(heartbeat.encode());
@@ -578,7 +556,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         return response.getCode() == ResponseCode.SUCCESS;
     }
 
-    public void consumerSendMessageBack(final String addr, final String brokerName, final MessageExt msg, final String consumerGroup, final int delayLevel, final long timeoutMillis, final int maxConsumeRetryTimes) throws RemotingException, InterruptedException {
+    public void consumerSendMessageBack(String addr, String brokerName, MessageExt msg, String consumerGroup, int delayLevel, long timeoutMillis, int maxConsumeRetryTimes) throws RemotingException, InterruptedException {
         ConsumerSendMsgBackRequestHeader requestHeader = new ConsumerSendMsgBackRequestHeader();
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CONSUMER_SEND_MSG_BACK, requestHeader);
 
@@ -599,7 +577,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public Set<MessageQueue> lockBatchMQ(final String addr, final LockBatchRequestBody requestBody, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public Set<MessageQueue> lockBatchMQ(String addr, LockBatchRequestBody requestBody, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.LOCK_BATCH_MQ, null);
 
         request.setBody(requestBody.encode());
@@ -612,24 +590,24 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void unlockBatchMQ(final String addr, final UnlockBatchRequestBody requestBody, final long timeoutMillis, final boolean oneway) throws RemotingException, InterruptedException {
+    public void unlockBatchMQ(String addr, UnlockBatchRequestBody requestBody, long timeoutMillis, boolean oneway) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UNLOCK_BATCH_MQ, null);
-
         request.setBody(requestBody.encode());
 
         if (oneway) {
             this.remotingClient.invokeOneway(addr, request, timeoutMillis);
-        } else {
-            RemotingCommand response = this.remotingClient .invokeSync(addr, request, timeoutMillis);
-            if (response.getCode() == SUCCESS) {
-                return;
-            }
-
-            throw new RemotingException(response.getCode(), response.getRemark(), addr);
+            return;
         }
+
+        RemotingCommand response = this.remotingClient .invokeSync(addr, request, timeoutMillis);
+        if (response.getCode() == SUCCESS) {
+            return;
+        }
+
+        throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public TopicStatsTable getTopicStatsInfo(final String addr, final String topic, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public TopicStatsTable getTopicStatsInfo(String addr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
         GetTopicStatsInfoRequestHeader requestHeader = new GetTopicStatsInfoRequestHeader();
         requestHeader.setTopic(topic);
 
@@ -642,11 +620,11 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public ConsumeStats getConsumeStats(final String addr, final String consumerGroup, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public ConsumeStats getConsumeStats(String addr, String consumerGroup, long timeoutMillis) throws InterruptedException, RemotingException {
         return getConsumeStats(addr, consumerGroup, null, timeoutMillis);
     }
 
-    public ConsumeStats getConsumeStats(final String addr, final String consumerGroup, final String topic, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public ConsumeStats getConsumeStats(String addr, String consumerGroup, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
         GetConsumeStatsRequestHeader requestHeader = new GetConsumeStatsRequestHeader();
         requestHeader.setConsumerGroup(consumerGroup);
         requestHeader.setTopic(topic);
@@ -661,7 +639,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public ProducerConnection getProducerConnectionList(final String addr, final String producerGroup, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public ProducerConnection getProducerConnectionList(String addr, String producerGroup, long timeoutMillis) throws InterruptedException, RemotingException {
         GetProducerConnectionListRequestHeader requestHeader = new GetProducerConnectionListRequestHeader();
         requestHeader.setProducerGroup(producerGroup);
 
@@ -674,11 +652,10 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public ProducerTableInfo getAllProducerInfo(final String addr, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public ProducerTableInfo getAllProducerInfo(String addr, long timeoutMillis) throws InterruptedException, RemotingException {
         GetAllProducerInfoRequestHeader requestHeader = new GetAllProducerInfoRequestHeader();
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_PRODUCER_INFO, requestHeader);
-
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         if (response.getCode() == SUCCESS) {
             return ProducerTableInfo.decode(response.getBody(), ProducerTableInfo.class);
@@ -687,7 +664,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public ConsumerConnection getConsumerConnectionList(final String addr, final String consumerGroup, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public ConsumerConnection getConsumerConnectionList(String addr, String consumerGroup, long timeoutMillis) throws InterruptedException, RemotingException {
         GetConsumerConnectionListRequestHeader requestHeader = new GetConsumerConnectionListRequestHeader();
         requestHeader.setConsumerGroup(consumerGroup);
 
@@ -700,7 +677,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public KVTable getBrokerRuntimeInfo(final String addr, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public KVTable getBrokerRuntimeInfo(String addr, long timeoutMillis) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_RUNTIME_INFO, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         if (response.getCode() == SUCCESS) {
@@ -710,7 +687,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void addBroker(final String addr, final String brokerConfigPath, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public void addBroker(String addr, String brokerConfigPath, long timeoutMillis) throws InterruptedException, RemotingException {
         AddBrokerRequestHeader requestHeader = new AddBrokerRequestHeader();
         requestHeader.setConfigPath(brokerConfigPath);
 
@@ -725,7 +702,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void removeBroker(final String addr, String clusterName, String brokerName, long brokerId, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public void removeBroker(String addr, String clusterName, String brokerName, long brokerId, long timeoutMillis) throws InterruptedException, RemotingException {
         RemoveBrokerRequestHeader requestHeader = new RemoveBrokerRequestHeader();
         requestHeader.setBrokerClusterName(clusterName);
         requestHeader.setBrokerName(brokerName);
@@ -742,25 +719,26 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void updateBrokerConfig(final String addr, final Properties properties, final long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public void updateBrokerConfig(String addr, Properties properties, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         Validators.checkBrokerConfig(properties);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_BROKER_CONFIG, null);
 
         String str = BeanUtils.properties2String(properties);
-        if (str.length() > 0) {
-            request.setBody(str.getBytes(MQConstants.DEFAULT_CHARSET));
-            RemotingCommand response = this.remotingClient
-                .invokeSync(addr, request, timeoutMillis);
-            if (response.getCode() == SUCCESS) {
-                return;
-            }
-
-            throw new RemotingException(response.getCode(), response.getRemark(), addr);
+        if (str.length() <= 0) {
+            return;
         }
+
+        request.setBody(str.getBytes(MQConstants.DEFAULT_CHARSET));
+        RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
+        if (response.getCode() == SUCCESS) {
+            return;
+        }
+
+        throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public Properties getBrokerConfig(final String addr, final long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public Properties getBrokerConfig(String addr, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_CONFIG, null);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -772,34 +750,36 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void updateColdDataFlowCtrGroupConfig(final String addr, final Properties properties, final long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public void updateColdDataFlowCtrGroupConfig(String addr, Properties properties, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_COLD_DATA_FLOW_CTR_CONFIG, null);
         String str = BeanUtils.properties2String(properties);
-        if (str.length() > 0) {
-            request.setBody(str.getBytes(MQConstants.DEFAULT_CHARSET));
-            RemotingCommand response = this.remotingClient.invokeSync(
-                addr, request, timeoutMillis);
-            if (response.getCode() == SUCCESS) {
-                return;
-            }
-            throw new RemotingException(response.getCode(), response.getRemark());
+        if (str.length() <= 0) {
+            return;
         }
+
+        request.setBody(str.getBytes(MQConstants.DEFAULT_CHARSET));
+        RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
+        if (response.getCode() == SUCCESS) {
+            return;
+        }
+        throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void removeColdDataFlowCtrGroupConfig(final String addr, final String consumerGroup, final long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public void removeColdDataFlowCtrGroupConfig(String addr, String consumerGroup, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.REMOVE_COLD_DATA_FLOW_CTR_CONFIG, null);
-        if (consumerGroup != null && consumerGroup.length() > 0) {
-            request.setBody(consumerGroup.getBytes(MQConstants.DEFAULT_CHARSET));
-            RemotingCommand response = this.remotingClient.invokeSync(
-                addr, request, timeoutMillis);
-            if (response.getCode() == SUCCESS) {
-                return;
-            }
-            throw new RemotingException(response.getCode(), response.getRemark());
+        if (!StringUtils.isBlank(consumerGroup)) {
+            return;
         }
+
+        request.setBody(consumerGroup.getBytes(MQConstants.DEFAULT_CHARSET));
+        RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
+        if (response.getCode() == SUCCESS) {
+            return;
+        }
+        throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public String getColdDataFlowCtrInfo(final String addr, final long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public String getColdDataFlowCtrInfo(String addr, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_COLD_DATA_FLOW_CTR_INFO, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
@@ -812,7 +792,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public String setCommitLogReadAheadMode(final String addr, final String mode, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public String setCommitLogReadAheadMode(String addr, String mode, long timeoutMillis) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.SET_COMMITLOG_READ_MODE, null);
         HashMap<String, String> extFields = new HashMap<>();
         extFields.put(FIleReadaheadMode.READ_AHEAD_MODE, mode);
@@ -828,7 +808,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public ClusterInfo getBrokerClusterInfo(final long timeoutMillis) throws InterruptedException, RemotingException {
+    public ClusterInfo getBrokerClusterInfo(long timeoutMillis) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_CLUSTER_INFO, null);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
@@ -839,15 +819,15 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public TopicRouteData getDefaultTopicRouteInfoFromNameServer(final long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicRouteData getDefaultTopicRouteInfoFromNameServer(long timeoutMillis) throws RemotingException, InterruptedException {
         return getTopicRouteInfoFromNameServer(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC, timeoutMillis, false);
     }
 
-    public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicRouteData getTopicRouteInfoFromNameServer(String topic, long timeoutMillis) throws RemotingException, InterruptedException {
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, true);
     }
 
-    public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis, boolean allowTopicNotExist) throws RemotingException, InterruptedException {
+    public TopicRouteData getTopicRouteInfoFromNameServer(String topic, long timeoutMillis, boolean allowTopicNotExist) throws RemotingException, InterruptedException {
         GetRouteInfoRequestHeader requestHeader = new GetRouteInfoRequestHeader();
         requestHeader.setTopic(topic);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ROUTEINFO_BY_TOPIC, requestHeader);
@@ -857,7 +837,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         switch (response.getCode()) {
             case ResponseCode.TOPIC_NOT_EXIST: {
                 if (allowTopicNotExist) {
-                    log.warn("get Topic [{}] RouteInfoFromNameServer is not exist value", topic);
+                    LOG.warn("get Topic [{}] RouteInfoFromNameServer is not exist value", topic);
                 }
 
                 break;
@@ -875,21 +855,23 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public TopicList getTopicListFromNameServer(final long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getTopicListFromNameServer(long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_TOPIC_LIST_FROM_NAMESERVER, null);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                return TopicList.decode(body, TopicList.class);
-            }
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        byte[] body = response.getBody();
+        if (body != null) {
+            return TopicList.decode(body, TopicList.class);
         }
 
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public int wipeWritePermOfBroker(final String namesrvAddr, String brokerName, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public int wipeWritePermOfBroker(String namesrvAddr, String brokerName, long timeoutMillis) throws InterruptedException, RemotingException {
         WipeWritePermOfBrokerRequestHeader requestHeader = new WipeWritePermOfBrokerRequestHeader();
         requestHeader.setBrokerName(brokerName);
 
@@ -904,12 +886,11 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public int addWritePermOfBroker(final String nameSrvAddr, String brokerName, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public int addWritePermOfBroker(String nameSrvAddr, String brokerName, long timeoutMillis) throws InterruptedException, RemotingException {
         AddWritePermOfBrokerRequestHeader requestHeader = new AddWritePermOfBrokerRequestHeader();
         requestHeader.setBrokerName(brokerName);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.ADD_WRITE_PERM_OF_BROKER, requestHeader);
-
         RemotingCommand response = this.remotingClient.invokeSync(nameSrvAddr, request, timeoutMillis);
         assert response != null;
         if (response.getCode() == SUCCESS) {
@@ -919,7 +900,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void deleteTopicInBroker(final String addr, final String topic, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public void deleteTopicInBroker(String addr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
         DeleteTopicRequestHeader requestHeader = new DeleteTopicRequestHeader();
         requestHeader.setTopic(topic);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_TOPIC_IN_BROKER, requestHeader);
@@ -932,11 +913,13 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void deleteTopicInNameServer(final String addr, final String topic, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public void deleteTopicInNameServer(String addr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
         DeleteTopicFromNamesrvRequestHeader requestHeader = new DeleteTopicFromNamesrvRequestHeader();
         requestHeader.setTopic(topic);
+
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_TOPIC_IN_NAMESRV, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
+
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return;
@@ -945,13 +928,15 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void deleteTopicInNameServer(final String addr, final String clusterName, final String topic, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public void deleteTopicInNameServer(String addr, String clusterName, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
         DeleteTopicFromNamesrvRequestHeader requestHeader = new DeleteTopicFromNamesrvRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setClusterName(clusterName);
+
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_TOPIC_IN_NAMESRV, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             return;
         }
@@ -959,14 +944,15 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void deleteSubscriptionGroup(final String addr, final String groupName, final boolean removeOffset, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public void deleteSubscriptionGroup(String addr, String groupName, boolean removeOffset, long timeoutMillis) throws InterruptedException, RemotingException {
         DeleteSubscriptionGroupRequestHeader requestHeader = new DeleteSubscriptionGroupRequestHeader();
         requestHeader.setGroupName(groupName);
         requestHeader.setCleanOffset(removeOffset);
-        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_SUBSCRIPTIONGROUP, requestHeader);
 
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_SUBSCRIPTIONGROUP, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             return;
         }
@@ -974,7 +960,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public String getKVConfigValue(final String namespace, final String key, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public String getKVConfigValue(String namespace, String key, long timeoutMillis) throws RemotingException, InterruptedException {
         GetKVConfigRequestHeader requestHeader = new GetKVConfigRequestHeader();
         requestHeader.setNamespace(namespace);
         requestHeader.setKey(key);
@@ -982,6 +968,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_KV_CONFIG, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             GetKVConfigResponseHeader responseHeader = (GetKVConfigResponseHeader) response.decodeCommandCustomHeader(GetKVConfigResponseHeader.class);
             return responseHeader.getValue();
@@ -990,32 +977,33 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void putKVConfigValue(final String namespace, final String key, final String value, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public void putKVConfigValue(String namespace, String key, String value, long timeoutMillis) throws RemotingException, InterruptedException {
         PutKVConfigRequestHeader requestHeader = new PutKVConfigRequestHeader();
         requestHeader.setNamespace(namespace);
         requestHeader.setKey(key);
         requestHeader.setValue(value);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.PUT_KV_CONFIG, requestHeader);
-
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
-        if (nameServerAddressList != null) {
-            RemotingCommand errResponse = null;
-            for (String namesrvAddr : nameServerAddressList) {
-                RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMillis);
-                assert response != null;
-                if (response.getCode() != SUCCESS) {
-                    errResponse = response;
-                }
-            }
+        if (nameServerAddressList == null) {
+            return;
+        }
 
-            if (errResponse != null) {
-                throw new RemotingException(errResponse.getCode(), errResponse.getRemark());
+        RemotingCommand errResponse = null;
+        for (String namesrvAddr : nameServerAddressList) {
+            RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMillis);
+            assert response != null;
+            if (response.getCode() != SUCCESS) {
+                errResponse = response;
             }
+        }
+
+        if (errResponse != null) {
+            throw new RemotingException(errResponse.getCode(), errResponse.getRemark());
         }
     }
 
-    public void deleteKVConfigValue(final String namespace, final String key, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public void deleteKVConfigValue(String namespace, String key, long timeoutMillis) throws RemotingException, InterruptedException {
         DeleteKVConfigRequestHeader requestHeader = new DeleteKVConfigRequestHeader();
         requestHeader.setNamespace(namespace);
         requestHeader.setKey(key);
@@ -1023,28 +1011,32 @@ public class BrokerClient implements NameServerUpdateCallback {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_KV_CONFIG, requestHeader);
 
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
-        if (nameServerAddressList != null) {
-            RemotingCommand errResponse = null;
-            for (String namesrvAddr : nameServerAddressList) {
-                RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMillis);
-                assert response != null;
-                if (response.getCode() != SUCCESS) {
-                    errResponse = response;
-                }
+        if (nameServerAddressList == null) {
+            return;
+        }
+
+        RemotingCommand errResponse = null;
+        for (String namesrvAddr : nameServerAddressList) {
+            RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMillis);
+            assert response != null;
+            if (response.getCode() != SUCCESS) {
+                errResponse = response;
             }
-            if (errResponse != null) {
-                throw new RemotingException(errResponse.getCode(), errResponse.getRemark());
-            }
+        }
+
+        if (errResponse != null) {
+            throw new RemotingException(errResponse.getCode(), errResponse.getRemark());
         }
     }
 
-    public KVTable getKVListByNamespace(final String namespace, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public KVTable getKVListByNamespace(String namespace, long timeoutMillis) throws RemotingException, InterruptedException {
         GetKVListByNamespaceRequestHeader requestHeader = new GetKVListByNamespaceRequestHeader();
         requestHeader.setNamespace(namespace);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_KVLIST_BY_NAMESPACE, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             return KVTable.decode(response.getBody(), KVTable.class);
         }
@@ -1052,23 +1044,21 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public Map<MessageQueue, Long> invokeBrokerToResetOffset(final String addr, final String topic, final String group, final long timestamp, final boolean isForce, final long timeoutMillis)
-        throws RemotingException, InterruptedException {
+    public Map<MessageQueue, Long> invokeBrokerToResetOffset(String addr, String topic, String group, long timestamp, boolean isForce, long timeoutMillis) throws RemotingException, InterruptedException {
         return invokeBrokerToResetOffset(addr, topic, group, timestamp, isForce, timeoutMillis, false);
     }
 
-    public Map<MessageQueue, Long> invokeBrokerToResetOffset(final String addr, final String topic, final String group, final long timestamp, int queueId, Long offset, final long timeoutMillis)
-        throws RemotingException, InterruptedException {
-
+    public Map<MessageQueue, Long> invokeBrokerToResetOffset(String addr, String topic, String group, long timestamp, int queueId, Long offset, long timeoutMillis) throws RemotingException, InterruptedException {
         ResetOffsetRequestHeader requestHeader = new ResetOffsetRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setGroup(group);
         requestHeader.setQueueId(queueId);
         requestHeader.setTimestamp(timestamp);
         requestHeader.setOffset(offset);
-        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.INVOKE_BROKER_TO_RESET_OFFSET, requestHeader);
 
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.INVOKE_BROKER_TO_RESET_OFFSET, requestHeader);
         RemotingCommand response = remotingClient.invokeSync(addr, request, timeoutMillis);
+
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
                 if (null != response.getBody()) {
@@ -1079,7 +1069,7 @@ public class BrokerClient implements NameServerUpdateCallback {
             case ResponseCode.TOPIC_NOT_EXIST:
             case ResponseCode.SUBSCRIPTION_NOT_EXIST:
             case ResponseCode.SYSTEM_ERROR:
-                log.warn("Invoke broker to reset offset error code={}, remark={}", response.getCode(), response.getRemark());
+                LOG.warn("Invoke broker to reset offset error code={}, remark={}", response.getCode(), response.getRemark());
                 break;
             default:
                 break;
@@ -1087,7 +1077,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public Map<MessageQueue, Long> invokeBrokerToResetOffset(final String addr, final String topic, final String group, final long timestamp, final boolean isForce, final long timeoutMillis, boolean isC) throws RemotingException, InterruptedException {
+    public Map<MessageQueue, Long> invokeBrokerToResetOffset(String addr, String topic, String group, long timestamp, boolean isForce, long timeoutMillis, boolean isC) throws RemotingException, InterruptedException {
         ResetOffsetRequestHeader requestHeader = new ResetOffsetRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setGroup(group);
@@ -1102,17 +1092,20 @@ public class BrokerClient implements NameServerUpdateCallback {
         }
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            if (response.getBody() != null) {
-                ResetOffsetBody body = ResetOffsetBody.decode(response.getBody(), ResetOffsetBody.class);
-                return body.getOffsetTable();
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        if (response.getBody() != null) {
+            ResetOffsetBody body = ResetOffsetBody.decode(response.getBody(), ResetOffsetBody.class);
+            return body.getOffsetTable();
         }
 
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public Map<String, Map<MessageQueue, Long>> invokeBrokerToGetConsumerStatus(final String addr, final String topic, final String group, final String clientAddr, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public Map<String, Map<MessageQueue, Long>> invokeBrokerToGetConsumerStatus(String addr, String topic, String group, String clientAddr, long timeoutMillis) throws RemotingException, InterruptedException {
         GetConsumerStatusRequestHeader requestHeader = new GetConsumerStatusRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setGroup(group);
@@ -1121,22 +1114,26 @@ public class BrokerClient implements NameServerUpdateCallback {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.INVOKE_BROKER_TO_GET_CONSUMER_STATUS, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            if (response.getBody() != null) {
-                GetConsumerStatusBody body = GetConsumerStatusBody.decode(response.getBody(), GetConsumerStatusBody.class);
-                return body.getConsumerTable();
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        if (response.getBody() != null) {
+            GetConsumerStatusBody body = GetConsumerStatusBody.decode(response.getBody(), GetConsumerStatusBody.class);
+            return body.getConsumerTable();
         }
 
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public GroupList queryTopicConsumeByWho(final String addr, final String topic, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public GroupList queryTopicConsumeByWho(String addr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
         QueryTopicConsumeByWhoRequestHeader requestHeader = new QueryTopicConsumeByWhoRequestHeader();
         requestHeader.setTopic(topic);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_TOPIC_CONSUME_BY_WHO, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
+
         if (response.getCode() == SUCCESS) {
             return GroupList.decode(response.getBody(), GroupList.class);
         }
@@ -1144,12 +1141,13 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public TopicList queryTopicsByConsumer(final String addr, final String group, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public TopicList queryTopicsByConsumer(String addr, String group, long timeoutMillis) throws InterruptedException, RemotingException {
         QueryTopicsByConsumerRequestHeader requestHeader = new QueryTopicsByConsumerRequestHeader();
         requestHeader.setGroup(group);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_TOPICS_BY_CONSUMER, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
+
         if (response.getCode() == SUCCESS) {
             return TopicList.decode(response.getBody(), TopicList.class);
         }
@@ -1157,13 +1155,14 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public SubscriptionData querySubscriptionByConsumer(final String addr, final String group, final String topic, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public SubscriptionData querySubscriptionByConsumer(String addr, String group, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
         QuerySubscriptionByConsumerRequestHeader requestHeader = new QuerySubscriptionByConsumerRequestHeader();
         requestHeader.setGroup(group);
         requestHeader.setTopic(topic);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_SUBSCRIPTION_BY_CONSUMER, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
+
         if (response.getCode() == SUCCESS) {
             QuerySubscriptionResponseBody subscriptionResponseBody = QuerySubscriptionResponseBody.decode(response.getBody(), QuerySubscriptionResponseBody.class);
             return subscriptionResponseBody.getSubscriptionData();
@@ -1172,13 +1171,14 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public List<QueueTimeSpan> queryConsumeTimeSpan(final String addr, final String topic, final String group, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public List<QueueTimeSpan> queryConsumeTimeSpan(String addr, String topic, String group, long timeoutMillis) throws InterruptedException, RemotingException {
         QueryConsumeTimeSpanRequestHeader requestHeader = new QueryConsumeTimeSpanRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setGroup(group);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CONSUME_TIME_SPAN, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
+
         if (response.getCode() == SUCCESS) {
             QueryConsumeTimeSpanBody consumeTimeSpanBody = GroupList.decode(response.getBody(), QueryConsumeTimeSpanBody.class);
             return consumeTimeSpanBody.getConsumeTimeSpanSet();
@@ -1187,12 +1187,14 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public TopicList getTopicsByCluster(final String cluster, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getTopicsByCluster(String cluster, long timeoutMillis) throws RemotingException, InterruptedException {
         GetTopicsByClusterRequestHeader requestHeader = new GetTopicsByClusterRequestHeader();
         requestHeader.setCluster(cluster);
+
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_TOPICS_BY_CLUSTER, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             byte[] body = response.getBody();
             if (body != null) {
@@ -1203,43 +1205,48 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public TopicList getSystemTopicList(final long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getSystemTopicList(long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_SYSTEM_TOPIC_LIST_FROM_NS, null);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                TopicList topicList = TopicList.decode(response.getBody(), TopicList.class);
-                if (topicList.getTopicList() != null && !topicList.getTopicList().isEmpty()
-                    && !StringUtils.isBlank(topicList.getBrokerAddr())) {
-                    TopicList tmp = getSystemTopicListFromBroker(topicList.getBrokerAddr(), timeoutMillis);
-                    if (tmp.getTopicList() != null && !tmp.getTopicList().isEmpty()) {
-                        topicList.getTopicList().addAll(tmp.getTopicList());
-                    }
-                }
-                return topicList;
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
         }
 
-        throw new RemotingException(response.getCode(), response.getRemark());
+        byte[] body = response.getBody();
+        if (body == null) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        TopicList topicList = TopicList.decode(response.getBody(), TopicList.class);
+        if (topicList.getTopicList() != null && !topicList.getTopicList().isEmpty() && !StringUtils.isBlank(topicList.getBrokerAddr())) {
+            TopicList tmp = getSystemTopicListFromBroker(topicList.getBrokerAddr(), timeoutMillis);
+            if (tmp.getTopicList() != null && !tmp.getTopicList().isEmpty()) {
+                topicList.getTopicList().addAll(tmp.getTopicList());
+            }
+        }
+        return topicList;
     }
 
-    public TopicList getSystemTopicListFromBroker(final String addr, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getSystemTopicListFromBroker(String addr, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_SYSTEM_TOPIC_LIST_FROM_BROKER, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                return TopicList.decode(body, TopicList.class);
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        byte[] body = response.getBody();
+        if (body != null) {
+            return TopicList.decode(body, TopicList.class);
         }
 
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public boolean cleanExpiredConsumeQueue(final String addr, long timeoutMillis) throws RemotingException, InterruptedException {
+    public boolean cleanExpiredConsumeQueue(String addr, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CLEAN_EXPIRED_CONSUMEQUEUE, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         if (response.getCode() == SUCCESS) {
@@ -1249,7 +1256,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public boolean deleteExpiredCommitLog(final String addr, long timeoutMillis) throws RemotingException, InterruptedException {
+    public boolean deleteExpiredCommitLog(String addr, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_EXPIRED_COMMITLOG, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         if (response.getCode() == SUCCESS) {
@@ -1259,7 +1266,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public boolean cleanUnusedTopicByAddr(final String addr, long timeoutMillis) throws RemotingException, InterruptedException {
+    public boolean cleanUnusedTopicByAddr(String addr, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CLEAN_UNUSED_TOPIC, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         if (response.getCode() == SUCCESS) {
@@ -1269,7 +1276,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public ConsumerRunningInfo getConsumerRunningInfo(final String addr, String consumerGroup, String clientId, boolean jstack, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public ConsumerRunningInfo getConsumerRunningInfo(String addr, String consumerGroup, String clientId, boolean jstack, long timeoutMillis) throws RemotingException, InterruptedException {
         GetConsumerRunningInfoRequestHeader requestHeader = new GetConsumerRunningInfoRequestHeader();
         requestHeader.setConsumerGroup(consumerGroup);
         requestHeader.setClientId(clientId);
@@ -1278,17 +1285,20 @@ public class BrokerClient implements NameServerUpdateCallback {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CONSUMER_RUNNING_INFO, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                return ConsumerRunningInfo.decode(body, ConsumerRunningInfo.class);
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        byte[] body = response.getBody();
+        if (body != null) {
+            return ConsumerRunningInfo.decode(body, ConsumerRunningInfo.class);
         }
 
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public ConsumeMessageDirectlyResult consumeMessageDirectly(final String addr, String consumerGroup, String clientId, String topic, String msgId, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public ConsumeMessageDirectlyResult consumeMessageDirectly(String addr, String consumerGroup, String clientId, String topic, String msgId, long timeoutMillis) throws RemotingException, InterruptedException {
         ConsumeMessageDirectlyResultRequestHeader requestHeader = new ConsumeMessageDirectlyResultRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setConsumerGroup(consumerGroup);
@@ -1298,20 +1308,24 @@ public class BrokerClient implements NameServerUpdateCallback {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CONSUME_MESSAGE_DIRECTLY, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                return ConsumeMessageDirectlyResult.decode(body, ConsumeMessageDirectlyResult.class);
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        byte[] body = response.getBody();
+        if (body != null) {
+            return ConsumeMessageDirectlyResult.decode(body, ConsumeMessageDirectlyResult.class);
         }
 
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public Map<Integer, Long> queryCorrectionOffset(final String addr, final String topic, final String group, Set<String> filterGroup, long timeoutMillis) throws RemotingException, InterruptedException {
+    public Map<Integer, Long> queryCorrectionOffset(String addr, String topic, String group, Set<String> filterGroup, long timeoutMillis) throws RemotingException, InterruptedException {
         QueryCorrectionOffsetHeader requestHeader = new QueryCorrectionOffsetHeader();
         requestHeader.setCompareGroup(group);
         requestHeader.setTopic(topic);
+
         if (filterGroup != null) {
             StringBuilder sb = new StringBuilder();
             String split = "";
@@ -1321,75 +1335,88 @@ public class BrokerClient implements NameServerUpdateCallback {
             }
             requestHeader.setFilterGroups(sb.toString());
         }
+
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CORRECTION_OFFSET, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            if (response.getBody() != null) {
-                QueryCorrectionOffsetBody body = QueryCorrectionOffsetBody.decode(response.getBody(), QueryCorrectionOffsetBody.class);
-                return body.getCorrectionOffsets();
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        if (response.getBody() != null) {
+            QueryCorrectionOffsetBody body = QueryCorrectionOffsetBody.decode(response.getBody(), QueryCorrectionOffsetBody.class);
+            return body.getCorrectionOffsets();
         }
 
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public TopicList getUnitTopicList(final boolean containRetry, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getUnitTopicList(boolean containRetry, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_UNIT_TOPIC_LIST, null);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                TopicList topicList = TopicList.decode(response.getBody(), TopicList.class);
-                if (!containRetry) {
-                    topicList.getTopicList().removeIf(topic -> topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX));
-                }
 
-                return topicList;
-            }
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
         }
 
-        throw new RemotingException(response.getCode(), response.getRemark());
+        byte[] body = response.getBody();
+        if (body == null) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        TopicList topicList = TopicList.decode(response.getBody(), TopicList.class);
+        if (!containRetry) {
+            topicList.getTopicList().removeIf(topic -> topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX));
+        }
+
+        return topicList;
     }
 
-    public TopicList getHasUnitSubTopicList(final boolean containRetry, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getHasUnitSubTopicList(boolean containRetry, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_HAS_UNIT_SUB_TOPIC_LIST, null);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                TopicList topicList = TopicList.decode(response.getBody(), TopicList.class);
-                if (!containRetry) {
-                    topicList.getTopicList().removeIf(topic -> topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX));
-                }
-                return topicList;
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
         }
 
-        throw new RemotingException(response.getCode(), response.getRemark());
+        byte[] body = response.getBody();
+        if (body == null) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        TopicList topicList = TopicList.decode(response.getBody(), TopicList.class);
+        if (!containRetry) {
+            topicList.getTopicList().removeIf(topic -> topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX));
+        }
+        return topicList;
     }
 
-    public TopicList getHasUnitSubUnUnitTopicList(final boolean containRetry, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getHasUnitSubUnUnitTopicList(boolean containRetry, long timeoutMillis) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_HAS_UNIT_SUB_UNUNIT_TOPIC_LIST, null);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                TopicList topicList = TopicList.decode(response.getBody(), TopicList.class);
-                if (!containRetry) {
-                    topicList.getTopicList().removeIf(topic -> topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX));
-                }
-                return topicList;
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
         }
 
-        throw new RemotingException(response.getCode(), response.getRemark());
+        byte[] body = response.getBody();
+        if (body == null) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        TopicList topicList = TopicList.decode(response.getBody(), TopicList.class);
+        if (!containRetry) {
+            topicList.getTopicList().removeIf(topic -> topic.startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX));
+        }
+        return topicList;
     }
 
-    public void cloneGroupOffset(final String addr, final String srcGroup, final String destGroup, final String topic, final boolean isOffline, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public void cloneGroupOffset(String addr, String srcGroup, String destGroup, String topic, boolean isOffline, long timeoutMillis) throws RemotingException, InterruptedException {
         CloneGroupOffsetRequestHeader requestHeader = new CloneGroupOffsetRequestHeader();
         requestHeader.setSrcGroup(srcGroup);
         requestHeader.setDestGroup(destGroup);
@@ -1413,11 +1440,14 @@ public class BrokerClient implements NameServerUpdateCallback {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.VIEW_BROKER_STATS_DATA, requestHeader);
         RemotingCommand response = this.remotingClient .invokeSync(brokerAddr, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                return BrokerStatsData.decode(body, BrokerStatsData.class);
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        byte[] body = response.getBody();
+        if (body != null) {
+            return BrokerStatsData.decode(body, BrokerStatsData.class);
         }
 
         throw new RemotingException(response.getCode(), response.getRemark());
@@ -1430,39 +1460,45 @@ public class BrokerClient implements NameServerUpdateCallback {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_CONSUME_STATS, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                return ConsumeStatsList.decode(body, ConsumeStatsList.class);
-            }
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        byte[] body = response.getBody();
+        if (body != null) {
+            return ConsumeStatsList.decode(body, ConsumeStatsList.class);
         }
 
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public SubscriptionGroupWrapper getAllSubscriptionGroup(final String brokerAddr, long timeoutMillis) throws InterruptedException, RemotingException {
+    public SubscriptionGroupWrapper getAllSubscriptionGroup(String brokerAddr, long timeoutMillis) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_SUBSCRIPTIONGROUP_CONFIG, null);
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, timeoutMillis);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             return SubscriptionGroupWrapper.decode(response.getBody(), SubscriptionGroupWrapper.class);
         }
         throw new RemotingException(response.getCode(), response.getRemark(), brokerAddr);
     }
 
-    public SubscriptionGroupConfig getSubscriptionGroupConfig(final String brokerAddr, String group, long timeoutMillis) throws InterruptedException, RemotingException {
+    public SubscriptionGroupConfig getSubscriptionGroupConfig(String brokerAddr, String group, long timeoutMillis) throws InterruptedException, RemotingException {
         GetSubscriptionGroupConfigRequestHeader header = new GetSubscriptionGroupConfigRequestHeader();
         header.setGroup(group);
+
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_SUBSCRIPTIONGROUP_CONFIG, header);
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, timeoutMillis);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             return RemotingSerializable.decode(response.getBody(), SubscriptionGroupConfig.class);
         }
         throw new RemotingException(response.getCode(), response.getRemark(), brokerAddr);
     }
 
-    public TopicConfigSerializeWrapper getAllTopicConfig(final String addr, long timeoutMillis) throws InterruptedException, RemotingException {
+    public TopicConfigSerializeWrapper getAllTopicConfig(String addr, long timeoutMillis) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_TOPIC_CONFIG, null);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -1474,13 +1510,13 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void updateNameServerConfig(final Properties properties, final List<String> nameServers, long timeoutMillis) throws UnsupportedEncodingException, InterruptedException, RemotingException {
+    public void updateNameServerConfig(Properties properties, List<String> nameServers, long timeoutMillis) throws UnsupportedEncodingException, InterruptedException, RemotingException {
         String str = BeanUtils.properties2String(properties);
         if (str.length() < 1) {
             return;
         }
-        List<String> invokeNameServers = (nameServers == null || nameServers.isEmpty()) ?
-            this.remotingClient.getNameServerAddressList() : nameServers;
+
+        List<String> invokeNameServers = (nameServers == null || nameServers.isEmpty()) ? this.remotingClient.getNameServerAddressList() : nameServers;
         if (invokeNameServers == null || invokeNameServers.isEmpty()) {
             return;
         }
@@ -1502,10 +1538,11 @@ public class BrokerClient implements NameServerUpdateCallback {
         }
     }
 
-    public Map<String, Properties> getNameServerConfig(final List<String> nameServers, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public Map<String, Properties> getNameServerConfig(List<String> nameServers, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         List<String> invokeNameServers = (nameServers == null || nameServers.isEmpty())
             ? this.remotingClient.getNameServerAddressList()
             : nameServers;
+
         if (invokeNameServers == null || invokeNameServers.isEmpty()) {
             return null;
         }
@@ -1517,18 +1554,16 @@ public class BrokerClient implements NameServerUpdateCallback {
             RemotingCommand response = this.remotingClient.invokeSync(nameServer, request, timeoutMillis);
 
             assert response != null;
-
-            if (ResponseCode.SUCCESS == response.getCode()) {
-                configMap.put(nameServer, BeanUtils.string2Properties(new String(response.getBody(), MQConstants.DEFAULT_CHARSET)));
-            } else {
+            if (ResponseCode.SUCCESS != response.getCode()) {
                 throw new RemotingException(response.getCode(), response.getRemark());
             }
+
+            configMap.put(nameServer, BeanUtils.string2Properties(new String(response.getBody(), MQConstants.DEFAULT_CHARSET)));
         }
         return configMap;
     }
 
-    public QueryConsumeQueueResponseBody queryConsumeQueue(final String brokerAddr, final String topic, final int queueId, final long index, final int count, final String consumerGroup, final long timeoutMillis) throws InterruptedException, RemotingException {
-
+    public QueryConsumeQueueResponseBody queryConsumeQueue(String brokerAddr, String topic, int queueId, long index, int count, String consumerGroup, long timeoutMillis) throws InterruptedException, RemotingException {
         QueryConsumeQueueRequestHeader requestHeader = new QueryConsumeQueueRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setQueueId(queueId);
@@ -1538,7 +1573,6 @@ public class BrokerClient implements NameServerUpdateCallback {
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CONSUME_QUEUE, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, timeoutMillis);
-
         assert response != null;
 
         if (ResponseCode.SUCCESS == response.getCode()) {
@@ -1548,18 +1582,16 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void checkClientInBroker(final String brokerAddr, final String consumerGroup, final String clientId, final SubscriptionData subscriptionData, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public void checkClientInBroker(String brokerAddr, String consumerGroup, String clientId, SubscriptionData subscriptionData, long timeoutMillis) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CHECK_CLIENT_CONFIG, null);
 
         CheckClientRequestBody requestBody = new CheckClientRequestBody();
         requestBody.setClientId(clientId);
         requestBody.setGroup(consumerGroup);
         requestBody.setSubscriptionData(subscriptionData);
-
         request.setBody(requestBody.encode());
 
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, timeoutMillis);
-
         assert response != null;
 
         if (ResponseCode.SUCCESS != response.getCode()) {
@@ -1567,21 +1599,22 @@ public class BrokerClient implements NameServerUpdateCallback {
         }
     }
 
-    public boolean resumeCheckHalfMessage(final String addr, String msgId, final long timeoutMillis) throws RemotingException, InterruptedException {
+    public boolean resumeCheckHalfMessage(String addr, String msgId, long timeoutMillis) throws RemotingException, InterruptedException {
         ResumeCheckHalfMessageRequestHeader requestHeader = new ResumeCheckHalfMessageRequestHeader();
         requestHeader.setMsgId(msgId);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.RESUME_CHECK_HALF_MESSAGE, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             return true;
         }
-        log.error("Failed to resume half message check logic. Remark={}", response.getRemark());
+        LOG.error("Failed to resume half message check logic. Remark={}", response.getRemark());
         return false;
     }
 
-    public void setMessageRequestMode(final String brokerAddr, final String topic, final String consumerGroup, final MessageRequestMode mode, final int popShareQueueNum, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public void setMessageRequestMode(String brokerAddr, String topic, String consumerGroup, MessageRequestMode mode, int popShareQueueNum, long timeoutMillis) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.SET_MESSAGE_REQUEST_MODE, null);
 
         SetMessageRequestModeRequestBody requestBody = new SetMessageRequestModeRequestBody();
@@ -1593,18 +1626,21 @@ public class BrokerClient implements NameServerUpdateCallback {
 
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, timeoutMillis);
         assert response != null;
+
         if (ResponseCode.SUCCESS != response.getCode()) {
             throw new RemotingException(response.getCode(), response.getRemark());
         }
     }
 
-    public TopicConfigAndQueueMapping getTopicConfig(final String brokerAddr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
+    public TopicConfigAndQueueMapping getTopicConfig(String brokerAddr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
         GetTopicConfigRequestHeader header = new GetTopicConfigRequestHeader();
         header.setTopic(topic);
         header.setLo(true);
+
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_TOPIC_CONFIG, header);
         RemotingCommand response = this.remotingClient .invokeSync(brokerAddr, request, timeoutMillis);
         assert response != null;
+
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
                 return RemotingSerializable.decode(response.getBody(), TopicConfigAndQueueMapping.class);
@@ -1617,10 +1653,11 @@ public class BrokerClient implements NameServerUpdateCallback {
             default:
                 break;
         }
+
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void createStaticTopic(final String addr, final String defaultTopic, final TopicConfig topicConfig, final TopicQueueMappingDetail topicQueueMappingDetail, boolean force, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public void createStaticTopic(String addr, String defaultTopic, TopicConfig topicConfig, TopicQueueMappingDetail topicQueueMappingDetail, boolean force, long timeoutMillis) throws InterruptedException, RemotingException {
         CreateTopicRequestHeader requestHeader = new CreateTopicRequestHeader();
         requestHeader.setTopic(topicConfig.getTopicName());
         requestHeader.setDefaultTopic(defaultTopic);
@@ -1636,6 +1673,7 @@ public class BrokerClient implements NameServerUpdateCallback {
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             return;
         }
@@ -1655,13 +1693,13 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void resetMasterFlushOffset(final String brokerAddr, final long masterFlushOffset) throws InterruptedException, RemotingException {
+    public void resetMasterFlushOffset(String brokerAddr, long masterFlushOffset) throws InterruptedException, RemotingException {
         ResetMasterFlushOffsetHeader requestHeader = new ResetMasterFlushOffsetHeader();
         requestHeader.setMasterFlushOffset(masterFlushOffset);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.RESET_MASTER_FLUSH_OFFSET, requestHeader);
-
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, 3000);
+
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return;
@@ -1669,7 +1707,7 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark(), brokerAddr);
     }
 
-    public HARuntimeInfo getBrokerHAStatus(final String brokerAddr, final long timeoutMillis) throws InterruptedException, RemotingException {
+    public HARuntimeInfo getBrokerHAStatus(String brokerAddr, long timeoutMillis) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_HA_STATUS, null);
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, timeoutMillis);
         assert response != null;
@@ -1681,9 +1719,10 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public GetMetaDataResponseHeader getControllerMetaData(final String controllerAddress) throws InterruptedException, RemotingException {
-        final RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CONTROLLER_GET_METADATA_INFO, null);
-        final RemotingCommand response = this.remotingClient.invokeSync(controllerAddress, request, 3000);
+    public GetMetaDataResponseHeader getControllerMetaData(String controllerAddress) throws InterruptedException, RemotingException {
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CONTROLLER_GET_METADATA_INFO, null);
+        RemotingCommand response = this.remotingClient.invokeSync(controllerAddress, request, 3000);
+
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return (GetMetaDataResponseHeader) response.decodeCommandCustomHeader(GetMetaDataResponseHeader.class);
@@ -1691,18 +1730,20 @@ public class BrokerClient implements NameServerUpdateCallback {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public BrokerReplicasInfo getInSyncStateData(final String controllerAddress, final List<String> brokers) throws InterruptedException, RemotingException {
+    public BrokerReplicasInfo getInSyncStateData(String controllerAddress, List<String> brokers) throws InterruptedException, RemotingException {
         // Get controller leader address.
-        final GetMetaDataResponseHeader controllerMetaData = getControllerMetaData(controllerAddress);
+        GetMetaDataResponseHeader controllerMetaData = getControllerMetaData(controllerAddress);
         assert controllerMetaData != null;
         assert controllerMetaData.getControllerLeaderAddress() != null;
-        final String leaderAddress = controllerMetaData.getControllerLeaderAddress();
+        String leaderAddress = controllerMetaData.getControllerLeaderAddress();
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CONTROLLER_GET_SYNC_STATE_DATA, null);
-        final byte[] body = RemotingSerializable.encode(brokers);
+        byte[] body = RemotingSerializable.encode(brokers);
         request.setBody(body);
+
         RemotingCommand response = this.remotingClient.invokeSync(leaderAddress, request, 3000);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             return RemotingSerializable.decode(response.getBody(), BrokerReplicasInfo.class);
         }
@@ -1711,17 +1752,17 @@ public class BrokerClient implements NameServerUpdateCallback {
 
     public EpochEntryCache getBrokerEpochCache(String brokerAddr) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_EPOCH_CACHE, null);
-        final RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, 3000);
+        RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, 3000);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             return RemotingSerializable.decode(response.getBody(), EpochEntryCache.class);
         }
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public Map<String, Properties> getControllerConfig(final List<String> controllerServers, final long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
-        List<String> invokeControllerServers = (controllerServers == null || controllerServers.isEmpty()) ?
-            this.remotingClient.getNameServerAddressList() : controllerServers;
+    public Map<String, Properties> getControllerConfig(List<String> controllerServers, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+        List<String> invokeControllerServers = (controllerServers == null || controllerServers.isEmpty()) ? this.remotingClient.getNameServerAddressList() : controllerServers;
         if (invokeControllerServers == null || invokeControllerServers.isEmpty()) {
             return null;
         }
@@ -1733,17 +1774,16 @@ public class BrokerClient implements NameServerUpdateCallback {
             RemotingCommand response = this.remotingClient.invokeSync(controller, request, timeoutMillis);
 
             assert response != null;
-
-            if (ResponseCode.SUCCESS == response.getCode()) {
-                configMap.put(controller, BeanUtils.string2Properties(new String(response.getBody(), MQConstants.DEFAULT_CHARSET)));
-            } else {
+            if (ResponseCode.SUCCESS != response.getCode()) {
                 throw new RemotingException(response.getCode(), response.getRemark());
             }
+
+            configMap.put(controller, BeanUtils.string2Properties(new String(response.getBody(), MQConstants.DEFAULT_CHARSET)));
         }
         return configMap;
     }
 
-    public void updateControllerConfig(final Properties properties, final List<String> controllers, final long timeoutMillis) throws InterruptedException, UnsupportedEncodingException, RemotingException {
+    public void updateControllerConfig(Properties properties, List<String> controllers, long timeoutMillis) throws InterruptedException, UnsupportedEncodingException, RemotingException {
         String str = BeanUtils.properties2String(properties);
         if (str.length() < 1 || controllers == null || controllers.isEmpty()) {
             return;
@@ -1767,17 +1807,17 @@ public class BrokerClient implements NameServerUpdateCallback {
     }
 
     public Pair<ElectMasterResponseHeader, BrokerMemberGroup> electMaster(String controllerAddr, String clusterName, String brokerName, Long brokerId) throws RemotingException, InterruptedException {
-
         //get controller leader address
-        final GetMetaDataResponseHeader controllerMetaData = this.getControllerMetaData(controllerAddr);
+        GetMetaDataResponseHeader controllerMetaData = this.getControllerMetaData(controllerAddr);
         assert controllerMetaData != null;
         assert controllerMetaData.getControllerLeaderAddress() != null;
-        final String leaderAddress = controllerMetaData.getControllerLeaderAddress();
+        String leaderAddress = controllerMetaData.getControllerLeaderAddress();
         ElectMasterRequestHeader electRequestHeader = ElectMasterRequestHeader.ofAdminTrigger(clusterName, brokerName, brokerId);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CONTROLLER_ELECT_MASTER, electRequestHeader);
-        final RemotingCommand response = this.remotingClient.invokeSync(leaderAddress, request, 3000);
+        RemotingCommand response = this.remotingClient.invokeSync(leaderAddress, request, 3000);
         assert response != null;
+
         if (response.getCode() == SUCCESS) {
             BrokerMemberGroup brokerMemberGroup = RemotingSerializable.decode(response.getBody(), BrokerMemberGroup.class);
             ElectMasterResponseHeader responseHeader = (ElectMasterResponseHeader) response.decodeCommandCustomHeader(ElectMasterResponseHeader.class);
@@ -1788,15 +1828,15 @@ public class BrokerClient implements NameServerUpdateCallback {
 
     public void cleanControllerBrokerData(String controllerAddr, String clusterName, String brokerName, String brokerControllerIdsToClean, boolean isCleanLivingBroker) throws InterruptedException, RemotingException {
         //get controller leader address
-        final GetMetaDataResponseHeader controllerMetaData = this.getControllerMetaData(controllerAddr);
+        GetMetaDataResponseHeader controllerMetaData = this.getControllerMetaData(controllerAddr);
         assert controllerMetaData != null;
         assert controllerMetaData.getControllerLeaderAddress() != null;
-        final String leaderAddress = controllerMetaData.getControllerLeaderAddress();
+        String leaderAddress = controllerMetaData.getControllerLeaderAddress();
 
         CleanControllerBrokerDataRequestHeader cleanHeader = new CleanControllerBrokerDataRequestHeader(clusterName, brokerName, brokerControllerIdsToClean, isCleanLivingBroker);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CLEAN_BROKER_DATA, cleanHeader);
 
-        final RemotingCommand response = this.remotingClient.invokeSync(leaderAddress, request, 3000);
+        RemotingCommand response = this.remotingClient.invokeSync(leaderAddress, request, 3000);
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return;
