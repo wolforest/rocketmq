@@ -98,11 +98,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             return true;
         }
 
-        if (this.brokerController.getMessageStore().isOSPageCacheBusy() || this.brokerController.getMessageStore().isTransientStorePoolDeficient()) {
-            return true;
-        }
-
-        return false;
+        return this.brokerController.getMessageStore().isOSPageCacheBusy() || this.brokerController.getMessageStore().isTransientStorePoolDeficient();
     }
 
     private RemotingCommand processSendRequest(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
@@ -125,12 +121,10 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         clearReservedProperties(requestHeader);
 
         if (requestHeader.isBatch()) {
-            return this.sendBatchMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
-                (ctx1, response1) -> executeSendMessageHookAfter(response1, ctx1));
+            return this.sendBatchMessage(ctx, request, sendMessageContext, requestHeader, mappingContext, (ctx1, response1) -> executeSendMessageHookAfter(response1, ctx1));
         }
 
-        return this.sendMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
-            (ctx12, response12) -> executeSendMessageHookAfter(response12, ctx12));
+        return this.sendMessage(ctx, request, sendMessageContext, requestHeader, mappingContext, (ctx12, response12) -> executeSendMessageHookAfter(response12, ctx12));
     }
 
     private RemotingCommand executeSendMessageHookBefore(SendMessageContext sendMessageContext, RemotingCommand request) {
@@ -164,11 +158,11 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             }
             //no need to care the broker name
             long staticLogicOffset = mappingItem.computeStaticQueueOffsetLoosely(responseHeader.getQueueOffset());
-            if (staticLogicOffset < 0) {
+            //if (staticLogicOffset < 0) {
                 //if the logic offset is -1, just let it go
                 //maybe we need a dynamic config
                 //return buildErrorResponse(ResponseCode.NOT_LEADER_FOR_QUEUE, String.format("%s-%d convert offset error in current broker %s", mappingContext.getTopic(), mappingContext.getGlobalId(), mappingDetail.getBname()));
-            }
+            //}
             responseHeader.setQueueId(mappingContext.getGlobalId());
             responseHeader.setQueueOffset(staticLogicOffset);
         } catch (Throwable t) {
