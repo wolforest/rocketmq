@@ -26,8 +26,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.common.utils.SystemUtils;
 
 public class MessageClientIDSetter {
-    
+
+    /**
+     * ip.length + 2 + 4 + 4 + 2
+     * length = 16
+     */
     private static final int LEN;
+
+    /**
+     * ip + pid + classLoader.hashCode()
+     * length = 20
+     */
     private static final char[] FIX_STRING;
     private static final AtomicInteger COUNTER;
     private static long startTime;
@@ -114,6 +123,12 @@ public class MessageClientIDSetter {
         return value & 0x0000FFFF;
     }
 
+    /**
+     * ip.length + 2 + 4 + 4 + 2
+     * ip + pid + classLoader.hashCode() + timeDiff + counter
+     *
+     * @return unique messageID
+     */
     public static String createUniqID() {
         char[] sb = new char[LEN * 2];
         System.arraycopy(FIX_STRING, 0, sb, 0, FIX_STRING.length);
