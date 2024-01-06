@@ -171,8 +171,8 @@ import org.apache.rocketmq.remoting.rpchook.StreamTypeRPCHook;
 
 import static org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode.SUCCESS;
 
-public class BrokerClient {
-    protected static final Logger LOG = LoggerFactory.getLogger(BrokerClient.class);
+public class RPCClient {
+    protected static final Logger LOG = LoggerFactory.getLogger(RPCClient.class);
 
     static {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
@@ -181,11 +181,11 @@ public class BrokerClient {
     protected final RemotingClient remotingClient;
     protected long timeoutMillis = 5000;
 
-    public BrokerClient() {
+    public RPCClient() {
         this(null, null);
     }
 
-    public BrokerClient(String accessKey, String secretKey) {
+    public RPCClient(String accessKey, String secretKey) {
         NettyClientConfig nettyClientConfig = new NettyClientConfig();
         this.remotingClient = new NettyRemotingClient(nettyClientConfig, null);
 

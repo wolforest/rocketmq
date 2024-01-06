@@ -17,9 +17,7 @@
 package org.apache.rocketmq.apitest.manager;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.common.domain.topic.TopicAttributes;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
@@ -32,7 +30,7 @@ public class TopicManager {
         try {
             String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
 
-            return ClientManager.getBrokerClient().getTopicConfig(brokerAddr, topic);
+            return ClientManager.getClient().getTopicConfig(brokerAddr, topic);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -42,10 +40,10 @@ public class TopicManager {
     public static void deleteTopic(String topic) {
         try {
             String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
-            ClientManager.getBrokerClient().deleteTopicInBroker(brokerAddr, topic);
+            ClientManager.getClient().deleteTopicInBroker(brokerAddr, topic);
 
             String nameAddr = ConfigManager.getConfig().getString("nameAddr");
-            ClientManager.getBrokerClient().deleteTopicInNameServer(nameAddr, topic);
+            ClientManager.getClient().deleteTopicInNameServer(nameAddr, topic);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -81,7 +79,7 @@ public class TopicManager {
             TopicConfig topicConfig = new TopicConfig(topic);
             topicConfig.setAttributes(attributes);
 
-            ClientManager.getBrokerClient().createTopic(brokerAddr, topicConfig);
+            ClientManager.getClient().createTopic(brokerAddr, topicConfig);
         } catch (Exception e) {
             e.printStackTrace();
         }
