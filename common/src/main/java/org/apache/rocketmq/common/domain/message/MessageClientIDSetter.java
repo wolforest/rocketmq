@@ -35,7 +35,7 @@ public class MessageClientIDSetter {
 
     /**
      * ip + pid + classLoader.hashCode()
-     * length = 20
+     * length = 10
      */
     private static final char[] FIX_STRING;
     private static final AtomicInteger COUNTER;
