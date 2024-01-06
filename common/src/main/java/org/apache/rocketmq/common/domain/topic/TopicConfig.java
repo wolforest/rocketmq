@@ -42,6 +42,7 @@ public class TopicConfig {
 
     /**
      * Field attributes key should start with '+', and should not have ' ' char in key or value
+     * topicType stored in attributes, key = '+' + TOPIC_MESSAGE_TYPE_ATTRIBUTE.getName()
      *
      * put("+" + TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE.getName(), TopicMessageType.FIFO.getValue());
      * put("+" + TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE.getName(), TopicMessageType.DELAY.getValue());
@@ -125,16 +126,21 @@ public class TopicConfig {
         this.writeQueueNums = Integer.parseInt(strs[2]);
         this.perm = Integer.parseInt(strs[3]);
         this.topicFilterType = TopicFilterType.valueOf(strs[4]);
-
-        if (strs.length >= 6) {
-            try {
-                this.attributes = JSON.parseObject(strs[5], ATTRIBUTES_TYPE_REFERENCE.getType());
-            } catch (Exception e) {
-                // ignore exception when parse failed, cause map's key/value can have ' ' char.
-            }
-        }
+        decodeAttributes(strs);
 
         return true;
+    }
+
+    private void decodeAttributes(String[] strs) {
+        if (strs.length < 6) {
+            return;
+        }
+
+        try {
+            this.attributes = JSON.parseObject(strs[5], ATTRIBUTES_TYPE_REFERENCE.getType());
+        } catch (Exception e) {
+            // ignore exception when parse failed, cause map's key/value can have ' ' char.
+        }
     }
 
     public String getTopicName() {
