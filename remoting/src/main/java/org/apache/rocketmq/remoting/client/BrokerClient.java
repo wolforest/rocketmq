@@ -44,7 +44,6 @@ import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.remoting.ChannelEventListener;
 import org.apache.rocketmq.remoting.InvokeCallback;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.RemotingClient;
@@ -173,14 +172,14 @@ import org.apache.rocketmq.remoting.rpchook.StreamTypeRPCHook;
 import static org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode.SUCCESS;
 
 public class BrokerClient {
-    private static final Logger LOG = LoggerFactory.getLogger(BrokerClient.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(BrokerClient.class);
 
     static {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
     }
 
-    private final RemotingClient remotingClient;
-    private long timeoutMillis = 5000;
+    protected final RemotingClient remotingClient;
+    protected long timeoutMillis = 5000;
 
     public BrokerClient() {
         this(null, null);
@@ -194,6 +193,10 @@ public class BrokerClient {
         this.remotingClient.registerRPCHook(new StreamTypeRPCHook());
         registerRPCHook(accessKey, secretKey);
         this.remotingClient.registerRPCHook(new DynamicalExtFieldRPCHook());
+    }
+
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     private void registerRPCHook(String accessKey, String secretKey) {
@@ -824,9 +827,16 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public ClusterInfo getBrokerClusterInfo(long timeoutMillis) throws InterruptedException, RemotingException {
+    /**
+     * get cluster info(broker info) from nameServer
+     * @param addr namesrv addr
+     * @return ClusterInfor
+     * @throws InterruptedException e
+     * @throws RemotingException e
+     */
+    public ClusterInfo getBrokerClusterInfo(String addr) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_CLUSTER_INFO, null);
-        RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
+        RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
         if (response.getCode() == SUCCESS) {
             return ClusterInfo.decode(response.getBody(), ClusterInfo.class);
