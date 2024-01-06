@@ -18,13 +18,12 @@ package org.apache.rocketmq.apitest.manager;
 
 import org.apache.rocketmq.client.apis.ClientServiceProvider;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.apache.rocketmq.remoting.client.BrokerClient;
 
 import static org.apache.rocketmq.common.utils.NameServerAddressUtils.NAMESRV_ADDR_PROPERTY;
 
 public class ClientManager {
-    private static MQAdminExt client = null;
+    private static BrokerClient client = null;
 
     private static final ClientServiceProvider PROVIDER = ClientServiceProvider.loadService();
 
@@ -32,7 +31,7 @@ public class ClientManager {
         return PROVIDER;
     }
 
-    public static MQAdminExt getClient() {
+    public static BrokerClient getBrokerClient() {
         return client;
     }
 
@@ -42,7 +41,7 @@ public class ClientManager {
         }
 
         System.setProperty(NAMESRV_ADDR_PROPERTY, ConfigManager.getConfig().getString("nameAddr"));
-        client = new DefaultMQAdminExt();
+        client = new BrokerClient();
         client.start();
     }
 

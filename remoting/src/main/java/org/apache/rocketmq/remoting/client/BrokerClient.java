@@ -180,6 +180,7 @@ public class BrokerClient {
     }
 
     private final RemotingClient remotingClient;
+    private long timeoutMillis = 5000;
 
     public BrokerClient() {
         this(null, null);
@@ -222,7 +223,7 @@ public class BrokerClient {
         this.remotingClient.shutdown();
     }
 
-    public void createSubscriptionGroup(String addr, SubscriptionGroupConfig config, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void createSubscriptionGroup(String addr, SubscriptionGroupConfig config) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_AND_CREATE_SUBSCRIPTIONGROUP, null);
 
         byte[] body = RemotingSerializable.encode(config);
@@ -238,7 +239,7 @@ public class BrokerClient {
 
     }
 
-    public void createTopic(String addr, TopicConfig topicConfig, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void createTopic(String addr, TopicConfig topicConfig) throws RemotingException, InterruptedException {
         Validators.checkTopicConfig(topicConfig);
 
         CreateTopicRequestHeader requestHeader = new CreateTopicRequestHeader();
@@ -263,7 +264,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void createPlainAccessConfig(String addr, PlainAccessConfig plainAccessConfig, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void createPlainAccessConfig(String addr, PlainAccessConfig plainAccessConfig) throws RemotingException, InterruptedException {
         CreateAccessConfigRequestHeader requestHeader = new CreateAccessConfigRequestHeader();
         requestHeader.setAccessKey(plainAccessConfig.getAccessKey());
         requestHeader.setSecretKey(plainAccessConfig.getSecretKey());
@@ -284,7 +285,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void deleteAccessConfig(String addr, String accessKey, long timeoutMillis)
+    public void deleteAccessConfig(String addr, String accessKey)
         throws RemotingException, InterruptedException {
         DeleteAccessConfigRequestHeader requestHeader = new DeleteAccessConfigRequestHeader();
         requestHeader.setAccessKey(accessKey);
@@ -315,7 +316,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public ClusterAclVersionInfo getBrokerClusterAclInfo(String addr, long timeoutMillis) throws InterruptedException, RemotingException {
+    public ClusterAclVersionInfo getBrokerClusterAclInfo(String addr) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_CLUSTER_ACL_INFO, null);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -341,7 +342,7 @@ public class BrokerClient {
 
     }
 
-    public MessageExt viewMessage(String addr, long offset, long timeoutMillis) throws RemotingException, InterruptedException {
+    public MessageExt viewMessage(String addr, long offset) throws RemotingException, InterruptedException {
         ViewMessageRequestHeader requestHeader = new ViewMessageRequestHeader();
         requestHeader.setOffset(offset);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.VIEW_MESSAGE_BY_ID, requestHeader);
@@ -358,7 +359,7 @@ public class BrokerClient {
     }
 
     @Deprecated
-    public long searchOffset(String addr, String topic, int queueId, long timestamp, long timeoutMillis) throws RemotingException, InterruptedException {
+    public long searchOffset(String addr, String topic, int queueId, long timestamp) throws RemotingException, InterruptedException {
         SearchOffsetRequestHeader requestHeader = new SearchOffsetRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setQueueId(queueId);
@@ -375,12 +376,12 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public long searchOffset(String addr, MessageQueue messageQueue, long timestamp, long timeoutMillis) throws RemotingException, InterruptedException {
+    public long searchOffset(String addr, MessageQueue messageQueue, long timestamp) throws RemotingException, InterruptedException {
         // default return lower boundary offset when there are more than one offsets.
-        return searchOffset(addr, messageQueue, timestamp, BoundaryType.LOWER, timeoutMillis);
+        return searchOffset(addr, messageQueue, timestamp, BoundaryType.LOWER);
     }
 
-    public long searchOffset(String addr, MessageQueue messageQueue, long timestamp, BoundaryType boundaryType, long timeoutMillis) throws RemotingException, InterruptedException {
+    public long searchOffset(String addr, MessageQueue messageQueue, long timestamp, BoundaryType boundaryType) throws RemotingException, InterruptedException {
         SearchOffsetRequestHeader requestHeader = new SearchOffsetRequestHeader();
         requestHeader.setTopic(messageQueue.getTopic());
         requestHeader.setQueueId(messageQueue.getQueueId());
@@ -398,7 +399,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public long getMaxOffset(String addr, MessageQueue messageQueue, long timeoutMillis)
+    public long getMaxOffset(String addr, MessageQueue messageQueue)
         throws RemotingException, InterruptedException {
         GetMaxOffsetRequestHeader requestHeader = new GetMaxOffsetRequestHeader();
         requestHeader.setTopic(messageQueue.getTopic());
@@ -416,7 +417,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public List<String> getConsumerIdListByGroup(String addr, String consumerGroup, long timeoutMillis) throws RemotingException, InterruptedException {
+    public List<String> getConsumerIdListByGroup(String addr, String consumerGroup) throws RemotingException, InterruptedException {
         GetConsumerListByGroupRequestHeader requestHeader = new GetConsumerListByGroupRequestHeader();
         requestHeader.setConsumerGroup(consumerGroup);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CONSUMER_LIST_BY_GROUP, requestHeader);
@@ -433,7 +434,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public long getMinOffset(String addr, MessageQueue messageQueue, long timeoutMillis) throws RemotingException, InterruptedException {
+    public long getMinOffset(String addr, MessageQueue messageQueue) throws RemotingException, InterruptedException {
         GetMinOffsetRequestHeader requestHeader = new GetMinOffsetRequestHeader();
         requestHeader.setTopic(messageQueue.getTopic());
         requestHeader.setQueueId(messageQueue.getQueueId());
@@ -450,7 +451,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public long getEarliestMsgStoreTime(String addr, MessageQueue mq, long timeoutMillis) throws RemotingException, InterruptedException {
+    public long getEarliestMsgStoreTime(String addr, MessageQueue mq) throws RemotingException, InterruptedException {
         GetEarliestMsgStoretimeRequestHeader requestHeader = new GetEarliestMsgStoretimeRequestHeader();
         requestHeader.setTopic(mq.getTopic());
         requestHeader.setQueueId(mq.getQueueId());
@@ -467,7 +468,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public long queryConsumerOffset(String addr, QueryConsumerOffsetRequestHeader requestHeader, long timeoutMillis) throws RemotingException, InterruptedException {
+    public long queryConsumerOffset(String addr, QueryConsumerOffsetRequestHeader requestHeader) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CONSUMER_OFFSET, requestHeader);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -487,7 +488,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void updateConsumerOffset(String addr, UpdateConsumerOffsetRequestHeader requestHeader, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void updateConsumerOffset(String addr, UpdateConsumerOffsetRequestHeader requestHeader) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_CONSUMER_OFFSET, requestHeader);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -499,13 +500,13 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void updateConsumerOffsetOneway(String addr, UpdateConsumerOffsetRequestHeader requestHeader, long timeoutMillis) throws RemotingConnectException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException, InterruptedException {
+    public void updateConsumerOffsetOneway(String addr, UpdateConsumerOffsetRequestHeader requestHeader) throws RemotingConnectException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_CONSUMER_OFFSET, requestHeader);
 
         this.remotingClient.invokeOneway(addr, request, timeoutMillis);
     }
 
-    public int sendHeartbeat(String addr, HeartbeatData heartbeatData, long timeoutMillis) throws RemotingException, InterruptedException {
+    public int sendHeartbeat(String addr, HeartbeatData heartbeatData) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.HEART_BEAT, null);
         request.setLanguage(LanguageCode.JAVA);
         request.setBody(heartbeatData.encode());
@@ -518,7 +519,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public HeartbeatV2Result sendHeartbeatV2(String addr, HeartbeatData heartbeatData, long timeoutMillis) throws RemotingException, InterruptedException {
+    public HeartbeatV2Result sendHeartbeatV2(String addr, HeartbeatData heartbeatData) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.HEART_BEAT, null);
         request.setLanguage(LanguageCode.JAVA);
         request.setBody(heartbeatData.encode());
@@ -534,7 +535,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void unregisterClient(String addr, String clientID, String producerGroup, String consumerGroup, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void unregisterClient(String addr, String clientID, String producerGroup, String consumerGroup) throws RemotingException, InterruptedException {
         UnregisterClientRequestHeader requestHeader = new UnregisterClientRequestHeader();
         requestHeader.setClientID(clientID);
         requestHeader.setProducerGroup(producerGroup);
@@ -550,7 +551,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void endTransactionOneway(String addr, EndTransactionRequestHeader requestHeader, String remark, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void endTransactionOneway(String addr, EndTransactionRequestHeader requestHeader, String remark) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.END_TRANSACTION, requestHeader);
 
         request.setRemark(remark);
@@ -563,7 +564,7 @@ public class BrokerClient {
         this.remotingClient.invokeAsync(addr, request, timeoutMillis, invokeCallback);
     }
 
-    public boolean registerClient(String addr, HeartbeatData heartbeat, long timeoutMillis) throws RemotingException, InterruptedException {
+    public boolean registerClient(String addr, HeartbeatData heartbeat) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.HEART_BEAT, null);
 
         request.setBody(heartbeat.encode());
@@ -592,7 +593,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public Set<MessageQueue> lockBatchMQ(String addr, LockBatchRequestBody requestBody, long timeoutMillis) throws RemotingException, InterruptedException {
+    public Set<MessageQueue> lockBatchMQ(String addr, LockBatchRequestBody requestBody) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.LOCK_BATCH_MQ, null);
 
         request.setBody(requestBody.encode());
@@ -622,7 +623,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public TopicStatsTable getTopicStatsInfo(String addr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
+    public TopicStatsTable getTopicStatsInfo(String addr, String topic) throws InterruptedException, RemotingException {
         GetTopicStatsInfoRequestHeader requestHeader = new GetTopicStatsInfoRequestHeader();
         requestHeader.setTopic(topic);
 
@@ -635,11 +636,11 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public ConsumeStats getConsumeStats(String addr, String consumerGroup, long timeoutMillis) throws InterruptedException, RemotingException {
-        return getConsumeStats(addr, consumerGroup, null, timeoutMillis);
+    public ConsumeStats getConsumeStats(String addr, String consumerGroup) throws InterruptedException, RemotingException {
+        return getConsumeStats(addr, consumerGroup, null);
     }
 
-    public ConsumeStats getConsumeStats(String addr, String consumerGroup, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
+    public ConsumeStats getConsumeStats(String addr, String consumerGroup, String topic) throws InterruptedException, RemotingException {
         GetConsumeStatsRequestHeader requestHeader = new GetConsumeStatsRequestHeader();
         requestHeader.setConsumerGroup(consumerGroup);
         requestHeader.setTopic(topic);
@@ -654,7 +655,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public ProducerConnection getProducerConnectionList(String addr, String producerGroup, long timeoutMillis) throws InterruptedException, RemotingException {
+    public ProducerConnection getProducerConnectionList(String addr, String producerGroup) throws InterruptedException, RemotingException {
         GetProducerConnectionListRequestHeader requestHeader = new GetProducerConnectionListRequestHeader();
         requestHeader.setProducerGroup(producerGroup);
 
@@ -667,7 +668,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public ProducerTableInfo getAllProducerInfo(String addr, long timeoutMillis) throws InterruptedException, RemotingException {
+    public ProducerTableInfo getAllProducerInfo(String addr) throws InterruptedException, RemotingException {
         GetAllProducerInfoRequestHeader requestHeader = new GetAllProducerInfoRequestHeader();
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_PRODUCER_INFO, requestHeader);
@@ -679,7 +680,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public ConsumerConnection getConsumerConnectionList(String addr, String consumerGroup, long timeoutMillis) throws InterruptedException, RemotingException {
+    public ConsumerConnection getConsumerConnectionList(String addr, String consumerGroup) throws InterruptedException, RemotingException {
         GetConsumerConnectionListRequestHeader requestHeader = new GetConsumerConnectionListRequestHeader();
         requestHeader.setConsumerGroup(consumerGroup);
 
@@ -692,7 +693,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public KVTable getBrokerRuntimeInfo(String addr, long timeoutMillis) throws InterruptedException, RemotingException {
+    public KVTable getBrokerRuntimeInfo(String addr) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_RUNTIME_INFO, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         if (response.getCode() == SUCCESS) {
@@ -702,7 +703,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void addBroker(String addr, String brokerConfigPath, long timeoutMillis) throws InterruptedException, RemotingException {
+    public void addBroker(String addr, String brokerConfigPath) throws InterruptedException, RemotingException {
         AddBrokerRequestHeader requestHeader = new AddBrokerRequestHeader();
         requestHeader.setConfigPath(brokerConfigPath);
 
@@ -717,7 +718,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void removeBroker(String addr, String clusterName, String brokerName, long brokerId, long timeoutMillis) throws InterruptedException, RemotingException {
+    public void removeBroker(String addr, String clusterName, String brokerName, long brokerId) throws InterruptedException, RemotingException {
         RemoveBrokerRequestHeader requestHeader = new RemoveBrokerRequestHeader();
         requestHeader.setBrokerClusterName(clusterName);
         requestHeader.setBrokerName(brokerName);
@@ -734,7 +735,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void updateBrokerConfig(String addr, Properties properties, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public void updateBrokerConfig(String addr, Properties properties) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         Validators.checkBrokerConfig(properties);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_BROKER_CONFIG, null);
@@ -753,7 +754,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public Properties getBrokerConfig(String addr, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public Properties getBrokerConfig(String addr) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_CONFIG, null);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -765,7 +766,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void updateColdDataFlowCtrGroupConfig(String addr, Properties properties, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public void updateColdDataFlowCtrGroupConfig(String addr, Properties properties) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_COLD_DATA_FLOW_CTR_CONFIG, null);
         String str = BeanUtils.properties2String(properties);
         if (str.length() <= 0) {
@@ -780,7 +781,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void removeColdDataFlowCtrGroupConfig(String addr, String consumerGroup, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public void removeColdDataFlowCtrGroupConfig(String addr, String consumerGroup) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.REMOVE_COLD_DATA_FLOW_CTR_CONFIG, null);
         if (!StringUtils.isBlank(consumerGroup)) {
             return;
@@ -794,7 +795,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public String getColdDataFlowCtrInfo(String addr, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public String getColdDataFlowCtrInfo(String addr) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_COLD_DATA_FLOW_CTR_INFO, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
@@ -807,7 +808,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public String setCommitLogReadAheadMode(String addr, String mode, long timeoutMillis) throws InterruptedException, RemotingException {
+    public String setCommitLogReadAheadMode(String addr, String mode) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.SET_COMMITLOG_READ_MODE, null);
         HashMap<String, String> extFields = new HashMap<>();
         extFields.put(FIleReadaheadMode.READ_AHEAD_MODE, mode);
@@ -838,7 +839,7 @@ public class BrokerClient {
         return getTopicRouteInfoFromNameServer(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC, timeoutMillis, false);
     }
 
-    public TopicRouteData getTopicRouteInfoFromNameServer(String topic, long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicRouteData getTopicRouteInfoFromNameServer(String topic) throws RemotingException, InterruptedException {
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, true);
     }
 
@@ -886,7 +887,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public int wipeWritePermOfBroker(String namesrvAddr, String brokerName, long timeoutMillis) throws InterruptedException, RemotingException {
+    public int wipeWritePermOfBroker(String namesrvAddr, String brokerName) throws InterruptedException, RemotingException {
         WipeWritePermOfBrokerRequestHeader requestHeader = new WipeWritePermOfBrokerRequestHeader();
         requestHeader.setBrokerName(brokerName);
 
@@ -901,7 +902,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public int addWritePermOfBroker(String nameSrvAddr, String brokerName, long timeoutMillis) throws InterruptedException, RemotingException {
+    public int addWritePermOfBroker(String nameSrvAddr, String brokerName) throws InterruptedException, RemotingException {
         AddWritePermOfBrokerRequestHeader requestHeader = new AddWritePermOfBrokerRequestHeader();
         requestHeader.setBrokerName(brokerName);
 
@@ -915,7 +916,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void deleteTopicInBroker(String addr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
+    public void deleteTopicInBroker(String addr, String topic) throws InterruptedException, RemotingException {
         DeleteTopicRequestHeader requestHeader = new DeleteTopicRequestHeader();
         requestHeader.setTopic(topic);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_TOPIC_IN_BROKER, requestHeader);
@@ -928,7 +929,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void deleteTopicInNameServer(String addr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
+    public void deleteTopicInNameServer(String addr, String topic) throws InterruptedException, RemotingException {
         DeleteTopicFromNamesrvRequestHeader requestHeader = new DeleteTopicFromNamesrvRequestHeader();
         requestHeader.setTopic(topic);
 
@@ -943,7 +944,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void deleteTopicInNameServer(String addr, String clusterName, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
+    public void deleteTopicInNameServer(String addr, String clusterName, String topic) throws InterruptedException, RemotingException {
         DeleteTopicFromNamesrvRequestHeader requestHeader = new DeleteTopicFromNamesrvRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setClusterName(clusterName);
@@ -959,7 +960,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void deleteSubscriptionGroup(String addr, String groupName, boolean removeOffset, long timeoutMillis) throws InterruptedException, RemotingException {
+    public void deleteSubscriptionGroup(String addr, String groupName, boolean removeOffset) throws InterruptedException, RemotingException {
         DeleteSubscriptionGroupRequestHeader requestHeader = new DeleteSubscriptionGroupRequestHeader();
         requestHeader.setGroupName(groupName);
         requestHeader.setCleanOffset(removeOffset);
@@ -975,7 +976,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public String getKVConfigValue(String namespace, String key, long timeoutMillis) throws RemotingException, InterruptedException {
+    public String getKVConfigValue(String namespace, String key) throws RemotingException, InterruptedException {
         GetKVConfigRequestHeader requestHeader = new GetKVConfigRequestHeader();
         requestHeader.setNamespace(namespace);
         requestHeader.setKey(key);
@@ -992,7 +993,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void putKVConfigValue(String namespace, String key, String value, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void putKVConfigValue(String namespace, String key, String value) throws RemotingException, InterruptedException {
         PutKVConfigRequestHeader requestHeader = new PutKVConfigRequestHeader();
         requestHeader.setNamespace(namespace);
         requestHeader.setKey(key);
@@ -1018,7 +1019,7 @@ public class BrokerClient {
         }
     }
 
-    public void deleteKVConfigValue(String namespace, String key, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void deleteKVConfigValue(String namespace, String key) throws RemotingException, InterruptedException {
         DeleteKVConfigRequestHeader requestHeader = new DeleteKVConfigRequestHeader();
         requestHeader.setNamespace(namespace);
         requestHeader.setKey(key);
@@ -1044,7 +1045,7 @@ public class BrokerClient {
         }
     }
 
-    public KVTable getKVListByNamespace(String namespace, long timeoutMillis) throws RemotingException, InterruptedException {
+    public KVTable getKVListByNamespace(String namespace) throws RemotingException, InterruptedException {
         GetKVListByNamespaceRequestHeader requestHeader = new GetKVListByNamespaceRequestHeader();
         requestHeader.setNamespace(namespace);
 
@@ -1059,11 +1060,11 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public Map<MessageQueue, Long> invokeBrokerToResetOffset(String addr, String topic, String group, long timestamp, boolean isForce, long timeoutMillis) throws RemotingException, InterruptedException {
+    public Map<MessageQueue, Long> invokeBrokerToResetOffset(String addr, String topic, String group, long timestamp, boolean isForce) throws RemotingException, InterruptedException {
         return invokeBrokerToResetOffset(addr, topic, group, timestamp, isForce, timeoutMillis, false);
     }
 
-    public Map<MessageQueue, Long> invokeBrokerToResetOffset(String addr, String topic, String group, long timestamp, int queueId, Long offset, long timeoutMillis) throws RemotingException, InterruptedException {
+    public Map<MessageQueue, Long> invokeBrokerToResetOffset(String addr, String topic, String group, long timestamp, int queueId, Long offset) throws RemotingException, InterruptedException {
         ResetOffsetRequestHeader requestHeader = new ResetOffsetRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setGroup(group);
@@ -1120,7 +1121,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public Map<String, Map<MessageQueue, Long>> invokeBrokerToGetConsumerStatus(String addr, String topic, String group, String clientAddr, long timeoutMillis) throws RemotingException, InterruptedException {
+    public Map<String, Map<MessageQueue, Long>> invokeBrokerToGetConsumerStatus(String addr, String topic, String group, String clientAddr) throws RemotingException, InterruptedException {
         GetConsumerStatusRequestHeader requestHeader = new GetConsumerStatusRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setGroup(group);
@@ -1142,7 +1143,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public GroupList queryTopicConsumeByWho(String addr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
+    public GroupList queryTopicConsumeByWho(String addr, String topic) throws InterruptedException, RemotingException {
         QueryTopicConsumeByWhoRequestHeader requestHeader = new QueryTopicConsumeByWhoRequestHeader();
         requestHeader.setTopic(topic);
 
@@ -1156,7 +1157,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public TopicList queryTopicsByConsumer(String addr, String group, long timeoutMillis) throws InterruptedException, RemotingException {
+    public TopicList queryTopicsByConsumer(String addr, String group) throws InterruptedException, RemotingException {
         QueryTopicsByConsumerRequestHeader requestHeader = new QueryTopicsByConsumerRequestHeader();
         requestHeader.setGroup(group);
 
@@ -1170,7 +1171,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public SubscriptionData querySubscriptionByConsumer(String addr, String group, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
+    public SubscriptionData querySubscriptionByConsumer(String addr, String group, String topic) throws InterruptedException, RemotingException {
         QuerySubscriptionByConsumerRequestHeader requestHeader = new QuerySubscriptionByConsumerRequestHeader();
         requestHeader.setGroup(group);
         requestHeader.setTopic(topic);
@@ -1186,7 +1187,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public List<QueueTimeSpan> queryConsumeTimeSpan(String addr, String topic, String group, long timeoutMillis) throws InterruptedException, RemotingException {
+    public List<QueueTimeSpan> queryConsumeTimeSpan(String addr, String topic, String group) throws InterruptedException, RemotingException {
         QueryConsumeTimeSpanRequestHeader requestHeader = new QueryConsumeTimeSpanRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setGroup(group);
@@ -1202,7 +1203,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public TopicList getTopicsByCluster(String cluster, long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getTopicsByCluster(String cluster) throws RemotingException, InterruptedException {
         GetTopicsByClusterRequestHeader requestHeader = new GetTopicsByClusterRequestHeader();
         requestHeader.setCluster(cluster);
 
@@ -1236,7 +1237,7 @@ public class BrokerClient {
 
         TopicList topicList = TopicList.decode(response.getBody(), TopicList.class);
         if (topicList.getTopicList() != null && !topicList.getTopicList().isEmpty() && !StringUtils.isBlank(topicList.getBrokerAddr())) {
-            TopicList tmp = getSystemTopicListFromBroker(topicList.getBrokerAddr(), timeoutMillis);
+            TopicList tmp = getSystemTopicListFromBroker(topicList.getBrokerAddr());
             if (tmp.getTopicList() != null && !tmp.getTopicList().isEmpty()) {
                 topicList.getTopicList().addAll(tmp.getTopicList());
             }
@@ -1244,7 +1245,7 @@ public class BrokerClient {
         return topicList;
     }
 
-    public TopicList getSystemTopicListFromBroker(String addr, long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getSystemTopicListFromBroker(String addr) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_SYSTEM_TOPIC_LIST_FROM_BROKER, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
@@ -1261,7 +1262,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public boolean cleanExpiredConsumeQueue(String addr, long timeoutMillis) throws RemotingException, InterruptedException {
+    public boolean cleanExpiredConsumeQueue(String addr) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CLEAN_EXPIRED_CONSUMEQUEUE, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         if (response.getCode() == SUCCESS) {
@@ -1271,7 +1272,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public boolean deleteExpiredCommitLog(String addr, long timeoutMillis) throws RemotingException, InterruptedException {
+    public boolean deleteExpiredCommitLog(String addr) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_EXPIRED_COMMITLOG, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         if (response.getCode() == SUCCESS) {
@@ -1281,7 +1282,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public boolean cleanUnusedTopicByAddr(String addr, long timeoutMillis) throws RemotingException, InterruptedException {
+    public boolean cleanUnusedTopicByAddr(String addr) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CLEAN_UNUSED_TOPIC, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         if (response.getCode() == SUCCESS) {
@@ -1291,7 +1292,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public ConsumerRunningInfo getConsumerRunningInfo(String addr, String consumerGroup, String clientId, boolean jstack, long timeoutMillis) throws RemotingException, InterruptedException {
+    public ConsumerRunningInfo getConsumerRunningInfo(String addr, String consumerGroup, String clientId, boolean jstack) throws RemotingException, InterruptedException {
         GetConsumerRunningInfoRequestHeader requestHeader = new GetConsumerRunningInfoRequestHeader();
         requestHeader.setConsumerGroup(consumerGroup);
         requestHeader.setClientId(clientId);
@@ -1313,7 +1314,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public ConsumeMessageDirectlyResult consumeMessageDirectly(String addr, String consumerGroup, String clientId, String topic, String msgId, long timeoutMillis) throws RemotingException, InterruptedException {
+    public ConsumeMessageDirectlyResult consumeMessageDirectly(String addr, String consumerGroup, String clientId, String topic, String msgId) throws RemotingException, InterruptedException {
         ConsumeMessageDirectlyResultRequestHeader requestHeader = new ConsumeMessageDirectlyResultRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setConsumerGroup(consumerGroup);
@@ -1336,7 +1337,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public Map<Integer, Long> queryCorrectionOffset(String addr, String topic, String group, Set<String> filterGroup, long timeoutMillis) throws RemotingException, InterruptedException {
+    public Map<Integer, Long> queryCorrectionOffset(String addr, String topic, String group, Set<String> filterGroup) throws RemotingException, InterruptedException {
         QueryCorrectionOffsetHeader requestHeader = new QueryCorrectionOffsetHeader();
         requestHeader.setCompareGroup(group);
         requestHeader.setTopic(topic);
@@ -1367,7 +1368,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public TopicList getUnitTopicList(boolean containRetry, long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getUnitTopicList(boolean containRetry) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_UNIT_TOPIC_LIST, null);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
@@ -1389,7 +1390,7 @@ public class BrokerClient {
         return topicList;
     }
 
-    public TopicList getHasUnitSubTopicList(boolean containRetry, long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getHasUnitSubTopicList(boolean containRetry) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_HAS_UNIT_SUB_TOPIC_LIST, null);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
@@ -1410,7 +1411,7 @@ public class BrokerClient {
         return topicList;
     }
 
-    public TopicList getHasUnitSubUnUnitTopicList(boolean containRetry, long timeoutMillis) throws RemotingException, InterruptedException {
+    public TopicList getHasUnitSubUnUnitTopicList(boolean containRetry) throws RemotingException, InterruptedException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_HAS_UNIT_SUB_UNUNIT_TOPIC_LIST, null);
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
@@ -1431,7 +1432,7 @@ public class BrokerClient {
         return topicList;
     }
 
-    public void cloneGroupOffset(String addr, String srcGroup, String destGroup, String topic, boolean isOffline, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void cloneGroupOffset(String addr, String srcGroup, String destGroup, String topic, boolean isOffline) throws RemotingException, InterruptedException {
         CloneGroupOffsetRequestHeader requestHeader = new CloneGroupOffsetRequestHeader();
         requestHeader.setSrcGroup(srcGroup);
         requestHeader.setDestGroup(destGroup);
@@ -1447,7 +1448,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public BrokerStatsData viewBrokerStatsData(String brokerAddr, String statsName, String statsKey, long timeoutMillis) throws RemotingException, InterruptedException {
+    public BrokerStatsData viewBrokerStatsData(String brokerAddr, String statsName, String statsKey) throws RemotingException, InterruptedException {
         ViewBrokerStatsDataRequestHeader requestHeader = new ViewBrokerStatsDataRequestHeader();
         requestHeader.setStatsName(statsName);
         requestHeader.setStatsKey(statsKey);
@@ -1468,7 +1469,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public ConsumeStatsList fetchConsumeStatsInBroker(String brokerAddr, boolean isOrder, long timeoutMillis) throws RemotingException, InterruptedException {
+    public ConsumeStatsList fetchConsumeStatsInBroker(String brokerAddr, boolean isOrder) throws RemotingException, InterruptedException {
         GetConsumeStatsInBrokerHeader requestHeader = new GetConsumeStatsInBrokerHeader();
         requestHeader.setIsOrder(isOrder);
 
@@ -1488,7 +1489,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public SubscriptionGroupWrapper getAllSubscriptionGroup(String brokerAddr, long timeoutMillis) throws InterruptedException, RemotingException {
+    public SubscriptionGroupWrapper getAllSubscriptionGroup(String brokerAddr) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_SUBSCRIPTIONGROUP_CONFIG, null);
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, timeoutMillis);
         assert response != null;
@@ -1499,7 +1500,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), brokerAddr);
     }
 
-    public SubscriptionGroupConfig getSubscriptionGroupConfig(String brokerAddr, String group, long timeoutMillis) throws InterruptedException, RemotingException {
+    public SubscriptionGroupConfig getSubscriptionGroupConfig(String brokerAddr, String group) throws InterruptedException, RemotingException {
         GetSubscriptionGroupConfigRequestHeader header = new GetSubscriptionGroupConfigRequestHeader();
         header.setGroup(group);
 
@@ -1513,7 +1514,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), brokerAddr);
     }
 
-    public TopicConfigSerializeWrapper getAllTopicConfig(String addr, long timeoutMillis) throws InterruptedException, RemotingException {
+    public TopicConfigSerializeWrapper getAllTopicConfig(String addr) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_TOPIC_CONFIG, null);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -1525,7 +1526,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), addr);
     }
 
-    public void updateNameServerConfig(Properties properties, List<String> nameServers, long timeoutMillis) throws UnsupportedEncodingException, InterruptedException, RemotingException {
+    public void updateNameServerConfig(Properties properties, List<String> nameServers) throws UnsupportedEncodingException, InterruptedException, RemotingException {
         String str = BeanUtils.properties2String(properties);
         if (str.length() < 1) {
             return;
@@ -1553,7 +1554,7 @@ public class BrokerClient {
         }
     }
 
-    public Map<String, Properties> getNameServerConfig(List<String> nameServers, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public Map<String, Properties> getNameServerConfig(List<String> nameServers) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         List<String> invokeNameServers = (nameServers == null || nameServers.isEmpty())
             ? this.remotingClient.getNameServerAddressList()
             : nameServers;
@@ -1578,7 +1579,7 @@ public class BrokerClient {
         return configMap;
     }
 
-    public QueryConsumeQueueResponseBody queryConsumeQueue(String brokerAddr, String topic, int queueId, long index, int count, String consumerGroup, long timeoutMillis) throws InterruptedException, RemotingException {
+    public QueryConsumeQueueResponseBody queryConsumeQueue(String brokerAddr, String topic, int queueId, long index, int count, String consumerGroup) throws InterruptedException, RemotingException {
         QueryConsumeQueueRequestHeader requestHeader = new QueryConsumeQueueRequestHeader();
         requestHeader.setTopic(topic);
         requestHeader.setQueueId(queueId);
@@ -1597,7 +1598,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void checkClientInBroker(String brokerAddr, String consumerGroup, String clientId, SubscriptionData subscriptionData, long timeoutMillis) throws InterruptedException, RemotingException {
+    public void checkClientInBroker(String brokerAddr, String consumerGroup, String clientId, SubscriptionData subscriptionData) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CHECK_CLIENT_CONFIG, null);
 
         CheckClientRequestBody requestBody = new CheckClientRequestBody();
@@ -1614,7 +1615,7 @@ public class BrokerClient {
         }
     }
 
-    public boolean resumeCheckHalfMessage(String addr, String msgId, long timeoutMillis) throws RemotingException, InterruptedException {
+    public boolean resumeCheckHalfMessage(String addr, String msgId) throws RemotingException, InterruptedException {
         ResumeCheckHalfMessageRequestHeader requestHeader = new ResumeCheckHalfMessageRequestHeader();
         requestHeader.setMsgId(msgId);
 
@@ -1629,7 +1630,7 @@ public class BrokerClient {
         return false;
     }
 
-    public void setMessageRequestMode(String brokerAddr, String topic, String consumerGroup, MessageRequestMode mode, int popShareQueueNum, long timeoutMillis) throws InterruptedException, RemotingException {
+    public void setMessageRequestMode(String brokerAddr, String topic, String consumerGroup, MessageRequestMode mode, int popShareQueueNum) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.SET_MESSAGE_REQUEST_MODE, null);
 
         SetMessageRequestModeRequestBody requestBody = new SetMessageRequestModeRequestBody();
@@ -1647,7 +1648,7 @@ public class BrokerClient {
         }
     }
 
-    public TopicConfigAndQueueMapping getTopicConfig(String brokerAddr, String topic, long timeoutMillis) throws InterruptedException, RemotingException {
+    public TopicConfigAndQueueMapping getTopicConfig(String brokerAddr, String topic) throws InterruptedException, RemotingException {
         GetTopicConfigRequestHeader header = new GetTopicConfigRequestHeader();
         header.setTopic(topic);
         header.setLo(true);
@@ -1672,7 +1673,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public void createStaticTopic(String addr, String defaultTopic, TopicConfig topicConfig, TopicQueueMappingDetail topicQueueMappingDetail, boolean force, long timeoutMillis) throws InterruptedException, RemotingException {
+    public void createStaticTopic(String addr, String defaultTopic, TopicConfig topicConfig, TopicQueueMappingDetail topicQueueMappingDetail, boolean force) throws InterruptedException, RemotingException {
         CreateTopicRequestHeader requestHeader = new CreateTopicRequestHeader();
         requestHeader.setTopic(topicConfig.getTopicName());
         requestHeader.setDefaultTopic(defaultTopic);
@@ -1696,7 +1697,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public GroupForbidden updateAndGetGroupForbidden(String addr, UpdateGroupForbiddenRequestHeader requestHeader, long timeoutMillis) throws InterruptedException, RemotingException {
+    public GroupForbidden updateAndGetGroupForbidden(String addr, UpdateGroupForbiddenRequestHeader requestHeader) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_AND_GET_GROUP_FORBIDDEN, requestHeader);
 
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
@@ -1722,7 +1723,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark(), brokerAddr);
     }
 
-    public HARuntimeInfo getBrokerHAStatus(String brokerAddr, long timeoutMillis) throws InterruptedException, RemotingException {
+    public HARuntimeInfo getBrokerHAStatus(String brokerAddr) throws InterruptedException, RemotingException {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_BROKER_HA_STATUS, null);
         RemotingCommand response = this.remotingClient.invokeSync(brokerAddr, request, timeoutMillis);
         assert response != null;
@@ -1776,7 +1777,7 @@ public class BrokerClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public Map<String, Properties> getControllerConfig(List<String> controllerServers, long timeoutMillis) throws InterruptedException, RemotingException, UnsupportedEncodingException {
+    public Map<String, Properties> getControllerConfig(List<String> controllerServers) throws InterruptedException, RemotingException, UnsupportedEncodingException {
         List<String> invokeControllerServers = (controllerServers == null || controllerServers.isEmpty()) ? this.remotingClient.getNameServerAddressList() : controllerServers;
         if (invokeControllerServers == null || invokeControllerServers.isEmpty()) {
             return null;
@@ -1798,7 +1799,7 @@ public class BrokerClient {
         return configMap;
     }
 
-    public void updateControllerConfig(Properties properties, List<String> controllers, long timeoutMillis) throws InterruptedException, UnsupportedEncodingException, RemotingException {
+    public void updateControllerConfig(Properties properties, List<String> controllers) throws InterruptedException, UnsupportedEncodingException, RemotingException {
         String str = BeanUtils.properties2String(properties);
         if (str.length() < 1 || controllers == null || controllers.isEmpty()) {
             return;

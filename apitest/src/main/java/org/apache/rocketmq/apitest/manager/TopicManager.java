@@ -32,7 +32,7 @@ public class TopicManager {
         try {
             String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
 
-            return ClientManager.getClient().examineTopicConfig(brokerAddr, topic);
+            return ClientManager.getBrokerClient().getTopicConfig(brokerAddr, topic);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -42,17 +42,10 @@ public class TopicManager {
     public static void deleteTopic(String topic) {
         try {
             String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
-            Set<String> brokerSet = new HashSet<>();
-            brokerSet.add(brokerAddr);
-
-            ClientManager.getClient().deleteTopicInBroker(brokerSet, topic);
-
+            ClientManager.getBrokerClient().deleteTopicInBroker(brokerAddr, topic);
 
             String nameAddr = ConfigManager.getConfig().getString("nameAddr");
-            Set<String> nameSet = new HashSet<>();
-            nameSet.add(nameAddr);
-
-            ClientManager.getClient().deleteTopicInNameServer(nameSet, topic);
+            ClientManager.getBrokerClient().deleteTopicInNameServer(nameAddr, topic);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -88,7 +81,7 @@ public class TopicManager {
             TopicConfig topicConfig = new TopicConfig(topic);
             topicConfig.setAttributes(attributes);
 
-            ClientManager.getClient().createAndUpdateTopicConfig(brokerAddr, topicConfig);
+            ClientManager.getBrokerClient().createTopic(brokerAddr, topicConfig);
         } catch (Exception e) {
             e.printStackTrace();
         }
