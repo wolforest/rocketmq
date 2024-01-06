@@ -39,7 +39,15 @@ public class TopicConfig {
     private TopicFilterType topicFilterType = TopicFilterType.SINGLE_TAG;
     private int topicSysFlag = 0;
     private boolean order = false;
-    // Field attributes should not have ' ' char in key or value, otherwise will lead to decode failure.
+
+    /**
+     * Field attributes key should start with '+', and should not have ' ' char in key or value
+     *
+     * put("+" + TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE.getName(), TopicMessageType.FIFO.getValue());
+     * put("+" + TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE.getName(), TopicMessageType.DELAY.getValue());
+     * put("+" + TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE.getName(), TopicMessageType.TRANSACTION.getValue());
+     *
+     */
     private Map<String, String> attributes = new HashMap<>();
 
     public TopicConfig() {
