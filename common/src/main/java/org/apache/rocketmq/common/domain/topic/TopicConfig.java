@@ -28,13 +28,14 @@ import static org.apache.rocketmq.common.domain.topic.TopicAttributes.TOPIC_MESS
 
 public class TopicConfig {
     private static final String SEPARATOR = " ";
-    public static int defaultReadQueueNums = 16;
-    public static int defaultWriteQueueNums = 16;
+    public static final int DEFAULT_READ_QUEUE_NUMS = 16;
+    public static final int DEFAULT_WRITE_QUEUE_NUMS = 16;
     private static final TypeReference<Map<String, String>> ATTRIBUTES_TYPE_REFERENCE = new TypeReference<Map<String, String>>() {
     };
+
     private String topicName;
-    private int readQueueNums = defaultReadQueueNums;
-    private int writeQueueNums = defaultWriteQueueNums;
+    private int readQueueNums = DEFAULT_READ_QUEUE_NUMS;
+    private int writeQueueNums = DEFAULT_WRITE_QUEUE_NUMS;
     private int perm = PermName.PERM_READ | PermName.PERM_WRITE;
     private TopicFilterType topicFilterType = TopicFilterType.SINGLE_TAG;
     private int topicSysFlag = 0;
