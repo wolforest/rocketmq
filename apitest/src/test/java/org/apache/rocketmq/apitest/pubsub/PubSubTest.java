@@ -34,11 +34,11 @@ import org.apache.rocketmq.client.apis.producer.SendReceipt;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static org.junit.Assert.assertNotNull;
 
 public class PubSubTest extends ApiBaseTest {
     private static final Logger LOG = LoggerFactory.getLogger(PubSubTest.class);
@@ -79,7 +79,7 @@ public class PubSubTest extends ApiBaseTest {
 
             try {
                 SendReceipt sendReceipt = producer.send(message);
-                assertNotNull(sendReceipt);
+                Assert.assertNotNull(sendReceipt);
                 LOG.info("pub message: {}", sendReceipt);
             } catch (Throwable t) {
                 LOG.error("Failed to send message: {}", i, t);

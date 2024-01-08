@@ -2,20 +2,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>rocketmq-all</artifactId>
-        <groupId>org.apache.rocketmq</groupId>
-        <version>5.1.5-SNAPSHOT</version>
-    </parent>
 
+    <groupId>org.apache.rocketmq</groupId>
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
     <artifactId>rocketmq-api-test</artifactId>
-    <name>rocketmq-api-test ${project.version}</name>
+    <name>rocketmq-api-test</name>
+    <version>5.1.5-SNAPSHOT</version>
 
     <properties>
         <project.root>${basedir}/..</project.root>
-        <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 
     <dependencies>
@@ -28,27 +24,14 @@
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-common</artifactId>
+            <version>5.1.5-SNAPSHOT</version>
         </dependency>
-
-<!--        <dependency>-->
-<!--            <groupId>org.awaitility</groupId>-->
-<!--            <artifactId>awaitility</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.google.truth</groupId>-->
-<!--            <artifactId>truth</artifactId>-->
-<!--        </dependency>-->
-
 
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-remoting</artifactId>
+            <version>5.1.5-SNAPSHOT</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.springframework</groupId>-->
-<!--            <artifactId>spring-core</artifactId>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
 
         <dependency>
             <groupId>org.testng</groupId>
@@ -59,46 +42,12 @@
         <dependency>
             <groupId>io.github.aliyunmq</groupId>
             <artifactId>rocketmq-logback-classic</artifactId>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.aspectj</groupId>
-                        <artifactId>aspectjweaver</artifactId>
-                        <version>1.9.20.1</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <suiteXmlFiles>
-                        <suiteXmlFile>src/test/resources/suite/suite-apitest.xml</suiteXmlFile>
-                    </suiteXmlFiles>
-                    <argLine>
-                        --add-opens java.base/java.lang=ALL-UNNAMED
-                        --add-opens java.base/java.io=ALL-UNNAMED
-                        --add-opens java.base/java.util=ALL-UNNAMED
-                        --add-opens java.base/java.util.concurrent=ALL-UNNAMED
-                        --add-opens java.base/java.math=ALL-UNNAMED
-                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED
-                        --add-opens java.base/java.security=ALL-UNNAMED
-                    </argLine>
-                </configuration>
-            </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-compiler-plugin</artifactId>-->
-<!--                <version>3.8.1</version>-->
-<!--                <configuration>-->
-<!--                    <encoding>UTF-8</encoding>-->
-<!--                </configuration>-->
-
-<!--            </plugin>-->
         </plugins>
     </build>
 

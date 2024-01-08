@@ -22,13 +22,10 @@ import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 public class TopicTest extends ApiBaseTest {
     private static final Logger LOG = LoggerFactory.getLogger(TopicTest.class);
@@ -47,14 +44,14 @@ public class TopicTest extends ApiBaseTest {
         TopicManager.createTopic(topic);
 
         TopicConfig topicConfig = TopicManager.findTopic(topic);
-        assertNotNull(topicConfig);
-        assertEquals(topic, topicConfig.getTopicName());
-        assertEquals(TopicMessageType.NORMAL, topicConfig.getTopicMessageType());
+        Assert.assertNotNull(topicConfig);
+        Assert.assertEquals(topic, topicConfig.getTopicName());
+        Assert.assertEquals(TopicMessageType.NORMAL, topicConfig.getTopicMessageType());
 
         TopicManager.deleteTopic(topic);
 
         TopicConfig config2 = TopicManager.findTopic(topic);
-        assertNull(config2);
+        Assert.assertNull(config2);
     }
 
     @Test
@@ -63,14 +60,14 @@ public class TopicTest extends ApiBaseTest {
         TopicManager.createDelayTopic(topic);
 
         TopicConfig topicConfig = TopicManager.findTopic(topic);
-        assertNotNull(topicConfig);
-        assertEquals(topic, topicConfig.getTopicName());
-        assertEquals(TopicMessageType.DELAY, topicConfig.getTopicMessageType());
+        Assert.assertNotNull(topicConfig);
+        Assert.assertEquals(topic, topicConfig.getTopicName());
+        Assert.assertEquals(TopicMessageType.DELAY, topicConfig.getTopicMessageType());
 
         TopicManager.deleteTopic(topic);
 
         TopicConfig config2 = TopicManager.findTopic(topic);
-        assertNull(config2);
+        Assert.assertNull(config2);
     }
 
     @Test
@@ -79,13 +76,13 @@ public class TopicTest extends ApiBaseTest {
         TopicManager.createTransactionalTopic(topic);
 
         TopicConfig topicConfig = TopicManager.findTopic(topic);
-        assertNotNull(topicConfig);
-        assertEquals(topic, topicConfig.getTopicName());
-        assertEquals(TopicMessageType.TRANSACTION, topicConfig.getTopicMessageType());
+        Assert.assertNotNull(topicConfig);
+        Assert.assertEquals(topic, topicConfig.getTopicName());
+        Assert.assertEquals(TopicMessageType.TRANSACTION, topicConfig.getTopicMessageType());
 
         TopicManager.deleteTopic(topic);
 
         TopicConfig config2 = TopicManager.findTopic(topic);
-        assertNull(config2);
+        Assert.assertNull(config2);
     }
 }
