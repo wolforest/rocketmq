@@ -16,6 +16,10 @@
  */
 package org.apache.rocketmq.apitest.pubsub;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Map;
 import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.apitest.manager.ClientManager;
 import org.apache.rocketmq.apitest.manager.ConsumerManager;
@@ -30,14 +34,9 @@ import org.apache.rocketmq.client.apis.producer.SendReceipt;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Map;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -53,24 +52,20 @@ public class PubSubTest extends ApiBaseTest {
     private Producer producer;
 
 
-    @Before
-    public void before() throws Throwable {
-        super.before();
-
+    @BeforeMethod
+    public void beforeMethod() {
         createProducer();
         startConsumer();
     }
 
-    @After
-    public void after() {
+    @AfterMethod
+    public void afterMethod() {
         try {
             stopConsumer();
             stopProducer();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        super.after();
     }
 
     @Test

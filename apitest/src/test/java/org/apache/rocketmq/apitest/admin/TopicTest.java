@@ -18,13 +18,13 @@ package org.apache.rocketmq.apitest.admin;
 
 import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.apitest.manager.TopicManager;
-import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -33,14 +33,12 @@ import static org.junit.Assert.assertNull;
 public class TopicTest extends ApiBaseTest {
     private static final Logger LOG = LoggerFactory.getLogger(TopicTest.class);
 
-    @Before
-    public void before() throws Throwable {
-        super.before();
+    @BeforeMethod
+    public void beforeMethod() throws Throwable {
     }
 
-    @After
-    public void after() {
-        super.after();
+    @AfterMethod
+    public void afterMethod() {
     }
 
     @Test

@@ -46,9 +46,5 @@
             <version>2.9.0</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.rocketmq</groupId>
-            <artifactId>rocketmq-acl</artifactId>
-        </dependency>
     </dependencies>
 </project>

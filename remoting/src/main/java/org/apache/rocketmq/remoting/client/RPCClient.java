@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import org.apache.rocketmq.acl.common.AclClientRPCHook;
-import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.common.app.config.PlainAccessConfig;
 import org.apache.rocketmq.common.domain.constant.FIleReadaheadMode;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
@@ -182,16 +180,16 @@ public class RPCClient {
     protected long timeoutMillis = 5000;
 
     public RPCClient() {
-        this(null, null);
+        this(null);
     }
 
-    public RPCClient(String accessKey, String secretKey) {
+    public RPCClient(RPCHook hook) {
         NettyClientConfig nettyClientConfig = new NettyClientConfig();
         this.remotingClient = new NettyRemotingClient(nettyClientConfig, null);
 
         // Inject stream rpc hook first to make reserve field signature
         this.remotingClient.registerRPCHook(new StreamTypeRPCHook());
-        registerRPCHook(accessKey, secretKey);
+        registerRPCHook(hook);
         this.remotingClient.registerRPCHook(new DynamicalExtFieldRPCHook());
     }
 
@@ -199,13 +197,12 @@ public class RPCClient {
         this.timeoutMillis = timeoutMillis;
     }
 
-    private void registerRPCHook(String accessKey, String secretKey) {
-        if (StringUtils.isBlank(accessKey) || StringUtils.isBlank(secretKey)) {
+    private void registerRPCHook(RPCHook hook) {
+        if (null == hook) {
             return;
         }
 
-        RPCHook rpcHook = new AclClientRPCHook(new SessionCredentials(accessKey, secretKey));
-        this.remotingClient.registerRPCHook(rpcHook);
+        this.remotingClient.registerRPCHook(hook);
     }
 
     public List<String> getNameServerAddressList() {
