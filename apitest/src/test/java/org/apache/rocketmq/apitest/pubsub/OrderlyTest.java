@@ -50,7 +50,7 @@ public class OrderlyTest extends ApiBaseTest {
     private static final String CONSUMER_GROUP = GroupManager.createUniqueGroup();
     private static final String PRODUCE_GROUP = GroupManager.createUniqueGroup();
     private static final String MESSAGE_PREFIX = "MQM_DL_";
-    private static final String MESSAGE_BODY = "delay message body: ";
+    private static final String MESSAGE_BODY = "orderly message body: ";
 
     private PushConsumer consumer;
     private Producer producer;

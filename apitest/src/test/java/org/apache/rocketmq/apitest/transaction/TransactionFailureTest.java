@@ -47,8 +47,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 @Test(groups = {"client"})
-public class TransactionSuccessTest extends ApiBaseTest {
-    private static final Logger LOG = LoggerFactory.getLogger(TransactionSuccessTest.class);
+public class TransactionFailureTest extends ApiBaseTest {
+    private static final Logger LOG = LoggerFactory.getLogger(TransactionFailureTest.class);
     private static final String TOPIC = TopicManager.createUniqueTopic();
     private static final String CONSUMER_GROUP = GroupManager.createUniqueGroup();
     private static final String MESSAGE_PREFIX = "MQ_TRX_";
@@ -56,9 +56,6 @@ public class TransactionSuccessTest extends ApiBaseTest {
 
     private PushConsumer consumer;
     private Producer producer;
-
-    private final Set<String> messageIdSet = new HashSet<>();
-
 
     @BeforeMethod
     public void beforeMethod() {
@@ -96,11 +93,9 @@ public class TransactionSuccessTest extends ApiBaseTest {
 
                 String messageId = sendReceipt.getMessageId().toString();
                 Assert.assertNotNull(messageId);
-
-                messageIdSet.add(messageId);
                 LOG.info("pub message: {}", sendReceipt);
 
-                transaction.commit();
+                transaction.rollback();
             } catch (Throwable t) {
                 LOG.error("Failed to send message: {}", i, t);
             }
@@ -152,10 +147,7 @@ public class TransactionSuccessTest extends ApiBaseTest {
         LOG.info("create consume listener");
         return message -> {
             LOG.info("Consume message={}", message);
-            String messageId = message.getMessageId().toString();
-
-            Assert.assertEquals(TOPIC, message.getTopic());
-            Assert.assertTrue(messageIdSet.contains(messageId));
+            Assert.fail("consumer received unexpected messages");
 
             return ConsumeResult.SUCCESS;
         };

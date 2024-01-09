@@ -11,8 +11,11 @@
         <classes>
             <class name="org.apache.rocketmq.apitest.pubsub.PubSubTest" />
             <class name="org.apache.rocketmq.apitest.pubsub.OrderlyTest" />
-            <class name="org.apache.rocketmq.apitest.transaction.TransactionSuccessTest" />
             <class name="org.apache.rocketmq.apitest.schedule.DelayTest" />
+            <class name="org.apache.rocketmq.apitest.transaction.TransactionSuccessTest" />
+            <class name="org.apache.rocketmq.apitest.transaction.TransactionFailureTest" />
+            <class name="org.apache.rocketmq.apitest.transaction.CheckFailureTest" />
+            <class name="org.apache.rocketmq.apitest.transaction.CheckSuccessTest" />
         </classes>
     </test>
 </suite>

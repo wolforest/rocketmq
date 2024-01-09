@@ -35,7 +35,6 @@ import org.apache.rocketmq.client.apis.consumer.PushConsumer;
 import org.apache.rocketmq.client.apis.message.Message;
 import org.apache.rocketmq.client.apis.producer.Producer;
 import org.apache.rocketmq.client.apis.producer.SendReceipt;
-import org.apache.rocketmq.client.apis.producer.Transaction;
 import org.apache.rocketmq.client.apis.producer.TransactionChecker;
 import org.apache.rocketmq.client.apis.producer.TransactionResolution;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -47,8 +46,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 @Test(groups = {"client"})
-public class TransactionSuccessTest extends ApiBaseTest {
-    private static final Logger LOG = LoggerFactory.getLogger(TransactionSuccessTest.class);
+public class CheckSuccessTest extends ApiBaseTest {
+    private static final Logger LOG = LoggerFactory.getLogger(CheckSuccessTest.class);
     private static final String TOPIC = TopicManager.createUniqueTopic();
     private static final String CONSUMER_GROUP = GroupManager.createUniqueGroup();
     private static final String MESSAGE_PREFIX = "MQ_TRX_";
@@ -89,7 +88,7 @@ public class TransactionSuccessTest extends ApiBaseTest {
 
 
             try {
-                Transaction transaction = producer.beginTransaction();
+                producer.beginTransaction();
 
                 SendReceipt sendReceipt = producer.send(message);
                 Assert.assertNotNull(sendReceipt);
@@ -100,7 +99,7 @@ public class TransactionSuccessTest extends ApiBaseTest {
                 messageIdSet.add(messageId);
                 LOG.info("pub message: {}", sendReceipt);
 
-                transaction.commit();
+                //transaction.commit();
             } catch (Throwable t) {
                 LOG.error("Failed to send message: {}", i, t);
             }
