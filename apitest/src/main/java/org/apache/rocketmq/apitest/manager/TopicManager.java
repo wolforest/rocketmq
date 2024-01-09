@@ -49,39 +49,41 @@ public class TopicManager {
         }
     }
 
-    public static void createTopic(String topic) {
+    public static boolean createTopic(String topic) {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("+" + TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE.getName(), TopicMessageType.NORMAL.getValue());
-        createTopic(topic, attributes);
+        return createTopic(topic, attributes);
     }
 
-    public static void createFIFOTopic(String topic) {
+    public static boolean createFIFOTopic(String topic) {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("+" + TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE.getName(), TopicMessageType.FIFO.getValue());
-        createTopic(topic, attributes);
+        return createTopic(topic, attributes);
     }
 
-    public static void createDelayTopic(String topic) {
+    public static boolean createDelayTopic(String topic) {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("+" + TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE.getName(), TopicMessageType.DELAY.getValue());
-        createTopic(topic, attributes);
+        return createTopic(topic, attributes);
     }
 
-    public static void createTransactionalTopic(String topic) {
+    public static boolean createTransactionalTopic(String topic) {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("+" + TopicAttributes.TOPIC_MESSAGE_TYPE_ATTRIBUTE.getName(), TopicMessageType.TRANSACTION.getValue());
-        createTopic(topic, attributes);
+        return createTopic(topic, attributes);
     }
 
-    public static void createTopic(String topic, Map<String, String> attributes) {
+    public static boolean createTopic(String topic, Map<String, String> attributes) {
         try {
             String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
             TopicConfig topicConfig = new TopicConfig(topic);
             topicConfig.setAttributes(attributes);
 
             ClientManager.getClient().createTopic(brokerAddr, topicConfig);
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
 

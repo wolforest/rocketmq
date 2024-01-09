@@ -1,5 +1,6 @@
 package org.apache.rocketmq.apitest.manager;
 
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 
 public class GroupManager {
@@ -37,6 +38,10 @@ public class GroupManager {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static String createUniqueGroup() {
+        return GROUP_PREFIX + StringUtils.UUID();
     }
 
 }

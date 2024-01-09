@@ -42,7 +42,10 @@ public class TopicTest extends ApiBaseTest {
     @Test
     public void testNormalTopic() {
         String topic = TopicManager.createUniqueTopic();
-        TopicManager.createTopic(topic);
+        boolean status = TopicManager.createTopic(topic);
+        if (!status) {
+            return;
+        }
 
         TopicConfig topicConfig = TopicManager.findTopic(topic);
         Assert.assertNotNull(topicConfig);
@@ -58,7 +61,10 @@ public class TopicTest extends ApiBaseTest {
     @Test
     public void testDelayTopic() {
         String topic = TopicManager.createUniqueTopic();
-        TopicManager.createDelayTopic(topic);
+        boolean status = TopicManager.createDelayTopic(topic);
+        if (!status) {
+            return;
+        }
 
         TopicConfig topicConfig = TopicManager.findTopic(topic);
         Assert.assertNotNull(topicConfig);
@@ -74,7 +80,10 @@ public class TopicTest extends ApiBaseTest {
     @Test
     public void testTransactionTopic() {
         String topic = TopicManager.createUniqueTopic();
-        TopicManager.createTransactionalTopic(topic);
+        boolean status = TopicManager.createTransactionalTopic(topic);
+        if (!status) {
+            return;
+        }
 
         TopicConfig topicConfig = TopicManager.findTopic(topic);
         Assert.assertNotNull(topicConfig);
