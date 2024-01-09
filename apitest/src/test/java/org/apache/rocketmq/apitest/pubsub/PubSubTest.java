@@ -44,6 +44,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 
+@Test(groups = {"client"})
 public class PubSubTest extends ApiBaseTest {
     private static final Logger LOG = LoggerFactory.getLogger(PubSubTest.class);
     private static final String TOPIC = TopicManager.createUniqueTopic();
@@ -54,7 +55,7 @@ public class PubSubTest extends ApiBaseTest {
     private PushConsumer consumer;
     private Producer producer;
 
-    private Set<String> messageIdSet = new HashSet<>();
+    private final Set<String> messageIdSet = new HashSet<>();
 
 
     @BeforeMethod

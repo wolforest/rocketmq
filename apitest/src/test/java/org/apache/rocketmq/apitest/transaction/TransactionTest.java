@@ -16,5 +16,9 @@
  */
 package org.apache.rocketmq.apitest.transaction;
 
-public class TransactionTest {
+import org.apache.rocketmq.apitest.ApiBaseTest;
+import org.testng.annotations.Test;
+
+@Test(groups = {"client"})
+public class TransactionTest extends ApiBaseTest {
 }
