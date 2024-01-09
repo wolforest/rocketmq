@@ -19,11 +19,15 @@ package org.apache.rocketmq.apitest.pubsub;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.apitest.manager.ClientManager;
 import org.apache.rocketmq.apitest.manager.ConsumerManager;
+import org.apache.rocketmq.apitest.manager.GroupManager;
 import org.apache.rocketmq.apitest.manager.ProducerManager;
+import org.apache.rocketmq.apitest.manager.TopicManager;
 import org.apache.rocketmq.client.apis.consumer.ConsumeResult;
 import org.apache.rocketmq.client.apis.consumer.FilterExpression;
 import org.apache.rocketmq.client.apis.consumer.MessageListener;
@@ -42,14 +46,15 @@ import org.testng.annotations.Test;
 
 public class PubSubTest extends ApiBaseTest {
     private static final Logger LOG = LoggerFactory.getLogger(PubSubTest.class);
-    private static final String ACCOUNT_NAME = "default";
-    private static final String TOPIC = "MQ_TEST_TOPIC";
-    private static final String CONSUMER_GROUP = "MQ_TEST_GROUP";
-    private static final String MESSAGE_PREFIX = "MQ_TEST_KEY_PREFIX_";
+    private static final String TOPIC = TopicManager.createUniqueTopic();
+    private static final String CONSUMER_GROUP = GroupManager.createUniqueGroup();
+    private static final String MESSAGE_PREFIX = "MQT_";
     private static final String MESSAGE_BODY = "test message body: ";
 
     private PushConsumer consumer;
     private Producer producer;
+
+    private Set<String> messageIdSet = new HashSet<>();
 
 
     @BeforeMethod
@@ -63,6 +68,8 @@ public class PubSubTest extends ApiBaseTest {
         try {
             stopConsumer();
             stopProducer();
+            TopicManager.deleteTopic(TOPIC);
+            GroupManager.deleteGroup(CONSUMER_GROUP);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -74,12 +81,17 @@ public class PubSubTest extends ApiBaseTest {
             return;
         }
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100; i++) {
             Message message = createMessage(i);
 
             try {
                 SendReceipt sendReceipt = producer.send(message);
                 Assert.assertNotNull(sendReceipt);
+
+                String messageId = sendReceipt.getMessageId().toString();
+                Assert.assertNotNull(messageId);
+
+                messageIdSet.add(messageId);
                 LOG.info("pub message: {}", sendReceipt);
             } catch (Throwable t) {
                 LOG.error("Failed to send message: {}", i, t);
@@ -106,7 +118,7 @@ public class PubSubTest extends ApiBaseTest {
             return;
         }
 
-        ThreadUtils.sleep(5000);
+        ThreadUtils.sleep(10000);
         LOG.info("stop consumer");
 
         consumer.close();
@@ -125,6 +137,11 @@ public class PubSubTest extends ApiBaseTest {
         LOG.info("create consume listener");
         return message -> {
             LOG.info("Consume message={}", message);
+            String messageId = message.getMessageId().toString();
+
+            Assert.assertEquals(TOPIC, message.getTopic());
+            Assert.assertTrue(messageIdSet.contains(messageId));
+
             return ConsumeResult.SUCCESS;
         };
     }

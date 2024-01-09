@@ -20,7 +20,7 @@ public class GroupTest extends ApiBaseTest {
         SubscriptionGroupConfig groupConfig = GroupManager.findGroup(group);
         Assert.assertNotNull(groupConfig);
         Assert.assertEquals(group, groupConfig.getGroupName());
-        
+
         GroupManager.deleteGroup(group);
 
         SubscriptionGroupConfig groupConfig1 = GroupManager.findGroup(group);
