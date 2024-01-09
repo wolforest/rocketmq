@@ -21,7 +21,7 @@ public class GroupManager {
 
     }
 
-    public static SubscriptionGroupConfig getGroup(String group) {
+    public static SubscriptionGroupConfig findGroup(String group) {
         try {
             String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
             return ClientManager.getClient().getSubscriptionGroupConfig(brokerAddr, group);
