@@ -24,7 +24,7 @@ import org.apache.rocketmq.remoting.protocol.header.PullMessageRequestHeader;
 
 public class RequestBuilder {
 
-    private static Map<Integer, Class> requestCodeMap = new HashMap<>();
+    private static final Map<Integer, Class> requestCodeMap = new HashMap<>();
     static {
         requestCodeMap.put(RequestCode.PULL_MESSAGE, PullMessageRequestHeader.class);
     }
