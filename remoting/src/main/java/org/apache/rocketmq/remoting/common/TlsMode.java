@@ -31,7 +31,7 @@ public enum TlsMode {
     PERMISSIVE("permissive"),
     ENFORCING("enforcing");
 
-    private String name;
+    private final String name;
 
     TlsMode(String name) {
         this.name = name;
