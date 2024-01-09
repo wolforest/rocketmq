@@ -3,7 +3,6 @@
 <suite name="MQClientSuite">
     <groups>
         <run>
-            <include name="admin" />
             <include name="client" />
         </run>
     </groups>
@@ -11,7 +10,9 @@
     <test verbose="1" preserve-order="true" name="ApiTest">
         <classes>
             <class name="org.apache.rocketmq.apitest.pubsub.PubSubTest" />
-            <class name="org.apache.rocketmq.apitest.admin.TopicTest" />
+            <class name="org.apache.rocketmq.apitest.pubsub.OrderlyTest" />
+            <class name="org.apache.rocketmq.apitest.transaction.TransactionTest" />
+            <class name="org.apache.rocketmq.apitest.schedule.DelayTest" />
         </classes>
     </test>
 </suite>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="MQClientSuite">
+    <groups>
+        <run>
+            <include name="admin" />
+        </run>
+    </groups>
+
+    <test verbose="1" preserve-order="true" name="ApiTest">
+        <classes>
+            <class name="org.apache.rocketmq.apitest.admin.TopicTest" />
+            <class name="org.apache.rocketmq.apitest.admin.GroupTest" />
+        </classes>
+    </test>
+</suite>

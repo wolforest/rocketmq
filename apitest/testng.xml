@@ -6,6 +6,7 @@
     </listeners>
     <suite-files>
         <!-- hello world test suite -->
-        <suite-file path="src/test/resources/suite-apitest.xml" />
+        <suite-file path="src/test/resources/suite-admin.xml" />
+        <suite-file path="src/test/resources/suite-client.xml" />
     </suite-files>
 </suite>
