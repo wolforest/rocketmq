@@ -1,4 +1,4 @@
-package org.apache.rocketmq.apitest.pubsub;
+package org.apache.rocketmq.apitest.schedule;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,11 +28,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 @Test(groups = {"client"})
-public class OrderlyTest extends ApiBaseTest {
-    private static final Logger LOG = LoggerFactory.getLogger(OrderlyTest.class);
+public class DelayTest extends ApiBaseTest {
+    private static final Logger LOG = LoggerFactory.getLogger(DelayTest.class);
     private static final String TOPIC = TopicManager.createUniqueTopic();
     private static final String CONSUMER_GROUP = GroupManager.createUniqueGroup();
-    private static final String PRODUCE_GROUP = GroupManager.createUniqueGroup();
     private static final String MESSAGE_PREFIX = "MQM_DL_";
     private static final String MESSAGE_BODY = "delay message body: ";
 
@@ -137,7 +136,7 @@ public class OrderlyTest extends ApiBaseTest {
             .setTopic(TOPIC)
             .setKeys(MESSAGE_PREFIX + i)
             .setBody((MESSAGE_BODY + i).getBytes(StandardCharsets.UTF_8))
-            .setMessageGroup(PRODUCE_GROUP)
+            .setDeliveryTimestamp(System.currentTimeMillis() + 5000)
             .build();
     }
 
