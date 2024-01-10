@@ -65,7 +65,7 @@ public class ConfigManager {
 
         return ClientConfiguration.newBuilder()
             .setEndpoints(config.getString("proxyAddr"))
-            .enableSsl(false)
+            //.enableSsl(false)
             //.setCredentialProvider(sessionCredentialsProvider)
             .build();
     }

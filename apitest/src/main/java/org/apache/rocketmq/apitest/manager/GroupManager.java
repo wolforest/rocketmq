@@ -52,7 +52,7 @@ public class GroupManager {
             String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
             ClientManager.getClient().deleteSubscriptionGroup(brokerAddr, group, true);
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 

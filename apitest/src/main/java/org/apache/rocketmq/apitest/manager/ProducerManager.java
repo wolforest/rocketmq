@@ -57,6 +57,7 @@ public class ProducerManager {
 
             return builder.build();
         } catch (Exception e) {
+            e.printStackTrace();
             LOG.warn("can't connect to MQ server");
             return null;
         }

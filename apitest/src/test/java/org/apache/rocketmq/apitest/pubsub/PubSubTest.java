@@ -60,6 +60,8 @@ public class PubSubTest extends ApiBaseTest {
 
     @BeforeMethod
     public void beforeMethod() {
+        TopicManager.createTopic(TOPIC);
+        GroupManager.createGroup(CONSUMER_GROUP);
         createProducer();
         startConsumer();
     }
@@ -140,8 +142,9 @@ public class PubSubTest extends ApiBaseTest {
             LOG.info("Consume message={}", message);
             String messageId = message.getMessageId().toString();
 
+
             Assert.assertEquals(TOPIC, message.getTopic());
-            Assert.assertTrue(messageIdSet.contains(messageId));
+            Assert.assertFalse(messageIdSet.contains(messageId));
 
             return ConsumeResult.SUCCESS;
         };

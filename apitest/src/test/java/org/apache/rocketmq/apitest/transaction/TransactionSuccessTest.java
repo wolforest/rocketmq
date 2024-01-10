@@ -62,6 +62,8 @@ public class TransactionSuccessTest extends ApiBaseTest {
 
     @BeforeMethod
     public void beforeMethod() {
+        TopicManager.createTopic(TOPIC);
+        GroupManager.createGroup(CONSUMER_GROUP);
         createProducer();
         startConsumer();
     }

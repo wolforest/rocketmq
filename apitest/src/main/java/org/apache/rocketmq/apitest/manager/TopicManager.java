@@ -82,7 +82,7 @@ public class TopicManager {
             ClientManager.getClient().createTopic(brokerAddr, topicConfig);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return false;
         }
     }
