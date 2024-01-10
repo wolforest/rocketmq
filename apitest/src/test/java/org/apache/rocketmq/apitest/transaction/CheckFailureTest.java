@@ -57,7 +57,7 @@ public class CheckFailureTest extends ApiBaseTest {
 
     @BeforeMethod
     public void beforeMethod() {
-        TopicManager.createTopic(TOPIC);
+        TopicManager.createTransactionalTopic(TOPIC);
         GroupManager.createGroup(CONSUMER_GROUP);
         createProducer();
         startConsumer();

@@ -59,7 +59,7 @@ public class DelayTest extends ApiBaseTest {
 
     @BeforeMethod
     public void beforeMethod() {
-        TopicManager.createTopic(TOPIC);
+        TopicManager.createDelayTopic(TOPIC);
         GroupManager.createGroup(CONSUMER_GROUP);
         createProducer();
         startConsumer();

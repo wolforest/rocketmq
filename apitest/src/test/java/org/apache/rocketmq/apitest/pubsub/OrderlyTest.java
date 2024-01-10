@@ -60,7 +60,7 @@ public class OrderlyTest extends ApiBaseTest {
 
     @BeforeMethod
     public void beforeMethod() {
-        TopicManager.createTopic(TOPIC);
+        TopicManager.createFIFOTopic(TOPIC);
         GroupManager.createGroup(CONSUMER_GROUP);
         createProducer();
         startConsumer();
