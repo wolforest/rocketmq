@@ -7,7 +7,7 @@
         </run>
     </groups>
 
-    <test verbose="1" preserve-order="true" name="ApiTest">
+    <test verbose="1" preserve-order="true" name="ClientTest">
         <classes>
             <class name="org.apache.rocketmq.apitest.pubsub.PubSubTest" />
             <class name="org.apache.rocketmq.apitest.pubsub.OrderlyTest" />
