@@ -2,7 +2,7 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
 <suite name="TestSuite">
     <listeners>
-<!--        <listener class-name="study.daydayup.hello.test.TestNGListener" />-->
+        <listener class-name="org.apache.rocketmq.apitest.test.TestNGListener" />
     </listeners>
     <suite-files>
         <!-- hello world test suite -->
