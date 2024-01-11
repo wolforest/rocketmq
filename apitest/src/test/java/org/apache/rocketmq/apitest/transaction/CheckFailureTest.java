@@ -88,7 +88,7 @@ public class CheckFailureTest extends ApiBaseTest {
             try {
                 Transaction transaction = producer.beginTransaction();
 
-                SendReceipt sendReceipt = producer.send(message);
+                SendReceipt sendReceipt = producer.send(message, transaction);
                 Assert.assertNotNull(sendReceipt);
 
                 String messageId = sendReceipt.getMessageId().toString();
@@ -121,7 +121,7 @@ public class CheckFailureTest extends ApiBaseTest {
             return;
         }
 
-        ThreadUtils.sleep(10000);
+        ThreadUtils.sleep(30000);
         LOG.info("stop consumer");
 
         consumer.close();

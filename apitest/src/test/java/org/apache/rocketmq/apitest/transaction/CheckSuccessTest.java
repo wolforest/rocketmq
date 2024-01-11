@@ -35,6 +35,7 @@ import org.apache.rocketmq.client.apis.consumer.PushConsumer;
 import org.apache.rocketmq.client.apis.message.Message;
 import org.apache.rocketmq.client.apis.producer.Producer;
 import org.apache.rocketmq.client.apis.producer.SendReceipt;
+import org.apache.rocketmq.client.apis.producer.Transaction;
 import org.apache.rocketmq.client.apis.producer.TransactionChecker;
 import org.apache.rocketmq.client.apis.producer.TransactionResolution;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -90,9 +91,9 @@ public class CheckSuccessTest extends ApiBaseTest {
 
 
             try {
-                producer.beginTransaction();
+                Transaction transaction = producer.beginTransaction();
 
-                SendReceipt sendReceipt = producer.send(message);
+                SendReceipt sendReceipt = producer.send(message, transaction);
                 Assert.assertNotNull(sendReceipt);
 
                 String messageId = sendReceipt.getMessageId().toString();
@@ -127,7 +128,7 @@ public class CheckSuccessTest extends ApiBaseTest {
             return;
         }
 
-        ThreadUtils.sleep(10000);
+        ThreadUtils.sleep(30000);
         LOG.info("stop consumer");
 
         consumer.close();

@@ -93,7 +93,7 @@ public class TransactionSuccessTest extends ApiBaseTest {
             try {
                 Transaction transaction = producer.beginTransaction();
 
-                SendReceipt sendReceipt = producer.send(message);
+                SendReceipt sendReceipt = producer.send(message, transaction);
                 Assert.assertNotNull(sendReceipt);
 
                 String messageId = sendReceipt.getMessageId().toString();
