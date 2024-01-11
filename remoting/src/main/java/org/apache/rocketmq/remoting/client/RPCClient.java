@@ -799,13 +799,15 @@ public class RPCClient {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_COLD_DATA_FLOW_CTR_INFO, null);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            if (null != response.getBody() && response.getBody().length > 0) {
-                return new String(response.getBody(), MQConstants.DEFAULT_CHARSET);
-            }
-            return null;
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
         }
-        throw new RemotingException(response.getCode(), response.getRemark());
+
+        if (null != response.getBody() && response.getBody().length > 0) {
+            return new String(response.getBody(), MQConstants.DEFAULT_CHARSET);
+        }
+        return null;
     }
 
     public String setCommitLogReadAheadMode(String addr, String mode) throws InterruptedException, RemotingException {
@@ -815,13 +817,15 @@ public class RPCClient {
         request.setExtFields(extFields);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
         assert response != null;
-        if (response.getCode() == SUCCESS) {
-            if (null != response.getRemark() && response.getRemark().length() > 0) {
-                return response.getRemark();
-            }
-            return null;
+
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
         }
-        throw new RemotingException(response.getCode(), response.getRemark());
+
+        if (null != response.getRemark() && response.getRemark().length() > 0) {
+            return response.getRemark();
+        }
+        return null;
     }
 
     /**
@@ -862,7 +866,6 @@ public class RPCClient {
                 if (allowTopicNotExist) {
                     LOG.warn("get Topic [{}] RouteInfoFromNameServer is not exist value", topic);
                 }
-
                 break;
             }
             case ResponseCode.SUCCESS: {
