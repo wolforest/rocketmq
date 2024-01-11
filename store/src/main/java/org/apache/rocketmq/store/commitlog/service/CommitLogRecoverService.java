@@ -177,6 +177,7 @@ public class CommitLogRecoverService {
             this.mappedFileQueue.setCommittedWhere(0);
             this.defaultMessageStore.getConsumeQueueStore().destroy();
             this.defaultMessageStore.getConsumeQueueStore().loadAfterDestroy();
+            return;
         }
 
         // Looking beginning to recover from which file

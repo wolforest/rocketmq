@@ -17,12 +17,21 @@
 package org.apache.rocketmq.apitest.admin;
 
 import org.apache.rocketmq.apitest.ApiBaseTest;
+import org.apache.rocketmq.apitest.manager.BrokerManager;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 @Test(groups = "admin")
 public class ClusterTest extends ApiBaseTest {
 
+    @Test
     public void testGetClusterInfoWork() {
-        
+        ClusterInfo clusterInfo = BrokerManager.getClusterInfo();
+        if (clusterInfo == null) {
+            return;
+        }
+
+        Assert.assertFalse(clusterInfo.getBrokerAddrTable().isEmpty());
     }
 }

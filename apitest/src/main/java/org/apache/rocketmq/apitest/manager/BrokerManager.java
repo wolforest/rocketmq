@@ -21,6 +21,7 @@ import java.util.Properties;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 
 public class BrokerManager {
+    private static final String DEFAULT_CLUSTER = "DefaultCluster";
 
     public static ClusterInfo getClusterInfo() {
         try {
@@ -28,10 +29,7 @@ public class BrokerManager {
             return ClientManager.getClient().getBrokerClusterInfo(nameAddr);
         } catch (Exception e) {
             e.printStackTrace();
-            ClusterInfo info = new ClusterInfo();
-            info.setBrokerAddrTable(new HashMap<>());
-            info.setClusterAddrTable(new HashMap<>());
-            return info;
+            return null;
         }
     }
 
