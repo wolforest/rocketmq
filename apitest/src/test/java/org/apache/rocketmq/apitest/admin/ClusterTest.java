@@ -18,12 +18,15 @@ package org.apache.rocketmq.apitest.admin;
 
 import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.apitest.manager.BrokerManager;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 @Test(groups = "admin")
 public class ClusterTest extends ApiBaseTest {
+    private static final Logger LOG = LoggerFactory.getLogger(ClusterTest.class);
 
     @Test
     public void testGetClusterInfoWork() {
@@ -35,5 +38,6 @@ public class ClusterTest extends ApiBaseTest {
         Assert.assertFalse(clusterInfo.getBrokerAddrTable().isEmpty());
         Assert.assertFalse(clusterInfo.getClusterAddrTable().isEmpty());
         Assert.assertFalse(clusterInfo.getAllAddr().isEmpty());
+        LOG.info("testGetClusterInfoWork ok");
     }
 }

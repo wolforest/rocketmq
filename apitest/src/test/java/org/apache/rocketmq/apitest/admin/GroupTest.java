@@ -18,12 +18,15 @@ package org.apache.rocketmq.apitest.admin;
 
 import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.apitest.manager.GroupManager;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.junit.Assert;
 import org.testng.annotations.Test;
 
 @Test(groups = "admin")
 public class GroupTest extends ApiBaseTest {
+    private static final Logger LOG = LoggerFactory.getLogger(GroupTest.class);
 
     @Test
     public void testAddAndDeleteGroupTest() {
@@ -41,5 +44,6 @@ public class GroupTest extends ApiBaseTest {
 
         SubscriptionGroupConfig groupConfig1 = GroupManager.findGroup(group);
         Assert.assertNull(groupConfig1);
+        LOG.info("testAddAndDeleteGroupTest ok");
     }
 }

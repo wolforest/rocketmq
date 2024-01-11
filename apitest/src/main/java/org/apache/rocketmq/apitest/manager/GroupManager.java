@@ -17,18 +17,25 @@
 package org.apache.rocketmq.apitest.manager;
 
 import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 
 public class GroupManager {
     private static final String GROUP_PREFIX = "MQG_";
 
     public static boolean createGroup(String group) {
+        ClusterInfo clusterInfo = BrokerManager.getClusterInfo();
+        if (clusterInfo == null) {
+            return false;
+        }
+
         SubscriptionGroupConfig config = new SubscriptionGroupConfig();
         config.setGroupName(group);
 
-        String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
         try {
-            ClientManager.getClient().createSubscriptionGroup(brokerAddr, config);
+            for (String addr: clusterInfo.getAllAddr()) {
+                ClientManager.getClient().createSubscriptionGroup(addr, config);
+            }
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -38,9 +45,21 @@ public class GroupManager {
     }
 
     public static SubscriptionGroupConfig findGroup(String group) {
+        ClusterInfo clusterInfo = BrokerManager.getClusterInfo();
+        if (clusterInfo == null) {
+            return null;
+        }
+
         try {
-            String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
-            return ClientManager.getClient().getSubscriptionGroupConfig(brokerAddr, group);
+            SubscriptionGroupConfig config = null;
+            for (String addr: clusterInfo.getAllAddr()) {
+                config = ClientManager.getClient().getSubscriptionGroupConfig(addr, group);
+                if (config == null) {
+                    return null;
+                }
+            }
+
+            return config;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -48,11 +67,17 @@ public class GroupManager {
     }
 
     public static void deleteGroup(String group) {
+        ClusterInfo clusterInfo = BrokerManager.getClusterInfo();
+        if (clusterInfo == null) {
+            return ;
+        }
+
         try {
-            String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
-            ClientManager.getClient().deleteSubscriptionGroup(brokerAddr, group, true);
+            for (String addr: clusterInfo.getAllAddr()) {
+                ClientManager.getClient().deleteSubscriptionGroup(addr, group, true);
+            }
         } catch (Exception e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 

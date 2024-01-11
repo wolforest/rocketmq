@@ -22,15 +22,27 @@ import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.common.domain.topic.TopicAttributes;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 
 public class TopicManager {
     private static final String TOPIC_PREFIX = "MQT_";
 
     public static TopicConfig findTopic(String topic) {
-        try {
-            String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
+        ClusterInfo clusterInfo = BrokerManager.getClusterInfo();
+        if (clusterInfo == null) {
+            return null;
+        }
 
-            return ClientManager.getClient().getTopicConfig(brokerAddr, topic);
+        try {
+            TopicConfig topicConfig = null;
+            for (String addr: clusterInfo.getAllAddr()) {
+                topicConfig = ClientManager.getClient().getTopicConfig(addr, topic);
+                if (topicConfig == null) {
+                    return null;
+                }
+            }
+
+            return topicConfig;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -38,9 +50,15 @@ public class TopicManager {
     }
 
     public static void deleteTopic(String topic) {
+        ClusterInfo clusterInfo = BrokerManager.getClusterInfo();
+        if (clusterInfo == null) {
+            return;
+        }
+
         try {
-            String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
-            ClientManager.getClient().deleteTopicInBroker(brokerAddr, topic);
+            for (String addr: clusterInfo.getAllAddr()) {
+                ClientManager.getClient().deleteTopicInBroker(addr, topic);
+            }
 
             String nameAddr = ConfigManager.getConfig().getString("nameAddr");
             ClientManager.getClient().deleteTopicInNameServer(nameAddr, topic);
@@ -74,12 +92,18 @@ public class TopicManager {
     }
 
     public static boolean createTopic(String topic, Map<String, String> attributes) {
+        ClusterInfo clusterInfo = BrokerManager.getClusterInfo();
+        if (clusterInfo == null) {
+            return false;
+        }
         try {
-            String brokerAddr = ConfigManager.getConfig().getString("brokerAddr");
             TopicConfig topicConfig = new TopicConfig(topic);
             topicConfig.setAttributes(attributes);
 
-            ClientManager.getClient().createTopic(brokerAddr, topicConfig);
+            for (String addr: clusterInfo.getAllAddr()) {
+                ClientManager.getClient().createTopic(addr, topicConfig);
+            }
+
             return true;
         } catch (Exception e) {
             //e.printStackTrace();

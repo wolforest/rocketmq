@@ -16,11 +16,21 @@
  */
 package org.apache.rocketmq.apitest.manager;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 
 public class BrokerManager {
 
+    public static List<String> getAddrList() {
+        ClusterInfo clusterInfo = getClusterInfo();
+        if (clusterInfo == null) {
+            return new ArrayList<>();
+        }
+
+        return clusterInfo.getAllAddr();
+    }
 
     public static ClusterInfo getClusterInfo() {
         try {
