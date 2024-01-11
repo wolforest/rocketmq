@@ -1221,11 +1221,13 @@ public class RPCClient {
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
 
-        if (response.getCode() == SUCCESS) {
-            byte[] body = response.getBody();
-            if (body != null) {
-                return TopicList.decode(body, TopicList.class);
-            }
+        if (response.getCode() != SUCCESS) {
+            throw new RemotingException(response.getCode(), response.getRemark());
+        }
+
+        byte[] body = response.getBody();
+        if (body != null) {
+            return TopicList.decode(body, TopicList.class);
         }
 
         throw new RemotingException(response.getCode(), response.getRemark());
