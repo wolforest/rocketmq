@@ -47,15 +47,12 @@ public interface RemotingClient extends RemotingService {
         throws InterruptedException, RemotingConnectException, RemotingTooMuchRequestException,
         RemotingTimeoutException, RemotingSendRequestException;
 
-    default CompletableFuture<RemotingCommand> invoke(final String addr, final RemotingCommand request,
-        final long timeoutMillis) {
+    default CompletableFuture<RemotingCommand> invoke(final String addr, final RemotingCommand request, final long timeoutMillis) {
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
             invokeAsync(addr, request, timeoutMillis, new InvokeCallback() {
-
                 @Override
                 public void operationComplete(ResponseFuture responseFuture) {
-
                 }
 
                 @Override
