@@ -1349,20 +1349,31 @@ public class RPCClient {
         throw new RemotingException(response.getCode(), response.getRemark());
     }
 
-    public Map<Integer, Long> queryCorrectionOffset(String addr, String topic, String group, Set<String> filterGroup) throws RemotingException, InterruptedException {
+    private void setFilterGroups(QueryCorrectionOffsetHeader requestHeader, Set<String> filterGroup) {
+        if (filterGroup == null) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        String split = "";
+        for (String s : filterGroup) {
+            sb.append(split).append(s);
+            split = ",";
+        }
+        requestHeader.setFilterGroups(sb.toString());
+    }
+
+    private QueryCorrectionOffsetHeader initQueryCorrectionOffsetHeader(String topic, String group, Set<String> filterGroup) {
         QueryCorrectionOffsetHeader requestHeader = new QueryCorrectionOffsetHeader();
         requestHeader.setCompareGroup(group);
         requestHeader.setTopic(topic);
+        setFilterGroups(requestHeader, filterGroup);
 
-        if (filterGroup != null) {
-            StringBuilder sb = new StringBuilder();
-            String split = "";
-            for (String s : filterGroup) {
-                sb.append(split).append(s);
-                split = ",";
-            }
-            requestHeader.setFilterGroups(sb.toString());
-        }
+        return requestHeader;
+    }
+
+    public Map<Integer, Long> queryCorrectionOffset(String addr, String topic, String group, Set<String> filterGroup) throws RemotingException, InterruptedException {
+        QueryCorrectionOffsetHeader requestHeader = initQueryCorrectionOffsetHeader(topic, group, filterGroup);
 
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CORRECTION_OFFSET, requestHeader);
         RemotingCommand response = this.remotingClient.invokeSync(addr, request, timeoutMillis);
