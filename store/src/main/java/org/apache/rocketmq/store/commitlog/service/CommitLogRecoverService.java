@@ -170,13 +170,9 @@ public class CommitLogRecoverService {
         boolean checkCRCOnRecover = this.defaultMessageStore.getMessageStoreConfig().isCheckCRCOnRecover();
         boolean checkDupInfo = this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable();
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
-        // Commitlog case files are deleted
+
         if (mappedFiles.isEmpty()) {
-            log.warn("The commitlog files are deleted, and delete the consume queue files");
-            this.mappedFileQueue.setFlushedWhere(0);
-            this.mappedFileQueue.setCommittedWhere(0);
-            this.defaultMessageStore.getConsumeQueueStore().destroy();
-            this.defaultMessageStore.getConsumeQueueStore().loadAfterDestroy();
+            recoverWithoutMappedFile();
             return;
         }
 
