@@ -47,14 +47,17 @@ public class ClusterInfo extends RemotingSerializable {
 
     public String[] retrieveAllAddrByCluster(String cluster) {
         List<String> addrs = new ArrayList<>();
-        if (clusterAddrTable.containsKey(cluster)) {
-            Set<String> brokerNames = clusterAddrTable.get(cluster);
-            for (String brokerName : brokerNames) {
-                BrokerData brokerData = brokerAddrTable.get(brokerName);
-                if (null != brokerData) {
-                    addrs.addAll(brokerData.getBrokerAddrs().values());
-                }
+        if (!clusterAddrTable.containsKey(cluster)) {
+            return new String[]{};
+        }
+
+        Set<String> brokerNames = clusterAddrTable.get(cluster);
+        for (String brokerName : brokerNames) {
+            BrokerData brokerData = brokerAddrTable.get(brokerName);
+            if (null == brokerData) {
+                continue;
             }
+            addrs.addAll(brokerData.getBrokerAddrs().values());
         }
 
         return addrs.toArray(new String[] {});
