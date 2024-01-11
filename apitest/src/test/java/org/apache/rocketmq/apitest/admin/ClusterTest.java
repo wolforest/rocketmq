@@ -33,5 +33,7 @@ public class ClusterTest extends ApiBaseTest {
         }
 
         Assert.assertFalse(clusterInfo.getBrokerAddrTable().isEmpty());
+        Assert.assertFalse(clusterInfo.getClusterAddrTable().isEmpty());
+        Assert.assertFalse(clusterInfo.getAllAddr().isEmpty());
     }
 }

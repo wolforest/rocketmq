@@ -16,12 +16,11 @@
  */
 package org.apache.rocketmq.apitest.manager;
 
-import java.util.HashMap;
 import java.util.Properties;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 
 public class BrokerManager {
-    private static final String DEFAULT_CLUSTER = "DefaultCluster";
+
 
     public static ClusterInfo getClusterInfo() {
         try {

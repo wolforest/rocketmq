@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.rocketmq.common.app.BrokerIdentity;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 
@@ -45,10 +46,14 @@ public class ClusterInfo extends RemotingSerializable {
         this.clusterAddrTable = clusterAddrTable;
     }
 
-    public String[] retrieveAllAddrByCluster(String cluster) {
+    public List<String> getAllAddr() {
+        return getAllAddr(BrokerIdentity.DEFAULT_CLUSTER_NAME);
+    }
+
+    public List<String> getAllAddr(String cluster) {
         List<String> addrs = new ArrayList<>();
         if (!clusterAddrTable.containsKey(cluster)) {
-            return new String[]{};
+            return addrs;
         }
 
         Set<String> brokerNames = clusterAddrTable.get(cluster);
@@ -59,6 +64,12 @@ public class ClusterInfo extends RemotingSerializable {
             }
             addrs.addAll(brokerData.getBrokerAddrs().values());
         }
+
+        return addrs;
+    }
+
+    public String[] retrieveAllAddrByCluster(String cluster) {
+        List<String> addrs = getAllAddr(cluster);
 
         return addrs.toArray(new String[] {});
     }

@@ -30,7 +30,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class BrokerIdentity {
-    private static final String DEFAULT_CLUSTER_NAME = "DefaultCluster";
+    public static final String DEFAULT_CLUSTER_NAME = "DefaultCluster";
 
     protected static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
 
