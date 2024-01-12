@@ -16,5 +16,5 @@
  */
 package org.apache.rocketmq.remoting.client;
 
-public class NameServerClient extends RPCClient {
+public class NameServerClientDefault extends DefaultRPCClient {
 }

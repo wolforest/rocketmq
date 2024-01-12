@@ -17,12 +17,12 @@
 package org.apache.rocketmq.apitest.manager;
 
 import org.apache.rocketmq.client.apis.ClientServiceProvider;
-import org.apache.rocketmq.remoting.client.RPCClient;
+import org.apache.rocketmq.remoting.client.DefaultRPCClient;
 
 import static org.apache.rocketmq.common.utils.NameServerAddressUtils.NAMESRV_ADDR_PROPERTY;
 
 public class ClientManager {
-    private static RPCClient client = null;
+    private static DefaultRPCClient client = null;
 
     private static final ClientServiceProvider PROVIDER = ClientServiceProvider.loadService();
 
@@ -30,7 +30,7 @@ public class ClientManager {
         return PROVIDER;
     }
 
-    public static RPCClient getClient() {
+    public static DefaultRPCClient getClient() {
         return client;
     }
 
@@ -40,7 +40,7 @@ public class ClientManager {
         }
 
         System.setProperty(NAMESRV_ADDR_PROPERTY, ConfigManager.getConfig().getString("nameAddr"));
-        client = new RPCClient();
+        client = new DefaultRPCClient();
         client.start();
     }
 
