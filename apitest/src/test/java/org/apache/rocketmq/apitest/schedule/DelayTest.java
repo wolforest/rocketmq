@@ -19,9 +19,8 @@ package org.apache.rocketmq.apitest.schedule;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.apitest.manager.ClientManager;
 import org.apache.rocketmq.apitest.manager.ConsumerManager;
@@ -50,11 +49,12 @@ public class DelayTest extends ApiBaseTest {
     private static final String CONSUMER_GROUP = GroupManager.createUniqueGroup();
     private static final String MESSAGE_PREFIX = "MQM_DL_";
     private static final String MESSAGE_BODY = "delay message body: ";
+    private static final long DELAY_TIME = 5000;
 
     private PushConsumer consumer;
     private Producer producer;
 
-    private final Set<String> messageIdSet = new HashSet<>();
+    private final Map<String, Long> pubTimeMap = new HashMap<>();
 
 
     @BeforeMethod
@@ -93,7 +93,7 @@ public class DelayTest extends ApiBaseTest {
                 String messageId = sendReceipt.getMessageId().toString();
                 Assert.assertNotNull(messageId);
 
-                messageIdSet.add(messageId);
+                pubTimeMap.put(messageId, System.currentTimeMillis());
                 LOG.info("pub message: {}", sendReceipt);
             } catch (Throwable t) {
                 LOG.error("Failed to send message: {}", i, t);
@@ -142,7 +142,12 @@ public class DelayTest extends ApiBaseTest {
             String messageId = message.getMessageId().toString();
 
             Assert.assertEquals(TOPIC, message.getTopic());
-            Assert.assertTrue(messageIdSet.contains(messageId));
+            Assert.assertTrue(pubTimeMap.containsKey(messageId));
+
+            long consumeTime = System.currentTimeMillis();
+            long elapsedTime = consumeTime - pubTimeMap.get(messageId);
+            Assert.assertTrue(elapsedTime > DELAY_TIME);
+
 
             return ConsumeResult.SUCCESS;
         };
@@ -154,7 +159,7 @@ public class DelayTest extends ApiBaseTest {
             .setTopic(TOPIC)
             .setKeys(MESSAGE_PREFIX + i)
             .setBody((MESSAGE_BODY + i).getBytes(StandardCharsets.UTF_8))
-            .setDeliveryTimestamp(System.currentTimeMillis() + 5000)
+            .setDeliveryTimestamp(System.currentTimeMillis() + DELAY_TIME)
             .build();
     }
 
