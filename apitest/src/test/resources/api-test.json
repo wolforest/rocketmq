@@ -1,7 +1,6 @@
 {
-  "proxyAddr": "127.0.0.1:8080",
-  "nameAddr": "127.0.0.1:9876",
-  "brokerAddr": "127.0.0.1:10911",
+  "proxyAddr": "172.16.0.132:8080,172.16.0.133:8080",
+  "nameAddr": "172.16.0.132:9876",
   "accounts": {
     "default": {
       "accessKey": "rocketmq2",
