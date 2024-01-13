@@ -351,12 +351,10 @@ public class PopReviveService extends ServiceThread {
                 break;
             case NO_MATCHED_MESSAGE:
                 pullStatus = PullStatus.NO_MATCHED_MSG;
-                POP_LOGGER.debug("no matched message. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}",
-                    getMessageResult.getStatus(), topic, group, offset);
+                POP_LOGGER.debug("no matched message. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}", getMessageResult.getStatus(), topic, group, offset);
                 break;
             case NO_MESSAGE_IN_QUEUE:
-                POP_LOGGER.debug("no new message. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}",
-                    getMessageResult.getStatus(), topic, group, offset);
+                POP_LOGGER.debug("no new message. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}", getMessageResult.getStatus(), topic, group, offset);
                 break;
             case MESSAGE_WAS_REMOVING:
             case NO_MATCHED_LOGIC_QUEUE:
@@ -364,8 +362,7 @@ public class PopReviveService extends ServiceThread {
             case OFFSET_OVERFLOW_BADLY:
             case OFFSET_TOO_SMALL:
                 pullStatus = PullStatus.OFFSET_ILLEGAL;
-                POP_LOGGER.warn("offset illegal. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}",
-                    getMessageResult.getStatus(), topic, group, offset);
+                POP_LOGGER.warn("offset illegal. GetMessageStatus={}, topic={}, groupId={}, requestOffset={}", getMessageResult.getStatus(), topic, group, offset);
                 break;
             case OFFSET_OVERFLOW_ONE:
                 // no need to print WARN, because we use "offset + 1" to get the next message
@@ -383,8 +380,7 @@ public class PopReviveService extends ServiceThread {
         brokerController.getBrokerStatsManager().incGroupGetNums(group, topic, getMessageResult.getMessageCount());
         brokerController.getBrokerStatsManager().incGroupGetSize(group, topic, getMessageResult.getBufferTotalSize());
         brokerController.getBrokerStatsManager().incBrokerGetNums(topic, getMessageResult.getMessageCount());
-        brokerController.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId,
-            brokerController.getMessageStore().now() - foundList.get(foundList.size() - 1).getStoreTimestamp());
+        brokerController.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId, brokerController.getMessageStore().now() - foundList.get(foundList.size() - 1).getStoreTimestamp());
 
         Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
             .put(LABEL_TOPIC, topic)
@@ -465,8 +461,9 @@ public class PopReviveService extends ServiceThread {
         long timerDelay = brokerController.getMessageStore().getTimerMessageStore().getTimerState().getDequeueBehind();
         long commitLogDelay = brokerController.getMessageStore().getTimerMessageStore().getEnqueueBehind();
         // move endTime
-        if (context.getEndTime() != 0 && System.currentTimeMillis() - context.getEndTime() > 3 * PopConstants.SECOND && timerDelay <= 0 && commitLogDelay <= 0) {
-            context.setEndTime(System.currentTimeMillis());
+        long now = System.currentTimeMillis();
+        if (context.getEndTime() != 0 &&  now - context.getEndTime() > 3 * PopConstants.SECOND && timerDelay <= 0 && commitLogDelay <= 0) {
+            context.setEndTime(now);
         }
         POP_LOGGER.info("reviveQueueId={}, offset is {}, can not get new msg, old endTime {}, new endTime {}, timerDelay={}, commitLogDelay={} ",
             queueId, context.getOffset(), old, context.getEndTime(), timerDelay, commitLogDelay);
@@ -776,7 +773,7 @@ public class PopReviveService extends ServiceThread {
     private void cleanInflightMap() {
         for (Map.Entry<PopCheckPoint, Pair<Long, Boolean>> entry : inflightReviveRequestMap.entrySet()) {
             Pair<Long, Boolean> pair = entry.getValue();
-            if (!pair.getObject2()) {
+            if (null == pair.getObject2() || !pair.getObject2()) {
                 break;
             }
 

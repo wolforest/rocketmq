@@ -200,8 +200,7 @@ public class EscapeBridge {
         }
 
         if (!canEscape()) {
-            LOG.warn("Put message to specific queue failed, enableSlaveActingMaster={}, enableRemoteEscape={}.",
-                this.brokerController.getBrokerConfig().isEnableSlaveActingMaster(), this.brokerController.getBrokerConfig().isEnableRemoteEscape());
+            LOG.warn("Put message to specific queue failed, enableSlaveActingMaster={}, enableRemoteEscape={}.", this.brokerController.getBrokerConfig().isEnableSlaveActingMaster(), this.brokerController.getBrokerConfig().isEnableRemoteEscape());
             return new PutMessageResult(PutMessageStatus.SERVICE_NOT_AVAILABLE, null);
         }
 
@@ -223,9 +222,7 @@ public class EscapeBridge {
 
             String brokerNameToSend = mq.getBrokerName();
             String brokerAddrToSend = this.brokerController.getTopicRouteInfoManager().findBrokerAddressInPublish(brokerNameToSend);
-            final SendResult sendResult = this.brokerController.getBrokerOuterAPI().sendMessageToSpecificBroker(
-                brokerAddrToSend, brokerNameToSend,
-                messageExt, this.getProducerGroup(messageExt), SEND_TIMEOUT);
+            final SendResult sendResult = this.brokerController.getBrokerOuterAPI().sendMessageToSpecificBroker(brokerAddrToSend, brokerNameToSend, messageExt, this.getProducerGroup(messageExt), SEND_TIMEOUT);
 
             return transformSendResult2PutResult(sendResult);
         } catch (Exception e) {
