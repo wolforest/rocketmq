@@ -724,8 +724,7 @@ public class PopReviveService extends ServiceThread {
             GetMessageStatus getMessageStatus = resultPair.getObject1();
             MessageExt message = resultPair.getObject2();
             if (message == null) {
-                POP_LOGGER.warn("reviveQueueId={}, can not get biz msg topic is {}, offset is {}, then continue",
-                    queueId, popCheckPoint.getTopic(), msgOffset);
+                POP_LOGGER.warn("reviveQueueId={}, can not get biz msg topic is {}, offset is {}, then continue", queueId, popCheckPoint.getTopic(), msgOffset);
                 switch (getMessageStatus) {
                     case MESSAGE_WAS_REMOVING:
                     case OFFSET_TOO_SMALL:
@@ -742,6 +741,7 @@ public class PopReviveService extends ServiceThread {
                 POP_LOGGER.warn("reviveQueueId={}, skip ck from last epoch {}", queueId, popCheckPoint);
                 return new Pair<>(msgOffset, true);
             }
+
             boolean result = reviveRetry(popCheckPoint, message);
             return new Pair<>(msgOffset, result);
         };

@@ -497,6 +497,8 @@ public class PopBufferMergeService extends ServiceThread {
                 continue;
             }
 
+            boolean removeFlag = getRemoveFlag(pointWrapper);
+
             // double check
             if (isCkDone(pointWrapper)) {
                 continue;
@@ -512,7 +514,6 @@ public class PopBufferMergeService extends ServiceThread {
                 continue;
             }
 
-            boolean removeFlag = getRemoveFlag(pointWrapper);
             if (!removeFlag) {
                 continue;
             }
