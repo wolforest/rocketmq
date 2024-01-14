@@ -84,10 +84,11 @@ public class GetMessageContext {
     }
 
     private void init() {
+        this.maxFilterMessageSize = Math.max(16000, maxMsgNums * consumeQueue.getUnitSize());
+
         this.nextBeginOffset = offset;
         this.maxOffsetPy = messageStore.getCommitLog().getMaxOffset();
         this.maxPhyOffsetPulling = 0;
-        this.maxFilterMessageSize = Math.max(16000, maxMsgNums * consumeQueue.getUnitSize());
         initMaxPullSize(topic, queueId, maxTotalMsgSize);
 
         getResult.setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);

@@ -92,10 +92,7 @@ public class PopBufferMergeService extends ServiceThread {
     private final String reviveTopic;
 
     private final long interval = 5;
-    private final long minute5 = 5 * 60 * 1000;
-    private final int countOfMinute1 = (int) (60 * 1000 / interval);
     private final int countOfSecond1 = (int) (1000 / interval);
-    private final int countOfSecond30 = (int) (30 * 1000 / interval);
 
     /**
      * this is a temporary Byte List, can be replaced by local var,
@@ -135,6 +132,7 @@ public class PopBufferMergeService extends ServiceThread {
                 }
 
                 scan();
+                int countOfSecond30 = (int) (30 * 1000 / interval);
                 if (scanTimes % countOfSecond30 == 0) {
                     scanGarbage();
                 }
@@ -483,6 +481,7 @@ public class PopBufferMergeService extends ServiceThread {
                 iterator.remove();
                 continue;
             }
+            long minute5 = 5 * 60 * 1000;
             if (System.currentTimeMillis() - entry.getValue().getTime() > minute5) {
                 POP_LOGGER.info("[PopBuffer]remove long time not used sub {} of topic {} in buffer!", cid, topic);
                 iterator.remove();
@@ -578,11 +577,11 @@ public class PopBufferMergeService extends ServiceThread {
             return true;
         }
 
-        if (isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored()) {
+        if (isCkDone(pointWrapper)) {
             return true;
         }
 
-        return isCkDone(pointWrapper);
+        return isCkDoneForFinish(pointWrapper) && pointWrapper.isCkStored();
     }
 
     private int storeAckInfo(int count, PopCheckPointWrapper pointWrapper) {
@@ -699,6 +698,7 @@ public class PopBufferMergeService extends ServiceThread {
         PopMetricsManager.recordPopBufferScanTimeConsume(eclipse);
         scanTimes++;
 
+        int countOfMinute1 = (int) (60 * 1000 / interval);
         if (scanTimes >= countOfMinute1) {
             counter.set(this.buffer.size());
             scanTimes = 0;

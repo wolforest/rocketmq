@@ -114,35 +114,35 @@ public class GetMessageService {
         return getResult;
     }
 
-    private GetMessageResult handleNoMessageInQueue(GetMessageResult getResult, final long offset) {
+    private GetMessageResult handleNoMessageInQueue(GetMessageResult getResult, final long offset, ConsumeQueueInterface consumeQueue) {
         getResult.setStatus(GetMessageStatus.NO_MESSAGE_IN_QUEUE);
         getResult.setNextBeginOffset(nextOffsetCorrection(offset, 0));
-        getResult.setMaxOffset(0);
-        getResult.setMinOffset(0);
+        getResult.setMaxOffset(consumeQueue.getMaxOffsetInQueue());
+        getResult.setMinOffset(consumeQueue.getMinOffsetInQueue());
         return getResult;
     }
 
     private GetMessageResult handleOffsetTooSmall(GetMessageResult getResult, final long offset, ConsumeQueueInterface consumeQueue) {
         getResult.setStatus(GetMessageStatus.OFFSET_TOO_SMALL);
         getResult.setNextBeginOffset(nextOffsetCorrection(offset, consumeQueue.getMinOffsetInQueue()));
-        getResult.setMaxOffset(0);
-        getResult.setMinOffset(0);
+        getResult.setMaxOffset(consumeQueue.getMaxOffsetInQueue());
+        getResult.setMinOffset(consumeQueue.getMinOffsetInQueue());
         return getResult;
     }
 
-    private GetMessageResult handleOffsetOverflowOne(GetMessageResult getResult, final long offset) {
+    private GetMessageResult handleOffsetOverflowOne(GetMessageResult getResult, final long offset, ConsumeQueueInterface consumeQueue) {
         getResult.setStatus(GetMessageStatus.OFFSET_OVERFLOW_ONE);
         getResult.setNextBeginOffset(nextOffsetCorrection(offset, offset));
-        getResult.setMaxOffset(0);
-        getResult.setMinOffset(0);
+        getResult.setMaxOffset(consumeQueue.getMaxOffsetInQueue());
+        getResult.setMinOffset(consumeQueue.getMinOffsetInQueue());
         return getResult;
     }
 
     private GetMessageResult handleOffsetOverflowBadly(GetMessageResult getResult, final long offset, ConsumeQueueInterface consumeQueue) {
         getResult.setStatus(GetMessageStatus.OFFSET_OVERFLOW_BADLY);
         getResult.setNextBeginOffset(nextOffsetCorrection(offset, consumeQueue.getMaxOffsetInQueue()));
-        getResult.setMaxOffset(0);
-        getResult.setMinOffset(0);
+        getResult.setMaxOffset(consumeQueue.getMaxOffsetInQueue());
+        getResult.setMinOffset(consumeQueue.getMinOffsetInQueue());
         return getResult;
     }
 
@@ -152,7 +152,7 @@ public class GetMessageService {
         }
 
         if (consumeQueue.getMaxOffsetInQueue() == 0) {
-            return handleNoMessageInQueue(getResult, offset);
+            return handleNoMessageInQueue(getResult, offset, consumeQueue);
         }
 
         if (offset < consumeQueue.getMinOffsetInQueue()) {
@@ -160,7 +160,7 @@ public class GetMessageService {
         }
 
         if (offset == consumeQueue.getMaxOffsetInQueue()) {
-            return handleOffsetOverflowOne(getResult, offset);
+            return handleOffsetOverflowOne(getResult, offset, consumeQueue);
         }
 
         if (offset > consumeQueue.getMaxOffsetInQueue()) {
@@ -175,33 +175,33 @@ public class GetMessageService {
 
         long tmpOffset = nextOffsetCorrection(context.getNextBeginOffset(), messageStore.getConsumeQueueStore().rollNextFile(context.getConsumeQueue(), context.getNextBeginOffset()));
         context.setNextBeginOffset(tmpOffset);
+        context.getGetResult().setNextBeginOffset(tmpOffset);
+        context.getGetResult().setMinOffset(context.getConsumeQueue().getMinOffsetInQueue());
+        context.getGetResult().setMaxOffset(context.getConsumeQueue().getMaxOffsetInQueue());
+
         LOGGER.warn("consumer request topic: " + context.getTopic() + "offset: " + context.getOffset() + " minOffset: " + context.getConsumeQueue().getMinOffsetInQueue() + " maxOffset: "
             + context.getConsumeQueue().getMaxOffsetInQueue() + ", but access logic queue failed. Correct nextBeginOffset to " + context.getNextBeginOffset());
     }
 
     private void handleBufferQueue(GetMessageContext context, ReferredIterator<CqUnit> bufferConsumeQueue) {
-        try {
-            context.setNextPhyFileStartOffset(Long.MIN_VALUE);
-            while (bufferConsumeQueue.hasNext() && context.getNextBeginOffset() < context.getConsumeQueue().getMaxOffsetInQueue()) {
-                CqUnit cqUnit = bufferConsumeQueue.next();
-                boolean isInMem = estimateInMemByCommitOffset(cqUnit.getPos(), context.getMaxOffsetPy());
+        context.setNextPhyFileStartOffset(Long.MIN_VALUE);
+        while (bufferConsumeQueue.hasNext() && context.getNextBeginOffset() < context.getConsumeQueue().getMaxOffsetInQueue()) {
+            CqUnit cqUnit = bufferConsumeQueue.next();
+            boolean isInMem = estimateInMemByCommitOffset(cqUnit.getPos(), context.getMaxOffsetPy());
 
-                if ((cqUnit.getQueueOffset() - context.getOffset()) * context.getConsumeQueue().getUnitSize() > context.getMaxFilterMessageSize()) {
-                    break;
-                }
-
-                if (isTheBatchFull(cqUnit.getSize(), cqUnit.getBatchNum(), context.getMaxMsgNums(), context.getMaxPullSize(), context.getGetResult().getBufferTotalSize(), context.getGetResult().getMessageCount(), isInMem)) {
-                    break;
-                }
-
-                if (context.getGetResult().getBufferTotalSize() >= context.getMaxPullSize()) {
-                    break;
-                }
-
-                handleBufferQueueItem(context, cqUnit);
+            if ((cqUnit.getQueueOffset() - context.getOffset()) * context.getConsumeQueue().getUnitSize() > context.getMaxFilterMessageSize()) {
+                break;
             }
-        } finally {
-            bufferConsumeQueue.release();
+
+            if (isTheBatchFull(cqUnit.getSize(), cqUnit.getBatchNum(), context.getMaxMsgNums(), context.getMaxPullSize(), context.getGetResult().getBufferTotalSize(), context.getGetResult().getMessageCount(), isInMem)) {
+                break;
+            }
+
+            if (context.getGetResult().getBufferTotalSize() >= context.getMaxPullSize()) {
+                break;
+            }
+
+            handleBufferQueueItem(context, cqUnit);
         }
     }
 
@@ -216,8 +216,7 @@ public class GetMessageService {
             }
         }
 
-        if (context.getMessageFilter() != null
-            && !context.getMessageFilter().isMatchedByConsumeQueue(cqUnit.getValidTagsCodeAsLong(), cqUnit.getCqExtUnit())) {
+        if (context.getMessageFilter() != null && !context.getMessageFilter().isMatchedByConsumeQueue(cqUnit.getValidTagsCodeAsLong(), cqUnit.getCqExtUnit())) {
             if (context.getGetResult().getBufferTotalSize() == 0) {
                 context.getGetResult().setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);
             }
@@ -239,8 +238,7 @@ public class GetMessageService {
             context.getGetResult().setColdDataSum(context.getGetResult().getColdDataSum() + cqUnit.getSize());
         }
 
-        if (context.getMessageFilter() != null
-            && !context.getMessageFilter().isMatchedByCommitLog(selectResult.getByteBuffer().slice(), null)) {
+        if (context.getMessageFilter() != null && !context.getMessageFilter().isMatchedByCommitLog(selectResult.getByteBuffer().slice(), null)) {
             if (context.getGetResult().getBufferTotalSize() == 0) {
                 context.getGetResult().setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);
             }
@@ -248,6 +246,7 @@ public class GetMessageService {
             selectResult.release();
             return;
         }
+
         messageStore.getStoreStatsService().getGetMessageTransferredMsgCount().add(cqUnit.getBatchNum());
         context.getGetResult().addMessage(selectResult, cqUnit.getQueueOffset(), cqUnit.getBatchNum());
         context.getGetResult().setStatus(GetMessageStatus.FOUND);
