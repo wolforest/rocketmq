@@ -324,7 +324,6 @@ public class PopReviveService extends ServiceThread {
 
     private PullResult getMessage(String group, String topic, int queueId, long offset, int nums, boolean deCompressBody) {
         GetMessageResult getMessageResult = this.brokerController.getMessageStore().getMessage(group, topic, queueId, offset, nums, null);
-        POP_LOGGER.info("get revive message from store: queueId={} requestOffset={}, nums={}, result={}", queueId, offset, nums, getMessageResult);
 
         if (getMessageResult == null) {
             return formatNullResult(group, topic, offset);
