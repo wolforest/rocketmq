@@ -92,7 +92,7 @@ public class PopServiceManager {
     public final MessageExtBrokerInner buildCkMsg(final PopCheckPoint ck, final int reviveQid) {
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
 
-        msgInner.setTopic(brokerController.getBrokerNettyServer().getPopServiceManager().getReviveTopic());
+        msgInner.setTopic(reviveTopic);
         msgInner.setBody(JSON.toJSONString(ck).getBytes(DataConverter.CHARSET_UTF8));
         msgInner.setQueueId(reviveQid);
         msgInner.setTags(PopConstants.CK_TAG);

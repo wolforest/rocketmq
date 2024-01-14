@@ -253,6 +253,9 @@ public class ConsumerOffsetManager extends ConfigManager {
         }
     }
 
+    /**
+     * Just for PullMessageProcessor
+     */
     public void commitPullOffset(final String clientHost, final String group, final String topic, final int queueId,
         final long offset) {
         // topic@group
@@ -357,6 +360,9 @@ public class ConsumerOffsetManager extends ConfigManager {
         this.offsetTable = offsetTable;
     }
 
+    /**
+     * for admin
+     */
     public Map<Integer, Long> queryMinOffsetInAllGroup(final String topic, final String filterGroups) {
         removeConsumerOffsetByFilterGroups(filterGroups);
         Map<Integer, Long> queueMinOffset = new HashMap<>();
@@ -396,6 +402,10 @@ public class ConsumerOffsetManager extends ConfigManager {
             removeConsumerOffset(topicAtGroup);
         }
     }
+
+    /**
+     * for admin
+     */
     private void queryMinOffsetInAllGroup(Map.Entry<String, ConcurrentMap<Integer, Long>> offSetEntry, String topic, Map<Integer, Long> queueMinOffset) {
         for (Entry<Integer, Long> entry : offSetEntry.getValue().entrySet()) {
             long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, entry.getKey());
@@ -418,6 +428,9 @@ public class ConsumerOffsetManager extends ConfigManager {
         return this.offsetTable.get(key);
     }
 
+    /**
+     * for admin
+     */
     public void cloneOffset(final String srcGroup, final String destGroup, final String topic) {
         ConcurrentMap<Integer, Long> offsets = this.offsetTable.get(topic + TOPIC_GROUP_SEPARATOR + srcGroup);
         if (offsets == null) {
@@ -455,6 +468,9 @@ public class ConsumerOffsetManager extends ConfigManager {
         }
     }
 
+    /**
+     * Just for admin
+     */
     public void assignResetOffset(String topic, String group, int queueId, long offset) {
         if (Strings.isNullOrEmpty(topic) || Strings.isNullOrEmpty(group) || queueId < 0 || offset < 0) {
             LOG.warn("Illegal arguments when assigning reset offset. Topic={}, group={}, queueId={}, offset={}",

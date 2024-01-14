@@ -24,7 +24,7 @@ import apache.rocketmq.v2.Settings;
 import com.google.protobuf.util.Durations;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import org.apache.rocketmq.client.consumer.PopResult;
 import org.apache.rocketmq.client.consumer.PopStatus;
 import org.apache.rocketmq.common.domain.constant.ConsumeInitMode;
@@ -57,7 +57,7 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
 
     /**
      *
-     * @param ctx
+     * @param ctx ctx
      * @param request
      *          request.invisible_duration =>
      *          Required if client type is simple consumer.
@@ -85,7 +85,7 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
                 return;
             }
 
-            CompletableFuture<PopResult> popFuture = this.messagingProcessor.popMessage(
+            this.messagingProcessor.popMessage(
                     ctx,
                     new ReceiveMessageQueueSelector(
                         request.getMessageQueue().getBroker().getName()
@@ -101,9 +101,12 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
                     new PopMessageResultFilterImpl(settings.getBackoffPolicy().getMaxAttempts()),
                     request.hasAttemptId() ? request.getAttemptId() : null,
                     ctx.getRemainingMs()
-                );
+                ).thenAccept(createPopCallback(ctx, request, group, topic, writer))
+                .exceptionally(t -> {
+                    writer.writeAndComplete(ctx, request, t);
+                    return null;
+                });
 
-            handlePopResult(popFuture, ctx, request, group, topic, writer);
         } catch (Throwable t) {
             writer.writeAndComplete(ctx, request, t);
         }
@@ -196,8 +199,7 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
         if (proxyConfig.isEnableProxyAutoRenew() && request.getAutoRenew()) {
             actualInvisibleTime = proxyConfig.getDefaultInvisibleTimeMills();
         } else {
-            validateInvisibleTime(actualInvisibleTime,
-                ConfigurationManager.getProxyConfig().getMinInvisibleTimeMillsForRecv());
+            validateInvisibleTime(actualInvisibleTime, ConfigurationManager.getProxyConfig().getMinInvisibleTimeMillsForRecv());
         }
 
         return actualInvisibleTime;
@@ -216,8 +218,8 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
 
     }
 
-    private void handlePopResult(CompletableFuture<PopResult> popFuture, ProxyContext ctx, ReceiveMessageRequest request, String group, String topic, ReceiveMessageResponseStreamWriter writer) {
-        popFuture.thenAccept(popResult -> {
+    private Consumer<PopResult> createPopCallback(ProxyContext ctx, ReceiveMessageRequest request, String group, String topic, ReceiveMessageResponseStreamWriter writer) {
+        return  popResult -> {
             if (!ConfigurationManager.getProxyConfig().isEnableProxyAutoRenew() || !request.getAutoRenew()) {
                 writer.writeAndComplete(ctx, request, popResult);
                 return;
@@ -241,10 +243,6 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
                 messagingProcessor.addReceiptHandle(ctx, grpcChannelManager.getChannel(ctx.getClientID()), group, messageExt.getMsgId(), messageReceiptHandle);
             }
             writer.writeAndComplete(ctx, request, popResult);
-
-        }).exceptionally(t -> {
-            writer.writeAndComplete(ctx, request, t);
-            return null;
-        });
+        };
     }
 }

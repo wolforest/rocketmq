@@ -181,13 +181,12 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
         long popTime = ExtraInfoUtil.getPopTime(extraInfo);
 
         ConsumerOffsetManager offsetManager = this.brokerController.getConsumerOffsetManager();
-        QueueLockManager lockManager = this.brokerController.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
-
         long oldOffset = offsetManager.queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
         if (requestHeader.getOffset() < oldOffset) {
             return response;
         }
 
+        QueueLockManager lockManager = this.brokerController.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
         while (!lockManager.tryLock(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId())) {
         }
         try {

@@ -226,8 +226,8 @@ public class AckMessageProcessor implements NettyRequestProcessor {
 
         QueueLockManager queueLockManager = this.brokerController.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
         String lockKey = topic + PopConstants.SPLIT + consumeGroup + PopConstants.SPLIT + qId;
-
         lockQueue(queueLockManager, lockKey);
+
         try {
             oldOffset = this.brokerController.getConsumerOffsetManager().queryOffset(consumeGroup, topic, qId);
             if (ackOffset < oldOffset) {
@@ -256,17 +256,13 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         queueLockManager.unLock(lockKey);
     }
 
-    private void handleCommitSuccess(String topic, String consumeGroup, int qId, long nextOffset,
-        long invisibleTime, Channel channel) {
-        if (!this.brokerController.getConsumerOffsetManager().hasOffsetReset(
-            topic, consumeGroup, qId)) {
-            this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(),
-                consumeGroup, topic, qId, nextOffset);
+    private void handleCommitSuccess(String topic, String consumeGroup, int qId, long nextOffset, long invisibleTime, Channel channel) {
+        if (!this.brokerController.getConsumerOffsetManager().hasOffsetReset(topic, consumeGroup, qId)) {
+            this.brokerController.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), consumeGroup, topic, qId, nextOffset);
         }
-        if (!this.brokerController.getConsumerOrderInfoManager().checkBlock(null, topic,
-            consumeGroup, qId, invisibleTime)) {
-            brokerController.getBrokerNettyServer().getPopServiceManager().popArriving(
-                topic, consumeGroup, qId);
+
+        if (!this.brokerController.getConsumerOrderInfoManager().checkBlock(null, topic, consumeGroup, qId, invisibleTime)) {
+            brokerController.getBrokerNettyServer().getPopServiceManager().popArriving(topic, consumeGroup, qId);
         }
     }
 
