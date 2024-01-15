@@ -33,10 +33,10 @@ import org.apache.rocketmq.remoting.protocol.header.controller.GetReplicaInfoRes
 import org.apache.rocketmq.remoting.protocol.header.controller.register.ApplyBrokerIdResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.register.GetNextBrokerIdResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.register.RegisterBrokerToControllerResponseHeader;
-import org.apache.rocketmq.store.DefaultMessageStore;
-import org.apache.rocketmq.store.RunningFlags;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.ha.autoswitch.AutoSwitchHAService;
+import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.RunningFlags;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.infra.ha.autoswitch.AutoSwitchHAService;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Sets;
 import org.junit.After;

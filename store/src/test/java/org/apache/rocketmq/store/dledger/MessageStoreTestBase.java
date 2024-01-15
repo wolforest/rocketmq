@@ -25,17 +25,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExt;
-import org.apache.rocketmq.store.DefaultMessageStore;
-import org.apache.rocketmq.store.GetMessageResult;
+import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.PutMessageStatus;
+import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
+import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.StoreTestBase;
-import org.apache.rocketmq.store.config.FlushDiskType;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.config.StorePathConfigHelper;
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
+import org.apache.rocketmq.store.server.config.FlushDiskType;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
+import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
 import org.junit.Assert;
 
 public class MessageStoreTestBase extends StoreTestBase {

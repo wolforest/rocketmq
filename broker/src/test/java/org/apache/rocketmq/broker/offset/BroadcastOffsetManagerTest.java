@@ -24,7 +24,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.client.ConsumerManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
-import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.api.MessageStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

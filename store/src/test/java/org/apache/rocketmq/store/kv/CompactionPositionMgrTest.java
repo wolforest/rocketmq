@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.store.kv;
 
+import org.apache.rocketmq.store.domain.compaction.CompactionPositionMgr;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

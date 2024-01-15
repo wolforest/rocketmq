@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 import java.util.List;
-import org.apache.rocketmq.store.QueryMessageResult;
+import org.apache.rocketmq.store.api.dto.QueryMessageResult;
 
 public class QueryMessageTransfer extends AbstractReferenceCounted implements FileRegion {
     private final ByteBuffer byteBufferHeader;

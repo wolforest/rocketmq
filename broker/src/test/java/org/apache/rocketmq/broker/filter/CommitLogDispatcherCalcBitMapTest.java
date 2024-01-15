@@ -20,7 +20,7 @@ package org.apache.rocketmq.broker.filter;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.filter.util.BitsArray;
-import org.apache.rocketmq.store.DispatchRequest;
+import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
 import org.junit.Test;
 
 import java.util.Collection;

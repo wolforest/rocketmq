@@ -28,7 +28,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.header.EndTransactionRequestHeader;
-import org.apache.rocketmq.store.PutMessageResult;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
 
 import java.util.HashMap;
 import java.util.Map;

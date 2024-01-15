@@ -38,10 +38,10 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.stats.BrokerStats;
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.stats.LmqBrokerStatsManager;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.api.stats.BrokerStats;
+import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.stats.LmqBrokerStatsManager;
 
 /**
  * manager services type like

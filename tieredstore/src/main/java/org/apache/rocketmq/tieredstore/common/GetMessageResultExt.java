@@ -19,10 +19,10 @@ package org.apache.rocketmq.tieredstore.common;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.rocketmq.store.GetMessageResult;
-import org.apache.rocketmq.store.GetMessageStatus;
-import org.apache.rocketmq.store.MessageFilter;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.api.dto.GetMessageResult;
+import org.apache.rocketmq.store.api.dto.GetMessageStatus;
+import org.apache.rocketmq.store.api.MessageFilter;
+import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
 
 public class GetMessageResultExt extends GetMessageResult {
 

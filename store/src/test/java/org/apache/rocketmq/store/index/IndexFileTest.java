@@ -21,6 +21,7 @@
 package org.apache.rocketmq.store.index;
 
 import org.apache.rocketmq.common.utils.IOUtils;
+import org.apache.rocketmq.store.domain.index.IndexFile;
 import org.junit.Test;
 
 import java.io.File;

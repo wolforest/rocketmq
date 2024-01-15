@@ -33,9 +33,9 @@ import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.config.BrokerRole;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.server.config.BrokerRole;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 public class BrokerScheduleService {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);

@@ -30,7 +30,7 @@ import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingDetail;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingUtils;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicRemappingDetailWrapper;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

@@ -20,9 +20,10 @@ import java.time.Duration;
 import java.util.UUID;
 
 import org.apache.rocketmq.common.utils.SystemUtils;
-import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.StoreTestBase;
-import org.apache.rocketmq.store.config.StorePathConfigHelper;
+import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
+import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;

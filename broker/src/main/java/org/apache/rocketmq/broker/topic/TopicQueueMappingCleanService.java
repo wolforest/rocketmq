@@ -47,7 +47,7 @@ import org.apache.rocketmq.remoting.rpc.ClientMetadata;
 import org.apache.rocketmq.remoting.rpc.RpcClient;
 import org.apache.rocketmq.remoting.rpc.RpcRequest;
 import org.apache.rocketmq.remoting.rpc.RpcResponse;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 public class TopicQueueMappingCleanService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);

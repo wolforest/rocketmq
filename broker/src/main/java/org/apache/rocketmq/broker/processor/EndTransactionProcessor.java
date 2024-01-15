@@ -37,8 +37,8 @@ import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.header.EndTransactionRequestHeader;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.config.BrokerRole;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
+import org.apache.rocketmq.store.server.config.BrokerRole;
 
 /**
  * EndTransaction processor: process commit and rollback message

@@ -20,10 +20,10 @@ package org.apache.rocketmq.store;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.logfile.MappedFile;
-import org.apache.rocketmq.store.logfile.MappedFileQueue;
-import org.apache.rocketmq.store.logfile.MultiPathMappedFileQueue;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.infra.file.MappedFile;
+import org.apache.rocketmq.store.infra.file.MappedFileQueue;
+import org.apache.rocketmq.store.infra.file.MultiPathMappedFileQueue;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

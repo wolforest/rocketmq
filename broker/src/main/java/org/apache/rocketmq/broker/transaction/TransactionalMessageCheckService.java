@@ -35,10 +35,10 @@ import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.PutMessageStatus;
-import org.apache.rocketmq.store.config.BrokerRole;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
+import org.apache.rocketmq.store.api.dto.PutMessageStatus;
+import org.apache.rocketmq.store.server.config.BrokerRole;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 import java.util.Collections;
 import java.util.Date;

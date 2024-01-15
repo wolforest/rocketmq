@@ -16,8 +16,8 @@
  */
 package org.apache.rocketmq.store.timer;
 
-import org.apache.rocketmq.store.timer.persistence.wheel.Slot;
-import org.apache.rocketmq.store.timer.persistence.wheel.TimerWheel;
+import org.apache.rocketmq.store.domain.timer.persistence.wheel.Slot;
+import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

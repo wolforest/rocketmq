@@ -16,9 +16,9 @@
  */
 package org.apache.rocketmq.store.timer;
 
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.timer.persistence.wheel.Block;
-import org.apache.rocketmq.store.timer.persistence.wheel.TimerLog;
+import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.domain.timer.persistence.wheel.Block;
+import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerLog;
 import org.junit.After;
 import org.junit.Test;
 

@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.domain.consumer.SubscriptionGroupAttributes;
 import org.apache.rocketmq.common.lang.attribute.BooleanAttribute;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -23,7 +23,7 @@ import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Test;
 
 public class ForbiddenTest {

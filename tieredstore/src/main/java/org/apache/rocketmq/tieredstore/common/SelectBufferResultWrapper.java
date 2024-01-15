@@ -17,7 +17,7 @@
 package org.apache.rocketmq.tieredstore.common;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
 
 public class SelectBufferResultWrapper {
 

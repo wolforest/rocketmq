@@ -20,6 +20,7 @@ package org.apache.rocketmq.store.timer;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

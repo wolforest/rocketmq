@@ -24,12 +24,14 @@ import org.apache.rocketmq.common.domain.message.MessageAccessor;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
-import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
-import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.StoreTestBase;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.domain.queue.BatchConsumeQueue;
+import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
+import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
 
 import java.io.File;
 import java.util.HashMap;

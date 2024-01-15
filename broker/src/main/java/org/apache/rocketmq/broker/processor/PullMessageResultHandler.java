@@ -23,8 +23,8 @@ import org.apache.rocketmq.remoting.protocol.header.PullMessageRequestHeader;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingContext;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
-import org.apache.rocketmq.store.GetMessageResult;
-import org.apache.rocketmq.store.MessageFilter;
+import org.apache.rocketmq.store.api.dto.GetMessageResult;
+import org.apache.rocketmq.store.api.MessageFilter;
 
 /**
  * only one class(DefaultPullMessageResultHandler) implements this interface

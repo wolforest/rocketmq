@@ -21,7 +21,7 @@ import org.apache.rocketmq.broker.transaction.queue.TransactionalMessageBridge;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.remoting.protocol.header.EndTransactionRequestHeader;
-import org.apache.rocketmq.store.PutMessageResult;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
 
 public interface TransactionalMessageService {
 

@@ -35,13 +35,13 @@ import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.app.config.ControllerConfig;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
-import org.apache.rocketmq.store.GetMessageResult;
-import org.apache.rocketmq.store.GetMessageStatus;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.PutMessageStatus;
-import org.apache.rocketmq.store.config.BrokerRole;
-import org.apache.rocketmq.store.config.FlushDiskType;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.api.dto.GetMessageResult;
+import org.apache.rocketmq.store.api.dto.GetMessageStatus;
+import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.api.dto.PutMessageStatus;
+import org.apache.rocketmq.store.server.config.BrokerRole;
+import org.apache.rocketmq.store.server.config.FlushDiskType;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 import static org.awaitility.Awaitility.await;
 

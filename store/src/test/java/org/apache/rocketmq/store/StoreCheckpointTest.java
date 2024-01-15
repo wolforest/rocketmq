@@ -21,6 +21,7 @@
 package org.apache.rocketmq.store;
 
 import org.apache.rocketmq.common.utils.IOUtils;
+import org.apache.rocketmq.store.server.StoreCheckpoint;
 import org.junit.After;
 import org.junit.Test;
 

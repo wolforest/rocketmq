@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.kv;
 
-import org.apache.rocketmq.store.kv.CompactionLog.OffsetMap;
+import org.apache.rocketmq.store.domain.compaction.CompactionLog.OffsetMap;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

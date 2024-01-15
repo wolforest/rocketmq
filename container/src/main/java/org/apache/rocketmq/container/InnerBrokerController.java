@@ -24,8 +24,8 @@ import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 public class InnerBrokerController extends BrokerController {
     protected BrokerContainer brokerContainer;

@@ -18,7 +18,8 @@
 package org.apache.rocketmq.store.ha;
 
 import java.time.Duration;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.infra.ha.FlowMonitor;
 import org.junit.Assert;
 import org.junit.Test;
 

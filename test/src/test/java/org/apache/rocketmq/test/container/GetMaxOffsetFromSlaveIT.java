@@ -30,7 +30,7 @@ import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.domain.message.Message;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.exception.RemotingException;
-import org.apache.rocketmq.store.DefaultMessageStore;
+import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;

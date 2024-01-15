@@ -24,7 +24,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 
-import org.apache.rocketmq.store.stats.StoreStatsService;
+import org.apache.rocketmq.store.api.stats.StoreStatsService;
 import org.junit.Test;
 
 public class StoreStatsServiceTest {

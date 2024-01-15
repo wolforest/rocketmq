@@ -43,11 +43,11 @@ import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.header.ChangeInvisibleTimeRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.ChangeInvisibleTimeResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.ExtraInfoUtil;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.PutMessageStatus;
-import org.apache.rocketmq.store.pop.AckMsg;
-import org.apache.rocketmq.store.pop.PopCheckPoint;
-import org.apache.rocketmq.store.pop.PopKeyBuilder;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
+import org.apache.rocketmq.store.api.dto.PutMessageStatus;
+import org.apache.rocketmq.store.api.pop.AckMsg;
+import org.apache.rocketmq.store.api.pop.PopCheckPoint;
+import org.apache.rocketmq.store.api.pop.PopKeyBuilder;
 
 /**
  * process nack(not ack) request

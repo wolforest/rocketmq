@@ -30,9 +30,9 @@ import org.apache.rocketmq.remoting.protocol.body.ConsumerOffsetSerializeWrapper
 import org.apache.rocketmq.remoting.protocol.body.MessageRequestModeSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.body.SubscriptionGroupWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigAndMappingSerializeWrapper;
-import org.apache.rocketmq.store.config.StorePathConfigHelper;
-import org.apache.rocketmq.store.timer.TimerCheckpoint;
-import org.apache.rocketmq.store.timer.TimerMetrics;
+import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
+import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.TimerMetrics;
 
 public class SlaveSynchronize {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);

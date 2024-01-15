@@ -19,6 +19,7 @@ package org.apache.rocketmq.store.ha.autoswitch;
 import java.io.File;
 import java.nio.file.Paths;
 import org.apache.rocketmq.remoting.protocol.EpochEntry;
+import org.apache.rocketmq.store.infra.ha.autoswitch.EpochFileCache;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -42,10 +42,10 @@ import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.protocol.BrokerSyncInfo;
 import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerOffsetSerializeWrapper;
-import org.apache.rocketmq.store.config.StorePathConfigHelper;
-import org.apache.rocketmq.store.ha.HAConnectionState;
-import org.apache.rocketmq.store.ha.HAConnectionStateNotificationRequest;
-import org.apache.rocketmq.store.timer.TimerCheckpoint;
+import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
+import org.apache.rocketmq.store.infra.ha.HAConnectionState;
+import org.apache.rocketmq.store.infra.ha.HAConnectionStateNotificationRequest;
+import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
 
 public class BrokerPreOnlineService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);

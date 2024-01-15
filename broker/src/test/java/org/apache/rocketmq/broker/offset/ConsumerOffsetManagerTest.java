@@ -18,7 +18,7 @@
 package org.apache.rocketmq.broker.offset;
 
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

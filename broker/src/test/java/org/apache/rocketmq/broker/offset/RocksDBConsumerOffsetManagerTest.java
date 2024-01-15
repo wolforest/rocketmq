@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.utils.SystemUtils;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

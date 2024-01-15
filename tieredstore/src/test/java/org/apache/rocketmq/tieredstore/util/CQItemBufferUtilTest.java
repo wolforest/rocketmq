@@ -17,7 +17,7 @@
 package org.apache.rocketmq.tieredstore.util;
 
 import java.nio.ByteBuffer;
-import org.apache.rocketmq.store.queue.ConsumeQueue;
+import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;

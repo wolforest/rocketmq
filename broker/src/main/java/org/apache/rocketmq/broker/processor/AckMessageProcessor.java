@@ -46,11 +46,11 @@ import org.apache.rocketmq.remoting.protocol.body.BatchAck;
 import org.apache.rocketmq.remoting.protocol.body.BatchAckMessageRequestBody;
 import org.apache.rocketmq.remoting.protocol.header.AckMessageRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.ExtraInfoUtil;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.PutMessageStatus;
-import org.apache.rocketmq.store.pop.AckMsg;
-import org.apache.rocketmq.store.pop.BatchAckMsg;
-import org.apache.rocketmq.store.pop.PopKeyBuilder;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
+import org.apache.rocketmq.store.api.dto.PutMessageStatus;
+import org.apache.rocketmq.store.api.pop.AckMsg;
+import org.apache.rocketmq.store.api.pop.BatchAckMsg;
+import org.apache.rocketmq.store.api.pop.PopKeyBuilder;
 
 public class AckMessageProcessor implements NettyRequestProcessor {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);

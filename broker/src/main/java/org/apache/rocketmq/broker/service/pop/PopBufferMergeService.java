@@ -39,15 +39,15 @@ import org.apache.rocketmq.common.utils.DataConverter;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.PutMessageStatus;
-import org.apache.rocketmq.store.config.BrokerRole;
-import org.apache.rocketmq.store.pop.AckMsg;
-import org.apache.rocketmq.store.pop.BatchAckMsg;
-import org.apache.rocketmq.store.pop.PopCheckPoint;
-import org.apache.rocketmq.store.pop.PopCheckPointWrapper;
-import org.apache.rocketmq.store.pop.PopKeyBuilder;
-import org.apache.rocketmq.store.pop.QueueWithTime;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
+import org.apache.rocketmq.store.api.dto.PutMessageStatus;
+import org.apache.rocketmq.store.server.config.BrokerRole;
+import org.apache.rocketmq.store.api.pop.AckMsg;
+import org.apache.rocketmq.store.api.pop.BatchAckMsg;
+import org.apache.rocketmq.store.api.pop.PopCheckPoint;
+import org.apache.rocketmq.store.api.pop.PopCheckPointWrapper;
+import org.apache.rocketmq.store.api.pop.PopKeyBuilder;
+import org.apache.rocketmq.store.api.pop.QueueWithTime;
 
 /**
  * manage checkPoint and ack info of pop message

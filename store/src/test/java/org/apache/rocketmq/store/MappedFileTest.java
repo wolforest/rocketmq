@@ -21,8 +21,8 @@
 package org.apache.rocketmq.store;
 
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.store.logfile.DefaultMappedFile;
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.file.DefaultMappedFile;
+import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
 import org.junit.After;
 import org.junit.Test;
 

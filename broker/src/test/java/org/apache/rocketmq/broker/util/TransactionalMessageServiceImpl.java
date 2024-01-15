@@ -27,7 +27,7 @@ import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.header.EndTransactionRequestHeader;
-import org.apache.rocketmq.store.PutMessageResult;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
 
 public class TransactionalMessageServiceImpl implements TransactionalMessageService {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);

@@ -46,8 +46,8 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.remoting.protocol.subscription.SimpleSubscriptionData;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
-import org.apache.rocketmq.store.DefaultMessageFilter;
-import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.api.DefaultMessageFilter;
+import org.apache.rocketmq.store.api.MessageStore;
 
 public class ConsumerLagCalculator {
     private final BrokerConfig brokerConfig;

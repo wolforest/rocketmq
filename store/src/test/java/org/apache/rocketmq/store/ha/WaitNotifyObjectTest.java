@@ -17,6 +17,7 @@
 
 package org.apache.rocketmq.store.ha;
 
+import org.apache.rocketmq.store.infra.ha.WaitNotifyObject;
 import org.junit.Assert;
 import org.junit.Test;
 

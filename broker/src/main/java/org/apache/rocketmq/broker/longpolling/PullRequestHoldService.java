@@ -27,7 +27,7 @@ import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.queue.CqExtUnit;
+import org.apache.rocketmq.store.domain.queue.CqExtUnit;
 
 public class PullRequestHoldService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);

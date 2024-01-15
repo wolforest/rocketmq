@@ -49,10 +49,10 @@ import org.apache.rocketmq.remoting.protocol.header.controller.GetMetaDataRespon
 import org.apache.rocketmq.remoting.protocol.header.controller.GetReplicaInfoResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.register.GetNextBrokerIdResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.register.RegisterBrokerToControllerResponseHeader;
-import org.apache.rocketmq.store.config.BrokerRole;
-import org.apache.rocketmq.store.ha.autoswitch.AutoSwitchHAService;
-import org.apache.rocketmq.store.ha.autoswitch.BrokerMetadata;
-import org.apache.rocketmq.store.ha.autoswitch.TempBrokerMetadata;
+import org.apache.rocketmq.store.server.config.BrokerRole;
+import org.apache.rocketmq.store.infra.ha.autoswitch.AutoSwitchHAService;
+import org.apache.rocketmq.store.infra.ha.autoswitch.BrokerMetadata;
+import org.apache.rocketmq.store.infra.ha.autoswitch.TempBrokerMetadata;
 
 import static org.apache.rocketmq.remoting.protocol.ResponseCode.CONTROLLER_BROKER_METADATA_NOT_EXIST;
 

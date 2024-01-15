@@ -64,12 +64,12 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 import org.apache.rocketmq.remoting.rpc.RpcClientUtils;
 import org.apache.rocketmq.remoting.rpc.RpcRequest;
 import org.apache.rocketmq.remoting.rpc.RpcResponse;
-import org.apache.rocketmq.store.DefaultMessageStore;
-import org.apache.rocketmq.store.GetMessageResult;
-import org.apache.rocketmq.store.GetMessageStatus;
-import org.apache.rocketmq.store.MessageFilter;
-import org.apache.rocketmq.store.config.BrokerRole;
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.api.dto.GetMessageResult;
+import org.apache.rocketmq.store.api.dto.GetMessageStatus;
+import org.apache.rocketmq.store.api.MessageFilter;
+import org.apache.rocketmq.store.server.config.BrokerRole;
+import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
 
 import static org.apache.rocketmq.remoting.protocol.RemotingCommand.buildErrorResponse;
 

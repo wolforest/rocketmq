@@ -27,7 +27,7 @@ import org.apache.rocketmq.common.app.BrokerIdentity;
 import org.apache.rocketmq.remoting.RemotingServer;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 /**
  * An interface for broker container to hold multiple master and slave brokers.

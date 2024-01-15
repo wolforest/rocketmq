@@ -16,7 +16,8 @@
  */
 package org.apache.rocketmq.store;
 
-import org.apache.rocketmq.store.logfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.api.dto.GetMessageResult;
+import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
 import org.junit.Assert;
 import org.junit.Test;
 

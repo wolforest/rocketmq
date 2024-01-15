@@ -18,6 +18,7 @@
 package org.apache.rocketmq.store.pop;
 
 import com.alibaba.fastjson.JSON;
+import org.apache.rocketmq.store.api.pop.AckMsg;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.longpolling;
 import io.netty.channel.Channel;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
-import org.apache.rocketmq.store.MessageFilter;
+import org.apache.rocketmq.store.api.MessageFilter;
 
 public class PullRequest {
     private final RemotingCommand requestCommand;

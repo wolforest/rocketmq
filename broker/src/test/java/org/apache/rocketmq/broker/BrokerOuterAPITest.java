@@ -46,8 +46,8 @@ import org.apache.rocketmq.remoting.protocol.header.namesrv.QueryDataVersionResp
 import org.apache.rocketmq.remoting.protocol.header.namesrv.RegisterBrokerResponseHeader;
 import org.apache.rocketmq.remoting.protocol.namesrv.RegisterBrokerResult;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

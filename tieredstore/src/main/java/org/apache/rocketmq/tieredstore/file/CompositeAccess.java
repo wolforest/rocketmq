@@ -18,7 +18,7 @@ package org.apache.rocketmq.tieredstore.file;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.store.DispatchRequest;
+import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
 import org.apache.rocketmq.tieredstore.common.AppendResult;
 import org.apache.rocketmq.common.lang.BoundaryType;
 

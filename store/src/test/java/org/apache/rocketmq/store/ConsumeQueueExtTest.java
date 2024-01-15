@@ -18,8 +18,8 @@
 package org.apache.rocketmq.store;
 
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.store.queue.ConsumeQueueExt;
-import org.apache.rocketmq.store.queue.CqExtUnit;
+import org.apache.rocketmq.store.domain.queue.ConsumeQueueExt;
+import org.apache.rocketmq.store.domain.queue.CqExtUnit;
 import org.junit.After;
 import org.junit.Test;
 

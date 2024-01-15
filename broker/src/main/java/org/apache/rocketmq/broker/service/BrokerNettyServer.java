@@ -75,8 +75,8 @@ import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
 import org.apache.rocketmq.common.lang.thread.FileWatchService;
-import org.apache.rocketmq.store.MessageArrivingListener;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.api.MessageArrivingListener;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 public class BrokerNettyServer {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);

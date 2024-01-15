@@ -54,11 +54,11 @@ import org.apache.rocketmq.remoting.RemotingServer;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.timer.TimerCheckpoint;
-import org.apache.rocketmq.store.timer.TimerMessageStore;
+import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
 
 public class BrokerController {
     protected static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);

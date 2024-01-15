@@ -45,8 +45,8 @@ import org.apache.rocketmq.remoting.protocol.header.ReplyMessageRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.SendMessageRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.SendMessageRequestHeaderV2;
 import org.apache.rocketmq.remoting.protocol.header.SendMessageResponseHeader;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
+import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ThreadLocalRandom;

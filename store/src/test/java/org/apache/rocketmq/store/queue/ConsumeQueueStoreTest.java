@@ -19,9 +19,9 @@ package org.apache.rocketmq.store.queue;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.store.MessageStore;
-import org.apache.rocketmq.store.PutMessageResult;
-import org.apache.rocketmq.store.PutMessageStatus;
+import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
+import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.junit.Assert;
 import org.junit.Test;
 

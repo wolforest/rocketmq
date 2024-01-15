@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
-import org.apache.rocketmq.store.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.assertj.core.util.Arrays;
 import org.junit.After;
 import org.junit.Before;

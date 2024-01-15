@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.service.pop;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import org.apache.rocketmq.store.pop.PopCheckPoint;
+import org.apache.rocketmq.store.api.pop.PopCheckPoint;
 
 public class ConsumeReviveObj {
     private final HashMap<String, PopCheckPoint> map = new HashMap<>();

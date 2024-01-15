@@ -124,8 +124,8 @@ import org.apache.rocketmq.remoting.rpc.ClientMetadata;
 import org.apache.rocketmq.remoting.rpc.RpcClient;
 import org.apache.rocketmq.remoting.rpc.RpcClientImpl;
 import org.apache.rocketmq.remoting.rpchook.DynamicalExtFieldRPCHook;
-import org.apache.rocketmq.store.timer.TimerCheckpoint;
-import org.apache.rocketmq.store.timer.TimerMetrics;
+import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.TimerMetrics;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
