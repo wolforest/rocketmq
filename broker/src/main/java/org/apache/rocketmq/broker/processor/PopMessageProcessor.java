@@ -232,7 +232,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             SubscriptionData subscriptionData = FilterAPI.build(requestHeader.getTopic(), requestHeader.getExp(), requestHeader.getExpType());
             brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(), requestHeader.getTopic(), subscriptionData);
 
-            String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup());
+            String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup(), brokerController.getBrokerConfig().isEnableRetryTopicV2());
             SubscriptionData retrySubscriptionData = FilterAPI.build(retryTopic, SubscriptionData.SUB_ALL, requestHeader.getExpType());
             brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(), retryTopic, retrySubscriptionData);
 
@@ -264,7 +264,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             SubscriptionData subscriptionData = FilterAPI.build(requestHeader.getTopic(), "*", ExpressionType.TAG);
             brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(), requestHeader.getTopic(), subscriptionData);
 
-            String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup());
+            String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup(), brokerController.getBrokerConfig().isEnableRetryTopicV2());
             SubscriptionData retrySubscriptionData = FilterAPI.build(retryTopic, "*", ExpressionType.TAG);
             brokerController.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(), retryTopic, retrySubscriptionData);
         } catch (Exception e) {
@@ -294,7 +294,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         // only one type of retry topic is able to call popMsgFromQueue.
         boolean needRetry = randomQ % 5 == 0;
         boolean needRetryV1 = false;
-        if (brokerController.getBrokerConfig().isRetrieveMessageFromPopRetryTopicV1()) {
+        if (brokerController.getBrokerConfig().isEnableRetryTopicV2() && brokerController.getBrokerConfig().isRetrieveMessageFromPopRetryTopicV1()) {
             needRetryV1 = randomQ % 2 == 0;
         }
 
@@ -315,7 +315,11 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
     private CompletableFuture<Long> popMessage(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, int randomQ, CompletableFuture<Long> getMessageFuture) {
+
         TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+        if (topicConfig == null) {
+            return getMessageFuture;
+        }
 
         if (requestHeader.getQueueId() >= 0) {
             return getMessageFuture.thenCompose(restNum -> popMsgFromQueue(topicConfig.getTopicName(), requestHeader.getAttemptId(), false, getMessageResult, requestHeader, requestHeader.getQueueId(), restNum, reviveQid, ctx.channel(), popTime, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
@@ -359,9 +363,11 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     private TopicConfig getTopicConfig(boolean needRetryV1, PopMessageRequestHeader requestHeader) {
         TopicConfig topicConfig = null;
         if (needRetryV1) {
-            topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(KeyBuilder.buildPopRetryTopicV1(requestHeader.getTopic(), requestHeader.getConsumerGroup()));
+            String retryTopic = KeyBuilder.buildPopRetryTopicV1(requestHeader.getTopic(), requestHeader.getConsumerGroup());
+            topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(retryTopic);
         } else {
-            topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup()));
+            String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup(), brokerController.getBrokerConfig().isEnableRetryTopicV2());
+            topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(retryTopic);
         }
         return topicConfig;
     }
@@ -494,13 +500,10 @@ public class PopMessageProcessor implements NettyRequestProcessor {
      * @param orderCountInfo orderCountInfo : useless for non ordered Message
      * @return future<consumeOffset>
      */
-    private CompletableFuture<Long> popMsgFromQueue(String targetTopic, String attemptId, boolean isRetry, GetMessageResult getMessageResult,
+    private CompletableFuture<Long> popMsgFromQueue(String topic, String attemptId, boolean isRetry, GetMessageResult getMessageResult,
         PopMessageRequestHeader requestHeader, int queueId, long restNum, int reviveQid,
         Channel channel, long popTime, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder orderCountInfo) {
-
-        //move it out of this method
-        String topic = targetTopic;
 
         // originally initialize offset and getPopOffset here, move to try lock block
         long offset;
@@ -585,8 +588,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
                             return atomicRestNum.get() + result.getMessageCount();
                         }
                     }
-                    ExtraInfoUtil.buildStartOffsetInfo(startOffsetInfo, isRetry, queueId, finalOffset);
-                    ExtraInfoUtil.buildMsgOffsetInfo(msgOffsetInfo, isRetry, queueId, result.getMessageQueueOffset());
+                    ExtraInfoUtil.buildStartOffsetInfo(startOffsetInfo, topic, queueId, finalOffset);
+                    ExtraInfoUtil.buildMsgOffsetInfo(msgOffsetInfo, topic, queueId, result.getMessageQueueOffset());
                 }
 
                 atomicRestNum.set(result.getMaxOffset() - result.getNextBeginOffset() + atomicRestNum.get());

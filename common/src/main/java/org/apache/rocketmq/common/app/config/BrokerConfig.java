@@ -312,6 +312,7 @@ public class BrokerConfig extends BrokerIdentity {
 
     // read message from pop retry topic v1, for the compatibility, will be removed in the future version
     private boolean retrieveMessageFromPopRetryTopicV1 = true;
+    private boolean enableRetryTopicV2 = false;
 
     private boolean realTimeNotifyConsumerChange = true;
 
@@ -1301,6 +1302,14 @@ public class BrokerConfig extends BrokerIdentity {
 
     public void setRetrieveMessageFromPopRetryTopicV1(boolean retrieveMessageFromPopRetryTopicV1) {
         this.retrieveMessageFromPopRetryTopicV1 = retrieveMessageFromPopRetryTopicV1;
+    }
+
+    public boolean isEnableRetryTopicV2() {
+        return enableRetryTopicV2;
+    }
+
+    public void setEnableRetryTopicV2(boolean enableRetryTopicV2) {
+        this.enableRetryTopicV2 = enableRetryTopicV2;
     }
 
     public void setTransactionOpMsgMaxSize(int transactionOpMsgMaxSize) {

@@ -84,7 +84,7 @@ public abstract class AbstractTransactionalMessageCheckListener {
         header.setMsgId(msgExt.getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX));
         header.setTransactionId(header.getMsgId());
         header.setTranStateTableOffset(msgExt.getQueueOffset());
-        header.setBname(brokerController.getBrokerConfig().getBrokerName());
+        header.setBrokerName(brokerController.getBrokerConfig().getBrokerName());
 
         msgExt.setTopic(msgExt.getUserProperty(MessageConst.PROPERTY_REAL_TOPIC));
         msgExt.setQueueId(Integer.parseInt(msgExt.getUserProperty(MessageConst.PROPERTY_REAL_QUEUE_ID)));

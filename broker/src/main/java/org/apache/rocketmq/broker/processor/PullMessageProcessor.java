@@ -170,7 +170,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
         int sysFlag = requestHeader.getSysFlag();
         requestHeader.setLo(false);
-        requestHeader.setBname(mappingItem.getBname());
+        requestHeader.setBrokerName(mappingItem.getBname());
         sysFlag = PullSysFlag.clearSuspendFlag(sysFlag);
         sysFlag = PullSysFlag.clearCommitOffsetFlag(sysFlag);
         requestHeader.setSysFlag(sysFlag);

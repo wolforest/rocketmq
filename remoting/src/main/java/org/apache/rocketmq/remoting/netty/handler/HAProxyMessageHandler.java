@@ -23,6 +23,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.domain.constant.HAProxyConstants;
@@ -63,13 +64,13 @@ public class HAProxyMessageHandler extends ChannelInboundHandlerAdapter {
             }
             if (CollectionUtils.isNotEmpty(msg.tlvs())) {
                 msg.tlvs().forEach(tlv -> {
-                    byte[] valueBytes = ByteBufUtil.getBytes(tlv.content());
-                    if (!BinaryUtils.isAscii(valueBytes)) {
-                        return;
-                    }
                     AttributeKey<String> key = AttributeKeys.valueOf(
                         HAProxyConstants.PROXY_PROTOCOL_TLV_PREFIX + String.format("%02x", tlv.typeByteValue()));
+                    byte[] valueBytes = ByteBufUtil.getBytes(tlv.content());
                     String value = StringUtils.trim(new String(valueBytes, CharsetUtil.UTF_8));
+                    if (!BinaryUtils.isAscii(value.getBytes(StandardCharsets.UTF_8))) {
+                        return;
+                    }
                     channel.attr(key).set(value);
                 });
             }

@@ -289,7 +289,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
 
     private int commitBatchMsg(final RemotingCommand response, final Channel channel, final BatchAck batchAck, String brokerName, BatchAckMsg ackMsg) {
         // batch ack
-        String topic = ExtraInfoUtil.getRealTopic(batchAck.getTopic(), batchAck.getConsumerGroup(), ExtraInfoUtil.RETRY_TOPIC.equals(batchAck.getRetry()));
+        String topic = ExtraInfoUtil.getRealTopic(batchAck.getTopic(), batchAck.getConsumerGroup(), batchAck.getRetry());
 
         long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, batchAck.getQueueId());
         long maxOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, batchAck.getQueueId());
@@ -312,7 +312,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     private BatchAckMsg ackBatchMsgOneByOne(final RemotingCommand response, final Channel channel, BatchAck batchAck, long minOffset, long maxOffset) {
         BatchAckMsg batchAckMsg = new BatchAckMsg();
         BitSet bitSet = batchAck.getBitSet();
-        String topic = ExtraInfoUtil.getRealTopic(batchAck.getTopic(), batchAck.getConsumerGroup(), ExtraInfoUtil.RETRY_TOPIC.equals(batchAck.getRetry()));
+        String topic = ExtraInfoUtil.getRealTopic(batchAck.getTopic(), batchAck.getConsumerGroup(), batchAck.getRetry());
 
 
         for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {

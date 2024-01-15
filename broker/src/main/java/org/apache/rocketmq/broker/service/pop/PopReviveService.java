@@ -183,7 +183,7 @@ public class PopReviveService extends ServiceThread {
 
     private void initMsgTopic(PopCheckPoint popCheckPoint, MessageExtBrokerInner msgInner) {
         if (!popCheckPoint.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
-            msgInner.setTopic(KeyBuilder.buildPopRetryTopic(popCheckPoint.getTopic(), popCheckPoint.getCId()));
+            msgInner.setTopic(KeyBuilder.buildPopRetryTopic(popCheckPoint.getTopic(), popCheckPoint.getCId(), brokerController.getBrokerConfig().isEnableRetryTopicV2()));
         } else {
             msgInner.setTopic(popCheckPoint.getTopic());
         }

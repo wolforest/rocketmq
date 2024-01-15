@@ -76,8 +76,8 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
             }
 
             validateTopicAndConsumerGroup(request.getMessageQueue().getTopic(), request.getGroup());
-            String topic = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getMessageQueue().getTopic());
-            String group = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getGroup());
+            String topic = request.getMessageQueue().getTopic().getName();
+            String group = request.getGroup().getName();
 
             long actualInvisibleTime = getInvisibleTime(request);
             SubscriptionData subscriptionData = getSubscriptionData(ctx, request, topic, writer);

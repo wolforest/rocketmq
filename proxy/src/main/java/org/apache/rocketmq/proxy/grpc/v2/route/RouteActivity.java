@@ -38,15 +38,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.common.domain.topic.TopicMessageType;
-import org.apache.rocketmq.common.domain.constant.PermName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.common.domain.constant.PermName;
+import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.grpc.v2.AbstractMessingActivity;
 import org.apache.rocketmq.proxy.grpc.v2.channel.GrpcChannelManager;
 import org.apache.rocketmq.proxy.grpc.v2.common.GrpcClientSettingsManager;
-import org.apache.rocketmq.proxy.grpc.v2.common.GrpcConverter;
 import org.apache.rocketmq.proxy.grpc.v2.common.ResponseBuilder;
 import org.apache.rocketmq.proxy.processor.MessagingProcessor;
 import org.apache.rocketmq.proxy.service.route.ProxyTopicRouteData;
@@ -98,7 +97,7 @@ public class RouteActivity extends AbstractMessingActivity {
         try {
             validateTopicAndConsumerGroup(request.getTopic(), request.getGroup());
             List<org.apache.rocketmq.proxy.common.Address> addressList = this.convertToAddressList(request.getEndpoints());
-            String topic = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getTopic());
+            String topic = request.getTopic().getName();
 
             ProxyTopicRouteData routeData = this.messagingProcessor.getTopicRouteDataForProxy(ctx, addressList, topic);
 
@@ -115,7 +114,7 @@ public class RouteActivity extends AbstractMessingActivity {
 
     private List<MessageQueue> getMessageQueueList(ProxyContext ctx, QueryRouteRequest request) throws Exception {
         List<org.apache.rocketmq.proxy.common.Address> addressList = this.convertToAddressList(request.getEndpoints());
-        String topicName = GrpcConverter.getInstance().wrapResourceWithNamespace(request.getTopic());
+        String topicName = request.getTopic().getName();
         ProxyTopicRouteData proxyTopicRouteData = this.messagingProcessor.getTopicRouteDataForProxy(ctx, addressList, topicName);
 
         List<MessageQueue> messageQueueList = new ArrayList<>();
@@ -151,8 +150,7 @@ public class RouteActivity extends AbstractMessingActivity {
 
     private boolean getFifo(ProxyContext ctx, QueryAssignmentRequest request) {
         boolean fifo = false;
-        SubscriptionGroupConfig config = this.messagingProcessor.getSubscriptionGroupConfig(ctx,
-            GrpcConverter.getInstance().wrapResourceWithNamespace(request.getGroup()));
+        SubscriptionGroupConfig config = this.messagingProcessor.getSubscriptionGroupConfig(ctx, request.getTopic().getName());
         if (config != null && config.isConsumeMessageOrderly()) {
             fifo = true;
         }

@@ -546,9 +546,9 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         // delete pop retry topics first
         try {
             for (String group : groups) {
-                final String popRetryTopic = KeyBuilder.buildPopRetryTopic(topic, group);
-                if (brokerController.getTopicConfigManager().selectTopicConfig(popRetryTopic) != null) {
-                    deleteTopicInBroker(popRetryTopic);
+                final String popRetryTopicV2 = KeyBuilder.buildPopRetryTopic(topic, group, true);
+                if (brokerController.getTopicConfigManager().selectTopicConfig(popRetryTopicV2) != null) {
+                    deleteTopicInBroker(popRetryTopicV2);
                 }
                 final String popRetryTopicV1 = KeyBuilder.buildPopRetryTopicV1(topic, group);
                 if (brokerController.getTopicConfigManager().selectTopicConfig(popRetryTopicV1) != null) {
@@ -1011,7 +1011,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                     requestHeader.setLo(false);
                     requestHeader.setTimestamp(timestamp);
                     requestHeader.setQueueId(item.getQueueId());
-                    requestHeader.setBname(item.getBname());
+                    requestHeader.setBrokerName(item.getBname());
                     RpcRequest rpcRequest = new RpcRequest(RequestCode.SEARCH_OFFSET_BY_TIMESTAMP, requestHeader, null);
                     RpcResponse rpcResponse = this.brokerController.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.brokerController.getBrokerConfig().getForwardTimeout()).get();
                     if (rpcResponse.getException() != null) {
@@ -1078,7 +1078,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             LogicQueueMappingItem maxItem = TopicQueueMappingUtils.findLogicQueueMappingItem(mappingContext.getMappingItemList(), Long.MAX_VALUE, true);
             assert maxItem != null;
             assert maxItem.getLogicOffset() >= 0;
-            requestHeader.setBname(maxItem.getBname());
+            requestHeader.setBrokerName(maxItem.getBname());
             requestHeader.setLo(false);
             requestHeader.setQueueId(mappingItem.getQueueId());
 
@@ -1144,7 +1144,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         LogicQueueMappingItem mappingItem = TopicQueueMappingUtils.findLogicQueueMappingItem(mappingContext.getMappingItemList(), 0L, true);
         assert mappingItem != null;
         try {
-            requestHeader.setBname(mappingItem.getBname());
+            requestHeader.setBrokerName(mappingItem.getBname());
             requestHeader.setLo(false);
             requestHeader.setQueueId(mappingItem.getQueueId());
             long physicalOffset;
@@ -1211,7 +1211,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         LogicQueueMappingItem mappingItem = TopicQueueMappingUtils.findLogicQueueMappingItem(mappingContext.getMappingItemList(), 0L, true);
         assert mappingItem != null;
         try {
-            requestHeader.setBname(mappingItem.getBname());
+            requestHeader.setBrokerName(mappingItem.getBname());
             requestHeader.setLo(false);
             RpcRequest rpcRequest = new RpcRequest(RequestCode.GET_EARLIEST_MSG_STORETIME, requestHeader, null);
             //TO DO check if it is in current broker

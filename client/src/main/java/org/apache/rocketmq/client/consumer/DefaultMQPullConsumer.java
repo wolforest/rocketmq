@@ -89,23 +89,21 @@ public class DefaultMQPullConsumer extends ClientConfig implements MQPullConsume
     private int maxReconsumeTimes = 16;
 
     public DefaultMQPullConsumer() {
-        this(null, MQConstants.DEFAULT_CONSUMER_GROUP, null);
+        this(MQConstants.DEFAULT_CONSUMER_GROUP, null);
     }
 
     public DefaultMQPullConsumer(final String consumerGroup) {
-        this(null, consumerGroup, null);
+        this(consumerGroup, null);
     }
 
     public DefaultMQPullConsumer(RPCHook rpcHook) {
-        this(null, MQConstants.DEFAULT_CONSUMER_GROUP, rpcHook);
+        this(MQConstants.DEFAULT_CONSUMER_GROUP, rpcHook);
     }
 
     public DefaultMQPullConsumer(final String consumerGroup, RPCHook rpcHook) {
-        this(null, consumerGroup, rpcHook);
-    }
-
-    public DefaultMQPullConsumer(final String namespace, final String consumerGroup) {
-        this(namespace, consumerGroup, null);
+        this.consumerGroup = consumerGroup;
+        this.enableStreamRequestType = true;
+        defaultMQPullConsumerImpl = new DefaultMQPullConsumerImpl(this, rpcHook);
     }
 
     /**
