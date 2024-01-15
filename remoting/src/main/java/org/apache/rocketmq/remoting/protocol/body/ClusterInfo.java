@@ -52,6 +52,10 @@ public class ClusterInfo extends RemotingSerializable {
 
     public List<String> getAllAddr(String cluster) {
         List<String> addrs = new ArrayList<>();
+        if (null == clusterAddrTable || clusterAddrTable.isEmpty()) {
+            return addrs;
+        }
+
         if (!clusterAddrTable.containsKey(cluster)) {
             return addrs;
         }

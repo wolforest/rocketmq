@@ -23,6 +23,27 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 public class GroupManager {
     private static final String GROUP_PREFIX = "MQG_";
 
+    public static boolean createOrderlyGroup(String group) {
+        ClusterInfo clusterInfo = BrokerManager.getClusterInfo();
+        if (clusterInfo == null) {
+            return false;
+        }
+
+        SubscriptionGroupConfig config = new SubscriptionGroupConfig();
+        config.setGroupName(group);
+        config.setConsumeMessageOrderly(true);
+
+        try {
+            for (String addr: clusterInfo.getAllAddr()) {
+                ClientManager.getClient().createSubscriptionGroup(addr, config);
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public static boolean createGroup(String group) {
         ClusterInfo clusterInfo = BrokerManager.getClusterInfo();
         if (clusterInfo == null) {
