@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.util;
+package org.apache.rocketmq.broker.domain;
 
 import org.apache.rocketmq.broker.server.BrokerController;
 import org.apache.rocketmq.broker.server.schedule.ScheduleMessageService;

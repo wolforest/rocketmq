@@ -17,6 +17,7 @@
 package org.apache.rocketmq.broker.util;
 
 import java.util.Objects;
+import org.apache.rocketmq.broker.domain.HookUtils;
 import org.apache.rocketmq.broker.server.BrokerController;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.constant.MQConstants;

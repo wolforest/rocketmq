@@ -34,7 +34,7 @@ import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService
 import org.apache.rocketmq.broker.domain.transaction.queue.DefaultTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageServiceImpl;
-import org.apache.rocketmq.broker.util.HookUtils;
+import org.apache.rocketmq.broker.domain.HookUtils;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
