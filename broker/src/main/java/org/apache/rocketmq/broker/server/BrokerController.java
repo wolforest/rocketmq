@@ -19,7 +19,6 @@ package org.apache.rocketmq.broker.server;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import org.apache.rocketmq.acl.AccessValidator;
-import org.apache.rocketmq.broker.api.ShutdownHook;
 import org.apache.rocketmq.broker.server.daemon.BrokerClusterService;
 import org.apache.rocketmq.broker.server.daemon.BrokerMessageService;
 import org.apache.rocketmq.broker.server.daemon.BrokerMetadataService;

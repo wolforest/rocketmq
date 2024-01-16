@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.rocketmq.broker.server.BrokerController;
 import org.apache.rocketmq.broker.server.BrokerPreOnlineService;
-import org.apache.rocketmq.broker.api.ShutdownHook;
+import org.apache.rocketmq.broker.server.ShutdownHook;
 import org.apache.rocketmq.broker.server.client.ConsumerManager;
 import org.apache.rocketmq.broker.server.client.ProducerManager;
 import org.apache.rocketmq.broker.server.client.net.Broker2Client;
