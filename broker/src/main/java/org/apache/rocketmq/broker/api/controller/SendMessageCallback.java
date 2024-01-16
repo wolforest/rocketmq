@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.api.processor;
+package org.apache.rocketmq.broker.api.controller;
 
 import org.apache.rocketmq.broker.domain.mqtrace.SendMessageContext;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;

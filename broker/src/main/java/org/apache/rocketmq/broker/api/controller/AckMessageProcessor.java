@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.api.processor;
+package org.apache.rocketmq.broker.api.controller;
 
 import com.alibaba.fastjson.JSON;
 import io.netty.channel.Channel;

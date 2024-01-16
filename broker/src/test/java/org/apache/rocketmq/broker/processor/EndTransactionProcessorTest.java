@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.processor;
 
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.server.BrokerController;
-import org.apache.rocketmq.broker.api.processor.EndTransactionProcessor;
+import org.apache.rocketmq.broker.api.controller.EndTransactionProcessor;
 import org.apache.rocketmq.broker.domain.transaction.OperationResult;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
 import org.apache.rocketmq.common.app.config.BrokerConfig;

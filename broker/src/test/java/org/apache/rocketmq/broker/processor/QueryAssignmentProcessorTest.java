@@ -22,7 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.rocketmq.broker.server.BrokerController;
-import org.apache.rocketmq.broker.api.processor.QueryAssignmentProcessor;
+import org.apache.rocketmq.broker.api.controller.QueryAssignmentProcessor;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.metadata.topic.TopicRouteInfoManager;
 import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;

@@ -21,7 +21,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.broker.server.BrokerController;
-import org.apache.rocketmq.broker.api.processor.PopMessageProcessor;
+import org.apache.rocketmq.broker.api.controller.PopMessageProcessor;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;

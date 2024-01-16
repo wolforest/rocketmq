@@ -25,7 +25,7 @@ import org.apache.rocketmq.broker.domain.dledger.DLedgerRoleChangeHandler;
 import org.apache.rocketmq.broker.domain.failover.EscapeBridge;
 import org.apache.rocketmq.broker.metadata.filter.CommitLogDispatcherCalcBitMap;
 import org.apache.rocketmq.broker.api.plugin.BrokerAttachedPlugin;
-import org.apache.rocketmq.broker.api.processor.AckMessageProcessor;
+import org.apache.rocketmq.broker.api.controller.AckMessageProcessor;
 import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
 import org.apache.rocketmq.broker.server.schedule.ScheduleMessageService;
 import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;

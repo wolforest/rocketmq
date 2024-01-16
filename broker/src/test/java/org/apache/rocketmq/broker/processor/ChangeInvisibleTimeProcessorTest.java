@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.processor;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.server.BrokerController;
-import org.apache.rocketmq.broker.api.processor.ChangeInvisibleTimeProcessor;
+import org.apache.rocketmq.broker.api.controller.ChangeInvisibleTimeProcessor;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.domain.failover.EscapeBridge;
 import org.apache.rocketmq.common.app.config.BrokerConfig;

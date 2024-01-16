@@ -25,7 +25,7 @@ import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
 import org.apache.rocketmq.broker.server.BrokerController;
-import org.apache.rocketmq.broker.api.processor.ClientManageProcessor;
+import org.apache.rocketmq.broker.api.controller.ClientManageProcessor;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
 import org.apache.rocketmq.common.app.config.BrokerConfig;

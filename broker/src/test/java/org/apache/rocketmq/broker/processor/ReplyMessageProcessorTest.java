@@ -22,7 +22,7 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.rocketmq.broker.server.BrokerController;
-import org.apache.rocketmq.broker.api.processor.ReplyMessageProcessor;
+import org.apache.rocketmq.broker.api.controller.ReplyMessageProcessor;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.server.client.net.Broker2Client;
 import org.apache.rocketmq.common.app.config.BrokerConfig;

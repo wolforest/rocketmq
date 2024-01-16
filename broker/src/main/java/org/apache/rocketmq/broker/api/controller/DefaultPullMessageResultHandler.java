@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.api.processor;
+package org.apache.rocketmq.broker.api.controller;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
