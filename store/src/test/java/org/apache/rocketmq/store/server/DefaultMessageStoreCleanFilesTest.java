@@ -33,7 +33,6 @@ import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.store.StoreTestUtil;
 import org.apache.rocketmq.store.api.MessageArrivingListener;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.stats.BrokerStatsManager;

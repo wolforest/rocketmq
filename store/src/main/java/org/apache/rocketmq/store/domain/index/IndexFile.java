@@ -188,11 +188,11 @@ public class IndexFile {
 
     public int indexKeyHashMethod(final String key) {
         int keyHash = key.hashCode();
-        int keyHashPositive = Math.abs(keyHash);
-        if (keyHashPositive < 0) {
-            keyHashPositive = 0;
+        if (Integer.MIN_VALUE == keyHash) {
+            keyHash = keyHash + 1;
         }
-        return keyHashPositive;
+
+        return Math.abs(keyHash);
     }
 
     public long getBeginTimestamp() {
