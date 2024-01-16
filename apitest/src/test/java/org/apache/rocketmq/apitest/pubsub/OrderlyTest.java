@@ -16,12 +16,6 @@
  */
 package org.apache.rocketmq.apitest.pubsub;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.apitest.manager.ClientManager;
 import org.apache.rocketmq.apitest.manager.ConsumerManager;
@@ -43,6 +37,16 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Before running OrderlyTest,You should set the fifo property for the consumer-group to True
+ */
 @Test(groups = {"client"})
 public class OrderlyTest extends ApiBaseTest {
     private static final Logger LOG = LoggerFactory.getLogger(OrderlyTest.class);
@@ -151,12 +155,12 @@ public class OrderlyTest extends ApiBaseTest {
 
     private Message createMessage(int i) {
         return ClientManager.getProvider()
-            .newMessageBuilder()
-            .setTopic(TOPIC)
-            .setKeys(MESSAGE_PREFIX + i)
-            .setBody((MESSAGE_BODY + i).getBytes(StandardCharsets.UTF_8))
-            .setMessageGroup(PRODUCE_GROUP)
-            .build();
+                .newMessageBuilder()
+                .setTopic(TOPIC)
+                .setKeys(MESSAGE_PREFIX + i)
+                .setBody((MESSAGE_BODY + i).getBytes(StandardCharsets.UTF_8))
+                .setMessageGroup(PRODUCE_GROUP)
+                .build();
     }
 
 }
