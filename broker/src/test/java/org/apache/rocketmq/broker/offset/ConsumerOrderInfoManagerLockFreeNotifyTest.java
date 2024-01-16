@@ -19,10 +19,11 @@ package org.apache.rocketmq.broker.offset;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.service.pop.PopServiceManager;
-import org.apache.rocketmq.broker.service.BrokerNettyServer;
-import org.apache.rocketmq.broker.processor.PopMessageProcessor;
+import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.metadata.offset.ConsumerOrderInfoManager;
+import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
+import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
+import org.apache.rocketmq.broker.api.processor.PopMessageProcessor;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.assertj.core.util.Lists;
 import org.junit.Before;

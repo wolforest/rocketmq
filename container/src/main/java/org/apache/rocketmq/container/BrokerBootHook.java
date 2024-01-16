@@ -18,7 +18,7 @@
 package org.apache.rocketmq.container;
 
 import java.util.Properties;
-import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.server.BrokerController;
 
 public interface BrokerBootHook {
     /**

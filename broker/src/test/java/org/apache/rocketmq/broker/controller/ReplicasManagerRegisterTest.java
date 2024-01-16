@@ -17,12 +17,13 @@
 
 package org.apache.rocketmq.broker.controller;
 
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.out.BrokerOuterAPI;
-import org.apache.rocketmq.broker.service.BrokerClusterService;
-import org.apache.rocketmq.broker.service.BrokerMessageService;
-import org.apache.rocketmq.broker.slave.SlaveSynchronize;
-import org.apache.rocketmq.broker.topic.TopicConfigManager;
+import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
+import org.apache.rocketmq.broker.server.daemon.BrokerClusterService;
+import org.apache.rocketmq.broker.server.daemon.BrokerMessageService;
+import org.apache.rocketmq.broker.server.slave.ReplicasManager;
+import org.apache.rocketmq.broker.server.slave.SlaveSynchronize;
+import org.apache.rocketmq.broker.metadata.topic.TopicConfigManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.utils.IOUtils;

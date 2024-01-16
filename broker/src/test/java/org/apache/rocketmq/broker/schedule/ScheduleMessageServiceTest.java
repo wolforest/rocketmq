@@ -17,8 +17,10 @@
 
 package org.apache.rocketmq.broker.schedule;
 
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.failover.EscapeBridge;
+import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.domain.failover.EscapeBridge;
+import org.apache.rocketmq.broker.server.schedule.DelayOffsetSerializeWrapper;
+import org.apache.rocketmq.broker.server.schedule.ScheduleMessageService;
 import org.apache.rocketmq.broker.util.HookUtils;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;

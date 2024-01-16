@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.server.BrokerController;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;

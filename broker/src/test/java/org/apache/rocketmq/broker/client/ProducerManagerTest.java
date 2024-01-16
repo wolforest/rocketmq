@@ -22,6 +22,8 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
+import org.apache.rocketmq.broker.server.client.ProducerManager;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
 import org.junit.Before;
 import org.junit.Test;

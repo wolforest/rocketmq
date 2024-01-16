@@ -17,9 +17,10 @@
 package org.apache.rocketmq.broker.service.pop;
 
 import io.netty.channel.Channel;
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.client.ClientChannelInfo;
-import org.apache.rocketmq.broker.schedule.ScheduleMessageService;
+import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
+import org.apache.rocketmq.broker.server.schedule.ScheduleMessageService;
+import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.utils.ReflectUtils;

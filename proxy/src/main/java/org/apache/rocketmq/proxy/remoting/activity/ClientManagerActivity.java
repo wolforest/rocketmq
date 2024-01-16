@@ -19,11 +19,11 @@ package org.apache.rocketmq.proxy.remoting.activity;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.broker.client.ClientChannelInfo;
-import org.apache.rocketmq.broker.client.ConsumerGroupEvent;
-import org.apache.rocketmq.broker.client.ConsumerIdsChangeListener;
-import org.apache.rocketmq.broker.client.ProducerChangeListener;
-import org.apache.rocketmq.broker.client.ProducerGroupEvent;
+import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
+import org.apache.rocketmq.broker.server.client.ConsumerGroupEvent;
+import org.apache.rocketmq.broker.server.client.ConsumerIdsChangeListener;
+import org.apache.rocketmq.broker.server.client.ProducerChangeListener;
+import org.apache.rocketmq.broker.server.client.ProducerGroupEvent;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.processor.MessagingProcessor;
 import org.apache.rocketmq.proxy.remoting.channel.RemotingChannel;

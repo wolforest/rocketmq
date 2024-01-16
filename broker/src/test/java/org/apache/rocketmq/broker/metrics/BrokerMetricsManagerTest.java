@@ -20,6 +20,7 @@ package org.apache.rocketmq.broker.metrics;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
+import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

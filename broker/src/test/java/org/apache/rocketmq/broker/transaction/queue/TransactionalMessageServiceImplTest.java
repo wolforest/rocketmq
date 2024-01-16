@@ -16,10 +16,13 @@
  */
 package org.apache.rocketmq.broker.transaction.queue;
 
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.transaction.AbstractTransactionalMessageCheckListener;
-import org.apache.rocketmq.broker.transaction.OperationResult;
-import org.apache.rocketmq.broker.transaction.TransactionalMessageService;
+import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;
+import org.apache.rocketmq.broker.domain.transaction.OperationResult;
+import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
+import org.apache.rocketmq.broker.domain.transaction.queue.MessageQueueOpContext;
+import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;
+import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageServiceImpl;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.message.Message;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;

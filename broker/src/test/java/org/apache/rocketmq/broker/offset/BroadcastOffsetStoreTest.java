@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.broker.offset;
 
+import org.apache.rocketmq.broker.metadata.offset.BroadcastOffsetStore;
 import org.junit.Assert;
 import org.junit.Test;
 

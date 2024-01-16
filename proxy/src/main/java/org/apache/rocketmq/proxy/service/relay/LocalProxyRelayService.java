@@ -17,7 +17,7 @@
 package org.apache.rocketmq.proxy.service.relay;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.server.BrokerController;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.service.channel.SimpleChannel;
 import org.apache.rocketmq.proxy.service.transaction.TransactionService;

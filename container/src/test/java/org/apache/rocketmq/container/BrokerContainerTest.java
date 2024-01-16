@@ -17,8 +17,8 @@
 
 package org.apache.rocketmq.container;
 
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.out.BrokerOuterAPI;
+import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.BrokerIdentity;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;

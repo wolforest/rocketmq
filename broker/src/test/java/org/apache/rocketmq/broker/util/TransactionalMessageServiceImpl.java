@@ -17,10 +17,10 @@
 package org.apache.rocketmq.broker.util;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.transaction.AbstractTransactionalMessageCheckListener;
-import org.apache.rocketmq.broker.transaction.OperationResult;
-import org.apache.rocketmq.broker.transaction.TransactionalMessageService;
-import org.apache.rocketmq.broker.transaction.queue.TransactionalMessageBridge;
+import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;
+import org.apache.rocketmq.broker.domain.transaction.OperationResult;
+import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
+import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;

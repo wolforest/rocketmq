@@ -39,7 +39,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import org.apache.rocketmq.broker.client.ClientChannelInfo;
+import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.grpc.v2.BaseActivityTest;

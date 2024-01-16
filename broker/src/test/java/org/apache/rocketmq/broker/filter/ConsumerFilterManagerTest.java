@@ -17,6 +17,8 @@
 
 package org.apache.rocketmq.broker.filter;
 
+import org.apache.rocketmq.broker.metadata.filter.ConsumerFilterData;
+import org.apache.rocketmq.broker.metadata.filter.ConsumerFilterManager;
 import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.protocol.filter.FilterAPI;

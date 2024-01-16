@@ -17,6 +17,7 @@
 package org.apache.rocketmq.broker.transaction.queue;
 
 
+import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageUtil;
 import org.apache.rocketmq.common.domain.message.MessageAccessor;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageExt;

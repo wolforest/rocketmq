@@ -18,10 +18,10 @@ package org.apache.rocketmq.proxy.processor;
 
 import io.netty.channel.Channel;
 import java.util.Set;
-import org.apache.rocketmq.broker.client.ClientChannelInfo;
-import org.apache.rocketmq.broker.client.ConsumerGroupInfo;
-import org.apache.rocketmq.broker.client.ConsumerIdsChangeListener;
-import org.apache.rocketmq.broker.client.ProducerChangeListener;
+import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
+import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
+import org.apache.rocketmq.broker.server.client.ConsumerIdsChangeListener;
+import org.apache.rocketmq.broker.server.client.ProducerChangeListener;
 import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.service.ServiceManager;

@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.proxy.service;
 
-import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.server.BrokerController;
 import org.apache.rocketmq.remoting.RPCHook;
 
 public class ServiceManagerFactory {

@@ -20,7 +20,7 @@ import com.google.common.collect.Lists;
 import com.google.common.net.HostAndPort;
 import java.util.HashMap;
 import java.util.List;
-import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.server.BrokerController;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.message.MessageQueue;

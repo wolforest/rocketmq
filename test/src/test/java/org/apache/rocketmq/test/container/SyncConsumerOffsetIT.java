@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.server.BrokerController;
 import org.apache.rocketmq.container.BrokerContainer;
 import org.apache.rocketmq.container.InnerSalveBrokerController;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;

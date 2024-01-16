@@ -16,7 +16,8 @@
  */
 package org.apache.rocketmq.broker.service.pop;
 
-import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.store.api.pop.PopCheckPoint;
 import org.junit.Test;
 

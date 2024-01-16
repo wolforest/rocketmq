@@ -19,7 +19,7 @@ package org.apache.rocketmq.container;
 
 import io.netty.channel.Channel;
 import java.util.Collection;
-import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.server.BrokerController;
 import org.apache.rocketmq.remoting.ChannelEventListener;
 
 public class ContainerClientHouseKeepingService implements ChannelEventListener {

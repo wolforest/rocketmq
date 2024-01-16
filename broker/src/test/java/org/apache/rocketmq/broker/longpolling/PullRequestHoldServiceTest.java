@@ -19,8 +19,10 @@ package org.apache.rocketmq.broker.longpolling;
 
 import io.netty.channel.Channel;
 import java.util.HashMap;
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.service.BrokerNettyServer;
+import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
+import org.apache.rocketmq.broker.server.longpolling.PullRequest;
+import org.apache.rocketmq.broker.server.longpolling.PullRequestHoldService;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;

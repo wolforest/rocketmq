@@ -17,9 +17,10 @@
 
 package org.apache.rocketmq.broker.offset;
 
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.broker.subscription.LmqSubscriptionGroupManager;
-import org.apache.rocketmq.broker.topic.LmqTopicConfigManager;
+import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.metadata.offset.LmqConsumerOffsetManager;
+import org.apache.rocketmq.broker.metadata.subscription.LmqSubscriptionGroupManager;
+import org.apache.rocketmq.broker.metadata.topic.LmqTopicConfigManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.utils.IOUtils;

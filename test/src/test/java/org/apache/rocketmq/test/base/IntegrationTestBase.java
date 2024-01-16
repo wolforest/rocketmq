@@ -18,7 +18,7 @@
 package org.apache.rocketmq.test.base;
 
 import com.google.common.truth.Truth;
-import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.server.BrokerController;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicAttributes;
