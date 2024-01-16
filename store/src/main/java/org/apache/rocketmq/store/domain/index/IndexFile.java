@@ -56,7 +56,7 @@ public class IndexFile {
     private final IndexHeader indexHeader;
 
     public IndexFile(final String fileName, final int hashSlotNum, final int indexNum,
-        final long endPhyOffset, final long endTimestamp) throws IOException {
+                     final long endPhyOffset, final long endTimestamp) throws IOException {
         this.fileTotalSize = IndexHeader.INDEX_HEADER_SIZE + (hashSlotNum * HASH_SLOT_SIZE) + (indexNum * INDEX_SIZE);
         this.mappedFile = new DefaultMappedFile(fileName, fileTotalSize);
         this.mappedByteBuffer = this.mappedFile.getMappedByteBuffer();
@@ -188,11 +188,10 @@ public class IndexFile {
 
     public int indexKeyHashMethod(final String key) {
         int keyHash = key.hashCode();
-        int keyHashPositive = Math.abs(keyHash);
-        if (keyHashPositive < 0) {
-            keyHashPositive = 0;
+        if (Integer.MIN_VALUE == keyHash) {
+            return 0;
         }
-        return keyHashPositive;
+        return Math.abs(keyHash);
     }
 
     public long getBeginTimestamp() {
@@ -226,8 +225,8 @@ public class IndexFile {
         try {
             int slotValue = this.mappedByteBuffer.getInt(absSlotPos);
             if (slotValue <= INVALID_INDEX
-                || slotValue > this.indexHeader.getIndexCount()
-                || this.indexHeader.getIndexCount() <= 1) {
+                    || slotValue > this.indexHeader.getIndexCount()
+                    || this.indexHeader.getIndexCount() <= 1) {
                 return;
             }
 
@@ -266,9 +265,9 @@ public class IndexFile {
             }
 
             if (prevIndexRead <= INVALID_INDEX
-                || prevIndexRead > this.indexHeader.getIndexCount()
-                || prevIndexRead == nextIndexToRead
-                || timeRead < begin) {
+                    || prevIndexRead > this.indexHeader.getIndexCount()
+                    || prevIndexRead == nextIndexToRead
+                    || timeRead < begin) {
                 break;
             }
 
