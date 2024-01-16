@@ -21,7 +21,7 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.metadata.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.metadata.topic.TopicConfigManager;
@@ -79,7 +79,7 @@ public class PopReviveServiceTest {
     @Mock
     private SubscriptionGroupManager subscriptionGroupManager;
     @Mock
-    private BrokerController brokerController;
+    private Broker broker;
     @Mock
     private TimerState timerState;
 
@@ -90,11 +90,11 @@ public class PopReviveServiceTest {
     public void before() {
         brokerConfig = new BrokerConfig();
 
-        when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
-        when(brokerController.getConsumerOffsetManager()).thenReturn(consumerOffsetManager);
-        when(brokerController.getMessageStore()).thenReturn(messageStore);
-        when(brokerController.getTopicConfigManager()).thenReturn(topicConfigManager);
-        when(brokerController.getSubscriptionGroupManager()).thenReturn(subscriptionGroupManager);
+        when(broker.getBrokerConfig()).thenReturn(brokerConfig);
+        when(broker.getConsumerOffsetManager()).thenReturn(consumerOffsetManager);
+        when(broker.getMessageStore()).thenReturn(messageStore);
+        when(broker.getTopicConfigManager()).thenReturn(topicConfigManager);
+        when(broker.getSubscriptionGroupManager()).thenReturn(subscriptionGroupManager);
         when(messageStore.getTimerMessageStore()).thenReturn(timerMessageStore);
         when(timerMessageStore.getTimerState()).thenReturn(timerState);
         when(timerMessageStore.getTimerState().getDequeueBehind()).thenReturn(0L);
@@ -103,7 +103,7 @@ public class PopReviveServiceTest {
         when(topicConfigManager.selectTopicConfig(anyString())).thenReturn(new TopicConfig());
         when(subscriptionGroupManager.findSubscriptionGroupConfig(anyString())).thenReturn(new SubscriptionGroupConfig());
 
-        popReviveService = spy(new PopReviveService(brokerController, REVIVE_TOPIC, REVIVE_QUEUE_ID));
+        popReviveService = spy(new PopReviveService(broker, REVIVE_TOPIC, REVIVE_QUEUE_ID));
         popReviveService.setShouldRunPopRevive(true);
     }
 

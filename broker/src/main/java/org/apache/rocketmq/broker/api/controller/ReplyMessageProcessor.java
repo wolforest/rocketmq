@@ -20,7 +20,7 @@ package org.apache.rocketmq.broker.api.controller;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.opentelemetry.api.common.Attributes;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.domain.mqtrace.SendMessageContext;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
@@ -58,8 +58,8 @@ import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LA
 public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
-    public ReplyMessageProcessor(final BrokerController brokerController) {
-        super(brokerController);
+    public ReplyMessageProcessor(final Broker broker) {
+        super(broker);
     }
 
     @Override
@@ -112,12 +112,12 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
 
         response.setOpaque(request.getOpaque());
 
-        response.addExtField(MessageConst.PROPERTY_MSG_REGION, this.brokerController.getBrokerConfig().getRegionId());
-        response.addExtField(MessageConst.PROPERTY_TRACE_SWITCH, String.valueOf(this.brokerController.getBrokerConfig().isTraceOn()));
+        response.addExtField(MessageConst.PROPERTY_MSG_REGION, this.broker.getBrokerConfig().getRegionId());
+        response.addExtField(MessageConst.PROPERTY_TRACE_SWITCH, String.valueOf(this.broker.getBrokerConfig().isTraceOn()));
 
         log.debug("receive SendReplyMessage request command, {}", request);
-        final long startTimstamp = this.brokerController.getBrokerConfig().getStartAcceptSendRequestTimeStamp();
-        if (this.brokerController.getMessageStore().now() < startTimstamp) {
+        final long startTimstamp = this.broker.getBrokerConfig().getStartAcceptSendRequestTimeStamp();
+        if (this.broker.getMessageStore().now() < startTimstamp) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(String.format("broker unable to service, until %s", TimeUtils.timeMillisToHumanString2(startTimstamp)));
             return response;
@@ -132,7 +132,7 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
         final byte[] body = request.getBody();
 
         int queueIdInt = requestHeader.getQueueId();
-        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+        TopicConfig topicConfig = this.broker.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
 
         if (queueIdInt < 0) {
             queueIdInt = ThreadLocalRandom.current().nextInt(99999999) % topicConfig.getWriteQueueNums();
@@ -153,8 +153,8 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
         PushReplyResult pushReplyResult = this.pushReplyMessage(ctx, requestHeader, msgInner);
         this.handlePushReplyResult(pushReplyResult, response, responseHeader, queueIdInt);
 
-        if (this.brokerController.getBrokerConfig().isStoreReplyMessageEnable()) {
-            PutMessageResult putMessageResult = this.brokerController.getMessageStore().putMessage(msgInner);
+        if (this.broker.getBrokerConfig().isStoreReplyMessageEnable()) {
+            PutMessageResult putMessageResult = this.broker.getMessageStore().putMessage(msgInner);
             this.handlePutMessageResult(putMessageResult, request, msgInner, responseHeader, sendMessageContext, queueIdInt, BrokerMetricsManager.getMessageType(requestHeader));
         }
 
@@ -189,13 +189,13 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
         PushReplyResult pushReplyResult = new PushReplyResult(false);
 
         if (senderId != null) {
-            Channel channel = this.brokerController.getProducerManager().findChannel(senderId);
+            Channel channel = this.broker.getProducerManager().findChannel(senderId);
             if (channel != null) {
                 msg.getProperties().put(MessageConst.PROPERTY_PUSH_REPLY_TIME, String.valueOf(System.currentTimeMillis()));
                 replyMessageRequestHeader.setProperties(MessageDecoder.messageProperties2String(msg.getProperties()));
 
                 try {
-                    RemotingCommand pushResponse = this.brokerController.getBroker2Client().callClient(channel, request);
+                    RemotingCommand pushResponse = this.broker.getBroker2Client().callClient(channel, request);
                     assert pushResponse != null;
                     if (pushResponse.getCode() == ResponseCode.SUCCESS) {
                         pushReplyResult.setPushOk(true);
@@ -264,7 +264,7 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
             case MESSAGE_ILLEGAL:
                 log.warn(
                     "the message is illegal, maybe msg body or properties length not matched. msg body length limit {}B.",
-                    this.brokerController.getMessageStoreConfig().getMaxMessageSize());
+                    this.broker.getMessageStoreConfig().getMaxMessageSize());
                 break;
             case PROPERTIES_SIZE_EXCEEDED:
                 log.warn(
@@ -287,12 +287,12 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
         }
 
         String owner = request.getExtFields().get(BrokerStatsManager.COMMERCIAL_OWNER);
-        int commercialSizePerMsg = brokerController.getBrokerConfig().getCommercialSizePerMsg();
+        int commercialSizePerMsg = broker.getBrokerConfig().getCommercialSizePerMsg();
         if (putOk) {
-            this.brokerController.getBrokerStatsManager().incTopicPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum(), 1);
-            this.brokerController.getBrokerStatsManager().incTopicPutSize(msg.getTopic(),
+            this.broker.getBrokerStatsManager().incTopicPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum(), 1);
+            this.broker.getBrokerStatsManager().incTopicPutSize(msg.getTopic(),
                 putMessageResult.getAppendMessageResult().getWroteBytes());
-            this.brokerController.getBrokerStatsManager().incBrokerPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum());
+            this.broker.getBrokerStatsManager().incBrokerPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum());
 
             if (!BrokerMetricsManager.isRetryOrDlqTopic(msg.getTopic())) {
                 Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
@@ -314,7 +314,7 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
                 sendMessageContext.setQueueId(responseHeader.getQueueId());
                 sendMessageContext.setQueueOffset(responseHeader.getQueueOffset());
 
-                int commercialBaseCount = brokerController.getBrokerConfig().getCommercialBaseCount();
+                int commercialBaseCount = broker.getBrokerConfig().getCommercialBaseCount();
                 int wroteSize = putMessageResult.getAppendMessageResult().getWroteBytes();
                 int incValue = (int) Math.ceil(wroteSize * 1.0 / commercialSizePerMsg) * commercialBaseCount;
 

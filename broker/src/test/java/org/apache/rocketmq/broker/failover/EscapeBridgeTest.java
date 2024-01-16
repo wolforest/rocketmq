@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.failover.EscapeBridge;
 import org.apache.rocketmq.broker.server.daemon.BrokerMessageService;
 import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
@@ -60,7 +60,7 @@ public class EscapeBridgeTest {
     private EscapeBridge escapeBridge;
 
     @Mock
-    private BrokerController brokerController;
+    private Broker broker;
 
     @Mock
     private MessageExtBrokerInner messageExtBrokerInner;
@@ -90,19 +90,19 @@ public class EscapeBridgeTest {
         brokerConfig = new BrokerConfig();
         getMessageResult = new GetMessageResult();
         brokerConfig.setBrokerName(BROKER_NAME);
-        when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
+        when(broker.getBrokerConfig()).thenReturn(brokerConfig);
 
-        escapeBridge = new EscapeBridge(brokerController);
+        escapeBridge = new EscapeBridge(broker);
         messageExtBrokerInner = new MessageExtBrokerInner();
-        when(brokerController.getMessageStore()).thenReturn(defaultMessageStore);
+        when(broker.getMessageStore()).thenReturn(defaultMessageStore);
         when(defaultMessageStore.getMessageAsync(anyString(), anyString(), anyInt(), anyLong(), anyInt(), any())).thenReturn(CompletableFuture.completedFuture(getMessageResult));
 
         TopicRouteInfoManager topicRouteInfoManager = mock(TopicRouteInfoManager.class);
-        when(brokerController.getTopicRouteInfoManager()).thenReturn(topicRouteInfoManager);
+        when(broker.getTopicRouteInfoManager()).thenReturn(topicRouteInfoManager);
         when(topicRouteInfoManager.findBrokerAddressInSubscribe(anyString(), anyLong(), anyBoolean())).thenReturn("");
 
         BrokerOuterAPI brokerOuterAPI = mock(BrokerOuterAPI.class);
-        when(brokerController.getBrokerOuterAPI()).thenReturn(brokerOuterAPI);
+        when(broker.getBrokerOuterAPI()).thenReturn(brokerOuterAPI);
         when(brokerOuterAPI.pullMessageFromSpecificBrokerAsync(anyString(), anyString(), anyString(), anyString(), anyInt(), anyLong(), anyInt(), anyLong()))
             .thenReturn(CompletableFuture.completedFuture(new PullResult(PullStatus.FOUND, -1, -1, -1, new ArrayList<>())));
 
@@ -115,7 +115,7 @@ public class EscapeBridgeTest {
     @After
     public void after() {
         escapeBridge.shutdown();
-        brokerController.shutdown();
+        broker.shutdown();
         defaultMQProducer.shutdown();
     }
 
@@ -131,10 +131,10 @@ public class EscapeBridgeTest {
 
         // masterBroker is not null
         messageExtBrokerInner.setBody("Hello World2".getBytes(StandardCharsets.UTF_8));
-        when(brokerController.peekMasterBroker()).thenReturn(brokerController);
+        when(broker.peekMasterBroker()).thenReturn(broker);
         Assertions.assertThatCode(() -> escapeBridge.putMessage(messageExtBrokerInner)).doesNotThrowAnyException();
 
-        when(brokerController.peekMasterBroker()).thenReturn(null);
+        when(broker.peekMasterBroker()).thenReturn(null);
         final PutMessageResult result3 = escapeBridge.putMessage(messageExtBrokerInner);
         assert result3 != null;
         assert PutMessageStatus.PUT_TO_REMOTE_BROKER_FAIL.equals(result3.getPutMessageStatus());
@@ -147,10 +147,10 @@ public class EscapeBridgeTest {
         Assertions.assertThatCode(() -> escapeBridge.asyncPutMessage(messageExtBrokerInner)).doesNotThrowAnyException();
 
         // masterBroker is not null
-        when(brokerController.peekMasterBroker()).thenReturn(brokerController);
+        when(broker.peekMasterBroker()).thenReturn(broker);
         Assertions.assertThatCode(() -> escapeBridge.asyncPutMessage(messageExtBrokerInner)).doesNotThrowAnyException();
 
-        when(brokerController.peekMasterBroker()).thenReturn(null);
+        when(broker.peekMasterBroker()).thenReturn(null);
         Assertions.assertThatCode(() -> escapeBridge.asyncPutMessage(messageExtBrokerInner)).doesNotThrowAnyException();
     }
 
@@ -162,15 +162,15 @@ public class EscapeBridgeTest {
         assert PutMessageStatus.PUT_TO_REMOTE_BROKER_FAIL.equals(result1.getPutMessageStatus());
 
         // masterBroker is not null
-        when(brokerController.peekMasterBroker()).thenReturn(brokerController);
+        when(broker.peekMasterBroker()).thenReturn(broker);
         Assertions.assertThatCode(() -> escapeBridge.putMessageToSpecificQueue(messageExtBrokerInner)).doesNotThrowAnyException();
     }
 
     @Test
     public void getMessageTest() {
-        when(brokerController.peekMasterBroker()).thenReturn(brokerController);
-        when(brokerController.getBrokerMessageService()).thenReturn(brokerMessageService);
-        when(brokerController.getBrokerMessageService().getMessageStoreByBrokerName(any())).thenReturn(defaultMessageStore);
+        when(broker.peekMasterBroker()).thenReturn(broker);
+        when(broker.getBrokerMessageService()).thenReturn(brokerMessageService);
+        when(broker.getBrokerMessageService().getMessageStoreByBrokerName(any())).thenReturn(defaultMessageStore);
         Assertions.assertThatCode(() -> escapeBridge.putMessage(messageExtBrokerInner)).doesNotThrowAnyException();
 
         Assertions.assertThatCode(() -> escapeBridge.getMessage(TEST_TOPIC, 0, DEFAULT_QUEUE_ID, BROKER_NAME, false)).doesNotThrowAnyException();
@@ -178,9 +178,9 @@ public class EscapeBridgeTest {
 
     @Test
     public void getMessageAsyncTest() {
-        when(brokerController.peekMasterBroker()).thenReturn(brokerController);
-        when(brokerController.getBrokerMessageService()).thenReturn(brokerMessageService);
-        when(brokerController.getBrokerMessageService().getMessageStoreByBrokerName(any())).thenReturn(defaultMessageStore);
+        when(broker.peekMasterBroker()).thenReturn(broker);
+        when(broker.getBrokerMessageService()).thenReturn(brokerMessageService);
+        when(broker.getBrokerMessageService().getMessageStoreByBrokerName(any())).thenReturn(defaultMessageStore);
         Assertions.assertThatCode(() -> escapeBridge.putMessage(messageExtBrokerInner)).doesNotThrowAnyException();
 
         Assertions.assertThatCode(() -> escapeBridge.getMessageAsync(TEST_TOPIC, 0, DEFAULT_QUEUE_ID, BROKER_NAME, false)).doesNotThrowAnyException();

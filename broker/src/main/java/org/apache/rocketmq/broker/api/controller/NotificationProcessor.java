@@ -20,7 +20,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import java.util.Objects;
 import java.util.Random;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.longpolling.PollingHeader;
 import org.apache.rocketmq.broker.server.longpolling.PollingResult;
 import org.apache.rocketmq.broker.server.longpolling.PopLongPollingService;
@@ -43,14 +43,14 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 
 public class NotificationProcessor implements NettyRequestProcessor {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final Random random = new Random(System.currentTimeMillis());
     private final PopLongPollingService popLongPollingService;
     private static final String BORN_TIME = "bornTime";
 
-    public NotificationProcessor(final BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.popLongPollingService = new PopLongPollingService(brokerController, this);
+    public NotificationProcessor(final Broker broker) {
+        this.broker = broker;
+        this.popLongPollingService = new PopLongPollingService(broker, this);
     }
 
     @Override
@@ -78,13 +78,13 @@ public class NotificationProcessor implements NettyRequestProcessor {
 
         response.setOpaque(request.getOpaque());
 
-        if (!PermName.isReadable(this.brokerController.getBrokerConfig().getBrokerPermission())) {
+        if (!PermName.isReadable(this.broker.getBrokerConfig().getBrokerPermission())) {
             response.setCode(ResponseCode.NO_PERMISSION);
-            response.setRemark(String.format("the broker[%s] peeking message is forbidden", this.brokerController.getBrokerConfig().getBrokerIP1()));
+            response.setRemark(String.format("the broker[%s] peeking message is forbidden", this.broker.getBrokerConfig().getBrokerIP1()));
             return response;
         }
 
-        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+        TopicConfig topicConfig = this.broker.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
         if (null == topicConfig) {
             POP_LOGGER.error("The topic {} not exist, consumer: {} ", requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(channel));
             response.setCode(ResponseCode.TOPIC_NOT_EXIST);
@@ -107,7 +107,7 @@ public class NotificationProcessor implements NettyRequestProcessor {
             return response;
         }
 
-        SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
+        SubscriptionGroupConfig subscriptionGroupConfig = this.broker.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
         if (null == subscriptionGroupConfig) {
             response.setCode(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST);
             response.setRemark(String.format("subscription group [%s] does not exist, %s", requestHeader.getConsumerGroup(), FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST)));
@@ -122,7 +122,7 @@ public class NotificationProcessor implements NettyRequestProcessor {
         int randomQ = random.nextInt(100);
         boolean hasMsg = false;
         boolean needRetry = randomQ % 5 == 0;
-        BrokerConfig brokerConfig = brokerController.getBrokerConfig();
+        BrokerConfig brokerConfig = broker.getBrokerConfig();
         if (needRetry) {
             String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup(), brokerConfig.isEnableRetryTopicV2());
             hasMsg = hasMsgFromTopic(retryTopic, randomQ, requestHeader);
@@ -162,7 +162,7 @@ public class NotificationProcessor implements NettyRequestProcessor {
 
     private boolean hasMsgFromTopic(String topicName, int randomQ, NotificationRequestHeader requestHeader) {
         boolean hasMsg;
-        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(topicName);
+        TopicConfig topicConfig = this.broker.getTopicConfigManager().selectTopicConfig(topicName);
         return hasMsgFromTopic(topicConfig, randomQ, requestHeader);
     }
 
@@ -182,21 +182,21 @@ public class NotificationProcessor implements NettyRequestProcessor {
 
     private boolean hasMsgFromQueue(String targetTopic, NotificationRequestHeader requestHeader, int queueId) {
         if (Boolean.TRUE.equals(requestHeader.getOrder())) {
-            if (this.brokerController.getConsumerOrderInfoManager().checkBlock(requestHeader.getAttemptId(), requestHeader.getTopic(), requestHeader.getConsumerGroup(), queueId, 0)) {
+            if (this.broker.getConsumerOrderInfoManager().checkBlock(requestHeader.getAttemptId(), requestHeader.getTopic(), requestHeader.getConsumerGroup(), queueId, 0)) {
                 return false;
             }
         }
         long offset = getPopOffset(targetTopic, requestHeader.getConsumerGroup(), queueId);
-        long restNum = this.brokerController.getMessageStore().getMaxOffsetInQueue(targetTopic, queueId) - offset;
+        long restNum = this.broker.getMessageStore().getMaxOffsetInQueue(targetTopic, queueId) - offset;
         return restNum > 0;
     }
 
     private long getPopOffset(String topic, String cid, int queueId) {
-        long offset = this.brokerController.getConsumerOffsetManager().queryOffset(cid, topic, queueId);
+        long offset = this.broker.getConsumerOffsetManager().queryOffset(cid, topic, queueId);
         if (offset < 0) {
-            offset = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, queueId);
+            offset = this.broker.getMessageStore().getMinOffsetInQueue(topic, queueId);
         }
-        long bufferOffset = this.brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()
+        long bufferOffset = this.broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()
             .getLatestOffset(topic, cid, queueId);
         if (bufferOffset < 0) {
             return offset;

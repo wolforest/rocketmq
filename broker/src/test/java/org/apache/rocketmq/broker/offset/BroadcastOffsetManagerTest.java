@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.server.client.ConsumerManager;
 import org.apache.rocketmq.broker.metadata.offset.BroadcastOffsetManager;
@@ -57,10 +57,10 @@ public class BroadcastOffsetManagerTest {
         brokerConfig.setEnableBroadcastOffsetStore(true);
         brokerConfig.setBroadcastOffsetExpireSecond(1);
         brokerConfig.setBroadcastOffsetExpireMaxSecond(5);
-        BrokerController brokerController = mock(BrokerController.class);
-        when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
+        Broker broker = mock(Broker.class);
+        when(broker.getBrokerConfig()).thenReturn(brokerConfig);
 
-        when(brokerController.getConsumerManager()).thenReturn(consumerManager);
+        when(broker.getConsumerManager()).thenReturn(consumerManager);
         doAnswer((Answer<ClientChannelInfo>) mock -> {
             String clientId = mock.getArgument(1);
             if (onlineClientIdSet.contains(clientId)) {
@@ -75,14 +75,14 @@ public class BroadcastOffsetManagerTest {
             commitOffset.set(mock.getArgument(4));
             return null;
         }).when(consumerOffsetManager).commitOffset(anyString(), anyString(), anyString(), anyInt(), anyLong());
-        when(brokerController.getConsumerOffsetManager()).thenReturn(consumerOffsetManager);
+        when(broker.getConsumerOffsetManager()).thenReturn(consumerOffsetManager);
 
         MessageStore messageStore = mock(MessageStore.class);
         doAnswer((Answer<Long>) mock -> maxOffset.get())
             .when(messageStore).getMaxOffsetInQueue(anyString(), anyInt(), anyBoolean());
-        when(brokerController.getMessageStore()).thenReturn(messageStore);
+        when(broker.getMessageStore()).thenReturn(messageStore);
 
-        broadcastOffsetManager = new BroadcastOffsetManager(brokerController);
+        broadcastOffsetManager = new BroadcastOffsetManager(broker);
     }
 
     @Test

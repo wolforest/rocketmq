@@ -21,7 +21,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageConst;
@@ -38,7 +38,7 @@ import org.apache.rocketmq.remoting.protocol.header.CheckTransactionStateRequest
 public abstract class AbstractTransactionalMessageCheckListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
 
-    private BrokerController brokerController;
+    private Broker broker;
 
     //queue nums of topic TRANS_CHECK_MAX_TIME_TOPIC
     protected final static int TCMT_QUEUE_NUMS = 1;
@@ -48,8 +48,8 @@ public abstract class AbstractTransactionalMessageCheckListener {
     public AbstractTransactionalMessageCheckListener() {
     }
 
-    public AbstractTransactionalMessageCheckListener(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public AbstractTransactionalMessageCheckListener(Broker broker) {
+        this.broker = broker;
     }
 
     public void resolveHalfMsg(final MessageExt msgExt) {
@@ -84,23 +84,23 @@ public abstract class AbstractTransactionalMessageCheckListener {
         header.setMsgId(msgExt.getUserProperty(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX));
         header.setTransactionId(header.getMsgId());
         header.setTranStateTableOffset(msgExt.getQueueOffset());
-        header.setBrokerName(brokerController.getBrokerConfig().getBrokerName());
+        header.setBrokerName(broker.getBrokerConfig().getBrokerName());
 
         msgExt.setTopic(msgExt.getUserProperty(MessageConst.PROPERTY_REAL_TOPIC));
         msgExt.setQueueId(Integer.parseInt(msgExt.getUserProperty(MessageConst.PROPERTY_REAL_QUEUE_ID)));
         msgExt.setStoreSize(0);
 
         String groupId = msgExt.getProperty(MessageConst.PROPERTY_PRODUCER_GROUP);
-        Channel channel = brokerController.getProducerManager().getAvailableChannel(groupId);
+        Channel channel = broker.getProducerManager().getAvailableChannel(groupId);
         if (channel != null) {
-            brokerController.getBroker2Client().checkProducerTransactionState(groupId, channel, header, msgExt);
+            broker.getBroker2Client().checkProducerTransactionState(groupId, channel, header, msgExt);
         } else {
             LOGGER.warn("Check transaction failed, channel is null. groupId={}", groupId);
         }
     }
 
-    public BrokerController getBrokerController() {
-        return brokerController;
+    public Broker getBrokerController() {
+        return broker;
     }
 
     public void shutDown() {
@@ -112,17 +112,17 @@ public abstract class AbstractTransactionalMessageCheckListener {
     public synchronized void initExecutorService() {
         if (executorService == null) {
             executorService = ThreadUtils.newThreadPoolExecutor(2, 5, 100, TimeUnit.SECONDS, new ArrayBlockingQueue<>(2000),
-                new ThreadFactoryImpl("Transaction-msg-check-thread", brokerController.getBrokerIdentity()), new CallerRunsPolicy());
+                new ThreadFactoryImpl("Transaction-msg-check-thread", broker.getBrokerIdentity()), new CallerRunsPolicy());
         }
     }
 
     /**
      * Inject brokerController for this listener
      *
-     * @param brokerController brokerController
+     * @param broker brokerController
      */
-    public void setBrokerController(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public void setBrokerController(Broker broker) {
+        this.broker = broker;
         initExecutorService();
     }
 

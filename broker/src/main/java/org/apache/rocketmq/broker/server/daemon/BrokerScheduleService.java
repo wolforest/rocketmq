@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
@@ -52,7 +52,7 @@ public class BrokerScheduleService {
 
     private final BrokerConfig brokerConfig;
     private final MessageStoreConfig messageStoreConfig;
-    private final BrokerController brokerController;
+    private final Broker broker;
 
     private ScheduledExecutorService scheduledExecutorService;
 
@@ -63,14 +63,14 @@ public class BrokerScheduleService {
     public BrokerScheduleService(
         final BrokerConfig brokerConfig,
         final MessageStoreConfig messageStoreConfig,
-        final BrokerController brokerController
+        final Broker broker
     ) {
         this.brokerConfig = brokerConfig;
         this.messageStoreConfig = messageStoreConfig;
-        this.brokerController = brokerController;
+        this.broker = broker;
 
         this.brokerMemberGroup = new BrokerMemberGroup(this.brokerConfig.getBrokerClusterName(), this.brokerConfig.getBrokerName());
-        this.brokerMemberGroup.getBrokerAddrs().put(this.brokerConfig.getBrokerId(), brokerController.getBrokerAddr());
+        this.brokerMemberGroup.getBrokerAddrs().put(this.brokerConfig.getBrokerId(), broker.getBrokerAddr());
 
         initPoolExecutors();
     }
@@ -221,7 +221,7 @@ public class BrokerScheduleService {
 
     public void syncBrokerMemberGroup() {
         try {
-            brokerMemberGroup = brokerController.getBrokerOuterAPI()
+            brokerMemberGroup = broker.getBrokerOuterAPI()
                 .syncBrokerMemberGroup(this.brokerConfig.getBrokerClusterName(), this.brokerConfig.getBrokerName(), this.brokerConfig.isCompatibleWithOldNameSrv());
         } catch (Exception e) {
             LOG.error("syncBrokerMemberGroup from namesrv failed, ", e);
@@ -231,11 +231,11 @@ public class BrokerScheduleService {
             LOG.warn("Couldn't find any broker member from namesrv in {}/{}", this.brokerConfig.getBrokerClusterName(), this.brokerConfig.getBrokerName());
             return;
         }
-        brokerController.getMessageStore().setAliveReplicaNumInGroup(calcAliveBrokerNumInGroup(brokerMemberGroup.getBrokerAddrs()));
+        broker.getMessageStore().setAliveReplicaNumInGroup(calcAliveBrokerNumInGroup(brokerMemberGroup.getBrokerAddrs()));
 
-        if (!brokerController.isIsolated()) {
+        if (!broker.isIsolated()) {
             long minBrokerId = brokerMemberGroup.minimumBrokerId();
-            brokerController.getBrokerClusterService().updateMinBroker(minBrokerId, brokerMemberGroup.getBrokerAddrs().get(minBrokerId));
+            broker.getBrokerClusterService().updateMinBroker(minBrokerId, brokerMemberGroup.getBrokerAddrs().get(minBrokerId));
         }
     }
 
@@ -385,7 +385,7 @@ public class BrokerScheduleService {
             return;
         }
 
-        for (Map.Entry<String, MomentStatsItem> next : brokerController.getBrokerStatsManager().getMomentStatsItemSetFallSize().getStatsItemTable().entrySet()) {
+        for (Map.Entry<String, MomentStatsItem> next : broker.getBrokerStatsManager().getMomentStatsItemSetFallSize().getStatsItemTable().entrySet()) {
             final long fallBehindBytes = next.getValue().getValue().get();
             if (fallBehindBytes <= this.brokerConfig.getConsumerFallbehindThreshold()) {
                 continue;
@@ -394,7 +394,7 @@ public class BrokerScheduleService {
             final String[] split = next.getValue().getStatsKey().split("@");
             final String group = split[2];
             LOG_PROTECTION.info("[PROTECT_BROKER] the consumer[{}] consume slowly, {} bytes, disable it", group, fallBehindBytes);
-            brokerController.getBrokerMetadataManager().getSubscriptionGroupManager().disableConsume(group);
+            broker.getBrokerMetadataManager().getSubscriptionGroupManager().disableConsume(group);
         }
     }
 
@@ -461,8 +461,8 @@ public class BrokerScheduleService {
         return messageStoreConfig;
     }
 
-    public BrokerController getBrokerController() {
-        return brokerController;
+    public Broker getBrokerController() {
+        return broker;
     }
 
 }

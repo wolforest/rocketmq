@@ -17,7 +17,7 @@
 package org.apache.rocketmq.container;
 
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.app.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
@@ -27,7 +27,7 @@ import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
-public class InnerBrokerController extends BrokerController {
+public class InnerBrokerController extends Broker {
     protected BrokerContainer brokerContainer;
 
     public InnerBrokerController(
@@ -71,16 +71,16 @@ public class InnerBrokerController extends BrokerController {
             public void run0() {
                 try {
                     if (System.currentTimeMillis() < shouldStartTime) {
-                        BrokerController.LOG.info("Register to namesrv after {}", shouldStartTime);
+                        Broker.LOG.info("Register to namesrv after {}", shouldStartTime);
                         return;
                     }
                     if (isIsolated) {
-                        BrokerController.LOG.info("Skip register for broker is isolated");
+                        Broker.LOG.info("Skip register for broker is isolated");
                         return;
                     }
                     InnerBrokerController.this.getBrokerServiceRegistry().registerBrokerAll(true, false, brokerConfig.isForceRegister());
                 } catch (Throwable e) {
-                    BrokerController.LOG.error("registerBrokerAll Exception", e);
+                    Broker.LOG.error("registerBrokerAll Exception", e);
                 }
             }
         }, 1000 * 10, Math.max(10000, Math.min(brokerConfig.getRegisterNameServerPeriod(), 60000)), TimeUnit.MILLISECONDS));
@@ -94,7 +94,7 @@ public class InnerBrokerController extends BrokerController {
                     try {
                         InnerBrokerController.this.getBrokerScheduleService().syncBrokerMemberGroup();
                     } catch (Throwable e) {
-                        BrokerController.LOG.error("sync BrokerMemberGroup error. ", e);
+                        Broker.LOG.error("sync BrokerMemberGroup error. ", e);
                     }
                 }
             }, 1000, this.brokerConfig.getSyncBrokerMemberGroupPeriod(), TimeUnit.MILLISECONDS));
@@ -162,15 +162,15 @@ public class InnerBrokerController extends BrokerController {
         if (this.brokerConfig.getBrokerName().equals(brokerName)) {
             return this.getMessageStore();
         }
-        BrokerController brokerController = this.brokerContainer.findBrokerControllerByBrokerName(brokerName);
-        if (brokerController != null) {
-            return brokerController.getMessageStore();
+        Broker broker = this.brokerContainer.findBrokerControllerByBrokerName(brokerName);
+        if (broker != null) {
+            return broker.getMessageStore();
         }
         return null;
     }
 
     @Override
-    public BrokerController peekMasterBroker() {
+    public Broker peekMasterBroker() {
         if (brokerConfig.getBrokerId() == MQConstants.MASTER_ID) {
             return this;
         }

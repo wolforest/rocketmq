@@ -20,7 +20,7 @@ package org.apache.rocketmq.broker.client;
 import io.netty.channel.Channel;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.server.client.ConsumerManager;
@@ -56,7 +56,7 @@ public class ConsumerManagerTest {
     private DefaultConsumerIdsChangeListener defaultConsumerIdsChangeListener;
 
     @Mock
-    private BrokerController brokerController;
+    private Broker broker;
 
     @Mock
     private ConsumerFilterManager consumerFilterManager;
@@ -78,13 +78,13 @@ public class ConsumerManagerTest {
     @Before
     public void before() {
         clientChannelInfo = new ClientChannelInfo(channel, CLIENT_ID, LanguageCode.JAVA, VERSION);
-        defaultConsumerIdsChangeListener = new DefaultConsumerIdsChangeListener(brokerController);
+        defaultConsumerIdsChangeListener = new DefaultConsumerIdsChangeListener(broker);
         brokerStatsManager = new BrokerStatsManager(brokerConfig);
         consumerManager = new ConsumerManager(defaultConsumerIdsChangeListener, brokerStatsManager, brokerConfig);
-        broker2Client = new Broker2Client(brokerController);
-        when(brokerController.getConsumerFilterManager()).thenReturn(consumerFilterManager);
-        when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
-        when(brokerController.getBroker2Client()).thenReturn(broker2Client);
+        broker2Client = new Broker2Client(broker);
+        when(broker.getConsumerFilterManager()).thenReturn(consumerFilterManager);
+        when(broker.getBrokerConfig()).thenReturn(brokerConfig);
+        when(broker.getBroker2Client()).thenReturn(broker2Client);
     }
 
     @Test

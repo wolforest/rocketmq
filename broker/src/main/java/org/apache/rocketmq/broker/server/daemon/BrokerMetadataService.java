@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.server.daemon;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.filter.ConsumerFilterManager;
 import org.apache.rocketmq.broker.metadata.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.metadata.offset.ConsumerOrderInfoManager;
@@ -42,7 +42,7 @@ public class BrokerMetadataService {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
     private final MessageStoreConfig messageStoreConfig;
-    private final BrokerController brokerController;
+    private final Broker broker;
 
     protected TopicQueueMappingManager topicQueueMappingManager;
     private ConsumerOffsetManager consumerOffsetManager;
@@ -51,9 +51,9 @@ public class BrokerMetadataService {
     protected TopicConfigManager topicConfigManager;
     protected SubscriptionGroupManager subscriptionGroupManager;
 
-    public BrokerMetadataService(BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.messageStoreConfig = brokerController.getMessageStoreConfig();
+    public BrokerMetadataService(Broker broker) {
+        this.broker = broker;
+        this.messageStoreConfig = broker.getMessageStoreConfig();
         init();
     }
 
@@ -104,18 +104,18 @@ public class BrokerMetadataService {
 
     private void init() {
         if (isEnableRocksDBStore()) {
-            this.topicConfigManager = messageStoreConfig.isEnableLmq() ? new RocksDBLmqTopicConfigManager(brokerController) : new RocksDBTopicConfigManager(brokerController);
-            this.subscriptionGroupManager = messageStoreConfig.isEnableLmq() ? new RocksDBLmqSubscriptionGroupManager(brokerController) : new RocksDBSubscriptionGroupManager(brokerController);
-            this.consumerOffsetManager = messageStoreConfig.isEnableLmq() ? new RocksDBLmqConsumerOffsetManager(brokerController) : new RocksDBConsumerOffsetManager(brokerController);
+            this.topicConfigManager = messageStoreConfig.isEnableLmq() ? new RocksDBLmqTopicConfigManager(broker) : new RocksDBTopicConfigManager(broker);
+            this.subscriptionGroupManager = messageStoreConfig.isEnableLmq() ? new RocksDBLmqSubscriptionGroupManager(broker) : new RocksDBSubscriptionGroupManager(broker);
+            this.consumerOffsetManager = messageStoreConfig.isEnableLmq() ? new RocksDBLmqConsumerOffsetManager(broker) : new RocksDBConsumerOffsetManager(broker);
         } else {
-            this.topicConfigManager = messageStoreConfig.isEnableLmq() ? new LmqTopicConfigManager(brokerController) : new TopicConfigManager(brokerController);
-            this.subscriptionGroupManager = messageStoreConfig.isEnableLmq() ? new LmqSubscriptionGroupManager(brokerController) : new SubscriptionGroupManager(brokerController);
-            this.consumerOffsetManager = messageStoreConfig.isEnableLmq() ? new LmqConsumerOffsetManager(brokerController) : new ConsumerOffsetManager(brokerController);
+            this.topicConfigManager = messageStoreConfig.isEnableLmq() ? new LmqTopicConfigManager(broker) : new TopicConfigManager(broker);
+            this.subscriptionGroupManager = messageStoreConfig.isEnableLmq() ? new LmqSubscriptionGroupManager(broker) : new SubscriptionGroupManager(broker);
+            this.consumerOffsetManager = messageStoreConfig.isEnableLmq() ? new LmqConsumerOffsetManager(broker) : new ConsumerOffsetManager(broker);
         }
 
-        this.topicQueueMappingManager = new TopicQueueMappingManager(brokerController);
-        this.consumerFilterManager = new ConsumerFilterManager(brokerController);
-        this.consumerOrderInfoManager = new ConsumerOrderInfoManager(brokerController);
+        this.topicQueueMappingManager = new TopicQueueMappingManager(broker);
+        this.consumerFilterManager = new ConsumerFilterManager(broker);
+        this.consumerOrderInfoManager = new ConsumerOrderInfoManager(broker);
     }
 
     public TopicQueueMappingManager getTopicQueueMappingManager() {

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
@@ -47,14 +47,14 @@ public class ConsumerOrderInfoManager extends ConfigManager {
         new ConcurrentHashMap<>(128);
 
     private transient ConsumerOrderInfoLockManager consumerOrderInfoLockManager;
-    private transient BrokerController brokerController;
+    private transient Broker broker;
 
     public ConsumerOrderInfoManager() {
     }
 
-    public ConsumerOrderInfoManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.consumerOrderInfoLockManager = new ConsumerOrderInfoLockManager(brokerController);
+    public ConsumerOrderInfoManager(Broker broker) {
+        this.broker = broker;
+        this.consumerOrderInfoLockManager = new ConsumerOrderInfoLockManager(broker);
     }
 
     public ConcurrentHashMap<String, ConcurrentHashMap<Integer, OrderInfo>> getTable() {
@@ -257,7 +257,7 @@ public class ConsumerOrderInfoManager extends ConfigManager {
     }
 
     protected void autoClean() {
-        if (brokerController == null) {
+        if (broker == null) {
             return;
         }
         Iterator<Map.Entry<String/* topic@group*/, ConcurrentHashMap<Integer/*queueId*/, OrderInfo>>> iterator =
@@ -274,14 +274,14 @@ public class ConsumerOrderInfoManager extends ConfigManager {
             String topic = arrays[0];
             String group = arrays[1];
 
-            TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(topic);
+            TopicConfig topicConfig = this.broker.getTopicConfigManager().selectTopicConfig(topic);
             if (topicConfig == null) {
                 iterator.remove();
                 log.info("Topic not exist, Clean order info, {}:{}", topicAtGroup, qs);
                 continue;
             }
 
-            if (this.brokerController.getSubscriptionGroupManager().getSubscriptionGroupTable().get(group) == null) {
+            if (this.broker.getSubscriptionGroupManager().getSubscriptionGroupTable().get(group) == null) {
                 iterator.remove();
                 log.info("Group not exist, Clean order info, {}:{}", topicAtGroup, qs);
                 continue;
@@ -318,8 +318,8 @@ public class ConsumerOrderInfoManager extends ConfigManager {
 
     @Override
     public String configFilePath() {
-        if (brokerController != null) {
-            return BrokerPathConfigHelper.getConsumerOrderInfoPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
+        if (broker != null) {
+            return BrokerPathConfigHelper.getConsumerOrderInfoPath(this.broker.getMessageStoreConfig().getStorePathRootDir());
         } else {
             return BrokerPathConfigHelper.getConsumerOrderInfoPath("~");
         }

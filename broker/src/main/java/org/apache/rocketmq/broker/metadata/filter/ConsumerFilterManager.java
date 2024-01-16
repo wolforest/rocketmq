@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -49,7 +49,7 @@ public class ConsumerFilterManager extends ConfigManager {
     private ConcurrentMap<String/*Topic*/, FilterDataMapByTopic>
         filterDataByTopic = new ConcurrentHashMap<>(256);
 
-    private transient BrokerController brokerController;
+    private transient Broker broker;
     private transient BloomFilter bloomFilter;
 
     public ConsumerFilterManager() {
@@ -57,14 +57,14 @@ public class ConsumerFilterManager extends ConfigManager {
         this.bloomFilter = BloomFilter.createByFn(20, 64);
     }
 
-    public ConsumerFilterManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public ConsumerFilterManager(Broker broker) {
+        this.broker = broker;
         this.bloomFilter = BloomFilter.createByFn(
-            brokerController.getBrokerConfig().getMaxErrorRateOfBloomFilter(),
-            brokerController.getBrokerConfig().getExpectConsumerNumUseFilter()
+            broker.getBrokerConfig().getMaxErrorRateOfBloomFilter(),
+            broker.getBrokerConfig().getExpectConsumerNumUseFilter()
         );
         // then set bit map length of store config.
-        brokerController.getMessageStoreConfig().setBitMapLengthConsumeQueueExt(
+        broker.getMessageStoreConfig().setBitMapLengthConsumeQueueExt(
             this.bloomFilter.getM()
         );
     }
@@ -225,9 +225,9 @@ public class ConsumerFilterManager extends ConfigManager {
 
     @Override
     public String configFilePath() {
-        if (this.brokerController != null) {
+        if (this.broker != null) {
             return BrokerPathConfigHelper.getConsumerFilterPath(
-                this.brokerController.getMessageStoreConfig().getStorePathRootDir()
+                this.broker.getMessageStoreConfig().getStorePathRootDir()
             );
         }
         return BrokerPathConfigHelper.getConsumerFilterPath("./unit_test");
@@ -320,7 +320,7 @@ public class ConsumerFilterManager extends ConfigManager {
                 Map.Entry<String, ConsumerFilterData> filterDataByGroup = filterDataIterator.next();
 
                 ConsumerFilterData filterData = filterDataByGroup.getValue();
-                if (filterData.howLongAfterDeath() >= (this.brokerController == null ? MS_24_HOUR : this.brokerController.getBrokerConfig().getFilterDataCleanTimeSpan())) {
+                if (filterData.howLongAfterDeath() >= (this.broker == null ? MS_24_HOUR : this.broker.getBrokerConfig().getFilterDataCleanTimeSpan())) {
                     log.info("Remove filter consumer {}, died too long!", filterDataByGroup.getValue());
                     filterDataIterator.remove();
                 }

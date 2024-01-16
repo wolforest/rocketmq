@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.transaction.queue;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageUtil;
 import org.apache.rocketmq.client.consumer.PullResult;
@@ -63,7 +63,7 @@ public class TransactionalMessageBridgeTest {
     private TransactionalMessageBridge transactionBridge;
 
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(),
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(),
         new NettyClientConfig(), new MessageStoreConfig());
 
     @Mock
@@ -71,8 +71,8 @@ public class TransactionalMessageBridgeTest {
 
     @Before
     public void init() {
-        brokerController.setMessageStore(messageStore);
-        transactionBridge = new TransactionalMessageBridge(brokerController, messageStore);
+        broker.setMessageStore(messageStore);
+        transactionBridge = new TransactionalMessageBridge(broker, messageStore);
     }
 
     @Test
@@ -107,7 +107,7 @@ public class TransactionalMessageBridgeTest {
 
     @Test
     public void testFetchConsumeOffset() {
-        MessageQueue mq = new MessageQueue(TransactionalMessageUtil.buildOpTopic(), this.brokerController.getBrokerConfig().getBrokerName(),
+        MessageQueue mq = new MessageQueue(TransactionalMessageUtil.buildOpTopic(), this.broker.getBrokerConfig().getBrokerName(),
             0);
         long offset = transactionBridge.fetchConsumeOffset(mq);
         assertThat(offset).isGreaterThan(-1);
@@ -115,7 +115,7 @@ public class TransactionalMessageBridgeTest {
 
     @Test
     public void updateConsumeOffset() {
-        MessageQueue mq = new MessageQueue(TransactionalMessageUtil.buildOpTopic(), this.brokerController.getBrokerConfig().getBrokerName(),
+        MessageQueue mq = new MessageQueue(TransactionalMessageUtil.buildOpTopic(), this.broker.getBrokerConfig().getBrokerName(),
             0);
         transactionBridge.updateConsumeOffset(mq, 0);
     }

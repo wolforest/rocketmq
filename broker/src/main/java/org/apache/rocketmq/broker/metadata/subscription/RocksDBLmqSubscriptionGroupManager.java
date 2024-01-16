@@ -16,14 +16,14 @@
  */
 package org.apache.rocketmq.broker.metadata.subscription;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 
 public class RocksDBLmqSubscriptionGroupManager extends RocksDBSubscriptionGroupManager {
 
-    public RocksDBLmqSubscriptionGroupManager(BrokerController brokerController) {
-        super(brokerController);
+    public RocksDBLmqSubscriptionGroupManager(Broker broker) {
+        super(broker);
     }
 
     @Override

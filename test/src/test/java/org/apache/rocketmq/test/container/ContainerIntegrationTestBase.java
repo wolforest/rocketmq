@@ -20,7 +20,7 @@ package org.apache.rocketmq.test.container;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
@@ -98,9 +98,9 @@ public class ContainerIntegrationTestBase {
     protected static BrokerContainer brokerContainer1;
     protected static BrokerContainer brokerContainer2;
     protected static BrokerContainer brokerContainer3;
-    protected static BrokerController master1With3Replicas;
-    protected static BrokerController master2With3Replicas;
-    protected static BrokerController master3With3Replicas;
+    protected static Broker master1With3Replicas;
+    protected static Broker master2With3Replicas;
+    protected static Broker master3With3Replicas;
     protected static NamesrvController namesrvController;
 
     protected static DefaultMQAdminExt defaultMQAdminExt;
@@ -108,7 +108,7 @@ public class ContainerIntegrationTestBase {
     private final static Logger LOG = LoggerFactory.getLogger(ContainerIntegrationTestBase.class);
     private static ConcurrentMap<BrokerConfig, MessageStoreConfig> slaveStoreConfigCache = new ConcurrentHashMap<>();
 
-    protected static ConcurrentMap<BrokerConfigLite, BrokerController> isolatedBrokers = new ConcurrentHashMap<>();
+    protected static ConcurrentMap<BrokerConfigLite, Broker> isolatedBrokers = new ConcurrentHashMap<>();
     private static final Set<Integer> PORTS_IN_USE = new HashSet<>();
 
     @BeforeClass
@@ -172,7 +172,7 @@ public class ContainerIntegrationTestBase {
         defaultMQAdminExt.start();
     }
 
-    protected static void createTopicTo(BrokerController masterBroker, String topicName, int rqn, int wqn) {
+    protected static void createTopicTo(Broker masterBroker, String topicName, int rqn, int wqn) {
         try {
             TopicConfig topicConfig = new TopicConfig(topicName, rqn, wqn, 6, 0);
             defaultMQAdminExt.createAndUpdateTopicConfig(masterBroker.getBrokerAddr(), topicConfig);
@@ -185,7 +185,7 @@ public class ContainerIntegrationTestBase {
         }
     }
 
-    protected static void createGroup(BrokerController masterBroker, String groupName) {
+    protected static void createGroup(Broker masterBroker, String groupName) {
         try {
             SubscriptionGroupConfig config = new SubscriptionGroupConfig();
             config.setGroupName(groupName);
@@ -210,8 +210,8 @@ public class ContainerIntegrationTestBase {
         }
     }
 
-    protected static void createTopicTo(BrokerController brokerController, String topicName) {
-        createTopicTo(brokerController, topicName, 8, 8);
+    protected static void createTopicTo(Broker broker, String topicName) {
+        createTopicTo(broker, topicName, 8, 8);
     }
 
     private static void registerCleaner() {
@@ -222,8 +222,8 @@ public class ContainerIntegrationTestBase {
 
                 for (final BrokerContainer brokerContainer : brokerContainerList) {
                     brokerContainer.shutdown();
-                    for (BrokerController brokerController : brokerContainer.getBrokerControllers()) {
-                        brokerController.getMessageStore().destroy();
+                    for (Broker broker : brokerContainer.getBrokerControllers()) {
+                        broker.getMessageStore().destroy();
                     }
                 }
 
@@ -329,7 +329,7 @@ public class ContainerIntegrationTestBase {
         return result;
     }
 
-    public static BrokerController createAndAddMaster(BrokerContainer brokerContainer,
+    public static Broker createAndAddMaster(BrokerContainer brokerContainer,
         BrokerGroupConfig brokerGroupConfig, int brokerIndex) throws Exception {
         BrokerConfig brokerConfig = new BrokerConfig();
         MessageStoreConfig storeConfig = new MessageStoreConfig();
@@ -362,21 +362,21 @@ public class ContainerIntegrationTestBase {
         storeConfig.setSyncFlushTimeout(10 * 1000);
 
         System.out.printf("start master %s with port %d-%d%n", brokerConfig.getCanonicalName(), brokerConfig.getListenPort(), storeConfig.getHaListenPort());
-        BrokerController brokerController = null;
+        Broker broker = null;
         try {
-            brokerController = brokerContainer.addBroker(brokerConfig, storeConfig);
-            Assert.assertNotNull(brokerController);
-            brokerController.start();
-            TMP_FILE_LIST.add(new File(brokerController.getTopicConfigManager().configFilePath()));
-            TMP_FILE_LIST.add(new File(brokerController.getSubscriptionGroupManager().configFilePath()));
-            LOG.info("Broker Start name:{} addr:{}", brokerConfig.getBrokerName(), brokerController.getBrokerAddr());
+            broker = brokerContainer.addBroker(brokerConfig, storeConfig);
+            Assert.assertNotNull(broker);
+            broker.start();
+            TMP_FILE_LIST.add(new File(broker.getTopicConfigManager().configFilePath()));
+            TMP_FILE_LIST.add(new File(broker.getSubscriptionGroupManager().configFilePath()));
+            LOG.info("Broker Start name:{} addr:{}", brokerConfig.getBrokerName(), broker.getBrokerAddr());
         } catch (Exception e) {
             LOG.info("Broker start failed", e);
             e.printStackTrace();
             System.exit(1);
         }
 
-        return brokerController;
+        return broker;
     }
 
     protected static DefaultMQProducer createProducer(String producerGroup) {
@@ -419,7 +419,7 @@ public class ContainerIntegrationTestBase {
     }
 
     protected static void createAndAddSlave(int slaveBrokerId, BrokerContainer brokerContainer,
-        BrokerController master) {
+        Broker master) {
         BrokerConfig slaveBrokerConfig = new BrokerConfig();
         slaveBrokerConfig.setBrokerName(master.getBrokerConfig().getBrokerName());
         slaveBrokerConfig.setBrokerId(slaveBrokerId);
@@ -457,12 +457,12 @@ public class ContainerIntegrationTestBase {
         System.out.printf("start slave %s with port %d-%d%n", slaveBrokerConfig.getCanonicalName(), slaveBrokerConfig.getListenPort(), storeConfig.getHaListenPort());
 
         try {
-            BrokerController brokerController = brokerContainer.addBroker(slaveBrokerConfig, storeConfig);
+            Broker broker = brokerContainer.addBroker(slaveBrokerConfig, storeConfig);
             Assert.assertNotNull(brokerContainer);
-            brokerController.start();
-            TMP_FILE_LIST.add(new File(brokerController.getTopicConfigManager().configFilePath()));
-            TMP_FILE_LIST.add(new File(brokerController.getSubscriptionGroupManager().configFilePath()));
-            LOG.info("Add slave name:{} addr:{}", slaveBrokerConfig.getBrokerName(), brokerController.getBrokerAddr());
+            broker.start();
+            TMP_FILE_LIST.add(new File(broker.getTopicConfigManager().configFilePath()));
+            TMP_FILE_LIST.add(new File(broker.getSubscriptionGroupManager().configFilePath()));
+            LOG.info("Add slave name:{} addr:{}", slaveBrokerConfig.getBrokerName(), broker.getBrokerAddr());
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Couldn't add slave broker", e);
@@ -470,7 +470,7 @@ public class ContainerIntegrationTestBase {
     }
 
     protected static void removeSlaveBroker(int slaveBrokerId, BrokerContainer brokerContainer,
-        BrokerController master) throws Exception {
+        Broker master) throws Exception {
         BrokerIdentity brokerIdentity = new BrokerIdentity(master.getBrokerConfig().getBrokerClusterName(),
             master.getBrokerConfig().getBrokerName(), slaveBrokerId);
 
@@ -515,16 +515,16 @@ public class ContainerIntegrationTestBase {
         }
     }
 
-    protected static void isolateBroker(BrokerController brokerController) {
-        final BrokerConfig config = brokerController.getBrokerConfig();
+    protected static void isolateBroker(Broker broker) {
+        final BrokerConfig config = broker.getBrokerConfig();
 
         BrokerConfigLite liteConfig = new BrokerConfigLite(config.getBrokerClusterName(),
             config.getBrokerName(),
-            brokerController.getBrokerAddr(),
+            broker.getBrokerAddr(),
             config.getBrokerId());
 
         // Reject register requests from the specific broker
-        isolatedBrokers.putIfAbsent(liteConfig, brokerController);
+        isolatedBrokers.putIfAbsent(liteConfig, broker);
 
         // UnRegister the specific broker immediately
         namesrvController.getRouteInfoManager().unregisterBroker(liteConfig.getClusterName(),
@@ -533,16 +533,16 @@ public class ContainerIntegrationTestBase {
             liteConfig.getBrokerId());
     }
 
-    protected static void cancelIsolatedBroker(BrokerController brokerController) {
-        final BrokerConfig config = brokerController.getBrokerConfig();
+    protected static void cancelIsolatedBroker(Broker broker) {
+        final BrokerConfig config = broker.getBrokerConfig();
 
         BrokerConfigLite liteConfig = new BrokerConfigLite(config.getBrokerClusterName(),
             config.getBrokerName(),
-            brokerController.getBrokerAddr(),
+            broker.getBrokerAddr(),
             config.getBrokerId());
 
         isolatedBrokers.remove(liteConfig);
-        brokerController.getBrokerServiceRegistry().registerBrokerAll(true, false, true);
+        broker.getBrokerServiceRegistry().registerBrokerAll(true, false, true);
 
         await().atMost(Duration.ofMinutes(1)).until(() -> namesrvController.getRouteInfoManager()
             .getBrokerMemberGroup(liteConfig.getClusterName(), liteConfig.brokerName).getBrokerAddrs()

@@ -18,7 +18,7 @@
 package org.apache.rocketmq.proxy.service.relay;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.service.channel.SimpleChannelHandlerContext;
 import org.apache.rocketmq.proxy.service.transaction.TransactionService;
@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class LocalProxyRelayServiceTest {
     private LocalProxyRelayService localProxyRelayService;
     @Mock
-    private BrokerController brokerControllerMock;
+    private Broker brokerMock;
     @Mock
     private TransactionService transactionService;
     @Mock
@@ -53,8 +53,8 @@ public class LocalProxyRelayServiceTest {
 
     @Before
     public void setUp() {
-        localProxyRelayService = new LocalProxyRelayService(brokerControllerMock, transactionService);
-        Mockito.when(brokerControllerMock.getRemotingServer()).thenReturn(nettyRemotingServerMock);
+        localProxyRelayService = new LocalProxyRelayService(brokerMock, transactionService);
+        Mockito.when(brokerMock.getRemotingServer()).thenReturn(nettyRemotingServerMock);
     }
 
     @Test

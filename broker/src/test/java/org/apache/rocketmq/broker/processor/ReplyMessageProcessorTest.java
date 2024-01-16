@@ -21,7 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.ReplyMessageProcessor;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.server.client.net.Broker2Client;
@@ -63,7 +63,7 @@ import static org.mockito.Mockito.when;
 public class ReplyMessageProcessorTest {
     private ReplyMessageProcessor replyMessageProcessor;
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
     @Mock
     private ChannelHandlerContext handlerContext;
     @Mock
@@ -80,21 +80,21 @@ public class ReplyMessageProcessorTest {
     @Before
     public void init() throws IllegalAccessException, NoSuchFieldException {
         clientInfo = new ClientChannelInfo(channel, "127.0.0.1", LanguageCode.JAVA, 0);
-        brokerController.setMessageStore(messageStore);
-        when(brokerController.getBroker2Client()).thenReturn(broker2Client);
+        broker.setMessageStore(messageStore);
+        when(broker.getBroker2Client()).thenReturn(broker2Client);
         when(messageStore.now()).thenReturn(System.currentTimeMillis());
         Channel mockChannel = mock(Channel.class);
         when(mockChannel.remoteAddress()).thenReturn(new InetSocketAddress(1024));
         when(handlerContext.channel()).thenReturn(mockChannel);
-        replyMessageProcessor = new ReplyMessageProcessor(brokerController);
+        replyMessageProcessor = new ReplyMessageProcessor(broker);
     }
 
     @Test
     public void testProcessRequest_Success() throws RemotingCommandException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException {
         when(messageStore.putMessage(any(MessageExtBrokerInner.class))).thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK)));
-        brokerController.getProducerManager().registerProducer(group, clientInfo);
+        broker.getProducerManager().registerProducer(group, clientInfo);
         final RemotingCommand request = createSendMessageRequestHeaderCommand(RequestCode.SEND_REPLY_MESSAGE);
-        when(brokerController.getBroker2Client().callClient(any(), any(RemotingCommand.class))).thenReturn(createResponse(ResponseCode.SUCCESS, request));
+        when(broker.getBroker2Client().callClient(any(), any(RemotingCommand.class))).thenReturn(createResponse(ResponseCode.SUCCESS, request));
         RemotingCommand responseToReturn = replyMessageProcessor.processRequest(handlerContext, request);
         assertThat(responseToReturn.getCode()).isEqualTo(ResponseCode.SUCCESS);
         assertThat(responseToReturn.getOpaque()).isEqualTo(request.getOpaque());

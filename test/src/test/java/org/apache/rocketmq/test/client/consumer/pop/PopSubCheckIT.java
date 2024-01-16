@@ -69,7 +69,7 @@ public class PopSubCheckIT extends BaseConf {
         RMQNormalProducer producer = getProducer(NAMESRV_ADDR, topic);
         producer.getProducer().setCompressMsgBodyOverHowmuch(Integer.MAX_VALUE);
 
-        for (String brokerAddr : new String[]{brokerController1.getBrokerAddr(), brokerController2.getBrokerAddr()}) {
+        for (String brokerAddr : new String[]{broker1.getBrokerAddr(), broker2.getBrokerAddr()}) {
             defaultMQAdminExt.setMessageRequestMode(brokerAddr, topic, group, MessageRequestMode.POP, 8, 60_000);
         }
 

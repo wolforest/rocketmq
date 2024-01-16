@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.server.latency;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
 import org.apache.rocketmq.common.app.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
@@ -35,21 +35,21 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * BrokerFastFailure will cover {@link BrokerController#getBrokerNettyServer()#getSendThreadPoolQueue()} and
- * {@link BrokerController#getBrokerNettyServer()#getPullThreadPoolQueue()}
+ * BrokerFastFailure will cover {@link Broker#getBrokerNettyServer()#getSendThreadPoolQueue()} and
+ * {@link Broker#getBrokerNettyServer()#getPullThreadPoolQueue()}
  */
 public class BrokerFastFailure {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final ScheduledExecutorService scheduledExecutorService;
-    private final BrokerController brokerController;
+    private final Broker broker;
 
     private volatile long jstackTime = System.currentTimeMillis();
 
-    public BrokerFastFailure(final BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public BrokerFastFailure(final Broker broker) {
+        this.broker = broker;
         this.scheduledExecutorService = ThreadUtils.newScheduledThreadPool(1,
             new ThreadFactoryImpl("BrokerFastFailureScheduledThread", true,
-                brokerController == null ? null : brokerController.getBrokerConfig()));
+                broker == null ? null : broker.getBrokerConfig()));
     }
 
     public static RequestTask castRunnable(final Runnable runnable) {
@@ -66,10 +66,10 @@ public class BrokerFastFailure {
     }
 
     public void start() {
-        this.scheduledExecutorService.scheduleAtFixedRate(new AbstractBrokerRunnable(this.brokerController.getBrokerConfig()) {
+        this.scheduledExecutorService.scheduleAtFixedRate(new AbstractBrokerRunnable(this.broker.getBrokerConfig()) {
             @Override
             public void run0() {
-                if (brokerController.getBrokerConfig().isBrokerFastFailureEnable()) {
+                if (broker.getBrokerConfig().isBrokerFastFailureEnable()) {
                     cleanExpiredRequest();
                 }
             }
@@ -79,8 +79,8 @@ public class BrokerFastFailure {
     private void cleanExpiredRequest() {
         responseSystemBusy();
 
-        BrokerNettyServer nettyServer = this.brokerController.getBrokerNettyServer();
-        BrokerConfig brokerConfig = this.brokerController.getBrokerConfig();
+        BrokerNettyServer nettyServer = this.broker.getBrokerNettyServer();
+        BrokerConfig brokerConfig = this.broker.getBrokerConfig();
 
         cleanExpiredRequestInQueue(nettyServer.getSendThreadPoolQueue(), brokerConfig.getWaitTimeMillsInSendQueue());
         cleanExpiredRequestInQueue(nettyServer.getPullThreadPoolQueue(), brokerConfig.getWaitTimeMillsInPullQueue());
@@ -91,13 +91,13 @@ public class BrokerFastFailure {
     }
 
     private void responseSystemBusy() {
-        while (this.brokerController.getMessageStore().isOSPageCacheBusy()) {
+        while (this.broker.getMessageStore().isOSPageCacheBusy()) {
             try {
-                if (this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().isEmpty()) {
+                if (this.broker.getBrokerNettyServer().getSendThreadPoolQueue().isEmpty()) {
                     break;
                 }
 
-                final Runnable runnable = this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().poll(0, TimeUnit.SECONDS);
+                final Runnable runnable = this.broker.getBrokerNettyServer().getSendThreadPoolQueue().poll(0, TimeUnit.SECONDS);
                 if (null == runnable) {
                     break;
                 }
@@ -110,7 +110,7 @@ public class BrokerFastFailure {
                 rt.returnResponse(RemotingSysResponseCode.SYSTEM_BUSY, String.format(
                     "[PCBUSY_CLEAN_QUEUE]broker busy, start flow control for a while, period in queue: %sms, "
                         + "size of queue: %d", System.currentTimeMillis() - rt.getCreateTimestamp(),
-                    this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().size()));
+                    this.broker.getBrokerNettyServer().getSendThreadPoolQueue().size()));
             } catch (Throwable ignored) {
             }
         }

@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.processor;
 
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.EndTransactionProcessor;
 import org.apache.rocketmq.broker.domain.transaction.OperationResult;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
@@ -62,8 +62,8 @@ public class EndTransactionProcessorTest {
     private ChannelHandlerContext handlerContext;
 
     @Spy
-    private BrokerController
-        brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(),
+    private Broker
+        broker = new Broker(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(),
             new MessageStoreConfig());
 
     @Mock
@@ -74,9 +74,9 @@ public class EndTransactionProcessorTest {
 
     @Before
     public void init() {
-        brokerController.getBrokerMessageService().setMessageStore(messageStore);
-        brokerController.getBrokerMessageService().setTransactionalMessageService(transactionMsgService);
-        endTransactionProcessor = new EndTransactionProcessor(brokerController);
+        broker.getBrokerMessageService().setMessageStore(messageStore);
+        broker.getBrokerMessageService().setTransactionalMessageService(transactionMsgService);
+        endTransactionProcessor = new EndTransactionProcessor(broker);
     }
 
     private OperationResult createResponse(int status) {

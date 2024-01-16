@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.server.daemon.pop;
 import com.alibaba.fastjson.JSON;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.longpolling.PopLongPollingService;
 import org.apache.rocketmq.broker.server.longpolling.PopRequest;
 import org.apache.rocketmq.broker.api.controller.NotificationProcessor;
@@ -38,7 +38,7 @@ import org.apache.rocketmq.store.api.pop.PopKeyBuilder;
 
 public class PopServiceManager {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
 
     private final String reviveTopic;
     private final QueueLockManager queueLockManager;
@@ -50,20 +50,20 @@ public class PopServiceManager {
     private final PopLongPollingService notificationPollingService;
 
 
-    public PopServiceManager(final BrokerController brokerController, PopMessageProcessor popMessageProcessor, NotificationProcessor notificationProcessor) {
-        this.brokerController = brokerController;
-        this.reviveTopic = KeyBuilder.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName());
+    public PopServiceManager(final Broker broker, PopMessageProcessor popMessageProcessor, NotificationProcessor notificationProcessor) {
+        this.broker = broker;
+        this.reviveTopic = KeyBuilder.buildClusterReviveTopic(this.broker.getBrokerConfig().getBrokerClusterName());
 
-        this.popPollingService = new PopLongPollingService(brokerController, popMessageProcessor);
-        this.notificationPollingService = new PopLongPollingService(brokerController, notificationProcessor);
+        this.popPollingService = new PopLongPollingService(broker, popMessageProcessor);
+        this.notificationPollingService = new PopLongPollingService(broker, notificationProcessor);
 
-        this.queueLockManager = new QueueLockManager(brokerController);
-        this.popBufferMergeService = new PopBufferMergeService(this.brokerController);
+        this.queueLockManager = new QueueLockManager(broker);
+        this.popBufferMergeService = new PopBufferMergeService(this.broker);
 
-        this.popReviveServices = new PopReviveService[this.brokerController.getBrokerConfig().getReviveQueueNum()];
-        for (int i = 0; i < this.brokerController.getBrokerConfig().getReviveQueueNum(); i++) {
-            this.popReviveServices[i] = new PopReviveService(brokerController, reviveTopic, i);
-            this.popReviveServices[i].setShouldRunPopRevive(brokerController.getBrokerConfig().getBrokerId() == 0);
+        this.popReviveServices = new PopReviveService[this.broker.getBrokerConfig().getReviveQueueNum()];
+        for (int i = 0; i < this.broker.getBrokerConfig().getReviveQueueNum(); i++) {
+            this.popReviveServices[i] = new PopReviveService(broker, reviveTopic, i);
+            this.popReviveServices[i].setShouldRunPopRevive(broker.getBrokerConfig().getBrokerId() == 0);
         }
     }
 
@@ -97,8 +97,8 @@ public class PopServiceManager {
         msgInner.setQueueId(reviveQid);
         msgInner.setTags(PopConstants.CK_TAG);
         msgInner.setBornTimestamp(System.currentTimeMillis());
-        msgInner.setBornHost(this.brokerController.getStoreHost());
-        msgInner.setStoreHost(this.brokerController.getStoreHost());
+        msgInner.setBornHost(this.broker.getStoreHost());
+        msgInner.setStoreHost(this.broker.getStoreHost());
         msgInner.setDeliverTimeMs(ck.getReviveTime() - PopConstants.ackTimeInterval);
         msgInner.getProperties().put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, PopKeyBuilder.genCkUniqueId(ck));
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
@@ -128,8 +128,8 @@ public class PopServiceManager {
 
     public void notifyLongPollingRequestIfNeed(String topic, String group, int queueId) {
         long popBufferOffset = this.getPopBufferMergeService().getLatestOffset(topic, group, queueId);
-        long consumerOffset = this.brokerController.getConsumerOffsetManager().queryOffset(group, topic, queueId);
-        long maxOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
+        long consumerOffset = this.broker.getConsumerOffsetManager().queryOffset(group, topic, queueId);
+        long maxOffset = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId);
         long offset = Math.max(popBufferOffset, consumerOffset);
         if (maxOffset <= offset) {
             return;
@@ -142,7 +142,7 @@ public class PopServiceManager {
         }
 
         notificationPollingService.notifyMessageArriving(topic, queueId);
-        if (this.brokerController.getBrokerConfig().isEnablePopLog()) {
+        if (this.broker.getBrokerConfig().isEnablePopLog()) {
             POP_LOGGER.info("notify long polling request. topic:{}, group:{}, queueId:{}, success:{}",
                 topic, group, queueId, notifySuccess);
         }

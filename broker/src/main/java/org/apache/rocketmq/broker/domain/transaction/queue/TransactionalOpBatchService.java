@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.domain.transaction.queue;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -25,14 +25,14 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 public class TransactionalOpBatchService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
 
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final TransactionalMessageServiceImpl transactionalMessageService;
 
     private long wakeupTimestamp = 0;
 
 
-    public TransactionalOpBatchService(BrokerController brokerController, TransactionalMessageServiceImpl transactionalMessageService) {
-        this.brokerController = brokerController;
+    public TransactionalOpBatchService(Broker broker, TransactionalMessageServiceImpl transactionalMessageService) {
+        this.broker = broker;
         this.transactionalMessageService = transactionalMessageService;
     }
 
@@ -44,7 +44,7 @@ public class TransactionalOpBatchService extends ServiceThread {
     @Override
     public void run() {
         LOGGER.info("Start transaction op batch thread!");
-        long checkInterval = brokerController.getBrokerConfig().getTransactionOpBatchInterval();
+        long checkInterval = broker.getBrokerConfig().getTransactionOpBatchInterval();
         wakeupTimestamp = System.currentTimeMillis() + checkInterval;
         while (!this.isStopped()) {
             long interval = wakeupTimestamp - System.currentTimeMillis();

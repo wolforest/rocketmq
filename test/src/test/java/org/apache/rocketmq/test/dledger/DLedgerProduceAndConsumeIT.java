@@ -17,7 +17,7 @@
 package org.apache.rocketmq.test.dledger;
 
 import java.util.UUID;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
@@ -74,7 +74,7 @@ public class DLedgerProduceAndConsumeIT {
         String peers = String.format("n0-localhost:%d", 0);
         BrokerConfig brokerConfig = buildBrokerConfig(cluster, brokerName);
         MessageStoreConfig storeConfig = buildStoreConfig(brokerName, peers, selfId);
-        BrokerController brokerController = IntegrationTestBase.createAndStartBroker(storeConfig, brokerConfig);
+        Broker broker = IntegrationTestBase.createAndStartBroker(storeConfig, brokerConfig);
         BaseConf.waitBrokerRegistered(BaseConf.NAMESRV_ADDR, brokerConfig.getBrokerName(), 1);
 
         Assert.assertEquals(BrokerRole.SYNC_MASTER, storeConfig.getBrokerRole());
@@ -100,8 +100,8 @@ public class DLedgerProduceAndConsumeIT {
         }
 
         Thread.sleep(500);
-        Assert.assertEquals(0, brokerController.getMessageStore().getMinOffsetInQueue(topic, 0));
-        Assert.assertEquals(10, brokerController.getMessageStore().getMaxOffsetInQueue(topic, 0));
+        Assert.assertEquals(0, broker.getMessageStore().getMinOffsetInQueue(topic, 0));
+        Assert.assertEquals(10, broker.getMessageStore().getMaxOffsetInQueue(topic, 0));
 
         MessageQueue messageQueue = new MessageQueue(topic, brokerName, 0);
         PullResult pullResult = consumer.pull(messageQueue, "*", 0, 32);
@@ -116,6 +116,6 @@ public class DLedgerProduceAndConsumeIT {
 
         producer.shutdown();
         consumer.shutdown();
-        brokerController.shutdown();
+        broker.shutdown();
     }
 }

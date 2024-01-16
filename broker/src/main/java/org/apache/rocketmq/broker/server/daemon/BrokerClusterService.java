@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.rebalance.RebalanceLockManager;
 import org.apache.rocketmq.broker.server.slave.ReplicasManager;
 import org.apache.rocketmq.broker.server.slave.SlaveSynchronize;
@@ -39,7 +39,7 @@ import org.apache.rocketmq.remoting.protocol.BrokerSyncInfo;
 public class BrokerClusterService {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final BrokerConfig brokerConfig;
 
     private final Lock lock = new ReentrantLock();
@@ -53,16 +53,16 @@ public class BrokerClusterService {
     private boolean updateMasterHAServerAddrPeriodically = false;
 
 
-    public BrokerClusterService(BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.brokerConfig = brokerController.getBrokerConfig();
+    public BrokerClusterService(Broker broker) {
+        this.broker = broker;
+        this.brokerConfig = broker.getBrokerConfig();
 
-        this.slaveSynchronize = new SlaveSynchronize(brokerController);
+        this.slaveSynchronize = new SlaveSynchronize(broker);
     }
 
     public void load() {
         if (this.brokerConfig.isEnableControllerMode()) {
-            this.replicasManager = new ReplicasManager(brokerController);
+            this.replicasManager = new ReplicasManager(broker);
             this.replicasManager.setFenced(true);
         }
     }
@@ -113,42 +113,42 @@ public class BrokerClusterService {
         // close channels with master broker
         String masterAddr = this.slaveSynchronize.getMasterAddr();
         if (masterAddr != null) {
-            brokerController.getBrokerOuterAPI().getRemotingClient().closeChannels(
+            broker.getBrokerOuterAPI().getRemotingClient().closeChannels(
                 Arrays.asList(masterAddr, NetworkUtils.brokerVIPChannel(true, masterAddr)));
         }
         // master not available, stop sync
         this.slaveSynchronize.setMasterAddr(null);
-        brokerController.getMessageStore().updateHaMasterAddress(null);
+        broker.getMessageStore().updateHaMasterAddress(null);
     }
 
     private void onMasterOnline(String masterAddr, String masterHaAddr) {
-        boolean needSyncMasterFlushOffset = brokerController.getMessageStore().getMasterFlushedOffset() == 0
-            && this.brokerController.getMessageStoreConfig().isSyncMasterFlushOffsetWhenStartup();
+        boolean needSyncMasterFlushOffset = broker.getMessageStore().getMasterFlushedOffset() == 0
+            && this.broker.getMessageStoreConfig().isSyncMasterFlushOffsetWhenStartup();
         if (masterHaAddr == null || needSyncMasterFlushOffset) {
             doSyncMasterFlushOffset(masterAddr, masterHaAddr, needSyncMasterFlushOffset);
         }
 
         // set master HA address.
         if (masterHaAddr != null) {
-            brokerController.getMessageStore().updateHaMasterAddress(masterHaAddr);
+            broker.getMessageStore().updateHaMasterAddress(masterHaAddr);
         }
 
         // wakeup HAClient
-        brokerController.getMessageStore().wakeupHAClient();
+        broker.getMessageStore().wakeupHAClient();
     }
 
     private void doSyncMasterFlushOffset(String masterAddr, String masterHaAddr, boolean needSyncMasterFlushOffset) {
         try {
-            BrokerSyncInfo brokerSyncInfo = brokerController.getBrokerOuterAPI().retrieveBrokerHaInfo(masterAddr);
+            BrokerSyncInfo brokerSyncInfo = broker.getBrokerOuterAPI().retrieveBrokerHaInfo(masterAddr);
 
             if (needSyncMasterFlushOffset) {
                 LOG.info("Set master flush offset in slave to {}", brokerSyncInfo.getMasterFlushOffset());
-                brokerController.getMessageStore().setMasterFlushedOffset(brokerSyncInfo.getMasterFlushOffset());
+                broker.getMessageStore().setMasterFlushedOffset(brokerSyncInfo.getMasterFlushOffset());
             }
 
             if (masterHaAddr == null) {
-                brokerController.getMessageStore().updateHaMasterAddress(brokerSyncInfo.getMasterHaAddress());
-                brokerController.getMessageStore().updateMasterAddress(brokerSyncInfo.getMasterAddress());
+                broker.getMessageStore().updateHaMasterAddress(brokerSyncInfo.getMasterHaAddress());
+                broker.getMessageStore().updateMasterAddress(brokerSyncInfo.getMasterAddress());
             }
         } catch (Exception e) {
             LOG.error("retrieve master ha info exception, {}", e);
@@ -163,7 +163,7 @@ public class BrokerClusterService {
         this.minBrokerIdInGroup = minBrokerId;
         this.minBrokerAddrInGroup = minBrokerAddr;
 
-        brokerController.getBrokerMessageService().changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == this.minBrokerIdInGroup);
+        broker.getBrokerMessageService().changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == this.minBrokerIdInGroup);
 
         if (offlineBrokerAddr != null && offlineBrokerAddr.equals(this.slaveSynchronize.getMasterAddr())) {
             // master offline
@@ -177,7 +177,7 @@ public class BrokerClusterService {
 
         // notify PullRequest on hold to pull from master.
         if (this.minBrokerIdInGroup == MQConstants.MASTER_ID) {
-            brokerController.getBrokerNettyServer().getPullRequestHoldService().notifyMasterOnline();
+            broker.getBrokerNettyServer().getPullRequestHoldService().notifyMasterOnline();
         }
     }
 

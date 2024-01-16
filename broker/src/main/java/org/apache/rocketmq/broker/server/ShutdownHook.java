@@ -22,5 +22,5 @@ public interface ShutdownHook {
      *
      * @param controller broker to shutdown
      */
-    void beforeShutdown(BrokerController controller);
+    void beforeShutdown(Broker controller);
 }

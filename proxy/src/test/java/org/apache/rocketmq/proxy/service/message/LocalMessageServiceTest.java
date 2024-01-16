@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
 import org.apache.rocketmq.broker.api.controller.AckMessageProcessor;
 import org.apache.rocketmq.broker.api.controller.ChangeInvisibleTimeProcessor;
@@ -94,7 +94,7 @@ public class LocalMessageServiceTest extends InitConfigTest {
     @Mock
     private AckMessageProcessor ackMessageProcessorMock;
     @Mock
-    private BrokerController brokerControllerMock;
+    private Broker brokerMock;
     @Mock
     private BrokerNettyServer brokerNettyServer;
 
@@ -119,14 +119,14 @@ public class LocalMessageServiceTest extends InitConfigTest {
         super.before();
         ConfigurationManager.getProxyConfig().setNamesrvAddr("1.1.1.1");
         channelManager = new ChannelManager();
-        Mockito.when(brokerControllerMock.getBrokerNettyServer()).thenReturn(brokerNettyServer);
-        Mockito.when(brokerControllerMock.getBrokerConfig()).thenReturn(new BrokerConfig());
-        Mockito.when(brokerControllerMock.getBrokerNettyServer().getSendMessageProcessor()).thenReturn(sendMessageProcessorMock);
-        Mockito.when(brokerControllerMock.getBrokerNettyServer().getPopMessageProcessor()).thenReturn(popMessageProcessorMock);
-        Mockito.when(brokerControllerMock.getBrokerNettyServer().getChangeInvisibleTimeProcessor()).thenReturn(changeInvisibleTimeProcessorMock);
-        Mockito.when(brokerControllerMock.getBrokerNettyServer().getAckMessageProcessor()).thenReturn(ackMessageProcessorMock);
-        Mockito.when(brokerControllerMock.getBrokerNettyServer().getEndTransactionProcessor()).thenReturn(endTransactionProcessorMock);
-        localMessageService = new LocalMessageService(brokerControllerMock, channelManager, null);
+        Mockito.when(brokerMock.getBrokerNettyServer()).thenReturn(brokerNettyServer);
+        Mockito.when(brokerMock.getBrokerConfig()).thenReturn(new BrokerConfig());
+        Mockito.when(brokerMock.getBrokerNettyServer().getSendMessageProcessor()).thenReturn(sendMessageProcessorMock);
+        Mockito.when(brokerMock.getBrokerNettyServer().getPopMessageProcessor()).thenReturn(popMessageProcessorMock);
+        Mockito.when(brokerMock.getBrokerNettyServer().getChangeInvisibleTimeProcessor()).thenReturn(changeInvisibleTimeProcessorMock);
+        Mockito.when(brokerMock.getBrokerNettyServer().getAckMessageProcessor()).thenReturn(ackMessageProcessorMock);
+        Mockito.when(brokerMock.getBrokerNettyServer().getEndTransactionProcessor()).thenReturn(endTransactionProcessorMock);
+        localMessageService = new LocalMessageService(brokerMock, channelManager, null);
         proxyContext = ProxyContext.create().withVal(ContextVariable.REMOTE_ADDRESS, "0.0.0.1")
             .withVal(ContextVariable.LOCAL_ADDRESS, "0.0.0.2");
     }
@@ -164,7 +164,7 @@ public class LocalMessageServiceTest extends InitConfigTest {
         assertThat(sendResult.getSendStatus()).isEqualTo(SendStatus.SEND_OK);
         assertThat(sendResult.getMsgId()).isEqualTo(MessageClientIDSetter.getUniqID(message));
         assertThat(sendResult.getMessageQueue())
-            .isEqualTo(new MessageQueue(topic, brokerControllerMock.getBrokerConfig().getBrokerName(), queueId));
+            .isEqualTo(new MessageQueue(topic, brokerMock.getBrokerConfig().getBrokerName(), queueId));
         assertThat(sendResult.getQueueOffset()).isEqualTo(queueOffset);
         assertThat(sendResult.getTransactionId()).isEqualTo(transactionId);
         assertThat(sendResult.getOffsetMsgId()).isEqualTo(offsetMessageId);
@@ -208,7 +208,7 @@ public class LocalMessageServiceTest extends InitConfigTest {
         SendResult sendResult = future.get().get(0);
         assertThat(sendResult.getSendStatus()).isEqualTo(SendStatus.SEND_OK);
         assertThat(sendResult.getMessageQueue())
-            .isEqualTo(new MessageQueue(topic, brokerControllerMock.getBrokerConfig().getBrokerName(), queueId));
+            .isEqualTo(new MessageQueue(topic, brokerMock.getBrokerConfig().getBrokerName(), queueId));
         assertThat(sendResult.getQueueOffset()).isEqualTo(queueOffset);
         assertThat(sendResult.getTransactionId()).isEqualTo(transactionId);
         assertThat(sendResult.getOffsetMsgId()).isEqualTo(offsetMessageId);

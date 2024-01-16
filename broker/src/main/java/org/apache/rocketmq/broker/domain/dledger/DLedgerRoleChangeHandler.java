@@ -23,7 +23,7 @@ import io.openmessaging.storage.dledger.utils.DLedgerUtils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -37,20 +37,20 @@ public class DLedgerRoleChangeHandler implements DLedgerLeaderElector.RoleChange
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private ExecutorService executorService;
-    private BrokerController brokerController;
+    private Broker broker;
     private DefaultMessageStore messageStore;
     private DLedgerCommitLog dLedgerCommitLog;
     private DLedgerServer dLegerServer;
     private Future<?> slaveSyncFuture;
     private long lastSyncTimeMs = System.currentTimeMillis();
 
-    public DLedgerRoleChangeHandler(BrokerController brokerController, DefaultMessageStore messageStore) {
-        this.brokerController = brokerController;
+    public DLedgerRoleChangeHandler(Broker broker, DefaultMessageStore messageStore) {
+        this.broker = broker;
         this.messageStore = messageStore;
         this.dLedgerCommitLog = (DLedgerCommitLog) messageStore.getCommitLog();
         this.dLegerServer = dLedgerCommitLog.getdLedgerServer();
         this.executorService = ThreadUtils.newSingleThreadExecutor(
-            new ThreadFactoryImpl("DLegerRoleChangeHandler_", brokerController.getBrokerIdentity()));
+            new ThreadFactoryImpl("DLegerRoleChangeHandler_", broker.getBrokerIdentity()));
     }
 
     @Override
@@ -108,17 +108,17 @@ public class DLedgerRoleChangeHandler implements DLedgerLeaderElector.RoleChange
             if (null != slaveSyncFuture) {
                 slaveSyncFuture.cancel(false);
             }
-            this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
-            slaveSyncFuture = this.brokerController.getBrokerScheduleService().getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
+            this.broker.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
+            slaveSyncFuture = this.broker.getBrokerScheduleService().getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         if (System.currentTimeMillis() - lastSyncTimeMs > 10 * 1000) {
-                            brokerController.getBrokerClusterService().getSlaveSynchronize().syncAll();
+                            broker.getBrokerClusterService().getSlaveSynchronize().syncAll();
                             lastSyncTimeMs = System.currentTimeMillis();
                         }
                         //timer checkpoint, latency-sensitive, so sync it more frequently
-                        brokerController.getBrokerClusterService().getSlaveSynchronize().syncTimerCheckPoint();
+                        broker.getBrokerClusterService().getSlaveSynchronize().syncTimerCheckPoint();
                     } catch (Throwable e) {
                         LOGGER.error("ScheduledTask SlaveSynchronize syncAll error.", e);
                     }
@@ -129,51 +129,51 @@ public class DLedgerRoleChangeHandler implements DLedgerLeaderElector.RoleChange
             if (null != slaveSyncFuture) {
                 slaveSyncFuture.cancel(false);
             }
-            this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
+            this.broker.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
         }
     }
 
     public void changeToSlave(int brokerId) {
-        LOGGER.info("Begin to change to slave brokerName={} brokerId={}", this.brokerController.getBrokerConfig().getBrokerName(), brokerId);
+        LOGGER.info("Begin to change to slave brokerName={} brokerId={}", this.broker.getBrokerConfig().getBrokerName(), brokerId);
 
         //change the role
-        this.brokerController.getBrokerConfig().setBrokerId(brokerId == 0 ? 1 : brokerId); //TO DO check
-        this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SLAVE);
+        this.broker.getBrokerConfig().setBrokerId(brokerId == 0 ? 1 : brokerId); //TO DO check
+        this.broker.getMessageStoreConfig().setBrokerRole(BrokerRole.SLAVE);
 
-        this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(false);
+        this.broker.getBrokerMessageService().changeSpecialServiceStatus(false);
 
         //handle the slave synchronise
         handleSlaveSynchronize(BrokerRole.SLAVE);
 
         try {
-            this.brokerController.getBrokerServiceRegistry().registerBrokerAll(true, true, this.brokerController.getBrokerConfig().isForceRegister());
+            this.broker.getBrokerServiceRegistry().registerBrokerAll(true, true, this.broker.getBrokerConfig().isForceRegister());
         } catch (Throwable ignored) {
 
         }
-        LOGGER.info("Finish to change to slave brokerName={} brokerId={}", this.brokerController.getBrokerConfig().getBrokerName(), brokerId);
+        LOGGER.info("Finish to change to slave brokerName={} brokerId={}", this.broker.getBrokerConfig().getBrokerName(), brokerId);
     }
 
     public void changeToMaster(BrokerRole role) {
         if (role == BrokerRole.SLAVE) {
             return;
         }
-        LOGGER.info("Begin to change to master brokerName={}", this.brokerController.getBrokerConfig().getBrokerName());
+        LOGGER.info("Begin to change to master brokerName={}", this.broker.getBrokerConfig().getBrokerName());
 
         //handle the slave synchronise
         handleSlaveSynchronize(role);
 
-        this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(true);
+        this.broker.getBrokerMessageService().changeSpecialServiceStatus(true);
 
         //if the operations above are totally successful, we change to master
-        this.brokerController.getBrokerConfig().setBrokerId(0); //TO DO check
-        this.brokerController.getMessageStoreConfig().setBrokerRole(role);
+        this.broker.getBrokerConfig().setBrokerId(0); //TO DO check
+        this.broker.getMessageStoreConfig().setBrokerRole(role);
 
         try {
-            this.brokerController.getBrokerServiceRegistry().registerBrokerAll(true, true, this.brokerController.getBrokerConfig().isForceRegister());
+            this.broker.getBrokerServiceRegistry().registerBrokerAll(true, true, this.broker.getBrokerConfig().isForceRegister());
         } catch (Throwable ignored) {
 
         }
-        LOGGER.info("Finish to change to master brokerName={}", this.brokerController.getBrokerConfig().getBrokerName());
+        LOGGER.info("Finish to change to master brokerName={}", this.broker.getBrokerConfig().getBrokerName());
     }
 
     @Override

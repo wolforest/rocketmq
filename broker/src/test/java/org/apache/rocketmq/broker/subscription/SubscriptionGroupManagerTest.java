@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.subscription;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.subscription.RocksDBSubscriptionGroupManager;
 import org.apache.rocketmq.broker.metadata.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.common.domain.consumer.SubscriptionGroupAttributes;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 public class SubscriptionGroupManagerTest {
     private String group = "group";
     @Mock
-    private BrokerController brokerControllerMock;
+    private Broker brokerMock;
     private SubscriptionGroupManager subscriptionGroupManager;
 
     @Before
@@ -54,8 +54,8 @@ public class SubscriptionGroupManagerTest {
             false,
             false
         ));
-        subscriptionGroupManager = spy(new SubscriptionGroupManager(brokerControllerMock));
-        when(brokerControllerMock.getMessageStore()).thenReturn(null);
+        subscriptionGroupManager = spy(new SubscriptionGroupManager(brokerMock));
+        when(brokerMock.getMessageStore()).thenReturn(null);
         doNothing().when(subscriptionGroupManager).persist();
     }
 
@@ -74,8 +74,8 @@ public class SubscriptionGroupManagerTest {
         if (SystemUtils.isMac()) {
             return;
         }
-        when(brokerControllerMock.getMessageStoreConfig()).thenReturn(new MessageStoreConfig());
-        subscriptionGroupManager = spy(new RocksDBSubscriptionGroupManager(brokerControllerMock));
+        when(brokerMock.getMessageStoreConfig()).thenReturn(new MessageStoreConfig());
+        subscriptionGroupManager = spy(new RocksDBSubscriptionGroupManager(brokerMock));
         subscriptionGroupManager.load();
         group += System.currentTimeMillis();
         updateSubscriptionGroupConfig();

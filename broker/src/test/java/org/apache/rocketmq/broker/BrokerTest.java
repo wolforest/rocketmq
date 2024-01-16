@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.broker;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.future.FutureTaskExt;
 import org.apache.rocketmq.common.utils.IOUtils;
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class BrokerControllerTest {
+public class BrokerTest {
 
     private MessageStoreConfig messageStoreConfig;
 
@@ -62,10 +62,10 @@ public class BrokerControllerTest {
 
     @Test
     public void testBrokerRestart() throws Exception {
-        BrokerController brokerController = new BrokerController(brokerConfig, nettyServerConfig, new NettyClientConfig(), messageStoreConfig);
-        assertThat(brokerController.initialize()).isTrue();
-        brokerController.start();
-        brokerController.shutdown();
+        Broker broker = new Broker(brokerConfig, nettyServerConfig, new NettyClientConfig(), messageStoreConfig);
+        assertThat(broker.initialize()).isTrue();
+        broker.start();
+        broker.shutdown();
     }
 
     @After
@@ -75,8 +75,8 @@ public class BrokerControllerTest {
 
     @Test
     public void testHeadSlowTimeMills() throws Exception {
-        BrokerController brokerController = new BrokerController(brokerConfig, nettyServerConfig, new NettyClientConfig(), messageStoreConfig);
-        brokerController.initialize();
+        Broker broker = new Broker(brokerConfig, nettyServerConfig, new NettyClientConfig(), messageStoreConfig);
+        broker.initialize();
         BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
         //create task is not instance of FutureTaskExt;
@@ -93,6 +93,6 @@ public class BrokerControllerTest {
 
         long headSlowTimeMills = 100;
         TimeUnit.MILLISECONDS.sleep(headSlowTimeMills);
-        assertThat(brokerController.getBrokerNettyServer().headSlowTimeMills(queue)).isGreaterThanOrEqualTo(headSlowTimeMills);
+        assertThat(broker.getBrokerNettyServer().headSlowTimeMills(queue)).isGreaterThanOrEqualTo(headSlowTimeMills);
     }
 }

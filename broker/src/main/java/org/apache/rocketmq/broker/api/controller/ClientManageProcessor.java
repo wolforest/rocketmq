@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.api.controller;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.PermName;
@@ -47,11 +47,11 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 
 public class ClientManageProcessor implements NettyRequestProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final ConcurrentMap<String /* ConsumerGroup */, Integer /* HeartbeatFingerprint */> consumerGroupHeartbeatTable = new ConcurrentHashMap<>();
 
-    public ClientManageProcessor(final BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public ClientManageProcessor(final Broker broker) {
+        this.broker = broker;
     }
 
     @Override
@@ -90,7 +90,7 @@ public class ClientManageProcessor implements NettyRequestProcessor {
         }
         for (ConsumerData consumerData : heartbeatData.getConsumerDataSet()) {
             //Reject the PullConsumer
-            if (brokerController.getBrokerConfig().isRejectPullConsumerEnable()) {
+            if (broker.getBrokerConfig().isRejectPullConsumerEnable()) {
                 if (ConsumeType.CONSUME_ACTIVELY == consumerData.getConsumeType()) {
                     continue;
                 }
@@ -99,13 +99,13 @@ public class ClientManageProcessor implements NettyRequestProcessor {
             boolean hasOrderTopicSub = false;
 
             for (final SubscriptionData subscriptionData : consumerData.getSubscriptionDataSet()) {
-                if (this.brokerController.getTopicConfigManager().isOrderTopic(subscriptionData.getTopic())) {
+                if (this.broker.getTopicConfigManager().isOrderTopic(subscriptionData.getTopic())) {
                     hasOrderTopicSub = true;
                     break;
                 }
             }
 
-            SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager()
+            SubscriptionGroupConfig subscriptionGroupConfig = this.broker.getSubscriptionGroupManager()
                 .findSubscriptionGroupConfig(consumerData.getGroupName());
             boolean isNotifyConsumerIdsChangedEnable = true;
 
@@ -119,10 +119,10 @@ public class ClientManageProcessor implements NettyRequestProcessor {
                 topicSysFlag = TopicSysFlag.buildSysFlag(false, true);
             }
             String newTopic = MQConstants.getRetryTopic(consumerData.getGroupName());
-            this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic, subscriptionGroupConfig.getRetryQueueNums(),
+            this.broker.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic, subscriptionGroupConfig.getRetryQueueNums(),
                 PermName.PERM_WRITE | PermName.PERM_READ, hasOrderTopicSub, topicSysFlag);
 
-            boolean changed = this.brokerController.getConsumerManager().registerConsumer(
+            boolean changed = this.broker.getConsumerManager().registerConsumer(
                 consumerData.getGroupName(),
                 clientChannelInfo,
                 consumerData.getConsumeType(),
@@ -139,7 +139,7 @@ public class ClientManageProcessor implements NettyRequestProcessor {
         }
 
         for (ProducerData data : heartbeatData.getProducerDataSet()) {
-            this.brokerController.getProducerManager().registerProducer(data.getGroupName(),
+            this.broker.getProducerManager().registerProducer(data.getGroupName(),
                 clientChannelInfo);
         }
         response.setCode(ResponseCode.SUCCESS);
@@ -153,7 +153,7 @@ public class ClientManageProcessor implements NettyRequestProcessor {
         boolean isSubChange = false;
         for (ConsumerData consumerData : heartbeatData.getConsumerDataSet()) {
             //Reject the PullConsumer
-            if (brokerController.getBrokerConfig().isRejectPullConsumerEnable()) {
+            if (broker.getBrokerConfig().isRejectPullConsumerEnable()) {
                 if (ConsumeType.CONSUME_ACTIVELY == consumerData.getConsumeType()) {
                     continue;
                 }
@@ -165,12 +165,12 @@ public class ClientManageProcessor implements NettyRequestProcessor {
             boolean hasOrderTopicSub = false;
 
             for (final SubscriptionData subscriptionData : consumerData.getSubscriptionDataSet()) {
-                if (this.brokerController.getTopicConfigManager().isOrderTopic(subscriptionData.getTopic())) {
+                if (this.broker.getTopicConfigManager().isOrderTopic(subscriptionData.getTopic())) {
                     hasOrderTopicSub = true;
                     break;
                 }
             }
-            SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(consumerData.getGroupName());
+            SubscriptionGroupConfig subscriptionGroupConfig = this.broker.getSubscriptionGroupManager().findSubscriptionGroupConfig(consumerData.getGroupName());
             boolean isNotifyConsumerIdsChangedEnable = true;
             if (null == subscriptionGroupConfig) {
                 continue;
@@ -181,12 +181,12 @@ public class ClientManageProcessor implements NettyRequestProcessor {
                 topicSysFlag = TopicSysFlag.buildSysFlag(false, true);
             }
             String newTopic = MQConstants.getRetryTopic(consumerData.getGroupName());
-            this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic, subscriptionGroupConfig.getRetryQueueNums(), PermName.PERM_WRITE | PermName.PERM_READ, hasOrderTopicSub, topicSysFlag);
+            this.broker.getTopicConfigManager().createTopicInSendMessageBackMethod(newTopic, subscriptionGroupConfig.getRetryQueueNums(), PermName.PERM_WRITE | PermName.PERM_READ, hasOrderTopicSub, topicSysFlag);
             boolean changed = false;
             if (heartbeatData.isWithoutSub()) {
-                changed = this.brokerController.getConsumerManager().registerConsumerWithoutSub(consumerData.getGroupName(), clientChannelInfo, consumerData.getConsumeType(), consumerData.getMessageModel(), consumerData.getConsumeFromWhere(), isNotifyConsumerIdsChangedEnable);
+                changed = this.broker.getConsumerManager().registerConsumerWithoutSub(consumerData.getGroupName(), clientChannelInfo, consumerData.getConsumeType(), consumerData.getMessageModel(), consumerData.getConsumeFromWhere(), isNotifyConsumerIdsChangedEnable);
             } else {
-                changed = this.brokerController.getConsumerManager().registerConsumer(consumerData.getGroupName(), clientChannelInfo, consumerData.getConsumeType(), consumerData.getMessageModel(), consumerData.getConsumeFromWhere(), consumerData.getSubscriptionDataSet(), isNotifyConsumerIdsChangedEnable);
+                changed = this.broker.getConsumerManager().registerConsumer(consumerData.getGroupName(), clientChannelInfo, consumerData.getConsumeType(), consumerData.getMessageModel(), consumerData.getConsumeFromWhere(), consumerData.getSubscriptionDataSet(), isNotifyConsumerIdsChangedEnable);
             }
             if (changed) {
                 LOGGER.info("heartBeatV2 ClientManageProcessor: registerConsumer info changed, SDK address={}, consumerData={}",
@@ -195,7 +195,7 @@ public class ClientManageProcessor implements NettyRequestProcessor {
 
         }
         for (ProducerData data : heartbeatData.getProducerDataSet()) {
-            this.brokerController.getProducerManager().registerProducer(data.getGroupName(), clientChannelInfo);
+            this.broker.getProducerManager().registerProducer(data.getGroupName(), clientChannelInfo);
         }
         response.setCode(ResponseCode.SUCCESS);
         response.setRemark(null);
@@ -220,7 +220,7 @@ public class ClientManageProcessor implements NettyRequestProcessor {
         {
             final String group = requestHeader.getProducerGroup();
             if (group != null) {
-                this.brokerController.getProducerManager().unregisterProducer(group, clientChannelInfo);
+                this.broker.getProducerManager().unregisterProducer(group, clientChannelInfo);
             }
         }
 
@@ -228,12 +228,12 @@ public class ClientManageProcessor implements NettyRequestProcessor {
             final String group = requestHeader.getConsumerGroup();
             if (group != null) {
                 SubscriptionGroupConfig subscriptionGroupConfig =
-                    this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(group);
+                    this.broker.getSubscriptionGroupManager().findSubscriptionGroupConfig(group);
                 boolean isNotifyConsumerIdsChangedEnable = true;
                 if (null != subscriptionGroupConfig) {
                     isNotifyConsumerIdsChangedEnable = subscriptionGroupConfig.isNotifyConsumerIdsChangedEnable();
                 }
-                this.brokerController.getConsumerManager().unregisterConsumer(group, clientChannelInfo, isNotifyConsumerIdsChangedEnable);
+                this.broker.getConsumerManager().unregisterConsumer(group, clientChannelInfo, isNotifyConsumerIdsChangedEnable);
             }
         }
 
@@ -258,7 +258,7 @@ public class ClientManageProcessor implements NettyRequestProcessor {
                 return response;
             }
 
-            if (!this.brokerController.getBrokerConfig().isEnablePropertyFilter()) {
+            if (!this.broker.getBrokerConfig().isEnablePropertyFilter()) {
                 response.setCode(ResponseCode.SYSTEM_ERROR);
                 response.setRemark("The broker does not support consumer to filter message by " + subscriptionData.getExpressionType());
                 return response;

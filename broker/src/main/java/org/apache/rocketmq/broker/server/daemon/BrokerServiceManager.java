@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.server.daemon;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPreOnlineService;
 import org.apache.rocketmq.broker.server.ShutdownHook;
 import org.apache.rocketmq.broker.server.client.ConsumerManager;
@@ -54,7 +54,7 @@ import org.apache.rocketmq.store.api.stats.LmqBrokerStatsManager;
 public class BrokerServiceManager {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final BrokerConfig brokerConfig;
     private final MessageStoreConfig messageStoreConfig;
 
@@ -88,18 +88,18 @@ public class BrokerServiceManager {
 
     private ShutdownHook shutdownHook;
 
-    public BrokerServiceManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.brokerConfig = brokerController.getBrokerConfig();
-        this.messageStoreConfig = brokerController.getMessageStoreConfig();
+    public BrokerServiceManager(Broker broker) {
+        this.broker = broker;
+        this.brokerConfig = broker.getBrokerConfig();
+        this.messageStoreConfig = broker.getMessageStoreConfig();
         initMonitorService();
         initServiceWithGetterAndSetter();
         initBrokerPlugin();
     }
 
     public boolean load() {
-        this.brokerMetricsManager = new BrokerMetricsManager(brokerController);
-        this.brokerStats = new BrokerStats(brokerController.getBrokerMessageService().getMessageStore());
+        this.brokerMetricsManager = new BrokerMetricsManager(broker);
+        this.brokerStats = new BrokerStats(broker.getBrokerMessageService().getMessageStore());
 
         boolean result = true;
         for (BrokerAttachedPlugin brokerAttachedPlugin : brokerAttachedPlugins) {
@@ -198,31 +198,31 @@ public class BrokerServiceManager {
         }
 
         if (this.shutdownHook != null) {
-            this.shutdownHook.beforeShutdown(brokerController);
+            this.shutdownHook.beforeShutdown(broker);
         }
     }
 
     private void initServiceWithGetterAndSetter() {
-        this.consumerManager = new ConsumerManager(brokerController.getBrokerNettyServer().getConsumerIdsChangeListener(), brokerStatsManager, brokerController.getBrokerConfig());
+        this.consumerManager = new ConsumerManager(broker.getBrokerNettyServer().getConsumerIdsChangeListener(), brokerStatsManager, broker.getBrokerConfig());
         this.producerManager = new ProducerManager(brokerStatsManager);
 
-        this.broker2Client = new Broker2Client(brokerController);
-        this.popInflightMessageCounter = new PopInflightMessageCounter(brokerController);
+        this.broker2Client = new Broker2Client(broker);
+        this.popInflightMessageCounter = new PopInflightMessageCounter(broker);
     }
 
     private void initServiceWithStartAndShutdown() {
-        this.broadcastOffsetManager = new BroadcastOffsetManager(brokerController);
+        this.broadcastOffsetManager = new BroadcastOffsetManager(broker);
 
-        this.brokerFastFailure = new BrokerFastFailure(brokerController);
-        this.topicRouteInfoManager = new TopicRouteInfoManager(brokerController);
+        this.brokerFastFailure = new BrokerFastFailure(broker);
+        this.topicRouteInfoManager = new TopicRouteInfoManager(broker);
 
-        this.coldDataPullRequestHoldService = new ColdDataPullRequestHoldService(brokerController);
-        this.coldDataCgCtrService = new ColdDataCgCtrService(brokerController);
+        this.coldDataPullRequestHoldService = new ColdDataPullRequestHoldService(broker);
+        this.coldDataCgCtrService = new ColdDataCgCtrService(broker);
 
-        this.topicQueueMappingCleanService = new TopicQueueMappingCleanService(brokerController);
+        this.topicQueueMappingCleanService = new TopicQueueMappingCleanService(broker);
 
         if (this.brokerConfig.isEnableSlaveActingMaster() && !this.brokerConfig.isSkipPreOnline()) {
-            this.brokerPreOnlineService = new BrokerPreOnlineService(brokerController);
+            this.brokerPreOnlineService = new BrokerPreOnlineService(broker);
         }
     }
 
@@ -240,7 +240,7 @@ public class BrokerServiceManager {
         this.brokerStatsManager.setProduerStateGetter(new BrokerStatsManager.StateGetter() {
             @Override
             public boolean online(String instanceId, String group, String topic) {
-                if (brokerController.getTopicConfigManager().getTopicConfigTable().containsKey(NamespaceUtil.wrapNamespace(instanceId, topic))) {
+                if (broker.getTopicConfigManager().getTopicConfigTable().containsKey(NamespaceUtil.wrapNamespace(instanceId, topic))) {
                     return getProducerManager().groupOnline(NamespaceUtil.wrapNamespace(instanceId, group));
                 } else {
                     return getProducerManager().groupOnline(group);
@@ -254,7 +254,7 @@ public class BrokerServiceManager {
             @Override
             public boolean online(String instanceId, String group, String topic) {
                 String topicFullName = NamespaceUtil.wrapNamespace(instanceId, topic);
-                if (brokerController.getTopicConfigManager().getTopicConfigTable().containsKey(topicFullName)) {
+                if (broker.getTopicConfigManager().getTopicConfigTable().containsKey(topicFullName)) {
                     return getConsumerManager().findSubscriptionData(NamespaceUtil.wrapNamespace(instanceId, group), topicFullName) != null;
                 } else {
                     return getConsumerManager().findSubscriptionData(group, topic) != null;

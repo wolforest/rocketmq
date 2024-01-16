@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ConsumerManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
@@ -108,7 +108,7 @@ public class BrokerMetricsManager {
 
     private final BrokerConfig brokerConfig;
     private final MessageStore messageStore;
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final ConsumerLagCalculator consumerLagCalculator;
     private final static Map<String, String> LABEL_MAP = new HashMap<>();
     private OtlpGrpcMetricExporter metricExporter;
@@ -148,11 +148,11 @@ public class BrokerMetricsManager {
         }
     };
 
-    public BrokerMetricsManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
-        brokerConfig = brokerController.getBrokerConfig();
-        this.messageStore = brokerController.getMessageStore();
-        this.consumerLagCalculator = new ConsumerLagCalculator(brokerController);
+    public BrokerMetricsManager(Broker broker) {
+        this.broker = broker;
+        brokerConfig = broker.getBrokerConfig();
+        this.messageStore = broker.getMessageStore();
+        this.consumerLagCalculator = new ConsumerLagCalculator(broker);
         init();
     }
 
@@ -411,18 +411,18 @@ public class BrokerMetricsManager {
             .setDescription("Request processor watermark")
             .ofLongs()
             .buildWithCallback(measurement -> {
-                measurement.record(brokerController.getBrokerNettyServer().getSendThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "send").build());
-                measurement.record(brokerController.getBrokerNettyServer().getAsyncPutThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "async_put").build());
-                measurement.record(brokerController.getBrokerNettyServer().getPullThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "pull").build());
-                measurement.record(brokerController.getBrokerNettyServer().getAckThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "ack").build());
-                measurement.record(brokerController.getBrokerNettyServer().getQueryThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "query_message").build());
-                measurement.record(brokerController.getBrokerNettyServer().getClientManagerThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "client_manager").build());
-                measurement.record(brokerController.getBrokerNettyServer().getHeartbeatThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "heartbeat").build());
-                measurement.record(brokerController.getBrokerNettyServer().getLitePullThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "lite_pull").build());
-                measurement.record(brokerController.getBrokerNettyServer().getEndTransactionThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "transaction").build());
-                measurement.record(brokerController.getBrokerNettyServer().getConsumerManagerThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "consumer_manager").build());
-                measurement.record(brokerController.getBrokerNettyServer().getAdminBrokerThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "admin").build());
-                measurement.record(brokerController.getBrokerNettyServer().getReplyThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "reply").build());
+                measurement.record(broker.getBrokerNettyServer().getSendThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "send").build());
+                measurement.record(broker.getBrokerNettyServer().getAsyncPutThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "async_put").build());
+                measurement.record(broker.getBrokerNettyServer().getPullThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "pull").build());
+                measurement.record(broker.getBrokerNettyServer().getAckThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "ack").build());
+                measurement.record(broker.getBrokerNettyServer().getQueryThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "query_message").build());
+                measurement.record(broker.getBrokerNettyServer().getClientManagerThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "client_manager").build());
+                measurement.record(broker.getBrokerNettyServer().getHeartbeatThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "heartbeat").build());
+                measurement.record(broker.getBrokerNettyServer().getLitePullThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "lite_pull").build());
+                measurement.record(broker.getBrokerNettyServer().getEndTransactionThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "transaction").build());
+                measurement.record(broker.getBrokerNettyServer().getConsumerManagerThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "consumer_manager").build());
+                measurement.record(broker.getBrokerNettyServer().getAdminBrokerThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "admin").build());
+                measurement.record(broker.getBrokerNettyServer().getReplyThreadPoolQueue().size(), newAttributesBuilder().put(LABEL_PROCESSOR, "reply").build());
             });
 
         brokerPermission = brokerMeter.gaugeBuilder(GAUGE_BROKER_PERMISSION)
@@ -460,7 +460,7 @@ public class BrokerMetricsManager {
             .ofLongs()
             .buildWithCallback(measurement -> {
                 Map<ProducerAttr, Integer> metricsMap = new HashMap<>();
-                brokerController.getProducerManager()
+                broker.getProducerManager()
                     .getGroupChannelTable()
                     .values()
                     .stream()
@@ -485,7 +485,7 @@ public class BrokerMetricsManager {
             .ofLongs()
             .buildWithCallback(measurement -> {
                 Map<ConsumerAttr, Integer> metricsMap = new HashMap<>();
-                ConsumerManager consumerManager = brokerController.getConsumerManager();
+                ConsumerManager consumerManager = broker.getConsumerManager();
                 consumerManager.getConsumerTable()
                     .forEach((group, groupInfo) -> {
                         if (groupInfo != null) {
@@ -563,7 +563,7 @@ public class BrokerMetricsManager {
     private void initOtherMetrics() {
         RemotingMetricsManager.initMetrics(brokerMeter, BrokerMetricsManager::newAttributesBuilder);
         messageStore.initMetrics(brokerMeter, BrokerMetricsManager::newAttributesBuilder);
-        PopMetricsManager.initMetrics(brokerMeter, brokerController, BrokerMetricsManager::newAttributesBuilder);
+        PopMetricsManager.initMetrics(brokerMeter, broker, BrokerMetricsManager::newAttributesBuilder);
     }
 
     public void shutdown() {

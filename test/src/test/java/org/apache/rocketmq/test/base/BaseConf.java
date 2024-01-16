@@ -27,7 +27,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.consumer.MQPullConsumer;
 import org.apache.rocketmq.client.consumer.MQPushConsumer;
 import org.apache.rocketmq.client.producer.MQProducer;
@@ -76,11 +76,11 @@ public class BaseConf {
     protected final static int QUEUE_NUMBERS = 8;
 
     protected static NamesrvController namesrvController;
-    protected static BrokerController brokerController1;
-    protected static BrokerController brokerController2;
-    protected static BrokerController brokerController3;
-    protected static List<BrokerController> brokerControllerList;
-    protected static Map<String, BrokerController> brokerControllerMap;
+    protected static Broker broker1;
+    protected static Broker broker2;
+    protected static Broker broker3;
+    protected static List<Broker> brokerList;
+    protected static Map<String, Broker> brokerControllerMap;
 
     protected static List<Object> mqClients = new ArrayList<Object>();
     protected static boolean debug = false;
@@ -91,24 +91,24 @@ public class BaseConf {
         NAMESRV_ADDR = "127.0.0.1:" + namesrvController.getNettyServerConfig().getListenPort();
         log.debug("Name server started, listening: {}", NAMESRV_ADDR);
 
-        brokerController1 = IntegrationTestBase.createAndStartBroker(NAMESRV_ADDR);
-        log.debug("Broker {} started, listening: {}", brokerController1.getBrokerConfig().getBrokerName(),
-            brokerController1.getBrokerConfig().getListenPort());
+        broker1 = IntegrationTestBase.createAndStartBroker(NAMESRV_ADDR);
+        log.debug("Broker {} started, listening: {}", broker1.getBrokerConfig().getBrokerName(),
+            broker1.getBrokerConfig().getListenPort());
 
-        brokerController2 = IntegrationTestBase.createAndStartBroker(NAMESRV_ADDR);
-        log.debug("Broker {} started, listening: {}", brokerController2.getBrokerConfig().getBrokerName(),
-            brokerController2.getBrokerConfig().getListenPort());
+        broker2 = IntegrationTestBase.createAndStartBroker(NAMESRV_ADDR);
+        log.debug("Broker {} started, listening: {}", broker2.getBrokerConfig().getBrokerName(),
+            broker2.getBrokerConfig().getListenPort());
 
-        brokerController3 = IntegrationTestBase.createAndStartBroker(NAMESRV_ADDR);
-        log.debug("Broker {} started, listening: {}", brokerController2.getBrokerConfig().getBrokerName(),
-            brokerController2.getBrokerConfig().getListenPort());
+        broker3 = IntegrationTestBase.createAndStartBroker(NAMESRV_ADDR);
+        log.debug("Broker {} started, listening: {}", broker2.getBrokerConfig().getBrokerName(),
+            broker2.getBrokerConfig().getListenPort());
 
-        CLUSTER_NAME = brokerController1.getBrokerConfig().getBrokerClusterName();
-        BROKER1_NAME = brokerController1.getBrokerConfig().getBrokerName();
-        BROKER2_NAME = brokerController2.getBrokerConfig().getBrokerName();
-        BROKER3_NAME = brokerController3.getBrokerConfig().getBrokerName();
-        brokerControllerList = ImmutableList.of(brokerController1, brokerController2, brokerController3);
-        brokerControllerMap = brokerControllerList.stream().collect(
+        CLUSTER_NAME = broker1.getBrokerConfig().getBrokerClusterName();
+        BROKER1_NAME = broker1.getBrokerConfig().getBrokerName();
+        BROKER2_NAME = broker2.getBrokerConfig().getBrokerName();
+        BROKER3_NAME = broker3.getBrokerConfig().getBrokerName();
+        brokerList = ImmutableList.of(broker1, broker2, broker3);
+        brokerControllerMap = brokerList.stream().collect(
             Collectors.toMap(input -> input.getBrokerConfig().getBrokerName(), Function.identity()));
         initMQAdmin(NAMESRV_ADDR);
     }
@@ -133,8 +133,8 @@ public class BaseConf {
                 }
                 return brokerDatas.size() == expectedBrokerNum;
             });
-            for (BrokerController brokerController: brokerControllerList) {
-                brokerController.getBrokerOuterAPI().refreshMetadata();
+            for (Broker broker : brokerList) {
+                broker.getBrokerOuterAPI().refreshMetadata();
             }
         } catch (Exception e) {
             log.error("init failed, please check BaseConf", e);
@@ -147,8 +147,8 @@ public class BaseConf {
         long start = System.currentTimeMillis();
         while (System.currentTimeMillis() - start <= timeMs) {
             boolean allOk = true;
-            for (BrokerController brokerController: brokerControllerList) {
-                if (brokerController.getMessageStore().dispatchBehindBytes() != 0) {
+            for (Broker broker : brokerList) {
+                if (broker.getMessageStore().dispatchBehindBytes() != 0) {
                     allOk = false;
                     break;
                 }

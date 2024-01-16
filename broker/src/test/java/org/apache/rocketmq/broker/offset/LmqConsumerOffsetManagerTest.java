@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.broker.offset;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.offset.LmqConsumerOffsetManager;
 import org.apache.rocketmq.broker.metadata.subscription.LmqSubscriptionGroupManager;
 import org.apache.rocketmq.broker.metadata.topic.LmqTopicConfigManager;
@@ -40,14 +40,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class LmqConsumerOffsetManagerTest {
 
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(),
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(),
         new NettyClientConfig(), new MessageStoreConfig());
 
     @Test
     public void testOffsetManage() {
-        LmqConsumerOffsetManager lmqConsumerOffsetManager = new LmqConsumerOffsetManager(brokerController);
-        LmqTopicConfigManager lmqTopicConfigManager = new LmqTopicConfigManager(brokerController);
-        LmqSubscriptionGroupManager lmqSubscriptionGroupManager = new LmqSubscriptionGroupManager(brokerController);
+        LmqConsumerOffsetManager lmqConsumerOffsetManager = new LmqConsumerOffsetManager(broker);
+        LmqTopicConfigManager lmqTopicConfigManager = new LmqTopicConfigManager(broker);
+        LmqSubscriptionGroupManager lmqSubscriptionGroupManager = new LmqSubscriptionGroupManager(broker);
 
         String lmqTopicName = "%LMQ%1111";
         TopicConfig topicConfig = new TopicConfig();
@@ -76,7 +76,7 @@ public class LmqConsumerOffsetManagerTest {
 
     @Test
     public void testOffsetManage1() {
-        LmqConsumerOffsetManager lmqConsumerOffsetManager = new LmqConsumerOffsetManager(brokerController);
+        LmqConsumerOffsetManager lmqConsumerOffsetManager = new LmqConsumerOffsetManager(broker);
 
         String lmqTopicName = "%LMQ%1111";
 
@@ -93,7 +93,7 @@ public class LmqConsumerOffsetManagerTest {
 
         String json = lmqConsumerOffsetManager.encode(true);
 
-        LmqConsumerOffsetManager lmqConsumerOffsetManager1 = new LmqConsumerOffsetManager(brokerController);
+        LmqConsumerOffsetManager lmqConsumerOffsetManager1 = new LmqConsumerOffsetManager(broker);
 
         lmqConsumerOffsetManager1.decode(json);
 

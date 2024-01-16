@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.api.controller;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.opentelemetry.api.common.Attributes;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.domain.mqtrace.ConsumeMessageContext;
 import org.apache.rocketmq.broker.domain.mqtrace.ConsumeMessageHook;
@@ -78,12 +78,12 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
     protected List<ConsumeMessageHook> consumeMessageHookList;
 
     protected final static int DLQ_NUMS_PER_GROUP = 1;
-    protected final BrokerController brokerController;
+    protected final Broker broker;
     protected final Random random = new Random(System.currentTimeMillis());
     private List<SendMessageHook> sendMessageHookList;
 
-    public AbstractSendMessageProcessor(final BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public AbstractSendMessageProcessor(final Broker broker) {
+        this.broker = broker;
     }
 
     public void registerConsumeMessageHook(List<ConsumeMessageHook> consumeMessageHookList) {
@@ -97,16 +97,16 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             (ConsumerSendMsgBackRequestHeader) request.decodeCommandCustomHeader(ConsumerSendMsgBackRequestHeader.class);
 
         // send back requests sent to SlaveBroker will be forwarded to the master broker beside
-        final BrokerController masterBroker = this.brokerController.peekMasterBroker();
+        final Broker masterBroker = this.broker.peekMasterBroker();
         if (null == masterBroker) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark("no master available along with " + brokerController.getBrokerConfig().getBrokerIP1());
+            response.setRemark("no master available along with " + broker.getBrokerConfig().getBrokerIP1());
             return response;
         }
 
         // The broker that received the request.
         // It may be a master broker or a slave broker
-        final BrokerController currentBroker = this.brokerController;
+        final Broker currentBroker = this.broker;
 
         SubscriptionGroupConfig subscriptionGroupConfig =
             masterBroker.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getGroup());
@@ -364,9 +364,9 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         sendMessageContext.setBodyLength(request.getBody().length);
         sendMessageContext.setMsgProps(requestHeader.getProperties());
         sendMessageContext.setBornHost(RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
-        sendMessageContext.setBrokerAddr(this.brokerController.getBrokerAddr());
+        sendMessageContext.setBrokerAddr(this.broker.getBrokerAddr());
         sendMessageContext.setQueueId(requestHeader.getQueueId());
-        sendMessageContext.setBrokerRegionId(this.brokerController.getBrokerConfig().getRegionId());
+        sendMessageContext.setBrokerRegionId(this.broker.getBrokerConfig().getRegionId());
         sendMessageContext.setBornTimeStamp(requestHeader.getBornTimestamp());
         sendMessageContext.setRequestTimeStamp(System.currentTimeMillis());
 
@@ -375,8 +375,8 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
 
         Map<String, String> properties = MessageDecoder.string2messageProperties(requestHeader.getProperties());
         String uniqueKey = properties.get(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
-        properties.put(MessageConst.PROPERTY_MSG_REGION, this.brokerController.getBrokerConfig().getRegionId());
-        properties.put(MessageConst.PROPERTY_TRACE_SWITCH, String.valueOf(this.brokerController.getBrokerConfig().isTraceOn()));
+        properties.put(MessageConst.PROPERTY_MSG_REGION, this.broker.getBrokerConfig().getRegionId());
+        properties.put(MessageConst.PROPERTY_TRACE_SWITCH, String.valueOf(this.broker.getBrokerConfig().isTraceOn()));
         requestHeader.setProperties(MessageDecoder.messageProperties2String(properties));
 
         if (uniqueKey == null) {
@@ -429,7 +429,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
     }
 
     public SocketAddress getStoreHost() {
-        return brokerController.getStoreHost();
+        return broker.getStoreHost();
     }
 
     protected RemotingCommand msgContentCheck(final ChannelHandlerContext ctx,
@@ -463,10 +463,10 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
     protected RemotingCommand msgCheck(final ChannelHandlerContext ctx,
         final SendMessageRequestHeader requestHeader, final RemotingCommand request,
         final RemotingCommand response) {
-        if (!PermName.isWriteable(this.brokerController.getBrokerConfig().getBrokerPermission())
-            && this.brokerController.getTopicConfigManager().isOrderTopic(requestHeader.getTopic())) {
+        if (!PermName.isWriteable(this.broker.getBrokerConfig().getBrokerPermission())
+            && this.broker.getTopicConfigManager().isOrderTopic(requestHeader.getTopic())) {
             response.setCode(ResponseCode.NO_PERMISSION);
-            response.setRemark("the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1()
+            response.setRemark("the broker[" + this.broker.getBrokerConfig().getBrokerIP1()
                 + "] sending message is forbidden");
             return response;
         }
@@ -484,7 +484,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         }
 
         TopicConfig topicConfig =
-            this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+            this.broker.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
         if (null == topicConfig) {
             int topicSysFlag = 0;
             if (requestHeader.isUnitMode()) {
@@ -496,7 +496,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             }
 
             LOGGER.warn("the topic {} not exist, producer: {}", requestHeader.getTopic(), ctx.channel().remoteAddress());
-            topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageMethod(
+            topicConfig = this.broker.getTopicConfigManager().createTopicInSendMessageMethod(
                 requestHeader.getTopic(),
                 requestHeader.getDefaultTopic(),
                 RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
@@ -505,7 +505,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             if (null == topicConfig) {
                 if (requestHeader.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
                     topicConfig =
-                        this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(
+                        this.broker.getTopicConfigManager().createTopicInSendMessageBackMethod(
                             requestHeader.getTopic(), 1, PermName.PERM_WRITE | PermName.PERM_READ,
                             topicSysFlag);
                 }

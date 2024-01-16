@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
@@ -32,8 +32,8 @@ public class LmqConsumerOffsetManager extends ConsumerOffsetManager {
 
     }
 
-    public LmqConsumerOffsetManager(BrokerController brokerController) {
-        super(brokerController);
+    public LmqConsumerOffsetManager(Broker broker) {
+        super(broker);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class LmqConsumerOffsetManager extends ConsumerOffsetManager {
 
     @Override
     public String configFilePath() {
-        return BrokerPathConfigHelper.getLmqConsumerOffsetPath(brokerController.getMessageStoreConfig().getStorePathRootDir());
+        return BrokerPathConfigHelper.getLmqConsumerOffsetPath(broker.getMessageStoreConfig().getStorePathRootDir());
     }
 
     @Override

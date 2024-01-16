@@ -21,7 +21,7 @@ import com.google.common.net.HostAndPort;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.topic.TopicConfigManager;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
@@ -51,7 +51,7 @@ public class LocalTopicRouteServiceTest extends BaseServiceTest {
     private static final int LOCAL_PORT = 10911;
     private static final String LOCAL_ADDR = LOCAL_HOST + ":" + LOCAL_PORT;
     @Mock
-    private BrokerController brokerController;
+    private Broker broker;
     @Mock
     private TopicConfigManager topicConfigManager;
     private ConcurrentMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>();
@@ -64,12 +64,12 @@ public class LocalTopicRouteServiceTest extends BaseServiceTest {
         this.brokerConfig.setBrokerName(LOCAL_BROKER_NAME);
         this.brokerConfig.setBrokerClusterName(LOCAL_CLUSTER_NAME);
 
-        when(this.brokerController.getBrokerAddr()).thenReturn(LOCAL_ADDR);
-        when(this.brokerController.getBrokerConfig()).thenReturn(this.brokerConfig);
-        when(this.brokerController.getTopicConfigManager()).thenReturn(this.topicConfigManager);
+        when(this.broker.getBrokerAddr()).thenReturn(LOCAL_ADDR);
+        when(this.broker.getBrokerConfig()).thenReturn(this.brokerConfig);
+        when(this.broker.getTopicConfigManager()).thenReturn(this.topicConfigManager);
         when(this.topicConfigManager.getTopicConfigTable()).thenReturn(this.topicConfigTable);
 
-        this.topicRouteService = new LocalTopicRouteService(this.brokerController, this.mqClientAPIFactory);
+        this.topicRouteService = new LocalTopicRouteService(this.broker, this.mqClientAPIFactory);
 
         when(this.mqClientAPIExt.getTopicRouteInfoFromNameServer(eq(TOPIC), anyLong())).thenReturn(topicRouteData);
         when(this.mqClientAPIExt.getTopicRouteInfoFromNameServer(eq(ERR_TOPIC), anyLong())).thenThrow(new MQClientException(ResponseCode.TOPIC_NOT_EXIST, ""));

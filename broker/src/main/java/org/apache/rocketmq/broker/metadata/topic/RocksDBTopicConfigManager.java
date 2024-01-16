@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.metadata.topic;
 
 import java.io.File;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.app.config.RocksDBConfigManager;
 import org.apache.rocketmq.common.utils.DataConverter;
@@ -28,9 +28,9 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 
 public class RocksDBTopicConfigManager extends TopicConfigManager {
 
-    public RocksDBTopicConfigManager(BrokerController brokerController) {
-        super(brokerController, false);
-        this.rocksDBConfigManager = new RocksDBConfigManager(brokerController.getMessageStoreConfig().getMemTableFlushIntervalMs());
+    public RocksDBTopicConfigManager(Broker broker) {
+        super(broker, false);
+        this.rocksDBConfigManager = new RocksDBConfigManager(broker.getMessageStoreConfig().getMemTableFlushIntervalMs());
     }
 
     @Override
@@ -58,7 +58,7 @@ public class RocksDBTopicConfigManager extends TopicConfigManager {
 
     @Override
     public String configFilePath() {
-        return this.brokerController.getMessageStoreConfig().getStorePathRootDir() + File.separator + "config" + File.separator + "topics" + File.separator;
+        return this.broker.getMessageStoreConfig().getStorePathRootDir() + File.separator + "config" + File.separator + "topics" + File.separator;
     }
 
     @Override
@@ -88,7 +88,7 @@ public class RocksDBTopicConfigManager extends TopicConfigManager {
 
     @Override
     public synchronized void persist() {
-        if (brokerController.getMessageStoreConfig().isRealTimePersistRocksDBConfig()) {
+        if (broker.getMessageStoreConfig().isRealTimePersistRocksDBConfig()) {
             this.rocksDBConfigManager.flushWAL();
         }
     }

@@ -27,7 +27,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
@@ -59,10 +59,10 @@ public class TopicRouteInfoManager {
     private final ConcurrentHashMap<String, Set<MessageQueue>> topicSubscribeInfoTable = new ConcurrentHashMap<>();
 
     private ScheduledExecutorService scheduledExecutorService;
-    private BrokerController brokerController;
+    private Broker broker;
 
-    public TopicRouteInfoManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public TopicRouteInfoManager(Broker broker) {
+        this.broker = broker;
     }
 
     public void start() {
@@ -74,7 +74,7 @@ public class TopicRouteInfoManager {
             } catch (Exception e) {
                 log.error("ScheduledTask: failed to pull TopicRouteData from NameServer", e);
             }
-        }, 1000, this.brokerController.getBrokerConfig().getLoadBalancePollNameServerInterval(), TimeUnit.MILLISECONDS);
+        }, 1000, this.broker.getBrokerConfig().getLoadBalancePollNameServerInterval(), TimeUnit.MILLISECONDS);
     }
 
     private void updateTopicRouteInfoFromNameServer() {
@@ -94,7 +94,7 @@ public class TopicRouteInfoManager {
         try {
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
-                    final TopicRouteData topicRouteData = this.brokerController.getBrokerOuterAPI()
+                    final TopicRouteData topicRouteData = this.broker.getBrokerOuterAPI()
                         .getTopicRouteInfoFromNameServer(topic, GET_TOPIC_ROUTE_TIMEOUT);
                     if (null == topicRouteData) {
                         log.warn("TopicRouteInfoManager: updateTopicRouteInfoFromNameServer, getTopicRouteInfoFromNameServer return null, Topic: {}.", topic);

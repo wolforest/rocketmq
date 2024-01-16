@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.SystemConfigFileHelper;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.BrokerIdentity;
@@ -104,15 +104,15 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
             return validateResult;
         }
 
-        BrokerController brokerController;
+        Broker broker;
         try {
-            brokerController = this.brokerContainer.addBroker(brokerConfig, messageStoreConfig);
+            broker = this.brokerContainer.addBroker(brokerConfig, messageStoreConfig);
         } catch (Exception e) {
             LOGGER.error("addBroker exception {}", e);
             return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, e.getMessage());
         }
 
-        return startBroker(brokerController, brokerProperties, brokerConfig, messageStoreConfig, response);
+        return startBroker(broker, brokerProperties, brokerConfig, messageStoreConfig, response);
     }
 
     private Properties getConfigProperties(String configPath, RemotingCommand response) throws UnsupportedEncodingException {
@@ -192,7 +192,7 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
         return null;
     }
 
-    private RemotingCommand handleStartException(Exception e, BrokerController brokerController, BrokerConfig brokerConfig, MessageStoreConfig messageStoreConfig, RemotingCommand response) throws Exception {
+    private RemotingCommand handleStartException(Exception e, Broker broker, BrokerConfig brokerConfig, MessageStoreConfig messageStoreConfig, RemotingCommand response) throws Exception {
         LOGGER.error("start broker exception {}", e);
         BrokerIdentity brokerIdentity;
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
@@ -203,27 +203,27 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
                 brokerConfig.getBrokerName(), brokerConfig.getBrokerId());
         }
         this.brokerContainer.removeBroker(brokerIdentity);
-        brokerController.shutdown();
+        broker.shutdown();
         return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "start broker failed, " + e);
     }
 
-    private RemotingCommand startBroker(BrokerController brokerController, Properties brokerProperties, BrokerConfig brokerConfig, MessageStoreConfig messageStoreConfig, RemotingCommand response) throws Exception {
-        if (brokerController == null) {
+    private RemotingCommand startBroker(Broker broker, Properties brokerProperties, BrokerConfig brokerConfig, MessageStoreConfig messageStoreConfig, RemotingCommand response) throws Exception {
+        if (broker == null) {
             return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "add broker return null");
         }
 
-        brokerController.getConfiguration().registerConfig(brokerProperties);
+        broker.getConfiguration().registerConfig(brokerProperties);
         try {
             for (BrokerBootHook brokerBootHook : brokerBootHookList) {
-                brokerBootHook.executeBeforeStart(brokerController, brokerProperties);
+                brokerBootHook.executeBeforeStart(broker, brokerProperties);
             }
-            brokerController.start();
+            broker.start();
 
             for (BrokerBootHook brokerBootHook : brokerBootHookList) {
-                brokerBootHook.executeAfterStart(brokerController, brokerProperties);
+                brokerBootHook.executeAfterStart(broker, brokerProperties);
             }
         } catch (Exception e) {
-            return handleStartException(e, brokerController, brokerConfig, messageStoreConfig, response);
+            return handleStartException(e, broker, brokerConfig, messageStoreConfig, response);
         }
 
         return response.setCodeAndRemark(ResponseCode.SUCCESS, null);
@@ -238,16 +238,16 @@ public class BrokerContainerProcessor implements NettyRequestProcessor {
 
         BrokerIdentity brokerIdentity = new BrokerIdentity(requestHeader.getBrokerClusterName(), requestHeader.getBrokerName(), requestHeader.getBrokerId());
 
-        BrokerController brokerController;
+        Broker broker;
         try {
-            brokerController = this.brokerContainer.removeBroker(brokerIdentity);
+            broker = this.brokerContainer.removeBroker(brokerIdentity);
         } catch (Exception e) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(e.getMessage());
             return response;
         }
 
-        if (brokerController != null) {
+        if (broker != null) {
             response.setCode(ResponseCode.SUCCESS);
             response.setRemark(null);
         } else {

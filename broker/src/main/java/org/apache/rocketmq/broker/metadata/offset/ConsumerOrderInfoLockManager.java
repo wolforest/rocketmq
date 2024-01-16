@@ -26,7 +26,7 @@ import io.netty.util.TimerTask;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -34,13 +34,13 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 public class ConsumerOrderInfoLockManager {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final Map<Key, Timeout> timeoutMap = new ConcurrentHashMap<>();
     private final Timer timer;
     private static final int TIMER_TICK_MS = 100;
 
-    public ConsumerOrderInfoLockManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public ConsumerOrderInfoLockManager(Broker broker) {
+        this.broker = broker;
         this.timer = new HashedWheelTimer(
             new ThreadFactoryImpl("ConsumerOrderInfoLockManager_"),
             TIMER_TICK_MS, TimeUnit.MILLISECONDS);
@@ -50,7 +50,7 @@ public class ConsumerOrderInfoLockManager {
      * when ConsumerOrderInfoManager load from disk, recover data
      */
     public void recover(Map<String/* topic@group*/, ConcurrentHashMap<Integer/*queueId*/, ConsumerOrderInfoManager.OrderInfo>> table) {
-        if (!this.brokerController.getBrokerConfig().isEnableNotifyAfterPopOrderLockRelease()) {
+        if (!this.broker.getBrokerConfig().isEnableNotifyAfterPopOrderLockRelease()) {
             return;
         }
         for (Map.Entry<String, ConcurrentHashMap<Integer, ConsumerOrderInfoManager.OrderInfo>> entry : table.entrySet()) {
@@ -77,7 +77,7 @@ public class ConsumerOrderInfoLockManager {
     }
 
     public void updateLockFreeTimestamp(String topic, String group, int queueId, Long lockFreeTimestamp) {
-        if (!this.brokerController.getBrokerConfig().isEnableNotifyAfterPopOrderLockRelease()) {
+        if (!this.broker.getBrokerConfig().isEnableNotifyAfterPopOrderLockRelease()) {
             return;
         }
         if (lockFreeTimestamp == null) {
@@ -106,7 +106,7 @@ public class ConsumerOrderInfoLockManager {
 
     protected void notifyLockIsFree(Key key) {
         try {
-            this.brokerController.getBrokerNettyServer().getPopServiceManager().notifyLongPollingRequestIfNeed(key.topic, key.group, key.queueId);
+            this.broker.getBrokerNettyServer().getPopServiceManager().notifyLongPollingRequestIfNeed(key.topic, key.group, key.queueId);
         } catch (Exception e) {
             POP_LOGGER.error("unexpect error when notifyLockIsFree. key:{}", key, e);
         }
@@ -131,7 +131,7 @@ public class ConsumerOrderInfoLockManager {
 
         @Override
         public void run(Timeout timeout) throws Exception {
-            if (timeout.isCancelled() || !brokerController.getBrokerConfig().isEnableNotifyAfterPopOrderLockRelease()) {
+            if (timeout.isCancelled() || !broker.getBrokerConfig().isEnableNotifyAfterPopOrderLockRelease()) {
                 return;
             }
             notifyLockIsFree(key);

@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.broker.offset;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Assert;
@@ -34,17 +34,17 @@ public class ConsumerOffsetManagerTest {
 
     private static final String KEY = "FooBar@FooBarGroup";
 
-    private BrokerController brokerController;
+    private Broker broker;
 
     private ConsumerOffsetManager consumerOffsetManager;
 
     @Before
     public void init() {
-        brokerController = Mockito.mock(BrokerController.class);
-        consumerOffsetManager = new ConsumerOffsetManager(brokerController);
+        broker = Mockito.mock(Broker.class);
+        consumerOffsetManager = new ConsumerOffsetManager(broker);
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        Mockito.when(brokerController.getMessageStoreConfig()).thenReturn(messageStoreConfig);
+        Mockito.when(broker.getMessageStoreConfig()).thenReturn(messageStoreConfig);
 
         ConcurrentHashMap<String, ConcurrentMap<Integer, Long>> offsetTable = new ConcurrentHashMap<>(512);
         offsetTable.put(KEY,new ConcurrentHashMap<Integer, Long>() {{
@@ -76,7 +76,7 @@ public class ConsumerOffsetManagerTest {
         offsetTable.put(group, table);
 
         consumerOffsetManager.persist();
-        ConsumerOffsetManager manager = new ConsumerOffsetManager(brokerController);
+        ConsumerOffsetManager manager = new ConsumerOffsetManager(broker);
         manager.load();
 
         ConcurrentMap<Integer, Long> offsetTableLoaded = manager.getOffsetTable().get(group);

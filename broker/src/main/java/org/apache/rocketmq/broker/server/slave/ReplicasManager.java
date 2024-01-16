@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
@@ -74,7 +74,7 @@ public class ReplicasManager {
     private final ScheduledExecutorService scheduledService;
     private final ExecutorService executorService;
     private final ExecutorService scanExecutor;
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final AutoSwitchHAService haService;
 
     private final BrokerConfig brokerConfig;
@@ -105,20 +105,20 @@ public class ReplicasManager {
     private long lastSyncTimeMs = System.currentTimeMillis();
     private final Random random = new Random();
 
-    public ReplicasManager(final BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.brokerOuterAPI = brokerController.getBrokerOuterAPI();
-        this.scheduledService = ThreadUtils.newScheduledThreadPool(3, new ThreadFactoryImpl("ReplicasManager_ScheduledService_", brokerController.getBrokerIdentity()));
-        this.executorService = ThreadUtils.newThreadPoolExecutor(3, new ThreadFactoryImpl("ReplicasManager_ExecutorService_", brokerController.getBrokerIdentity()));
+    public ReplicasManager(final Broker broker) {
+        this.broker = broker;
+        this.brokerOuterAPI = broker.getBrokerOuterAPI();
+        this.scheduledService = ThreadUtils.newScheduledThreadPool(3, new ThreadFactoryImpl("ReplicasManager_ScheduledService_", broker.getBrokerIdentity()));
+        this.executorService = ThreadUtils.newThreadPoolExecutor(3, new ThreadFactoryImpl("ReplicasManager_ExecutorService_", broker.getBrokerIdentity()));
         this.scanExecutor = ThreadUtils.newThreadPoolExecutor(4, 10, 60, TimeUnit.SECONDS,
-            new ArrayBlockingQueue<>(32), new ThreadFactoryImpl("ReplicasManager_scan_thread_", brokerController.getBrokerIdentity()));
-        this.haService = (AutoSwitchHAService) brokerController.getMessageStore().getHaService();
-        this.brokerConfig = brokerController.getBrokerConfig();
+            new ArrayBlockingQueue<>(32), new ThreadFactoryImpl("ReplicasManager_scan_thread_", broker.getBrokerIdentity()));
+        this.haService = (AutoSwitchHAService) broker.getMessageStore().getHaService();
+        this.brokerConfig = broker.getBrokerConfig();
         this.availableControllerAddresses = new ConcurrentHashMap<>();
         this.syncStateSet = new HashSet<>();
-        this.brokerAddress = brokerController.getBrokerAddr();
-        this.brokerMetadata = new BrokerMetadata(this.brokerController.getMessageStoreConfig().getStorePathBrokerIdentity());
-        this.tempBrokerMetadata = new TempBrokerMetadata(this.brokerController.getMessageStoreConfig().getStorePathBrokerIdentity() + "-temp");
+        this.brokerAddress = broker.getBrokerAddr();
+        this.brokerMetadata = new BrokerMetadata(this.broker.getMessageStoreConfig().getStorePathBrokerIdentity());
+        this.tempBrokerMetadata = new TempBrokerMetadata(this.broker.getMessageStoreConfig().getStorePathBrokerIdentity() + "-temp");
     }
 
     enum State {
@@ -166,8 +166,8 @@ public class ReplicasManager {
     }
 
     public void setFenced(boolean fenced) {
-        this.brokerController.setIsolated(fenced);
-        this.brokerController.getMessageStore().getRunningFlags().makeFenced(fenced);
+        this.broker.setIsolated(fenced);
+        this.broker.getMessageStore().getRunningFlags().makeFenced(fenced);
     }
 
     /**
@@ -300,13 +300,13 @@ public class ReplicasManager {
 
             LOGGER.info("Begin to change to master, brokerName:{}, replicas:{}, new Epoch:{}", this.brokerConfig.getBrokerName(), this.brokerAddress, newMasterEpoch);
             this.masterEpoch = newMasterEpoch;
-            if (this.masterBrokerId != null && this.masterBrokerId.equals(this.brokerControllerId) && this.brokerController.getBrokerConfig().getBrokerId() == MQConstants.MASTER_ID) {
+            if (this.masterBrokerId != null && this.masterBrokerId.equals(this.brokerControllerId) && this.broker.getBrokerConfig().getBrokerId() == MQConstants.MASTER_ID) {
                 // Change SyncStateSet
                 final HashSet<Long> newSyncStateSet = new HashSet<>(syncStateSet);
                 changeSyncStateSet(newSyncStateSet, syncStateSetEpoch);
                 // if master doesn't change
                 this.haService.changeToMasterWhenLastRoleIsMaster(newMasterEpoch);
-                this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
+                this.broker.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
                 this.executorService.submit(this::checkSyncStateSetAndDoReport);
                 registerBrokerWhenRoleChange();
                 return;
@@ -322,9 +322,9 @@ public class ReplicasManager {
             // Notify ha service, change to master
             this.haService.changeToMaster(newMasterEpoch);
 
-            this.brokerController.getBrokerConfig().setBrokerId(MQConstants.MASTER_ID);
-            this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SYNC_MASTER);
-            this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(true);
+            this.broker.getBrokerConfig().setBrokerId(MQConstants.MASTER_ID);
+            this.broker.getMessageStoreConfig().setBrokerRole(BrokerRole.SYNC_MASTER);
+            this.broker.getBrokerMessageService().changeSpecialServiceStatus(true);
 
             // Change record
             this.masterAddress = this.brokerAddress;
@@ -332,7 +332,7 @@ public class ReplicasManager {
 
             schedulingCheckSyncStateSet();
 
-            this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
+            this.broker.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
             this.executorService.submit(this::checkSyncStateSetAndDoReport);
             registerBrokerWhenRoleChange();
         }
@@ -358,7 +358,7 @@ public class ReplicasManager {
             if (newMasterBrokerId.equals(this.masterBrokerId)) {
                 // if master doesn't change
                 this.haService.changeToSlaveWhenMasterNotChange(newMasterAddress, newMasterEpoch);
-                this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
+                this.broker.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
                 registerBrokerWhenRoleChange();
                 return;
             }
@@ -367,8 +367,8 @@ public class ReplicasManager {
             stopCheckSyncStateSet();
 
             // Change config(compatibility problem)
-            this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SLAVE);
-            this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(false);
+            this.broker.getMessageStoreConfig().setBrokerRole(BrokerRole.SLAVE);
+            this.broker.getBrokerMessageService().changeSpecialServiceStatus(false);
             // The brokerId in brokerConfig just means its role(master[0] or slave[>=1])
             this.brokerConfig.setBrokerId(brokerControllerId);
 
@@ -382,7 +382,7 @@ public class ReplicasManager {
             // Notify ha service, change to slave
             this.haService.changeToSlave(newMasterAddress, newMasterEpoch, brokerControllerId);
 
-            this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
+            this.broker.getTopicConfigManager().getDataVersion().nextVersion(newMasterEpoch);
             registerBrokerWhenRoleChange();
         }
     }
@@ -392,13 +392,13 @@ public class ReplicasManager {
         this.executorService.submit(() -> {
             // Register broker to name-srv
             try {
-                this.brokerController.getBrokerServiceRegistry().registerBrokerAll(true, false, this.brokerController.getBrokerConfig().isForceRegister());
+                this.broker.getBrokerServiceRegistry().registerBrokerAll(true, false, this.broker.getBrokerConfig().isForceRegister());
             } catch (final Throwable e) {
-                LOGGER.error("Error happen when register broker to name-srv, Failed to change broker to {}", this.brokerController.getMessageStoreConfig().getBrokerRole(), e);
+                LOGGER.error("Error happen when register broker to name-srv, Failed to change broker to {}", this.broker.getMessageStoreConfig().getBrokerRole(), e);
                 return;
             }
             LOGGER.info("Change broker [id:{}][address:{}] to {}, newMasterBrokerId:{}, newMasterAddress:{}, newMasterEpoch:{}, syncStateSetEpoch:{}",
-                this.brokerControllerId, this.brokerAddress, this.brokerController.getMessageStoreConfig().getBrokerRole(), this.masterBrokerId, this.masterAddress, this.masterEpoch, this.syncStateSetEpoch);
+                this.brokerControllerId, this.brokerAddress, this.broker.getMessageStoreConfig().getBrokerRole(), this.masterBrokerId, this.masterAddress, this.masterEpoch, this.syncStateSetEpoch);
         });
 
     }
@@ -420,7 +420,7 @@ public class ReplicasManager {
         if (this.slaveSyncFuture != null) {
             this.slaveSyncFuture.cancel(false);
         }
-        this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
+        this.broker.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
     }
 
     private void handleSlaveSynchronize(final BrokerRole role) {
@@ -432,15 +432,15 @@ public class ReplicasManager {
         if (this.slaveSyncFuture != null) {
             this.slaveSyncFuture.cancel(false);
         }
-        this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(this.masterAddress);
-        slaveSyncFuture = this.brokerController.getBrokerScheduleService().getScheduledExecutorService().scheduleAtFixedRate(() -> {
+        this.broker.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(this.masterAddress);
+        slaveSyncFuture = this.broker.getBrokerScheduleService().getScheduledExecutorService().scheduleAtFixedRate(() -> {
             try {
                 if (System.currentTimeMillis() - lastSyncTimeMs > 10 * 1000) {
-                    brokerController.getBrokerClusterService().getSlaveSynchronize().syncAll();
+                    broker.getBrokerClusterService().getSlaveSynchronize().syncAll();
                     lastSyncTimeMs = System.currentTimeMillis();
                 }
                 //timer checkpoint, latency-sensitive, so sync it more frequently
-                brokerController.getBrokerClusterService().getSlaveSynchronize().syncTimerCheckPoint();
+                broker.getBrokerClusterService().getSlaveSynchronize().syncTimerCheckPoint();
             } catch (final Throwable e) {
                 LOGGER.error("ScheduledTask SlaveSynchronize syncAll error.", e);
             }
@@ -486,8 +486,8 @@ public class ReplicasManager {
             this.brokerControllerId,
             this.brokerConfig.getSendHeartbeatTimeoutMillis(),
             this.brokerConfig.isInBrokerContainer(), this.getLastEpoch(),
-            this.brokerController.getMessageStore().getMaxPhyOffset(),
-            this.brokerController.getMessageStore().getConfirmOffset(),
+            this.broker.getMessageStore().getMaxPhyOffset(),
+            this.broker.getMessageStore().getConfirmOffset(),
             this.brokerConfig.getControllerHeartBeatTimeoutMills(),
             this.brokerConfig.getBrokerElectionPriority()
         );
@@ -914,7 +914,7 @@ public class ReplicasManager {
     }
 
     public BrokerRole getBrokerRole() {
-        return this.brokerController.getMessageStoreConfig().getBrokerRole();
+        return this.broker.getMessageStoreConfig().getBrokerRole();
     }
 
     public boolean isMasterState() {

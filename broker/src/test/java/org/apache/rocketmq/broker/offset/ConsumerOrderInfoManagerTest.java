@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.offset.ConsumerOrderInfoManager;
 import org.apache.rocketmq.broker.metadata.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.metadata.topic.TopicConfigManager;
@@ -378,13 +378,13 @@ public class ConsumerOrderInfoManagerTest {
     @Test
     public void testAutoCleanAndEncode() {
         BrokerConfig brokerConfig = new BrokerConfig();
-        BrokerController brokerController = mock(BrokerController.class);
+        Broker broker = mock(Broker.class);
         TopicConfigManager topicConfigManager = mock(TopicConfigManager.class);
-        when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
-        when(brokerController.getTopicConfigManager()).thenReturn(topicConfigManager);
+        when(broker.getBrokerConfig()).thenReturn(brokerConfig);
+        when(broker.getTopicConfigManager()).thenReturn(topicConfigManager);
 
         SubscriptionGroupManager subscriptionGroupManager = mock(SubscriptionGroupManager.class);
-        when(brokerController.getSubscriptionGroupManager()).thenReturn(subscriptionGroupManager);
+        when(broker.getSubscriptionGroupManager()).thenReturn(subscriptionGroupManager);
         ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupConfigConcurrentMap = new ConcurrentHashMap<>();
         subscriptionGroupConfigConcurrentMap.put(GROUP, new SubscriptionGroupConfig());
         when(subscriptionGroupManager.getSubscriptionGroupTable()).thenReturn(subscriptionGroupConfigConcurrentMap);
@@ -392,7 +392,7 @@ public class ConsumerOrderInfoManagerTest {
         TopicConfig topicConfig = new TopicConfig(TOPIC);
         when(topicConfigManager.selectTopicConfig(eq(TOPIC))).thenReturn(topicConfig);
 
-        ConsumerOrderInfoManager consumerOrderInfoManager = new ConsumerOrderInfoManager(brokerController);
+        ConsumerOrderInfoManager consumerOrderInfoManager = new ConsumerOrderInfoManager(broker);
 
         {
             consumerOrderInfoManager.update(null, false,

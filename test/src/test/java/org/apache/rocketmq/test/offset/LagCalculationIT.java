@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.filter.ConsumerFilterData;
 import org.apache.rocketmq.broker.metadata.filter.ExpressionMessageFilter;
 import org.apache.rocketmq.client.consumer.MessageSelector;
@@ -64,7 +64,7 @@ public class LagCalculationIT extends BaseConf {
     public void setUp() {
         topic = initTopic();
         LOGGER.info(String.format("use topic: %s;", topic));
-        for (BrokerController controller : brokerControllerList) {
+        for (Broker controller : brokerList) {
             controller.getBrokerConfig().setLongPollingEnable(false);
             controller.getBrokerConfig().setShortPollingTimeMills(500);
             controller.getBrokerConfig().setEstimateAccumulation(true);
@@ -82,7 +82,7 @@ public class LagCalculationIT extends BaseConf {
     private Pair<Long, Long> getLag(List<MessageQueue> mqs) {
         long lag = 0;
         long pullLag = 0;
-        for (BrokerController controller : brokerControllerList) {
+        for (Broker controller : brokerList) {
             ConsumeStats consumeStats = MQAdminTestUtils.examineConsumeStats(controller.getBrokerAddr(), topic, consumer.getConsumerGroup());
             Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
             for (MessageQueue mq : mqs) {
@@ -109,7 +109,7 @@ public class LagCalculationIT extends BaseConf {
 
     public void waitForFullyDispatched() {
         await().atMost(5, TimeUnit.SECONDS).until(() -> {
-            for (BrokerController controller : brokerControllerList) {
+            for (Broker controller : brokerList) {
                 if (controller.getMessageStore().dispatchBehindBytes() != 0) {
                     return false;
                 }
@@ -193,7 +193,7 @@ public class LagCalculationIT extends BaseConf {
         }
 
         // test lag estimation for tag consumer
-        for (BrokerController controller : brokerControllerList) {
+        for (Broker controller : brokerList) {
             for (MessageQueue mq : mqs) {
                 if (mq.getBrokerName().equals(controller.getBrokerConfig().getBrokerName())) {
                     long brokerOffset = controller.getMessageStore().getMaxOffsetInQueue(topic, mq.getQueueId());
@@ -206,7 +206,7 @@ public class LagCalculationIT extends BaseConf {
         }
 
         // test lag estimation for sql consumer
-        for (BrokerController controller : brokerControllerList) {
+        for (Broker controller : brokerList) {
             for (MessageQueue mq : mqs) {
                 if (mq.getBrokerName().equals(controller.getBrokerConfig().getBrokerName())) {
                     long brokerOffset = controller.getMessageStore().getMaxOffsetInQueue(topic, mq.getQueueId());

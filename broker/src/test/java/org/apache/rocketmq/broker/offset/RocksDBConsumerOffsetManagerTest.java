@@ -20,7 +20,7 @@ package org.apache.rocketmq.broker.offset;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.metadata.offset.RocksDBConsumerOffsetManager;
 import org.apache.rocketmq.common.utils.SystemUtils;
@@ -37,7 +37,7 @@ public class RocksDBConsumerOffsetManagerTest {
 
     private static final String KEY = "FooBar@FooBarGroup";
 
-    private BrokerController brokerController;
+    private Broker broker;
 
     private ConsumerOffsetManager consumerOffsetManager;
 
@@ -46,11 +46,11 @@ public class RocksDBConsumerOffsetManagerTest {
         if (notToBeExecuted()) {
             return;
         }
-        brokerController = Mockito.mock(BrokerController.class);
+        broker = Mockito.mock(Broker.class);
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        Mockito.when(brokerController.getMessageStoreConfig()).thenReturn(messageStoreConfig);
+        Mockito.when(broker.getMessageStoreConfig()).thenReturn(messageStoreConfig);
 
-        consumerOffsetManager = new RocksDBConsumerOffsetManager(brokerController);
+        consumerOffsetManager = new RocksDBConsumerOffsetManager(broker);
         consumerOffsetManager.load();
 
         ConcurrentHashMap<String, ConcurrentMap<Integer, Long>> offsetTable = new ConcurrentHashMap<>(512);

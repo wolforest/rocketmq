@@ -32,7 +32,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.server.daemon.pop.PopReviveService;
 import org.apache.rocketmq.common.lang.Pair;
@@ -81,7 +81,7 @@ public class PopMetricsManager {
         return Lists.newArrayList(new Pair<>(popBufferScanTimeConsumeSelector, popBufferScanTimeConsumeViewBuilder));
     }
 
-    public static void initMetrics(Meter meter, BrokerController brokerController,
+    public static void initMetrics(Meter meter, Broker broker,
         Supplier<AttributesBuilder> attributesBuilderSupplier) {
         PopMetricsManager.attributesBuilderSupplier = attributesBuilderSupplier;
 
@@ -103,38 +103,38 @@ public class PopMetricsManager {
         meter.gaugeBuilder(GAUGE_POP_OFFSET_BUFFER_SIZE)
             .setDescription("Time number of buffered offset")
             .ofLongs()
-            .buildWithCallback(measurement -> calculatePopBufferOffsetSize(brokerController, measurement));
+            .buildWithCallback(measurement -> calculatePopBufferOffsetSize(broker, measurement));
         meter.gaugeBuilder(GAUGE_POP_CHECKPOINT_BUFFER_SIZE)
             .setDescription("The number of buffered checkpoint")
             .ofLongs()
-            .buildWithCallback(measurement -> calculatePopBufferCkSize(brokerController, measurement));
+            .buildWithCallback(measurement -> calculatePopBufferCkSize(broker, measurement));
         meter.gaugeBuilder(GAUGE_POP_REVIVE_LAG)
             .setDescription("The processing lag of revive topic")
             .setUnit("milliseconds")
             .ofLongs()
-            .buildWithCallback(measurement -> calculatePopReviveLag(brokerController, measurement));
+            .buildWithCallback(measurement -> calculatePopReviveLag(broker, measurement));
         meter.gaugeBuilder(GAUGE_POP_REVIVE_LATENCY)
             .setDescription("The processing latency of revive topic")
             .setUnit("milliseconds")
             .ofLongs()
-            .buildWithCallback(measurement -> calculatePopReviveLatency(brokerController, measurement));
+            .buildWithCallback(measurement -> calculatePopReviveLatency(broker, measurement));
     }
 
-    private static void calculatePopBufferOffsetSize(BrokerController brokerController,
+    private static void calculatePopBufferOffsetSize(Broker broker,
         ObservableLongMeasurement measurement) {
-        PopBufferMergeService popBufferMergeService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        PopBufferMergeService popBufferMergeService = broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
         measurement.record(popBufferMergeService.getOffsetTotalSize(), newAttributesBuilder().build());
     }
 
-    private static void calculatePopBufferCkSize(BrokerController brokerController,
+    private static void calculatePopBufferCkSize(Broker broker,
         ObservableLongMeasurement measurement) {
-        PopBufferMergeService popBufferMergeService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        PopBufferMergeService popBufferMergeService = broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
         measurement.record(popBufferMergeService.getBufferedCKSize(), newAttributesBuilder().build());
     }
 
-    private static void calculatePopReviveLatency(BrokerController brokerController,
+    private static void calculatePopReviveLatency(Broker broker,
         ObservableLongMeasurement measurement) {
-        PopReviveService[] popReviveServices = brokerController.getBrokerNettyServer().getPopServiceManager().getPopReviveServices();
+        PopReviveService[] popReviveServices = broker.getBrokerNettyServer().getPopServiceManager().getPopReviveServices();
         for (PopReviveService popReviveService : popReviveServices) {
             measurement.record(popReviveService.getReviveBehindMillis(), newAttributesBuilder()
                 .put(LABEL_QUEUE_ID, popReviveService.getQueueId())
@@ -142,9 +142,9 @@ public class PopMetricsManager {
         }
     }
 
-    private static void calculatePopReviveLag(BrokerController brokerController,
+    private static void calculatePopReviveLag(Broker broker,
         ObservableLongMeasurement measurement) {
-        PopReviveService[] popReviveServices = brokerController.getBrokerNettyServer().getPopServiceManager().getPopReviveServices();
+        PopReviveService[] popReviveServices = broker.getBrokerNettyServer().getPopServiceManager().getPopReviveServices();
         for (PopReviveService popReviveService : popReviveServices) {
             measurement.record(popReviveService.getReviveBehindMessages(), newAttributesBuilder()
                 .put(LABEL_QUEUE_ID, popReviveService.getQueueId())

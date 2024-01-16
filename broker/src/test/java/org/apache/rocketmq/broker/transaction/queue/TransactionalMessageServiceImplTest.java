@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.transaction.queue;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.OperationResult;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
@@ -59,7 +59,7 @@ public class TransactionalMessageServiceImplTest {
     private TransactionalMessageBridge bridge;
 
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(),
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(),
         new NettyClientConfig(), new MessageStoreConfig());
 
     @Mock
@@ -67,8 +67,8 @@ public class TransactionalMessageServiceImplTest {
 
     @Before
     public void init() {
-        when(bridge.getBrokerController()).thenReturn(brokerController);
-        listener.setBrokerController(brokerController);
+        when(bridge.getBrokerController()).thenReturn(broker);
+        listener.setBrokerController(broker);
         queueTransactionMsgService = new TransactionalMessageServiceImpl(bridge);
     }
 
@@ -108,8 +108,8 @@ public class TransactionalMessageServiceImplTest {
 
     @Test
     public void testDeletePrepareMessage_maxSize() throws InterruptedException {
-        brokerController.getBrokerConfig().setTransactionOpMsgMaxSize(1);
-        brokerController.getBrokerConfig().setTransactionOpBatchInterval(3000);
+        broker.getBrokerConfig().setTransactionOpMsgMaxSize(1);
+        broker.getBrokerConfig().setTransactionOpBatchInterval(3000);
         queueTransactionMsgService.open();
         boolean res = queueTransactionMsgService.deletePrepareMessage(createMessageBrokerInner(1000, "test", "testHello"));
         assertThat(res).isTrue();

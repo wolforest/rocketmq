@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.processor;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.ChangeInvisibleTimeProcessor;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.domain.failover.EscapeBridge;
@@ -61,7 +61,7 @@ import static org.mockito.Mockito.when;
 public class ChangeInvisibleTimeProcessorTest {
     private ChangeInvisibleTimeProcessor changeInvisibleTimeProcessor;
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
     @Mock
     private ChannelHandlerContext handlerContext;
     @Mock
@@ -73,18 +73,18 @@ public class ChangeInvisibleTimeProcessorTest {
     private String group = "FooBarGroup";
     private ClientChannelInfo clientInfo;
     @Mock
-    private EscapeBridge escapeBridge = new EscapeBridge(this.brokerController);
+    private EscapeBridge escapeBridge = new EscapeBridge(this.broker);
 
     @Before
     public void init() throws IllegalAccessException, NoSuchFieldException {
-        brokerController.setMessageStore(messageStore);
-        when(brokerController.getEscapeBridge()).thenReturn(escapeBridge);
+        broker.setMessageStore(messageStore);
+        when(broker.getEscapeBridge()).thenReturn(escapeBridge);
         Channel mockChannel = mock(Channel.class);
         when(handlerContext.channel()).thenReturn(mockChannel);
-        brokerController.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());
+        broker.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());
         ConsumerData consumerData = createConsumerData(group, topic);
         clientInfo = new ClientChannelInfo(channel, "127.0.0.1", LanguageCode.JAVA, 0);
-        brokerController.getConsumerManager().registerConsumer(
+        broker.getConsumerManager().registerConsumer(
             consumerData.getGroupName(),
             clientInfo,
             consumerData.getConsumeType(),
@@ -92,7 +92,7 @@ public class ChangeInvisibleTimeProcessorTest {
             consumerData.getConsumeFromWhere(),
             consumerData.getSubscriptionDataSet(),
             false);
-        changeInvisibleTimeProcessor = new ChangeInvisibleTimeProcessor(brokerController);
+        changeInvisibleTimeProcessor = new ChangeInvisibleTimeProcessor(broker);
     }
 
     @Test

@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.server.longpolling;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -26,14 +26,14 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 public class LmqPullRequestHoldService extends PullRequestHoldService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
-    public LmqPullRequestHoldService(BrokerController brokerController) {
-        super(brokerController);
+    public LmqPullRequestHoldService(Broker broker) {
+        super(broker);
     }
 
     @Override
     public String getServiceName() {
-        if (brokerController != null && brokerController.getBrokerConfig().isInBrokerContainer()) {
-            return this.brokerController.getBrokerIdentity().getIdentifier() + LmqPullRequestHoldService.class.getSimpleName();
+        if (broker != null && broker.getBrokerConfig().isInBrokerContainer()) {
+            return this.broker.getBrokerIdentity().getIdentifier() + LmqPullRequestHoldService.class.getSimpleName();
         }
         return LmqPullRequestHoldService.class.getSimpleName();
     }
@@ -48,7 +48,7 @@ public class LmqPullRequestHoldService extends PullRequestHoldService {
             }
             String topic = key.substring(0, idx);
             int queueId = Integer.parseInt(key.substring(idx + 1));
-            final long offset = brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
+            final long offset = broker.getMessageStore().getMaxOffsetInQueue(topic, queueId);
             try {
                 this.notifyMessageArriving(topic, queueId, offset);
             } catch (Throwable e) {

@@ -16,15 +16,15 @@
  */
 package org.apache.rocketmq.broker.metadata.topic;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.PermName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 
 public class RocksDBLmqTopicConfigManager extends RocksDBTopicConfigManager {
 
-    public RocksDBLmqTopicConfigManager(BrokerController brokerController) {
-        super(brokerController);
+    public RocksDBLmqTopicConfigManager(Broker broker) {
+        super(broker);
     }
 
     @Override

@@ -21,7 +21,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.RocksDBConfigManager;
 import org.apache.rocketmq.common.utils.DataConverter;
 import org.rocksdb.WriteBatch;
@@ -31,9 +31,9 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 
 public class RocksDBConsumerOffsetManager extends ConsumerOffsetManager {
 
-    public RocksDBConsumerOffsetManager(BrokerController brokerController) {
-        super(brokerController);
-        this.rocksDBConfigManager = new RocksDBConfigManager(brokerController.getMessageStoreConfig().getMemTableFlushIntervalMs());
+    public RocksDBConsumerOffsetManager(Broker broker) {
+        super(broker);
+        this.rocksDBConfigManager = new RocksDBConfigManager(broker.getMessageStoreConfig().getMemTableFlushIntervalMs());
     }
 
     @Override
@@ -67,7 +67,7 @@ public class RocksDBConsumerOffsetManager extends ConsumerOffsetManager {
 
     @Override
     public String configFilePath() {
-        return this.brokerController.getMessageStoreConfig().getStorePathRootDir() + File.separator + "config" + File.separator + "consumerOffsets" + File.separator;
+        return this.broker.getMessageStoreConfig().getStorePathRootDir() + File.separator + "config" + File.separator + "consumerOffsets" + File.separator;
     }
 
     @Override

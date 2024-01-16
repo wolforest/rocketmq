@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.broker.schedule;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.failover.EscapeBridge;
 import org.apache.rocketmq.broker.server.schedule.DelayOffsetSerializeWrapper;
 import org.apache.rocketmq.broker.server.schedule.ScheduleMessageService;
@@ -65,7 +65,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ScheduleMessageServiceTest {
 
-    private BrokerController brokerController;
+    private Broker broker;
     private ScheduleMessageService scheduleMessageService;
 
     /**
@@ -127,18 +127,18 @@ public class ScheduleMessageServiceTest {
         assertThat(messageStore.load()).isTrue();
 
         messageStore.start();
-        brokerController = Mockito.mock(BrokerController.class);
-        Mockito.when(brokerController.getMessageStore()).thenReturn(messageStore);
-        Mockito.when(brokerController.getMessageStoreConfig()).thenReturn(messageStoreConfig);
-        Mockito.when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
-        Mockito.when(brokerController.peekMasterBroker()).thenReturn(brokerController);
-        Mockito.when(brokerController.getBrokerStatsManager()).thenReturn(manager);
-        EscapeBridge escapeBridge = new EscapeBridge(brokerController);
-        Mockito.when(brokerController.getEscapeBridge()).thenReturn(escapeBridge);
-        scheduleMessageService = new ScheduleMessageService(brokerController);
+        broker = Mockito.mock(Broker.class);
+        Mockito.when(broker.getMessageStore()).thenReturn(messageStore);
+        Mockito.when(broker.getMessageStoreConfig()).thenReturn(messageStoreConfig);
+        Mockito.when(broker.getBrokerConfig()).thenReturn(brokerConfig);
+        Mockito.when(broker.peekMasterBroker()).thenReturn(broker);
+        Mockito.when(broker.getBrokerStatsManager()).thenReturn(manager);
+        EscapeBridge escapeBridge = new EscapeBridge(broker);
+        Mockito.when(broker.getEscapeBridge()).thenReturn(escapeBridge);
+        scheduleMessageService = new ScheduleMessageService(broker);
         scheduleMessageService.load();
         scheduleMessageService.start();
-        Mockito.when(brokerController.getScheduleMessageService()).thenReturn(scheduleMessageService);
+        Mockito.when(broker.getScheduleMessageService()).thenReturn(scheduleMessageService);
     }
 
     @Test
@@ -149,7 +149,7 @@ public class ScheduleMessageServiceTest {
         offsetTable.put(2, 5L);
         scheduleMessageService.persist();
 
-        ScheduleMessageService controlInstance = new ScheduleMessageService(brokerController);
+        ScheduleMessageService controlInstance = new ScheduleMessageService(broker);
         assertTrue(controlInstance.load());
 
         ConcurrentMap<Integer, Long> loaded = controlInstance.getOffsetTable();
@@ -163,7 +163,7 @@ public class ScheduleMessageServiceTest {
 
         ConcurrentMap<Integer /* level */, Long/* offset */> offsetTable = null;
 
-        scheduleMessageService = new ScheduleMessageService(brokerController);
+        scheduleMessageService = new ScheduleMessageService(broker);
         scheduleMessageService.parseDelayLevel();
 
         ConcurrentMap<Integer /* level */, Long/* offset */> offsetTable1 = new ConcurrentHashMap<>();
@@ -205,7 +205,7 @@ public class ScheduleMessageServiceTest {
         int realQueueId = msg.getQueueId();
         // set delayLevel,and send delay message
         msg.setDelayTimeLevel(delayLevel);
-        HookUtils.handleScheduleMessage(brokerController, msg);
+        HookUtils.handleScheduleMessage(broker, msg);
         PutMessageResult result = messageStore.putMessage(msg);
         assertThat(result.isOk()).isTrue();
 

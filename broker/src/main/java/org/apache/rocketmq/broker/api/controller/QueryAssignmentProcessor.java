@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.metadata.loadbalance.MessageRequestModeManager;
 import org.apache.rocketmq.broker.metadata.topic.TopicRouteInfoManager;
@@ -53,14 +53,14 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 public class QueryAssignmentProcessor implements NettyRequestProcessor {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
-    private final BrokerController brokerController;
+    private final Broker broker;
 
     private final ConcurrentHashMap<String, AllocateMessageQueueStrategy> name2LoadStrategy = new ConcurrentHashMap<>();
 
     private MessageRequestModeManager messageRequestModeManager;
 
-    public QueryAssignmentProcessor(final BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public QueryAssignmentProcessor(final Broker broker) {
+        this.broker = broker;
 
         //register strategy
         //NOTE: init with broker's log instead of init with ClientLogger.getLog();
@@ -69,7 +69,7 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
         AllocateMessageQueueAveragelyByCircle allocateMessageQueueAveragelyByCircle = new AllocateMessageQueueAveragelyByCircle();
         name2LoadStrategy.put(allocateMessageQueueAveragelyByCircle.getName(), allocateMessageQueueAveragelyByCircle);
 
-        this.messageRequestModeManager = new MessageRequestModeManager(brokerController);
+        this.messageRequestModeManager = new MessageRequestModeManager(broker);
         this.messageRequestModeManager.load();
     }
 
@@ -118,11 +118,11 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
                 // retry topic must be pull mode
                 setMessageRequestModeRequestBody.setMode(MessageRequestMode.PULL);
             } else {
-                setMessageRequestModeRequestBody.setMode(brokerController.getBrokerConfig().getDefaultMessageRequestMode());
+                setMessageRequestModeRequestBody.setMode(broker.getBrokerConfig().getDefaultMessageRequestMode());
             }
 
             if (setMessageRequestModeRequestBody.getMode() == MessageRequestMode.POP) {
-                setMessageRequestModeRequestBody.setPopShareQueueNum(brokerController.getBrokerConfig().getDefaultPopShareQueueNum());
+                setMessageRequestModeRequestBody.setPopShareQueueNum(broker.getBrokerConfig().getDefaultPopShareQueueNum());
             }
         }
 
@@ -163,7 +163,7 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
         final MessageModel messageModel, final String strategyName,
         SetMessageRequestModeRequestBody setMessageRequestModeRequestBody, final ChannelHandlerContext ctx) {
         Set<MessageQueue> assignedQueueSet = null;
-        final TopicRouteInfoManager topicRouteInfoManager = this.brokerController.getTopicRouteInfoManager();
+        final TopicRouteInfoManager topicRouteInfoManager = this.broker.getTopicRouteInfoManager();
 
         switch (messageModel) {
             case BROADCASTING: {
@@ -182,12 +182,12 @@ public class QueryAssignmentProcessor implements NettyRequestProcessor {
                     return null;
                 }
 
-                if (!brokerController.getBrokerConfig().isServerLoadBalancerEnable()) {
+                if (!broker.getBrokerConfig().isServerLoadBalancerEnable()) {
                     return mqSet;
                 }
 
                 List<String> cidAll = null;
-                ConsumerGroupInfo consumerGroupInfo = this.brokerController.getConsumerManager().getConsumerGroupInfo(consumerGroup);
+                ConsumerGroupInfo consumerGroupInfo = this.broker.getConsumerManager().getConsumerGroupInfo(consumerGroup);
                 if (consumerGroupInfo != null) {
                     cidAll = consumerGroupInfo.getAllClientId();
                 }

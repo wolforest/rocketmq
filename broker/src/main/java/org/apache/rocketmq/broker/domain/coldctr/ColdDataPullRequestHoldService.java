@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.domain.coldctr;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.longpolling.PullRequest;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.utils.SystemClock;
@@ -40,17 +40,17 @@ public class ColdDataPullRequestHoldService extends ServiceThread {
 
     private final long coldHoldTimeoutMillis = 3000;
     private final SystemClock systemClock = new SystemClock();
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final LinkedBlockingQueue<PullRequest> pullRequestColdHoldQueue = new LinkedBlockingQueue<>(10000);
 
     public void suspendColdDataReadRequest(PullRequest pullRequest) {
-        if (this.brokerController.getMessageStoreConfig().isColdDataFlowControlEnable()) {
+        if (this.broker.getMessageStoreConfig().isColdDataFlowControlEnable()) {
             pullRequestColdHoldQueue.offer(pullRequest);
         }
     }
 
-    public ColdDataPullRequestHoldService(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public ColdDataPullRequestHoldService(Broker broker) {
+        this.broker = broker;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class ColdDataPullRequestHoldService extends ServiceThread {
         log.info("{} service started", this.getServiceName());
         while (!this.isStopped()) {
             try {
-                if (!this.brokerController.getMessageStoreConfig().isColdDataFlowControlEnable()) {
+                if (!this.broker.getMessageStoreConfig().isColdDataFlowControlEnable()) {
                     this.waitForRunning(20 * 1000);
                 } else {
                     this.waitForRunning(5 * 1000);
@@ -87,7 +87,7 @@ public class ColdDataPullRequestHoldService extends ServiceThread {
             if (System.currentTimeMillis() >= pullRequest.getSuspendTimestamp() + coldHoldTimeoutMillis) {
                 try {
                     pullRequest.getRequestCommand().addExtField(NO_SUSPEND_KEY, "1");
-                    this.brokerController.getBrokerNettyServer().executePullRequest(pullRequest.getClientChannel(), pullRequest.getRequestCommand());
+                    this.broker.getBrokerNettyServer().executePullRequest(pullRequest.getClientChannel(), pullRequest.getRequestCommand());
                     succTotal++;
                 } catch (Exception e) {
                     log.error("PullRequestColdHoldService checkColdDataPullRequest error", e);

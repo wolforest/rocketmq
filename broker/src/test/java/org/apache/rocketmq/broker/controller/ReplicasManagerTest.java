@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.broker.controller;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
 import org.apache.rocketmq.broker.server.daemon.BrokerClusterService;
 import org.apache.rocketmq.broker.server.daemon.BrokerMessageService;
@@ -65,7 +65,7 @@ public class ReplicasManagerTest {
     public static final String STORE_PATH = STORE_BASE_PATH + File.separator + UUID.randomUUID();
 
     @Mock
-    private BrokerController brokerController;
+    private Broker broker;
 
     private ReplicasManager replicasManager;
 
@@ -141,7 +141,7 @@ public class ReplicasManagerTest {
         messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setStorePathRootDir(STORE_PATH);
         brokerConfig = new BrokerConfig();
-        slaveSynchronize = new SlaveSynchronize(brokerController);
+        slaveSynchronize = new SlaveSynchronize(broker);
         getMetaDataResponseHeader = new GetMetaDataResponseHeader(GROUP, LEADER_ID, OLD_MASTER_ADDRESS, IS_LEADER, PEERS);
         getNextBrokerIdResponseHeader = new GetNextBrokerIdResponseHeader();
         getNextBrokerIdResponseHeader.setNextBrokerId(BROKER_ID_1);
@@ -160,17 +160,17 @@ public class ReplicasManagerTest {
         result = new Pair<>(getReplicaInfoResponseHeader, syncStateSet);
         TopicConfigManager topicConfigManager = new TopicConfigManager();
         when(defaultMessageStore.getMessageStoreConfig()).thenReturn(messageStoreConfig);
-        when(brokerController.getMessageStore()).thenReturn(defaultMessageStore);
-        when(brokerController.getMessageStore().getHaService()).thenReturn(autoSwitchHAService);
-        when(brokerController.getMessageStore().getRunningFlags()).thenReturn(runningFlags);
-        when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
-        when(brokerController.getMessageStoreConfig()).thenReturn(messageStoreConfig);
-        when(brokerController.getBrokerClusterService()).thenReturn(brokerClusterService);
-        when(brokerController.getBrokerClusterService().getSlaveSynchronize()).thenReturn(slaveSynchronize);
-        when(brokerController.getBrokerMessageService()).thenReturn(brokerMessageService);
-        when(brokerController.getBrokerOuterAPI()).thenReturn(brokerOuterAPI);
-        when(brokerController.getBrokerAddr()).thenReturn(OLD_MASTER_ADDRESS);
-        when(brokerController.getTopicConfigManager()).thenReturn(topicConfigManager);
+        when(broker.getMessageStore()).thenReturn(defaultMessageStore);
+        when(broker.getMessageStore().getHaService()).thenReturn(autoSwitchHAService);
+        when(broker.getMessageStore().getRunningFlags()).thenReturn(runningFlags);
+        when(broker.getBrokerConfig()).thenReturn(brokerConfig);
+        when(broker.getMessageStoreConfig()).thenReturn(messageStoreConfig);
+        when(broker.getBrokerClusterService()).thenReturn(brokerClusterService);
+        when(broker.getBrokerClusterService().getSlaveSynchronize()).thenReturn(slaveSynchronize);
+        when(broker.getBrokerMessageService()).thenReturn(brokerMessageService);
+        when(broker.getBrokerOuterAPI()).thenReturn(brokerOuterAPI);
+        when(broker.getBrokerAddr()).thenReturn(OLD_MASTER_ADDRESS);
+        when(broker.getTopicConfigManager()).thenReturn(topicConfigManager);
         when(brokerOuterAPI.getControllerMetaData(any())).thenReturn(getMetaDataResponseHeader);
         when(brokerOuterAPI.checkAddressReachable(any())).thenReturn(true);
         when(brokerOuterAPI.getNextBrokerId(any(), any(), any())).thenReturn(getNextBrokerIdResponseHeader);
@@ -178,7 +178,7 @@ public class ReplicasManagerTest {
         when(brokerOuterAPI.registerBrokerToController(any(), any(), anyLong(), any(), any())).thenReturn(new Pair<>(new RegisterBrokerToControllerResponseHeader(), SYNC_STATE_SET_1));
         when(brokerOuterAPI.getReplicaInfo(any(), any())).thenReturn(result);
         when(brokerOuterAPI.brokerElect(any(), any(), any(), any())).thenReturn(new Pair<>(brokerTryElectResponseHeader, SYNC_STATE_SET_1));
-        replicasManager = new ReplicasManager(brokerController);
+        replicasManager = new ReplicasManager(broker);
         autoSwitchHAService.init(defaultMessageStore);
         replicasManager.start();
         // execute schedulingSyncBrokerMetadata()
@@ -188,7 +188,7 @@ public class ReplicasManagerTest {
     @After
     public void after() {
         replicasManager.shutdown();
-        brokerController.shutdown();
+        broker.shutdown();
         IOUtils.deleteFile(new File(STORE_BASE_PATH));
     }
 

@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
@@ -65,17 +65,17 @@ public class TransactionalMessageBridge {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
 
     private final ConcurrentHashMap<Integer, MessageQueue> opQueueMap = new ConcurrentHashMap<>();
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final MessageStore store;
     private final SocketAddress storeHost;
 
-    public TransactionalMessageBridge(BrokerController brokerController, MessageStore store) {
+    public TransactionalMessageBridge(Broker broker, MessageStore store) {
         try {
-            this.brokerController = brokerController;
+            this.broker = broker;
             this.store = store;
             this.storeHost =
-                new InetSocketAddress(brokerController.getBrokerConfig().getBrokerIP1(),
-                    brokerController.getNettyServerConfig().getListenPort());
+                new InetSocketAddress(broker.getBrokerConfig().getBrokerIP1(),
+                    broker.getNettyServerConfig().getListenPort());
         } catch (Exception e) {
             LOGGER.error("Init TransactionBridge error", e);
             throw new RuntimeException(e);
@@ -83,7 +83,7 @@ public class TransactionalMessageBridge {
     }
 
     public long fetchConsumeOffset(MessageQueue mq) {
-        long offset = brokerController.getConsumerOffsetManager().queryOffset(TransactionalMessageUtil.buildConsumerGroup(),
+        long offset = broker.getConsumerOffsetManager().queryOffset(TransactionalMessageUtil.buildConsumerGroup(),
             mq.getTopic(), mq.getQueueId());
         if (offset == -1) {
             offset = store.getMinOffsetInQueue(mq.getTopic(), mq.getQueueId());
@@ -101,7 +101,7 @@ public class TransactionalMessageBridge {
         for (int i = 0; i < topicConfig.getReadQueueNums(); i++) {
             MessageQueue mq = new MessageQueue();
             mq.setTopic(topic);
-            mq.setBrokerName(brokerController.getBrokerConfig().getBrokerName());
+            mq.setBrokerName(broker.getBrokerConfig().getBrokerName());
             mq.setQueueId(i);
             mqSet.add(mq);
         }
@@ -109,7 +109,7 @@ public class TransactionalMessageBridge {
     }
 
     public void updateConsumeOffset(MessageQueue mq, long offset) {
-        this.brokerController.getConsumerOffsetManager().commitOffset(
+        this.broker.getConsumerOffsetManager().commitOffset(
             RemotingHelper.parseSocketAddressAddr(this.storeHost), TransactionalMessageUtil.buildConsumerGroup(), mq.getTopic(),
             mq.getQueueId(), offset);
     }
@@ -148,7 +148,7 @@ public class TransactionalMessageBridge {
         PutMessageResult result = store.putMessage(messageInner);
 
         if (result != null && result.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
-            BrokerStatsManager statsManager = this.brokerController.getBrokerStatsManager();
+            BrokerStatsManager statsManager = this.broker.getBrokerStatsManager();
             statsManager.incTopicPutNums(messageInner.getTopic());
             statsManager.incTopicPutSize(messageInner.getTopic(), result.getAppendMessageResult().getWroteBytes());
             statsManager.incBrokerPutNums();
@@ -207,7 +207,7 @@ public class TransactionalMessageBridge {
             return opQueue;
         }
 
-        opQueue = getOpQueueByHalf(queueId, this.brokerController.getBrokerConfig().getBrokerName());
+        opQueue = getOpQueueByHalf(queueId, this.broker.getBrokerConfig().getBrokerName());
         MessageQueue oldQueue = opQueueMap.putIfAbsent(queueId, opQueue);
         if (oldQueue != null) {
             opQueue = oldQueue;
@@ -231,12 +231,12 @@ public class TransactionalMessageBridge {
         return this.store.lookMessageByOffset(commitLogOffset);
     }
 
-    public BrokerController getBrokerController() {
-        return brokerController;
+    public Broker getBrokerController() {
+        return broker;
     }
 
     public boolean escapeMessage(MessageExtBrokerInner messageInner) {
-        PutMessageResult putMessageResult = this.brokerController.getEscapeBridge().putMessage(messageInner);
+        PutMessageResult putMessageResult = this.broker.getEscapeBridge().putMessage(messageInner);
         if (putMessageResult != null && putMessageResult.isOk()) {
             return true;
         } else {
@@ -303,14 +303,14 @@ public class TransactionalMessageBridge {
         context.setPullStatus(PullStatus.FOUND);
         context.setFoundList(decodeMsgList(context.getGetMessageResult()));
 
-        this.brokerController.getBrokerStatsManager().incGroupGetNums(context.getGroup(), context.getTopic(), context.getGetMessageResult().getMessageCount());
-        this.brokerController.getBrokerStatsManager().incGroupGetSize(context.getGroup(), context.getTopic(), context.getGetMessageResult().getBufferTotalSize());
-        this.brokerController.getBrokerStatsManager().incBrokerGetNums(context.getTopic(), context.getGetMessageResult().getMessageCount());
+        this.broker.getBrokerStatsManager().incGroupGetNums(context.getGroup(), context.getTopic(), context.getGetMessageResult().getMessageCount());
+        this.broker.getBrokerStatsManager().incGroupGetSize(context.getGroup(), context.getTopic(), context.getGetMessageResult().getBufferTotalSize());
+        this.broker.getBrokerStatsManager().incBrokerGetNums(context.getTopic(), context.getGetMessageResult().getMessageCount());
         if (context.isFoundListEmpty()) {
             return;
         }
-        this.brokerController.getBrokerStatsManager().recordDiskFallBehindTime(context.getGroup(), context.getTopic(), context.getQueueId(),
-            this.brokerController.getMessageStore().now() - context.getLastFound().getStoreTimestamp());
+        this.broker.getBrokerStatsManager().recordDiskFallBehindTime(context.getGroup(), context.getTopic(), context.getQueueId(),
+            this.broker.getMessageStore().now() - context.getLastFound().getStoreTimestamp());
 
         Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
             .put(LABEL_TOPIC, context.getTopic())
@@ -377,9 +377,9 @@ public class TransactionalMessageBridge {
     }
 
     private TopicConfig selectTopicConfig(String topic) {
-        TopicConfig topicConfig = brokerController.getTopicConfigManager().selectTopicConfig(topic);
+        TopicConfig topicConfig = broker.getTopicConfigManager().selectTopicConfig(topic);
         if (topicConfig == null) {
-            topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(
+            topicConfig = this.broker.getTopicConfigManager().createTopicInSendMessageBackMethod(
                 topic, 1, PermName.PERM_WRITE | PermName.PERM_READ, 0);
         }
         return topicConfig;

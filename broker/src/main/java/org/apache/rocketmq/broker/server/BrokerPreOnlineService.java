@@ -49,18 +49,18 @@ import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
 
 public class BrokerPreOnlineService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
 
     private int waitBrokerIndex = 0;
 
-    public BrokerPreOnlineService(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public BrokerPreOnlineService(Broker broker) {
+        this.broker = broker;
     }
 
     @Override
     public String getServiceName() {
-        if (this.brokerController != null && this.brokerController.getBrokerConfig().isInBrokerContainer()) {
-            return brokerController.getBrokerIdentity().getIdentifier() + BrokerPreOnlineService.class.getSimpleName();
+        if (this.broker != null && this.broker.getBrokerConfig().isInBrokerContainer()) {
+            return broker.getBrokerIdentity().getIdentifier() + BrokerPreOnlineService.class.getSimpleName();
         }
         return BrokerPreOnlineService.class.getSimpleName();
     }
@@ -70,8 +70,8 @@ public class BrokerPreOnlineService extends ServiceThread {
         LOGGER.info(this.getServiceName() + " service started");
 
         while (!this.isStopped()) {
-            if (!this.brokerController.isIsolated()) {
-                LOGGER.info("broker {} is online", this.brokerController.getBrokerConfig().getCanonicalName());
+            if (!this.broker.isIsolated()) {
+                LOGGER.info("broker {} is online", this.broker.getBrokerConfig().getCanonicalName());
                 break;
             }
             try {
@@ -93,8 +93,8 @@ public class BrokerPreOnlineService extends ServiceThread {
         LOGGER.info("wait for handshake completion with {}", brokerAddr);
         HAConnectionStateNotificationRequest request =
             new HAConnectionStateNotificationRequest(HAConnectionState.TRANSFER, RemotingHelper.parseHostFromAddress(brokerAddr), true);
-        if (this.brokerController.getMessageStore().getHaService() != null) {
-            this.brokerController.getMessageStore().getHaService().putGroupConnectionStateRequest(request);
+        if (this.broker.getMessageStore().getHaService() != null) {
+            this.broker.getMessageStore().getHaService().putGroupConnectionStateRequest(request);
         } else {
             LOGGER.error("HAService is null, maybe broker config is wrong. For example, duplicationEnable is true");
             request.getRequestFuture().complete(false);
@@ -107,7 +107,7 @@ public class BrokerPreOnlineService extends ServiceThread {
             LOGGER.error("wait for handshake completion failed, HA connection lost");
             return false;
         }
-        if (this.brokerController.getBrokerConfig().getBrokerId() != MQConstants.MASTER_ID) {
+        if (this.broker.getBrokerConfig().getBrokerId() != MQConstants.MASTER_ID) {
             LOGGER.info("slave preOnline complete, start service");
             long minBrokerId = getMinBrokerId(brokerMemberGroup.getBrokerAddrs());
             this.registerBroker(minBrokerId, brokerMemberGroup.getBrokerAddrs().get(minBrokerId));
@@ -121,16 +121,16 @@ public class BrokerPreOnlineService extends ServiceThread {
         while (true) {
             if (waitBrokerIndex >= brokerIdList.size()) {
                 LOGGER.info("master preOnline complete, start service");
-                this.registerBroker(MQConstants.MASTER_ID, this.brokerController.getBrokerAddr());
+                this.registerBroker(MQConstants.MASTER_ID, this.broker.getBrokerAddr());
                 return true;
             }
 
             String brokerAddrToWait = brokerMemberGroup.getBrokerAddrs().get(brokerIdList.get(waitBrokerIndex));
 
             try {
-                this.brokerController.getBrokerOuterAPI().
-                    sendBrokerHaInfo(brokerAddrToWait, this.brokerController.getHAServerAddr(),
-                        this.brokerController.getMessageStore().getBrokerInitMaxOffset(), this.brokerController.getBrokerAddr());
+                this.broker.getBrokerOuterAPI().
+                    sendBrokerHaInfo(brokerAddrToWait, this.broker.getHAServerAddr(),
+                        this.broker.getMessageStore().getBrokerInitMaxOffset(), this.broker.getBrokerAddr());
             } catch (Exception e) {
                 LOGGER.error("send ha address to {} exception, {}", brokerAddrToWait, e);
                 return false;
@@ -174,29 +174,29 @@ public class BrokerPreOnlineService extends ServiceThread {
     }
 
     private void syncConsumerOffsetReverse(String brokerAddr) throws RemotingSendRequestException, RemotingConnectException, RemotingTimeoutException, MQBrokerException, InterruptedException {
-        ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper = this.brokerController.getBrokerOuterAPI().getAllConsumerOffset(brokerAddr);
-        if (null != consumerOffsetSerializeWrapper && brokerController.getConsumerOffsetManager().getDataVersion().compare(consumerOffsetSerializeWrapper.getDataVersion()) <= 0) {
+        ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper = this.broker.getBrokerOuterAPI().getAllConsumerOffset(brokerAddr);
+        if (null != consumerOffsetSerializeWrapper && broker.getConsumerOffsetManager().getDataVersion().compare(consumerOffsetSerializeWrapper.getDataVersion()) <= 0) {
             LOGGER.info("{}'s consumerOffset data version is larger than master broker, {}'s consumerOffset will be used.", brokerAddr, brokerAddr);
-            this.brokerController.getConsumerOffsetManager().getOffsetTable()
+            this.broker.getConsumerOffsetManager().getOffsetTable()
                 .putAll(consumerOffsetSerializeWrapper.getOffsetTable());
-            this.brokerController.getConsumerOffsetManager().getDataVersion().assignNewOne(consumerOffsetSerializeWrapper.getDataVersion());
-            this.brokerController.getConsumerOffsetManager().persist();
+            this.broker.getConsumerOffsetManager().getDataVersion().assignNewOne(consumerOffsetSerializeWrapper.getDataVersion());
+            this.broker.getConsumerOffsetManager().persist();
         }
     }
 
     private void syncDelayOffsetReverse(String brokerAddr) throws InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException, MQBrokerException, UnsupportedEncodingException {
-        String delayOffset = this.brokerController.getBrokerOuterAPI().getAllDelayOffset(brokerAddr);
+        String delayOffset = this.broker.getBrokerOuterAPI().getAllDelayOffset(brokerAddr);
         DelayOffsetSerializeWrapper delayOffsetSerializeWrapper =
             DelayOffsetSerializeWrapper.fromJson(delayOffset, DelayOffsetSerializeWrapper.class);
 
-        if (null != delayOffset && brokerController.getScheduleMessageService().getDataVersion().compare(delayOffsetSerializeWrapper.getDataVersion()) <= 0) {
+        if (null != delayOffset && broker.getScheduleMessageService().getDataVersion().compare(delayOffsetSerializeWrapper.getDataVersion()) <= 0) {
             LOGGER.info("{}'s scheduleMessageService data version is larger than master broker, {}'s delayOffset will be used.", brokerAddr, brokerAddr);
             String fileName =
-                StorePathConfigHelper.getDelayOffsetStorePath(this.brokerController
+                StorePathConfigHelper.getDelayOffsetStorePath(this.broker
                     .getMessageStoreConfig().getStorePathRootDir());
             try {
                 StringUtils.string2File(delayOffset, fileName);
-                this.brokerController.getScheduleMessageService().load();
+                this.broker.getScheduleMessageService().load();
             } catch (IOException e) {
                 LOGGER.error("Persist file Exception, {}", fileName, e);
             }
@@ -204,18 +204,18 @@ public class BrokerPreOnlineService extends ServiceThread {
     }
 
     private void syncTimerCheckPointReverse(String brokerAddr) throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException {
-        TimerCheckpoint timerCheckpoint = this.brokerController.getBrokerOuterAPI().getTimerCheckPoint(brokerAddr);
-        if (null != this.brokerController.getTimerCheckpoint() && this.brokerController.getTimerCheckpoint().getDataVersion().compare(timerCheckpoint.getDataVersion()) <= 0) {
+        TimerCheckpoint timerCheckpoint = this.broker.getBrokerOuterAPI().getTimerCheckPoint(brokerAddr);
+        if (null != this.broker.getTimerCheckpoint() && this.broker.getTimerCheckpoint().getDataVersion().compare(timerCheckpoint.getDataVersion()) <= 0) {
             LOGGER.info("{}'s timerCheckpoint data version is larger than master broker, {}'s timerCheckpoint will be used.", brokerAddr, brokerAddr);
-            this.brokerController.getTimerCheckpoint().setLastReadTimeMs(timerCheckpoint.getLastReadTimeMs());
-            this.brokerController.getTimerCheckpoint().setMasterTimerQueueOffset(timerCheckpoint.getMasterTimerQueueOffset());
-            this.brokerController.getTimerCheckpoint().getDataVersion().assignNewOne(timerCheckpoint.getDataVersion());
-            this.brokerController.getTimerCheckpoint().flush();
+            this.broker.getTimerCheckpoint().setLastReadTimeMs(timerCheckpoint.getLastReadTimeMs());
+            this.broker.getTimerCheckpoint().setMasterTimerQueueOffset(timerCheckpoint.getMasterTimerQueueOffset());
+            this.broker.getTimerCheckpoint().getDataVersion().assignNewOne(timerCheckpoint.getDataVersion());
+            this.broker.getTimerCheckpoint().flush();
         }
     }
 
     private void brokerAttachedPluginSyncMetadataReverse(String brokerAddr) throws Exception {
-        for (BrokerAttachedPlugin brokerAttachedPlugin : brokerController.getBrokerServiceManager().getBrokerAttachedPlugins()) {
+        for (BrokerAttachedPlugin brokerAttachedPlugin : broker.getBrokerServiceManager().getBrokerAttachedPlugins()) {
             if (brokerAttachedPlugin != null) {
                 brokerAttachedPlugin.syncMetadataReverse(brokerAddr);
             }
@@ -225,22 +225,22 @@ public class BrokerPreOnlineService extends ServiceThread {
     private boolean prepareForSlaveOnline(BrokerMemberGroup brokerMemberGroup) {
         BrokerSyncInfo brokerSyncInfo;
         try {
-            brokerSyncInfo = this.brokerController.getBrokerOuterAPI()
+            brokerSyncInfo = this.broker.getBrokerOuterAPI()
                 .retrieveBrokerHaInfo(brokerMemberGroup.getBrokerAddrs().get(MQConstants.MASTER_ID));
         } catch (Exception e) {
             LOGGER.error("retrieve master ha info exception, {}", e);
             return false;
         }
 
-        if (this.brokerController.getMessageStore().getMasterFlushedOffset() == 0
-            && this.brokerController.getMessageStoreConfig().isSyncMasterFlushOffsetWhenStartup()) {
+        if (this.broker.getMessageStore().getMasterFlushedOffset() == 0
+            && this.broker.getMessageStoreConfig().isSyncMasterFlushOffsetWhenStartup()) {
             LOGGER.info("Set master flush offset in slave to {}", brokerSyncInfo.getMasterFlushOffset());
-            this.brokerController.getMessageStore().setMasterFlushedOffset(brokerSyncInfo.getMasterFlushOffset());
+            this.broker.getMessageStore().setMasterFlushedOffset(brokerSyncInfo.getMasterFlushOffset());
         }
 
         if (brokerSyncInfo.getMasterHaAddress() != null) {
-            this.brokerController.getMessageStore().updateHaMasterAddress(brokerSyncInfo.getMasterHaAddress());
-            this.brokerController.getMessageStore().updateMasterAddress(brokerSyncInfo.getMasterAddress());
+            this.broker.getMessageStore().updateHaMasterAddress(brokerSyncInfo.getMasterHaAddress());
+            this.broker.getMessageStore().updateMasterAddress(brokerSyncInfo.getMasterAddress());
         } else {
             LOGGER.info("fetch master ha address return null, start service directly");
             long minBrokerId = getMinBrokerId(brokerMemberGroup.getBrokerAddrs());
@@ -266,10 +266,10 @@ public class BrokerPreOnlineService extends ServiceThread {
     private boolean prepareForBrokerOnline() {
         BrokerMemberGroup brokerMemberGroup;
         try {
-            brokerMemberGroup = this.brokerController.getBrokerOuterAPI().syncBrokerMemberGroup(
-                this.brokerController.getBrokerConfig().getBrokerClusterName(),
-                this.brokerController.getBrokerConfig().getBrokerName(),
-                this.brokerController.getBrokerConfig().isCompatibleWithOldNameSrv());
+            brokerMemberGroup = this.broker.getBrokerOuterAPI().syncBrokerMemberGroup(
+                this.broker.getBrokerConfig().getBrokerClusterName(),
+                this.broker.getBrokerConfig().getBrokerName(),
+                this.broker.getBrokerConfig().isCompatibleWithOldNameSrv());
         } catch (Exception e) {
             LOGGER.error("syncBrokerMemberGroup from namesrv error, start service failed, will try later, ", e);
             return false;
@@ -278,7 +278,7 @@ public class BrokerPreOnlineService extends ServiceThread {
         if (brokerMemberGroup != null && !brokerMemberGroup.getBrokerAddrs().isEmpty()) {
             long minBrokerId = getMinBrokerId(brokerMemberGroup.getBrokerAddrs());
 
-            if (this.brokerController.getBrokerConfig().getBrokerId() == MQConstants.MASTER_ID) {
+            if (this.broker.getBrokerConfig().getBrokerId() == MQConstants.MASTER_ID) {
                 return prepareForMasterOnline(brokerMemberGroup);
             } else if (minBrokerId == MQConstants.MASTER_ID) {
                 return prepareForSlaveOnline(brokerMemberGroup);
@@ -288,7 +288,7 @@ public class BrokerPreOnlineService extends ServiceThread {
             }
         } else {
             LOGGER.info("no other broker online, will start service directly");
-            this.registerBroker(this.brokerController.getBrokerConfig().getBrokerId(), this.brokerController.getBrokerAddr());
+            this.registerBroker(this.broker.getBrokerConfig().getBrokerId(), this.broker.getBrokerAddr());
         }
 
         return true;
@@ -300,22 +300,22 @@ public class BrokerPreOnlineService extends ServiceThread {
      * @param minBrokerAddr
      */
     public void registerBroker(long minBrokerId, String minBrokerAddr) {
-        BrokerConfig brokerConfig = brokerController.getBrokerConfig();
+        BrokerConfig brokerConfig = broker.getBrokerConfig();
         LOGGER.info("{} start service, min broker id is {}, min broker addr: {}", brokerConfig.getCanonicalName(), minBrokerId, minBrokerAddr);
-        brokerController.getBrokerClusterService().setMinBrokerIdInGroup(minBrokerId);
-        brokerController.getBrokerClusterService().setMinBrokerAddrInGroup(minBrokerAddr);
+        broker.getBrokerClusterService().setMinBrokerIdInGroup(minBrokerId);
+        broker.getBrokerClusterService().setMinBrokerAddrInGroup(minBrokerAddr);
 
-        brokerController.getBrokerMessageService().changeSpecialServiceStatus(brokerConfig.getBrokerId() == minBrokerId);
-        brokerController.getBrokerServiceRegistry().registerBrokerAll(true, false, brokerConfig.isForceRegister());
-        brokerController.setIsolated(false);
+        broker.getBrokerMessageService().changeSpecialServiceStatus(brokerConfig.getBrokerId() == minBrokerId);
+        broker.getBrokerServiceRegistry().registerBrokerAll(true, false, brokerConfig.isForceRegister());
+        broker.setIsolated(false);
     }
 
     private long getMinBrokerId(Map<Long, String> brokerAddrMap) {
         Map<Long, String> brokerAddrMapCopy = new HashMap<>(brokerAddrMap);
-        brokerAddrMapCopy.remove(this.brokerController.getBrokerConfig().getBrokerId());
+        brokerAddrMapCopy.remove(this.broker.getBrokerConfig().getBrokerId());
         if (!brokerAddrMapCopy.isEmpty()) {
             return Collections.min(brokerAddrMapCopy.keySet());
         }
-        return this.brokerController.getBrokerConfig().getBrokerId();
+        return this.broker.getBrokerConfig().getBrokerId();
     }
 }

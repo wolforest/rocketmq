@@ -18,7 +18,7 @@ package org.apache.rocketmq.proxy.service;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ConsumerManager;
 import org.apache.rocketmq.broker.server.client.ProducerManager;
 import org.apache.rocketmq.client.common.NameserverAccessConfig;
@@ -47,7 +47,7 @@ import org.apache.rocketmq.remoting.RPCHook;
 
 public class LocalServiceManager extends AbstractStartAndShutdown implements ServiceManager {
 
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final TopicRouteService topicRouteService;
     private final MessageService messageService;
     private final TransactionService transactionService;
@@ -61,17 +61,17 @@ public class LocalServiceManager extends AbstractStartAndShutdown implements Ser
     private final ScheduledExecutorService scheduledExecutorService = ThreadUtils.newSingleThreadScheduledExecutor(
         new ThreadFactoryImpl("LocalServiceManagerScheduledThread"));
 
-    public LocalServiceManager(BrokerController brokerController, RPCHook rpcHook) {
-        this.brokerController = brokerController;
+    public LocalServiceManager(Broker broker, RPCHook rpcHook) {
+        this.broker = broker;
         this.channelManager = new ChannelManager();
-        this.messageService = new LocalMessageService(brokerController, channelManager, rpcHook);
+        this.messageService = new LocalMessageService(broker, channelManager, rpcHook);
 
         initMQClientAPIFactory(rpcHook);
 
-        this.topicRouteService = new LocalTopicRouteService(brokerController, mqClientAPIFactory);
-        this.transactionService = new LocalTransactionService(brokerController.getBrokerConfig());
-        this.proxyRelayService = new LocalProxyRelayService(brokerController, this.transactionService);
-        this.metadataService = new LocalMetadataService(brokerController);
+        this.topicRouteService = new LocalTopicRouteService(broker, mqClientAPIFactory);
+        this.transactionService = new LocalTransactionService(broker.getBrokerConfig());
+        this.proxyRelayService = new LocalProxyRelayService(broker, this.transactionService);
+        this.metadataService = new LocalMetadataService(broker);
         this.adminService = new DefaultAdminService(this.mqClientAPIFactory);
         this.init();
     }
@@ -108,12 +108,12 @@ public class LocalServiceManager extends AbstractStartAndShutdown implements Ser
 
     @Override
     public ProducerManager getProducerManager() {
-        return this.brokerController.getProducerManager();
+        return this.broker.getProducerManager();
     }
 
     @Override
     public ConsumerManager getConsumerManager() {
-        return this.brokerController.getConsumerManager();
+        return this.broker.getConsumerManager();
     }
 
     @Override

@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.topic.TopicConfigManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicAttributes;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 public class TopicConfigManagerTest {
     private TopicConfigManager topicConfigManager;
     @Mock
-    private BrokerController brokerController;
+    private Broker broker;
 
     @Mock
     private DefaultMessageStore defaultMessageStore;
@@ -56,12 +56,12 @@ public class TopicConfigManagerTest {
     @Before
     public void init() {
         BrokerConfig brokerConfig = new BrokerConfig();
-        when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
+        when(broker.getBrokerConfig()).thenReturn(brokerConfig);
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        when(brokerController.getMessageStoreConfig()).thenReturn(messageStoreConfig);
-        when(brokerController.getMessageStore()).thenReturn(defaultMessageStore);
+        when(broker.getMessageStoreConfig()).thenReturn(messageStoreConfig);
+        when(broker.getMessageStore()).thenReturn(defaultMessageStore);
         when(defaultMessageStore.getStateMachineVersion()).thenReturn(0L);
-        topicConfigManager = new TopicConfigManager(brokerController);
+        topicConfigManager = new TopicConfigManager(broker);
     }
 
     @Test

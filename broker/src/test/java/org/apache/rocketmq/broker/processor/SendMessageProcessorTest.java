@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.SendMessageProcessor;
 import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
 import org.apache.rocketmq.common.app.AbortProcessException;
@@ -80,7 +80,7 @@ public class SendMessageProcessorTest {
     @Mock
     private Channel channel;
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(),
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(),
         new NettyClientConfig(), new MessageStoreConfig());
     @Mock
     private MessageStore messageStore;
@@ -95,19 +95,19 @@ public class SendMessageProcessorTest {
 
     @Before
     public void init() {
-        brokerController.setMessageStore(messageStore);
-        TopicConfigManager topicConfigManager = new TopicConfigManager(brokerController);
+        broker.setMessageStore(messageStore);
+        TopicConfigManager topicConfigManager = new TopicConfigManager(broker);
         topicConfigManager.getTopicConfigTable().put(topic, new TopicConfig(topic));
-        SubscriptionGroupManager subscriptionGroupManager = new SubscriptionGroupManager(brokerController);
-        when(brokerController.getSubscriptionGroupManager()).thenReturn(subscriptionGroupManager);
-        when(brokerController.getTopicConfigManager()).thenReturn(topicConfigManager);
-        when(brokerController.getBrokerNettyServer()).thenReturn(brokerNettyServer);
-        when(brokerController.getBrokerNettyServer().getPutMessageFutureExecutor()).thenReturn(Executors.newSingleThreadExecutor());
+        SubscriptionGroupManager subscriptionGroupManager = new SubscriptionGroupManager(broker);
+        when(broker.getSubscriptionGroupManager()).thenReturn(subscriptionGroupManager);
+        when(broker.getTopicConfigManager()).thenReturn(topicConfigManager);
+        when(broker.getBrokerNettyServer()).thenReturn(brokerNettyServer);
+        when(broker.getBrokerNettyServer().getPutMessageFutureExecutor()).thenReturn(Executors.newSingleThreadExecutor());
         when(messageStore.now()).thenReturn(System.currentTimeMillis());
         when(channel.remoteAddress()).thenReturn(new InetSocketAddress(1024));
         when(handlerContext.channel()).thenReturn(channel);
         when(messageStore.lookMessageByOffset(anyLong())).thenReturn(new MessageExt());
-        sendMessageProcessor = new SendMessageProcessor(brokerController);
+        sendMessageProcessor = new SendMessageProcessor(broker);
     }
 
     @Test
@@ -209,7 +209,7 @@ public class SendMessageProcessorTest {
             thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK)));
         final RemotingCommand request = createSendMsgBackCommand(RequestCode.CONSUMER_SEND_MSG_BACK);
 
-        sendMessageProcessor = new SendMessageProcessor(brokerController);
+        sendMessageProcessor = new SendMessageProcessor(broker);
         final RemotingCommand response = sendMessageProcessor.processRequest(handlerContext, request);
         assertThat(response).isNotNull();
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
@@ -217,8 +217,8 @@ public class SendMessageProcessorTest {
 
     @Test
     public void testProcessRequest_Transaction() throws RemotingCommandException {
-        brokerController.getBrokerMessageService().setTransactionalMessageService(transactionMsgService);
-        when(brokerController.getBrokerMessageService().getTransactionalMessageService().asyncPrepareMessage(any(MessageExtBrokerInner.class)))
+        broker.getBrokerMessageService().setTransactionalMessageService(transactionMsgService);
+        when(broker.getBrokerMessageService().getTransactionalMessageService().asyncPrepareMessage(any(MessageExtBrokerInner.class)))
             .thenReturn(CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK))));
         RemotingCommand request = createSendTransactionMsgCommand(RequestCode.SEND_MESSAGE);
         final RemotingCommand[] response = new RemotingCommand[1];
@@ -277,7 +277,7 @@ public class SendMessageProcessorTest {
             thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK)));
         final RemotingCommand request = createSendMsgBackCommand(RequestCode.CONSUMER_SEND_MSG_BACK);
 
-        sendMessageProcessor = new SendMessageProcessor(brokerController);
+        sendMessageProcessor = new SendMessageProcessor(broker);
         List<ConsumeMessageHook> consumeMessageHookList = new ArrayList<>();
         final ConsumeMessageContext[] messageContext = new ConsumeMessageContext[1];
         ConsumeMessageHook consumeMessageHook = new ConsumeMessageHook() {

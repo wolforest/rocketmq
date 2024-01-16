@@ -28,7 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.acl.AccessValidator;
 import org.apache.rocketmq.acl.plain.PlainAccessValidator;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientHousekeepingService;
 import org.apache.rocketmq.broker.server.client.ConsumerIdsChangeListener;
 import org.apache.rocketmq.broker.server.client.DefaultConsumerIdsChangeListener;
@@ -137,7 +137,7 @@ public class BrokerNettyServer {
     private final BrokerConfig brokerConfig;
     private final MessageStoreConfig messageStoreConfig;
     private final NettyServerConfig nettyServerConfig;
-    private final BrokerController brokerController;
+    private final Broker broker;
 
     private InetSocketAddress storeHost;
     private RemotingServer remotingServer;
@@ -147,14 +147,14 @@ public class BrokerNettyServer {
         final BrokerConfig brokerConfig,
         final MessageStoreConfig messageStoreConfig,
         final NettyServerConfig nettyServerConfig,
-        final BrokerController brokerController
+        final Broker broker
     ) {
         this.brokerConfig = brokerConfig;
         this.messageStoreConfig = messageStoreConfig;
         this.nettyServerConfig = nettyServerConfig;
-        this.brokerController = brokerController;
+        this.broker = broker;
 
-        this.setStoreHost(new InetSocketAddress(this.getBrokerConfig().getBrokerIP1(), brokerController.getListenPort()));
+        this.setStoreHost(new InetSocketAddress(this.getBrokerConfig().getBrokerIP1(), broker.getListenPort()));
 
         initProcessors();
         initThreadPoolQueue();
@@ -350,7 +350,7 @@ public class BrokerNettyServer {
                 LOG.error("excuteRequestWhenWakeup run", e1);
             }
         };
-        this.brokerController.getBrokerNettyServer().getPullMessageExecutor().submit(new RequestTask(run, channel, request));
+        this.broker.getBrokerNettyServer().getPullMessageExecutor().submit(new RequestTask(run, channel, request));
     }
 
     private void writeResponse(final Channel channel, final RemotingCommand request, RemotingCommand response) {
@@ -621,7 +621,7 @@ public class BrokerNettyServer {
     }
 
     private void initServices() {
-        this.popServiceManager = new PopServiceManager(brokerController, popMessageProcessor, notificationProcessor);
+        this.popServiceManager = new PopServiceManager(broker, popMessageProcessor, notificationProcessor);
         this.clientHousekeepingService = new ClientHousekeepingService(getBrokerController());
         this.pullRequestHoldService = messageStoreConfig.isEnableLmq() ? new LmqPullRequestHoldService(getBrokerController()) : new PullRequestHoldService(getBrokerController());
         this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService, this.popServiceManager);
@@ -714,8 +714,8 @@ public class BrokerNettyServer {
         return messageStoreConfig;
     }
 
-    public BrokerController getBrokerController() {
-        return brokerController;
+    public Broker getBrokerController() {
+        return broker;
     }
 
     public NettyServerConfig getNettyServerConfig() {
@@ -890,7 +890,7 @@ public class BrokerNettyServer {
         final Runnable peek = q.peek();
         if (peek != null) {
             RequestTask rt = BrokerFastFailure.castRunnable(peek);
-            slowTimeMills = rt == null ? 0 : this.brokerController.getBrokerMessageService().getMessageStore().now() - rt.getCreateTimestamp();
+            slowTimeMills = rt == null ? 0 : this.broker.getBrokerMessageService().getMessageStore().now() - rt.getCreateTimestamp();
         }
 
         if (slowTimeMills < 0) {

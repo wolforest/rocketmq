@@ -60,7 +60,10 @@ import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
 
-public class BrokerController {
+/**
+ * @renamed from BrokerController to Broker
+ */
+public class Broker {
     protected static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
     protected final BrokerConfig brokerConfig;
@@ -81,7 +84,7 @@ public class BrokerController {
     private final BrokerClusterService brokerClusterService;
     private final BrokerMessageService brokerMessageService;
 
-    public BrokerController(
+    public Broker(
         final BrokerConfig brokerConfig,
         final NettyServerConfig nettyServerConfig,
         final NettyClientConfig nettyClientConfig,
@@ -92,14 +95,14 @@ public class BrokerController {
         this.brokerServiceManager.setShutdownHook(shutdownHook);
     }
 
-    public BrokerController(
+    public Broker(
         final BrokerConfig brokerConfig,
         final MessageStoreConfig messageStoreConfig
     ) {
         this(brokerConfig, null, null, messageStoreConfig);
     }
 
-    public BrokerController(
+    public Broker(
         final BrokerConfig brokerConfig,
         final NettyServerConfig nettyServerConfig,
         final NettyClientConfig nettyClientConfig,
@@ -188,7 +191,7 @@ public class BrokerController {
 
     //**************************************** private or protected methods start ****************************************************
     protected void registerBroker() {
-        BrokerController.LOG.info("{} start service", this.brokerConfig.getCanonicalName());
+        Broker.LOG.info("{} start service", this.brokerConfig.getCanonicalName());
 
         this.brokerMessageService.changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MQConstants.MASTER_ID);
         this.brokerServiceRegistry.registerBrokerAll(true, false, brokerConfig.isForceRegister());
@@ -197,7 +200,7 @@ public class BrokerController {
     }
 
     protected void unregisterBroker() {
-        BrokerController.LOG.info("{} stop service", this.getBrokerConfig().getCanonicalName());
+        Broker.LOG.info("{} stop service", this.getBrokerConfig().getCanonicalName());
         isIsolated = true;
         this.brokerMessageService.changeSpecialServiceStatus(false);
     }
@@ -406,7 +409,7 @@ public class BrokerController {
         return this.brokerConfig.getBrokerId();
     }
 
-    public BrokerController peekMasterBroker() {
+    public Broker peekMasterBroker() {
         return brokerConfig.getBrokerId() == MQConstants.MASTER_ID ? this : null;
     }
 

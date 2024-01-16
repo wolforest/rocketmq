@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 
@@ -32,7 +32,7 @@ import org.apache.rocketmq.common.lang.thread.ServiceThread;
  */
 public class BroadcastOffsetManager extends ServiceThread {
     private static final String TOPIC_GROUP_SEPARATOR = "@";
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final BrokerConfig brokerConfig;
 
     /**
@@ -42,9 +42,9 @@ public class BroadcastOffsetManager extends ServiceThread {
     protected final ConcurrentHashMap<String /* topic@groupId */, BroadcastOffsetData> offsetStoreMap =
         new ConcurrentHashMap<>();
 
-    public BroadcastOffsetManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.brokerConfig = brokerController.getBrokerConfig();
+    public BroadcastOffsetManager(Broker broker) {
+        this.broker = broker;
+        this.brokerConfig = broker.getBrokerConfig();
     }
 
     public void updateOffset(String topic, String group, int queueId, long offset, String clientId, boolean fromProxy) {
@@ -113,13 +113,13 @@ public class BroadcastOffsetManager extends ServiceThread {
         }
         if (storeOffset < 0) {
             storeOffset =
-                brokerController.getConsumerOffsetManager().queryOffset(broadcastGroupId(groupId), topic, queueId);
+                broker.getConsumerOffsetManager().queryOffset(broadcastGroupId(groupId), topic, queueId);
         }
         if (storeOffset < 0) {
-            if (this.brokerController.getMessageStore().checkInMemByConsumeOffset(topic, queueId, 0, 1)) {
+            if (this.broker.getMessageStore().checkInMemByConsumeOffset(topic, queueId, 0, 1)) {
                 storeOffset = 0;
             } else {
-                storeOffset = brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId, true);
+                storeOffset = broker.getMessageStore().getMaxOffsetInQueue(topic, queueId, true);
             }
         }
         return storeOffset;
@@ -143,7 +143,7 @@ public class BroadcastOffsetManager extends ServiceThread {
                 broadcastOffsetData.clientOffsetStore
                     .computeIfPresent(clientId, (clientIdKey, broadcastTimedOffsetStore) -> {
                         long interval = System.currentTimeMillis() - broadcastTimedOffsetStore.timestamp;
-                        boolean clientIsOnline = brokerController.getConsumerManager().findChannel(broadcastOffsetData.group, clientId) != null;
+                        boolean clientIsOnline = broker.getConsumerManager().findChannel(broadcastOffsetData.group, clientId) != null;
                         if (clientIsOnline || interval < Duration.ofSeconds(brokerConfig.getBroadcastOffsetExpireSecond()).toMillis()) {
                             Set<Integer> queueSet = broadcastTimedOffsetStore.offsetStore.queueList();
                             for (Integer queue : queueSet) {
@@ -170,7 +170,7 @@ public class BroadcastOffsetManager extends ServiceThread {
             });
 
             queueMinOffset.forEach((queueId, offset) ->
-                this.brokerController.getConsumerOffsetManager().commitOffset("BroadcastOffset",
+                this.broker.getConsumerOffsetManager().commitOffset("BroadcastOffset",
                 broadcastGroupId(broadcastOffsetData.group), broadcastOffsetData.topic, queueId, offset));
         }
     }

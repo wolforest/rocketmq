@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
@@ -422,8 +422,8 @@ public class StaticTopicIT extends BaseConf {
 
         {
             for (int i = 0; i < 10; i++) {
-                for (BrokerController brokerController: brokerControllerList) {
-                    brokerController.getBrokerServiceManager().getTopicQueueMappingCleanService().wakeup();
+                for (Broker broker : brokerList) {
+                    broker.getBrokerServiceManager().getTopicQueueMappingCleanService().wakeup();
                 }
                 Thread.sleep(100);
             }
@@ -439,13 +439,13 @@ public class StaticTopicIT extends BaseConf {
 
         }
         {
-            Set<String> topics =  new HashSet<>(brokerController1.getTopicConfigManager().getTopicConfigTable().keySet());
+            Set<String> topics =  new HashSet<>(broker1.getTopicConfigManager().getTopicConfigTable().keySet());
             topics.remove(topic);
-            brokerController1.getMessageStore().cleanUnusedTopic(topics);
-            brokerController2.getMessageStore().cleanUnusedTopic(topics);
+            broker1.getMessageStore().cleanUnusedTopic(topics);
+            broker2.getMessageStore().cleanUnusedTopic(topics);
             for (int i = 0; i < 10; i++) {
-                for (BrokerController brokerController: brokerControllerList) {
-                    brokerController.getBrokerServiceManager().getTopicQueueMappingCleanService().wakeup();
+                for (Broker broker : brokerList) {
+                    broker.getBrokerServiceManager().getTopicQueueMappingCleanService().wakeup();
                 }
                 Thread.sleep(100);
             }

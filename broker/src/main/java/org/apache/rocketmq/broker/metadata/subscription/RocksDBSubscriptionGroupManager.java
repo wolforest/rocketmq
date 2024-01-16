@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.metadata.subscription;
 
 import java.io.File;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.RocksDBConfigManager;
 import org.apache.rocketmq.common.utils.DataConverter;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
@@ -28,9 +28,9 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 
 public class RocksDBSubscriptionGroupManager extends SubscriptionGroupManager {
 
-    public RocksDBSubscriptionGroupManager(BrokerController brokerController) {
-        super(brokerController, false);
-        this.rocksDBConfigManager = new RocksDBConfigManager(brokerController.getMessageStoreConfig().getMemTableFlushIntervalMs());
+    public RocksDBSubscriptionGroupManager(Broker broker) {
+        super(broker, false);
+        this.rocksDBConfigManager = new RocksDBConfigManager(broker.getMessageStoreConfig().getMemTableFlushIntervalMs());
     }
 
     @Override
@@ -103,13 +103,13 @@ public class RocksDBSubscriptionGroupManager extends SubscriptionGroupManager {
 
     @Override
     public synchronized void persist() {
-        if (brokerController.getMessageStoreConfig().isRealTimePersistRocksDBConfig()) {
+        if (broker.getMessageStoreConfig().isRealTimePersistRocksDBConfig()) {
             this.rocksDBConfigManager.flushWAL();
         }
     }
 
     @Override
     public String configFilePath() {
-        return this.brokerController.getMessageStoreConfig().getStorePathRootDir() + File.separator + "config" + File.separator + "subscriptionGroups" + File.separator;
+        return this.broker.getMessageStoreConfig().getStorePathRootDir() + File.separator + "config" + File.separator + "subscriptionGroups" + File.separator;
     }
 }

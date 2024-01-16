@@ -18,7 +18,7 @@
 package org.apache.rocketmq.test.container;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
@@ -429,7 +429,7 @@ public class PopSlaveActingMasterIT extends ContainerIntegrationTestBase {
                 master2With3Replicas.getBrokerConfig().getBrokerName(),
                 master2With3Replicas.getBrokerConfig().getBrokerId()));
 
-        BrokerController slave1InBrokerContainer3 = getSlaveFromContainerByName(brokerContainer3, master1With3Replicas.getBrokerConfig().getBrokerName());
+        Broker slave1InBrokerContainer3 = getSlaveFromContainerByName(brokerContainer3, master1With3Replicas.getBrokerConfig().getBrokerName());
         isolateBroker(slave1InBrokerContainer3);
         brokerContainer3.removeBroker(new BrokerIdentity(
                 slave1InBrokerContainer3.getBrokerConfig().getBrokerClusterName(),

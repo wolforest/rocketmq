@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.acl.common.AclUtils;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.server.client.ConsumerIdsChangeListener;
@@ -102,12 +102,12 @@ public class DefaultMessagingProcessor extends AbstractStartAndShutdown implemen
         this.init();
     }
 
-    public static DefaultMessagingProcessor createForLocalMode(BrokerController brokerController) {
-        return createForLocalMode(brokerController, null);
+    public static DefaultMessagingProcessor createForLocalMode(Broker broker) {
+        return createForLocalMode(broker, null);
     }
 
-    public static DefaultMessagingProcessor createForLocalMode(BrokerController brokerController, RPCHook rpcHook) {
-        return new DefaultMessagingProcessor(ServiceManagerFactory.createForLocalMode(brokerController, rpcHook));
+    public static DefaultMessagingProcessor createForLocalMode(Broker broker, RPCHook rpcHook) {
+        return new DefaultMessagingProcessor(ServiceManagerFactory.createForLocalMode(broker, rpcHook));
     }
 
     public static DefaultMessagingProcessor createForClusterMode() {

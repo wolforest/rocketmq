@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
@@ -57,21 +57,21 @@ public class TopicQueueMappingCleanService extends ServiceThread {
     private RpcClient rpcClient;
     private MessageStoreConfig messageStoreConfig;
     private BrokerConfig brokerConfig;
-    private BrokerController brokerController;
+    private Broker broker;
 
-    public TopicQueueMappingCleanService(BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.topicQueueMappingManager = brokerController.getTopicQueueMappingManager();
-        this.rpcClient = brokerController.getBrokerOuterAPI().getRpcClient();
-        this.messageStoreConfig = brokerController.getMessageStoreConfig();
-        this.brokerConfig = brokerController.getBrokerConfig();
-        this.brokerOuterAPI = brokerController.getBrokerOuterAPI();
+    public TopicQueueMappingCleanService(Broker broker) {
+        this.broker = broker;
+        this.topicQueueMappingManager = broker.getTopicQueueMappingManager();
+        this.rpcClient = broker.getBrokerOuterAPI().getRpcClient();
+        this.messageStoreConfig = broker.getMessageStoreConfig();
+        this.brokerConfig = broker.getBrokerConfig();
+        this.brokerOuterAPI = broker.getBrokerOuterAPI();
     }
 
     @Override
     public String getServiceName() {
         if (this.brokerConfig.isInBrokerContainer()) {
-            return this.brokerController.getBrokerIdentity().getIdentifier() + TopicQueueMappingCleanService.class.getSimpleName();
+            return this.broker.getBrokerIdentity().getIdentifier() + TopicQueueMappingCleanService.class.getSimpleName();
         }
         return TopicQueueMappingCleanService.class.getSimpleName();
     }

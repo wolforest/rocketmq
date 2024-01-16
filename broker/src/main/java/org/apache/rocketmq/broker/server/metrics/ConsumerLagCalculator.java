@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.server.client.ConsumerManager;
 import org.apache.rocketmq.broker.metadata.filter.ConsumerFilterData;
@@ -62,16 +62,16 @@ public class ConsumerLagCalculator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
-    public ConsumerLagCalculator(BrokerController brokerController) {
-        this.brokerConfig = brokerController.getBrokerConfig();
-        this.topicConfigManager = brokerController.getTopicConfigManager();
-        this.consumerManager = brokerController.getConsumerManager();
-        this.offsetManager = brokerController.getConsumerOffsetManager();
-        this.consumerFilterManager = brokerController.getConsumerFilterManager();
-        this.subscriptionGroupManager = brokerController.getSubscriptionGroupManager();
-        this.messageStore = brokerController.getMessageStore();
-        this.popBufferMergeService = brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
-        this.popInflightMessageCounter = brokerController.getPopInflightMessageCounter();
+    public ConsumerLagCalculator(Broker broker) {
+        this.brokerConfig = broker.getBrokerConfig();
+        this.topicConfigManager = broker.getTopicConfigManager();
+        this.consumerManager = broker.getConsumerManager();
+        this.offsetManager = broker.getConsumerOffsetManager();
+        this.consumerFilterManager = broker.getConsumerFilterManager();
+        this.subscriptionGroupManager = broker.getSubscriptionGroupManager();
+        this.messageStore = broker.getMessageStore();
+        this.popBufferMergeService = broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        this.popInflightMessageCounter = broker.getPopInflightMessageCounter();
     }
 
     private static class ProcessGroupInfo {

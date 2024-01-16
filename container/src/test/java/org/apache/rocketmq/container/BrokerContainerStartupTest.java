@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.container;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.BeanUtils;
@@ -109,7 +109,7 @@ public class BrokerContainerStartupTest {
         BrokerContainer brokerContainer = BrokerContainerStartup.startBrokerContainer(
             BrokerContainerStartup.createBrokerContainer(Arrays.array("-c", brokerContainerConfigPath)));
         assertThat(brokerContainer).isNotNull();
-        List<BrokerController> brokers = BrokerContainerStartup.createAndStartBrokers(brokerContainer);
+        List<Broker> brokers = BrokerContainerStartup.createAndStartBrokers(brokerContainer);
         assertThat(brokers.size()).isEqualTo(1);
 
         brokerContainer.shutdown();

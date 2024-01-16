@@ -20,7 +20,7 @@ package org.apache.rocketmq.test.offset;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -61,7 +61,7 @@ public class OffsetResetIT extends BaseConf {
         topic = initTopic();
         LOGGER.info(String.format("use topic: %s;", topic));
 
-        for (BrokerController controller : brokerControllerList) {
+        for (Broker controller : brokerList) {
             controller.getBrokerConfig().setLongPollingEnable(false);
             controller.getBrokerConfig().setShortPollingTimeMills(500);
             controller.getBrokerConfig().setUseServerSideResetOffset(true);
@@ -95,7 +95,7 @@ public class OffsetResetIT extends BaseConf {
      */
     private long getConsumerLag(String topic, String group) throws Exception {
         long consumerLag = 0L;
-        for (BrokerController controller : brokerControllerList) {
+        for (Broker controller : brokerList) {
             ConsumeStats consumeStats = defaultMQAdminExt.getDefaultMQAdminExtImpl()
                 .getMqClientInstance().getMQClientAPIImpl()
                 .getConsumeStats(controller.getBrokerAddr(), group, topic, 3000);
@@ -130,13 +130,13 @@ public class OffsetResetIT extends BaseConf {
         await().pollInterval(Duration.ofSeconds(1)).atMost(Duration.ofMinutes(3)).until(
             () -> 0L == this.getConsumerLag(topic, consumer.getConsumerGroup()));
 
-        for (BrokerController controller : brokerControllerList) {
+        for (Broker controller : brokerList) {
             defaultMQAdminExt.resetOffsetByQueueId(controller.getBrokerAddr(),
                 consumer.getConsumerGroup(), consumer.getTopic(), 3, 0);
         }
 
         int hasConsumeBefore = listener.getMsgIndex().get();
-        int expectAfterReset = brokerControllerList.size() * msgSize;
+        int expectAfterReset = brokerList.size() * msgSize;
         await().pollInterval(Duration.ofSeconds(1)).atMost(Duration.ofMinutes(3)).until(() -> {
             long receive = listener.getMsgIndex().get();
             long expect = hasConsumeBefore + expectAfterReset;
@@ -157,7 +157,7 @@ public class OffsetResetIT extends BaseConf {
         await().pollInterval(Duration.ofSeconds(1)).atMost(Duration.ofMinutes(3)).until(
             () -> 0L == this.getConsumerLag(topic, consumer.getConsumerGroup()));
 
-        for (BrokerController controller : brokerControllerList) {
+        for (Broker controller : brokerList) {
             defaultMQAdminExt.getDefaultMQAdminExtImpl().getMqClientInstance().getMQClientAPIImpl()
                 .invokeBrokerToResetOffset(controller.getBrokerAddr(),
                     consumer.getTopic(), consumer.getConsumerGroup(), start, true, 3 * 1000);
@@ -185,7 +185,7 @@ public class OffsetResetIT extends BaseConf {
             () -> 0L == this.getConsumerLag(topic, consumer.getConsumerGroup()));
 
         long expectInflight = 0L;
-        for (BrokerController controller : brokerControllerList) {
+        for (Broker controller : brokerList) {
             ConsumeStats consumeStats = defaultMQAdminExt.getDefaultMQAdminExtImpl().getMqClientInstance()
                 .getMQClientAPIImpl().getConsumeStats(controller.getBrokerAddr(),
                     consumer.getConsumerGroup(), consumer.getTopic(), 3 * 1000);

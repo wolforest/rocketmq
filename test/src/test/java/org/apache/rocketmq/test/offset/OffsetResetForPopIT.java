@@ -62,7 +62,7 @@ public class OffsetResetForPopIT extends BaseConf {
     @Before
     public void setUp() throws Exception {
         // reset pop offset rely on server side offset
-        brokerController1.getBrokerConfig().setUseServerSideResetOffset(true);
+        broker1.getBrokerConfig().setUseServerSideResetOffset(true);
 
         adminExt = BaseConf.getAdmin(NAMESRV_ADDR);
         adminExt.start();
@@ -93,7 +93,7 @@ public class OffsetResetForPopIT extends BaseConf {
     private void resetOffsetInner(long resetOffset) {
         try {
             // reset offset by queue
-            adminExt.resetOffsetByQueueId(brokerController1.getBrokerAddr(),
+            adminExt.resetOffsetByQueueId(broker1.getBrokerAddr(),
                 consumer.getConsumerGroup(), consumer.getTopic(), 0, resetOffset);
         } catch (Exception ignore) {
         }
@@ -101,7 +101,7 @@ public class OffsetResetForPopIT extends BaseConf {
 
     private void ackMessageSync(MessageExt messageExt) {
         try {
-            consumer.ackAsync(brokerController1.getBrokerAddr(),
+            consumer.ackAsync(broker1.getBrokerAddr(),
                 messageExt.getProperty(MessageConst.PROPERTY_POP_CK)).get();
         } catch (Exception e) {
             e.printStackTrace();
@@ -123,11 +123,11 @@ public class OffsetResetForPopIT extends BaseConf {
         consumer.start();
 
         MessageQueue mq = new MessageQueue(topic, BROKER1_NAME, 0);
-        PopResult popResult = consumer.pop(brokerController1.getBrokerAddr(), mq);
+        PopResult popResult = consumer.pop(broker1.getBrokerAddr(), mq);
         Assert.assertEquals(10, popResult.getMsgFoundList().size());
 
         resetOffsetInner(resetOffset);
-        popResult = consumer.pop(brokerController1.getBrokerAddr(), mq);
+        popResult = consumer.pop(broker1.getBrokerAddr(), mq);
         Assert.assertTrue(popResult != null && popResult.getMsgFoundList() != null);
         Assert.assertEquals(messageCount - resetOffset, popResult.getMsgFoundList().size());
     }
@@ -141,25 +141,25 @@ public class OffsetResetForPopIT extends BaseConf {
         consumer.start();
 
         MessageQueue mq = new MessageQueue(topic, BROKER1_NAME, 0);
-        PopResult popResult1 = consumer.popOrderly(brokerController1.getBrokerAddr(), mq);
+        PopResult popResult1 = consumer.popOrderly(broker1.getBrokerAddr(), mq);
         Assert.assertEquals(10, popResult1.getMsgFoundList().size());
 
         resetOffsetInner(resetOffset);
         ConsumeStats consumeStats = adminExt.examineConsumeStats(group, topic);
         Assert.assertEquals(resetOffset, consumeStats.getOffsetTable().get(mq).getConsumerOffset());
 
-        PopResult popResult2 = consumer.popOrderly(brokerController1.getBrokerAddr(), mq);
+        PopResult popResult2 = consumer.popOrderly(broker1.getBrokerAddr(), mq);
         Assert.assertTrue(popResult2 != null && popResult2.getMsgFoundList() != null);
         Assert.assertEquals(messageCount - resetOffset, popResult2.getMsgFoundList().size());
 
         // ack old msg, expect has no effect
         ackMessageSync(popResult1.getMsgFoundList());
-        Assert.assertTrue(brokerController1.getConsumerOrderInfoManager()
+        Assert.assertTrue(broker1.getConsumerOrderInfoManager()
             .checkBlock(null, topic, group, 0, RMQPopConsumer.DEFAULT_INVISIBLE_TIME));
 
         // ack new msg
         ackMessageSync(popResult2.getMsgFoundList());
-        Assert.assertFalse(brokerController1.getConsumerOrderInfoManager()
+        Assert.assertFalse(broker1.getConsumerOrderInfoManager()
             .checkBlock(null, topic, group, 0, RMQPopConsumer.DEFAULT_INVISIBLE_TIME));
     }
 
@@ -173,14 +173,14 @@ public class OffsetResetForPopIT extends BaseConf {
         consumer.start();
 
         MessageQueue mq = new MessageQueue(topic, BROKER1_NAME, 0);
-        PopResult popResult = consumer.popOrderly(brokerController1.getBrokerAddr(), mq);
+        PopResult popResult = consumer.popOrderly(broker1.getBrokerAddr(), mq);
         Assert.assertEquals(messageCount - resetOffset, popResult.getMsgFoundList().size());
-        Assert.assertTrue(brokerController1.getConsumerOrderInfoManager()
+        Assert.assertTrue(broker1.getConsumerOrderInfoManager()
             .checkBlock(null, topic, group, 0, RMQPopConsumer.DEFAULT_INVISIBLE_TIME));
 
         ackMessageSync(popResult.getMsgFoundList());
         TimeUnit.SECONDS.sleep(1);
-        Assert.assertFalse(brokerController1.getConsumerOrderInfoManager()
+        Assert.assertFalse(broker1.getConsumerOrderInfoManager()
             .checkBlock(null, topic, group, 0, RMQPopConsumer.DEFAULT_INVISIBLE_TIME));
     }
 
@@ -188,19 +188,19 @@ public class OffsetResetForPopIT extends BaseConf {
     public void testResetOffsetAfterPopWhenOpenBufferAndWait() throws Exception {
         int messageCount = 10;
         int resetOffset = 4;
-        brokerController1.getBrokerConfig().setEnablePopBufferMerge(true);
+        broker1.getBrokerConfig().setEnablePopBufferMerge(true);
         producer.send(messageCount);
         consumer = new RMQPopConsumer(NAMESRV_ADDR, topic, "*", group, new RMQNormalListener());
         consumer.start();
 
         MessageQueue mq = new MessageQueue(topic, BROKER1_NAME, 0);
-        PopResult popResult = consumer.pop(brokerController1.getBrokerAddr(), mq);
+        PopResult popResult = consumer.pop(broker1.getBrokerAddr(), mq);
         Assert.assertEquals(10, popResult.getMsgFoundList().size());
 
         resetOffsetInner(resetOffset);
-        TimeUnit.MILLISECONDS.sleep(brokerController1.getBrokerConfig().getPopCkStayBufferTimeOut());
+        TimeUnit.MILLISECONDS.sleep(broker1.getBrokerConfig().getPopCkStayBufferTimeOut());
 
-        popResult = consumer.pop(brokerController1.getBrokerAddr(), mq);
+        popResult = consumer.pop(broker1.getBrokerAddr(), mq);
         Assert.assertTrue(popResult != null && popResult.getMsgFoundList() != null);
         Assert.assertEquals(messageCount - resetOffset, popResult.getMsgFoundList().size());
     }
@@ -232,7 +232,7 @@ public class OffsetResetForPopIT extends BaseConf {
 
     private void testResetOffsetWhilePop(int targetCount, boolean resetFuture, boolean needAck,
         int... resetOffset) {
-        brokerController1.getBrokerConfig().setEnablePopBufferMerge(true);
+        broker1.getBrokerConfig().setEnablePopBufferMerge(true);
         producer.send(10);
 
         // max pop one message per request
@@ -246,7 +246,7 @@ public class OffsetResetForPopIT extends BaseConf {
             long start = System.currentTimeMillis();
             while (System.currentTimeMillis() - start <= 30 * 1000L) {
                 try {
-                    PopResult popResult = consumer.pop(brokerController1.getBrokerAddr(), mq);
+                    PopResult popResult = consumer.pop(broker1.getBrokerAddr(), mq);
                     if (popResult == null || popResult.getMsgFoundList() == null) {
                         continue;
                     }
@@ -304,7 +304,7 @@ public class OffsetResetForPopIT extends BaseConf {
 
     private void testResetOffsetWhilePopOrderly(int targetCount, List<Integer> expectMsgReceive,
         List<Integer> resetOffset, int expectCount) {
-        brokerController1.getBrokerConfig().setEnablePopBufferMerge(true);
+        broker1.getBrokerConfig().setEnablePopBufferMerge(true);
         for (int i = 0; i < 10; i++) {
             Message msg = new Message(topic, (String.valueOf(i)).getBytes());
             producer.send(msg);
@@ -319,7 +319,7 @@ public class OffsetResetForPopIT extends BaseConf {
             long start = System.currentTimeMillis();
             while (System.currentTimeMillis() - start <= 30 * 1000L) {
                 try {
-                    PopResult popResult = consumer.popOrderly(brokerController1.getBrokerAddr(), mq);
+                    PopResult popResult = consumer.popOrderly(broker1.getBrokerAddr(), mq);
                     if (popResult == null || popResult.getMsgFoundList() == null) {
                         continue;
                     }

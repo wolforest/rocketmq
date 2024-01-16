@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.test.autoswitchrole;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.slave.ReplicasManager;
 import org.apache.rocketmq.common.app.config.ControllerConfig;
 import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
@@ -63,8 +63,8 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
 
     private static ControllerConfig controllerConfig;
 
-    private BrokerController brokerController1;
-    private BrokerController brokerController2;
+    private Broker broker1;
+    private Broker broker2;
     private Random random = new Random();
 
     @BeforeClass
@@ -97,18 +97,18 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
 
     public void initBroker(int mappedFileSize, String brokerName) throws Exception {
 
-        this.brokerController1 = startBroker(nameserverAddress, controllerAddress, brokerName, 1, nextPort(), nextPort(), nextPort(), BrokerRole.SYNC_MASTER, mappedFileSize);
-        this.brokerController2 = startBroker(nameserverAddress, controllerAddress, brokerName, 2, nextPort(), nextPort(), nextPort(), BrokerRole.SLAVE, mappedFileSize);
+        this.broker1 = startBroker(nameserverAddress, controllerAddress, brokerName, 1, nextPort(), nextPort(), nextPort(), BrokerRole.SYNC_MASTER, mappedFileSize);
+        this.broker2 = startBroker(nameserverAddress, controllerAddress, brokerName, 2, nextPort(), nextPort(), nextPort(), BrokerRole.SLAVE, mappedFileSize);
         // Wait slave connecting to master
-        assertTrue(waitSlaveReady(this.brokerController2.getMessageStore()));
+        assertTrue(waitSlaveReady(this.broker2.getMessageStore()));
         Thread.sleep(1000);
     }
 
     public void mockData(String topic) throws Exception {
-        final MessageStore messageStore = brokerController1.getMessageStore();
+        final MessageStore messageStore = broker1.getMessageStore();
         putMessage(messageStore, topic);
         // Check slave message
-        checkMessage(brokerController2.getMessageStore(), topic, 10, 0);
+        checkMessage(broker2.getMessageStore(), topic, 10, 0);
     }
 
     public boolean waitSlaveReady(MessageStore messageStore) throws InterruptedException {
@@ -134,14 +134,14 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
         mockData(topic);
 
         // Check SyncStateSet
-        final ReplicasManager replicasManager = brokerController1.getBrokerClusterService().getReplicasManager();
+        final ReplicasManager replicasManager = broker1.getBrokerClusterService().getReplicasManager();
         SyncStateSet syncStateSet = replicasManager.getSyncStateSet();
         assertEquals(2, syncStateSet.getSyncStateSet().size());
 
         // Shutdown controller2
         ScheduledExecutorService singleThread = Executors.newSingleThreadScheduledExecutor();
         while (!singleThread.awaitTermination(6 * 1000, TimeUnit.MILLISECONDS)) {
-            this.brokerController2.shutdown();
+            this.broker2.shutdown();
             singleThread.shutdown();
         }
 
@@ -155,32 +155,32 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
         String topic = "Topic-" + AutoSwitchRoleIntegrationTest.class.getSimpleName() + random.nextInt(65535);
         String brokerName = "Broker-" + AutoSwitchRoleIntegrationTest.class.getSimpleName() + random.nextInt(65535);
         initBroker(DEFAULT_FILE_SIZE, brokerName);
-        int listenPort = brokerController1.getBrokerConfig().getListenPort();
-        int nettyPort = brokerController1.getNettyServerConfig().getListenPort();
+        int listenPort = broker1.getBrokerConfig().getListenPort();
+        int nettyPort = broker1.getNettyServerConfig().getListenPort();
         mockData(topic);
 
         // Let master shutdown
-        brokerController1.shutdown();
-        brokerList.remove(this.brokerController1);
+        broker1.shutdown();
+        brokerList.remove(this.broker1);
         Thread.sleep(6000);
 
         // The slave should change to master
-        assertTrue(brokerController2.getBrokerClusterService().getReplicasManager().isMasterState());
-        assertEquals(brokerController2.getBrokerClusterService().getReplicasManager().getMasterEpoch(), 2);
+        assertTrue(broker2.getBrokerClusterService().getReplicasManager().isMasterState());
+        assertEquals(broker2.getBrokerClusterService().getReplicasManager().getMasterEpoch(), 2);
 
         // Restart old master, it should be slave
-        brokerController1 = startBroker(nameserverAddress, controllerAddress, brokerName, 1, nextPort(), listenPort, nettyPort, BrokerRole.SLAVE, DEFAULT_FILE_SIZE);
-        waitSlaveReady(brokerController1.getMessageStore());
+        broker1 = startBroker(nameserverAddress, controllerAddress, brokerName, 1, nextPort(), listenPort, nettyPort, BrokerRole.SLAVE, DEFAULT_FILE_SIZE);
+        waitSlaveReady(broker1.getMessageStore());
 
-        assertFalse(brokerController1.getBrokerClusterService().getReplicasManager().isMasterState());
-        assertEquals(brokerController1.getBrokerClusterService().getReplicasManager().getMasterAddress(), brokerController2.getBrokerClusterService().getReplicasManager().getBrokerAddress());
+        assertFalse(broker1.getBrokerClusterService().getReplicasManager().isMasterState());
+        assertEquals(broker1.getBrokerClusterService().getReplicasManager().getMasterAddress(), broker2.getBrokerClusterService().getReplicasManager().getBrokerAddress());
 
         // Put another batch messages
-        final MessageStore messageStore = brokerController2.getMessageStore();
+        final MessageStore messageStore = broker2.getMessageStore();
         putMessage(messageStore, topic);
 
         // Check slave message
-        checkMessage(brokerController1.getMessageStore(), topic, 20, 0);
+        checkMessage(broker1.getMessageStore(), topic, 20, 0);
         shutdownAndClearBroker();
     }
 
@@ -190,25 +190,25 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
         String topic = "Topic-" + AutoSwitchRoleIntegrationTest.class.getSimpleName() + random.nextInt(65535);
         String brokerName = "Broker-" + AutoSwitchRoleIntegrationTest.class.getSimpleName() + random.nextInt(65535);
         int oldPort = nextPort();
-        this.brokerController1 = startBroker(nameserverAddress, controllerAddress, brokerName, 1, nextPort(), oldPort, oldPort, BrokerRole.SYNC_MASTER, DEFAULT_FILE_SIZE);
+        this.broker1 = startBroker(nameserverAddress, controllerAddress, brokerName, 1, nextPort(), oldPort, oldPort, BrokerRole.SYNC_MASTER, DEFAULT_FILE_SIZE);
         Thread.sleep(1000);
-        assertTrue(brokerController1.getBrokerClusterService().getReplicasManager().isMasterState());
-        assertEquals(brokerController1.getBrokerClusterService().getReplicasManager().getMasterEpoch(), 1);
+        assertTrue(broker1.getBrokerClusterService().getReplicasManager().isMasterState());
+        assertEquals(broker1.getBrokerClusterService().getReplicasManager().getMasterEpoch(), 1);
 
         // Let master shutdown
-        brokerController1.shutdown();
-        brokerList.remove(this.brokerController1);
+        broker1.shutdown();
+        brokerList.remove(this.broker1);
         Thread.sleep(6000);
 
         // Restart with changed address
         int newPort = nextPort();
-        this.brokerController1 = startBroker(nameserverAddress, controllerAddress, brokerName, 1, nextPort(), newPort, newPort, BrokerRole.SYNC_MASTER, DEFAULT_FILE_SIZE);
+        this.broker1 = startBroker(nameserverAddress, controllerAddress, brokerName, 1, nextPort(), newPort, newPort, BrokerRole.SYNC_MASTER, DEFAULT_FILE_SIZE);
         Thread.sleep(1000);
 
         // Check broker id
-        assertEquals(1, brokerController1.getBrokerClusterService().getReplicasManager().getBrokerControllerId().longValue());
+        assertEquals(1, broker1.getBrokerClusterService().getReplicasManager().getBrokerControllerId().longValue());
         // Check role
-        assertTrue(brokerController1.getBrokerClusterService().getReplicasManager().isMasterState());
+        assertTrue(broker1.getBrokerClusterService().getReplicasManager().isMasterState());
 
         // check ip address
         RemotingCommand remotingCommand = controllerManager.getController().getReplicaInfo(new GetReplicaInfoRequestHeader(brokerName)).get(500, TimeUnit.MILLISECONDS);
@@ -224,15 +224,15 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
         String brokerName = "Broker-" + AutoSwitchRoleIntegrationTest.class.getSimpleName() + random.nextInt();
         initBroker(DEFAULT_FILE_SIZE, brokerName);
         // Put message from 0 to 9
-        putMessage(this.brokerController1.getMessageStore(), topic);
-        checkMessage(this.brokerController2.getMessageStore(), topic, 10, 0);
+        putMessage(this.broker1.getMessageStore(), topic);
+        checkMessage(this.broker2.getMessageStore(), topic, 10, 0);
 
         // Shutdown Controller
         controllerManager.shutdown();
 
         // Put message from 10 to 19
-        putMessage(this.brokerController1.getMessageStore(), topic);
-        checkMessage(this.brokerController2.getMessageStore(), topic, 20, 0);
+        putMessage(this.broker1.getMessageStore(), topic);
+        checkMessage(this.broker2.getMessageStore(), topic, 20, 0);
 
         initAndStartControllerManager();
     }
@@ -244,10 +244,10 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
         initBroker(DEFAULT_FILE_SIZE, brokerName);
         mockData(topic);
 
-        BrokerController broker3 = startBroker(nameserverAddress, controllerAddress, brokerName, 3, nextPort(), nextPort(), nextPort(), BrokerRole.SLAVE, DEFAULT_FILE_SIZE);
+        Broker broker3 = startBroker(nameserverAddress, controllerAddress, brokerName, 3, nextPort(), nextPort(), nextPort(), BrokerRole.SLAVE, DEFAULT_FILE_SIZE);
         waitSlaveReady(broker3.getMessageStore());
         checkMessage(broker3.getMessageStore(), topic, 10, 0);
-        putMessage(this.brokerController1.getMessageStore(), topic);
+        putMessage(this.broker1.getMessageStore(), topic);
         checkMessage(broker3.getMessageStore(), topic, 20, 0);
         shutdownAndClearBroker();
     }
@@ -260,30 +260,30 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
         // Noted that 10 msg 's total size = 1570, and if init the mappedFileSize = 1700, one file only be used to store 10 msg.
         initBroker(1700, brokerName);
         // Step1: Put message
-        putMessage(this.brokerController1.getMessageStore(), topic);
-        checkMessage(this.brokerController2.getMessageStore(), topic, 10, 0);
+        putMessage(this.broker1.getMessageStore(), topic);
+        checkMessage(this.broker2.getMessageStore(), topic, 10, 0);
 
         // Step2: shutdown broker1, broker2 as master
-        brokerController1.shutdown();
-        brokerList.remove(brokerController1);
+        broker1.shutdown();
+        brokerList.remove(broker1);
         Thread.sleep(5000);
 
-        assertTrue(brokerController2.getBrokerClusterService().getReplicasManager().isMasterState());
-        assertEquals(brokerController2.getBrokerClusterService().getReplicasManager().getMasterEpoch(), 2);
+        assertTrue(broker2.getBrokerClusterService().getReplicasManager().isMasterState());
+        assertEquals(broker2.getBrokerClusterService().getReplicasManager().getMasterEpoch(), 2);
 
         // Step3: add broker3
-        BrokerController broker3 = startBroker(nameserverAddress, controllerAddress, brokerName, 3, nextPort(), nextPort(), nextPort(), BrokerRole.SLAVE, 1700);
+        Broker broker3 = startBroker(nameserverAddress, controllerAddress, brokerName, 3, nextPort(), nextPort(), nextPort(), BrokerRole.SLAVE, 1700);
         waitSlaveReady(broker3.getMessageStore());
         checkMessage(broker3.getMessageStore(), topic, 10, 0);
 
         // Step4: put another batch message
         // Master: <Epoch1, 0, 1570> <Epoch2, 1570, 3270>
-        putMessage(this.brokerController2.getMessageStore(), topic);
+        putMessage(this.broker2.getMessageStore(), topic);
         checkMessage(broker3.getMessageStore(), topic, 20, 0);
 
         // Step5: Check file position, each epoch will be stored on one file(Because fileSize = 1700, which equal to 10 msg size);
         // So epoch1 was stored in firstFile, epoch2 was stored in second file, the lastFile was empty.
-        final MessageStore broker2MessageStore = this.brokerController2.getMessageStore();
+        final MessageStore broker2MessageStore = this.broker2.getMessageStore();
         final MappedFileQueue fileQueue = broker2MessageStore.getCommitLog().getMappedFileQueue();
         assertEquals(2, fileQueue.getTotalFileSize() / 1700);
 
@@ -293,19 +293,19 @@ public class AutoSwitchRoleIntegrationTest extends AutoSwitchRoleBase {
         fileQueue.retryDeleteFirstFile(1000);
         assertEquals(broker2MessageStore.getCommitLog().getMinOffset(), 1700);
 
-        final AutoSwitchHAService haService = (AutoSwitchHAService) this.brokerController2.getMessageStore().getHaService();
+        final AutoSwitchHAService haService = (AutoSwitchHAService) this.broker2.getMessageStore().getHaService();
         haService.truncateEpochFilePrefix(1570);
         checkMessage(broker2MessageStore, topic, 10, 10);
 
         // Step6, start broker4, link to broker2, it should sync msg from epoch2(offset = 1700).
-        BrokerController broker4 = startBroker(nameserverAddress, controllerAddress, brokerName, 4, nextPort(), nextPort(), nextPort(), BrokerRole.SLAVE, 1700);
+        Broker broker4 = startBroker(nameserverAddress, controllerAddress, brokerName, 4, nextPort(), nextPort(), nextPort(), BrokerRole.SLAVE, 1700);
         waitSlaveReady(broker4.getMessageStore());
         checkMessage(broker4.getMessageStore(), topic, 10, 10);
         shutdownAndClearBroker();
     }
 
     public void shutdownAndClearBroker() throws InterruptedException {
-        for (BrokerController controller : brokerList) {
+        for (Broker controller : brokerList) {
             controller.shutdown();
             IOUtils.deleteFile(new File(controller.getMessageStoreConfig().getStorePathRootDir()));
         }

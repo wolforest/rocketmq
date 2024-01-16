@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
@@ -55,7 +55,7 @@ public class AutoSwitchRoleBase {
     private static final String STORE_PATH_ROOT_DIR = STORE_PATH_ROOT_PARENT_DIR + File.separator + "store";
     private static final String STORE_MESSAGE = "Once, there was a chance for me!";
     private static final byte[] MESSAGE_BODY = STORE_MESSAGE.getBytes();
-    protected static List<BrokerController> brokerList;
+    protected static List<Broker> brokerList;
     private static SocketAddress bornHost;
     private static SocketAddress storeHost;
     private static int number = 0;
@@ -96,7 +96,7 @@ public class AutoSwitchRoleBase {
         return port;
     }
 
-    public BrokerController startBroker(String namesrvAddress, String controllerAddress, String brokerName,
+    public Broker startBroker(String namesrvAddress, String controllerAddress, String brokerName,
         int brokerId, int haPort,
         int brokerListenPort,
         int nettyListenPort, BrokerRole expectedRole, int mappedFileSize) throws Exception {
@@ -114,12 +114,12 @@ public class AutoSwitchRoleBase {
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
         nettyServerConfig.setListenPort(nettyListenPort);
 
-        final BrokerController brokerController = new BrokerController(brokerConfig, nettyServerConfig, new NettyClientConfig(), storeConfig);
-        assertTrue(brokerController.initialize());
-        brokerController.start();
-        brokerList.add(brokerController);
-        await().atMost(20, TimeUnit.SECONDS).until(() -> (expectedRole == BrokerRole.SYNC_MASTER) == brokerController.getBrokerClusterService().getReplicasManager().isMasterState());
-        return brokerController;
+        final Broker broker = new Broker(brokerConfig, nettyServerConfig, new NettyClientConfig(), storeConfig);
+        assertTrue(broker.initialize());
+        broker.start();
+        brokerList.add(broker);
+        await().atMost(20, TimeUnit.SECONDS).until(() -> (expectedRole == BrokerRole.SYNC_MASTER) == broker.getBrokerClusterService().getReplicasManager().isMasterState());
+        return broker;
     }
 
     protected MessageStoreConfig buildMessageStoreConfig(final String brokerDir, final int haPort,

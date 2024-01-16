@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.metadata.loadbalance;
 
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
@@ -25,7 +25,7 @@ import org.apache.rocketmq.remoting.protocol.body.SetMessageRequestModeRequestBo
 
 public class MessageRequestModeManager extends ConfigManager {
 
-    private transient BrokerController brokerController;
+    private transient Broker broker;
 
     private ConcurrentHashMap<String/*topic*/, ConcurrentHashMap<String/*consumerGroup*/, SetMessageRequestModeRequestBody>>
         messageRequestModeMap = new ConcurrentHashMap<>();
@@ -34,8 +34,8 @@ public class MessageRequestModeManager extends ConfigManager {
         // empty construct for decode
     }
 
-    public MessageRequestModeManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public MessageRequestModeManager(Broker broker) {
+        this.broker = broker;
     }
 
     public void setMessageRequestMode(String topic, String consumerGroup, SetMessageRequestModeRequestBody requestBody) {
@@ -75,7 +75,7 @@ public class MessageRequestModeManager extends ConfigManager {
 
     @Override
     public String configFilePath() {
-        return BrokerPathConfigHelper.getMessageRequestModePath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
+        return BrokerPathConfigHelper.getMessageRequestModePath(this.broker.getMessageStoreConfig().getStorePathRootDir());
     }
 
     @Override

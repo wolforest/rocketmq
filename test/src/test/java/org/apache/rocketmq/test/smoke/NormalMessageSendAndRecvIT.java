@@ -126,28 +126,28 @@ public class NormalMessageSendAndRecvIT extends BaseConf {
 
     void resetStoreConfigWithEnableBuildConsumeQueueConcurrently(boolean enableBuildConsumeQueueConcurrently) {
         {
-            brokerController1.shutdown();
-            MessageStoreConfig storeConfig = brokerController1.getMessageStoreConfig();
-            BrokerConfig brokerConfig = brokerController1.getBrokerConfig();
+            broker1.shutdown();
+            MessageStoreConfig storeConfig = broker1.getMessageStoreConfig();
+            BrokerConfig brokerConfig = broker1.getBrokerConfig();
             storeConfig.setEnableBuildConsumeQueueConcurrently(enableBuildConsumeQueueConcurrently);
-            brokerController1 = IntegrationTestBase.createAndStartBroker(storeConfig, brokerConfig);
+            broker1 = IntegrationTestBase.createAndStartBroker(storeConfig, brokerConfig);
         }
         {
-            brokerController2.shutdown();
-            MessageStoreConfig storeConfig = brokerController2.getMessageStoreConfig();
-            BrokerConfig brokerConfig = brokerController2.getBrokerConfig();
+            broker2.shutdown();
+            MessageStoreConfig storeConfig = broker2.getMessageStoreConfig();
+            BrokerConfig brokerConfig = broker2.getBrokerConfig();
             storeConfig.setEnableBuildConsumeQueueConcurrently(enableBuildConsumeQueueConcurrently);
-            brokerController2 = IntegrationTestBase.createAndStartBroker(storeConfig, brokerConfig);
+            broker2 = IntegrationTestBase.createAndStartBroker(storeConfig, brokerConfig);
         }
         {
-            brokerController3.shutdown();
-            MessageStoreConfig storeConfig = brokerController3.getMessageStoreConfig();
-            BrokerConfig brokerConfig = brokerController3.getBrokerConfig();
+            broker3.shutdown();
+            MessageStoreConfig storeConfig = broker3.getMessageStoreConfig();
+            BrokerConfig brokerConfig = broker3.getBrokerConfig();
             storeConfig.setEnableBuildConsumeQueueConcurrently(enableBuildConsumeQueueConcurrently);
-            brokerController3 = IntegrationTestBase.createAndStartBroker(storeConfig, brokerConfig);
+            broker3 = IntegrationTestBase.createAndStartBroker(storeConfig, brokerConfig);
         }
-        brokerControllerList = ImmutableList.of(brokerController1, brokerController2, brokerController3);
-        brokerControllerMap = brokerControllerList.stream().collect(
+        brokerList = ImmutableList.of(broker1, broker2, broker3);
+        brokerControllerMap = brokerList.stream().collect(
                 Collectors.toMap(input -> input.getBrokerConfig().getBrokerName(), Function.identity()));
     }
 

@@ -57,7 +57,7 @@ public class BatchAckIT extends BasePop {
 
     @Before
     public void setUp() {
-        brokerAddr = brokerController1.getBrokerAddr();
+        brokerAddr = broker1.getBrokerAddr();
         topic = MQRandomUtils.getRandomTopic();
         group = initConsumerGroup();
         IntegrationTestBase.initTopic(topic, NAMESRV_ADDR, BROKER1_NAME, 8, CQType.SimpleCQ, TopicMessageType.NORMAL);
@@ -73,8 +73,8 @@ public class BatchAckIT extends BasePop {
 
     @Test
     public void testBatchAckNormallyWithPopBuffer() throws Throwable {
-        brokerController1.getBrokerConfig().setEnablePopBufferMerge(true);
-        brokerController2.getBrokerConfig().setEnablePopBufferMerge(true);
+        broker1.getBrokerConfig().setEnablePopBufferMerge(true);
+        broker2.getBrokerConfig().setEnablePopBufferMerge(true);
 
         testBatchAck(() -> {
             try {
@@ -87,8 +87,8 @@ public class BatchAckIT extends BasePop {
 
     @Test
     public void testBatchAckNormallyWithOutPopBuffer() throws Throwable {
-        brokerController1.getBrokerConfig().setEnablePopBufferMerge(false);
-        brokerController2.getBrokerConfig().setEnablePopBufferMerge(false);
+        broker1.getBrokerConfig().setEnablePopBufferMerge(false);
+        broker2.getBrokerConfig().setEnablePopBufferMerge(false);
 
         testBatchAck(() -> {
             try {

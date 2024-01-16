@@ -25,7 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.topic.TopicQueueMappingManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingDetail;
@@ -44,19 +44,19 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class TopicQueueMappingManagerTest {
     @Mock
-    private BrokerController brokerController;
+    private Broker broker;
     private static final String BROKER1_NAME = "broker1";
 
     @Before
     public void before() {
         BrokerConfig brokerConfig = new BrokerConfig();
         brokerConfig.setBrokerName(BROKER1_NAME);
-        when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
+        when(broker.getBrokerConfig()).thenReturn(brokerConfig);
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setStorePathRootDir(System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test");
         messageStoreConfig.setDeleteWhen("01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23;00");
-        when(brokerController.getMessageStoreConfig()).thenReturn(messageStoreConfig);
+        when(broker.getMessageStoreConfig()).thenReturn(messageStoreConfig);
     }
 
 
@@ -89,7 +89,7 @@ public class TopicQueueMappingManagerTest {
         }
 
         {
-            topicQueueMappingManager = new TopicQueueMappingManager(brokerController);
+            topicQueueMappingManager = new TopicQueueMappingManager(broker);
             Assert.assertTrue(topicQueueMappingManager.load());
             Assert.assertEquals(0, topicQueueMappingManager.getTopicQueueMappingTable().size());
             for (TopicQueueMappingDetail mappingDetail : mappingDetailMap.values()) {
@@ -101,7 +101,7 @@ public class TopicQueueMappingManagerTest {
         }
 
         {
-            topicQueueMappingManager = new TopicQueueMappingManager(brokerController);
+            topicQueueMappingManager = new TopicQueueMappingManager(broker);
             Assert.assertTrue(topicQueueMappingManager.load());
             Assert.assertEquals(mappingDetailMap.size(), topicQueueMappingManager.getTopicQueueMappingTable().size());
             for (TopicQueueMappingDetail topicQueueMappingDetail: topicQueueMappingManager.getTopicQueueMappingTable().values()) {

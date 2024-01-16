@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ThreadUtils;
@@ -33,7 +33,7 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 
 public class DefaultConsumerIdsChangeListener implements ConsumerIdsChangeListener {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final int cacheSize = 8096;
 
     private final ScheduledExecutorService scheduledExecutorService =  ThreadUtils.newScheduledThreadPool(1,
@@ -41,10 +41,10 @@ public class DefaultConsumerIdsChangeListener implements ConsumerIdsChangeListen
 
     private ConcurrentHashMap<String,List<Channel>> consumerChannelMap = new ConcurrentHashMap<>(cacheSize);
 
-    public DefaultConsumerIdsChangeListener(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public DefaultConsumerIdsChangeListener(Broker broker) {
+        this.broker = broker;
 
-        scheduledExecutorService.scheduleAtFixedRate(new AbstractBrokerRunnable(brokerController.getBrokerConfig()) {
+        scheduledExecutorService.scheduleAtFixedRate(new AbstractBrokerRunnable(broker.getBrokerConfig()) {
             @Override
             public void run0() {
                 try {
@@ -68,10 +68,10 @@ public class DefaultConsumerIdsChangeListener implements ConsumerIdsChangeListen
                     return;
                 }
                 List<Channel> channels = (List<Channel>) args[0];
-                if (channels != null && brokerController.getBrokerConfig().isNotifyConsumerIdsChangedEnable()) {
-                    if (this.brokerController.getBrokerConfig().isRealTimeNotifyConsumerChange()) {
+                if (channels != null && broker.getBrokerConfig().isNotifyConsumerIdsChangedEnable()) {
+                    if (this.broker.getBrokerConfig().isRealTimeNotifyConsumerChange()) {
                         for (Channel chl : channels) {
-                            this.brokerController.getBroker2Client().notifyConsumerIdsChanged(chl, group);
+                            this.broker.getBroker2Client().notifyConsumerIdsChanged(chl, group);
                         }
                     } else {
                         consumerChannelMap.put(group, channels);
@@ -79,14 +79,14 @@ public class DefaultConsumerIdsChangeListener implements ConsumerIdsChangeListen
                 }
                 break;
             case UNREGISTER:
-                this.brokerController.getConsumerFilterManager().unRegister(group);
+                this.broker.getConsumerFilterManager().unRegister(group);
                 break;
             case REGISTER:
                 if (args == null || args.length < 1) {
                     return;
                 }
                 Collection<SubscriptionData> subscriptionDataList = (Collection<SubscriptionData>) args[0];
-                this.brokerController.getConsumerFilterManager().register(group, subscriptionDataList);
+                this.broker.getConsumerFilterManager().register(group, subscriptionDataList);
                 break;
             case CLIENT_REGISTER:
             case CLIENT_UNREGISTER:
@@ -109,9 +109,9 @@ public class DefaultConsumerIdsChangeListener implements ConsumerIdsChangeListen
             String consumerId = entry.getKey();
             List<Channel> channelList = entry.getValue();
             try {
-                if (channelList != null && brokerController.getBrokerConfig().isNotifyConsumerIdsChangedEnable()) {
+                if (channelList != null && broker.getBrokerConfig().isNotifyConsumerIdsChangedEnable()) {
                     for (Channel chl : channelList) {
-                        this.brokerController.getBroker2Client().notifyConsumerIdsChanged(chl, consumerId);
+                        this.broker.getBroker2Client().notifyConsumerIdsChanged(chl, consumerId);
                     }
                 }
             } catch (Exception e) {

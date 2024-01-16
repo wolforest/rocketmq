@@ -30,9 +30,9 @@ public class CreateAndUpdateTopicIT extends BaseConf {
     @Test
     public void testCreateOrUpdateTopic_EnableSingleTopicRegistration() {
         String topic = "test-topic-without-broker-registration";
-        brokerController1.getBrokerConfig().setEnableSingleTopicRegister(true);
-        brokerController2.getBrokerConfig().setEnableSingleTopicRegister(true);
-        brokerController3.getBrokerConfig().setEnableSingleTopicRegister(true);
+        broker1.getBrokerConfig().setEnableSingleTopicRegister(true);
+        broker2.getBrokerConfig().setEnableSingleTopicRegister(true);
+        broker3.getBrokerConfig().setEnableSingleTopicRegister(true);
 
         final boolean createResult = MQAdminTestUtils.createTopic(NAMESRV_ADDR, CLUSTER_NAME, topic, 8, null);
         assertThat(createResult).isTrue();
@@ -41,18 +41,18 @@ public class CreateAndUpdateTopicIT extends BaseConf {
         assertThat(route.getBrokerDatas()).hasSize(3);
         assertThat(route.getQueueDatas()).hasSize(3);
 
-        brokerController1.getBrokerConfig().setEnableSingleTopicRegister(false);
-        brokerController2.getBrokerConfig().setEnableSingleTopicRegister(false);
-        brokerController3.getBrokerConfig().setEnableSingleTopicRegister(false);
+        broker1.getBrokerConfig().setEnableSingleTopicRegister(false);
+        broker2.getBrokerConfig().setEnableSingleTopicRegister(false);
+        broker3.getBrokerConfig().setEnableSingleTopicRegister(false);
 
     }
 
     @Test
     public void testDeleteTopicFromNameSrvWithBrokerRegistration() {
         namesrvController.getNamesrvConfig().setDeleteTopicWithBrokerRegistration(true);
-        brokerController1.getBrokerConfig().setEnableSingleTopicRegister(true);
-        brokerController2.getBrokerConfig().setEnableSingleTopicRegister(true);
-        brokerController3.getBrokerConfig().setEnableSingleTopicRegister(true);
+        broker1.getBrokerConfig().setEnableSingleTopicRegister(true);
+        broker2.getBrokerConfig().setEnableSingleTopicRegister(true);
+        broker3.getBrokerConfig().setEnableSingleTopicRegister(true);
 
         String testTopic1 = "test-topic-keep-route";
         String testTopic2 = "test-topic-delete-route";
@@ -71,7 +71,7 @@ public class CreateAndUpdateTopicIT extends BaseConf {
         MQAdminTestUtils.deleteTopicFromBrokerOnly(NAMESRV_ADDR, BROKER1_NAME, testTopic2);
 
         // Deletion is lazy, trigger broker registration
-        brokerController1.getBrokerServiceRegistry().registerBrokerAll(false, false, true);
+        broker1.getBrokerServiceRegistry().registerBrokerAll(false, false, true);
 
         // The route info of testTopic2 will be removed from broker1 after the registration
         route = MQAdminTestUtils.examineTopicRouteInfo(NAMESRV_ADDR, testTopic2);
@@ -79,18 +79,18 @@ public class CreateAndUpdateTopicIT extends BaseConf {
         assertThat(route.getQueueDatas().get(0).getBrokerName()).isEqualTo(BROKER2_NAME);
         assertThat(route.getQueueDatas().get(1).getBrokerName()).isEqualTo(BROKER3_NAME);
 
-        brokerController1.getBrokerConfig().setEnableSingleTopicRegister(false);
-        brokerController2.getBrokerConfig().setEnableSingleTopicRegister(false);
-        brokerController3.getBrokerConfig().setEnableSingleTopicRegister(false);
+        broker1.getBrokerConfig().setEnableSingleTopicRegister(false);
+        broker2.getBrokerConfig().setEnableSingleTopicRegister(false);
+        broker3.getBrokerConfig().setEnableSingleTopicRegister(false);
         namesrvController.getNamesrvConfig().setDeleteTopicWithBrokerRegistration(false);
     }
 
     @Test
     public void testStaticTopicNotAffected() throws Exception {
         namesrvController.getNamesrvConfig().setDeleteTopicWithBrokerRegistration(true);
-        brokerController1.getBrokerConfig().setEnableSingleTopicRegister(true);
-        brokerController2.getBrokerConfig().setEnableSingleTopicRegister(true);
-        brokerController3.getBrokerConfig().setEnableSingleTopicRegister(true);
+        broker1.getBrokerConfig().setEnableSingleTopicRegister(true);
+        broker2.getBrokerConfig().setEnableSingleTopicRegister(true);
+        broker3.getBrokerConfig().setEnableSingleTopicRegister(true);
 
         String testTopic = "test-topic-not-affected";
         String testStaticTopic = "test-static-topic";
@@ -107,30 +107,30 @@ public class CreateAndUpdateTopicIT extends BaseConf {
         assertThat(route.getBrokerDatas()).hasSize(3);
         assertThat(route.getQueueDatas()).hasSize(3);
 
-        brokerController1.getBrokerConfig().setEnableSingleTopicRegister(false);
-        brokerController2.getBrokerConfig().setEnableSingleTopicRegister(false);
-        brokerController3.getBrokerConfig().setEnableSingleTopicRegister(false);
+        broker1.getBrokerConfig().setEnableSingleTopicRegister(false);
+        broker2.getBrokerConfig().setEnableSingleTopicRegister(false);
+        broker3.getBrokerConfig().setEnableSingleTopicRegister(false);
         namesrvController.getNamesrvConfig().setDeleteTopicWithBrokerRegistration(false);
     }
 
     @Test
     public void testCreateOrUpdateTopic_EnableSplitRegistration() {
-        brokerController1.getBrokerConfig().setEnableSplitRegistration(true);
-        brokerController2.getBrokerConfig().setEnableSplitRegistration(true);
-        brokerController3.getBrokerConfig().setEnableSplitRegistration(true);
+        broker1.getBrokerConfig().setEnableSplitRegistration(true);
+        broker2.getBrokerConfig().setEnableSplitRegistration(true);
+        broker3.getBrokerConfig().setEnableSplitRegistration(true);
 
         String testTopic = "test-topic-";
 
         for (int i = 0; i < 10; i++) {
             TopicConfig topicConfig = new TopicConfig(testTopic + i, 8, 8);
-            brokerController1.getTopicConfigManager().updateTopicConfig(topicConfig);
-            brokerController2.getTopicConfigManager().updateTopicConfig(topicConfig);
-            brokerController3.getTopicConfigManager().updateTopicConfig(topicConfig);
+            broker1.getTopicConfigManager().updateTopicConfig(topicConfig);
+            broker2.getTopicConfigManager().updateTopicConfig(topicConfig);
+            broker3.getTopicConfigManager().updateTopicConfig(topicConfig);
         }
 
-        brokerController1.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
-        brokerController2.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
-        brokerController3.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
+        broker1.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
+        broker2.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
+        broker3.getBrokerServiceRegistry().registerBrokerAll(false, true, true);
 
         for (int i = 0; i < 10; i++) {
             TopicRouteData route = MQAdminTestUtils.examineTopicRouteInfo(NAMESRV_ADDR, testTopic + i);
@@ -138,8 +138,8 @@ public class CreateAndUpdateTopicIT extends BaseConf {
             assertThat(route.getQueueDatas()).hasSize(3);
         }
 
-        brokerController1.getBrokerConfig().setEnableSplitRegistration(false);
-        brokerController2.getBrokerConfig().setEnableSplitRegistration(false);
-        brokerController3.getBrokerConfig().setEnableSplitRegistration(false);
+        broker1.getBrokerConfig().setEnableSplitRegistration(false);
+        broker2.getBrokerConfig().setEnableSplitRegistration(false);
+        broker3.getBrokerConfig().setEnableSplitRegistration(false);
     }
 }

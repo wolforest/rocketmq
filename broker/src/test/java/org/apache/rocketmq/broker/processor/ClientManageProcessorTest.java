@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.List;
 import java.util.ArrayList;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.ClientManageProcessor;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
@@ -59,7 +59,7 @@ import static org.mockito.Mockito.when;
 public class ClientManageProcessorTest {
     private ClientManageProcessor clientManageProcessor;
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
     @Mock
     private ChannelHandlerContext handlerContext;
     @Mock
@@ -73,12 +73,12 @@ public class ClientManageProcessorTest {
     @Before
     public void init() {
         when(handlerContext.channel()).thenReturn(channel);
-        clientManageProcessor = new ClientManageProcessor(brokerController);
+        clientManageProcessor = new ClientManageProcessor(broker);
         clientChannelInfo = new ClientChannelInfo(channel, clientId, LanguageCode.JAVA, 100);
-        brokerController.getProducerManager().registerProducer(group, clientChannelInfo);
+        broker.getProducerManager().registerProducer(group, clientChannelInfo);
 
         ConsumerData consumerData = PullMessageProcessorTest.createConsumerData(group, topic);
-        brokerController.getConsumerManager().registerConsumer(
+        broker.getConsumerManager().registerConsumer(
             consumerData.getGroupName(),
             clientChannelInfo,
             consumerData.getConsumeType(),
@@ -90,8 +90,8 @@ public class ClientManageProcessorTest {
 
     @Test
     public void processRequest_UnRegisterProducer() throws Exception {
-        brokerController.getProducerManager().registerProducer(group, clientChannelInfo);
-        Map<Channel, ClientChannelInfo> channelMap = brokerController.getProducerManager().getGroupChannelTable().get(group);
+        broker.getProducerManager().registerProducer(group, clientChannelInfo);
+        Map<Channel, ClientChannelInfo> channelMap = broker.getProducerManager().getGroupChannelTable().get(group);
         assertThat(channelMap).isNotNull();
         assertThat(channelMap.get(channel)).isEqualTo(clientChannelInfo);
 
@@ -100,13 +100,13 @@ public class ClientManageProcessorTest {
         assertThat(response).isNotNull();
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
 
-        channelMap = brokerController.getProducerManager().getGroupChannelTable().get(group);
+        channelMap = broker.getProducerManager().getGroupChannelTable().get(group);
         assertThat(channelMap).isNull();
     }
 
     @Test
     public void processRequest_UnRegisterConsumer() throws RemotingCommandException {
-        ConsumerGroupInfo consumerGroupInfo = brokerController.getConsumerManager().getConsumerGroupInfo(group);
+        ConsumerGroupInfo consumerGroupInfo = broker.getConsumerManager().getConsumerGroupInfo(group);
         assertThat(consumerGroupInfo).isNotNull();
 
         RemotingCommand request = createUnRegisterConsumerCommand();
@@ -114,7 +114,7 @@ public class ClientManageProcessorTest {
         assertThat(response).isNotNull();
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
 
-        consumerGroupInfo = brokerController.getConsumerManager().getConsumerGroupInfo(group);
+        consumerGroupInfo = broker.getConsumerManager().getConsumerGroupInfo(group);
         assertThat(consumerGroupInfo).isNull();
     }
 
@@ -124,26 +124,26 @@ public class ClientManageProcessorTest {
         RemotingCommand response = clientManageProcessor.processRequest(handlerContext, request);
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
         assertThat(Boolean.parseBoolean(response.getExtFields().get(MQConstants.IS_SUB_CHANGE))).isFalse();
-        ConsumerGroupInfo consumerGroupInfo = brokerController.getConsumerManager().getConsumerGroupInfo(group);
+        ConsumerGroupInfo consumerGroupInfo = broker.getConsumerManager().getConsumerGroupInfo(group);
 
         RemotingCommand requestSimple = createHeartbeatCommand(true, "topicA");
         RemotingCommand responseSimple = clientManageProcessor.processRequest(handlerContext, requestSimple);
         assertThat(responseSimple.getCode()).isEqualTo(ResponseCode.SUCCESS);
         assertThat(Boolean.parseBoolean(responseSimple.getExtFields().get(MQConstants.IS_SUB_CHANGE))).isFalse();
-        ConsumerGroupInfo consumerGroupInfoSimple = brokerController.getConsumerManager().getConsumerGroupInfo(group);
+        ConsumerGroupInfo consumerGroupInfoSimple = broker.getConsumerManager().getConsumerGroupInfo(group);
         assertThat(consumerGroupInfoSimple).isEqualTo(consumerGroupInfo);
 
         request = createHeartbeatCommand(false, "topicB");
         response = clientManageProcessor.processRequest(handlerContext, request);
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
         assertThat(Boolean.parseBoolean(response.getExtFields().get(MQConstants.IS_SUB_CHANGE))).isTrue();
-        consumerGroupInfo = brokerController.getConsumerManager().getConsumerGroupInfo(group);
+        consumerGroupInfo = broker.getConsumerManager().getConsumerGroupInfo(group);
 
         requestSimple = createHeartbeatCommand(true, "topicB");
         responseSimple = clientManageProcessor.processRequest(handlerContext, requestSimple);
         assertThat(responseSimple.getCode()).isEqualTo(ResponseCode.SUCCESS);
         assertThat(Boolean.parseBoolean(responseSimple.getExtFields().get(MQConstants.IS_SUB_CHANGE))).isFalse();
-        consumerGroupInfoSimple = brokerController.getConsumerManager().getConsumerGroupInfo(group);
+        consumerGroupInfoSimple = broker.getConsumerManager().getConsumerGroupInfo(group);
         assertThat(consumerGroupInfoSimple).isEqualTo(consumerGroupInfo);
     }
 

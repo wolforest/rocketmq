@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.processor;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.AckMessageProcessor;
 import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
@@ -77,7 +77,7 @@ public class AckMessageProcessorTest {
     @Mock
     private PopServiceManager popServiceManager;
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
     @Mock
     private ChannelHandlerContext handlerContext;
     @Mock
@@ -99,14 +99,14 @@ public class AckMessageProcessorTest {
     @Before
     public void init() throws IllegalAccessException, NoSuchFieldException {
         clientInfo = new ClientChannelInfo(channel, "127.0.0.1", LanguageCode.JAVA, 0);
-        brokerController.setMessageStore(messageStore);
-        EscapeBridge escapeBridge = new EscapeBridge(brokerController);
-        Mockito.when(brokerController.getEscapeBridge()).thenReturn(escapeBridge);
+        broker.setMessageStore(messageStore);
+        EscapeBridge escapeBridge = new EscapeBridge(broker);
+        Mockito.when(broker.getEscapeBridge()).thenReturn(escapeBridge);
         Channel mockChannel = mock(Channel.class);
         when(handlerContext.channel()).thenReturn(mockChannel);
-        brokerController.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());
+        broker.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());
         ConsumerData consumerData = createConsumerData(group, topic);
-        brokerController.getConsumerManager().registerConsumer(
+        broker.getConsumerManager().registerConsumer(
                 consumerData.getGroupName(),
                 clientInfo,
                 consumerData.getConsumeType(),
@@ -114,12 +114,12 @@ public class AckMessageProcessorTest {
                 consumerData.getConsumeFromWhere(),
                 consumerData.getSubscriptionDataSet(),
                 false);
-        ackMessageProcessor = new AckMessageProcessor(brokerController);
+        ackMessageProcessor = new AckMessageProcessor(broker);
 
         when(messageStore.getMinOffsetInQueue(anyString(), anyInt())).thenReturn(MIN_OFFSET_IN_QUEUE);
         when(messageStore.getMaxOffsetInQueue(anyString(), anyInt())).thenReturn(MAX_OFFSET_IN_QUEUE);
-        when(brokerController.getBrokerNettyServer()).thenReturn(brokerNettyServer);
-        when(brokerController.getBrokerNettyServer().getPopServiceManager()).thenReturn(popServiceManager);
+        when(broker.getBrokerNettyServer()).thenReturn(brokerNettyServer);
+        when(broker.getBrokerNettyServer().getPopServiceManager()).thenReturn(popServiceManager);
     }
 
     @Test
@@ -127,7 +127,7 @@ public class AckMessageProcessorTest {
         when(messageStore.putMessage(any(MessageExtBrokerInner.class))).thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK)));
         PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
         when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(false);
-        when(brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
+        when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
 
         int queueId = 0;
         long queueOffset = 0;
@@ -265,7 +265,7 @@ public class AckMessageProcessorTest {
             // buffer addAk OK
             PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
             when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(true);
-            when(brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
+            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
 
             AckMessageRequestHeader requestHeader = new AckMessageRequestHeader();
             long ackOffset = MIN_OFFSET_IN_QUEUE + 10;
@@ -285,7 +285,7 @@ public class AckMessageProcessorTest {
             // buffer addAk fail
             PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
             when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(false);
-            when(brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
+            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
             // store putMessage OK
             PutMessageResult putMessageResult = new PutMessageResult(PutMessageStatus.PUT_OK, null);
             when(messageStore.putMessage(any())).thenReturn(putMessageResult);
@@ -311,7 +311,7 @@ public class AckMessageProcessorTest {
             // buffer addAk OK
             PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
             when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(true);
-            when(brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
+            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
 
             BatchAck bAck1 = new BatchAck();
             bAck1.setConsumerGroup(MQConstants.DEFAULT_CONSUMER_GROUP);
@@ -335,7 +335,7 @@ public class AckMessageProcessorTest {
             // buffer addAk fail
             PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
             when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(false);
-            when(brokerController.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
+            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
             // store putMessage OK
             PutMessageResult putMessageResult = new PutMessageResult(PutMessageStatus.PUT_OK, null);
             when(messageStore.putMessage(any())).thenReturn(putMessageResult);

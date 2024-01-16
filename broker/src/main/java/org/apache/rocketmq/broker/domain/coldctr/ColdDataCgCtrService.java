@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.utils.SystemClock;
@@ -58,9 +58,9 @@ public class ColdDataCgCtrService extends ServiceThread {
     private final MessageStoreConfig messageStoreConfig;
     private final ColdCtrStrategy coldCtrStrategy;
 
-    public ColdDataCgCtrService(BrokerController brokerController) {
-        this.brokerConfig = brokerController.getBrokerConfig();
-        this.messageStoreConfig = brokerController.getMessageStoreConfig();
+    public ColdDataCgCtrService(Broker broker) {
+        this.brokerConfig = broker.getBrokerConfig();
+        this.messageStoreConfig = broker.getMessageStoreConfig();
         this.coldCtrStrategy = brokerConfig.isUsePIDColdCtrStrategy() ? new PIDAdaptiveColdCtrStrategy(this, (long)(brokerConfig.getGlobalColdReadThreshold() * 0.8)) : new SimpleColdCtrStrategy(this);
     }
 

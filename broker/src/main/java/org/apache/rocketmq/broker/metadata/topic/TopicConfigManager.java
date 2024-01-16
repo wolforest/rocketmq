@@ -29,7 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import com.google.common.collect.ImmutableMap;
 
 import com.google.common.collect.Maps;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.common.domain.topic.KeyBuilder;
@@ -61,16 +61,16 @@ public class TopicConfigManager extends ConfigManager {
     private transient final Lock topicConfigTableLock = new ReentrantLock();
     protected ConcurrentMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>(1024);
     private final DataVersion dataVersion = new DataVersion();
-    protected transient BrokerController brokerController;
+    protected transient Broker broker;
 
     public TopicConfigManager() {}
 
-    public TopicConfigManager(BrokerController brokerController) {
-        this(brokerController, true);
+    public TopicConfigManager(Broker broker) {
+        this(broker, true);
     }
 
-    public TopicConfigManager(BrokerController brokerController, boolean init) {
-        this.brokerController = brokerController;
+    public TopicConfigManager(Broker broker, boolean init) {
+        this.broker = broker;
         if (init) {
             init();
         }
@@ -79,39 +79,39 @@ public class TopicConfigManager extends ConfigManager {
     protected void init() {
         addSystemTopic(TopicValidator.RMQ_SYS_SELF_TEST_TOPIC, 1, 1);
 
-        if (this.brokerController.getBrokerConfig().isAutoCreateTopicEnable()) {
+        if (this.broker.getBrokerConfig().isAutoCreateTopicEnable()) {
             addSystemTopic(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC,
-                this.brokerController.getBrokerConfig().getDefaultTopicQueueNums(),
-                this.brokerController.getBrokerConfig().getDefaultTopicQueueNums(),
+                this.broker.getBrokerConfig().getDefaultTopicQueueNums(),
+                this.broker.getBrokerConfig().getDefaultTopicQueueNums(),
                 PermName.PERM_INHERIT | PermName.PERM_READ | PermName.PERM_WRITE);
         }
 
         addSystemTopic(TopicValidator.RMQ_SYS_BENCHMARK_TOPIC, 1024, 1024);
 
-        addSystemTopic(this.brokerController.getBrokerConfig().getBrokerClusterName(), null, null,
-            getPerm(this.brokerController.getBrokerConfig().isClusterTopicEnable()));
+        addSystemTopic(this.broker.getBrokerConfig().getBrokerClusterName(), null, null,
+            getPerm(this.broker.getBrokerConfig().isClusterTopicEnable()));
 
-        addSystemTopic(this.brokerController.getBrokerConfig().getBrokerName(), 1, 1,
-            getPerm(this.brokerController.getBrokerConfig().isBrokerTopicEnable()));
+        addSystemTopic(this.broker.getBrokerConfig().getBrokerName(), 1, 1,
+            getPerm(this.broker.getBrokerConfig().isBrokerTopicEnable()));
 
         addSystemTopic(TopicValidator.RMQ_SYS_OFFSET_MOVED_EVENT, 1, 1);
 
         addSystemTopic(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, SCHEDULE_TOPIC_QUEUE_NUM, SCHEDULE_TOPIC_QUEUE_NUM);
 
-        if (this.brokerController.getBrokerConfig().isTraceTopicEnable()) {
-            addSystemTopic(this.brokerController.getBrokerConfig().getMsgTraceTopicName(), 1, 1);
+        if (this.broker.getBrokerConfig().isTraceTopicEnable()) {
+            addSystemTopic(this.broker.getBrokerConfig().getMsgTraceTopicName(), 1, 1);
         }
 
-        addSystemTopic(this.brokerController.getBrokerConfig().getBrokerClusterName() + "_" + MQConstants.REPLY_TOPIC_POSTFIX,
+        addSystemTopic(this.broker.getBrokerConfig().getBrokerClusterName() + "_" + MQConstants.REPLY_TOPIC_POSTFIX,
             1, 1);
 
         // PopAckConstants.REVIVE_TOPIC
-        addSystemTopic(KeyBuilder.buildClusterReviveTopic(this.brokerController.getBrokerConfig().getBrokerClusterName()),
-            this.brokerController.getBrokerConfig().getReviveQueueNum(),
-            this.brokerController.getBrokerConfig().getReviveQueueNum());
+        addSystemTopic(KeyBuilder.buildClusterReviveTopic(this.broker.getBrokerConfig().getBrokerClusterName()),
+            this.broker.getBrokerConfig().getReviveQueueNum(),
+            this.broker.getBrokerConfig().getReviveQueueNum());
 
         // sync broker member group topic
-        addSystemTopic(TopicValidator.SYNC_BROKER_MEMBER_GROUP_PREFIX + this.brokerController.getBrokerConfig().getBrokerName(),
+        addSystemTopic(TopicValidator.SYNC_BROKER_MEMBER_GROUP_PREFIX + this.broker.getBrokerConfig().getBrokerName(),
             1, 1, PermName.PERM_INHERIT);
 
         // TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC
@@ -185,7 +185,7 @@ public class TopicConfigManager extends ConfigManager {
                     TopicConfig defaultTopicConfig = getTopicConfig(defaultTopic);
                     if (defaultTopicConfig != null) {
                         if (defaultTopic.equals(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC)) {
-                            if (!this.brokerController.getBrokerConfig().isAutoCreateTopicEnable()) {
+                            if (!this.broker.getBrokerConfig().isAutoCreateTopicEnable()) {
                                 defaultTopicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
                             }
                         }
@@ -221,7 +221,7 @@ public class TopicConfigManager extends ConfigManager {
 
                         putTopicConfig(topicConfig);
 
-                        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+                        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
                         dataVersion.nextVersion(stateMachineVersion);
 
                         createNew = true;
@@ -268,7 +268,7 @@ public class TopicConfigManager extends ConfigManager {
                     }
                     log.info("Create new topic [{}] config:[{}]", topicConfig.getTopicName(), topicConfig);
                     putTopicConfig(topicConfig);
-                    long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+                    long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
                     dataVersion.nextVersion(stateMachineVersion);
                     createNew = true;
                     this.persist();
@@ -323,8 +323,8 @@ public class TopicConfigManager extends ConfigManager {
                 putTopicConfig(topicConfig);
                 createNew = true;
 
-                long stateMachineVersion = brokerController.getMessageStore() != null
-                    ? brokerController.getMessageStore().getStateMachineVersion()
+                long stateMachineVersion = broker.getMessageStore() != null
+                    ? broker.getMessageStore().getStateMachineVersion()
                     : 0;
                 dataVersion.nextVersion(stateMachineVersion);
 
@@ -366,7 +366,7 @@ public class TopicConfigManager extends ConfigManager {
                     log.info("create new topic {}", topicConfig);
                     putTopicConfig(topicConfig);
                     createNew = true;
-                    long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+                    long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
                     dataVersion.nextVersion(stateMachineVersion);
                     this.persist();
                 } finally {
@@ -402,7 +402,7 @@ public class TopicConfigManager extends ConfigManager {
 
         putTopicConfig(topicConfig);
 
-        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
         dataVersion.nextVersion(stateMachineVersion);
 
         this.persist();
@@ -428,7 +428,7 @@ public class TopicConfigManager extends ConfigManager {
 
         putTopicConfig(topicConfig);
 
-        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
         dataVersion.nextVersion(stateMachineVersion);
 
         this.persist();
@@ -458,7 +458,7 @@ public class TopicConfigManager extends ConfigManager {
             log.info("create new topic [{}]", topicConfig);
         }
 
-        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
         dataVersion.nextVersion(stateMachineVersion);
 
         this.persist(topicConfig.getTopicName(), topicConfig);
@@ -499,7 +499,7 @@ public class TopicConfigManager extends ConfigManager {
         }*/
 
         if (isChange) {
-            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+            long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
             dataVersion.nextVersion(stateMachineVersion);
             this.persist();
         }
@@ -527,7 +527,7 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         log.info("delete topic config OK, topic: {}", old);
-        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
         dataVersion.nextVersion(stateMachineVersion);
         this.persist();
     }
@@ -553,7 +553,7 @@ public class TopicConfigManager extends ConfigManager {
         topicConfigWrapper.setTopicConfigTable(topicConfigTable);
         topicConfigWrapper.setTopicQueueMappingInfoMap(topicQueueMappingInfoMap);
         topicConfigWrapper.setDataVersion(this.getDataVersion());
-        if (this.brokerController.getBrokerConfig().isEnableSplitRegistration()) {
+        if (this.broker.getBrokerConfig().isEnableSplitRegistration()) {
             this.getDataVersion().nextVersion();
         }
         return topicConfigWrapper;
@@ -566,7 +566,7 @@ public class TopicConfigManager extends ConfigManager {
 
     @Override
     public String configFilePath() {
-        return BrokerPathConfigHelper.getTopicConfigPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
+        return BrokerPathConfigHelper.getTopicConfigPath(this.broker.getMessageStoreConfig().getStorePathRootDir());
     }
 
     @Override
@@ -630,10 +630,10 @@ public class TopicConfigManager extends ConfigManager {
     }
 
     private void registerBrokerData(TopicConfig topicConfig) {
-        if (brokerController.getBrokerConfig().isEnableSingleTopicRegister()) {
-            this.brokerController.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
+        if (broker.getBrokerConfig().isEnableSingleTopicRegister()) {
+            this.broker.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
         } else {
-            this.brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, dataVersion);
+            this.broker.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, dataVersion);
         }
     }
 

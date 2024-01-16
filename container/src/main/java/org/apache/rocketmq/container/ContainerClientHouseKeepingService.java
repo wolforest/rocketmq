@@ -19,7 +19,7 @@ package org.apache.rocketmq.container;
 
 import io.netty.channel.Channel;
 import java.util.Collection;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.remoting.ChannelEventListener;
 
 public class ContainerClientHouseKeepingService implements ChannelEventListener {
@@ -58,7 +58,7 @@ public class ContainerClientHouseKeepingService implements ChannelEventListener 
         Collection<InnerBrokerController> masterBrokers = this.brokerContainer.getMasterBrokers();
         Collection<InnerSalveBrokerController> slaveBrokers = this.brokerContainer.getSlaveBrokers();
 
-        for (BrokerController masterBroker : masterBrokers) {
+        for (Broker masterBroker : masterBrokers) {
             brokerOperation(masterBroker, callbackCode, remoteAddr, channel);
         }
 
@@ -67,24 +67,24 @@ public class ContainerClientHouseKeepingService implements ChannelEventListener 
         }
     }
 
-    private void brokerOperation(BrokerController brokerController, CallbackCode callbackCode, String remoteAddr,
+    private void brokerOperation(Broker broker, CallbackCode callbackCode, String remoteAddr,
         Channel channel) {
         if (callbackCode == CallbackCode.CONNECT) {
-            brokerController.getBrokerStatsManager().incChannelConnectNum();
+            broker.getBrokerStatsManager().incChannelConnectNum();
             return;
         }
-        boolean removed = brokerController.getProducerManager().doChannelCloseEvent(remoteAddr, channel);
-        removed &= brokerController.getConsumerManager().doChannelCloseEvent(remoteAddr, channel);
+        boolean removed = broker.getProducerManager().doChannelCloseEvent(remoteAddr, channel);
+        removed &= broker.getConsumerManager().doChannelCloseEvent(remoteAddr, channel);
         if (removed) {
             switch (callbackCode) {
                 case CLOSE:
-                    brokerController.getBrokerStatsManager().incChannelCloseNum();
+                    broker.getBrokerStatsManager().incChannelCloseNum();
                     break;
                 case EXCEPTION:
-                    brokerController.getBrokerStatsManager().incChannelExceptionNum();
+                    broker.getBrokerStatsManager().incChannelExceptionNum();
                     break;
                 case IDLE:
-                    brokerController.getBrokerStatsManager().incChannelIdleNum();
+                    broker.getBrokerStatsManager().incChannelIdleNum();
                     break;
                 default:
                     break;

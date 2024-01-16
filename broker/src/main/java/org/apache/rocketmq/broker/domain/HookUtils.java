@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.domain;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.schedule.ScheduleMessageService;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -58,13 +58,13 @@ public class HookUtils {
      */
     private static final Integer MAX_TOPIC_LENGTH = 255;
 
-    public static PutMessageResult checkBeforePutMessage(BrokerController brokerController, final MessageExt msg) {
-        if (brokerController.getMessageStore().isShutdown()) {
+    public static PutMessageResult checkBeforePutMessage(Broker broker, final MessageExt msg) {
+        if (broker.getMessageStore().isShutdown()) {
             LOG.warn("message store has shutdown, so putMessage is forbidden");
             return new PutMessageResult(PutMessageStatus.SERVICE_NOT_AVAILABLE, null);
         }
 
-        if (!brokerController.getMessageStoreConfig().isDuplicationEnable() && BrokerRole.SLAVE == brokerController.getMessageStoreConfig().getBrokerRole()) {
+        if (!broker.getMessageStoreConfig().isDuplicationEnable() && BrokerRole.SLAVE == broker.getMessageStoreConfig().getBrokerRole()) {
             long value = PRINT_TIMES.getAndIncrement();
             if ((value % 50000) == 0) {
                 LOG.warn("message store is in slave mode, so putMessage is forbidden ");
@@ -73,10 +73,10 @@ public class HookUtils {
             return new PutMessageResult(PutMessageStatus.SERVICE_NOT_AVAILABLE, null);
         }
 
-        if (!brokerController.getMessageStore().getRunningFlags().isWriteable()) {
+        if (!broker.getMessageStore().getRunningFlags().isWriteable()) {
             long value = PRINT_TIMES.getAndIncrement();
             if ((value % 50000) == 0) {
-                LOG.warn("message store is not writeable, so putMessage is forbidden " + brokerController.getMessageStore().getRunningFlags().getFlagBits());
+                LOG.warn("message store is not writeable, so putMessage is forbidden " + broker.getMessageStore().getRunningFlags().getFlagBits());
             }
 
             return new PutMessageResult(PutMessageStatus.SERVICE_NOT_AVAILABLE, null);
@@ -103,13 +103,13 @@ public class HookUtils {
             return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, null);
         }
 
-        if (brokerController.getMessageStore().isOSPageCacheBusy()) {
+        if (broker.getMessageStore().isOSPageCacheBusy()) {
             return new PutMessageResult(PutMessageStatus.OS_PAGE_CACHE_BUSY, null);
         }
         return null;
     }
 
-    public static PutMessageResult checkInnerBatch(BrokerController brokerController, final MessageExt msg) {
+    public static PutMessageResult checkInnerBatch(Broker broker, final MessageExt msg) {
         if (msg.getProperties().containsKey(MessageConst.PROPERTY_INNER_NUM)
             && !MessageSysFlag.check(msg.getSysFlag(), MessageSysFlag.INNER_BATCH_FLAG)) {
             LOG.warn("[BUG]The message had property {} but is not an inner batch", MessageConst.PROPERTY_INNER_NUM);
@@ -117,7 +117,7 @@ public class HookUtils {
         }
 
         if (MessageSysFlag.check(msg.getSysFlag(), MessageSysFlag.INNER_BATCH_FLAG)) {
-            Optional<TopicConfig> topicConfig = Optional.ofNullable(brokerController.getTopicConfigManager().getTopicConfigTable().get(msg.getTopic()));
+            Optional<TopicConfig> topicConfig = Optional.ofNullable(broker.getTopicConfigManager().getTopicConfigTable().get(msg.getTopic()));
             if (!QueueTypeUtils.isBatchCq(topicConfig)) {
                 LOG.error("[BUG]The message is an inner batch but cq type is not batch cq");
                 return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, null);
@@ -127,7 +127,7 @@ public class HookUtils {
         return null;
     }
 
-    public static PutMessageResult handleScheduleMessage(BrokerController brokerController,
+    public static PutMessageResult handleScheduleMessage(Broker broker,
         final MessageExtBrokerInner msg) {
         final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
         if (tranType != MessageSysFlag.TRANSACTION_NOT_TYPE && tranType != MessageSysFlag.TRANSACTION_COMMIT_TYPE) {
@@ -136,7 +136,7 @@ public class HookUtils {
         }
         // Delay Delivery
         if (msg.getDelayTimeLevel() > 0) {
-            transformDelayLevelMessage(brokerController, msg);
+            transformDelayLevelMessage(broker, msg);
         }
 
         if (isRolledTimerMessage(msg)) {
@@ -147,12 +147,12 @@ public class HookUtils {
             return null;
         }
 
-        if (!brokerController.getMessageStoreConfig().isTimerWheelEnable()) {
+        if (!broker.getMessageStoreConfig().isTimerWheelEnable()) {
             //wheel timer is not enabled, reject the message
             return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_NOT_ENABLE, null);
         }
 
-        return transformTimerMessage(brokerController, msg);
+        return transformTimerMessage(broker, msg);
     }
 
     private static boolean isRolledTimerMessage(MessageExtBrokerInner msg) {
@@ -180,7 +180,7 @@ public class HookUtils {
         return null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELIVER_MS) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_MS) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_SEC);
     }
 
-    private static PutMessageResult transformTimerMessage(BrokerController brokerController,
+    private static PutMessageResult transformTimerMessage(Broker broker,
         MessageExtBrokerInner msg) {
         //do transform
         int delayLevel = msg.getDelayTimeLevel();
@@ -197,18 +197,18 @@ public class HookUtils {
             return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_MSG_ILLEGAL, null);
         }
         if (deliverMs > System.currentTimeMillis()) {
-            if (delayLevel <= 0 && deliverMs - System.currentTimeMillis() > brokerController.getMessageStoreConfig().getTimerMaxDelaySec() * 1000L) {
+            if (delayLevel <= 0 && deliverMs - System.currentTimeMillis() > broker.getMessageStoreConfig().getTimerMaxDelaySec() * 1000L) {
                 return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_MSG_ILLEGAL, null);
             }
 
-            int timerPrecisionMs = brokerController.getMessageStoreConfig().getTimerPrecisionMs();
+            int timerPrecisionMs = broker.getMessageStoreConfig().getTimerPrecisionMs();
             if (deliverMs % timerPrecisionMs == 0) {
                 deliverMs -= timerPrecisionMs;
             } else {
                 deliverMs = deliverMs / timerPrecisionMs * timerPrecisionMs;
             }
 
-            if (brokerController.getTimerMessageStore().isReject(deliverMs)) {
+            if (broker.getTimerMessageStore().isReject(deliverMs)) {
                 return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_FLOW_CONTROL, null);
             }
             MessageAccessor.putProperty(msg, MessageConst.PROPERTY_TIMER_OUT_MS, deliverMs + "");
@@ -223,10 +223,10 @@ public class HookUtils {
         return null;
     }
 
-    public static void transformDelayLevelMessage(BrokerController brokerController, MessageExtBrokerInner msg) {
+    public static void transformDelayLevelMessage(Broker broker, MessageExtBrokerInner msg) {
 
-        if (msg.getDelayTimeLevel() > brokerController.getScheduleMessageService().getMaxDelayLevel()) {
-            msg.setDelayTimeLevel(brokerController.getScheduleMessageService().getMaxDelayLevel());
+        if (msg.getDelayTimeLevel() > broker.getScheduleMessageService().getMaxDelayLevel()) {
+            msg.setDelayTimeLevel(broker.getScheduleMessageService().getMaxDelayLevel());
         }
 
         // Backup real topic, queueId
@@ -238,14 +238,14 @@ public class HookUtils {
         msg.setQueueId(ScheduleMessageService.delayLevel2QueueId(msg.getDelayTimeLevel()));
     }
 
-    public static boolean sendMessageBack(BrokerController brokerController, List<MessageExt> msgList,
+    public static boolean sendMessageBack(Broker broker, List<MessageExt> msgList,
         String brokerName, String brokerAddr) {
         try {
             Iterator<MessageExt> it = msgList.iterator();
             while (it.hasNext()) {
                 MessageExt msg = it.next();
                 msg.setWaitStoreMsgOK(false);
-                brokerController.getBrokerOuterAPI().sendMessageToSpecificBroker(brokerAddr, brokerName, msg, "InnerSendMessageBackGroup", 3000);
+                broker.getBrokerOuterAPI().sendMessageToSpecificBroker(brokerAddr, brokerName, msg, "InnerSendMessageBackGroup", 3000);
                 it.remove();
             }
         } catch (Exception e) {

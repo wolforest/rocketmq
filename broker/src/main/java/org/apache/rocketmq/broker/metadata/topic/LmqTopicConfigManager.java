@@ -16,14 +16,14 @@
  */
 package org.apache.rocketmq.broker.metadata.topic;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.PermName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 
 public class LmqTopicConfigManager extends TopicConfigManager {
-    public LmqTopicConfigManager(BrokerController brokerController) {
-        super(brokerController);
+    public LmqTopicConfigManager(Broker broker) {
+        super(broker);
     }
 
     @Override

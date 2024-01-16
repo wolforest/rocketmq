@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.consumer.AckResult;
 import org.apache.rocketmq.client.consumer.AckStatus;
 import org.apache.rocketmq.client.consumer.PopResult;
@@ -79,11 +79,11 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 public class LocalMessageService implements MessageService {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.PROXY_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final ChannelManager channelManager;
 
-    public LocalMessageService(BrokerController brokerController, ChannelManager channelManager, RPCHook rpcHook) {
-        this.brokerController = brokerController;
+    public LocalMessageService(Broker broker, ChannelManager channelManager, RPCHook rpcHook) {
+        this.broker = broker;
         this.channelManager = channelManager;
     }
 
@@ -122,7 +122,7 @@ public class LocalMessageService implements MessageService {
         RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.CONSUMER_SEND_MSG_BACK, requestHeader, ctx.getLanguage());
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
-            RemotingCommand response = brokerController.getBrokerNettyServer().getSendMessageProcessor()
+            RemotingCommand response = broker.getBrokerNettyServer().getSendMessageProcessor()
                 .processRequest(channelHandlerContext, command);
             future.complete(response);
         } catch (Exception e) {
@@ -140,7 +140,7 @@ public class LocalMessageService implements MessageService {
         ChannelHandlerContext channelHandlerContext = channel.getChannelHandlerContext();
         RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.END_TRANSACTION, requestHeader, ctx.getLanguage());
         try {
-            brokerController.getBrokerNettyServer().getEndTransactionProcessor()
+            broker.getBrokerNettyServer().getEndTransactionProcessor()
                 .processRequest(channelHandlerContext, command);
             future.complete(null);
         } catch (Exception e) {
@@ -167,7 +167,7 @@ public class LocalMessageService implements MessageService {
         RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.CHANGE_MESSAGE_INVISIBLETIME, requestHeader, ctx.getLanguage());
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
-            RemotingCommand response = brokerController.getBrokerNettyServer().getChangeInvisibleTimeProcessor()
+            RemotingCommand response = broker.getBrokerNettyServer().getChangeInvisibleTimeProcessor()
                 .processRequest(channelHandlerContext, command);
             future.complete(response);
         } catch (Exception e) {
@@ -186,7 +186,7 @@ public class LocalMessageService implements MessageService {
         RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.ACK_MESSAGE, requestHeader, ctx.getLanguage());
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
-            RemotingCommand response = brokerController.getBrokerNettyServer().getAckMessageProcessor()
+            RemotingCommand response = broker.getBrokerNettyServer().getAckMessageProcessor()
                 .processRequest(channelHandlerContext, command);
             future.complete(response);
         } catch (Exception e) {
@@ -208,7 +208,7 @@ public class LocalMessageService implements MessageService {
 
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
-            RemotingCommand response = brokerController.getBrokerNettyServer().getAckMessageProcessor()
+            RemotingCommand response = broker.getBrokerNettyServer().getAckMessageProcessor()
                 .processRequest(channelHandlerContext, command);
             future.complete(response);
         } catch (Exception e) {
@@ -279,7 +279,7 @@ public class LocalMessageService implements MessageService {
         ChannelHandlerContext simpleChannelHandlerContext = channel.getChannelHandlerContext();
 
         try {
-            RemotingCommand response = brokerController.getBrokerNettyServer().getSendMessageProcessor().processRequest(simpleChannelHandlerContext, request);
+            RemotingCommand response = broker.getBrokerNettyServer().getSendMessageProcessor().processRequest(simpleChannelHandlerContext, request);
             if (response != null) {
                 invocationContext.handle(response);
                 channel.eraseInvocationContext(request.getOpaque());
@@ -300,7 +300,7 @@ public class LocalMessageService implements MessageService {
             sendResult.setSendStatus(sendStatus);
 
             sendResult.setMsgId(messageId);
-            sendResult.setMessageQueue(new MessageQueue(requestHeader.getTopic(), brokerController.getBrokerConfig().getBrokerName(), requestHeader.getQueueId()));
+            sendResult.setMessageQueue(new MessageQueue(requestHeader.getTopic(), broker.getBrokerConfig().getBrokerName(), requestHeader.getQueueId()));
             sendResult.setQueueOffset(responseHeader.getQueueOffset());
             sendResult.setTransactionId(responseHeader.getTransactionId());
             sendResult.setOffsetMsgId(responseHeader.getMsgId());
@@ -343,7 +343,7 @@ public class LocalMessageService implements MessageService {
         ChannelHandlerContext simpleChannelHandlerContext = channel.getChannelHandlerContext();
 
         try {
-            RemotingCommand response = brokerController.getBrokerNettyServer().getPopMessageProcessor().processRequest(simpleChannelHandlerContext, request);
+            RemotingCommand response = broker.getBrokerNettyServer().getPopMessageProcessor().processRequest(simpleChannelHandlerContext, request);
             if (response != null) {
                 invocationContext.handle(response);
                 channel.eraseInvocationContext(request.getOpaque());
@@ -458,7 +458,7 @@ public class LocalMessageService implements MessageService {
     private BatchAckMessageRequestBody createRequestBody(List<ReceiptHandleMessage> handleList, String consumerGroup, String topic) {
         Map<String, BatchAck> batchAckMap = createBatchAckMap(handleList, consumerGroup, topic);
         BatchAckMessageRequestBody requestBody = new BatchAckMessageRequestBody();
-        requestBody.setBrokerName(brokerController.getBrokerConfig().getBrokerName());
+        requestBody.setBrokerName(broker.getBrokerConfig().getBrokerName());
         requestBody.setAcks(new ArrayList<>(batchAckMap.values()));
 
         return requestBody;

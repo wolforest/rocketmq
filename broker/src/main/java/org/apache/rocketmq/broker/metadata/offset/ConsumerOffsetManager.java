@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.metadata.offset;
 
 import com.google.common.base.Strings;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -70,15 +70,15 @@ public class ConsumerOffsetManager extends ConfigManager {
     private final ConcurrentMap<String/* topic@group */, ConcurrentMap<Integer, Long>> pullOffsetTable =
         new ConcurrentHashMap<>(512);
 
-    protected transient BrokerController brokerController;
+    protected transient Broker broker;
 
     private final transient AtomicLong versionChangeCounter = new AtomicLong(0);
 
     public ConsumerOffsetManager() {
     }
 
-    public ConsumerOffsetManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public ConsumerOffsetManager(Broker broker) {
+        this.broker = broker;
     }
 
     protected void removeConsumerOffset(String topicAtGroup) {
@@ -137,7 +137,7 @@ public class ConsumerOffsetManager extends ConfigManager {
 
             String topic = arrays[0];
             String group = arrays[1];
-            if (null != brokerController.getConsumerManager().findSubscriptionData(group, topic)
+            if (null != broker.getConsumerManager().findSubscriptionData(group, topic)
                 || !this.offsetBehindMuchThanData(topic, next.getValue())) {
                 continue;
             }
@@ -154,7 +154,7 @@ public class ConsumerOffsetManager extends ConfigManager {
 
         while (it.hasNext() && result) {
             Entry<Integer, Long> next = it.next();
-            long minOffsetInStore = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, next.getKey());
+            long minOffsetInStore = this.broker.getMessageStore().getMinOffsetInQueue(topic, next.getKey());
             long offsetInPersist = next.getValue();
             result = offsetInPersist <= minOffsetInStore;
         }
@@ -245,9 +245,9 @@ public class ConsumerOffsetManager extends ConfigManager {
                 LOG.warn("[NOTIFYME]update consumer offset less than store. clientHost={}, key={}, queueId={}, requestOffset={}, storeOffset={}", clientHost, key, queueId, offset, storeOffset);
             }
         }
-        if (versionChangeCounter.incrementAndGet() % brokerController.getBrokerConfig().getConsumerOffsetUpdateVersionStep() == 0) {
-            long version = brokerController.getMessageStore() != null
-                ? brokerController.getMessageStore().getStateMachineVersion()
+        if (versionChangeCounter.incrementAndGet() % broker.getBrokerConfig().getConsumerOffsetUpdateVersionStep() == 0) {
+            long version = broker.getMessageStore() != null
+                ? broker.getMessageStore().getStateMachineVersion()
                 : 0;
             dataVersion.nextVersion(version);
         }
@@ -278,7 +278,7 @@ public class ConsumerOffsetManager extends ConfigManager {
         String key = topic + TOPIC_GROUP_SEPARATOR + group;
 
         // useServerSideResetOffset default value is false
-        if (this.brokerController.getBrokerConfig().isUseServerSideResetOffset()) {
+        if (this.broker.getBrokerConfig().isUseServerSideResetOffset()) {
             Map<Integer, Long> reset = resetOffsetTable.get(key);
             if (null != reset && reset.containsKey(queueId)) {
                 return reset.get(queueId);
@@ -329,7 +329,7 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     @Override
     public String configFilePath() {
-        return BrokerPathConfigHelper.getConsumerOffsetPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
+        return BrokerPathConfigHelper.getConsumerOffsetPath(this.broker.getMessageStoreConfig().getStorePathRootDir());
     }
 
     @Override
@@ -408,7 +408,7 @@ public class ConsumerOffsetManager extends ConfigManager {
      */
     private void queryMinOffsetInAllGroup(Map.Entry<String, ConcurrentMap<Integer, Long>> offSetEntry, String topic, Map<Integer, Long> queueMinOffset) {
         for (Entry<Integer, Long> entry : offSetEntry.getValue().entrySet()) {
-            long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, entry.getKey());
+            long minOffset = this.broker.getMessageStore().getMinOffsetInQueue(topic, entry.getKey());
             if (entry.getValue() < minOffset) {
                 continue;
             }

@@ -20,7 +20,7 @@ package org.apache.rocketmq.container;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.BrokerIdentity;
@@ -52,7 +52,7 @@ public interface IBrokerContainer {
      * @return the added BrokerController or null if the broker already exists
      * @throws Exception when initialize broker
      */
-    BrokerController addBroker(BrokerConfig brokerConfig, MessageStoreConfig storeConfig) throws Exception;
+    Broker addBroker(BrokerConfig brokerConfig, MessageStoreConfig storeConfig) throws Exception;
 
     /**
      * Remove the broker from this container associated with the specific broker identity
@@ -60,7 +60,7 @@ public interface IBrokerContainer {
      * @param brokerIdentity the specific broker identity
      * @return the removed BrokerController or null if the broker doesn't exists
      */
-    BrokerController removeBroker(BrokerIdentity brokerIdentity) throws Exception;
+    Broker removeBroker(BrokerIdentity brokerIdentity) throws Exception;
 
     /**
      * Return the broker controller associated with the specific broker identity
@@ -68,7 +68,7 @@ public interface IBrokerContainer {
      * @param brokerIdentity the specific broker identity
      * @return the associated messaging broker or null
      */
-    BrokerController getBroker(BrokerIdentity brokerIdentity);
+    Broker getBroker(BrokerIdentity brokerIdentity);
 
     /**
      * Return all the master brokers belong to this container
@@ -89,7 +89,7 @@ public interface IBrokerContainer {
      *
      * @return all broker controller
      */
-    List<BrokerController> getBrokerControllers();
+    List<Broker> getBrokerControllers();
 
     /**
      * Return the address of broker container.
@@ -103,7 +103,7 @@ public interface IBrokerContainer {
      *
      * @return the first master broker in container
      */
-    BrokerController peekMasterBroker();
+    Broker peekMasterBroker();
 
     /**
      * Return the config of the broker container

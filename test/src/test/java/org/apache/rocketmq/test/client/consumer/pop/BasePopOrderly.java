@@ -58,8 +58,8 @@ public class BasePopOrderly extends BasePop {
 
     @Before
     public void setUp() {
-        brokerController1.getBrokerConfig().setEnableNotifyAfterPopOrderLockRelease(true);
-        brokerAddr = brokerController1.getBrokerAddr();
+        broker1.getBrokerConfig().setEnableNotifyAfterPopOrderLockRelease(true);
+        brokerAddr = broker1.getBrokerAddr();
         topic = MQRandomUtils.getRandomTopic();
         group = initConsumerGroup();
         IntegrationTestBase.initTopic(topic, NAMESRV_ADDR, BROKER1_NAME, 1, CQType.SimpleCQ, TopicMessageType.FIFO);

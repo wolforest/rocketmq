@@ -21,7 +21,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.broker.server.daemon.BrokerShutdownThread;
 import org.apache.rocketmq.broker.server.daemon.SystemConfigFileHelper;
@@ -49,7 +49,7 @@ public class BrokerStartup {
         start(createBrokerController(args));
     }
 
-    public static BrokerController start(BrokerController controller) {
+    public static Broker start(Broker controller) {
         try {
             controller.start();
             printBrokerStartInfo(controller);
@@ -62,15 +62,15 @@ public class BrokerStartup {
         return null;
     }
 
-    public static void shutdown(final BrokerController controller) {
+    public static void shutdown(final Broker controller) {
         if (null != controller) {
             controller.shutdown();
         }
     }
 
-    public static BrokerController createBrokerController(String[] args) {
+    public static Broker createBrokerController(String[] args) {
         try {
-            BrokerController controller = buildBrokerController(args);
+            Broker controller = buildBrokerController(args);
             boolean initResult = controller.initialize();
             if (!initResult) {
                 controller.shutdown();
@@ -85,7 +85,7 @@ public class BrokerStartup {
         return null;
     }
 
-    private static BrokerController buildBrokerController(String[] args) throws Exception {
+    private static Broker buildBrokerController(String[] args) throws Exception {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
 
         final BrokerConfig brokerConfig = new BrokerConfig();
@@ -108,7 +108,7 @@ public class BrokerStartup {
         setBrokerLogDir(brokerConfig, messageStoreConfig);
         printConfigInfo(commandLine, brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
 
-        BrokerController controller = new BrokerController(brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
+        Broker controller = new Broker(brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
 
         // Remember all configs to prevent discard
         controller.getConfiguration().registerConfig(properties);
@@ -269,11 +269,11 @@ public class BrokerStartup {
         BeanUtils.printObjectProperties(log, storeConfig);
     }
 
-    private static Runnable buildShutdownHook(BrokerController brokerController) {
-        return new BrokerShutdownThread(brokerController);
+    private static Runnable buildShutdownHook(Broker broker) {
+        return new BrokerShutdownThread(broker);
     }
 
-    private static void printBrokerStartInfo(BrokerController controller) {
+    private static void printBrokerStartInfo(Broker controller) {
         String tip = String.format("The broker[%s, %s] boot success. serializeType=%s",
             controller.getBrokerConfig().getBrokerName(), controller.getBrokerAddr(),
             RemotingCommand.getSerializeTypeConfigInThisServer());

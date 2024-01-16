@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.domain.transaction;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.transaction.queue.CheckContext;
 import org.apache.rocketmq.broker.domain.transaction.queue.GetResult;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;
@@ -66,22 +66,22 @@ public class TransactionalMessageCheckService extends ServiceThread {
     private static final int OP_MSG_PULL_NUMS = 32;
     private static final int SLEEP_WHILE_NO_OP = 1000;
 
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final TransactionalMessageBridge transactionalMessageBridge;
     private final AbstractTransactionalMessageCheckListener transactionalMessageCheckListener;
 
     private final ConcurrentHashMap<MessageQueue, MessageQueue> opQueueMap = new ConcurrentHashMap<>();
 
-    public TransactionalMessageCheckService(BrokerController brokerController, TransactionalMessageBridge transactionalMessageBridge, AbstractTransactionalMessageCheckListener transactionalMessageCheckListener) {
-        this.brokerController = brokerController;
+    public TransactionalMessageCheckService(Broker broker, TransactionalMessageBridge transactionalMessageBridge, AbstractTransactionalMessageCheckListener transactionalMessageCheckListener) {
+        this.broker = broker;
         this.transactionalMessageBridge = transactionalMessageBridge;
         this.transactionalMessageCheckListener = transactionalMessageCheckListener;
     }
 
     @Override
     public String getServiceName() {
-        if (brokerController != null && brokerController.getBrokerConfig().isInBrokerContainer()) {
-            return brokerController.getBrokerIdentity().getIdentifier() + TransactionalMessageCheckService.class.getSimpleName();
+        if (broker != null && broker.getBrokerConfig().isInBrokerContainer()) {
+            return broker.getBrokerIdentity().getIdentifier() + TransactionalMessageCheckService.class.getSimpleName();
         }
         return TransactionalMessageCheckService.class.getSimpleName();
     }
@@ -90,7 +90,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
     public void run() {
         log.info("Start transaction check service thread!");
         while (!this.isStopped()) {
-            long checkInterval = brokerController.getBrokerConfig().getTransactionCheckInterval();
+            long checkInterval = broker.getBrokerConfig().getTransactionCheckInterval();
 
             // execute this.onWaitEnd()
             // then execute TransactionalMessageService.check()
@@ -101,8 +101,8 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
     @Override
     protected void onWaitEnd() {
-        long timeout = brokerController.getBrokerConfig().getTransactionTimeOut();
-        int checkMax = brokerController.getBrokerConfig().getTransactionCheckMax();
+        long timeout = broker.getBrokerConfig().getTransactionTimeOut();
+        int checkMax = broker.getBrokerConfig().getTransactionCheckMax();
         long begin = System.currentTimeMillis();
         log.info("Begin to check prepare message, begin time:{}", begin);
         this.check(timeout, checkMax, this.transactionalMessageCheckListener);
@@ -298,9 +298,9 @@ public class TransactionalMessageCheckService extends ServiceThread {
     }
 
     private boolean isSlaveMode() {
-        BrokerController brokerController = this.transactionalMessageBridge.getBrokerController();
-        BrokerConfig brokerConfig = brokerController.getBrokerConfig();
-        MessageStoreConfig storeConfig = brokerController.getMessageStoreConfig();
+        Broker broker = this.transactionalMessageBridge.getBrokerController();
+        BrokerConfig brokerConfig = broker.getBrokerConfig();
+        MessageStoreConfig storeConfig = broker.getMessageStoreConfig();
 
         if (!brokerConfig.isEnableSlaveActingMaster()) {
             return false;
@@ -309,7 +309,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         if (!BrokerRole.SLAVE.equals(storeConfig.getBrokerRole())) {
             return false;
         }
-        return brokerController.getMinBrokerIdInGroup() == brokerController.getBrokerIdentity().getBrokerId();
+        return broker.getMinBrokerIdInGroup() == broker.getBrokerIdentity().getBrokerId();
     }
 
     private void handleSlaveMode(CheckContext context) throws InterruptedException {

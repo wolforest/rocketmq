@@ -30,7 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.UUID;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.BrokerStartup;
 import org.apache.rocketmq.broker.server.daemon.BrokerServiceManager;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
@@ -188,14 +188,14 @@ public class ProxyStartupTest {
         try (MockedStatic<BrokerStartup> brokerStartupMocked = mockStatic(BrokerStartup.class);
              MockedStatic<DefaultMessagingProcessor> messagingProcessorMocked = mockStatic(DefaultMessagingProcessor.class)) {
             ArgumentCaptor<Object> args = ArgumentCaptor.forClass(Object.class);
-            BrokerController brokerControllerMocked = mock(BrokerController.class);
+            Broker brokerMocked = mock(Broker.class);
             BrokerServiceManager brokerServiceManager = mock(BrokerServiceManager.class);
             BrokerMetricsManager brokerMetricsManagerMocked = mock(BrokerMetricsManager.class);
             Mockito.when(brokerMetricsManagerMocked.getBrokerMeter()).thenReturn(OpenTelemetrySdk.builder().build().getMeter("test"));
-            Mockito.when(brokerControllerMocked.getBrokerServiceManager()).thenReturn(brokerServiceManager);
-            Mockito.when(brokerControllerMocked.getBrokerServiceManager().getBrokerMetricsManager()).thenReturn(brokerMetricsManagerMocked);
+            Mockito.when(brokerMocked.getBrokerServiceManager()).thenReturn(brokerServiceManager);
+            Mockito.when(brokerMocked.getBrokerServiceManager().getBrokerMetricsManager()).thenReturn(brokerMetricsManagerMocked);
             brokerStartupMocked.when(() -> BrokerStartup.createBrokerController((String[]) args.capture()))
-                .thenReturn(brokerControllerMocked);
+                .thenReturn(brokerMocked);
             messagingProcessorMocked.when(() -> DefaultMessagingProcessor.createForLocalMode(any(), any()))
                 .thenReturn(mock(DefaultMessagingProcessor.class));
 

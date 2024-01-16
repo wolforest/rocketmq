@@ -21,7 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageCheckService;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;
@@ -66,14 +66,14 @@ public class TransactionalMessageCheckServiceTest {
     private AbstractTransactionalMessageCheckListener listener;
 
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(),
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(),
         new NettyClientConfig(), new MessageStoreConfig());
 
     @Before
     public void init() {
-        when(bridge.getBrokerController()).thenReturn(brokerController);
-        listener.setBrokerController(brokerController);
-        transactionalMessageCheckService = new TransactionalMessageCheckService(brokerController, bridge, listener);
+        when(bridge.getBrokerController()).thenReturn(broker);
+        listener.setBrokerController(broker);
+        transactionalMessageCheckService = new TransactionalMessageCheckService(broker, bridge, listener);
     }
 
     @Test
@@ -82,9 +82,9 @@ public class TransactionalMessageCheckServiceTest {
         when(bridge.getHalfMessage(0, 0, 1)).thenReturn(createDiscardPullResult(TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC, 5, "hellp", 1));
         //when(bridge.getHalfMessage(0, 1, 1)).thenReturn(createPullResult(TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC, 6, "hellp", 0));
         when(bridge.getOpMessage(anyInt(), anyLong(), anyInt())).thenReturn(createOpPulResult(TopicValidator.RMQ_SYS_TRANS_OP_HALF_TOPIC, 1, "10", 1));
-        when(bridge.getBrokerController()).thenReturn(this.brokerController);
-        long timeOut = this.brokerController.getBrokerConfig().getTransactionTimeOut();
-        int checkMax = this.brokerController.getBrokerConfig().getTransactionCheckMax();
+        when(bridge.getBrokerController()).thenReturn(this.broker);
+        long timeOut = this.broker.getBrokerConfig().getTransactionTimeOut();
+        int checkMax = this.broker.getBrokerConfig().getTransactionCheckMax();
         final AtomicInteger checkMessage = new AtomicInteger(0);
         doAnswer(new Answer() {
             @Override
@@ -103,12 +103,12 @@ public class TransactionalMessageCheckServiceTest {
         when(bridge.getHalfMessage(0, 0, 1)).thenReturn(createPullResult(TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC, 5, "hello", 1));
         when(bridge.getHalfMessage(0, 1, 1)).thenReturn(createPullResult(TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC, 6, "hellp", 0));
         when(bridge.getOpMessage(anyInt(), anyLong(), anyInt())).thenReturn(createPullResult(TopicValidator.RMQ_SYS_TRANS_OP_HALF_TOPIC, 1, "5", 0));
-        when(bridge.getBrokerController()).thenReturn(this.brokerController);
+        when(bridge.getBrokerController()).thenReturn(this.broker);
         when(bridge.renewHalfMessageInner(any(MessageExtBrokerInner.class))).thenReturn(createMessageBrokerInner());
         when(bridge.putMessageReturnResult(any(MessageExtBrokerInner.class)))
             .thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK)));
-        long timeOut = this.brokerController.getBrokerConfig().getTransactionTimeOut();
-        final int checkMax = this.brokerController.getBrokerConfig().getTransactionCheckMax();
+        long timeOut = this.broker.getBrokerConfig().getTransactionTimeOut();
+        final int checkMax = this.broker.getBrokerConfig().getTransactionCheckMax();
         final AtomicInteger checkMessage = new AtomicInteger(0);
         doAnswer(new Answer() {
             @Override

@@ -17,7 +17,7 @@
 package org.apache.rocketmq.container;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.app.AbstractBrokerRunnable;
@@ -190,8 +190,8 @@ public class BrokerContainer implements IBrokerContainer {
         slaveBrokerControllers.clear();
 
         // Shutdown master brokers
-        for (BrokerController masterBrokerController : masterBrokerControllers.values()) {
-            masterBrokerController.shutdown();
+        for (Broker masterBroker : masterBrokerControllers.values()) {
+            masterBroker.shutdown();
         }
 
         masterBrokerControllers.clear();
@@ -259,7 +259,7 @@ public class BrokerContainer implements IBrokerContainer {
         }
         InnerBrokerController brokerController = new InnerBrokerController(this, brokerConfig, storeConfig);
         BrokerIdentity brokerIdentity = brokerController.getBrokerIdentity();
-        final BrokerController previousBroker = dLedgerBrokerControllers.putIfAbsent(brokerIdentity, brokerController);
+        final Broker previousBroker = dLedgerBrokerControllers.putIfAbsent(brokerIdentity, brokerController);
         if (previousBroker != null) {
             throw new Exception(brokerIdentity.getCanonicalName() + " has already been added to current broker container");
         }
@@ -292,7 +292,7 @@ public class BrokerContainer implements IBrokerContainer {
         }
         InnerBrokerController masterBroker = new InnerBrokerController(this, masterBrokerConfig, storeConfig);
         BrokerIdentity brokerIdentity = masterBroker.getBrokerIdentity();
-        final BrokerController previousBroker = masterBrokerControllers.putIfAbsent(brokerIdentity, masterBroker);
+        final Broker previousBroker = masterBrokerControllers.putIfAbsent(brokerIdentity, masterBroker);
         if (previousBroker != null) {
             throw new Exception(masterBrokerConfig.getCanonicalName() + " has already been added to current broker container");
         }
@@ -354,7 +354,7 @@ public class BrokerContainer implements IBrokerContainer {
                 slaveBroker.shutdown();
                 throw new Exception("Failed to init slave broker " + slaveBrokerConfig.getCanonicalName());
             }
-            BrokerController masterBroker = this.peekMasterBroker();
+            Broker masterBroker = this.peekMasterBroker();
             if (slaveBroker.getMessageStore().getMasterStoreInProcess() == null && masterBroker != null) {
                 slaveBroker.getMessageStore().setMasterStoreInProcess(masterBroker.getMessageStore());
             }
@@ -368,7 +368,7 @@ public class BrokerContainer implements IBrokerContainer {
     }
 
     @Override
-    public BrokerController removeBroker(final BrokerIdentity brokerIdentity) throws Exception {
+    public Broker removeBroker(final BrokerIdentity brokerIdentity) throws Exception {
 
         InnerBrokerController dLedgerController = dLedgerBrokerControllers.remove(brokerIdentity);
         if (dLedgerController != null) {
@@ -382,9 +382,9 @@ public class BrokerContainer implements IBrokerContainer {
             return slaveBroker;
         }
 
-        BrokerController masterBroker = masterBrokerControllers.remove(brokerIdentity);
+        Broker masterBroker = masterBrokerControllers.remove(brokerIdentity);
 
-        BrokerController nextMasterBroker = this.peekMasterBroker();
+        Broker nextMasterBroker = this.peekMasterBroker();
         for (InnerSalveBrokerController slave : this.getSlaveBrokers()) {
             if (nextMasterBroker == null) {
                 slave.getMessageStore().setMasterStoreInProcess(null);
@@ -403,7 +403,7 @@ public class BrokerContainer implements IBrokerContainer {
     }
 
     @Override
-    public BrokerController getBroker(final BrokerIdentity brokerIdentity) {
+    public Broker getBroker(final BrokerIdentity brokerIdentity) {
         InnerSalveBrokerController slaveBroker = slaveBrokerControllers.get(brokerIdentity);
         if (slaveBroker != null) {
             return slaveBroker;
@@ -423,31 +423,31 @@ public class BrokerContainer implements IBrokerContainer {
     }
 
     @Override
-    public List<BrokerController> getBrokerControllers() {
-        List<BrokerController> brokerControllers = new ArrayList<>();
-        brokerControllers.addAll(this.getMasterBrokers());
-        brokerControllers.addAll(this.getSlaveBrokers());
-        return brokerControllers;
+    public List<Broker> getBrokerControllers() {
+        List<Broker> brokers = new ArrayList<>();
+        brokers.addAll(this.getMasterBrokers());
+        brokers.addAll(this.getSlaveBrokers());
+        return brokers;
     }
 
     @Override
-    public BrokerController peekMasterBroker() {
+    public Broker peekMasterBroker() {
         if (!masterBrokerControllers.isEmpty()) {
             return masterBrokerControllers.values().iterator().next();
         }
         return null;
     }
 
-    public BrokerController findBrokerControllerByBrokerName(String brokerName) {
-        for (BrokerController brokerController : masterBrokerControllers.values()) {
-            if (brokerController.getBrokerConfig().getBrokerName().equals(brokerName)) {
-                return brokerController;
+    public Broker findBrokerControllerByBrokerName(String brokerName) {
+        for (Broker broker : masterBrokerControllers.values()) {
+            if (broker.getBrokerConfig().getBrokerName().equals(brokerName)) {
+                return broker;
             }
         }
 
-        for (BrokerController brokerController : slaveBrokerControllers.values()) {
-            if (brokerController.getBrokerConfig().getBrokerName().equals(brokerName)) {
-                return brokerController;
+        for (Broker broker : slaveBrokerControllers.values()) {
+            if (broker.getBrokerConfig().getBrokerName().equals(brokerName)) {
+                return broker;
             }
         }
         return null;

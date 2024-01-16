@@ -26,7 +26,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.domain.topic.TopicFilterType;
@@ -69,14 +69,14 @@ public class ScheduleMessageService extends ConfigManager {
     private final Map<Integer /* level */, LinkedBlockingQueue<PutResultProcess>> deliverPendingTable =
         new ConcurrentHashMap<>(32);
 
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final transient AtomicLong versionChangeCounter = new AtomicLong(0);
 
-    public ScheduleMessageService(final BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.enableAsyncDeliver = brokerController.getMessageStoreConfig().isEnableScheduleAsyncDeliver();
+    public ScheduleMessageService(final Broker broker) {
+        this.broker = broker;
+        this.enableAsyncDeliver = broker.getMessageStoreConfig().isEnableScheduleAsyncDeliver();
         scheduledPersistService = ThreadUtils.newScheduledThreadPool(1,
-            new ThreadFactoryImpl("ScheduleMessageServicePersistThread", true, brokerController.getBrokerConfig()));
+            new ThreadFactoryImpl("ScheduleMessageServicePersistThread", true, broker.getBrokerConfig()));
     }
 
     public static int queueId2DelayLevel(final int queueId) {
@@ -91,7 +91,7 @@ public class ScheduleMessageService extends ConfigManager {
         for (Map.Entry<Integer, Long> next : this.offsetTable.entrySet()) {
             int queueId = delayLevel2QueueId(next.getKey());
             long delayOffset = next.getValue();
-            long maxOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, queueId);
+            long maxOffset = this.broker.getMessageStore().getMaxOffsetInQueue(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, queueId);
             String value = String.format("%d,%d", delayOffset, maxOffset);
             String key = String.format("%s_%d", RunningStats.scheduleMessageOffset.name(), next.getKey());
             stats.put(key, value);
@@ -100,8 +100,8 @@ public class ScheduleMessageService extends ConfigManager {
 
     public void updateOffset(int delayLevel, long offset) {
         this.offsetTable.put(delayLevel, offset);
-        if (versionChangeCounter.incrementAndGet() % brokerController.getBrokerConfig().getDelayOffsetUpdateVersionStep() == 0) {
-            long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        if (versionChangeCounter.incrementAndGet() % broker.getBrokerConfig().getDelayOffsetUpdateVersionStep() == 0) {
+            long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
             dataVersion.nextVersion(stateMachineVersion);
         }
     }
@@ -160,7 +160,7 @@ public class ScheduleMessageService extends ConfigManager {
             } catch (Throwable e) {
                 log.error("scheduleAtFixedRate flush exception", e);
             }
-        }, 10000, this.brokerController.getMessageStoreConfig().getFlushDelayOffsetInterval(), TimeUnit.MILLISECONDS);
+        }, 10000, this.broker.getMessageStoreConfig().getFlushDelayOffsetInterval(), TimeUnit.MILLISECONDS);
     }
 
     public void shutdown() {
@@ -248,7 +248,7 @@ public class ScheduleMessageService extends ConfigManager {
         try {
             for (int delayLevel : delayLevelTable.keySet()) {
                 ConsumeQueueInterface cq =
-                    brokerController.getMessageStore().getConsumeQueueStore().findOrCreateConsumeQueue(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC,
+                    broker.getMessageStore().getConsumeQueueStore().findOrCreateConsumeQueue(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC,
                         delayLevel2QueueId(delayLevel));
                 Long currentDelayOffset = offsetTable.get(delayLevel);
                 if (currentDelayOffset == null || cq == null) {
@@ -282,7 +282,7 @@ public class ScheduleMessageService extends ConfigManager {
 
     @Override
     public String configFilePath() {
-        return StorePathConfigHelper.getDelayOffsetStorePath(this.brokerController.getMessageStore().getMessageStoreConfig()
+        return StorePathConfigHelper.getDelayOffsetStorePath(this.broker.getMessageStore().getMessageStoreConfig()
             .getStorePathRootDir());
     }
 
@@ -319,7 +319,7 @@ public class ScheduleMessageService extends ConfigManager {
         timeUnitTable.put("h", 1000L * 60 * 60);
         timeUnitTable.put("d", 1000L * 60 * 60 * 24);
 
-        String levelString = this.brokerController.getMessageStoreConfig().getMessageDelayLevel();
+        String levelString = this.broker.getMessageStoreConfig().getMessageDelayLevel();
         try {
             String[] levelArray = levelString.split(" ");
             for (int i = 0; i < levelArray.length; i++) {
@@ -396,8 +396,8 @@ public class ScheduleMessageService extends ConfigManager {
         return deliverExecutorService;
     }
 
-    public BrokerController getBrokerController() {
-        return brokerController;
+    public Broker getBrokerController() {
+        return broker;
     }
 
     public Map<Integer, LinkedBlockingQueue<PutResultProcess>> getDeliverPendingTable() {

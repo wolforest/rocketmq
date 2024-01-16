@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.broker.controller;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
 import org.apache.rocketmq.broker.server.daemon.BrokerClusterService;
 import org.apache.rocketmq.broker.server.daemon.BrokerMessageService;
@@ -99,7 +99,7 @@ public class ReplicasManagerRegisterTest {
         return config;
     }
 
-    private BrokerController mockedBrokerController;
+    private Broker mockedBroker;
 
     private BrokerClusterService mockedBrokerClusterService;
 
@@ -116,26 +116,26 @@ public class ReplicasManagerRegisterTest {
     @Before
     public void setUp() throws Exception {
         IOUtils.deleteFile(new File(STORE_BASE_PATH));
-        this.mockedBrokerController = Mockito.mock(BrokerController.class);
+        this.mockedBroker = Mockito.mock(Broker.class);
         this.mockedBrokerClusterService = Mockito.mock(BrokerClusterService.class);
         this.mockedBrokerMessageService = Mockito.mock(BrokerMessageService.class);
         this.mockedMessageStore = Mockito.mock(DefaultMessageStore.class);
         this.mockedBrokerOuterAPI = Mockito.mock(BrokerOuterAPI.class);
         this.mockedAutoSwitchHAService = Mockito.mock(AutoSwitchHAService.class);
         TopicConfigManager mockedTopicConfigManager = new TopicConfigManager();
-        when(mockedBrokerController.getBrokerOuterAPI()).thenReturn(mockedBrokerOuterAPI);
-        when(mockedBrokerController.getMessageStore()).thenReturn(mockedMessageStore);
-        when(mockedBrokerController.getBrokerConfig()).thenReturn(BROKER_CONFIG);
-        when(mockedBrokerController.getTopicConfigManager()).thenReturn(mockedTopicConfigManager);
-        when(mockedBrokerController.getBrokerClusterService()).thenReturn(mockedBrokerClusterService);
-        when(mockedBrokerController.getBrokerMessageService()).thenReturn(mockedBrokerMessageService);
+        when(mockedBroker.getBrokerOuterAPI()).thenReturn(mockedBrokerOuterAPI);
+        when(mockedBroker.getMessageStore()).thenReturn(mockedMessageStore);
+        when(mockedBroker.getBrokerConfig()).thenReturn(BROKER_CONFIG);
+        when(mockedBroker.getTopicConfigManager()).thenReturn(mockedTopicConfigManager);
+        when(mockedBroker.getBrokerClusterService()).thenReturn(mockedBrokerClusterService);
+        when(mockedBroker.getBrokerMessageService()).thenReturn(mockedBrokerMessageService);
         when(mockedMessageStore.getHaService()).thenReturn(mockedAutoSwitchHAService);
         when(mockedMessageStore.getRunningFlags()).thenReturn(runningFlags);
-        when(mockedBrokerController.getBrokerClusterService().getSlaveSynchronize()).thenReturn(new SlaveSynchronize(mockedBrokerController));
+        when(mockedBroker.getBrokerClusterService().getSlaveSynchronize()).thenReturn(new SlaveSynchronize(mockedBroker));
         when(mockedBrokerOuterAPI.getControllerMetaData(any())).thenReturn(
                 new GetMetaDataResponseHeader("default-group", "dledger-a", CONTROLLER_ADDR, true, CONTROLLER_ADDR));
         when(mockedBrokerOuterAPI.checkAddressReachable(any())).thenReturn(true);
-        when(mockedBrokerController.getMessageStoreConfig()).thenReturn(buildMessageStoreConfig(0));
+        when(mockedBroker.getMessageStoreConfig()).thenReturn(buildMessageStoreConfig(0));
     }
 
     @Test
@@ -146,7 +146,7 @@ public class ReplicasManagerRegisterTest {
         when(mockedBrokerOuterAPI.registerBrokerToController(any(), any(), anyLong(), any(), any())).thenReturn(new Pair<>(new RegisterBrokerToControllerResponseHeader(),  syncStateSet));
         when(mockedBrokerOuterAPI.brokerElect(any(), any(), any(), anyLong())).thenReturn(new Pair<>(new ElectMasterResponseHeader(1L, "127.0.0.1:13131", 1, 1), syncStateSet));
 
-        ReplicasManager replicasManager0 = new ReplicasManager(mockedBrokerController);
+        ReplicasManager replicasManager0 = new ReplicasManager(mockedBroker);
         replicasManager0.start();
         await().atMost(Duration.ofMillis(1000)).until(() ->
             replicasManager0.getState() == ReplicasManager.State.RUNNING
@@ -166,7 +166,7 @@ public class ReplicasManagerRegisterTest {
         when(mockedBrokerOuterAPI.registerBrokerToController(any(), any(), anyLong(), any(), any())).thenReturn(new Pair<>(new RegisterBrokerToControllerResponseHeader(),  syncStateSet));
         when(mockedBrokerOuterAPI.brokerElect(any(), any(), any(), anyLong())).thenReturn(new Pair<>(new ElectMasterResponseHeader(1L, "127.0.0.1:13131", 1, 1), syncStateSet));
 
-        ReplicasManager replicasManager0 = new ReplicasManager(mockedBrokerController);
+        ReplicasManager replicasManager0 = new ReplicasManager(mockedBroker);
         replicasManager0.start();
         await().atMost(Duration.ofMillis(1000)).until(() ->
                 replicasManager0.getState() == ReplicasManager.State.RUNNING
@@ -179,25 +179,25 @@ public class ReplicasManagerRegisterTest {
         replicasManager0.shutdown();
 
         // change broker name in broker config
-        mockedBrokerController.getBrokerConfig().setBrokerName(BROKER_NAME + "1");
-        ReplicasManager replicasManagerRestart = new ReplicasManager(mockedBrokerController);
+        mockedBroker.getBrokerConfig().setBrokerName(BROKER_NAME + "1");
+        ReplicasManager replicasManagerRestart = new ReplicasManager(mockedBroker);
         replicasManagerRestart.start();
         Assert.assertEquals(ReplicasManager.RegisterState.CREATE_METADATA_FILE_DONE, replicasManagerRestart.getRegisterState());
-        mockedBrokerController.getBrokerConfig().setBrokerName(BROKER_NAME);
+        mockedBroker.getBrokerConfig().setBrokerName(BROKER_NAME);
         replicasManagerRestart.shutdown();
 
         // change cluster name in broker config
-        mockedBrokerController.getBrokerConfig().setBrokerClusterName(CLUSTER_NAME + "1");
-        replicasManagerRestart = new ReplicasManager(mockedBrokerController);
+        mockedBroker.getBrokerConfig().setBrokerClusterName(CLUSTER_NAME + "1");
+        replicasManagerRestart = new ReplicasManager(mockedBroker);
         replicasManagerRestart.start();
         Assert.assertEquals(ReplicasManager.RegisterState.CREATE_METADATA_FILE_DONE, replicasManagerRestart.getRegisterState());
-        mockedBrokerController.getBrokerConfig().setBrokerClusterName(CLUSTER_NAME);
+        mockedBroker.getBrokerConfig().setBrokerClusterName(CLUSTER_NAME);
         replicasManagerRestart.shutdown();
     }
 
     @Test
     public void testRegisterFailedAtGetNextBrokerId() throws Exception {
-        ReplicasManager replicasManager = new ReplicasManager(mockedBrokerController);
+        ReplicasManager replicasManager = new ReplicasManager(mockedBroker);
         when(mockedBrokerOuterAPI.getNextBrokerId(any(), any(), any())).thenThrow(new RuntimeException());
 
         replicasManager.start();
@@ -212,7 +212,7 @@ public class ReplicasManagerRegisterTest {
 
     @Test
     public void testRegisterFailedAtCreateTempFile() throws Exception {
-        ReplicasManager replicasManager = new ReplicasManager(mockedBrokerController);
+        ReplicasManager replicasManager = new ReplicasManager(mockedBroker);
         when(mockedBrokerOuterAPI.getNextBrokerId(any(), any(), any())).thenReturn(new GetNextBrokerIdResponseHeader(CLUSTER_NAME, BROKER_NAME, 1L));
         when(mockedBrokerOuterAPI.applyBrokerId(any(), any(), anyLong(), any(), any())).thenReturn(new ApplyBrokerIdResponseHeader());
         when(mockedBrokerOuterAPI.registerBrokerToController(any(), any(), anyLong(), any(), any())).thenReturn(new Pair<>(new RegisterBrokerToControllerResponseHeader(),  syncStateSet));
@@ -232,7 +232,7 @@ public class ReplicasManagerRegisterTest {
 
     @Test
     public void testRegisterFailedAtApplyBrokerIdFailed() throws Exception {
-        ReplicasManager replicasManager = new ReplicasManager(mockedBrokerController);
+        ReplicasManager replicasManager = new ReplicasManager(mockedBroker);
         when(mockedBrokerOuterAPI.getNextBrokerId(any(), any(), any())).thenReturn(new GetNextBrokerIdResponseHeader(CLUSTER_NAME, BROKER_NAME, 1L));
         when(mockedBrokerOuterAPI.applyBrokerId(any(), any(), anyLong(), any(), any())).thenThrow(new RuntimeException());
         when(mockedBrokerOuterAPI.registerBrokerToController(any(), any(), anyLong(), any(), any())).thenReturn(new Pair<>(new RegisterBrokerToControllerResponseHeader(),  syncStateSet));
@@ -252,7 +252,7 @@ public class ReplicasManagerRegisterTest {
 
     @Test
     public void testRegisterFailedAtCreateMetadataFileAndDeleteTemp() throws Exception {
-        ReplicasManager replicasManager = new ReplicasManager(mockedBrokerController);
+        ReplicasManager replicasManager = new ReplicasManager(mockedBroker);
         when(mockedBrokerOuterAPI.getNextBrokerId(any(), any(), any())).thenReturn(new GetNextBrokerIdResponseHeader(CLUSTER_NAME, BROKER_NAME, 1L));
         when(mockedBrokerOuterAPI.applyBrokerId(any(), any(), anyLong(), any(), any())).thenReturn(new ApplyBrokerIdResponseHeader());
         when(mockedBrokerOuterAPI.registerBrokerToController(any(), any(), anyLong(), any(), any())).thenReturn(new Pair<>(new RegisterBrokerToControllerResponseHeader(),  syncStateSet));
@@ -274,7 +274,7 @@ public class ReplicasManagerRegisterTest {
         spyReplicasManager.shutdown();
 
         // restart, we expect that this replicasManager still keep the tempMetadata and still try to finish its registering
-        ReplicasManager replicasManagerNew = new ReplicasManager(mockedBrokerController);
+        ReplicasManager replicasManagerNew = new ReplicasManager(mockedBroker);
         // because apply brokerId: 1 has succeeded, so now next broker id is 2
         when(mockedBrokerOuterAPI.getNextBrokerId(any(), any(), any())).thenReturn(new GetNextBrokerIdResponseHeader(CLUSTER_NAME, BROKER_NAME, 2L));
 
@@ -295,7 +295,7 @@ public class ReplicasManagerRegisterTest {
 
     @Test
     public void testRegisterFailedAtRegisterSuccess() throws Exception {
-        ReplicasManager replicasManager = new ReplicasManager(mockedBrokerController);
+        ReplicasManager replicasManager = new ReplicasManager(mockedBroker);
         when(mockedBrokerOuterAPI.getNextBrokerId(any(), any(), any())).thenReturn(new GetNextBrokerIdResponseHeader(CLUSTER_NAME, BROKER_NAME, 1L));
         when(mockedBrokerOuterAPI.applyBrokerId(any(), any(), anyLong(), any(), any())).thenReturn(new ApplyBrokerIdResponseHeader());
         when(mockedBrokerOuterAPI.registerBrokerToController(any(), any(), anyLong(), any(), any())).thenThrow(new RuntimeException());
@@ -324,7 +324,7 @@ public class ReplicasManagerRegisterTest {
         when(mockedBrokerOuterAPI.checkAddressReachable(any())).thenReturn(true);
 
         // restart, we expect that this replicasManager still keep the metadata and still try to finish its registering
-        ReplicasManager replicasManagerNew = new ReplicasManager(mockedBrokerController);
+        ReplicasManager replicasManagerNew = new ReplicasManager(mockedBroker);
         // because apply brokerId: 1 has succeeded, so now next broker id is 2
         when(mockedBrokerOuterAPI.getNextBrokerId(any(), any(), any())).thenReturn(new GetNextBrokerIdResponseHeader(CLUSTER_NAME, BROKER_NAME, 2L));
         // because apply brokerId: 1 has succeeded, so next request which try to apply brokerId: 1 will be failed

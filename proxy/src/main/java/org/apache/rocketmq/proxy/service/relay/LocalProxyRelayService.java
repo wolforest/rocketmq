@@ -17,7 +17,7 @@
 package org.apache.rocketmq.proxy.service.relay;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.service.channel.SimpleChannel;
 import org.apache.rocketmq.proxy.service.transaction.TransactionService;
@@ -32,11 +32,11 @@ import org.apache.rocketmq.remoting.protocol.header.GetConsumerRunningInfoReques
 
 public class LocalProxyRelayService extends AbstractProxyRelayService {
 
-    private final BrokerController brokerController;
+    private final Broker broker;
 
-    public LocalProxyRelayService(BrokerController brokerController, TransactionService transactionService) {
+    public LocalProxyRelayService(Broker broker, TransactionService transactionService) {
         super(transactionService);
-        this.brokerController = brokerController;
+        this.broker = broker;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class LocalProxyRelayService extends AbstractProxyRelayService {
         ProxyContext context, RemotingCommand command, GetConsumerRunningInfoRequestHeader header) {
         CompletableFuture<ProxyRelayResult<ConsumerRunningInfo>> future = new CompletableFuture<>();
         future.thenAccept(proxyOutResult -> {
-            RemotingServer remotingServer = this.brokerController.getRemotingServer();
+            RemotingServer remotingServer = this.broker.getRemotingServer();
             if (remotingServer instanceof NettyRemotingAbstract) {
                 NettyRemotingAbstract nettyRemotingAbstract = (NettyRemotingAbstract) remotingServer;
                 RemotingCommand remotingCommand = RemotingCommand.createResponseCommand(null);
@@ -68,7 +68,7 @@ public class LocalProxyRelayService extends AbstractProxyRelayService {
         ConsumeMessageDirectlyResultRequestHeader header) {
         CompletableFuture<ProxyRelayResult<ConsumeMessageDirectlyResult>> future = new CompletableFuture<>();
         future.thenAccept(proxyOutResult -> {
-            RemotingServer remotingServer = this.brokerController.getRemotingServer();
+            RemotingServer remotingServer = this.broker.getRemotingServer();
             if (remotingServer instanceof NettyRemotingAbstract) {
                 NettyRemotingAbstract nettyRemotingAbstract = (NettyRemotingAbstract) remotingServer;
                 RemotingCommand remotingCommand = RemotingCommand.createResponseCommand(null);

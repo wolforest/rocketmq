@@ -20,7 +20,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.PopMessageProcessor;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
@@ -61,7 +61,7 @@ public class PopMessageProcessorTest {
     private PopMessageProcessor popMessageProcessor;
 
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
     @Mock
     private ChannelHandlerContext handlerContext;
     private final EmbeddedChannel embeddedChannel = new EmbeddedChannel();
@@ -73,14 +73,14 @@ public class PopMessageProcessorTest {
 
     @Before
     public void init() {
-        brokerController.setMessageStore(messageStore);
-        brokerController.getBrokerConfig().setEnablePopBufferMerge(true);
-        popMessageProcessor = new PopMessageProcessor(brokerController);
+        broker.setMessageStore(messageStore);
+        broker.getBrokerConfig().setEnablePopBufferMerge(true);
+        popMessageProcessor = new PopMessageProcessor(broker);
         when(handlerContext.channel()).thenReturn(embeddedChannel);
-        brokerController.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig(topic));
+        broker.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig(topic));
         clientChannelInfo = new ClientChannelInfo(embeddedChannel);
         ConsumerData consumerData = createConsumerData(group, topic);
-        brokerController.getConsumerManager().registerConsumer(
+        broker.getConsumerManager().registerConsumer(
             consumerData.getGroupName(),
             clientChannelInfo,
             consumerData.getConsumeType(),
@@ -93,7 +93,7 @@ public class PopMessageProcessorTest {
     @Test
     public void testProcessRequest_TopicNotExist() throws RemotingCommandException {
         when(messageStore.getMessageStoreConfig()).thenReturn(new MessageStoreConfig());
-        brokerController.getTopicConfigManager().getTopicConfigTable().remove(topic);
+        broker.getTopicConfigManager().getTopicConfigTable().remove(topic);
         final RemotingCommand request = createPopMsgCommand();
         RemotingCommand response = popMessageProcessor.processRequest(handlerContext, request);
         assertThat(response).isNotNull();

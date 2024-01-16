@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.longpolling;
 
 import io.netty.channel.Channel;
 import java.util.HashMap;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
 import org.apache.rocketmq.broker.server.longpolling.PullRequest;
 import org.apache.rocketmq.broker.server.longpolling.PullRequestHoldService;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 public class PullRequestHoldServiceTest {
 
     @Mock
-    private BrokerController brokerController;
+    private Broker broker;
 
     private PullRequestHoldService pullRequestHoldService;
 
@@ -77,9 +77,9 @@ public class PullRequestHoldServiceTest {
 
     @Before
     public void before() {
-        when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
-        when(brokerController.getBrokerNettyServer()).thenReturn(brokerNettyServer);
-        pullRequestHoldService = new PullRequestHoldService(brokerController);
+        when(broker.getBrokerConfig()).thenReturn(brokerConfig);
+        when(broker.getBrokerNettyServer()).thenReturn(brokerNettyServer);
+        pullRequestHoldService = new PullRequestHoldService(broker);
         subscriptionData = new SubscriptionData(TEST_TOPIC, "*");
         pullRequest = new PullRequest(remotingCommand, channel, 3000, 3000, 0L, subscriptionData, defaultMessageFilter);
         pullRequestHoldService.start();

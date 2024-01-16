@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -49,13 +49,13 @@ public class TopicQueueMappingManager extends ConfigManager {
 
     //this data version should be equal to the TopicConfigManager
     private final DataVersion dataVersion = new DataVersion();
-    private transient BrokerController brokerController;
+    private transient Broker broker;
 
     private final ConcurrentMap<String, TopicQueueMappingDetail> topicQueueMappingTable = new ConcurrentHashMap<>();
 
 
-    public TopicQueueMappingManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public TopicQueueMappingManager(Broker broker) {
+        this.broker = broker;
     }
 
     public void updateTopicQueueMapping(TopicQueueMappingDetail newDetail, boolean force, boolean isClean, boolean flush) throws Exception {
@@ -72,7 +72,7 @@ public class TopicQueueMappingManager extends ConfigManager {
             if (newDetail == null) {
                 return;
             }
-            assert newDetail.getBname().equals(this.brokerController.getBrokerConfig().getBrokerName());
+            assert newDetail.getBname().equals(this.broker.getBrokerConfig().getBrokerName());
 
             newDetail.getHostedQueues().forEach((queueId, items) -> {
                 TopicQueueMappingUtils.checkLogicQueueMappingItemOffset(items);
@@ -159,7 +159,7 @@ public class TopicQueueMappingManager extends ConfigManager {
 
     @Override
     public String configFilePath() {
-        return BrokerPathConfigHelper.getTopicQueueMappingPath(this.brokerController.getMessageStoreConfig()
+        return BrokerPathConfigHelper.getTopicQueueMappingPath(this.broker.getMessageStoreConfig()
             .getStorePathRootDir());
     }
 
@@ -204,7 +204,7 @@ public class TopicQueueMappingManager extends ConfigManager {
             //it is not static topic
             return new TopicQueueMappingContext(topic, null, null, null, null);
         }
-        assert mappingDetail.getBname().equals(this.brokerController.getBrokerConfig().getBrokerName());
+        assert mappingDetail.getBname().equals(this.broker.getBrokerConfig().getBrokerName());
 
         if (globalId == null) {
             return new TopicQueueMappingContext(topic, null, mappingDetail, null, null);

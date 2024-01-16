@@ -21,7 +21,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.QueryAssignmentProcessor;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.metadata.topic.TopicRouteInfoManager;
@@ -64,7 +64,7 @@ import static org.mockito.Mockito.when;
 public class QueryAssignmentProcessorTest {
     private QueryAssignmentProcessor queryAssignmentProcessor;
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
 
     @Mock
     private TopicRouteInfoManager topicRouteInfoManager;
@@ -84,13 +84,13 @@ public class QueryAssignmentProcessorTest {
     @Before
     public void init() throws IllegalAccessException, NoSuchFieldException {
         clientInfo = new ClientChannelInfo(channel, "127.0.0.1", LanguageCode.JAVA, 0);
-        brokerController.setMessageStore(messageStore);
-        doReturn(topicRouteInfoManager).when(brokerController).getTopicRouteInfoManager();
+        broker.setMessageStore(messageStore);
+        doReturn(topicRouteInfoManager).when(broker).getTopicRouteInfoManager();
         when(topicRouteInfoManager.getTopicSubscribeInfo(topic)).thenReturn(ImmutableSet.of(new MessageQueue(topic, "broker-1", 0), new MessageQueue(topic, "broker-2", 1)));
-        queryAssignmentProcessor = new QueryAssignmentProcessor(brokerController);
-        brokerController.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());
+        queryAssignmentProcessor = new QueryAssignmentProcessor(broker);
+        broker.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());
         ConsumerData consumerData = createConsumerData(group, topic);
-        brokerController.getConsumerManager().registerConsumer(
+        broker.getConsumerManager().registerConsumer(
             consumerData.getGroupName(),
             clientInfo,
             consumerData.getConsumeType(),
@@ -102,7 +102,7 @@ public class QueryAssignmentProcessorTest {
 
     @Test
     public void testQueryAssignment() throws Exception {
-        brokerController.getProducerManager().registerProducer(group, clientInfo);
+        broker.getProducerManager().registerProducer(group, clientInfo);
         final RemotingCommand request = createQueryAssignmentRequest();
         RemotingCommand responseToReturn = queryAssignmentProcessor.processRequest(handlerContext, request);
         assertThat(responseToReturn.getCode()).isEqualTo(ResponseCode.SUCCESS);
@@ -113,7 +113,7 @@ public class QueryAssignmentProcessorTest {
 
     @Test
     public void testSetMessageRequestMode_Success() throws Exception {
-        brokerController.getProducerManager().registerProducer(group, clientInfo);
+        broker.getProducerManager().registerProducer(group, clientInfo);
         final RemotingCommand request = createSetMessageRequestModeRequest(topic);
         RemotingCommand responseToReturn = queryAssignmentProcessor.processRequest(handlerContext, request);
         assertThat(responseToReturn.getCode()).isEqualTo(ResponseCode.SUCCESS);
@@ -121,7 +121,7 @@ public class QueryAssignmentProcessorTest {
 
     @Test
     public void testSetMessageRequestMode_RetryTopic() throws Exception {
-        brokerController.getProducerManager().registerProducer(group, clientInfo);
+        broker.getProducerManager().registerProducer(group, clientInfo);
         final RemotingCommand request = createSetMessageRequestModeRequest(MQConstants.RETRY_GROUP_TOPIC_PREFIX + topic);
         RemotingCommand responseToReturn = queryAssignmentProcessor.processRequest(handlerContext, request);
         assertThat(responseToReturn.getCode()).isEqualTo(ResponseCode.NO_PERMISSION);

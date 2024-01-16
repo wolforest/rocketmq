@@ -21,7 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.FileRegion;
 import io.opentelemetry.api.common.Attributes;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.pagecache.OneMessageTransfer;
 import org.apache.rocketmq.broker.domain.pagecache.QueryMessageTransfer;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -47,10 +47,10 @@ import static org.apache.rocketmq.remoting.metrics.RemotingMetricsConstant.LABEL
 
 public class QueryMessageProcessor implements NettyRequestProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
 
-    public QueryMessageProcessor(final BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public QueryMessageProcessor(final Broker broker) {
+        this.broker = broker;
     }
 
     @Override
@@ -82,10 +82,10 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
 
         String isUniqueKey = request.getExtFields().get(MQConstants.UNIQUE_MSG_QUERY_FLAG);
         if (isUniqueKey != null && isUniqueKey.equals("true")) {
-            requestHeader.setMaxNum(this.brokerController.getMessageStoreConfig().getDefaultQueryMaxNum());
+            requestHeader.setMaxNum(this.broker.getMessageStoreConfig().getDefaultQueryMaxNum());
         }
 
-        final QueryMessageResult queryMessageResult = this.brokerController.getMessageStore().queryMessage(requestHeader.getTopic(),
+        final QueryMessageResult queryMessageResult = this.broker.getMessageStore().queryMessage(requestHeader.getTopic(),
                 requestHeader.getKey(), requestHeader.getMaxNum(), requestHeader.getBeginTimestamp(), requestHeader.getEndTimestamp());
         assert queryMessageResult != null;
 
@@ -138,7 +138,7 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
         response.setOpaque(request.getOpaque());
 
         final SelectMappedBufferResult selectMappedBufferResult =
-            this.brokerController.getMessageStore().selectOneMessageByOffset(requestHeader.getOffset());
+            this.broker.getMessageStore().selectOneMessageByOffset(requestHeader.getOffset());
         if (selectMappedBufferResult != null) {
             response.setCode(ResponseCode.SUCCESS);
             response.setRemark(null);

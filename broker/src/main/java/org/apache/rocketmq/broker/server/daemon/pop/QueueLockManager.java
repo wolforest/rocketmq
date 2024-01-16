@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.server.daemon.pop;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.PopMessageProcessor;
 import org.apache.rocketmq.common.domain.constant.PopConstants;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
@@ -31,10 +31,10 @@ public class QueueLockManager extends ServiceThread {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
 
     private final ConcurrentHashMap<String, TimedLock> expiredLocalCache = new ConcurrentHashMap<>(100000);
-    private final BrokerController brokerController;
+    private final Broker broker;
 
-    public QueueLockManager(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public QueueLockManager(Broker broker) {
+        this.broker = broker;
     }
 
     public String buildLockKey(String topic, String consumerGroup, int queueId) {
@@ -103,7 +103,7 @@ public class QueueLockManager extends ServiceThread {
 
     @Override
     public String getServiceName() {
-        PopMessageProcessor popMessageProcessor = brokerController.getBrokerNettyServer().getPopMessageProcessor();
+        PopMessageProcessor popMessageProcessor = broker.getBrokerNettyServer().getPopMessageProcessor();
         if (popMessageProcessor.getBrokerController().getBrokerConfig().isInBrokerContainer()) {
             return popMessageProcessor.getBrokerController().getBrokerIdentity().getIdentifier() + QueueLockManager.class.getSimpleName();
         }

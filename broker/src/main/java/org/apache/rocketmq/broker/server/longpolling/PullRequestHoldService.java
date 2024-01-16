@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -32,13 +32,13 @@ import org.apache.rocketmq.store.domain.queue.CqExtUnit;
 public class PullRequestHoldService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     protected static final String TOPIC_QUEUEID_SEPARATOR = "@";
-    protected final BrokerController brokerController;
+    protected final Broker broker;
     private final SystemClock systemClock = new SystemClock();
     protected ConcurrentMap<String/* topic@queueId */, ManyPullRequest> pullRequestTable =
         new ConcurrentHashMap<>(1024);
 
-    public PullRequestHoldService(final BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public PullRequestHoldService(final Broker broker) {
+        this.broker = broker;
     }
 
     public void suspendPullRequest(final String topic, final int queueId, final PullRequest pullRequest) {
@@ -69,10 +69,10 @@ public class PullRequestHoldService extends ServiceThread {
         log.info("{} service started", this.getServiceName());
         while (!this.isStopped()) {
             try {
-                if (this.brokerController.getBrokerConfig().isLongPollingEnable()) {
+                if (this.broker.getBrokerConfig().isLongPollingEnable()) {
                     this.waitForRunning(5 * 1000);
                 } else {
-                    this.waitForRunning(this.brokerController.getBrokerConfig().getShortPollingTimeMills());
+                    this.waitForRunning(this.broker.getBrokerConfig().getShortPollingTimeMills());
                 }
 
                 long beginLockTimestamp = this.systemClock.now();
@@ -91,8 +91,8 @@ public class PullRequestHoldService extends ServiceThread {
 
     @Override
     public String getServiceName() {
-        if (brokerController != null && brokerController.getBrokerConfig().isInBrokerContainer()) {
-            return this.brokerController.getBrokerIdentity().getIdentifier() + PullRequestHoldService.class.getSimpleName();
+        if (broker != null && broker.getBrokerConfig().isInBrokerContainer()) {
+            return this.broker.getBrokerIdentity().getIdentifier() + PullRequestHoldService.class.getSimpleName();
         }
         return PullRequestHoldService.class.getSimpleName();
     }
@@ -103,7 +103,7 @@ public class PullRequestHoldService extends ServiceThread {
             if (2 == kArray.length) {
                 String topic = kArray[0];
                 int queueId = Integer.parseInt(kArray[1]);
-                final long offset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
+                final long offset = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId);
                 try {
                     this.notifyMessageArriving(topic, queueId, offset);
                 } catch (Throwable e) {
@@ -136,7 +136,7 @@ public class PullRequestHoldService extends ServiceThread {
         for (PullRequest request : requestList) {
             long newestOffset = maxOffset;
             if (newestOffset <= request.getPullFromThisOffset()) {
-                newestOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
+                newestOffset = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId);
             }
 
             if (newestOffset > request.getPullFromThisOffset()) {
@@ -149,7 +149,7 @@ public class PullRequestHoldService extends ServiceThread {
 
                 if (match) {
                     try {
-                        this.brokerController.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
+                        this.broker.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
                             request.getRequestCommand());
                     } catch (Throwable e) {
                         log.error(
@@ -162,7 +162,7 @@ public class PullRequestHoldService extends ServiceThread {
 
             if (System.currentTimeMillis() >= (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
                 try {
-                    this.brokerController.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
+                    this.broker.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
                         request.getRequestCommand());
                 } catch (Throwable e) {
                     log.error(
@@ -189,7 +189,7 @@ public class PullRequestHoldService extends ServiceThread {
             for (PullRequest request : mpr.cloneListAndClear()) {
                 try {
                     log.info("notify master online, wakeup {} {}", request.getClientChannel(), request.getRequestCommand());
-                    this.brokerController.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
+                    this.broker.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
                         request.getRequestCommand());
                 } catch (Throwable e) {
                     log.error("execute request when master online failed.", e);

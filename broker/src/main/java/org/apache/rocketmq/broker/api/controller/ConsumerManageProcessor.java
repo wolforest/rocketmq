@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.api.controller;
 
 import io.netty.channel.ChannelHandlerContext;
 import java.util.List;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.metadata.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -49,10 +49,10 @@ import static org.apache.rocketmq.remoting.protocol.RemotingCommand.buildErrorRe
 
 public class ConsumerManageProcessor implements NettyRequestProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
 
-    public ConsumerManageProcessor(final BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public ConsumerManageProcessor(final Broker broker) {
+        this.broker = broker;
     }
 
     @Override
@@ -85,7 +85,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
                 .decodeCommandCustomHeader(GetConsumerListByGroupRequestHeader.class);
 
         ConsumerGroupInfo consumerGroupInfo =
-            this.brokerController.getConsumerManager().getConsumerGroupInfo(
+            this.broker.getConsumerManager().getConsumerGroupInfo(
                 requestHeader.getConsumerGroup());
         if (consumerGroupInfo != null) {
             List<String> clientIds = consumerGroupInfo.getAllClientId();
@@ -131,7 +131,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
                 return null;
             }
             RpcRequest rpcRequest = new RpcRequest(RequestCode.UPDATE_CONSUMER_OFFSET, requestHeader, null);
-            RpcResponse rpcResponse = this.brokerController.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.brokerController.getBrokerConfig().getForwardTimeout()).get();
+            RpcResponse rpcResponse = this.broker.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
             if (rpcResponse.getException() != null) {
                 throw rpcResponse.getException();
             }
@@ -152,7 +152,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
                 request.decodeCommandCustomHeader(UpdateConsumerOffsetRequestHeader.class);
 
         TopicQueueMappingContext mappingContext =
-            this.brokerController.getTopicQueueMappingManager().buildTopicQueueMappingContext(requestHeader);
+            this.broker.getTopicQueueMappingManager().buildTopicQueueMappingContext(requestHeader);
 
         RemotingCommand rewriteResult = rewriteRequestForStaticTopic(requestHeader, mappingContext);
         if (rewriteResult != null) {
@@ -164,7 +164,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
         Integer queueId = requestHeader.getQueueId();
         Long offset = requestHeader.getCommitOffset();
 
-        if (!this.brokerController.getTopicConfigManager().containsTopic(requestHeader.getTopic())) {
+        if (!this.broker.getTopicConfigManager().containsTopic(requestHeader.getTopic())) {
             response.setCode(ResponseCode.TOPIC_NOT_EXIST);
             response.setRemark("Topic " + topic + " not exist!");
             return response;
@@ -182,8 +182,8 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
             return response;
         }
 
-        ConsumerOffsetManager consumerOffsetManager = brokerController.getConsumerOffsetManager();
-        if (this.brokerController.getBrokerConfig().isUseServerSideResetOffset()) {
+        ConsumerOffsetManager consumerOffsetManager = broker.getConsumerOffsetManager();
+        if (this.broker.getBrokerConfig().isUseServerSideResetOffset()) {
             // Note, ignoring this update offset request
             if (consumerOffsetManager.hasOffsetReset(topic, group, queueId)) {
                 response.setCode(ResponseCode.SUCCESS);
@@ -194,7 +194,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
             }
         }
 
-        this.brokerController.getConsumerOffsetManager().commitOffset(
+        this.broker.getConsumerOffsetManager().commitOffset(
             RemotingHelper.parseChannelRemoteAddr(ctx.channel()), group, topic, queueId, offset);
         response.setCode(ResponseCode.SUCCESS);
         response.setRemark(null);
@@ -228,7 +228,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
                 LogicQueueMappingItem mappingItem = itemList.get(i);
                 mappingContext.setCurrentItem(mappingItem);
                 if (mappingItem.getBname().equals(mappingDetail.getBname())) {
-                    offset = this.brokerController.getConsumerOffsetManager().queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), mappingItem.getQueueId());
+                    offset = this.broker.getConsumerOffsetManager().queryOffset(requestHeader.getConsumerGroup(), requestHeader.getTopic(), mappingItem.getQueueId());
                     if (offset >= 0) {
                         break;
                     } else {
@@ -242,7 +242,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
                     requestHeader.setLo(false);
                     requestHeader.setSetZeroIfNotFound(false);
                     RpcRequest rpcRequest = new RpcRequest(RequestCode.QUERY_CONSUMER_OFFSET, requestHeader, null);
-                    RpcResponse rpcResponse = this.brokerController.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.brokerController.getBrokerConfig().getForwardTimeout()).get();
+                    RpcResponse rpcResponse = this.broker.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
                     if (rpcResponse.getException() != null) {
                         throw rpcResponse.getException();
                     }
@@ -306,14 +306,14 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
             (QueryConsumerOffsetRequestHeader) request
                 .decodeCommandCustomHeader(QueryConsumerOffsetRequestHeader.class);
 
-        TopicQueueMappingContext mappingContext = this.brokerController.getTopicQueueMappingManager().buildTopicQueueMappingContext(requestHeader);
+        TopicQueueMappingContext mappingContext = this.broker.getTopicQueueMappingManager().buildTopicQueueMappingContext(requestHeader);
         RemotingCommand rewriteResult = rewriteRequestForStaticTopic(requestHeader, mappingContext);
         if (rewriteResult != null) {
             return rewriteResult;
         }
 
         long offset =
-            this.brokerController.getConsumerOffsetManager().queryOffset(
+            this.broker.getConsumerOffsetManager().queryOffset(
                 requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
 
         if (offset >= 0) {
@@ -322,13 +322,13 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
             response.setRemark(null);
         } else {
             long minOffset =
-                this.brokerController.getMessageStore().getMinOffsetInQueue(requestHeader.getTopic(),
+                this.broker.getMessageStore().getMinOffsetInQueue(requestHeader.getTopic(),
                     requestHeader.getQueueId());
             if (requestHeader.getSetZeroIfNotFound() != null && Boolean.FALSE.equals(requestHeader.getSetZeroIfNotFound())) {
                 response.setCode(ResponseCode.QUERY_NOT_FOUND);
                 response.setRemark("Not found, do not set to zero, maybe this group boot first");
             } else if (minOffset <= 0
-                && this.brokerController.getMessageStore().checkInMemByConsumeOffset(
+                && this.broker.getMessageStore().checkInMemByConsumeOffset(
                 requestHeader.getTopic(), requestHeader.getQueueId(), 0, 1)) {
                 responseHeader.setOffset(0L);
                 response.setCode(ResponseCode.SUCCESS);

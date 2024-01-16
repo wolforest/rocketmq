@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.service.pop;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.store.api.pop.PopCheckPoint;
 import org.junit.Test;
@@ -29,10 +29,10 @@ public class PopInflightMessageCounterTest {
 
     @Test
     public void testNum() {
-        BrokerController brokerController = mock(BrokerController.class);
+        Broker broker = mock(Broker.class);
         long brokerStartTime = System.currentTimeMillis();
-        when(brokerController.getShouldStartTime()).thenReturn(brokerStartTime);
-        PopInflightMessageCounter counter = new PopInflightMessageCounter(brokerController);
+        when(broker.getShouldStartTime()).thenReturn(brokerStartTime);
+        PopInflightMessageCounter counter = new PopInflightMessageCounter(broker);
 
         final String topic = "topic";
         final String group = "group";
@@ -66,10 +66,10 @@ public class PopInflightMessageCounterTest {
 
     @Test
     public void testClearInFlightMessageNum() {
-        BrokerController brokerController = mock(BrokerController.class);
+        Broker broker = mock(Broker.class);
         long brokerStartTime = System.currentTimeMillis();
-        when(brokerController.getShouldStartTime()).thenReturn(brokerStartTime);
-        PopInflightMessageCounter counter = new PopInflightMessageCounter(brokerController);
+        when(broker.getShouldStartTime()).thenReturn(brokerStartTime);
+        PopInflightMessageCounter counter = new PopInflightMessageCounter(broker);
 
         final String topic = "topic";
         final String group = "group";

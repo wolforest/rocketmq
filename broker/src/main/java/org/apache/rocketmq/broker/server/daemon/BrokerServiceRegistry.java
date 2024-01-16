@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
@@ -51,13 +51,13 @@ public class BrokerServiceRegistry {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
     private final BrokerConfig brokerConfig;
-    private final BrokerController brokerController;
+    private final Broker broker;
     private BrokerOuterAPI brokerOuterAPI;
 
-    public BrokerServiceRegistry(BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.brokerConfig = brokerController.getBrokerConfig();
-        NettyClientConfig nettyClientConfig = brokerController.getNettyClientConfig();
+    public BrokerServiceRegistry(Broker broker) {
+        this.broker = broker;
+        this.brokerConfig = broker.getBrokerConfig();
+        NettyClientConfig nettyClientConfig = broker.getNettyClientConfig();
 
         if (null == nettyClientConfig) {
             LOG.info("nettyClientConfig is null,brokerOuterAPI does not need to be started");
@@ -122,7 +122,7 @@ public class BrokerServiceRegistry {
 
         Map<String, TopicQueueMappingInfo> topicQueueMappingInfoMap = topicConfigList.stream()
             .map(TopicConfig::getTopicName)
-            .map(topicName -> Optional.ofNullable(brokerController.getBrokerMetadataManager().getTopicQueueMappingManager().getTopicQueueMapping(topicName))
+            .map(topicName -> Optional.ofNullable(broker.getBrokerMetadataManager().getTopicQueueMappingManager().getTopicQueueMapping(topicName))
                 .map(info -> new AbstractMap.SimpleImmutableEntry<>(topicName, TopicQueueMappingDetail.cloneAsMappingInfo(info)))
                 .orElse(null))
             .filter(Objects::nonNull)
@@ -135,35 +135,35 @@ public class BrokerServiceRegistry {
     }
 
     public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway, boolean forceRegister) {
-        ConcurrentMap<String, TopicConfig> topicConfigMap = brokerController.getTopicConfigManager().getTopicConfigTable();
+        ConcurrentMap<String, TopicConfig> topicConfigMap = broker.getTopicConfigManager().getTopicConfigTable();
         ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>();
 
         for (TopicConfig topicConfig : topicConfigMap.values()) {
-            if (!PermName.isWriteable(brokerController.getBrokerConfig().getBrokerPermission())
-                || !PermName.isReadable(brokerController.getBrokerConfig().getBrokerPermission())) {
+            if (!PermName.isWriteable(broker.getBrokerConfig().getBrokerPermission())
+                || !PermName.isReadable(broker.getBrokerConfig().getBrokerPermission())) {
                 topicConfigTable.put(topicConfig.getTopicName(),
                     new TopicConfig(topicConfig.getTopicName(), topicConfig.getReadQueueNums(), topicConfig.getWriteQueueNums(),
-                        topicConfig.getPerm() & brokerController.getBrokerConfig().getBrokerPermission()));
+                        topicConfig.getPerm() & broker.getBrokerConfig().getBrokerPermission()));
             } else {
                 topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
             }
 
             if (this.brokerConfig.isEnableSplitRegistration()
                 && topicConfigTable.size() >= this.brokerConfig.getSplitRegistrationSize()) {
-                TopicConfigAndMappingSerializeWrapper topicConfigWrapper = brokerController.getTopicConfigManager().buildSerializeWrapper(topicConfigTable);
+                TopicConfigAndMappingSerializeWrapper topicConfigWrapper = broker.getTopicConfigManager().buildSerializeWrapper(topicConfigTable);
                 doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);
                 topicConfigTable.clear();
             }
         }
 
-        Map<String, TopicQueueMappingInfo> topicQueueMappingInfoMap = brokerController.getTopicQueueMappingManager().getTopicQueueMappingTable().entrySet().stream()
+        Map<String, TopicQueueMappingInfo> topicQueueMappingInfoMap = broker.getTopicQueueMappingManager().getTopicQueueMappingTable().entrySet().stream()
             .map(entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), TopicQueueMappingDetail.cloneAsMappingInfo(entry.getValue())))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        TopicConfigAndMappingSerializeWrapper topicConfigWrapper = brokerController.getTopicConfigManager().
+        TopicConfigAndMappingSerializeWrapper topicConfigWrapper = broker.getTopicConfigManager().
             buildSerializeWrapper(topicConfigTable, topicQueueMappingInfoMap);
         if (this.brokerConfig.isEnableSplitRegistration() || forceRegister || needRegister(this.brokerConfig.getBrokerClusterName(),
-            brokerController.getBrokerAddr(),
+            broker.getBrokerAddr(),
             this.brokerConfig.getBrokerName(),
             this.brokerConfig.getBrokerId(),
             this.brokerConfig.getRegisterBrokerTimeoutMills(),
@@ -175,23 +175,23 @@ public class BrokerServiceRegistry {
     public void unregisterBrokerAll() {
         this.brokerOuterAPI.unregisterBrokerAll(
             this.brokerConfig.getBrokerClusterName(),
-            brokerController.getBrokerAddr(),
+            broker.getBrokerAddr(),
             this.brokerConfig.getBrokerName(),
             this.brokerConfig.getBrokerId());
     }
 
     private void doRegisterBrokerAll(boolean checkOrderConfig, boolean oneway, TopicConfigSerializeWrapper topicConfigWrapper) {
-        if (brokerController.isShutdown()) {
+        if (broker.isShutdown()) {
             LOG.info("BrokerController#doRegisterBrokerAll: broker has shutdown, no need to register any more.");
             return;
         }
 
         List<RegisterBrokerResult> registerBrokerResultList = this.brokerOuterAPI.registerBrokerAll(
             this.brokerConfig.getBrokerClusterName(),
-            brokerController.getBrokerAddr(),
+            broker.getBrokerAddr(),
             this.brokerConfig.getBrokerName(),
             this.brokerConfig.getBrokerId(),
-            brokerController.getHAServerAddr(),
+            broker.getHAServerAddr(),
             topicConfigWrapper,
             Lists.newArrayList(),
             oneway,
@@ -199,7 +199,7 @@ public class BrokerServiceRegistry {
             this.brokerConfig.isEnableSlaveActingMaster(),
             this.brokerConfig.isCompressedRegister(),
             this.brokerConfig.isEnableSlaveActingMaster() ? this.brokerConfig.getBrokerNotActiveTimeoutMillis() : null,
-            brokerController.getBrokerIdentity());
+            broker.getBrokerIdentity());
 
         handleRegisterBrokerResult(registerBrokerResultList, checkOrderConfig);
     }
@@ -211,7 +211,7 @@ public class BrokerServiceRegistry {
         final int timeoutMills,
         final boolean isInBrokerContainer) {
 
-        TopicConfigSerializeWrapper topicConfigWrapper = brokerController.getBrokerMetadataManager().getTopicConfigManager().buildTopicConfigSerializeWrapper();
+        TopicConfigSerializeWrapper topicConfigWrapper = broker.getBrokerMetadataManager().getTopicConfigManager().buildTopicConfigSerializeWrapper();
         List<Boolean> changeList = brokerOuterAPI.needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigWrapper, timeoutMills, isInBrokerContainer);
         boolean needRegister = false;
         for (Boolean changed : changeList) {
@@ -227,14 +227,14 @@ public class BrokerServiceRegistry {
         boolean checkOrderConfig) {
         for (RegisterBrokerResult registerBrokerResult : registerBrokerResultList) {
             if (registerBrokerResult != null) {
-                if (brokerController.getBrokerClusterService().isUpdateMasterHAServerAddrPeriodically() && registerBrokerResult.getHaServerAddr() != null) {
-                    brokerController.getMessageStore().updateHaMasterAddress(registerBrokerResult.getHaServerAddr());
-                    brokerController.getMessageStore().updateMasterAddress(registerBrokerResult.getMasterAddr());
+                if (broker.getBrokerClusterService().isUpdateMasterHAServerAddrPeriodically() && registerBrokerResult.getHaServerAddr() != null) {
+                    broker.getMessageStore().updateHaMasterAddress(registerBrokerResult.getHaServerAddr());
+                    broker.getMessageStore().updateMasterAddress(registerBrokerResult.getMasterAddr());
                 }
 
-                brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(registerBrokerResult.getMasterAddr());
+                broker.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(registerBrokerResult.getMasterAddr());
                 if (checkOrderConfig) {
-                    brokerController.getBrokerMetadataManager().getTopicConfigManager().updateOrderTopicConfig(registerBrokerResult.getKvTable());
+                    broker.getBrokerMetadataManager().getTopicConfigManager().updateOrderTopicConfig(registerBrokerResult.getKvTable());
                 }
                 break;
             }

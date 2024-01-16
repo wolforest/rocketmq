@@ -48,16 +48,16 @@ public class PopBigMessageIT extends BasePopNormally {
 
     @Test
     public void testSendAndRecvBigMsgWhenDisablePopBufferMerge() throws Throwable {
-        brokerController1.getBrokerConfig().setEnablePopBufferMerge(false);
-        brokerController2.getBrokerConfig().setEnablePopBufferMerge(false);
+        broker1.getBrokerConfig().setEnablePopBufferMerge(false);
+        broker2.getBrokerConfig().setEnablePopBufferMerge(false);
 
         this.testSendAndRecvBigMsg();
     }
 
     @Test
     public void testSendAndRecvBigMsgWhenEnablePopBufferMerge() throws Throwable {
-        brokerController1.getBrokerConfig().setEnablePopBufferMerge(true);
-        brokerController2.getBrokerConfig().setEnablePopBufferMerge(true);
+        broker1.getBrokerConfig().setEnablePopBufferMerge(true);
+        broker2.getBrokerConfig().setEnablePopBufferMerge(true);
 
         this.testSendAndRecvBigMsg();
     }

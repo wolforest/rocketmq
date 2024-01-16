@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.container.BrokerContainer;
 import org.apache.rocketmq.container.InnerSalveBrokerController;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -87,7 +87,7 @@ public class SyncConsumerOffsetIT extends ContainerIntegrationTestBase {
             master3With3Replicas, Arrays.asList(brokerContainer1, brokerContainer2));
     }
 
-    private void syncConsumeOffsetInner(String topic, DefaultMQPushConsumer consumer, BrokerController master,
+    private void syncConsumeOffsetInner(String topic, DefaultMQPushConsumer consumer, Broker master,
         List<BrokerContainer> slaveContainers) throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
         awaitUntilSlaveOK();
         String group = THREE_REPLICA_CONSUMER_GROUP;

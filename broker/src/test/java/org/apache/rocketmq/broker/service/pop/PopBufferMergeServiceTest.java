@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.service.pop;
 
 import io.netty.channel.Channel;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.server.schedule.ScheduleMessageService;
 import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.mock;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class PopBufferMergeServiceTest {
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
     @Mock
     private DefaultMessageStore messageStore;
     private ScheduleMessageService scheduleMessageService;
@@ -57,15 +57,15 @@ public class PopBufferMergeServiceTest {
 
     @Before
     public void init() throws Exception {
-        ReflectUtils.writeField(brokerController.getBrokerConfig(), "enablePopBufferMerge", true, true);
-        brokerController.setMessageStore(messageStore);
-        scheduleMessageService = new ScheduleMessageService(brokerController);
+        ReflectUtils.writeField(broker.getBrokerConfig(), "enablePopBufferMerge", true, true);
+        broker.setMessageStore(messageStore);
+        scheduleMessageService = new ScheduleMessageService(broker);
         scheduleMessageService.parseDelayLevel();
         Channel mockChannel = mock(Channel.class);
-        brokerController.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());
+        broker.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());
         clientChannelInfo = new ClientChannelInfo(mockChannel);
         ConsumerData consumerData = createConsumerData(group, topic);
-        brokerController.getConsumerManager().registerConsumer(
+        broker.getConsumerManager().registerConsumer(
             consumerData.getGroupName(),
             clientChannelInfo,
             consumerData.getConsumeType(),
@@ -80,7 +80,7 @@ public class PopBufferMergeServiceTest {
         // This test case fails on Windows in CI pipeline
         // Disable it for later fix
         Assume.assumeFalse(SystemUtils.isWindows());
-        PopBufferMergeService popBufferMergeService = new PopBufferMergeService(brokerController);
+        PopBufferMergeService popBufferMergeService = new PopBufferMergeService(broker);
         popBufferMergeService.start();
         PopCheckPoint ck = new PopCheckPoint();
         ck.setBitMap(0);

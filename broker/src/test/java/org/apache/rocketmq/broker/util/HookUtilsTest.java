@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.util;
 
 import java.util.Objects;
 import org.apache.rocketmq.broker.domain.HookUtils;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.StringUtils;
@@ -34,37 +34,37 @@ public class HookUtilsTest {
 
     @Test
     public void testCheckBeforePutMessage() {
-        BrokerController brokerController = Mockito.mock(BrokerController.class);
+        Broker broker = Mockito.mock(Broker.class);
         MessageStore messageStore = Mockito.mock(MessageStore.class);
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         RunningFlags runningFlags = Mockito.mock(RunningFlags.class);
 
-        Mockito.when(brokerController.getMessageStore()).thenReturn(messageStore);
-        Mockito.when(brokerController.getMessageStore().isShutdown()).thenReturn(false);
-        Mockito.when(brokerController.getMessageStoreConfig()).thenReturn(messageStoreConfig);
+        Mockito.when(broker.getMessageStore()).thenReturn(messageStore);
+        Mockito.when(broker.getMessageStore().isShutdown()).thenReturn(false);
+        Mockito.when(broker.getMessageStoreConfig()).thenReturn(messageStoreConfig);
         Mockito.when(messageStore.getRunningFlags()).thenReturn(runningFlags);
         Mockito.when(messageStore.getRunningFlags().isWriteable()).thenReturn(true);
 
         MessageExt messageExt = new MessageExt();
         messageExt.setTopic(StringUtils.randomAlphabetic(Byte.MAX_VALUE).toUpperCase());
         messageExt.setBody(StringUtils.randomAlphabetic(Byte.MAX_VALUE).toUpperCase().getBytes());
-        Assert.assertNull(HookUtils.checkBeforePutMessage(brokerController, messageExt));
+        Assert.assertNull(HookUtils.checkBeforePutMessage(broker, messageExt));
 
         messageExt.setTopic(StringUtils.randomAlphabetic(Byte.MAX_VALUE + 1).toUpperCase());
         Assert.assertEquals(PutMessageStatus.MESSAGE_ILLEGAL, Objects.requireNonNull(
-            HookUtils.checkBeforePutMessage(brokerController, messageExt)).getPutMessageStatus());
+            HookUtils.checkBeforePutMessage(broker, messageExt)).getPutMessageStatus());
 
         messageExt.setTopic(MQConstants.RETRY_GROUP_TOPIC_PREFIX +
             StringUtils.randomAlphabetic(Byte.MAX_VALUE + 1).toUpperCase());
-        Assert.assertNull(HookUtils.checkBeforePutMessage(brokerController, messageExt));
+        Assert.assertNull(HookUtils.checkBeforePutMessage(broker, messageExt));
 
         messageExt.setTopic(MQConstants.RETRY_GROUP_TOPIC_PREFIX +
             StringUtils.randomAlphabetic(255 - MQConstants.RETRY_GROUP_TOPIC_PREFIX.length()).toUpperCase());
-        Assert.assertNull(HookUtils.checkBeforePutMessage(brokerController, messageExt));
+        Assert.assertNull(HookUtils.checkBeforePutMessage(broker, messageExt));
 
         messageExt.setTopic(MQConstants.RETRY_GROUP_TOPIC_PREFIX +
             StringUtils.randomAlphabetic(256 - MQConstants.RETRY_GROUP_TOPIC_PREFIX.length()).toUpperCase());
         Assert.assertEquals(PutMessageStatus.MESSAGE_ILLEGAL, Objects.requireNonNull(
-            HookUtils.checkBeforePutMessage(brokerController, messageExt)).getPutMessageStatus());
+            HookUtils.checkBeforePutMessage(broker, messageExt)).getPutMessageStatus());
     }
 }

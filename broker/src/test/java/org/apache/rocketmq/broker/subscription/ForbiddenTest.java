@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.subscription;
 
 import static org.junit.Assert.assertEquals;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -31,7 +31,7 @@ public class ForbiddenTest {
     @Test
     public void testBrokerRestart() throws Exception {
         SubscriptionGroupManager s = new SubscriptionGroupManager(
-            new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig()));
+            new Broker(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig()));
         s.updateForbidden("g", "t", 0, true);
         assertEquals(1, s.getForbidden("g", "t"));
         assertEquals(true, s.getForbidden("g", "t", 0));

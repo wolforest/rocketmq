@@ -20,15 +20,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 public class RocksDBLmqConsumerOffsetManager extends RocksDBConsumerOffsetManager {
     private ConcurrentHashMap<String, Long> lmqOffsetTable = new ConcurrentHashMap<>(512);
 
-    public RocksDBLmqConsumerOffsetManager(BrokerController brokerController) {
-        super(brokerController);
+    public RocksDBLmqConsumerOffsetManager(Broker broker) {
+        super(broker);
     }
 
     @Override

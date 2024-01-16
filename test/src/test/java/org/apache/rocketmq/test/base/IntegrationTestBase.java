@@ -18,7 +18,7 @@
 package org.apache.rocketmq.test.base;
 
 import com.google.common.truth.Truth;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicAttributes;
@@ -51,7 +51,7 @@ public class IntegrationTestBase {
     protected static final String BROKER_NAME_PREFIX = "TestBrokerName_";
     protected static final AtomicInteger BROKER_INDEX = new AtomicInteger(0);
     protected static final List<File> TMPE_FILES = new ArrayList<>();
-    protected static final List<BrokerController> BROKER_CONTROLLERS = new ArrayList<>();
+    protected static final List<Broker> BROKER_CONTROLLERS = new ArrayList<>();
     protected static final List<NamesrvController> NAMESRV_CONTROLLERS = new ArrayList<>();
     protected static int topicCreateTime = (int) TimeUnit.SECONDS.toSeconds(30);
     public static volatile int commitLogSize = 1024 * 1024 * 100;
@@ -65,16 +65,16 @@ public class IntegrationTestBase {
             @Override
             public void run() {
                 try {
-                    for (BrokerController brokerController : BROKER_CONTROLLERS) {
-                        if (brokerController != null) {
-                            brokerController.shutdown();
+                    for (Broker broker : BROKER_CONTROLLERS) {
+                        if (broker != null) {
+                            broker.shutdown();
                         }
                     }
 
                     // should destroy message store, otherwise could not delete the temp files.
-                    for (BrokerController brokerController : BROKER_CONTROLLERS) {
-                        if (brokerController != null) {
-                            brokerController.getMessageStore().destroy();
+                    for (Broker broker : BROKER_CONTROLLERS) {
+                        if (broker != null) {
+                            broker.getMessageStore().destroy();
                         }
                     }
 
@@ -128,7 +128,7 @@ public class IntegrationTestBase {
 
     }
 
-    public static BrokerController createAndStartBroker(String nsAddr) {
+    public static Broker createAndStartBroker(String nsAddr) {
         String baseDir = createBaseDir();
         BrokerConfig brokerConfig = new BrokerConfig();
         MessageStoreConfig storeConfig = new MessageStoreConfig();
@@ -150,22 +150,22 @@ public class IntegrationTestBase {
         return createAndStartBroker(storeConfig, brokerConfig);
     }
 
-    public static BrokerController createAndStartBroker(MessageStoreConfig storeConfig, BrokerConfig brokerConfig) {
+    public static Broker createAndStartBroker(MessageStoreConfig storeConfig, BrokerConfig brokerConfig) {
         NettyServerConfig nettyServerConfig = new NettyServerConfig();
         NettyClientConfig nettyClientConfig = new NettyClientConfig();
         nettyServerConfig.setListenPort(0);
         storeConfig.setHaListenPort(0);
-        BrokerController brokerController = new BrokerController(brokerConfig, nettyServerConfig, nettyClientConfig, storeConfig);
+        Broker broker = new Broker(brokerConfig, nettyServerConfig, nettyClientConfig, storeConfig);
         try {
-            Truth.assertThat(brokerController.initialize()).isTrue();
-            logger.info("Broker Start name:{} addr:{}", brokerConfig.getBrokerName(), brokerController.getBrokerAddr());
-            brokerController.start();
+            Truth.assertThat(broker.initialize()).isTrue();
+            logger.info("Broker Start name:{} addr:{}", brokerConfig.getBrokerName(), broker.getBrokerAddr());
+            broker.start();
         } catch (Throwable t) {
             logger.error("Broker start failed, will exit", t);
             System.exit(1);
         }
-        BROKER_CONTROLLERS.add(brokerController);
-        return brokerController;
+        BROKER_CONTROLLERS.add(broker);
+        return broker;
     }
 
     public static boolean initTopic(String topic, String nsAddr, String clusterName, int queueNumbers, CQType cqType) {

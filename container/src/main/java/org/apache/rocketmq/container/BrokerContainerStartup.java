@@ -27,7 +27,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
@@ -61,16 +61,16 @@ public class BrokerContainerStartup {
         createAndStartBrokers(brokerContainer);
     }
 
-    public static BrokerController createBrokerController(String[] args) {
+    public static Broker createBrokerController(String[] args) {
         final BrokerContainer brokerContainer = startBrokerContainer(createBrokerContainer(args));
         return createAndInitializeBroker(brokerContainer, configFile, properties);
     }
 
-    public static List<BrokerController> createAndStartBrokers(BrokerContainer brokerContainer) {
+    public static List<Broker> createAndStartBrokers(BrokerContainer brokerContainer) {
         String[] configPaths = parseBrokerConfigPath();
-        List<BrokerController> brokerControllerList = new ArrayList<>();
+        List<Broker> brokerList = new ArrayList<>();
         if (configPaths == null || configPaths.length <= 0) {
-            return brokerControllerList;
+            return brokerList;
         }
 
         SystemConfigFileHelper configFileHelper = new SystemConfigFileHelper();
@@ -78,16 +78,16 @@ public class BrokerContainerStartup {
             System.out.printf("Start broker from config file path %s%n", configPath);
             Properties brokerProperties = loadConfigProperties(configFileHelper, configPath);
 
-            final BrokerController brokerController = createAndInitializeBroker(brokerContainer, configPath, brokerProperties);
-            if (brokerController == null) {
+            final Broker broker = createAndInitializeBroker(brokerContainer, configPath, brokerProperties);
+            if (broker == null) {
                 continue;
             }
 
-            brokerControllerList.add(brokerController);
-            startBrokerController(brokerContainer, brokerController, brokerProperties);
+            brokerList.add(broker);
+            startBrokerController(brokerContainer, broker, brokerProperties);
         }
 
-        return brokerControllerList;
+        return brokerList;
     }
 
     private static String[] parseBrokerConfigPath() {
@@ -138,7 +138,7 @@ public class BrokerContainerStartup {
     }
 
 
-    private static BrokerController createAndInitializeBroker(BrokerContainer brokerContainer, String filePath, Properties brokerProperties) {
+    private static Broker createAndInitializeBroker(BrokerContainer brokerContainer, String filePath, Properties brokerProperties) {
         if (brokerProperties != null) {
             properties2SystemEnv(brokerProperties);
         }
@@ -151,10 +151,10 @@ public class BrokerContainerStartup {
         logConfigProperties(brokerConfig, messageStoreConfig);
 
         try {
-            BrokerController brokerController = brokerContainer.addBroker(brokerConfig, messageStoreConfig);
-            if (brokerController != null) {
-                brokerController.getConfiguration().registerConfig(brokerProperties);
-                return brokerController;
+            Broker broker = brokerContainer.addBroker(brokerConfig, messageStoreConfig);
+            if (broker != null) {
+                broker.getConfiguration().registerConfig(brokerProperties);
+                return broker;
             }
 
             System.out.printf("Add broker [%s-%s] failed.%n", brokerConfig.getBrokerName(), brokerConfig.getBrokerId());
@@ -243,23 +243,23 @@ public class BrokerContainerStartup {
     }
 
     public static void startBrokerController(BrokerContainer brokerContainer,
-        BrokerController brokerController, Properties brokerProperties) {
+        Broker broker, Properties brokerProperties) {
         try {
-            executeBeforeStart(brokerContainer, brokerController, brokerProperties);
-            brokerController.start();
-            executeAfterStart(brokerContainer, brokerController, brokerProperties);
+            executeBeforeStart(brokerContainer, broker, brokerProperties);
+            broker.start();
+            executeAfterStart(brokerContainer, broker, brokerProperties);
 
-            logControllerStartInfo(brokerController);
+            logControllerStartInfo(broker);
         } catch (Throwable e) {
             e.printStackTrace();
             System.exit(-1);
         }
     }
 
-    private static void logControllerStartInfo(BrokerController brokerController) {
+    private static void logControllerStartInfo(Broker broker) {
         String tip = String.format("Broker [%s-%s] boot success. serializeType=%s",
-            brokerController.getBrokerConfig().getBrokerName(),
-            brokerController.getBrokerConfig().getBrokerId(),
+            broker.getBrokerConfig().getBrokerName(),
+            broker.getBrokerConfig().getBrokerId(),
             RemotingCommand.getSerializeTypeConfigInThisServer());
 
         log.info(tip);
@@ -276,15 +276,15 @@ public class BrokerContainerStartup {
         System.out.printf("%s%n", tip);
     }
 
-    private static void executeBeforeStart(BrokerContainer brokerContainer, BrokerController brokerController, Properties brokerProperties) throws Exception {
+    private static void executeBeforeStart(BrokerContainer brokerContainer, Broker broker, Properties brokerProperties) throws Exception {
         for (BrokerBootHook hook : brokerContainer.getBrokerBootHookList()) {
-            hook.executeBeforeStart(brokerController, brokerProperties);
+            hook.executeBeforeStart(broker, brokerProperties);
         }
     }
 
-    private static void executeAfterStart(BrokerContainer brokerContainer, BrokerController brokerController, Properties brokerProperties) throws Exception {
+    private static void executeAfterStart(BrokerContainer brokerContainer, Broker broker, Properties brokerProperties) throws Exception {
         for (BrokerBootHook hook : brokerContainer.getBrokerBootHookList()) {
-            hook.executeAfterStart(brokerController, brokerProperties);
+            hook.executeAfterStart(broker, brokerProperties);
         }
     }
 

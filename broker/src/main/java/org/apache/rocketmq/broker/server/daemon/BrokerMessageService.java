@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.server.daemon;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.broker.domain.dledger.DLedgerRoleChangeHandler;
 import org.apache.rocketmq.broker.domain.failover.EscapeBridge;
@@ -70,7 +70,7 @@ public class BrokerMessageService {
     private final MessageStoreConfig messageStoreConfig;
     private final ConcurrentMap<String, TopicConfig> topicConfigTable;
 
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final BrokerStatsManager brokerStatsManager;
     private final MessageArrivingListener messageArrivingListener;
 
@@ -86,16 +86,16 @@ public class BrokerMessageService {
     private TimerMessageStore timerMessageStore;
 
 
-    public BrokerMessageService(BrokerController brokerController) {
-        this.brokerController = brokerController;
-        this.brokerConfig = brokerController.getBrokerConfig();
-        this.brokerStatsManager = brokerController.getBrokerStatsManager();
-        this.messageArrivingListener = brokerController.getBrokerNettyServer().getMessageArrivingListener();
-        this.messageStoreConfig = brokerController.getMessageStoreConfig();
-        this.topicConfigTable = brokerController.getTopicConfigManager().getTopicConfigTable();
+    public BrokerMessageService(Broker broker) {
+        this.broker = broker;
+        this.brokerConfig = broker.getBrokerConfig();
+        this.brokerStatsManager = broker.getBrokerStatsManager();
+        this.messageArrivingListener = broker.getBrokerNettyServer().getMessageArrivingListener();
+        this.messageStoreConfig = broker.getMessageStoreConfig();
+        this.topicConfigTable = broker.getTopicConfigManager().getTopicConfigTable();
 
-        this.scheduleMessageService = new ScheduleMessageService(brokerController);
-        this.escapeBridge = new EscapeBridge(brokerController);
+        this.scheduleMessageService = new ScheduleMessageService(broker);
+        this.escapeBridge = new EscapeBridge(broker);
     }
 
     public boolean init() {
@@ -185,12 +185,12 @@ public class BrokerMessageService {
             return true;
         }
 
-        PopServiceManager popServiceManager = brokerController.getBrokerNettyServer().getPopServiceManager();
+        PopServiceManager popServiceManager = broker.getBrokerNettyServer().getPopServiceManager();
         return popServiceManager != null && popServiceManager.isReviveRunning();
     }
 
     public void changeSpecialServiceStatus(boolean shouldStart) {
-        for (BrokerAttachedPlugin brokerAttachedPlugin : brokerController.getBrokerServiceManager().getBrokerAttachedPlugins()) {
+        for (BrokerAttachedPlugin brokerAttachedPlugin : broker.getBrokerServiceManager().getBrokerAttachedPlugins()) {
             if (brokerAttachedPlugin != null) {
                 brokerAttachedPlugin.statusChanged(shouldStart);
             }
@@ -199,10 +199,10 @@ public class BrokerMessageService {
         changeScheduleServiceStatus(shouldStart);
         changeTransactionCheckServiceStatus(shouldStart);
 
-        AckMessageProcessor ackMessageProcessor = brokerController.getBrokerNettyServer().getAckMessageProcessor();
+        AckMessageProcessor ackMessageProcessor = broker.getBrokerNettyServer().getAckMessageProcessor();
         if (ackMessageProcessor != null) {
             LOG.info("Set PopReviveService Status to {}", shouldStart);
-            brokerController.getBrokerNettyServer().getPopServiceManager().setReviveStatus(shouldStart);
+            broker.getBrokerNettyServer().getPopServiceManager().setReviveStatus(shouldStart);
         }
     }
 
@@ -244,7 +244,7 @@ public class BrokerMessageService {
             return;
         }
 
-        DLedgerRoleChangeHandler roleChangeHandler = new DLedgerRoleChangeHandler(brokerController, defaultMessageStore);
+        DLedgerRoleChangeHandler roleChangeHandler = new DLedgerRoleChangeHandler(broker, defaultMessageStore);
         DLedgerCommitLog dLedgerCommitLog =   (DLedgerCommitLog) defaultMessageStore.getCommitLog();
 
         dLedgerCommitLog.getdLedgerServer()
@@ -267,11 +267,11 @@ public class BrokerMessageService {
     private void initStorePlugins(DefaultMessageStore defaultMessageStore) throws IOException {
         // Load store plugin
         MessageStorePluginContext context = new MessageStorePluginContext(
-            messageStoreConfig, brokerStatsManager, this.messageArrivingListener, brokerConfig, brokerController.getConfiguration());
+            messageStoreConfig, brokerStatsManager, this.messageArrivingListener, brokerConfig, broker.getConfiguration());
 
         this.messageStore = MessageStoreFactory.build(context, defaultMessageStore);
 
-        this.messageStore.getDispatcherList().addFirst(new CommitLogDispatcherCalcBitMap(this.brokerConfig, brokerController.getConsumerFilterManager()));
+        this.messageStore.getDispatcherList().addFirst(new CommitLogDispatcherCalcBitMap(this.brokerConfig, broker.getConsumerFilterManager()));
     }
 
     private boolean loadMessageStore() {
@@ -292,7 +292,7 @@ public class BrokerMessageService {
     }
 
     private void initTransaction() {
-        TransactionalMessageBridge transactionalMessageBridge = new TransactionalMessageBridge(brokerController, this.getMessageStore());
+        TransactionalMessageBridge transactionalMessageBridge = new TransactionalMessageBridge(broker, this.getMessageStore());
 
         this.transactionalMessageService = ServiceProvider.loadClass(TransactionalMessageService.class);
         if (null == this.transactionalMessageService) {
@@ -305,8 +305,8 @@ public class BrokerMessageService {
             this.transactionalMessageCheckListener = new DefaultTransactionalMessageCheckListener();
             LOG.warn("Load default discard message hook service: {}", DefaultTransactionalMessageCheckListener.class.getSimpleName());
         }
-        this.transactionalMessageCheckListener.setBrokerController(brokerController);
-        this.transactionalMessageCheckService = new TransactionalMessageCheckService(brokerController, transactionalMessageBridge, this.transactionalMessageCheckListener);
+        this.transactionalMessageCheckListener.setBrokerController(broker);
+        this.transactionalMessageCheckService = new TransactionalMessageCheckService(broker, transactionalMessageBridge, this.transactionalMessageCheckListener);
     }
 
     private void addCheckBeforePutMessageHook() {
@@ -318,7 +318,7 @@ public class BrokerMessageService {
 
             @Override
             public PutMessageResult executeBeforePutMessage(MessageExt msg) {
-                return HookUtils.checkBeforePutMessage(brokerController, msg);
+                return HookUtils.checkBeforePutMessage(broker, msg);
             }
         });
     }
@@ -333,7 +333,7 @@ public class BrokerMessageService {
             @Override
             public PutMessageResult executeBeforePutMessage(MessageExt msg) {
                 if (msg instanceof MessageExtBrokerInner) {
-                    return HookUtils.checkInnerBatch(brokerController, msg);
+                    return HookUtils.checkInnerBatch(broker, msg);
                 }
                 return null;
             }
@@ -350,7 +350,7 @@ public class BrokerMessageService {
             @Override
             public PutMessageResult executeBeforePutMessage(MessageExt msg) {
                 if (msg instanceof MessageExtBrokerInner) {
-                    return HookUtils.handleScheduleMessage(brokerController, (MessageExtBrokerInner) msg);
+                    return HookUtils.handleScheduleMessage(broker, (MessageExtBrokerInner) msg);
                 }
                 return null;
             }
@@ -361,7 +361,7 @@ public class BrokerMessageService {
         return new SendMessageBackHook() {
             @Override
             public boolean executeSendMessageBack(List<MessageExt> msgList, String brokerName, String brokerAddr) {
-                return HookUtils.sendMessageBack(brokerController, msgList, brokerName, brokerAddr);
+                return HookUtils.sendMessageBack(broker, msgList, brokerName, brokerAddr);
             }
         };
     }

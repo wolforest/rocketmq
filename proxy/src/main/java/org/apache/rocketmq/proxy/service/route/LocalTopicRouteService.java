@@ -20,7 +20,7 @@ import com.google.common.collect.Lists;
 import com.google.common.net.HostAndPort;
 import java.util.HashMap;
 import java.util.List;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
@@ -35,16 +35,16 @@ import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
 public class LocalTopicRouteService extends TopicRouteService {
 
-    private final BrokerController brokerController;
+    private final Broker broker;
     private final List<BrokerData> brokerDataList;
     private final int grpcPort;
 
-    public LocalTopicRouteService(BrokerController brokerController, MQClientAPIFactory mqClientAPIFactory) {
+    public LocalTopicRouteService(Broker broker, MQClientAPIFactory mqClientAPIFactory) {
         super(mqClientAPIFactory);
-        this.brokerController = brokerController;
-        BrokerConfig brokerConfig = this.brokerController.getBrokerConfig();
+        this.broker = broker;
+        BrokerConfig brokerConfig = this.broker.getBrokerConfig();
         HashMap<Long, String> brokerAddrs = new HashMap<>();
-        brokerAddrs.put(MQConstants.MASTER_ID, this.brokerController.getBrokerAddr());
+        brokerAddrs.put(MQConstants.MASTER_ID, this.broker.getBrokerAddr());
         this.brokerDataList = Lists.newArrayList(
             new BrokerData(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(), brokerAddrs)
         );
@@ -53,7 +53,7 @@ public class LocalTopicRouteService extends TopicRouteService {
 
     @Override
     public MessageQueueView getCurrentMessageQueueView(ProxyContext ctx, String topic) throws Exception {
-        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().getTopicConfigTable().get(topic);
+        TopicConfig topicConfig = this.broker.getTopicConfigManager().getTopicConfigTable().get(topic);
         return new MessageQueueView(topic, toTopicRouteData(topicConfig), null);
     }
 
@@ -101,7 +101,7 @@ public class LocalTopicRouteService extends TopicRouteService {
 
     @Override
     public String getBrokerAddr(ProxyContext ctx, String brokerName) throws Exception {
-        return this.brokerController.getBrokerAddr();
+        return this.broker.getBrokerAddr();
     }
 
     @Override
@@ -119,7 +119,7 @@ public class LocalTopicRouteService extends TopicRouteService {
         queueData.setReadQueueNums(topicConfig.getReadQueueNums());
         queueData.setWriteQueueNums(topicConfig.getWriteQueueNums());
         queueData.setTopicSysFlag(topicConfig.getTopicSysFlag());
-        queueData.setBrokerName(this.brokerController.getBrokerConfig().getBrokerName());
+        queueData.setBrokerName(this.broker.getBrokerConfig().getBrokerName());
         topicRouteData.setQueueDatas(Lists.newArrayList(queueData));
 
         return topicRouteData;

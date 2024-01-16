@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.processor;
 
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.ConsumerManageProcessor;
 import org.apache.rocketmq.broker.metadata.topic.TopicConfigManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
@@ -47,7 +47,7 @@ public class ConsumerManageProcessorTest {
     @Mock
     private ChannelHandlerContext handlerContext;
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(), new NettyClientConfig(), new MessageStoreConfig());
     @Mock
     private MessageStore messageStore;
 
@@ -56,11 +56,11 @@ public class ConsumerManageProcessorTest {
 
     @Before
     public void init() {
-        brokerController.setMessageStore(messageStore);
-        TopicConfigManager topicConfigManager = new TopicConfigManager(brokerController);
+        broker.setMessageStore(messageStore);
+        TopicConfigManager topicConfigManager = new TopicConfigManager(broker);
         topicConfigManager.getTopicConfigTable().put(topic, new TopicConfig(topic));
-        when(brokerController.getTopicConfigManager()).thenReturn(topicConfigManager);
-        consumerManageProcessor = new ConsumerManageProcessor(brokerController);
+        when(broker.getTopicConfigManager()).thenReturn(topicConfigManager);
+        consumerManageProcessor = new ConsumerManageProcessor(broker);
     }
 
     @Test

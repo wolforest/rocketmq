@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.transaction.queue;
 
 import java.net.InetSocketAddress;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.transaction.queue.DefaultTransactionalMessageCheckListener;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.message.MessageAccessor;
@@ -45,15 +45,15 @@ public class DefaultTransactionalMessageCheckListenerTest {
     private MessageStore messageStore;
 
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(),
+    private Broker broker = new Broker(new BrokerConfig(),
         new NettyServerConfig(),
         new NettyClientConfig(), new MessageStoreConfig());
 
     @Before
     public void init() throws Exception {
         listener = new DefaultTransactionalMessageCheckListener();
-        listener.setBrokerController(brokerController);
-        brokerController.setMessageStore(messageStore);
+        listener.setBrokerController(broker);
+        broker.setMessageStore(messageStore);
 
     }
 

@@ -16,16 +16,16 @@
  */
 package org.apache.rocketmq.proxy.service;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.remoting.RPCHook;
 
 public class ServiceManagerFactory {
-    public static ServiceManager createForLocalMode(BrokerController brokerController) {
-        return createForLocalMode(brokerController, null);
+    public static ServiceManager createForLocalMode(Broker broker) {
+        return createForLocalMode(broker, null);
     }
 
-    public static ServiceManager createForLocalMode(BrokerController brokerController, RPCHook rpcHook) {
-        return new LocalServiceManager(brokerController, rpcHook);
+    public static ServiceManager createForLocalMode(Broker broker, RPCHook rpcHook) {
+        return new LocalServiceManager(broker, rpcHook);
     }
 
     public static ServiceManager createForClusterMode() {

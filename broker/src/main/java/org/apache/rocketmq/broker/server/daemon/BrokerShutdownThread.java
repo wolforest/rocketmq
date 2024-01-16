@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.server.daemon;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -26,10 +26,10 @@ public class BrokerShutdownThread implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private volatile boolean hasShutdown = false;
     private final AtomicInteger shutdownTimes = new AtomicInteger(0);
-    private final BrokerController brokerController;
+    private final Broker broker;
 
-    public BrokerShutdownThread(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public BrokerShutdownThread(Broker broker) {
+        this.broker = broker;
     }
 
     @Override
@@ -42,7 +42,7 @@ public class BrokerShutdownThread implements Runnable {
 
             this.hasShutdown = true;
             long beginTime = System.currentTimeMillis();
-            brokerController.shutdown();
+            broker.shutdown();
             long consumingTimeTotal = System.currentTimeMillis() - beginTime;
             LOG.info("Shutdown hook over, consuming total time(ms): {}", consumingTimeTotal);
         }

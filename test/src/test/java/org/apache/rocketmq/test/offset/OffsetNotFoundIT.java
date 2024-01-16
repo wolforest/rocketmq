@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.test.offset;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -66,8 +66,8 @@ public class OffsetNotFoundIT extends BaseConf {
 
     @Before
     public void setUp() {
-        for (BrokerController brokerController: brokerControllerList) {
-            brokerController.getBrokerNettyServer().registerServerRPCHook(offsetRpcHook);
+        for (Broker broker : brokerList) {
+            broker.getBrokerNettyServer().registerServerRPCHook(offsetRpcHook);
         }
 
 

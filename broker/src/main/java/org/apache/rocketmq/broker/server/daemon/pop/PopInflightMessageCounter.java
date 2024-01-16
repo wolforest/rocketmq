@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.server.daemon.pop;
 
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -34,10 +34,10 @@ public class PopInflightMessageCounter {
     private static final String TOPIC_GROUP_SEPARATOR = "@";
     private final Map<String /* topic@group */, Map<Integer /* queueId */, AtomicLong>> topicInFlightMessageNum =
         new ConcurrentHashMap<>(512);
-    private final BrokerController brokerController;
+    private final Broker broker;
 
-    public PopInflightMessageCounter(BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public PopInflightMessageCounter(Broker broker) {
+        this.broker = broker;
     }
 
     public void incrementInFlightMessageNum(String topic, String group, int queueId, int num) {
@@ -62,14 +62,14 @@ public class PopInflightMessageCounter {
     }
 
     public void decrementInFlightMessageNum(String topic, String group, long popTime, int qId, int delta) {
-        if (popTime < this.brokerController.getShouldStartTime()) {
+        if (popTime < this.broker.getShouldStartTime()) {
             return;
         }
         decrementInFlightMessageNum(topic, group, qId, delta);
     }
 
     public void decrementInFlightMessageNum(PopCheckPoint checkPoint) {
-        if (checkPoint.getPopTime() < this.brokerController.getShouldStartTime()) {
+        if (checkPoint.getPopTime() < this.broker.getShouldStartTime()) {
             return;
         }
         decrementInFlightMessageNum(checkPoint.getTopic(), checkPoint.getCId(), checkPoint.getQueueId(), 1);

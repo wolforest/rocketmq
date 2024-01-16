@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.api.controller;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import java.util.concurrent.ConcurrentSkipListSet;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.longpolling.PopRequest;
 import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
@@ -39,10 +39,10 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 
 public class PollingInfoProcessor implements NettyRequestProcessor {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
 
-    public PollingInfoProcessor(final BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public PollingInfoProcessor(final Broker broker) {
+        this.broker = broker;
     }
 
     @Override
@@ -65,13 +65,13 @@ public class PollingInfoProcessor implements NettyRequestProcessor {
 
         response.setOpaque(request.getOpaque());
 
-        if (!PermName.isReadable(this.brokerController.getBrokerConfig().getBrokerPermission())) {
+        if (!PermName.isReadable(this.broker.getBrokerConfig().getBrokerPermission())) {
             response.setCode(ResponseCode.NO_PERMISSION);
-            response.setRemark(String.format("the broker[%s] peeking message is forbidden", this.brokerController.getBrokerConfig().getBrokerIP1()));
+            response.setRemark(String.format("the broker[%s] peeking message is forbidden", this.broker.getBrokerConfig().getBrokerIP1()));
             return response;
         }
 
-        TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+        TopicConfig topicConfig = this.broker.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
         if (null == topicConfig) {
             POP_LOGGER.error("The topic {} not exist, consumer: {} ", requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(channel));
             response.setCode(ResponseCode.TOPIC_NOT_EXIST);
@@ -93,7 +93,7 @@ public class PollingInfoProcessor implements NettyRequestProcessor {
             response.setRemark(errorInfo);
             return response;
         }
-        SubscriptionGroupConfig subscriptionGroupConfig = this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
+        SubscriptionGroupConfig subscriptionGroupConfig = this.broker.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getConsumerGroup());
         if (null == subscriptionGroupConfig) {
             response.setCode(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST);
             response.setRemark(String.format("subscription group [%s] does not exist, %s", requestHeader.getConsumerGroup(), FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST)));
@@ -106,7 +106,7 @@ public class PollingInfoProcessor implements NettyRequestProcessor {
             return response;
         }
         String key = KeyBuilder.buildConsumeKey(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
-        ConcurrentSkipListSet<PopRequest> queue = this.brokerController.getBrokerNettyServer().getPopServiceManager().getPopPollingMap().get(key);
+        ConcurrentSkipListSet<PopRequest> queue = this.broker.getBrokerNettyServer().getPopServiceManager().getPopPollingMap().get(key);
         if (queue != null) {
             responseHeader.setPollingNum(queue.size());
         } else {

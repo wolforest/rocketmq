@@ -30,7 +30,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.acl.AccessValidator;
 import org.apache.rocketmq.acl.plain.PlainAccessValidator;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.BrokerStartup;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.lang.thread.ThreadPoolMonitor;
@@ -218,38 +218,38 @@ public class ProxyStartup {
     }
 
     protected static MessagingProcessor createLocalMessagingProcessor() {
-        BrokerController brokerController = createBrokerController();
-        ProxyMetricsManager.initLocalMode(brokerController.getBrokerServiceManager().getBrokerMetricsManager(), ConfigurationManager.getProxyConfig());
+        Broker broker = createBrokerController();
+        ProxyMetricsManager.initLocalMode(broker.getBrokerServiceManager().getBrokerMetricsManager(), ConfigurationManager.getProxyConfig());
 
-        StartAndShutdown brokerControllerWrapper = createBrokerControllerWrapper(brokerController);
+        StartAndShutdown brokerControllerWrapper = createBrokerControllerWrapper(broker);
         PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(brokerControllerWrapper);
 
-        MessagingProcessor messagingProcessor = DefaultMessagingProcessor.createForLocalMode(brokerController);
+        MessagingProcessor messagingProcessor = DefaultMessagingProcessor.createForLocalMode(broker);
         PROXY_START_AND_SHUTDOWN.appendStartAndShutdown(messagingProcessor);
 
         return messagingProcessor;
     }
 
-    protected static StartAndShutdown createBrokerControllerWrapper(BrokerController brokerController) {
+    protected static StartAndShutdown createBrokerControllerWrapper(Broker broker) {
         return new StartAndShutdown() {
             @Override
             public void start() throws Exception {
-                brokerController.start();
+                broker.start();
 
                 logStartInfo();
             }
 
             @Override
             public void shutdown() {
-                brokerController.shutdown();
+                broker.shutdown();
             }
 
             private void logStartInfo() {
-                String tip = "The broker[" + brokerController.getBrokerConfig().getBrokerName() + ", "
-                    + brokerController.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
+                String tip = "The broker[" + broker.getBrokerConfig().getBrokerName() + ", "
+                    + broker.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
 
-                if (null != brokerController.getBrokerConfig().getNamesrvAddr()) {
-                    tip += " and name server is " + brokerController.getBrokerConfig().getNamesrvAddr();
+                if (null != broker.getBrokerConfig().getNamesrvAddr()) {
+                    tip += " and name server is " + broker.getBrokerConfig().getNamesrvAddr();
                 }
                 log.info(tip);
             }
@@ -262,7 +262,7 @@ public class ProxyStartup {
         return application;
     }
 
-    protected static BrokerController createBrokerController() {
+    protected static Broker createBrokerController() {
         ProxyConfig config = ConfigurationManager.getProxyConfig();
         List<String> brokerStartupArgList = Lists.newArrayList("-c", config.getBrokerConfigPath());
         if (StringUtils.isNotBlank(config.getNamesrvAddr())) {

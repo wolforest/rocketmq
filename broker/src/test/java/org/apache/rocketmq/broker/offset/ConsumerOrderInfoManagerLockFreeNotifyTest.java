@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.offset;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.metadata.offset.ConsumerOrderInfoManager;
 import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
 import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
@@ -50,23 +50,23 @@ public class ConsumerOrderInfoManagerLockFreeNotifyTest {
 
     private final BrokerConfig brokerConfig = new BrokerConfig();
     private final PopMessageProcessor popMessageProcessor = mock(PopMessageProcessor.class);
-    private final BrokerController brokerController = mock(BrokerController.class);
+    private final Broker broker = mock(Broker.class);
     private final BrokerNettyServer brokerNettyServer = mock(BrokerNettyServer.class);
     private final PopServiceManager popServiceManager = mock(PopServiceManager.class);
     @Before
     public void before() {
         notified = new AtomicBoolean(false);
         brokerConfig.setEnableNotifyAfterPopOrderLockRelease(true);
-        when(brokerController.getBrokerNettyServer()).thenReturn(brokerNettyServer);
-        when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
-        when(brokerController.getBrokerNettyServer().getPopMessageProcessor()).thenReturn(popMessageProcessor);
-        when(brokerController.getBrokerNettyServer().getPopServiceManager()).thenReturn(popServiceManager);
+        when(broker.getBrokerNettyServer()).thenReturn(brokerNettyServer);
+        when(broker.getBrokerConfig()).thenReturn(brokerConfig);
+        when(broker.getBrokerNettyServer().getPopMessageProcessor()).thenReturn(popMessageProcessor);
+        when(broker.getBrokerNettyServer().getPopServiceManager()).thenReturn(popServiceManager);
         doAnswer((Answer<Void>) mock -> {
             notified.set(true);
             return null;
         }).when(popServiceManager).notifyLongPollingRequestIfNeed(anyString(), anyString(), anyInt());
 
-        consumerOrderInfoManager = new ConsumerOrderInfoManager(brokerController);
+        consumerOrderInfoManager = new ConsumerOrderInfoManager(broker);
         popTime = System.currentTimeMillis();
     }
 

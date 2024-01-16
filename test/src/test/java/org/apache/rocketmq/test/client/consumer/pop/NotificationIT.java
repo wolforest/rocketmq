@@ -43,7 +43,7 @@ public class NotificationIT extends BasePop {
 
     @Before
     public void setUp() {
-        brokerAddr = brokerController1.getBrokerAddr();
+        brokerAddr = broker1.getBrokerAddr();
         topic = MQRandomUtils.getRandomTopic();
         group = initConsumerGroup();
         IntegrationTestBase.initTopic(topic, NAMESRV_ADDR, BROKER1_NAME, 8, CQType.SimpleCQ, TopicMessageType.NORMAL);

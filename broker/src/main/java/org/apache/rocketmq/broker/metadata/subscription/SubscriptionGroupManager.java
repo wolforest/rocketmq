@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
 import org.apache.rocketmq.client.Validators;
 import org.apache.rocketmq.common.domain.consumer.SubscriptionGroupAttributes;
@@ -48,18 +48,18 @@ public class SubscriptionGroupManager extends ConfigManager {
         new ConcurrentHashMap<>(4);
 
     private final DataVersion dataVersion = new DataVersion();
-    protected transient BrokerController brokerController;
+    protected transient Broker broker;
 
     public SubscriptionGroupManager() {
         this.init();
     }
 
-    public SubscriptionGroupManager(BrokerController brokerController) {
-        this(brokerController, true);
+    public SubscriptionGroupManager(Broker broker) {
+        this(broker, true);
     }
 
-    public SubscriptionGroupManager(BrokerController brokerController, boolean init) {
-        this.brokerController = brokerController;
+    public SubscriptionGroupManager(Broker broker, boolean init) {
+        this.broker = broker;
         if (init) {
             init();
         }
@@ -155,7 +155,7 @@ public class SubscriptionGroupManager extends ConfigManager {
             log.info("create new subscription group, {}", config);
         }
 
-        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
         dataVersion.nextVersion(stateMachineVersion);
 
         this.persist();
@@ -232,7 +232,7 @@ public class SubscriptionGroupManager extends ConfigManager {
             log.info("set group forbidden, {}@{} old: {} new: {}", group, topic, 0, forbidden);
         }
 
-        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
         dataVersion.nextVersion(stateMachineVersion);
 
         this.persist();
@@ -245,7 +245,7 @@ public class SubscriptionGroupManager extends ConfigManager {
         }
 
         old.setConsumeEnable(false);
-        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
         dataVersion.nextVersion(stateMachineVersion);
     }
 
@@ -255,7 +255,7 @@ public class SubscriptionGroupManager extends ConfigManager {
             return subscriptionGroupConfig;
         }
 
-        if (!brokerController.getBrokerConfig().isAutoCreateSubscriptionGroup() && MQConstants.isSysConsumerGroup(group)) {
+        if (!broker.getBrokerConfig().isAutoCreateSubscriptionGroup() && MQConstants.isSysConsumerGroup(group)) {
             return null;
         }
 
@@ -269,7 +269,7 @@ public class SubscriptionGroupManager extends ConfigManager {
         if (null == preConfig) {
             log.info("auto create a subscription group, {}", subscriptionGroupConfig.toString());
         }
-        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
         dataVersion.nextVersion(stateMachineVersion);
         this.persist();
 
@@ -283,7 +283,7 @@ public class SubscriptionGroupManager extends ConfigManager {
 
     @Override
     public String configFilePath() {
-        return BrokerPathConfigHelper.getSubscriptionGroupPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
+        return BrokerPathConfigHelper.getSubscriptionGroupPath(this.broker.getMessageStoreConfig().getStorePathRootDir());
     }
 
     @Override
@@ -342,7 +342,7 @@ public class SubscriptionGroupManager extends ConfigManager {
         }
 
         log.info("delete subscription group OK, subscription group:{}", old);
-        long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
+        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
         dataVersion.nextVersion(stateMachineVersion);
         this.persist();
     }

@@ -53,8 +53,8 @@ public class PopMessageAndForwardingIT extends BasePop {
 
     @Before
     public void setUp() {
-        broker1Addr = brokerController1.getBrokerAddr();
-        broker2Addr = brokerController2.getBrokerAddr();
+        broker1Addr = broker1.getBrokerAddr();
+        broker2Addr = broker2.getBrokerAddr();
         topic = MQRandomUtils.getRandomTopic();
         group = initConsumerGroup();
         IntegrationTestBase.initTopic(topic, NAMESRV_ADDR, BROKER1_NAME, 8, CQType.SimpleCQ, TopicMessageType.NORMAL);

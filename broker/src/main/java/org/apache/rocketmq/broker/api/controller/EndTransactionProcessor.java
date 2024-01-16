@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.api.controller;
 
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.transaction.OperationResult;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageUtil;
 import org.apache.rocketmq.common.domain.topic.TopicFilterType;
@@ -50,10 +50,10 @@ import org.apache.rocketmq.store.server.config.BrokerRole;
  */
 public class EndTransactionProcessor implements NettyRequestProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
-    private final BrokerController brokerController;
+    private final Broker broker;
 
-    public EndTransactionProcessor(final BrokerController brokerController) {
-        this.brokerController = brokerController;
+    public EndTransactionProcessor(final Broker broker) {
+        this.broker = broker;
     }
 
     @Override
@@ -62,7 +62,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         final EndTransactionRequestHeader requestHeader = (EndTransactionRequestHeader) request.decodeCommandCustomHeader(EndTransactionRequestHeader.class);
         LOGGER.debug("Transaction request:{}", requestHeader);
 
-        if (BrokerRole.SLAVE == brokerController.getMessageStoreConfig().getBrokerRole()) {
+        if (BrokerRole.SLAVE == broker.getMessageStoreConfig().getBrokerRole()) {
             response.setCode(ResponseCode.SLAVE_NOT_AVAILABLE);
             LOGGER.warn("Message store is slave mode, so end transaction is forbidden. ");
             return response;
@@ -85,7 +85,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand processCommitRequest(EndTransactionRequestHeader requestHeader, RemotingCommand response) {
-        OperationResult result = this.brokerController.getBrokerMessageService().getTransactionalMessageService().commitMessage(requestHeader);
+        OperationResult result = this.broker.getBrokerMessageService().getTransactionalMessageService().commitMessage(requestHeader);
         if (result.getResponseCode() != ResponseCode.SUCCESS) {
             return response.setCodeAndRemark(result.getResponseCode(), result.getResponseRemark());
         }
@@ -109,13 +109,13 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED);
         RemotingCommand sendResult = sendFinalMessage(msgInner);
         if (sendResult.getCode() == ResponseCode.SUCCESS) {
-            this.brokerController.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
+            this.broker.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
         }
         return sendResult;
     }
 
     private RemotingCommand processRollbackRequest(EndTransactionRequestHeader requestHeader, RemotingCommand response) {
-        OperationResult result = this.brokerController.getBrokerMessageService().getTransactionalMessageService().rollbackMessage(requestHeader);
+        OperationResult result = this.broker.getBrokerMessageService().getTransactionalMessageService().rollbackMessage(requestHeader);
         if (result.getResponseCode() != ResponseCode.SUCCESS) {
             return response.setCodeAndRemark(result.getResponseCode(), result.getResponseRemark());
         }
@@ -128,7 +128,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         }
         RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
         if (res.getCode() == ResponseCode.SUCCESS) {
-            this.brokerController.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
+            this.broker.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
         }
         return res;
     }
@@ -145,7 +145,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         if (requestHeader.getFromTransactionCheck()) {
             return false;
         }
-        long transactionTimeout = brokerController.getBrokerConfig().getTransactionTimeOut();
+        long transactionTimeout = broker.getBrokerConfig().getTransactionTimeOut();
 
         String checkImmunityTimeStr = messageExt.getUserProperty(MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS);
         if (StringUtils.isNotEmpty(checkImmunityTimeStr)) {
@@ -295,7 +295,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
 
     private RemotingCommand sendFinalMessage(MessageExtBrokerInner msgInner) {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        final PutMessageResult putMessageResult = this.brokerController.getMessageStore().putMessage(msgInner);
+        final PutMessageResult putMessageResult = this.broker.getMessageStore().putMessage(msgInner);
         if (putMessageResult == null) {
             return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "store putMessage return null");
         }
@@ -318,7 +318,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
             case PROPERTIES_SIZE_EXCEEDED:
                 response.setCode(ResponseCode.MESSAGE_ILLEGAL);
                 response.setRemark(String.format("The message is illegal, maybe msg body or properties length not matched. msg body length limit %dB, msg properties length limit 32KB.",
-                    this.brokerController.getMessageStoreConfig().getMaxMessageSize()));
+                    this.broker.getMessageStoreConfig().getMaxMessageSize()));
                 break;
             case SERVICE_NOT_AVAILABLE:
                 response.setCode(ResponseCode.SERVICE_NOT_AVAILABLE);
@@ -331,17 +331,17 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
             case WHEEL_TIMER_MSG_ILLEGAL:
                 response.setCode(ResponseCode.MESSAGE_ILLEGAL);
                 response.setRemark(String.format("timer message illegal, the delay time should not be bigger than the max delay %dms; or if set del msg, the delay time should be bigger than the current time",
-                    this.brokerController.getMessageStoreConfig().getTimerMaxDelaySec() * 1000L));
+                    this.broker.getMessageStoreConfig().getTimerMaxDelaySec() * 1000L));
                 break;
             case WHEEL_TIMER_FLOW_CONTROL:
                 response.setCode(ResponseCode.SYSTEM_ERROR);
                 response.setRemark(String.format("timer message is under flow control, max num limit is %d or the current value is greater than %d and less than %d, trigger random flow control",
-                    this.brokerController.getMessageStoreConfig().getTimerCongestNumEachSlot() * 2L, this.brokerController.getMessageStoreConfig().getTimerCongestNumEachSlot(), this.brokerController.getMessageStoreConfig().getTimerCongestNumEachSlot() * 2L));
+                    this.broker.getMessageStoreConfig().getTimerCongestNumEachSlot() * 2L, this.broker.getMessageStoreConfig().getTimerCongestNumEachSlot(), this.broker.getMessageStoreConfig().getTimerCongestNumEachSlot() * 2L));
                 break;
             case WHEEL_TIMER_NOT_ENABLE:
                 response.setCode(ResponseCode.SYSTEM_ERROR);
                 response.setRemark(String.format("accurate timer message is not enabled, timerWheelEnable is %s",
-                    this.brokerController.getMessageStoreConfig().isTimerWheelEnable()));
+                    this.broker.getMessageStoreConfig().isTimerWheelEnable()));
                 break;
             case UNKNOWN_ERROR:
                 response.setCode(ResponseCode.SYSTEM_ERROR);

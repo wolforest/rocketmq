@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.server.BrokerController;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.api.controller.PullMessageProcessor;
 import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
@@ -70,7 +70,7 @@ import static org.mockito.Mockito.when;
 public class PullMessageProcessorTest {
     private PullMessageProcessor pullMessageProcessor;
     @Spy
-    private BrokerController brokerController = new BrokerController(new BrokerConfig(), new NettyServerConfig(),
+    private Broker broker = new Broker(new BrokerConfig(), new NettyServerConfig(),
         new NettyClientConfig(), new MessageStoreConfig());
     @Mock
     private ChannelHandlerContext handlerContext;
@@ -86,18 +86,18 @@ public class PullMessageProcessorTest {
 
     @Before
     public void init() throws CloneNotSupportedException {
-        brokerController.setMessageStore(messageStore);
-        SubscriptionGroupManager subscriptionGroupManager = new SubscriptionGroupManager(brokerController);
-        pullMessageProcessor = new PullMessageProcessor(brokerController);
-        when(brokerController.getMessageStore()).thenReturn(messageStore);
-        when(brokerController.getBrokerNettyServer()).thenReturn(brokerNettyServer);
-        when(brokerController.getBrokerNettyServer().getPullMessageProcessor()).thenReturn(pullMessageProcessor);
+        broker.setMessageStore(messageStore);
+        SubscriptionGroupManager subscriptionGroupManager = new SubscriptionGroupManager(broker);
+        pullMessageProcessor = new PullMessageProcessor(broker);
+        when(broker.getMessageStore()).thenReturn(messageStore);
+        when(broker.getBrokerNettyServer()).thenReturn(brokerNettyServer);
+        when(broker.getBrokerNettyServer().getPullMessageProcessor()).thenReturn(pullMessageProcessor);
         when(handlerContext.channel()).thenReturn(embeddedChannel);
-        when(brokerController.getSubscriptionGroupManager()).thenReturn(subscriptionGroupManager);
-        brokerController.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());
+        when(broker.getSubscriptionGroupManager()).thenReturn(subscriptionGroupManager);
+        broker.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());
         clientChannelInfo = new ClientChannelInfo(embeddedChannel);
         ConsumerData consumerData = createConsumerData(group, topic);
-        brokerController.getConsumerManager().registerConsumer(
+        broker.getConsumerManager().registerConsumer(
             consumerData.getGroupName(),
             clientChannelInfo,
             consumerData.getConsumeType(),
@@ -105,12 +105,12 @@ public class PullMessageProcessorTest {
             consumerData.getConsumeFromWhere(),
             consumerData.getSubscriptionDataSet(),
             false);
-        brokerController.initialize();
+        broker.initialize();
     }
 
     @Test
     public void testProcessRequest_TopicNotExist() throws RemotingCommandException {
-        brokerController.getTopicConfigManager().getTopicConfigTable().remove(topic);
+        broker.getTopicConfigManager().getTopicConfigTable().remove(topic);
         final RemotingCommand request = createPullMsgCommand(RequestCode.PULL_MESSAGE);
         RemotingCommand response = pullMessageProcessor.processRequest(handlerContext, request);
         assertThat(response).isNotNull();
@@ -120,7 +120,7 @@ public class PullMessageProcessorTest {
 
     @Test
     public void testProcessRequest_SubNotExist() throws RemotingCommandException {
-        brokerController.getConsumerManager().unregisterConsumer(group, clientChannelInfo, false);
+        broker.getConsumerManager().unregisterConsumer(group, clientChannelInfo, false);
         final RemotingCommand request = createPullMsgCommand(RequestCode.PULL_MESSAGE);
         RemotingCommand response = pullMessageProcessor.processRequest(handlerContext, request);
         assertThat(response).isNotNull();
@@ -212,7 +212,7 @@ public class PullMessageProcessorTest {
 
     @Test
     public void test_LitePullRequestForbidden() throws Exception {
-        brokerController.getBrokerConfig().setLitePullMessageEnable(false);
+        broker.getBrokerConfig().setLitePullMessageEnable(false);
         RemotingCommand remotingCommand = createPullMsgCommand(RequestCode.LITE_PULL_MESSAGE);
         RemotingCommand response = pullMessageProcessor.processRequest(handlerContext, remotingCommand);
         assertThat(response).isNotNull();
@@ -248,7 +248,7 @@ public class PullMessageProcessorTest {
         RemotingCommand response = embeddedChannel.readOutbound();
         assertThat(response).isNotNull();
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
-        assertThat(this.brokerController.getConsumerOffsetManager().queryPullOffset(group, topic, 1))
+        assertThat(this.broker.getConsumerOffsetManager().queryPullOffset(group, topic, 1))
             .isEqualTo(getMessageResult.getNextBeginOffset());
     }
 
