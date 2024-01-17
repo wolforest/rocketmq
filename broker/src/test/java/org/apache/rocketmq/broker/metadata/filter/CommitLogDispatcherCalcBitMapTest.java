@@ -17,6 +17,10 @@
 
 package org.apache.rocketmq.broker.metadata.filter;
 
+import org.apache.rocketmq.broker.infra.filter.CommitLogDispatcherCalcBitMap;
+import org.apache.rocketmq.broker.infra.filter.ConsumerFilterData;
+import org.apache.rocketmq.broker.infra.filter.ConsumerFilterManager;
+import org.apache.rocketmq.broker.infra.filter.MessageEvaluationContext;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.filter.util.BitsArray;

@@ -27,7 +27,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
-import org.apache.rocketmq.broker.domain.pagecache.ManyMessageTransfer;
+import org.apache.rocketmq.broker.infra.pagecache.ManyMessageTransfer;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.help.FAQUrl;
 import org.apache.rocketmq.common.domain.constant.LoggerName;

@@ -18,7 +18,7 @@ package org.apache.rocketmq.broker.api.controller;
 
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.metadata.topic.TopicConfigManager;
+import org.apache.rocketmq.broker.infra.topic.TopicConfigManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;

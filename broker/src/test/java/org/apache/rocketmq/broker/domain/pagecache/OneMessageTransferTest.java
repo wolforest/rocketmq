@@ -18,6 +18,7 @@
 package org.apache.rocketmq.broker.domain.pagecache;
 
 import java.nio.ByteBuffer;
+import org.apache.rocketmq.broker.infra.pagecache.OneMessageTransfer;
 import org.apache.rocketmq.store.infra.file.DefaultMappedFile;
 import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
 import org.junit.Assert;

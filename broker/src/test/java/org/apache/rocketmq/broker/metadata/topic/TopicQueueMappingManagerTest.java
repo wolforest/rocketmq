@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.apache.rocketmq.broker.infra.topic.TopicQueueMappingManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingDetail;

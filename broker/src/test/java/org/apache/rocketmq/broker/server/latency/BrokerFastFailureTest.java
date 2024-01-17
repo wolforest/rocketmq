@@ -19,6 +19,7 @@ package org.apache.rocketmq.broker.server.latency;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import org.apache.rocketmq.broker.server.daemon.BrokerFastFailure;
 import org.apache.rocketmq.common.lang.future.FutureTaskExt;
 import org.apache.rocketmq.remoting.netty.RequestTask;
 import org.junit.Test;

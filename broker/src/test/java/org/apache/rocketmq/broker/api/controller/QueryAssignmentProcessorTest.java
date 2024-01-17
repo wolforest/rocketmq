@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
-import org.apache.rocketmq.broker.metadata.topic.TopicRouteInfoManager;
+import org.apache.rocketmq.broker.infra.topic.TopicRouteInfoManager;
 import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;
 import org.apache.rocketmq.client.consumer.rebalance.AllocateMessageQueueAveragely;
 import org.apache.rocketmq.client.consumer.rebalance.AllocateMessageQueueAveragelyByCircle;

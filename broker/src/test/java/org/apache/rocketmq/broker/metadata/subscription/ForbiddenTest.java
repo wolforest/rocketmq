@@ -17,6 +17,7 @@
 
 package org.apache.rocketmq.broker.metadata.subscription;
 
+import org.apache.rocketmq.broker.infra.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;

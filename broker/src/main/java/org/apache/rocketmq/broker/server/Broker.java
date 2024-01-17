@@ -19,6 +19,7 @@ package org.apache.rocketmq.broker.server;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import org.apache.rocketmq.acl.AccessValidator;
+import org.apache.rocketmq.broker.ShutdownHook;
 import org.apache.rocketmq.broker.server.daemon.BrokerClusterService;
 import org.apache.rocketmq.broker.server.daemon.BrokerMessageService;
 import org.apache.rocketmq.broker.server.daemon.BrokerMetadataService;
@@ -31,20 +32,21 @@ import org.apache.rocketmq.broker.server.client.ProducerManager;
 import org.apache.rocketmq.broker.server.client.net.Broker2Client;
 import org.apache.rocketmq.broker.domain.coldctr.ColdDataCgCtrService;
 import org.apache.rocketmq.broker.domain.coldctr.ColdDataPullRequestHoldService;
-import org.apache.rocketmq.broker.domain.failover.EscapeBridge;
-import org.apache.rocketmq.broker.metadata.filter.ConsumerFilterManager;
-import org.apache.rocketmq.broker.metadata.offset.BroadcastOffsetManager;
-import org.apache.rocketmq.broker.metadata.offset.ConsumerOffsetManager;
-import org.apache.rocketmq.broker.metadata.offset.ConsumerOrderInfoManager;
-import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
+import org.apache.rocketmq.broker.infra.EscapeBridge;
+import org.apache.rocketmq.broker.infra.filter.ConsumerFilterManager;
+import org.apache.rocketmq.broker.infra.offset.BroadcastOffsetManager;
+import org.apache.rocketmq.broker.infra.offset.ConsumerOffsetManager;
+import org.apache.rocketmq.broker.infra.offset.ConsumerOrderInfoManager;
+import org.apache.rocketmq.broker.infra.NameServerClient;
 import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
-import org.apache.rocketmq.broker.server.schedule.ScheduleMessageService;
-import org.apache.rocketmq.broker.metadata.subscription.SubscriptionGroupManager;
-import org.apache.rocketmq.broker.metadata.topic.TopicConfigManager;
-import org.apache.rocketmq.broker.metadata.topic.TopicQueueMappingManager;
-import org.apache.rocketmq.broker.metadata.topic.TopicRouteInfoManager;
+import org.apache.rocketmq.broker.server.daemon.schedule.ScheduleMessageService;
+import org.apache.rocketmq.broker.infra.subscription.SubscriptionGroupManager;
+import org.apache.rocketmq.broker.infra.topic.TopicConfigManager;
+import org.apache.rocketmq.broker.infra.topic.TopicQueueMappingManager;
+import org.apache.rocketmq.broker.infra.topic.TopicRouteInfoManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.BrokerIdentity;
+import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -385,12 +387,12 @@ public class Broker {
         return shutdown;
     }
 
-    public BrokerOuterAPI getBrokerOuterAPI() {
+    public NameServerClient getBrokerOuterAPI() {
         return this.brokerServiceRegistry.getBrokerOuterAPI();
     }
 
-    public void setBrokerOuterAPI(BrokerOuterAPI brokerOuterAPI) {
-        this.brokerServiceRegistry.setBrokerOuterAPI(brokerOuterAPI);
+    public void setBrokerOuterAPI(NameServerClient nameServerClient) {
+        this.brokerServiceRegistry.setBrokerOuterAPI(nameServerClient);
     }
 
     public InetSocketAddress getStoreHost() {

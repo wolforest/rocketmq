@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.server.daemon.pop;
 import io.netty.channel.Channel;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
-import org.apache.rocketmq.broker.server.schedule.ScheduleMessageService;
+import org.apache.rocketmq.broker.server.daemon.schedule.ScheduleMessageService;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.utils.ReflectUtils;

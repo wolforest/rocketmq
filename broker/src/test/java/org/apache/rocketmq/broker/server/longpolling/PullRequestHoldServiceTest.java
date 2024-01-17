@@ -21,6 +21,8 @@ import io.netty.channel.Channel;
 import java.util.HashMap;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
+import org.apache.rocketmq.broker.server.daemon.longpolling.PullRequest;
+import org.apache.rocketmq.broker.server.daemon.longpolling.PullRequestHoldService;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;

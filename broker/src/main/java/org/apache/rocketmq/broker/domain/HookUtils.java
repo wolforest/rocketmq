@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.domain;
 
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.schedule.ScheduleMessageService;
+import org.apache.rocketmq.broker.server.daemon.schedule.ScheduleMessageService;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageAccessor;

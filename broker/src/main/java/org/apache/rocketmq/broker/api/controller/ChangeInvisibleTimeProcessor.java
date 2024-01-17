@@ -21,7 +21,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.metrics.PopMetricsManager;
-import org.apache.rocketmq.broker.metadata.offset.ConsumerOffsetManager;
+import org.apache.rocketmq.broker.infra.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.server.daemon.pop.QueueLockManager;
 import org.apache.rocketmq.common.domain.topic.KeyBuilder;

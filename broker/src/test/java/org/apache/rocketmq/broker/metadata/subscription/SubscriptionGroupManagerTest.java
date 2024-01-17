@@ -19,6 +19,8 @@ package org.apache.rocketmq.broker.metadata.subscription;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import org.apache.rocketmq.broker.infra.subscription.RocksDBSubscriptionGroupManager;
+import org.apache.rocketmq.broker.infra.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.consumer.SubscriptionGroupAttributes;
 import org.apache.rocketmq.common.lang.attribute.BooleanAttribute;

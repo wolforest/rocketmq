@@ -18,8 +18,8 @@ package org.apache.rocketmq.container;
 
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
-import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
+import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
+import org.apache.rocketmq.broker.infra.NameServerClient;
 import org.apache.rocketmq.common.app.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.BrokerIdentity;
@@ -59,7 +59,7 @@ public class BrokerContainer implements IBrokerContainer {
             .build());
     private final NettyServerConfig nettyServerConfig;
     private final NettyClientConfig nettyClientConfig;
-    private final BrokerOuterAPI brokerOuterAPI;
+    private final NameServerClient nameServerClient;
     private final ContainerClientHouseKeepingService containerClientHouseKeepingService;
 
     private final ConcurrentMap<BrokerIdentity, InnerSalveBrokerController> slaveBrokerControllers = new ConcurrentHashMap<>();
@@ -83,7 +83,7 @@ public class BrokerContainer implements IBrokerContainer {
         this.nettyServerConfig = nettyServerConfig;
         this.nettyClientConfig = nettyClientConfig;
 
-        this.brokerOuterAPI = new BrokerOuterAPI(nettyClientConfig);
+        this.nameServerClient = new NameServerClient(nettyClientConfig);
 
         this.brokerContainerProcessor = new BrokerContainerProcessor(this);
         this.brokerContainerProcessor.registerBrokerBootHook(this.brokerBootHookList);
@@ -98,9 +98,9 @@ public class BrokerContainer implements IBrokerContainer {
 
     private void updateNamesrvAddr() {
         if (this.brokerContainerConfig.isFetchNameSrvAddrByDnsLookup()) {
-            this.brokerOuterAPI.updateNameServerAddressListByDnsLookup(this.brokerContainerConfig.getNamesrvAddr());
+            this.nameServerClient.updateNameServerAddressListByDnsLookup(this.brokerContainerConfig.getNamesrvAddr());
         } else {
-            this.brokerOuterAPI.updateNameServerAddressList(this.brokerContainerConfig.getNamesrvAddr());
+            this.nameServerClient.updateNameServerAddressList(this.brokerContainerConfig.getNamesrvAddr());
         }
     }
 
@@ -138,7 +138,7 @@ public class BrokerContainer implements IBrokerContainer {
                 @Override
                 public void run0() {
                     try {
-                        BrokerContainer.this.brokerOuterAPI.fetchNameServerAddr();
+                        BrokerContainer.this.nameServerClient.fetchNameServerAddr();
                     } catch (Throwable e) {
                         LOG.error("ScheduledTask fetchNameServerAddr exception", e);
                     }
@@ -150,7 +150,7 @@ public class BrokerContainer implements IBrokerContainer {
             @Override
             public void run0() {
                 try {
-                    BrokerContainer.this.brokerOuterAPI.refreshMetadata();
+                    BrokerContainer.this.nameServerClient.refreshMetadata();
                 } catch (Exception e) {
                     LOG.error("ScheduledTask refresh metadata exception", e);
                 }
@@ -175,8 +175,8 @@ public class BrokerContainer implements IBrokerContainer {
             this.fastRemotingServer.start();
         }
 
-        if (this.brokerOuterAPI != null) {
-            this.brokerOuterAPI.start();
+        if (this.nameServerClient != null) {
+            this.nameServerClient.start();
         }
     }
 
@@ -212,8 +212,8 @@ public class BrokerContainer implements IBrokerContainer {
         // Shutdown the request executors
         ThreadUtils.shutdown(this.brokerContainerExecutor);
 
-        if (this.brokerOuterAPI != null) {
-            this.brokerOuterAPI.shutdown();
+        if (this.nameServerClient != null) {
+            this.nameServerClient.shutdown();
         }
     }
 
@@ -474,8 +474,8 @@ public class BrokerContainer implements IBrokerContainer {
     }
 
     @Override
-    public BrokerOuterAPI getBrokerOuterAPI() {
-        return brokerOuterAPI;
+    public NameServerClient getBrokerOuterAPI() {
+        return nameServerClient;
     }
 
     @Override

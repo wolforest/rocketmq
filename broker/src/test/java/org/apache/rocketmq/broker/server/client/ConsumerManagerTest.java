@@ -20,7 +20,7 @@ package org.apache.rocketmq.broker.server.client;
 import io.netty.channel.Channel;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.rocketmq.broker.metadata.filter.ConsumerFilterManager;
+import org.apache.rocketmq.broker.infra.filter.ConsumerFilterManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.net.Broker2Client;
 import org.apache.rocketmq.common.app.config.BrokerConfig;

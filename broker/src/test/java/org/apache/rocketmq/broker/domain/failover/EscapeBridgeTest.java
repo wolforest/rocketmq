@@ -21,10 +21,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.metadata.topic.TopicRouteInfoManager;
+import org.apache.rocketmq.broker.infra.EscapeBridge;
+import org.apache.rocketmq.broker.infra.topic.TopicRouteInfoManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerMessageService;
-import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
+import org.apache.rocketmq.broker.infra.NameServerClient;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
@@ -100,9 +101,9 @@ public class EscapeBridgeTest {
         when(broker.getTopicRouteInfoManager()).thenReturn(topicRouteInfoManager);
         when(topicRouteInfoManager.findBrokerAddressInSubscribe(anyString(), anyLong(), anyBoolean())).thenReturn("");
 
-        BrokerOuterAPI brokerOuterAPI = mock(BrokerOuterAPI.class);
-        when(broker.getBrokerOuterAPI()).thenReturn(brokerOuterAPI);
-        when(brokerOuterAPI.pullMessageFromSpecificBrokerAsync(anyString(), anyString(), anyString(), anyString(), anyInt(), anyLong(), anyInt(), anyLong()))
+        NameServerClient nameServerClient = mock(NameServerClient.class);
+        when(broker.getBrokerOuterAPI()).thenReturn(nameServerClient);
+        when(nameServerClient.pullMessageFromSpecificBrokerAsync(anyString(), anyString(), anyString(), anyString(), anyInt(), anyLong(), anyInt(), anyLong()))
             .thenReturn(CompletableFuture.completedFuture(new PullResult(PullStatus.FOUND, -1, -1, -1, new ArrayList<>())));
 
         brokerConfig.setEnableSlaveActingMaster(true);

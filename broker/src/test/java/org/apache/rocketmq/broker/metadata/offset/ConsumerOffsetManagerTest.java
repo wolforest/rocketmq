@@ -19,6 +19,7 @@ package org.apache.rocketmq.broker.metadata.offset;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.rocketmq.broker.infra.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Assert;

@@ -20,6 +20,8 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.rocketmq.broker.infra.offset.BroadcastOffsetManager;
+import org.apache.rocketmq.broker.infra.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.server.client.ConsumerManager;

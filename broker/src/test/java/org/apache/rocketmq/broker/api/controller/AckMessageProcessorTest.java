@@ -22,7 +22,7 @@ import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.broker.server.client.net.Broker2Client;
-import org.apache.rocketmq.broker.domain.failover.EscapeBridge;
+import org.apache.rocketmq.broker.infra.EscapeBridge;
 import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;

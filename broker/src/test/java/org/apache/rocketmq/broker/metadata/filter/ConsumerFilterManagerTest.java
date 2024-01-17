@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import org.apache.rocketmq.broker.infra.filter.ConsumerFilterData;
+import org.apache.rocketmq.broker.infra.filter.ConsumerFilterManager;
 import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.protocol.filter.FilterAPI;

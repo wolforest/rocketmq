@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.longpolling.PullRequest;
+import org.apache.rocketmq.broker.server.daemon.longpolling.PullRequest;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.domain.constant.LoggerName;

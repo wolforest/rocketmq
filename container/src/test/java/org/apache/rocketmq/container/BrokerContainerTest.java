@@ -18,7 +18,7 @@
 package org.apache.rocketmq.container;
 
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.out.BrokerOuterAPI;
+import org.apache.rocketmq.broker.infra.NameServerClient;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.BrokerIdentity;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
@@ -88,10 +88,10 @@ public class BrokerContainerTest {
                 new MessageStoreConfig());
         broker.getBrokerConfig().setEnableSlaveActingMaster(true);
 
-        BrokerOuterAPI brokerOuterAPI = mock(BrokerOuterAPI.class);
-        Method method = Broker.class.getDeclaredMethod("setBrokerOuterAPI", BrokerOuterAPI.class);
+        NameServerClient nameServerClient = mock(NameServerClient.class);
+        Method method = Broker.class.getDeclaredMethod("setBrokerOuterAPI", NameServerClient.class);
         method.setAccessible(true);
-        method.invoke(broker, brokerOuterAPI);
+        method.invoke(broker, nameServerClient);
         List<TopicConfig> topicConfigList = new ArrayList<>(2);
         for (int i = 0; i < 2; i++) {
             topicConfigList.add(new TopicConfig("topic-" + i));
@@ -99,13 +99,13 @@ public class BrokerContainerTest {
         DataVersion dataVersion = new DataVersion();
 
         // Check normal condition.
-        testRegisterIncrementBrokerDataWithPerm(broker, brokerOuterAPI,
+        testRegisterIncrementBrokerDataWithPerm(broker, nameServerClient,
                 topicConfigList, dataVersion, PermName.PERM_READ | PermName.PERM_WRITE, 1);
         // Check unwritable broker.
-        testRegisterIncrementBrokerDataWithPerm(broker, brokerOuterAPI,
+        testRegisterIncrementBrokerDataWithPerm(broker, nameServerClient,
                 topicConfigList, dataVersion, PermName.PERM_READ, 2);
         // Check unreadable broker.
-        testRegisterIncrementBrokerDataWithPerm(broker, brokerOuterAPI,
+        testRegisterIncrementBrokerDataWithPerm(broker, nameServerClient,
                 topicConfigList, dataVersion, PermName.PERM_WRITE, 3);
     }
 
@@ -118,10 +118,10 @@ public class BrokerContainerTest {
                 new MessageStoreConfig());
         broker.getBrokerConfig().setEnableSlaveActingMaster(true);
 
-        BrokerOuterAPI brokerOuterAPI = mock(BrokerOuterAPI.class);
-        Method method = Broker.class.getDeclaredMethod("setBrokerOuterAPI", BrokerOuterAPI.class);
+        NameServerClient nameServerClient = mock(NameServerClient.class);
+        Method method = Broker.class.getDeclaredMethod("setBrokerOuterAPI", NameServerClient.class);
         method.setAccessible(true);
-        method.invoke(broker, brokerOuterAPI);
+        method.invoke(broker, nameServerClient);
 
         List<TopicConfig> topicConfigList = new ArrayList<>(2);
         for (int i = 0; i < 2; i++) {
@@ -135,7 +135,7 @@ public class BrokerContainerTest {
         // Get topicConfigSerializeWrapper created by registerIncrementBrokerData() from brokerOuterAPI.registerBrokerAll()
         ArgumentCaptor<TopicConfigSerializeWrapper> captor = ArgumentCaptor.forClass(TopicConfigSerializeWrapper.class);
         ArgumentCaptor<BrokerIdentity> brokerIdentityCaptor = ArgumentCaptor.forClass(BrokerIdentity.class);
-        verify(brokerOuterAPI).registerBrokerAll(anyString(), anyString(), anyString(), anyLong(), anyString(),
+        verify(nameServerClient).registerBrokerAll(anyString(), anyString(), anyString(), anyLong(), anyString(),
                 captor.capture(), ArgumentMatchers.anyList(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean(), anyLong(), brokerIdentityCaptor.capture());
         TopicConfigSerializeWrapper wrapper = captor.getValue();
         for (Map.Entry<String, TopicConfig> entry : wrapper.getTopicConfigTable().entrySet()) {
@@ -358,7 +358,7 @@ public class BrokerContainerTest {
     }
 
     private void testRegisterIncrementBrokerDataWithPerm(Broker broker,
-                                                         BrokerOuterAPI brokerOuterAPI,
+                                                         NameServerClient nameServerClient,
                                                          List<TopicConfig> topicConfigList, DataVersion dataVersion, int perm, int times) {
         broker.getBrokerConfig().setBrokerPermission(perm);
 
@@ -366,7 +366,7 @@ public class BrokerContainerTest {
         // Get topicConfigSerializeWrapper created by registerIncrementBrokerData() from brokerOuterAPI.registerBrokerAll()
         ArgumentCaptor<TopicConfigSerializeWrapper> captor = ArgumentCaptor.forClass(TopicConfigSerializeWrapper.class);
         ArgumentCaptor<BrokerIdentity> brokerIdentityCaptor = ArgumentCaptor.forClass(BrokerIdentity.class);
-        verify(brokerOuterAPI, times(times)).registerBrokerAll(anyString(), anyString(), anyString(), anyLong(),
+        verify(nameServerClient, times(times)).registerBrokerAll(anyString(), anyString(), anyString(), anyLong(),
                 anyString(), captor.capture(), ArgumentMatchers.anyList(), anyBoolean(), anyInt(), anyBoolean(), anyBoolean(), anyLong(), brokerIdentityCaptor.capture());
         TopicConfigSerializeWrapper wrapper = captor.getValue();
 

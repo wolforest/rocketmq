@@ -18,6 +18,7 @@
 package org.apache.rocketmq.broker.server;
 
 import java.io.File;
+import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

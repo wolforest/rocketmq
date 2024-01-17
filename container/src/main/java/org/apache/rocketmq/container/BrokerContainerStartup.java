@@ -28,7 +28,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.BrokerPathConfigHelper;
+import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
