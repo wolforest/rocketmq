@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.server.longpolling;
 
 import java.util.Map;
 import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
-import org.apache.rocketmq.store.api.MessageArrivingListener;
+import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
 
 public class NotifyMessageArrivingListener implements MessageArrivingListener {
     private final PullRequestHoldService pullRequestHoldService;

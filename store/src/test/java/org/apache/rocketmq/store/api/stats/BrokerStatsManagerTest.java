@@ -18,6 +18,7 @@
 package org.apache.rocketmq.store.api.stats;
 
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

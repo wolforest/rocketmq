@@ -20,9 +20,8 @@ package org.apache.rocketmq.store.api.plugin;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.utils.BeanUtils;
 import org.apache.rocketmq.remoting.Configuration;
-import org.apache.rocketmq.store.api.MessageArrivingListener;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 
 public class MessageStorePluginContext {
     private MessageStoreConfig messageStoreConfig;

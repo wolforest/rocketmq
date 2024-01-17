@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
-import org.apache.rocketmq.store.server.RunningFlags;
+import org.apache.rocketmq.store.server.config.RunningFlags;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Assert;
 import org.junit.Test;

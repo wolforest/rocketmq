@@ -81,7 +81,7 @@ import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.infra.file.DefaultMappedFile;
 import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
-import org.apache.rocketmq.store.api.stats.BrokerStats;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStats;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

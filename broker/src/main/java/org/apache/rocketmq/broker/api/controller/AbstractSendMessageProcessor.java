@@ -59,7 +59,7 @@ import org.apache.rocketmq.remoting.protocol.header.SendMessageResponseHeader;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
-import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 
 import java.net.SocketAddress;
 import java.util.List;

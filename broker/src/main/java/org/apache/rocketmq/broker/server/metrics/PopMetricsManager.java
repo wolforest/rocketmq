@@ -39,8 +39,8 @@ import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.app.metrics.NopLongCounter;
 import org.apache.rocketmq.common.app.metrics.NopLongHistogram;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
-import org.apache.rocketmq.store.api.pop.AckMsg;
-import org.apache.rocketmq.store.api.pop.PopCheckPoint;
+import org.apache.rocketmq.store.api.broker.pop.AckMsg;
+import org.apache.rocketmq.store.api.broker.pop.PopCheckPoint;
 
 import static org.apache.rocketmq.broker.server.metrics.PopMetricsConstant.COUNTER_POP_REVIVE_IN_MESSAGE_TOTAL;
 import static org.apache.rocketmq.broker.server.metrics.PopMetricsConstant.COUNTER_POP_REVIVE_OUT_MESSAGE_TOTAL;

@@ -34,7 +34,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
-import org.apache.rocketmq.store.api.MessageFilter;
+import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.dto.QueryMessageResult;
 import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
 import org.apache.rocketmq.tieredstore.common.GetMessageResultExt;

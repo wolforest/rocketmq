@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.domain.mqtrace;
 import java.util.Properties;
 
 import org.apache.rocketmq.common.domain.message.MessageType;
-import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 
 public class SendMessageContext {
     /** namespace */

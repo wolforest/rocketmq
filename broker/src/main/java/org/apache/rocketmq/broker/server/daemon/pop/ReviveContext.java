@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.server.daemon.pop;
 
 import java.util.HashMap;
-import org.apache.rocketmq.store.api.pop.PopCheckPoint;
+import org.apache.rocketmq.store.api.broker.pop.PopCheckPoint;
 
 public class ReviveContext {
     private final ConsumeReviveObj consumeReviveObj;

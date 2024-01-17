@@ -22,7 +22,7 @@ import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
-import org.apache.rocketmq.store.api.MessageFilter;
+import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.rocksdb.RocksDBException;
 
 public interface ConsumeQueueInterface extends FileQueueLifeCycle {

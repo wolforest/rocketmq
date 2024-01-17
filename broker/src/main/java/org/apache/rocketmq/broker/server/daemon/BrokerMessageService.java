@@ -44,18 +44,18 @@ import org.apache.rocketmq.common.utils.ServiceProvider;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
-import org.apache.rocketmq.store.api.MessageArrivingListener;
+import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.server.RocksDBMessageStore;
-import org.apache.rocketmq.store.server.StoreType;
+import org.apache.rocketmq.store.server.config.StoreType;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
-import org.apache.rocketmq.store.api.hook.PutMessageHook;
-import org.apache.rocketmq.store.api.hook.SendMessageBackHook;
-import org.apache.rocketmq.store.api.MessageStoreFactory;
+import org.apache.rocketmq.store.api.plugin.PutMessageHook;
+import org.apache.rocketmq.store.api.plugin.SendMessageBackHook;
+import org.apache.rocketmq.store.api.plugin.MessagePluginFactory;
 import org.apache.rocketmq.store.api.plugin.MessageStorePluginContext;
-import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
 import org.apache.rocketmq.store.domain.timer.TimerMetrics;
@@ -269,7 +269,7 @@ public class BrokerMessageService {
         MessageStorePluginContext context = new MessageStorePluginContext(
             messageStoreConfig, brokerStatsManager, this.messageArrivingListener, brokerConfig, broker.getConfiguration());
 
-        this.messageStore = MessageStoreFactory.build(context, defaultMessageStore);
+        this.messageStore = MessagePluginFactory.build(context, defaultMessageStore);
 
         this.messageStore.getDispatcherList().addFirst(new CommitLogDispatcherCalcBitMap(this.brokerConfig, broker.getConsumerFilterManager()));
     }

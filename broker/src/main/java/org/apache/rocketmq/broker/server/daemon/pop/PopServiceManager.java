@@ -33,8 +33,8 @@ import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.DataConverter;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.api.pop.PopCheckPoint;
-import org.apache.rocketmq.store.api.pop.PopKeyBuilder;
+import org.apache.rocketmq.store.api.broker.pop.PopCheckPoint;
+import org.apache.rocketmq.store.api.broker.pop.PopKeyBuilder;
 
 public class PopServiceManager {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);

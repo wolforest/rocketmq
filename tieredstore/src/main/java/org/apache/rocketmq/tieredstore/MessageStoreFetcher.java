@@ -19,7 +19,7 @@ package org.apache.rocketmq.tieredstore;
 
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
-import org.apache.rocketmq.store.api.MessageFilter;
+import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.dto.QueryMessageResult;
 import org.apache.rocketmq.common.lang.BoundaryType;
 

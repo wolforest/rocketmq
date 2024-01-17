@@ -53,7 +53,7 @@ import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingContex
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.remoting.protocol.topic.OffsetMovedEvent;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
-import org.apache.rocketmq.store.api.MessageFilter;
+import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 

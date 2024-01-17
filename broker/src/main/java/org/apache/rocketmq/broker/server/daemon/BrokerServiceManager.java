@@ -39,9 +39,9 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.api.stats.BrokerStats;
-import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.api.stats.LmqBrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStats;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.LmqBrokerStatsManager;
 
 /**
  * manager services type like

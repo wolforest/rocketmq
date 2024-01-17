@@ -29,7 +29,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
-import org.apache.rocketmq.store.domain.CompactionAppendMsgCallback;
+import org.apache.rocketmq.store.domain.compaction.CompactionAppendMsgCallback;
 import org.apache.rocketmq.store.domain.message.PutMessageContext;
 import org.apache.rocketmq.store.infra.TransientStorePool;
 import org.apache.rocketmq.store.domain.commitlog.AppendMessageCallback;

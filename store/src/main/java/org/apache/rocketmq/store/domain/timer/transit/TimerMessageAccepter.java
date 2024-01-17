@@ -34,7 +34,7 @@ import org.apache.rocketmq.store.domain.queue.ReferredIterator;
 import org.apache.rocketmq.store.domain.timer.MessageOperator;
 import org.apache.rocketmq.store.domain.timer.TimerRequest;
 import org.apache.rocketmq.store.domain.timer.TimerState;
-import org.apache.rocketmq.store.server.PerfCounter;
+import org.apache.rocketmq.store.server.metrics.PerfCounter;
 
 /**
  * Consume the original topic queue, convert message to TimerTask and put it into the in-memory pending queue

@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
-import org.apache.rocketmq.store.api.MessageFilter;
+import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
 import org.apache.rocketmq.store.domain.queue.CqExtUnit;
 import org.apache.rocketmq.tieredstore.util.MessageBufferUtilTest;

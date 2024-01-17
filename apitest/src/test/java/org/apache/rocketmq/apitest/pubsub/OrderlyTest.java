@@ -16,6 +16,13 @@
  */
 package org.apache.rocketmq.apitest.pubsub;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.apache.rocketmq.apitest.ApiBaseTest;
 import org.apache.rocketmq.apitest.manager.ClientManager;
 import org.apache.rocketmq.apitest.manager.ConsumerManager;
@@ -29,6 +36,7 @@ import org.apache.rocketmq.client.apis.consumer.PushConsumer;
 import org.apache.rocketmq.client.apis.message.Message;
 import org.apache.rocketmq.client.apis.producer.Producer;
 import org.apache.rocketmq.client.apis.producer.SendReceipt;
+import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -36,13 +44,6 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Before running OrderlyTest,You should set the fifo property for the consumer-group to True
@@ -53,13 +54,14 @@ public class OrderlyTest extends ApiBaseTest {
     private static final String TOPIC = TopicManager.createUniqueTopic();
     private static final String CONSUMER_GROUP = GroupManager.createUniqueGroup();
     private static final String PRODUCE_GROUP = GroupManager.createUniqueGroup();
-    private static final String MESSAGE_PREFIX = "MQM_DL_";
+    private static final String MESSAGE_KEY_PREFIX = "MQM_DL_";
     private static final String MESSAGE_BODY = "orderly message body: ";
 
     private PushConsumer consumer;
     private Producer producer;
 
     private final Set<String> messageIdSet = new HashSet<>();
+    private int lastKeyIndex = 0;
 
 
     @BeforeMethod
@@ -149,15 +151,35 @@ public class OrderlyTest extends ApiBaseTest {
             Assert.assertEquals(TOPIC, message.getTopic());
             Assert.assertTrue(messageIdSet.contains(messageId));
 
+            int keyIndex = getKeyIndex(message.getKeys());
+            LOG.info("current message index: {}; last message index: {}", keyIndex, lastKeyIndex);
+
+            Assert.assertTrue(keyIndex > lastKeyIndex);
+
+            lastKeyIndex = keyIndex;
             return ConsumeResult.SUCCESS;
         };
+    }
+
+    private int getKeyIndex(Collection<String> keys) {
+        if (keys.isEmpty()) {
+            return -1;
+        }
+
+        String key = keys.iterator().next();
+        if (StringUtils.isBlank(key)) {
+            return -1;
+        }
+
+        String num = key.substring(MESSAGE_KEY_PREFIX.length() - 1);
+        return Integer.parseInt(num);
     }
 
     private Message createMessage(int i) {
         return ClientManager.getProvider()
                 .newMessageBuilder()
                 .setTopic(TOPIC)
-                .setKeys(MESSAGE_PREFIX + i)
+                .setKeys(MESSAGE_KEY_PREFIX + i)
                 .setBody((MESSAGE_BODY + i).getBytes(StandardCharsets.UTF_8))
                 .setMessageGroup(PRODUCE_GROUP)
                 .build();

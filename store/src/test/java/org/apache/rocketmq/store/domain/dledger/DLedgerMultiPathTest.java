@@ -29,7 +29,7 @@ import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
 import org.apache.rocketmq.store.server.config.FlushDiskType;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.Assume;

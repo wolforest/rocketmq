@@ -55,10 +55,10 @@ import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
-import org.apache.rocketmq.store.api.pop.AckMsg;
-import org.apache.rocketmq.store.api.pop.BatchAckMsg;
-import org.apache.rocketmq.store.api.pop.PopCheckPoint;
-import org.apache.rocketmq.store.api.pop.PopKeyBuilder;
+import org.apache.rocketmq.store.api.broker.pop.AckMsg;
+import org.apache.rocketmq.store.api.broker.pop.BatchAckMsg;
+import org.apache.rocketmq.store.api.broker.pop.PopCheckPoint;
+import org.apache.rocketmq.store.api.broker.pop.PopKeyBuilder;
 
 import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LABEL_CONSUMER_GROUP;
 import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LABEL_IS_SYSTEM;

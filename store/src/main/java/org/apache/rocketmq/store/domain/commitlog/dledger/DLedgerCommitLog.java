@@ -47,7 +47,7 @@ import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.infra.file.MappedFile;
 import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
-import org.apache.rocketmq.store.api.stats.StoreStatsService;
+import org.apache.rocketmq.store.api.broker.stats.StoreStatsService;
 import org.rocksdb.RocksDBException;
 
 import java.net.Inet6Address;

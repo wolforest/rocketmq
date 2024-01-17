@@ -35,7 +35,7 @@ import org.apache.rocketmq.broker.metadata.topic.TopicQueueMappingManager;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.StoreType;
+import org.apache.rocketmq.store.server.config.StoreType;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 public class BrokerMetadataService {

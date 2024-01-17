@@ -39,7 +39,7 @@ import org.apache.rocketmq.remoting.protocol.header.controller.register.GetNextB
 import org.apache.rocketmq.remoting.protocol.header.controller.register.RegisterBrokerToControllerResponseHeader;
 import org.apache.rocketmq.store.infra.ha.autoswitch.AutoSwitchHAService;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
-import org.apache.rocketmq.store.server.RunningFlags;
+import org.apache.rocketmq.store.server.config.RunningFlags;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Sets;

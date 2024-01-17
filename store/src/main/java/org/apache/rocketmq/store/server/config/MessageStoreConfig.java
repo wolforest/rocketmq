@@ -20,7 +20,6 @@ import java.io.File;
 
 import org.apache.rocketmq.common.lang.annotation.ImportantField;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
-import org.apache.rocketmq.store.server.StoreType;
 import org.apache.rocketmq.store.domain.queue.BatchConsumeQueue;
 
 public class MessageStoreConfig {

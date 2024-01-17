@@ -21,20 +21,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
-import org.apache.rocketmq.store.api.MessageArrivingListener;
-import org.apache.rocketmq.store.api.MessageFilter;
+import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
+import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueStoreInterface;
-import org.apache.rocketmq.store.domain.queue.RocksDBConsumeQueue;
-import org.apache.rocketmq.store.domain.queue.RocksDBConsumeQueueStore;
-import org.apache.rocketmq.store.infra.rocksdb.RocksDBCleanConsumeQueueService;
-import org.apache.rocketmq.store.infra.rocksdb.RocksDBCorrectLogicOffsetService;
-import org.apache.rocketmq.store.infra.rocksdb.RocksDBFlushConsumeQueueService;
+import org.apache.rocketmq.store.domain.queue.rocksdb.RocksDBConsumeQueue;
+import org.apache.rocketmq.store.domain.queue.rocksdb.RocksDBConsumeQueueStore;
+import org.apache.rocketmq.store.domain.queue.rocksdb.RocksDBCleanConsumeQueueService;
+import org.apache.rocketmq.store.domain.queue.rocksdb.RocksDBCorrectLogicOffsetService;
+import org.apache.rocketmq.store.domain.queue.rocksdb.RocksDBFlushConsumeQueueService;
 import org.apache.rocketmq.store.server.daemon.CleanConsumeQueueService;
 import org.apache.rocketmq.store.server.daemon.CorrectLogicOffsetService;
 import org.apache.rocketmq.store.server.daemon.FlushConsumeQueueService;
-import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.rocksdb.RocksDBException;
 
 public class RocksDBMessageStore extends DefaultMessageStore {

@@ -17,7 +17,7 @@
 package org.apache.rocketmq.broker.server.daemon.pop;
 
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.store.api.pop.PopCheckPoint;
+import org.apache.rocketmq.store.api.broker.pop.PopCheckPoint;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

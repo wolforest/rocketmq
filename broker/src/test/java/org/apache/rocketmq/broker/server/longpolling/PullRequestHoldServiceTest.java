@@ -25,7 +25,7 @@ import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
-import org.apache.rocketmq.store.api.DefaultMessageFilter;
+import org.apache.rocketmq.store.api.filter.DefaultMessageFilter;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.assertj.core.api.Assertions;
 import org.junit.After;

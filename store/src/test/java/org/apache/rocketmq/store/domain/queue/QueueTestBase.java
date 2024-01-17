@@ -33,7 +33,7 @@ import org.apache.rocketmq.common.domain.topic.TopicAttributes;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.store.StoreTestBase;
 import org.apache.rocketmq.store.api.MessageStore;
-import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 

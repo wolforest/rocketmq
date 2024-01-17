@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.store.StoreTestBase;
 import org.apache.rocketmq.store.api.MessageStore;
-import org.apache.rocketmq.store.api.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;

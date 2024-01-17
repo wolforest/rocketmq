@@ -39,7 +39,7 @@ import org.apache.rocketmq.store.infra.ha.autoswitch.AutoSwitchHAService;
 import org.apache.rocketmq.store.infra.ha.autoswitch.BrokerMetadata;
 import org.apache.rocketmq.store.infra.ha.autoswitch.TempBrokerMetadata;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
-import org.apache.rocketmq.store.server.RunningFlags;
+import org.apache.rocketmq.store.server.config.RunningFlags;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.After;
 import org.junit.Assert;
