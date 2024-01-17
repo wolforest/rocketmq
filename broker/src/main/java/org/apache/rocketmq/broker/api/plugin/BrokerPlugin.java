@@ -25,7 +25,7 @@ import java.util.Map;
  *
  * @renamed from BrokerAttachedPlugin to BrokerPlugin
  */
-public interface BrokerAttachedPlugin {
+public interface BrokerPlugin {
 
     /**
      * Get plugin name

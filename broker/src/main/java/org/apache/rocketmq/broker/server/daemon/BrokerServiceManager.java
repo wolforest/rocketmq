@@ -27,7 +27,7 @@ import org.apache.rocketmq.broker.domain.coldctr.ColdDataCgCtrService;
 import org.apache.rocketmq.broker.domain.coldctr.ColdDataPullRequestHoldService;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.infra.offset.BroadcastOffsetManager;
-import org.apache.rocketmq.broker.api.plugin.BrokerAttachedPlugin;
+import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
 import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.infra.topic.TopicQueueMappingCleanService;
 import org.apache.rocketmq.broker.infra.topic.TopicRouteInfoManager;
@@ -81,7 +81,7 @@ public class BrokerServiceManager {
     /* monitor servie end */
 
     /*  broker plugin start */
-    private List<BrokerAttachedPlugin> brokerAttachedPlugins = new ArrayList<>();
+    private List<BrokerPlugin> brokerPlugins = new ArrayList<>();
     /*  broker plugin end */
 
     private ShutdownHook shutdownHook;
@@ -100,9 +100,9 @@ public class BrokerServiceManager {
         this.brokerStats = new BrokerStats(broker.getBrokerMessageService().getMessageStore());
 
         boolean result = true;
-        for (BrokerAttachedPlugin brokerAttachedPlugin : brokerAttachedPlugins) {
-            if (brokerAttachedPlugin != null) {
-                result = result && brokerAttachedPlugin.load();
+        for (BrokerPlugin brokerPlugin : brokerPlugins) {
+            if (brokerPlugin != null) {
+                result = result && brokerPlugin.load();
             }
         }
         return result;
@@ -141,9 +141,9 @@ public class BrokerServiceManager {
             this.topicQueueMappingCleanService.start();
         }
 
-        for (BrokerAttachedPlugin brokerAttachedPlugin : brokerAttachedPlugins) {
-            if (brokerAttachedPlugin != null) {
-                brokerAttachedPlugin.start();
+        for (BrokerPlugin brokerPlugin : brokerPlugins) {
+            if (brokerPlugin != null) {
+                brokerPlugin.start();
             }
         }
 
@@ -189,9 +189,9 @@ public class BrokerServiceManager {
             this.brokerStatsManager.shutdown();
         }
 
-        for (BrokerAttachedPlugin brokerAttachedPlugin : brokerAttachedPlugins) {
-            if (brokerAttachedPlugin != null) {
-                brokerAttachedPlugin.shutdown();
+        for (BrokerPlugin brokerPlugin : brokerPlugins) {
+            if (brokerPlugin != null) {
+                brokerPlugin.shutdown();
             }
         }
 
@@ -285,8 +285,8 @@ public class BrokerServiceManager {
         return brokerMetricsManager;
     }
 
-    public List<BrokerAttachedPlugin> getBrokerAttachedPlugins() {
-        return brokerAttachedPlugins;
+    public List<BrokerPlugin> getBrokerAttachedPlugins() {
+        return brokerPlugins;
     }
 
     public ProducerManager getProducerManager() {

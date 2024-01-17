@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.broker.server.dledger.DLedgerRoleChangeHandler;
 import org.apache.rocketmq.broker.infra.EscapeBridge;
 import org.apache.rocketmq.broker.infra.filter.CommitLogDispatcherCalcBitMap;
-import org.apache.rocketmq.broker.api.plugin.BrokerAttachedPlugin;
+import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
 import org.apache.rocketmq.broker.api.controller.AckMessageProcessor;
 import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
 import org.apache.rocketmq.broker.server.daemon.schedule.ScheduleMessageService;
@@ -190,9 +190,9 @@ public class BrokerMessageService {
     }
 
     public void changeSpecialServiceStatus(boolean shouldStart) {
-        for (BrokerAttachedPlugin brokerAttachedPlugin : broker.getBrokerServiceManager().getBrokerAttachedPlugins()) {
-            if (brokerAttachedPlugin != null) {
-                brokerAttachedPlugin.statusChanged(shouldStart);
+        for (BrokerPlugin brokerPlugin : broker.getBrokerServiceManager().getBrokerAttachedPlugins()) {
+            if (brokerPlugin != null) {
+                brokerPlugin.statusChanged(shouldStart);
             }
         }
 

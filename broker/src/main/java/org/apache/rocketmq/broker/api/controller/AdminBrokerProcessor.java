@@ -30,7 +30,7 @@ import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.infra.slave.ReplicasManager;
 import org.apache.rocketmq.broker.infra.filter.ConsumerFilterData;
 import org.apache.rocketmq.broker.infra.filter.ExpressionMessageFilter;
-import org.apache.rocketmq.broker.api.plugin.BrokerAttachedPlugin;
+import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
 import org.apache.rocketmq.broker.infra.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageUtil;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
@@ -2370,9 +2370,9 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
     private HashMap<String, String> prepareRuntimeInfo() {
         HashMap<String, String> runtimeInfo = this.broker.getMessageStore().getRuntimeInfo();
 
-        for (BrokerAttachedPlugin brokerAttachedPlugin : broker.getBrokerServiceManager().getBrokerAttachedPlugins()) {
-            if (brokerAttachedPlugin != null) {
-                brokerAttachedPlugin.buildRuntimeInfo(runtimeInfo);
+        for (BrokerPlugin brokerPlugin : broker.getBrokerServiceManager().getBrokerAttachedPlugins()) {
+            if (brokerPlugin != null) {
+                brokerPlugin.buildRuntimeInfo(runtimeInfo);
             }
         }
 

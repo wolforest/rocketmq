@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.api.plugin.BrokerAttachedPlugin;
+import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.schedule.DelayOffsetSerializeWrapper;
 import org.apache.rocketmq.client.exception.MQBrokerException;
@@ -216,9 +216,9 @@ public class BrokerPreOnlineService extends ServiceThread {
     }
 
     private void brokerAttachedPluginSyncMetadataReverse(String brokerAddr) throws Exception {
-        for (BrokerAttachedPlugin brokerAttachedPlugin : broker.getBrokerServiceManager().getBrokerAttachedPlugins()) {
-            if (brokerAttachedPlugin != null) {
-                brokerAttachedPlugin.syncMetadataReverse(brokerAddr);
+        for (BrokerPlugin brokerPlugin : broker.getBrokerServiceManager().getBrokerAttachedPlugins()) {
+            if (brokerPlugin != null) {
+                brokerPlugin.syncMetadataReverse(brokerAddr);
             }
         }
     }
