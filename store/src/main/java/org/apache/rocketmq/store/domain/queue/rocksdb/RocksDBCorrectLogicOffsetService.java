@@ -17,7 +17,6 @@
 package org.apache.rocketmq.store.domain.queue.rocksdb;
 
 import org.apache.rocketmq.store.server.DefaultMessageStore;
-import org.apache.rocketmq.store.domain.queue.rocksdb.RocksDBConsumeQueueOffsetTable;
 import org.apache.rocketmq.store.server.daemon.CorrectLogicOffsetService;
 
 public class RocksDBCorrectLogicOffsetService extends CorrectLogicOffsetService {

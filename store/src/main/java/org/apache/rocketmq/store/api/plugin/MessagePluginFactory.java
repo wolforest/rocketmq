@@ -20,8 +20,6 @@ package org.apache.rocketmq.store.api.plugin;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import org.apache.rocketmq.store.api.MessageStore;
-import org.apache.rocketmq.store.api.plugin.AbstractPluginMessageStore;
-import org.apache.rocketmq.store.api.plugin.MessageStorePluginContext;
 
 /**
  * load PluginMessageStore if hava
