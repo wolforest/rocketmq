@@ -22,10 +22,12 @@ import com.sun.jna.NativeLong;
 import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
 
+/**
+ * To load the c api using jna, you must use a version >= 5.11.0
+ * See https://github.com/java-native-access/jna/blob/master/CHANGES.md#release-5110
+ */
 public interface LibC extends Library {
-    /** To load the c api using jna, you must use a version >= 5.11.0
-     * See https://github.com/java-native-access/jna/blob/master/CHANGES.md#release-5110
-    **/
+
     LibC INSTANCE = Native.load(Platform.isWindows() ? "msvcrt" : "c", LibC.class);
 
     int MADV_NORMAL = 0;
