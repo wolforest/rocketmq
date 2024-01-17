@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.infra;
+package org.apache.rocketmq.broker.infra.network;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;

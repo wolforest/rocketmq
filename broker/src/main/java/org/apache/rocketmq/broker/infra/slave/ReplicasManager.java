@@ -31,7 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.infra.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.NameServerClient;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.Pair;

@@ -14,15 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.server.client;
+package org.apache.rocketmq.broker.domain.producer;
 
-public enum ProducerGroupEvent {
-    /**
-     * The group of producer is unregistered.
-     */
-    GROUP_UNREGISTER,
-    /**
-     * The client of this producer is unregistered.
-     */
-    CLIENT_UNREGISTER
+import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
+
+/**
+ * producer manager will call this listener when something happen
+ * <p>
+ * event type: {@link ProducerGroupEvent}
+ */
+public interface ProducerChangeListener {
+
+    void handle(ProducerGroupEvent event, String group, ClientChannelInfo clientChannelInfo);
 }

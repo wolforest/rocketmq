@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
-import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
+import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.infra.filter.ExpressionMessageFilter;
 import org.apache.rocketmq.broker.domain.mqtrace.ConsumeMessageContext;
 import org.apache.rocketmq.broker.domain.mqtrace.ConsumeMessageHook;

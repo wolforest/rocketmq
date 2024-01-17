@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.server.client;
+package org.apache.rocketmq.broker.domain.producer;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
 import org.junit.Before;
 import org.junit.Test;

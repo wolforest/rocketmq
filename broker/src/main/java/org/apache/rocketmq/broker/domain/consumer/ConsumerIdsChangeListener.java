@@ -14,14 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.server.client;
+package org.apache.rocketmq.broker.domain.consumer;
 
-/**
- * producer manager will call this listener when something happen
- * <p>
- * event type: {@link ProducerGroupEvent}
- */
-public interface ProducerChangeListener {
+public interface ConsumerIdsChangeListener {
 
-    void handle(ProducerGroupEvent event, String group, ClientChannelInfo clientChannelInfo);
+    void handle(ConsumerGroupEvent event, String group, Object... args);
+
+    void shutdown();
 }

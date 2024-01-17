@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.server.client.net;
+package org.apache.rocketmq.broker.infra.network;
 
 import io.netty.channel.Channel;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
-import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
+import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupInfo;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;

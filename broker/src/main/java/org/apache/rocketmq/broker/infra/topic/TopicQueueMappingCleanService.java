@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.infra.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.NameServerClient;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;

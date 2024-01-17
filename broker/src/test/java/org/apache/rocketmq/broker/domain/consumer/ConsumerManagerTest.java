@@ -15,14 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.server.client;
+package org.apache.rocketmq.broker.domain.consumer;
 
 import io.netty.channel.Channel;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.rocketmq.broker.infra.filter.ConsumerFilterManager;
+import org.apache.rocketmq.broker.infra.network.Broker2Client;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.client.net.Broker2Client;
+import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;

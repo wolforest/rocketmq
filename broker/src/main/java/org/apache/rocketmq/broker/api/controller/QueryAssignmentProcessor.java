@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
+import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.infra.loadbalance.MessageRequestModeManager;
 import org.apache.rocketmq.broker.infra.topic.TopicRouteInfoManager;
 import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;

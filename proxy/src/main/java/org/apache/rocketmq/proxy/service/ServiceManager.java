@@ -16,8 +16,8 @@
  */
 package org.apache.rocketmq.proxy.service;
 
-import org.apache.rocketmq.broker.server.client.ConsumerManager;
-import org.apache.rocketmq.broker.server.client.ProducerManager;
+import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
+import org.apache.rocketmq.broker.domain.producer.ProducerManager;
 import org.apache.rocketmq.common.utils.StartAndShutdown;
 import org.apache.rocketmq.proxy.service.admin.AdminService;
 import org.apache.rocketmq.proxy.service.message.MessageService;

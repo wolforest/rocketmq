@@ -48,7 +48,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.client.ConsumerManager;
+import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.common.lang.Pair;

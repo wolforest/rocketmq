@@ -18,7 +18,7 @@ package org.apache.rocketmq.container;
 
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.infra.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.NameServerClient;
 import org.apache.rocketmq.common.app.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.constant.MQConstants;

@@ -14,11 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.server.client;
+package org.apache.rocketmq.broker.domain.producer;
 
-public interface ConsumerIdsChangeListener {
-
-    void handle(ConsumerGroupEvent event, String group, Object... args);
-
-    void shutdown();
+public enum ProducerGroupEvent {
+    /**
+     * The group of producer is unregistered.
+     */
+    GROUP_UNREGISTER,
+    /**
+     * The client of this producer is unregistered.
+     */
+    CLIENT_UNREGISTER
 }

@@ -19,7 +19,7 @@ package org.apache.rocketmq.proxy.service.client;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import java.nio.ByteBuffer;
-import org.apache.rocketmq.broker.server.client.ProducerManager;
+import org.apache.rocketmq.broker.domain.producer.ProducerManager;
 import org.apache.rocketmq.client.impl.ClientRemotingProcessor;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageConst;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.infra;
+package org.apache.rocketmq.broker.infra.network;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

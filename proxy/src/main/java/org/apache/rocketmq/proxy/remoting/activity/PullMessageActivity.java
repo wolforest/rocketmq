@@ -19,7 +19,7 @@ package org.apache.rocketmq.proxy.remoting.activity;
 
 import io.netty.channel.ChannelHandlerContext;
 import java.time.Duration;
-import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
+import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupInfo;
 import org.apache.rocketmq.common.domain.sysflag.PullSysFlag;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.processor.MessagingProcessor;

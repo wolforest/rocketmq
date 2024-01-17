@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import org.apache.rocketmq.broker.server.client.ProducerManager;
+import org.apache.rocketmq.broker.domain.producer.ProducerManager;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;

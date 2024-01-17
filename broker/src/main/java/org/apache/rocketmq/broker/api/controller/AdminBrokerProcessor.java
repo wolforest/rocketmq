@@ -26,7 +26,7 @@ import org.apache.rocketmq.acl.AccessValidator;
 import org.apache.rocketmq.acl.plain.PlainAccessValidator;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
-import org.apache.rocketmq.broker.server.client.ConsumerGroupInfo;
+import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.infra.slave.ReplicasManager;
 import org.apache.rocketmq.broker.infra.filter.ConsumerFilterData;
 import org.apache.rocketmq.broker.infra.filter.ExpressionMessageFilter;

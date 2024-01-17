@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.infra.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.NameServerClient;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
