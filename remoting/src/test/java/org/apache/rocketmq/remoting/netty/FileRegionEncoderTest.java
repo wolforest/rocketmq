@@ -21,6 +21,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.DefaultFileRegion;
 import io.netty.channel.FileRegion;
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,8 +31,6 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
 import org.apache.rocketmq.remoting.netty.handler.FileRegionEncoder;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class FileRegionEncoderTest {
 
