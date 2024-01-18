@@ -21,7 +21,7 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.infra.offset.ConsumerOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.infra.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.infra.topic.TopicConfigManager;
 import org.apache.rocketmq.broker.server.Broker;

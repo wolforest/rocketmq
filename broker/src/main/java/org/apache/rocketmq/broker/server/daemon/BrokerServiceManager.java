@@ -26,7 +26,7 @@ import org.apache.rocketmq.broker.infra.network.Broker2Client;
 import org.apache.rocketmq.broker.domain.coldctr.ColdDataCgCtrService;
 import org.apache.rocketmq.broker.domain.coldctr.ColdDataPullRequestHoldService;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
-import org.apache.rocketmq.broker.infra.offset.BroadcastOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.BroadcastOffsetManager;
 import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
 import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.infra.topic.TopicQueueMappingCleanService;

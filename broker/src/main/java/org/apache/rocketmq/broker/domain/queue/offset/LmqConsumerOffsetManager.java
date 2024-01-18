@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.infra.offset;
+package org.apache.rocketmq.broker.domain.queue.offset;
 
 import java.util.HashMap;
 import java.util.Map;

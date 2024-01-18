@@ -18,11 +18,11 @@ package org.apache.rocketmq.broker.server.daemon;
 
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.infra.filter.ConsumerFilterManager;
-import org.apache.rocketmq.broker.infra.offset.ConsumerOffsetManager;
-import org.apache.rocketmq.broker.infra.offset.ConsumerOrderInfoManager;
-import org.apache.rocketmq.broker.infra.offset.LmqConsumerOffsetManager;
-import org.apache.rocketmq.broker.infra.offset.RocksDBConsumerOffsetManager;
-import org.apache.rocketmq.broker.infra.offset.RocksDBLmqConsumerOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOrderInfoManager;
+import org.apache.rocketmq.broker.domain.queue.offset.LmqConsumerOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.RocksDBConsumerOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.RocksDBLmqConsumerOffsetManager;
 import org.apache.rocketmq.broker.infra.subscription.LmqSubscriptionGroupManager;
 import org.apache.rocketmq.broker.infra.subscription.RocksDBLmqSubscriptionGroupManager;
 import org.apache.rocketmq.broker.infra.subscription.RocksDBSubscriptionGroupManager;

@@ -20,7 +20,7 @@ import io.netty.channel.ChannelHandlerContext;
 import java.util.List;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupInfo;
-import org.apache.rocketmq.broker.infra.offset.ConsumerOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;

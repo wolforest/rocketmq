@@ -26,7 +26,7 @@ import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
 import org.apache.rocketmq.broker.infra.filter.ConsumerFilterData;
 import org.apache.rocketmq.broker.infra.filter.ConsumerFilterManager;
 import org.apache.rocketmq.broker.infra.filter.ExpressionMessageFilter;
-import org.apache.rocketmq.broker.infra.offset.ConsumerOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.infra.subscription.SubscriptionGroupManager;

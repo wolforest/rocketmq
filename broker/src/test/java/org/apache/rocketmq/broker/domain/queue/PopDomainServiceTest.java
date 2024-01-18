@@ -14,18 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.infra.offset;
+package org.apache.rocketmq.broker.domain.queue;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-public class BroadcastOffsetStoreTest {
-
-    @Test
-    public void testBasicOffsetStore() {
-        BroadcastOffsetStore offsetStore = new BroadcastOffsetStore();
-        offsetStore.updateOffset(0, 100L, false);
-        offsetStore.updateOffset(1, 200L, false);
-        Assert.assertEquals(100L, offsetStore.readOffset(0));
-    }
+public class PopDomainServiceTest {
 }

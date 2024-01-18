@@ -14,21 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.infra.offset;
+package org.apache.rocketmq.broker.domain.queue.offset;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import org.junit.Assert;
+import org.junit.Test;
 
-import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
+public class BroadcastOffsetStoreTest {
 
-public class RocksDBOffsetSerializeWrapper extends RemotingSerializable {
-    private ConcurrentMap<Integer, Long> offsetTable = new ConcurrentHashMap(16);
-
-    public ConcurrentMap<Integer, Long> getOffsetTable() {
-        return offsetTable;
-    }
-
-    public void setOffsetTable(ConcurrentMap<Integer, Long> offsetTable) {
-        this.offsetTable = offsetTable;
+    @Test
+    public void testBasicOffsetStore() {
+        BroadcastOffsetStore offsetStore = new BroadcastOffsetStore();
+        offsetStore.updateOffset(0, 100L, false);
+        offsetStore.updateOffset(1, 200L, false);
+        Assert.assertEquals(100L, offsetStore.readOffset(0));
     }
 }
