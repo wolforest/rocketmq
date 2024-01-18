@@ -14,21 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.api.service;
+package org.apache.rocketmq.store.infra.rocksdb;
 
-import org.apache.rocketmq.common.app.config.ConfigManager;
-
-/**
- * store ConfigManager data
- * @see ConfigManager
- */
-public class JSONStoreService {
-
-    public String load(String key) {
-        return null;
-    }
-
-    public void save(String key, String data) {
-
-    }
+public class RocksDB {
 }
