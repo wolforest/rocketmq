@@ -16,18 +16,15 @@
  */
 package org.apache.rocketmq.broker.domain.queue.offset;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import java.io.File;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
-
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.RocksDBConfigManager;
 import org.apache.rocketmq.common.utils.DataConverter;
 import org.rocksdb.WriteBatch;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 
 public class RocksDBConsumerOffsetManager extends ConsumerOffsetManager {
 
@@ -72,23 +69,19 @@ public class RocksDBConsumerOffsetManager extends ConsumerOffsetManager {
 
     @Override
     public synchronized void persist() {
-        WriteBatch writeBatch = new WriteBatch();
-        try {
-            Iterator<Entry<String, ConcurrentMap<Integer, Long>>> iterator = this.offsetTable.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, ConcurrentMap<Integer, Long>> entry = iterator.next();
+        try (WriteBatch writeBatch = new WriteBatch()) {
+            for (Entry<String, ConcurrentMap<Integer, Long>> entry : this.offsetTable.entrySet()) {
                 putWriteBatch(writeBatch, entry.getKey(), entry.getValue());
-
-                if (writeBatch.getDataSize() >= 4 * 1024) {
-                    this.rocksDBConfigManager.batchPutWithWal(writeBatch);
+                if (writeBatch.getDataSize() < 4 * 1024) {
+                    continue;
                 }
+
+                this.rocksDBConfigManager.batchPutWithWal(writeBatch);
             }
             this.rocksDBConfigManager.batchPutWithWal(writeBatch);
             this.rocksDBConfigManager.flushWAL();
         } catch (Exception e) {
             LOG.error("consumer offset persist Failed", e);
-        } finally {
-            writeBatch.close();
         }
     }
 
