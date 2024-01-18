@@ -33,7 +33,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueStore;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;

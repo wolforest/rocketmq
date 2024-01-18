@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.common.lang.BoundaryType;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.rocksdb.RocksDBException;
 
 public interface ConsumeQueueStoreInterface {

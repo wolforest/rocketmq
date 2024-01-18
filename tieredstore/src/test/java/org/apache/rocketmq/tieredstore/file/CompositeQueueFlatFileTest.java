@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.tieredstore.TieredStoreTestUtil;
 import org.apache.rocketmq.tieredstore.common.AppendResult;
 import org.apache.rocketmq.tieredstore.common.FileSegmentType;

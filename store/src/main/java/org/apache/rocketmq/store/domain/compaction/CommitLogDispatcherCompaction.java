@@ -16,8 +16,8 @@
  */
 package org.apache.rocketmq.store.domain.compaction;
 
-import org.apache.rocketmq.store.server.dispatcher.CommitLogDispatcher;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.CommitLogDispatcher;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 
 public class CommitLogDispatcherCompaction implements CommitLogDispatcher {
     private final CompactionService cptService;

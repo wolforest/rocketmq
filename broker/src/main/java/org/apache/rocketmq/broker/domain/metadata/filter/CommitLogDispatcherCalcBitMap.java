@@ -23,8 +23,8 @@ import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.filter.util.BitsArray;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.dispatcher.CommitLogDispatcher;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.CommitLogDispatcher;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 
 import java.util.Collection;
 import java.util.Iterator;

@@ -18,7 +18,7 @@ package org.apache.rocketmq.store.server.daemon;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 
 /**
  * orderly queue for DispatchRequest

@@ -50,8 +50,8 @@ import org.apache.rocketmq.remoting.protocol.header.namesrv.RegisterBrokerReques
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.infra.ha.HAConnection;
-import org.apache.rocketmq.store.infra.ha.HAConnectionState;
+import org.apache.rocketmq.store.server.ha.HAConnection;
+import org.apache.rocketmq.store.server.ha.HAConnectionState;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.junit.Assert;
 import org.junit.BeforeClass;

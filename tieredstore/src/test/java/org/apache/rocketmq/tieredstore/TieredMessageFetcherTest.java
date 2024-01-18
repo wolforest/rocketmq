@@ -25,7 +25,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.rocketmq.common.lang.BoundaryType;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.api.dto.QueryMessageResult;

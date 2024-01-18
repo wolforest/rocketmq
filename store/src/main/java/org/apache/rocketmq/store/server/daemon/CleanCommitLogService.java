@@ -23,7 +23,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
-import org.apache.rocketmq.store.infra.ha.autoswitch.AutoSwitchHAService;
+import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAService;
 
 import java.util.HashSet;
 import java.util.Set;

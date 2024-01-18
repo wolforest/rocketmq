@@ -35,7 +35,7 @@ import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.MessageStore;

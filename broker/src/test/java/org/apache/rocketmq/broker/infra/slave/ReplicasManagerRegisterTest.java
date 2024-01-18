@@ -35,9 +35,9 @@ import org.apache.rocketmq.remoting.protocol.header.controller.GetMetaDataRespon
 import org.apache.rocketmq.remoting.protocol.header.controller.register.ApplyBrokerIdResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.register.GetNextBrokerIdResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.controller.register.RegisterBrokerToControllerResponseHeader;
-import org.apache.rocketmq.store.infra.ha.autoswitch.AutoSwitchHAService;
-import org.apache.rocketmq.store.infra.ha.autoswitch.BrokerMetadata;
-import org.apache.rocketmq.store.infra.ha.autoswitch.TempBrokerMetadata;
+import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAService;
+import org.apache.rocketmq.store.server.ha.autoswitch.BrokerMetadata;
+import org.apache.rocketmq.store.server.ha.autoswitch.TempBrokerMetadata;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.config.RunningFlags;

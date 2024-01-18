@@ -42,10 +42,10 @@ import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.server.config.RunningFlags;
 import org.apache.rocketmq.store.server.StoreCheckpoint;
 import org.apache.rocketmq.store.infra.TransientStorePool;
-import org.apache.rocketmq.store.server.dispatcher.CommitLogDispatcher;
+import org.apache.rocketmq.store.domain.dispatcher.CommitLogDispatcher;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.infra.ha.HAService;
+import org.apache.rocketmq.store.server.ha.HAService;
 import org.apache.rocketmq.store.api.plugin.PutMessageHook;
 import org.apache.rocketmq.store.api.plugin.SendMessageBackHook;
 import org.apache.rocketmq.store.infra.mappedfile.AllocateMappedFileService;
@@ -58,7 +58,7 @@ import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.api.broker.stats.StoreStatsService;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.rocksdb.RocksDBException;
 
 /**

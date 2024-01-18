@@ -39,7 +39,7 @@ import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.domain.message.MessageExtEncoder;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;

@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 public class MultiDispatchUtils {

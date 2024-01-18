@@ -32,9 +32,9 @@ import org.apache.rocketmq.remoting.protocol.header.controller.GetReplicaInfoReq
 import org.apache.rocketmq.remoting.protocol.header.controller.GetReplicaInfoResponseHeader;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.server.config.BrokerRole;
-import org.apache.rocketmq.store.infra.ha.HAClient;
-import org.apache.rocketmq.store.infra.ha.HAConnectionState;
-import org.apache.rocketmq.store.infra.ha.autoswitch.AutoSwitchHAService;
+import org.apache.rocketmq.store.server.ha.HAClient;
+import org.apache.rocketmq.store.server.ha.HAConnectionState;
+import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAService;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
 import org.junit.AfterClass;

@@ -22,7 +22,7 @@ import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;

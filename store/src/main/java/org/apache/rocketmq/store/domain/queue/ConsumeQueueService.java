@@ -47,7 +47,7 @@ import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
-import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.rocksdb.RocksDBException;
 
 public class ConsumeQueueService {
