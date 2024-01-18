@@ -18,13 +18,11 @@
 /**
  * $Id: MappedFileTest.java 1831 2013-05-16 01:39:51Z vintagewang@apache.org $
  */
-package org.apache.rocketmq.store.infra.file;
+package org.apache.rocketmq.store.infra.mappedfile;
 
 import java.io.File;
 import java.io.IOException;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.store.infra.mappedfile.DefaultMappedFile;
-import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.junit.After;
 import org.junit.Test;
 

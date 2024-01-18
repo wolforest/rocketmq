@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.store.infra.file;
+package org.apache.rocketmq.store.infra.mappedfile;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,10 +35,6 @@ import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
-import org.apache.rocketmq.store.infra.mappedfile.DefaultMappedFile;
-import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
-import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
-import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.assertj.core.util.Lists;
 import org.junit.After;
 import org.junit.Assume;

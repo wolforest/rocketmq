@@ -15,14 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.store.infra.file;
+package org.apache.rocketmq.store.infra.mappedfile;
 
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
-import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
-import org.apache.rocketmq.store.infra.mappedfile.MultiPathMappedFileQueue;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Test;
 
