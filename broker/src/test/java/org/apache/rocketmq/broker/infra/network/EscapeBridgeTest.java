@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.infra.topic.TopicRouteInfoManager;
+import org.apache.rocketmq.broker.domain.metadata.topic.TopicRouteInfoManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerMessageService;
 import org.apache.rocketmq.client.consumer.PullResult;

@@ -23,7 +23,7 @@ import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.broker.infra.dledger.DLedgerRoleChangeHandler;
 import org.apache.rocketmq.broker.infra.network.EscapeBridge;
-import org.apache.rocketmq.broker.infra.filter.CommitLogDispatcherCalcBitMap;
+import org.apache.rocketmq.broker.domain.metadata.filter.CommitLogDispatcherCalcBitMap;
 import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
 import org.apache.rocketmq.broker.api.controller.AckMessageProcessor;
 import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;

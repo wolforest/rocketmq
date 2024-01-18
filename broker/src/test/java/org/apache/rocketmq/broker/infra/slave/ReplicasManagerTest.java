@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.infra.network.NameServerClient;
-import org.apache.rocketmq.broker.infra.topic.TopicConfigManager;
+import org.apache.rocketmq.broker.domain.metadata.topic.TopicConfigManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerClusterService;
 import org.apache.rocketmq.broker.server.daemon.BrokerMessageService;

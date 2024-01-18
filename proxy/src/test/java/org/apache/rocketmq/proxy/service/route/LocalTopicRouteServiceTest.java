@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.infra.topic.TopicConfigManager;
+import org.apache.rocketmq.broker.domain.metadata.topic.TopicConfigManager;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
