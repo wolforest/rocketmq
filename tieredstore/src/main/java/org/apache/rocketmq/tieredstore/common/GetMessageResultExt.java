@@ -22,7 +22,7 @@ import java.util.List;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 
 public class GetMessageResultExt extends GetMessageResult {
 

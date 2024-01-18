@@ -62,7 +62,7 @@ import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.FlushDiskType;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.domain.queue.CqUnit;

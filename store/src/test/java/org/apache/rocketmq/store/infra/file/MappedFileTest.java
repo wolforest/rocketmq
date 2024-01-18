@@ -23,6 +23,8 @@ package org.apache.rocketmq.store.infra.file;
 import java.io.File;
 import java.io.IOException;
 import org.apache.rocketmq.common.utils.IOUtils;
+import org.apache.rocketmq.store.infra.mappedfile.DefaultMappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.junit.After;
 import org.junit.Test;
 

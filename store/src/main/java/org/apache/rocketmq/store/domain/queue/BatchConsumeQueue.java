@@ -36,12 +36,12 @@ import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
-import org.apache.rocketmq.store.infra.file.MappedFileQueue;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.MessageStore;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.config.BrokerRole;
-import org.apache.rocketmq.store.infra.file.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 
 public class BatchConsumeQueue implements ConsumeQueueInterface {
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);

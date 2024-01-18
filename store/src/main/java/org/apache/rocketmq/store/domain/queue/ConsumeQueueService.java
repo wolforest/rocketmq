@@ -44,7 +44,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
 import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;

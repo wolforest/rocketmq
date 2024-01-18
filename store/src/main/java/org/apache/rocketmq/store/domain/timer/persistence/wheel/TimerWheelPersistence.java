@@ -22,7 +22,7 @@ import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.domain.timer.Persistence;
 import org.apache.rocketmq.store.domain.timer.TimerRequest;
 import org.apache.rocketmq.store.domain.timer.TimerState;

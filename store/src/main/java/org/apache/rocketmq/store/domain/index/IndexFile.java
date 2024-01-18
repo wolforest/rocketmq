@@ -20,8 +20,8 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.infra.file.DefaultMappedFile;
-import org.apache.rocketmq.store.infra.file.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.DefaultMappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

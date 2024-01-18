@@ -26,9 +26,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.rocketmq.store.infra.file.MappedFileQueue;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
-import org.apache.rocketmq.store.infra.file.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 
 /**
  * Extend of consume queue, to store something not important,

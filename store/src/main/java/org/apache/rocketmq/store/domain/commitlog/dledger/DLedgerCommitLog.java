@@ -45,8 +45,8 @@ import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.infra.file.MappedFile;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.api.broker.stats.StoreStatsService;
 import org.rocksdb.RocksDBException;
 

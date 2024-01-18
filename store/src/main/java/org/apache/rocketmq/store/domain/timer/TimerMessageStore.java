@@ -51,7 +51,7 @@ import org.apache.rocketmq.store.domain.timer.transit.TimerMessageQuery;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageRecover;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageSaver;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageScanner;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;

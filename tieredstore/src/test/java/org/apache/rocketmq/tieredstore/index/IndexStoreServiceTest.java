@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.infra.file.DefaultMappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.DefaultMappedFile;
 import org.apache.rocketmq.tieredstore.TieredStoreTestUtil;
 import org.apache.rocketmq.tieredstore.common.AppendResult;
 import org.apache.rocketmq.tieredstore.common.TieredMessageStoreConfig;

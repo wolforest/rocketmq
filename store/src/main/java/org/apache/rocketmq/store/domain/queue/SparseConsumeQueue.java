@@ -25,8 +25,8 @@ import java.util.function.Function;
 import org.apache.rocketmq.common.lang.BoundaryType;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.store.api.MessageStore;
-import org.apache.rocketmq.store.infra.file.MappedFile;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 
 public class SparseConsumeQueue extends BatchConsumeQueue {
 

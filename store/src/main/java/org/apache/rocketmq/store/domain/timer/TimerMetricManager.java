@@ -25,7 +25,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerLog;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;

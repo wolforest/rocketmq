@@ -22,7 +22,7 @@ import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.DataVersion;
-import org.apache.rocketmq.store.infra.file.DefaultMappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.DefaultMappedFile;
 
 import java.io.File;
 import java.io.IOException;

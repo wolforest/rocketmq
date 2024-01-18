@@ -27,8 +27,8 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
-import org.apache.rocketmq.store.infra.file.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 import org.apache.rocketmq.store.infra.LibC;
 import sun.nio.ch.DirectBuffer;
 

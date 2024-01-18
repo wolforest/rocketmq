@@ -166,7 +166,7 @@ import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.server.config.BrokerRole;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.domain.queue.CqExtUnit;
 import org.apache.rocketmq.store.domain.queue.CqUnit;

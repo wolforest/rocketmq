@@ -29,7 +29,7 @@ import org.apache.rocketmq.store.server.config.RunningFlags;
 import org.apache.rocketmq.store.server.StoreCheckpoint;
 import org.apache.rocketmq.store.server.dispatcher.CommitLogDispatcher;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.domain.queue.CqExtUnit;

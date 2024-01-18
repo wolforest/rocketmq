@@ -36,7 +36,7 @@ import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.dto.QueryMessageResult;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.tieredstore.common.GetMessageResultExt;
 import org.apache.rocketmq.tieredstore.common.InFlightRequestFuture;
 import org.apache.rocketmq.tieredstore.common.MessageCacheKey;

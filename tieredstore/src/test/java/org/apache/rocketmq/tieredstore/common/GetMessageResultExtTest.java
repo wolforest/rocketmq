@@ -21,7 +21,7 @@ import java.util.Map;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.domain.queue.CqExtUnit;
 import org.apache.rocketmq.tieredstore.util.MessageBufferUtilTest;
 import org.junit.Assert;

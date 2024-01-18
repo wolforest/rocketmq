@@ -14,9 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.infra.file;
 
-import org.apache.rocketmq.store.infra.ReferenceResource;
+package org.apache.rocketmq.store.infra.mappedfile;
 
-public abstract class AbstractMappedFile extends ReferenceResource implements MappedFile {
+public class SelectMappedFileResult {
+
+    protected int size;
+
+    protected MappedFile mappedFile;
+
+    public SelectMappedFileResult(int size, MappedFile mappedFile) {
+        this.size = size;
+        this.mappedFile = mappedFile;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public MappedFile getMappedFile() {
+        return mappedFile;
+    }
 }

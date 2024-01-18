@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.daemon.BatchDispatchRequest;
 import org.apache.rocketmq.store.server.daemon.MainBatchDispatchRequestService;
 import org.apache.rocketmq.store.server.daemon.ReputMessageService;

@@ -79,8 +79,8 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.infra.file.DefaultMappedFile;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.DefaultMappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.api.broker.stats.BrokerStats;
 import org.junit.After;
 import org.junit.Before;

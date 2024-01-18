@@ -22,8 +22,8 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
-import org.apache.rocketmq.store.infra.file.MappedFileQueue;
-import org.apache.rocketmq.store.infra.file.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 
 import java.nio.ByteBuffer;
 import java.util.List;

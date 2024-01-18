@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.tieredstore.common.AppendResult;
 import org.apache.rocketmq.tieredstore.common.FileSegmentType;
 import org.apache.rocketmq.tieredstore.common.TieredMessageStoreConfig;

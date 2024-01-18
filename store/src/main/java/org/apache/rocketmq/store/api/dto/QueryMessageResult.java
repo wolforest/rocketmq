@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.api.dto;
 
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

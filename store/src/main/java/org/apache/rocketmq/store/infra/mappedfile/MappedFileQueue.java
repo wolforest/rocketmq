@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.infra.file;
+package org.apache.rocketmq.store.infra.mappedfile;
 
 import com.google.common.collect.Lists;
 import java.io.File;

@@ -43,7 +43,7 @@ import org.apache.rocketmq.remoting.protocol.EpochEntry;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.infra.ha.DefaultHAService;

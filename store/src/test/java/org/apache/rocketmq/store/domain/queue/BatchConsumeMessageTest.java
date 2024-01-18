@@ -33,7 +33,7 @@ import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

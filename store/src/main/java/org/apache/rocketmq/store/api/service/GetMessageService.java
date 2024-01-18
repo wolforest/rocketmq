@@ -31,7 +31,7 @@ import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.StoreUtil;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;

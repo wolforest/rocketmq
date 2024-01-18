@@ -20,7 +20,7 @@ import org.apache.rocketmq.common.domain.message.MessageExtBatch;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.domain.message.MessageExtEncoder;
-import org.apache.rocketmq.store.infra.file.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 
 public class CommitLogPutContext {
     private MessageExtBrokerInner msg;

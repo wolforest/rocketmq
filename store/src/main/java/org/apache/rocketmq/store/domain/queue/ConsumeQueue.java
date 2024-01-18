@@ -36,9 +36,9 @@ import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
-import org.apache.rocketmq.store.infra.file.MappedFile;
-import org.apache.rocketmq.store.infra.file.MappedFileQueue;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 
 public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);

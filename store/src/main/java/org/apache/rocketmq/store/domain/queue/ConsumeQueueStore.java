@@ -46,7 +46,7 @@ import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.server.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 
 import static java.lang.String.format;
 import static org.apache.rocketmq.store.server.config.StorePathConfigHelper.getStorePathBatchConsumeQueue;

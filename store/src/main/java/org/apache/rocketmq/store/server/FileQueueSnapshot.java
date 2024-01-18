@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.server;
 
-import org.apache.rocketmq.store.infra.file.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 
 public class FileQueueSnapshot {
     private MappedFile firstFile;

@@ -41,7 +41,7 @@ import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.QueryMessageResult;
-import org.apache.rocketmq.store.infra.file.SelectMappedBufferResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.api.plugin.AbstractPluginMessageStore;
 import org.apache.rocketmq.store.api.plugin.MessageStorePluginContext;
 import org.apache.rocketmq.tieredstore.common.TieredMessageStoreConfig;

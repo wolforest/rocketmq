@@ -39,7 +39,7 @@ import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.domain.commitlog.GroupCommitRequest;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.infra.ha.HAService;
-import org.apache.rocketmq.store.infra.file.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 import org.apache.rocketmq.store.infra.LibC;
 import org.rocksdb.RocksDBException;
 
