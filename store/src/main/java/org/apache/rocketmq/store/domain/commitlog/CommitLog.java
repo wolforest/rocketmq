@@ -109,6 +109,7 @@ public class CommitLog implements Swappable {
 
     private volatile Set<String> fullStorePaths = Collections.emptySet();
     private final FlushDiskWatcher flushDiskWatcher;
+    private final DelayLevel delayLevel;
 
     public CommitLog(final DefaultMessageStore messageStore) {
         initMappedFileQueue(messageStore);
@@ -125,6 +126,7 @@ public class CommitLog implements Swappable {
         this.flushDiskWatcher = new FlushDiskWatcher();
         this.topicQueueLock = new TopicQueueLock(messageStore.getMessageStoreConfig().getTopicQueueLockNum());
         this.commitLogSize = messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
+        this.delayLevel = new DelayLevel(messageStore.getMessageStoreConfig());
     }
 
     public static boolean isMultiDispatchMsg(MessageExtBrokerInner msg) {
@@ -553,14 +555,13 @@ public class CommitLog implements Swappable {
             return tagsCode;
         }
 
-        int delayLevel = Integer.parseInt(t);
-        if (delayLevel > this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel()) {
-            delayLevel = this.defaultMessageStore.getDelayLevelService().getMaxDelayLevel();
+        int level = Integer.parseInt(t);
+        if (level > delayLevel.getMaxDelayLevel()) {
+            level = delayLevel.getMaxDelayLevel();
         }
 
-        if (delayLevel > 0) {
-            tagsCode = this.defaultMessageStore.getDelayLevelService().computeDeliverTimestamp(delayLevel,
-                storeTimestamp);
+        if (level > 0) {
+            tagsCode = delayLevel.computeDeliverTimestamp(level, storeTimestamp);
         }
 
         return tagsCode;

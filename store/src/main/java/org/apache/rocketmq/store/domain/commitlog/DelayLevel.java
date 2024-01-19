@@ -14,26 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.server.daemon;
+package org.apache.rocketmq.store.domain.commitlog;
 
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
-public class DelayLevelService {
+public class DelayLevel {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private final DefaultMessageStore messageStore;
+    private final MessageStoreConfig storeConfig;
     private int maxDelayLevel;
 
     private final ConcurrentSkipListMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
         new ConcurrentSkipListMap<>();
 
-    public DelayLevelService(DefaultMessageStore messageStore) {
-        this.messageStore = messageStore;
+    public DelayLevel(MessageStoreConfig storeConfig) {
+        this.storeConfig = storeConfig;
         initDelayLevel();
     }
 
@@ -53,7 +53,7 @@ public class DelayLevelService {
         timeUnitTable.put("h", 1000L * 60 * 60);
         timeUnitTable.put("d", 1000L * 60 * 60 * 24);
 
-        String levelString = messageStore.getMessageStoreConfig().getMessageDelayLevel();
+        String levelString = storeConfig.getMessageDelayLevel();
         try {
             String[] levelArray = levelString.split(" ");
             for (int i = 0; i < levelArray.length; i++) {

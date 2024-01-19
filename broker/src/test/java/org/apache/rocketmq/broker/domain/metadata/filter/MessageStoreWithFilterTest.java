@@ -71,25 +71,23 @@ public class MessageStoreWithFilterTest {
     private static final int CQ_EXT_FILE_SIZE = 300000 * 128;
 
     private static SocketAddress bornHost;
-
     private static SocketAddress storeHost;
 
     private DefaultMessageStore master;
-
     private ConsumerFilterManager filterManager;
 
-    private int topicCount = 3;
-
-    private int msgPerTopic = 30;
+    private final int topicCount = 3;
+    private final int msgPerTopic = 30;
 
     static {
         try {
             storeHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
-        } catch (UnknownHostException e) {
+        } catch (UnknownHostException ignored) {
         }
+
         try {
             bornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
-        } catch (UnknownHostException e) {
+        } catch (UnknownHostException ignored) {
         }
     }
 
@@ -362,7 +360,7 @@ public class MessageStoreWithFilterTest {
 
         await().atMost(3, TimeUnit.SECONDS).untilAsserted(new ThrowingRunnable() {
             @Override
-            public void run() throws Throwable {
+            public void run() {
                 for (int i = 0; i < topicCount; i++) {
                     final String realTopic = TOPIC + i;
                     GetMessageResult getMessageResult = master.getMessage("test", realTopic, QUEUE_ID, 0, 10000,
@@ -370,10 +368,7 @@ public class MessageStoreWithFilterTest {
                             @Override
                             public boolean isMatchedByConsumeQueue(Long tagsCode,
                                 CqExtUnit cqExtUnit) {
-                                if (tagsCode != null && tagsCode <= ConsumeQueueExt.MAX_ADDR) {
-                                    return false;
-                                }
-                                return true;
+                                return tagsCode == null || tagsCode > ConsumeQueueExt.MAX_ADDR;
                             }
 
                             @Override

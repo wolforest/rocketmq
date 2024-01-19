@@ -84,7 +84,7 @@ import org.apache.rocketmq.store.domain.dispatcher.CommitLogDispatcherBuildIndex
 import org.apache.rocketmq.store.domain.dispatcher.ConcurrentReputMessageService;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueService;
 import org.apache.rocketmq.store.server.daemon.CorrectLogicOffsetService;
-import org.apache.rocketmq.store.server.daemon.DelayLevelService;
+import org.apache.rocketmq.store.domain.commitlog.DelayLevel;
 import org.apache.rocketmq.store.server.daemon.DispatchRequestOrderlyQueue;
 import org.apache.rocketmq.store.server.daemon.FlushConsumeQueueService;
 import org.apache.rocketmq.store.api.service.GetMessageService;
@@ -204,7 +204,6 @@ public class DefaultMessageStore implements MessageStore {
     private PutMessageService putMessageService;
     private QueryMessageService queryMessageService;
     private GetMessageService getMessageService;
-    private DelayLevelService delayLevelService;
     private ConsumeQueueService consumeQueueService;
 
     public DefaultMessageStore(final MessageStoreConfig messageStoreConfig, final BrokerStatsManager brokerStatsManager,
@@ -234,9 +233,6 @@ public class DefaultMessageStore implements MessageStore {
         this.consumeQueueStore.truncateDirty(phyOffset);
     }
 
-    /**
-     * @throws IOException
-     */
     @Override
     public boolean load() {
         boolean result = true;
@@ -277,7 +273,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     /**
-     * @throws Exception
+     * @throws Exception e
      */
     @Override
     public void start() throws Exception {
@@ -821,7 +817,7 @@ public class DefaultMessageStore implements MessageStore {
     /**
      * The ratio val is estimated by the experiment and experience
      * so that the result is not high accurate for different business
-     * @return
+     * @return bool
      */
     public boolean checkInColdAreaByCommitOffset(long offsetPy, long maxOffsetPy) {
         long memory = (long)(StoreUtil.TOTAL_PHYSICAL_MEMORY_SIZE * (this.messageStoreConfig.getAccessMessageInMemoryHotRatio() / 100.0));
@@ -951,7 +947,6 @@ public class DefaultMessageStore implements MessageStore {
 
     //**************************************** private or protected methods start ****************************************************
     private void initProcessService() {
-        this.delayLevelService = new DelayLevelService(this);
         this.putMessageService = new PutMessageService(this);
         this.queryMessageService = new QueryMessageService(this);
         this.getMessageService = new GetMessageService(this);
@@ -1068,7 +1063,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     private long getConsumeQueueMaxOffset() {
-        /**
+        /*
          * 1. Make sure the fast-forward messages to be truncated during the recovering according to the max physical offset of the commitlog;
          * 2. DLedger committedPos may be missing, so the maxPhysicalPosInLogicQueue maybe bigger that maxOffset returned by DLedgerCommitLog, just let it go;
          * 3. Calculate the reput offset according to the consume queue;
@@ -1088,7 +1083,7 @@ public class DefaultMessageStore implements MessageStore {
         }
         if (maxPhysicalPosInLogicQueue < this.commitLog.getMinOffset()) {
             maxPhysicalPosInLogicQueue = this.commitLog.getMinOffset();
-            /**
+            /*
              * This happens in following conditions:
              * 1. If someone removes all the consumequeue files or the disk get damaged.
              * 2. Launch a new broker, and copy the commitlog from other brokers.
@@ -1249,7 +1244,7 @@ public class DefaultMessageStore implements MessageStore {
                             IOUtils.string2FileNotSafe(stack, fileName);
                         }
                     }
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
             }
         }, 1, 1, TimeUnit.SECONDS);
@@ -1343,9 +1338,6 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     //**************************************** getter and setter start ****************************************************
-    public DelayLevelService getDelayLevelService() {
-        return delayLevelService;
-    }
 
     @Override
     public TimerMessageStore getTimerMessageStore() {
