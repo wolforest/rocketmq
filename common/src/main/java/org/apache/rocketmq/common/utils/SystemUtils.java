@@ -17,10 +17,12 @@
 package org.apache.rocketmq.common.utils;
 
 import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.util.function.Supplier;
 
 public class SystemUtils {
     public static final String OS_NAME = System.getProperty("os.name");
+    public static final long TOTAL_PHYSICAL_MEMORY_SIZE = getTotalPhysicalMemorySize();
     private static final String OS = System.getProperty("os.name").toLowerCase();
     private static int pid;
     static boolean isLinuxPlatform = false;
@@ -69,4 +71,14 @@ public class SystemUtils {
         return isLinuxPlatform;
     }
 
+    @SuppressWarnings("restriction")
+    public static long getTotalPhysicalMemorySize() {
+        long physicalTotal = 1024 * 1024 * 1024 * 24L;
+        OperatingSystemMXBean osmxb = ManagementFactory.getOperatingSystemMXBean();
+        if (osmxb instanceof com.sun.management.OperatingSystemMXBean) {
+            physicalTotal = ((com.sun.management.OperatingSystemMXBean) osmxb).getTotalPhysicalMemorySize();
+        }
+
+        return physicalTotal;
+    }
 }

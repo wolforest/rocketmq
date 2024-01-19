@@ -24,6 +24,7 @@ import org.apache.rocketmq.common.app.CleanupPolicy;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.CleanupPolicyUtils;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.message.GetMessageContext;
@@ -32,7 +33,6 @@ import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.server.StoreUtil;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.domain.queue.CqUnit;
@@ -306,7 +306,7 @@ public class GetMessageService {
 
     private void setSuggestPullingFromSlave(GetMessageResult getResult, long maxOffsetPy, long maxPhyOffsetPulling) {
         long diff = maxOffsetPy - maxPhyOffsetPulling;
-        long memory = (long) (StoreUtil.TOTAL_PHYSICAL_MEMORY_SIZE * (messageStore.getMessageStoreConfig().getAccessMessageInMemoryMaxRatio() / 100.0));
+        long memory = (long) (SystemUtils.TOTAL_PHYSICAL_MEMORY_SIZE * (messageStore.getMessageStoreConfig().getAccessMessageInMemoryMaxRatio() / 100.0));
         getResult.setSuggestPullingFromSlave(diff > memory);
     }
 
@@ -330,7 +330,7 @@ public class GetMessageService {
     }
 
     private boolean estimateInMemByCommitOffset(long offsetPy, long maxOffsetPy) {
-        long memory = (long) (StoreUtil.TOTAL_PHYSICAL_MEMORY_SIZE * (messageStore.getMessageStoreConfig().getAccessMessageInMemoryMaxRatio() / 100.0));
+        long memory = (long) (SystemUtils.TOTAL_PHYSICAL_MEMORY_SIZE * (messageStore.getMessageStoreConfig().getAccessMessageInMemoryMaxRatio() / 100.0));
         return (maxOffsetPy - offsetPy) <= memory;
     }
 

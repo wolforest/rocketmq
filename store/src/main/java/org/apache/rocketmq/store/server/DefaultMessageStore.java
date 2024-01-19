@@ -818,7 +818,7 @@ public class DefaultMessageStore implements MessageStore {
      * @return bool
      */
     public boolean checkInColdAreaByCommitOffset(long offsetPy, long maxOffsetPy) {
-        long memory = (long)(StoreUtil.TOTAL_PHYSICAL_MEMORY_SIZE * (this.messageStoreConfig.getAccessMessageInMemoryHotRatio() / 100.0));
+        long memory = (long)(SystemUtils.TOTAL_PHYSICAL_MEMORY_SIZE * (this.messageStoreConfig.getAccessMessageInMemoryHotRatio() / 100.0));
         return (maxOffsetPy - offsetPy) > memory;
     }
 

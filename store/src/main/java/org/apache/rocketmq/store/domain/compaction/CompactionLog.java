@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
@@ -39,7 +40,6 @@ import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.domain.message.PutMessageSpinLock;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.server.StoreUtil;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
@@ -273,7 +273,7 @@ public class CompactionLog {
     }
 
     private boolean checkInDiskByCommitOffset(long offsetPy, long maxOffsetPy) {
-        long memory = (long) (StoreUtil.TOTAL_PHYSICAL_MEMORY_SIZE *
+        long memory = (long) (SystemUtils.TOTAL_PHYSICAL_MEMORY_SIZE *
             (this.messageStoreConfig.getAccessMessageInMemoryMaxRatio() / 100.0));
         return (maxOffsetPy - offsetPy) > memory;
     }
@@ -555,7 +555,7 @@ public class CompactionLog {
                     }
 
                     long diff = maxOffsetPy - maxPhyOffsetPulling;
-                    long memory = (long)(StoreUtil.TOTAL_PHYSICAL_MEMORY_SIZE * (this.messageStoreConfig.getAccessMessageInMemoryMaxRatio() / 100.0));
+                    long memory = (long)(SystemUtils.TOTAL_PHYSICAL_MEMORY_SIZE * (this.messageStoreConfig.getAccessMessageInMemoryMaxRatio() / 100.0));
                     getResult.setSuggestPullingFromSlave(diff > memory);
                 }
             } else {
