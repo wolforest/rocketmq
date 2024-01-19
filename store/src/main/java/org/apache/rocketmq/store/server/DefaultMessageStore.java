@@ -53,7 +53,7 @@ import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.QueryMessageResult;
-import org.apache.rocketmq.store.infra.TransientStorePool;
+import org.apache.rocketmq.store.infra.memory.TransientStorePool;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.FlushDiskType;

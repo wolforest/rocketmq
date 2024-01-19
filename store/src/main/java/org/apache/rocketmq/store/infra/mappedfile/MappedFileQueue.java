@@ -34,8 +34,8 @@ import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.infra.ReferenceResource;
-import org.apache.rocketmq.store.infra.Swappable;
+import org.apache.rocketmq.store.infra.memory.ReferenceResource;
+import org.apache.rocketmq.store.infra.memory.Swappable;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
 

@@ -55,7 +55,7 @@ import org.apache.rocketmq.store.domain.message.PutMessageLock;
 import org.apache.rocketmq.store.domain.message.PutMessageReentrantLock;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.domain.message.PutMessageSpinLock;
-import org.apache.rocketmq.store.infra.Swappable;
+import org.apache.rocketmq.store.infra.memory.Swappable;
 import org.apache.rocketmq.store.domain.queue.TopicQueueLock;
 import org.apache.rocketmq.store.domain.commitlog.service.ColdDataCheckService;
 import org.apache.rocketmq.store.domain.commitlog.service.CommitLogPutService;
@@ -67,7 +67,7 @@ import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
 import org.apache.rocketmq.store.infra.mappedfile.MultiPathMappedFileQueue;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedFileResult;
-import org.apache.rocketmq.store.infra.LibC;
+import org.apache.rocketmq.store.infra.memory.LibC;
 import org.rocksdb.RocksDBException;
 import sun.nio.ch.DirectBuffer;
 

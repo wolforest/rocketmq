@@ -31,10 +31,10 @@ import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
 import org.apache.rocketmq.store.domain.compaction.CompactionAppendMsgCallback;
 import org.apache.rocketmq.store.domain.message.PutMessageContext;
-import org.apache.rocketmq.store.infra.TransientStorePool;
+import org.apache.rocketmq.store.infra.memory.TransientStorePool;
 import org.apache.rocketmq.store.domain.commitlog.AppendMessageCallback;
 import org.apache.rocketmq.store.server.config.FlushDiskType;
-import org.apache.rocketmq.store.infra.LibC;
+import org.apache.rocketmq.store.infra.memory.LibC;
 import sun.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
 

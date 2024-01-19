@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.domain.queue;
 
-import org.apache.rocketmq.store.infra.Swappable;
+import org.apache.rocketmq.store.infra.memory.Swappable;
 
 /**
  * FileQueueLifeCycle contains life cycle methods of ConsumerQueue that is directly implemented by FILE.

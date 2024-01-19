@@ -29,7 +29,7 @@ import org.apache.rocketmq.store.server.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
-import org.apache.rocketmq.store.infra.LibC;
+import org.apache.rocketmq.store.infra.memory.LibC;
 import sun.nio.ch.DirectBuffer;
 
 import java.util.Set;

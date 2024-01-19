@@ -173,7 +173,7 @@ import org.apache.rocketmq.store.domain.queue.CqUnit;
 import org.apache.rocketmq.store.domain.queue.ReferredIterator;
 import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
-import org.apache.rocketmq.store.infra.LibC;
+import org.apache.rocketmq.store.infra.memory.LibC;
 
 import java.io.UnsupportedEncodingException;
 import java.net.UnknownHostException;

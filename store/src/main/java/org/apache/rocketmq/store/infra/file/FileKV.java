@@ -19,6 +19,9 @@ package org.apache.rocketmq.store.infra.file;
 import java.io.IOException;
 import org.apache.rocketmq.common.utils.IOUtils;
 
+/**
+ * This class is not thread safe
+ */
 public class FileKV {
 
     public String get(String fileName) {

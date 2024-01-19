@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.infra;
+package org.apache.rocketmq.store.infra.memory;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
