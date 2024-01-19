@@ -16,5 +16,26 @@
  */
 package org.apache.rocketmq.store.infra.rocksdb;
 
-public class RocksDB {
+import org.apache.rocketmq.store.infra.KV;
+
+public class RocksDB implements KV {
+    @Override
+    public void start() {
+
+    }
+
+    @Override
+    public void shutdown() {
+
+    }
+
+    @Override
+    public String get(String key) {
+        return null;
+    }
+
+    @Override
+    public void set(String key, String value) {
+
+    }
 }

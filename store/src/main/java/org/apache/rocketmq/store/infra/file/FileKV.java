@@ -18,12 +18,22 @@ package org.apache.rocketmq.store.infra.file;
 
 import java.io.IOException;
 import org.apache.rocketmq.common.utils.IOUtils;
+import org.apache.rocketmq.store.infra.KV;
 
 /**
  * This class is not thread safe
  */
-public class FileKV {
+public class FileKV implements KV {
 
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void shutdown() {
+    }
+
+    @Override
     public String get(String fileName) {
         try {
             return IOUtils.file2String(fileName);
@@ -33,6 +43,7 @@ public class FileKV {
         }
     }
 
+    @Override
     public void set(String fileName, String data) {
         try {
             IOUtils.string2File(data, fileName);
