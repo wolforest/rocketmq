@@ -37,8 +37,7 @@ public class HandlePutResultTask implements Runnable {
 
     @Override
     public void run() {
-        LinkedBlockingQueue<PutResultProcess> pendingQueue =
-            scheduleMessageService.getDeliverPendingTable().get(this.delayLevel);
+        LinkedBlockingQueue<PutResultProcess> pendingQueue = scheduleMessageService.getDeliverPendingTable().get(this.delayLevel);
 
         PutResultProcess putResultProcess;
         while ((putResultProcess = pendingQueue.peek()) != null) {
@@ -74,10 +73,15 @@ public class HandlePutResultTask implements Runnable {
     }
 
     private void scheduleNextTask() {
-        if (scheduleMessageService.isStarted()) {
-            scheduleMessageService.getHandleExecutorService()
-                .schedule(new HandlePutResultTask(this.scheduleMessageService, this.delayLevel), DELAY_FOR_A_SLEEP, TimeUnit.MILLISECONDS);
+        if (!scheduleMessageService.isStarted()) {
+            return;
         }
+
+        scheduleMessageService.getHandleExecutorService().schedule(
+            new HandlePutResultTask(this.scheduleMessageService, this.delayLevel),
+            DELAY_FOR_A_SLEEP,
+            TimeUnit.MILLISECONDS
+        );
     }
 }
 

@@ -50,11 +50,8 @@ public class ScheduleMessageService extends ConfigManager {
 
     private static final long FIRST_DELAY_TIME = 1000L;
     private static final long WAIT_FOR_SHUTDOWN = 5000L;
-    private final ConcurrentSkipListMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
-        new ConcurrentSkipListMap<>();
-
-    private final ConcurrentMap<Integer /* level */, Long/* offset */> offsetTable =
-        new ConcurrentHashMap<>(32);
+    private final ConcurrentSkipListMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable = new ConcurrentSkipListMap<>();
+    private final ConcurrentMap<Integer /* level */, Long/* offset */> offsetTable = new ConcurrentHashMap<>(32);
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     private ScheduledExecutorService deliverExecutorService;
@@ -62,12 +59,10 @@ public class ScheduleMessageService extends ConfigManager {
     private DataVersion dataVersion = new DataVersion();
     private boolean enableAsyncDeliver = false;
 
-
     private ScheduledExecutorService handleExecutorService;
     private final ScheduledExecutorService scheduledPersistService;
 
-    private final Map<Integer /* level */, LinkedBlockingQueue<PutResultProcess>> deliverPendingTable =
-        new ConcurrentHashMap<>(32);
+    private final Map<Integer /* level */, LinkedBlockingQueue<PutResultProcess>> deliverPendingTable = new ConcurrentHashMap<>(32);
 
     private final Broker broker;
     private final transient AtomicLong versionChangeCounter = new AtomicLong(0);
