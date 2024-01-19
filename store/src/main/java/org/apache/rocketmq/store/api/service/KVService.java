@@ -24,11 +24,11 @@ import org.apache.rocketmq.common.app.config.ConfigManager;
  */
 public class KVService {
 
-    public String load(String key) {
+    public String get(String key) {
         return null;
     }
 
-    public void save(String key, String data) {
+    public void set(String key, String data) {
 
     }
 }
