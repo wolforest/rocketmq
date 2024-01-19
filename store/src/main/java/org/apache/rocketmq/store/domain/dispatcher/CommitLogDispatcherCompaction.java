@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.domain.compaction;
+package org.apache.rocketmq.store.domain.dispatcher;
 
-import org.apache.rocketmq.store.domain.dispatcher.CommitLogDispatcher;
-import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.compaction.CompactionService;
 
 public class CommitLogDispatcherCompaction implements CommitLogDispatcher {
     private final CompactionService cptService;

@@ -67,7 +67,7 @@ import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAService;
 import org.apache.rocketmq.store.api.plugin.PutMessageHook;
 import org.apache.rocketmq.store.api.plugin.SendMessageBackHook;
 import org.apache.rocketmq.store.domain.index.IndexService;
-import org.apache.rocketmq.store.domain.compaction.CommitLogDispatcherCompaction;
+import org.apache.rocketmq.store.domain.dispatcher.CommitLogDispatcherCompaction;
 import org.apache.rocketmq.store.domain.compaction.CompactionService;
 import org.apache.rocketmq.store.domain.compaction.CompactionStore;
 import org.apache.rocketmq.store.infra.mappedfile.AllocateMappedFileService;
