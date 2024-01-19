@@ -1624,6 +1624,10 @@ public class MessageStoreConfig {
         return timerSkipUnknownError;
     }
 
+    public void setTimerSkipUnknownError(boolean timerSkipUnknownError) {
+        this.timerSkipUnknownError = timerSkipUnknownError;
+    }
+
     public boolean isTimerWarmEnable() {
         return timerWarmEnable;
     }
