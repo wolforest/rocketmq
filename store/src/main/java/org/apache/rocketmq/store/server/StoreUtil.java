@@ -16,21 +16,10 @@
  */
 package org.apache.rocketmq.store.server;
 
-import com.google.common.base.Preconditions;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
-import java.nio.ByteBuffer;
-import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
-import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
-
-import static java.lang.String.format;
 
 public class StoreUtil {
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-
     public static final long TOTAL_PHYSICAL_MEMORY_SIZE = getTotalPhysicalMemorySize();
 
     @SuppressWarnings("restriction")
@@ -42,38 +31,5 @@ public class StoreUtil {
         }
 
         return physicalTotal;
-    }
-
-    public static void fileAppend(MappedFile file, ByteBuffer data) {
-        boolean success = file.appendMessage(data);
-        if (!success) {
-            throw new RuntimeException(format("fileAppend failed for file: %s and data remaining: %d", file, data.remaining()));
-        }
-    }
-
-    public static FileQueueSnapshot getFileQueueSnapshot(MappedFileQueue mappedFileQueue) {
-        return getFileQueueSnapshot(mappedFileQueue, mappedFileQueue.getLastMappedFile().getOffsetInFileName());
-    }
-
-    public static FileQueueSnapshot getFileQueueSnapshot(MappedFileQueue mappedFileQueue, final long currentFile) {
-        try {
-            Preconditions.checkNotNull(mappedFileQueue, "file queue shouldn't be null");
-            MappedFile firstFile = mappedFileQueue.getFirstMappedFile();
-            MappedFile lastFile = mappedFileQueue.getLastMappedFile();
-            int mappedFileSize = mappedFileQueue.getMappedFileSize();
-            if (firstFile == null || lastFile == null) {
-                return new FileQueueSnapshot(firstFile, -1, lastFile, -1, currentFile, -1, 0, false);
-            }
-
-            long firstFileIndex = 0;
-            long lastFileIndex = (lastFile.getOffsetInFileName() - firstFile.getOffsetInFileName()) / mappedFileSize;
-            long currentFileIndex = (currentFile - firstFile.getOffsetInFileName()) / mappedFileSize;
-            long behind = (lastFile.getOffsetInFileName() - currentFile) / mappedFileSize;
-            boolean exist = firstFile.getOffsetInFileName() <= currentFile && currentFile <= lastFile.getOffsetInFileName();
-            return new FileQueueSnapshot(firstFile, firstFileIndex, lastFile, lastFileIndex, currentFile, currentFileIndex, behind, exist);
-        } catch (Exception e) {
-            log.error("[BUG] get file queue snapshot failed. fileQueue: {}, currentFile: {}", mappedFileQueue, currentFile, e);
-        }
-        return new FileQueueSnapshot();
     }
 }
