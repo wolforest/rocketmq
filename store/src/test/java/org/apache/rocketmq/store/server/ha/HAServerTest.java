@@ -28,7 +28,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.commitlog.GroupCommitRequest;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;

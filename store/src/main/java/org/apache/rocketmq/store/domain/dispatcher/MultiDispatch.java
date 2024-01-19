@@ -21,7 +21,7 @@ import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.domain.message.MessageAccessor;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 
 /**
  * MultiDispatch for lmq, not-thread-safe

@@ -58,7 +58,7 @@ import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingContex
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingDetail;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.server.config.BrokerRole;

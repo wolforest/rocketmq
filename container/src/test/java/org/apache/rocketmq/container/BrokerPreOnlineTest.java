@@ -27,7 +27,7 @@ import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageCheckSe
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Test;
 import org.junit.runner.RunWith;

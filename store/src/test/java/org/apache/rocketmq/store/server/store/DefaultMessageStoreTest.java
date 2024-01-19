@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.store.server;
+package org.apache.rocketmq.store.server.store;
 
 import com.google.common.collect.Sets;
 import java.io.File;
@@ -48,25 +48,26 @@ import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.message.MessageExtBatch;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.BeanUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
+import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
-import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
-import org.apache.rocketmq.store.api.MessageStore;
-import org.apache.rocketmq.store.domain.commitlog.CommitLog;
-import org.apache.rocketmq.store.domain.message.MessageExtEncoder;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
+import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
+import org.apache.rocketmq.store.domain.commitlog.CommitLog;
+import org.apache.rocketmq.store.domain.message.MessageExtEncoder;
+import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
+import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
+import org.apache.rocketmq.store.domain.queue.CqUnit;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.server.StoreTestUtil;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.FlushDiskType;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
-import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
-import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
-import org.apache.rocketmq.store.domain.queue.CqUnit;
-import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.assertj.core.util.Strings;
 import org.junit.After;
 import org.junit.Assert;

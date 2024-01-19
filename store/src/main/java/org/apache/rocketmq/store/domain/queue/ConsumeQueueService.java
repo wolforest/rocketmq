@@ -45,7 +45,7 @@ import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
 import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.rocksdb.RocksDBException;

@@ -32,6 +32,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import org.apache.rocketmq.store.server.daemon.FlushConsumeQueueService;
 import org.apache.rocketmq.store.server.daemon.ReputMessageService;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.RocksDBMessageStore;
 
 public class StoreTestUtil {
 

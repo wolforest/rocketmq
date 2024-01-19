@@ -27,7 +27,7 @@ import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
 import org.apache.rocketmq.store.domain.message.MessageExtEncoder;
 import org.apache.rocketmq.store.api.MessageStore;

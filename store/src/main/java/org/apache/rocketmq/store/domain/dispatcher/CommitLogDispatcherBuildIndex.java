@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.store.domain.dispatcher;
 
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 
 public class CommitLogDispatcherBuildIndex  implements CommitLogDispatcher {
     private final DefaultMessageStore messageStore;

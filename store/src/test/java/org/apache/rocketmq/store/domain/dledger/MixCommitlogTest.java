@@ -21,7 +21,7 @@ import java.util.UUID;
 
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.store.domain.commitlog.MessageStoreTestBase;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.StoreTestBase;
 import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;

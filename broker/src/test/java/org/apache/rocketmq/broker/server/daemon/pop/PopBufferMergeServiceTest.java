@@ -29,7 +29,7 @@ import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.heartbeat.ConsumerData;
 import org.apache.rocketmq.store.api.broker.pop.AckMsg;
 import org.apache.rocketmq.store.api.broker.pop.PopCheckPoint;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Assume;
 import org.junit.Before;

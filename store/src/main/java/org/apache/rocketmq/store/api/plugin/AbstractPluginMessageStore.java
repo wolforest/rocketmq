@@ -43,7 +43,7 @@ import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.QueryMessageResult;
 import org.apache.rocketmq.store.server.config.RunningFlags;
-import org.apache.rocketmq.store.server.StoreCheckpoint;
+import org.apache.rocketmq.store.server.store.StoreCheckpoint;
 import org.apache.rocketmq.store.infra.memory.TransientStorePool;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;

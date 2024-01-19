@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 
-package org.apache.rocketmq.store.server;
+package org.apache.rocketmq.store.server.store;
 
 import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;

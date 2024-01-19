@@ -30,7 +30,7 @@ import java.util.function.Supplier;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.app.metrics.NopLongCounter;
 import org.apache.rocketmq.common.app.metrics.NopObservableLongGauge;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
 

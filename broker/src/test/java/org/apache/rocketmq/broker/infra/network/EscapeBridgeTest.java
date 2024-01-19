@@ -35,7 +35,7 @@ import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.infra.mappedfile.DefaultMappedFile;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;

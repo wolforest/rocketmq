@@ -36,7 +36,7 @@ import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
 import org.apache.rocketmq.store.domain.commitlog.AppendMessageCallback;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.domain.commitlog.DefaultAppendMessageCallback;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.After;
 import org.junit.Before;

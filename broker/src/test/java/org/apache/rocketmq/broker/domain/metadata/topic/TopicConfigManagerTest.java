@@ -30,7 +30,7 @@ import org.apache.rocketmq.common.lang.attribute.BooleanAttribute;
 import org.apache.rocketmq.common.lang.attribute.EnumAttribute;
 import org.apache.rocketmq.common.lang.attribute.LongRangeAttribute;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Assert;
 import org.junit.Before;

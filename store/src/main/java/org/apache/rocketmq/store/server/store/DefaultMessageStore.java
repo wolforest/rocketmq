@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.server;
+package org.apache.rocketmq.store.server.store;
 
 import com.google.common.hash.Hashing;
 import io.opentelemetry.api.common.AttributesBuilder;

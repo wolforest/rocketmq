@@ -46,7 +46,7 @@ import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
 import org.apache.rocketmq.store.domain.queue.CqExtUnit;
-import org.apache.rocketmq.store.server.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.After;
 import org.junit.Before;
