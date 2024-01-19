@@ -38,7 +38,6 @@ import org.apache.rocketmq.common.app.running.RunningStats;
 import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.ServiceProvider;
-import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -1213,7 +1212,7 @@ public class DefaultMessageStore implements MessageStore {
         if (pid < 0) {
             pid = 0;
         }
-        StringUtils.string2File(Integer.toString(pid), file.getAbsolutePath());
+        IOUtils.string2File(Integer.toString(pid), file.getAbsolutePath());
     }
 
     private void addScheduleTask() {
@@ -1247,7 +1246,7 @@ public class DefaultMessageStore implements MessageStore {
                             String stack = IOUtils.jstack();
                             final String fileName = System.getProperty("user.home") + File.separator + "debug/lock/stack-"
                                 + DefaultMessageStore.this.commitLog.getBeginTimeInLock() + "-" + lockTime;
-                            StringUtils.string2FileNotSafe(stack, fileName);
+                            IOUtils.string2FileNotSafe(stack, fileName);
                         }
                     }
                 } catch (Exception e) {

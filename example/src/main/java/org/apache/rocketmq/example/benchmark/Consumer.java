@@ -31,7 +31,7 @@ import org.apache.rocketmq.client.consumer.rebalance.AllocateMessageQueueAverage
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.common.domain.message.MessageExt;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -148,11 +148,11 @@ public class Consumer {
             consumer.subscribe(topic, "*");
         } else {
             if (ExpressionType.TAG.equals(filterType)) {
-                String expr = StringUtils.file2String(expression);
+                String expr = IOUtils.file2String(expression);
                 System.out.printf("Expression: %s%n", expr);
                 consumer.subscribe(topic, MessageSelector.byTag(expr));
             } else if (ExpressionType.SQL92.equals(filterType)) {
-                String expr = StringUtils.file2String(expression);
+                String expr = IOUtils.file2String(expression);
                 System.out.printf("Expression: %s%n", expr);
                 consumer.subscribe(topic, MessageSelector.bySql(expr));
             } else {

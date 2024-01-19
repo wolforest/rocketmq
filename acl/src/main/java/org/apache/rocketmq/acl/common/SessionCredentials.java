@@ -22,7 +22,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import org.apache.rocketmq.common.utils.BeanUtils;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 
 public class SessionCredentials {
     public static final Charset CHARSET = StandardCharsets.UTF_8;
@@ -42,7 +42,7 @@ public class SessionCredentials {
     public SessionCredentials() {
         String keyContent = null;
         try {
-            keyContent = StringUtils.file2String(KEY_FILE);
+            keyContent = IOUtils.file2String(KEY_FILE);
         } catch (IOException ignore) {
         }
         if (keyContent != null) {

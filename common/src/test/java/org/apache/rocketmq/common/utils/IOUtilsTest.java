@@ -23,8 +23,10 @@ import java.io.CharArrayReader;
 import java.io.CharArrayWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
@@ -36,6 +38,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -60,6 +63,29 @@ public class IOUtilsTest {
     public void destroy() {
         File file = new File(testRootDir);
         IOUtils.deleteFile(file);
+    }
+
+    @Test
+    public void testString2File() throws IOException {
+        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "StringUtilsTest" + System.currentTimeMillis();
+        IOUtils.string2File("StringUtils_testString2File", fileName);
+        assertThat(IOUtils.file2String(fileName)).isEqualTo("StringUtils_testString2File");
+    }
+
+    @Test
+    public void testFile2String() throws IOException {
+        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "StringUtilsTest" + System.currentTimeMillis();
+        File file = new File(fileName);
+        if (file.exists()) {
+            file.delete();
+        }
+        file.createNewFile();
+        PrintWriter out = new PrintWriter(fileName);
+        out.write("TestForStringUtils");
+        out.close();
+        String string = IOUtils.file2String(fileName);
+        assertThat(string).isEqualTo("TestForStringUtils");
+        file.delete();
     }
 
     @Test

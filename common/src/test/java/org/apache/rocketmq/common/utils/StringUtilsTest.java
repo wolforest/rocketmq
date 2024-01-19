@@ -18,8 +18,6 @@
 package org.apache.rocketmq.common.utils;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -30,28 +28,7 @@ import static org.assertj.core.api.Assertions.within;
 import static org.junit.Assert.assertEquals;
 
 public class StringUtilsTest {
-    @Test
-    public void testString2File() throws IOException {
-        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "StringUtilsTest" + System.currentTimeMillis();
-        StringUtils.string2File("StringUtils_testString2File", fileName);
-        assertThat(StringUtils.file2String(fileName)).isEqualTo("StringUtils_testString2File");
-    }
 
-    @Test
-    public void testFile2String() throws IOException {
-        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "StringUtilsTest" + System.currentTimeMillis();
-        File file = new File(fileName);
-        if (file.exists()) {
-            file.delete();
-        }
-        file.createNewFile();
-        PrintWriter out = new PrintWriter(fileName);
-        out.write("TestForStringUtils");
-        out.close();
-        String string = StringUtils.file2String(fileName);
-        assertThat(string).isEqualTo("TestForStringUtils");
-        file.delete();
-    }
 
     @Test
     public void testGetDiskPartitionSpaceUsedPercent() {

@@ -30,7 +30,7 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.common.app.stats.Stats;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.body.BrokerStatsData;
@@ -133,7 +133,7 @@ public class ExportMetricsCommand implements SubCommand {
             result.put("evaluateReport", evaluateReportMap);
             result.put("totalData", totalData);
 
-            StringUtils.string2FileNotSafe(JSON.toJSONString(result, true), path);
+            IOUtils.string2FileNotSafe(JSON.toJSONString(result, true), path);
             System.out.printf("export %s success", path);
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);

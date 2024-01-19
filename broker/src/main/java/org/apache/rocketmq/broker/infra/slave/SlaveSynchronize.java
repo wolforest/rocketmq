@@ -23,6 +23,7 @@ import org.apache.rocketmq.broker.domain.metadata.loadbalance.MessageRequestMode
 import org.apache.rocketmq.broker.domain.metadata.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -171,7 +172,7 @@ public class SlaveSynchronize {
             String fileName = StorePathConfigHelper.getDelayOffsetStorePath(dir);
 
             try {
-                StringUtils.string2File(delayOffset, fileName);
+                IOUtils.string2File(delayOffset, fileName);
                 this.broker.getScheduleMessageService().loadWhenSyncDelayOffset();
             } catch (IOException e) {
                 LOGGER.error("Persist file Exception, {}", fileName, e);

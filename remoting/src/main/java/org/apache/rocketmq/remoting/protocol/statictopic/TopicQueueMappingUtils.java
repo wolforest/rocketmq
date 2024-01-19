@@ -30,7 +30,7 @@ import java.util.Queue;
 import java.util.Set;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 
 public class TopicQueueMappingUtils {
 
@@ -395,7 +395,7 @@ public class TopicQueueMappingUtils {
         }
         String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + topic + "-" + wrapper.getEpoch() + suffix;
         try {
-            StringUtils.string2File(data, fileName);
+            IOUtils.string2File(data, fileName);
             return fileName;
         } catch (Exception e) {
             throw new RuntimeException("write file failed " + fileName,e);

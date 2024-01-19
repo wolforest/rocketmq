@@ -29,6 +29,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
@@ -378,5 +380,72 @@ public class IOUtils {
     public static String dealFilePath(String aclFilePath) {
         Path path = Paths.get(aclFilePath);
         return path.normalize().toString();
+    }
+
+    public static synchronized void string2File(final String str, final String fileName) throws IOException {
+        String bakFile = fileName + ".bak";
+        String prevContent = file2String(fileName);
+        if (prevContent != null) {
+            string2FileNotSafe(prevContent, bakFile);
+        }
+
+        string2FileNotSafe(str, fileName);
+    }
+
+    public static void string2FileNotSafe(final String str, final String fileName) throws IOException {
+        File file = new File(fileName);
+        File fileParent = file.getParentFile();
+        if (fileParent != null) {
+            fileParent.mkdirs();
+        }
+        writeStringToFile(file, str, "UTF-8");
+    }
+
+    public static String file2String(final String fileName) throws IOException {
+        File file = new File(fileName);
+        return file2String(file);
+    }
+
+    public static String file2String(final File file) throws IOException {
+        if (!file.exists()) {
+            return null;
+        }
+
+        byte[] data = new byte[(int) file.length()];
+        boolean result;
+
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            int len = inputStream.read(data);
+            result = len == data.length;
+        }
+
+        if (result) {
+            return new String(data, "UTF-8");
+        }
+
+        return null;
+    }
+
+    public static String file2String(final URL url) {
+        InputStream in = null;
+        try {
+            URLConnection urlConnection = url.openConnection();
+            urlConnection.setUseCaches(false);
+            in = urlConnection.getInputStream();
+            int len = in.available();
+            byte[] data = new byte[len];
+            in.read(data, 0, len);
+            return new String(data, StandardCharsets.UTF_8);
+        } catch (Exception ignored) {
+        } finally {
+            if (null != in) {
+                try {
+                    in.close();
+                } catch (IOException ignored) {
+                }
+            }
+        }
+
+        return null;
     }
 }

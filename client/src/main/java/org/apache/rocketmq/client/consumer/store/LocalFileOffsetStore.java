@@ -30,6 +30,7 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.common.app.help.FAQUrl;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -151,7 +152,7 @@ public class LocalFileOffsetStore implements OffsetStore {
         String jsonString = offsetSerializeWrapper.toJson(true);
         if (jsonString != null) {
             try {
-                StringUtils.string2File(jsonString, this.storePath);
+                IOUtils.string2File(jsonString, this.storePath);
             } catch (IOException e) {
                 log.error("persistAll consumer offset Exception, " + this.storePath, e);
             }
@@ -190,7 +191,7 @@ public class LocalFileOffsetStore implements OffsetStore {
     private OffsetSerializeWrapper readLocalOffset() throws MQClientException {
         String content = null;
         try {
-            content = StringUtils.file2String(this.storePath);
+            content = IOUtils.file2String(this.storePath);
         } catch (IOException e) {
             log.warn("Load local offset store file exception", e);
         }
@@ -213,7 +214,7 @@ public class LocalFileOffsetStore implements OffsetStore {
     private OffsetSerializeWrapper readLocalOffsetBak() throws MQClientException {
         String content = null;
         try {
-            content = StringUtils.file2String(this.storePath + ".bak");
+            content = IOUtils.file2String(this.storePath + ".bak");
         } catch (IOException e) {
             log.warn("Load local offset store bak file exception", e);
         }

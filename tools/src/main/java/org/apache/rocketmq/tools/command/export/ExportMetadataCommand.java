@@ -24,7 +24,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.body.SubscriptionGroupWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
@@ -99,13 +99,13 @@ public class ExportMetadataCommand implements SubCommand {
                     filePath = filePath + "/topic.json";
                     TopicConfigSerializeWrapper topicConfigSerializeWrapper = defaultMQAdminExt.getUserTopicConfig(
                         brokerAddr, specialTopic, 10000L);
-                    StringUtils.string2FileNotSafe(JSON.toJSONString(topicConfigSerializeWrapper, true), filePath);
+                    IOUtils.string2FileNotSafe(JSON.toJSONString(topicConfigSerializeWrapper, true), filePath);
                     System.out.printf("export %s success", filePath);
                 } else if (commandLine.hasOption('g')) {
                     filePath = filePath + "/subscriptionGroup.json";
                     SubscriptionGroupWrapper subscriptionGroupWrapper = defaultMQAdminExt.getUserSubscriptionGroup(
                         brokerAddr, 10000L);
-                    StringUtils.string2FileNotSafe(JSON.toJSONString(subscriptionGroupWrapper, true), filePath);
+                    IOUtils.string2FileNotSafe(JSON.toJSONString(subscriptionGroupWrapper, true), filePath);
                     System.out.printf("export %s success", filePath);
                 }
             } else if (commandLine.hasOption('c')) {
@@ -163,7 +163,7 @@ public class ExportMetadataCommand implements SubCommand {
                     exportPath = filePath + "/metadata.json";
                 }
                 result.put("exportTime", System.currentTimeMillis());
-                StringUtils.string2FileNotSafe(JSON.toJSONString(result, true), exportPath);
+                IOUtils.string2FileNotSafe(JSON.toJSONString(result, true), exportPath);
                 System.out.printf("export %s success%n", exportPath);
 
             } else {

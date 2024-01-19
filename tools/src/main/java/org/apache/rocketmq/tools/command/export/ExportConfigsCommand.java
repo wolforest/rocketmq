@@ -28,7 +28,7 @@ import com.alibaba.fastjson.JSON;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
@@ -98,7 +98,7 @@ public class ExportConfigsCommand implements SubCommand {
             result.put("clusterScale", clusterScaleMap);
 
             String path = filePath + "/configs.json";
-            StringUtils.string2FileNotSafe(JSON.toJSONString(result, true), path);
+            IOUtils.string2FileNotSafe(JSON.toJSONString(result, true), path);
             System.out.printf("export %s success", path);
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);

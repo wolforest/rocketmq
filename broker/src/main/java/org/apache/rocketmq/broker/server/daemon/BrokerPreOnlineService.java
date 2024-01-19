@@ -33,7 +33,7 @@ import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -196,7 +196,7 @@ public class BrokerPreOnlineService extends ServiceThread {
                 StorePathConfigHelper.getDelayOffsetStorePath(this.broker
                     .getMessageStoreConfig().getStorePathRootDir());
             try {
-                StringUtils.string2File(delayOffset, fileName);
+                IOUtils.string2File(delayOffset, fileName);
                 this.broker.getScheduleMessageService().load();
             } catch (IOException e) {
                 LOGGER.error("Persist file Exception, {}", fileName, e);

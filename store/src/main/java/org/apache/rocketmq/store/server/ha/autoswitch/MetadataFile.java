@@ -20,7 +20,6 @@ package org.apache.rocketmq.store.server.ha.autoswitch;
 import org.apache.rocketmq.common.utils.IOUtils;
 
 import java.io.File;
-import org.apache.rocketmq.common.utils.StringUtils;
 
 public abstract class MetadataFile {
 
@@ -36,11 +35,11 @@ public abstract class MetadataFile {
 
     public void writeToFile() throws Exception {
         IOUtils.deleteFile(new File(filePath));
-        StringUtils.string2File(encodeToStr(), this.filePath);
+        IOUtils.string2File(encodeToStr(), this.filePath);
     }
 
     public void readFromFile() throws Exception {
-        String dataStr = StringUtils.file2String(filePath);
+        String dataStr = IOUtils.file2String(filePath);
         decodeFromStr(dataStr);
     }
     public boolean fileExists() {

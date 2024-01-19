@@ -23,8 +23,8 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.domain.constant.MQVersion;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.NameServerAddressUtils;
-import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.body.Connection;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
@@ -89,7 +89,7 @@ public class ConsumerSubCommand implements SubCommand {
                         if (consumerRunningInfo != null) {
                             criTable.put(conn.getClientId(), consumerRunningInfo);
                             String filePath = now + "/" + conn.getClientId();
-                            StringUtils.string2FileNotSafe(consumerRunningInfo.formatString(), filePath);
+                            IOUtils.string2FileNotSafe(consumerRunningInfo.formatString(), filePath);
                             System.out.printf("%03d  %-40s %-20s %s%n",
                                 i++,
                                 conn.getClientId(),

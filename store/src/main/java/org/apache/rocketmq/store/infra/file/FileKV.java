@@ -16,5 +16,25 @@
  */
 package org.apache.rocketmq.store.infra.file;
 
-public class JSONDB {
+import java.io.IOException;
+import org.apache.rocketmq.common.utils.IOUtils;
+
+public class FileKV {
+
+    public String get(String fileName) {
+        try {
+            return IOUtils.file2String(fileName);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void set(String fileName, String data) {
+        try {
+            IOUtils.string2File(data, fileName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

@@ -90,7 +90,7 @@ public class CheckpointFile<T> {
 
             String content = entries.size() + System.lineSeparator() +
                 crc32 + System.lineSeparator() + entryContent;
-            StringUtils.string2File(content, this.filePath);
+            IOUtils.string2File(content, this.filePath);
         }
     }
 

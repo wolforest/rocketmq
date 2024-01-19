@@ -19,7 +19,7 @@ package org.apache.rocketmq.common.app.config;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ public abstract class ConfigManager {
         String fileName = null;
         try {
             fileName = this.configFilePath();
-            String jsonString = StringUtils.file2String(fileName);
+            String jsonString = IOUtils.file2String(fileName);
 
             if (null == jsonString || jsonString.length() == 0) {
                 return this.loadBak();
@@ -51,7 +51,7 @@ public abstract class ConfigManager {
         String fileName = null;
         try {
             fileName = this.configFilePath();
-            String jsonString = StringUtils.file2String(fileName + ".bak");
+            String jsonString = IOUtils.file2String(fileName + ".bak");
             if (jsonString != null && jsonString.length() > 0) {
                 this.decode(jsonString);
                 log.info("load " + fileName + " OK");
@@ -83,7 +83,7 @@ public abstract class ConfigManager {
 
         String fileName = this.configFilePath();
         try {
-            StringUtils.string2File(jsonString, fileName);
+            IOUtils.string2File(jsonString, fileName);
         } catch (IOException e) {
             log.error("persist file " + fileName + " exception", e);
         }

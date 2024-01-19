@@ -22,7 +22,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.namesrv.NamesrvController;
@@ -44,7 +44,7 @@ public class KVConfigManager {
     public void load() {
         String content = null;
         try {
-            content = StringUtils.file2String(this.namesrvController.getNamesrvConfig().getKvConfigPath());
+            content = IOUtils.file2String(this.namesrvController.getNamesrvConfig().getKvConfigPath());
         } catch (IOException e) {
             log.warn("Load KV config table exception", e);
         }
@@ -97,7 +97,7 @@ public class KVConfigManager {
                 String content = kvConfigSerializeWrapper.toJson();
 
                 if (null != content) {
-                    StringUtils.string2File(content, this.namesrvController.getNamesrvConfig().getKvConfigPath());
+                    IOUtils.string2File(content, this.namesrvController.getNamesrvConfig().getKvConfigPath());
                 }
             } catch (IOException e) {
                 log.error("persist kvconfig Exception, "
