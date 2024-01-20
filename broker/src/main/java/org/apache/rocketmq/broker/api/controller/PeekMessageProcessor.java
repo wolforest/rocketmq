@@ -37,6 +37,7 @@ import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -188,11 +189,11 @@ public class PeekMessageProcessor implements NettyRequestProcessor {
                 this.broker.getBrokerStatsManager().incBrokerGetNums(requestHeader.getTopic(), getMessageResult.getMessageCount());
 
                 if (this.broker.getBrokerConfig().isTransferMsgByHeap()) {
-                    final long beginTimeMills = this.broker.getMessageStore().now();
+                    final long beginTimeMills = TimeUtils.now();
                     final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
                     this.broker.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
                         requestHeader.getTopic(), requestHeader.getQueueId(),
-                        (int) (this.broker.getMessageStore().now() - beginTimeMills));
+                        (int) (TimeUtils.now() - beginTimeMills));
                     response.setBody(r);
                 } else {
                     final GetMessageResult tmpGetMessageResult = getMessageResult;
@@ -295,7 +296,7 @@ public class PeekMessageProcessor implements NettyRequestProcessor {
             getMessageResult.release();
         }
 
-        this.broker.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId, this.broker.getMessageStore().now() - storeTimestamp);
+        this.broker.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId, TimeUtils.now() - storeTimestamp);
         return byteBuffer.array();
     }
 

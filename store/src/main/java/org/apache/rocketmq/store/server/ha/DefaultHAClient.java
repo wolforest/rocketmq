@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.NetworkUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -103,7 +104,7 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
     }
 
     private boolean isTimeToReportOffset() {
-        long interval = defaultMessageStore.now() - this.lastWriteTimestamp;
+        long interval = TimeUtils.now() - this.lastWriteTimestamp;
         return interval > defaultMessageStore.getMessageStoreConfig().getHaSendHeartbeatInterval();
     }
 
@@ -327,7 +328,7 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
                         this.waitForRunning(1000 * 2);
                         continue;
                 }
-                long interval = this.defaultMessageStore.now() - this.lastReadTimestamp;
+                long interval = TimeUtils.now() - this.lastReadTimestamp;
                 if (interval > this.defaultMessageStore.getMessageStoreConfig().getHaHousekeepingInterval()) {
                     log.warn("AutoRecoverHAClient, housekeeping, found this connection[" + this.masterHaAddress
                         + "] expired, " + interval);

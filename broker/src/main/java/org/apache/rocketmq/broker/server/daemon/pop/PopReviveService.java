@@ -49,6 +49,7 @@ import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.DataConverter;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.ThreadUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
@@ -381,7 +382,7 @@ public class PopReviveService extends ServiceThread {
         broker.getBrokerStatsManager().incGroupGetNums(group, topic, getMessageResult.getMessageCount());
         broker.getBrokerStatsManager().incGroupGetSize(group, topic, getMessageResult.getBufferTotalSize());
         broker.getBrokerStatsManager().incBrokerGetNums(topic, getMessageResult.getMessageCount());
-        broker.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId, broker.getMessageStore().now() - foundList.get(foundList.size() - 1).getStoreTimestamp());
+        broker.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId, TimeUtils.now() - foundList.get(foundList.size() - 1).getStoreTimestamp());
 
         Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
             .put(LABEL_TOPIC, topic)

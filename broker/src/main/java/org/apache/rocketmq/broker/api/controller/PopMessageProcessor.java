@@ -52,6 +52,7 @@ import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -411,9 +412,9 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
     private boolean handleSuccessResponse(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse) {
         if (this.broker.getBrokerConfig().isTransferMsgByHeap()) {
-            final long beginTimeMills = this.broker.getMessageStore().now();
+            final long beginTimeMills = TimeUtils.now();
             final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
-            this.broker.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), (int) (this.broker.getMessageStore().now() - beginTimeMills));
+            this.broker.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), (int) (TimeUtils.now() - beginTimeMills));
             finalResponse.setBody(r);
             return true;
         }
@@ -805,7 +806,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
 
         this.broker.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId,
-            this.broker.getMessageStore().now() - storeTimestamp);
+            TimeUtils.now() - storeTimestamp);
         return byteBuffer.array();
     }
 

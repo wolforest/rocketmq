@@ -102,7 +102,7 @@ public class SendMessageProcessorTest {
         when(broker.getTopicConfigManager()).thenReturn(topicConfigManager);
         when(broker.getBrokerNettyServer()).thenReturn(brokerNettyServer);
         when(broker.getBrokerNettyServer().getPutMessageFutureExecutor()).thenReturn(Executors.newSingleThreadExecutor());
-        when(messageStore.now()).thenReturn(System.currentTimeMillis());
+        //when(messageStore.now()).thenReturn(System.currentTimeMillis());
         when(channel.remoteAddress()).thenReturn(new InetSocketAddress(1024));
         when(handlerContext.channel()).thenReturn(channel);
         when(messageStore.lookMessageByOffset(anyLong())).thenReturn(new MessageExt());

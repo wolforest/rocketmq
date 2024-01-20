@@ -117,7 +117,7 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
 
         log.debug("receive SendReplyMessage request command, {}", request);
         final long startTimstamp = this.broker.getBrokerConfig().getStartAcceptSendRequestTimeStamp();
-        if (this.broker.getMessageStore().now() < startTimstamp) {
+        if (TimeUtils.now() < startTimstamp) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(String.format("broker unable to service, until %s", TimeUtils.timeMillisToHumanString2(startTimstamp)));
             return response;

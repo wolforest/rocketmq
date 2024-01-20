@@ -19,6 +19,9 @@ package org.apache.rocketmq.common.utils;
 import java.util.Calendar;
 
 public class TimeUtils {
+    public static long now() {
+        return System.currentTimeMillis();
+    }
 
     public static long computeElapsedTimeMilliseconds(final long beginTime) {
         return System.currentTimeMillis() - beginTime;

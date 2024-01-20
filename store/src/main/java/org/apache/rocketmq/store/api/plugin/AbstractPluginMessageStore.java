@@ -255,11 +255,6 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     }
 
     @Override
-    public long now() {
-        return next.now();
-    }
-
-    @Override
     public int deleteTopics(final Set<String> deleteTopics) {
         return next.deleteTopics(deleteTopics);
     }

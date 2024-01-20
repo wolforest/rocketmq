@@ -704,12 +704,6 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     @Override
-    public long now() {
-        return this.systemClock.now();
-    }
-
-
-    @Override
     public int deleteTopics(final Set<String> deleteTopics) {
         return consumeQueueService.deleteTopics(deleteTopics);
     }

@@ -484,13 +484,6 @@ public interface MessageStore {
     long slaveFallBehindMuch();
 
     /**
-     * Return the current timestamp of the store.
-     *
-     * @return current time in milliseconds since 1970-01-01.
-     */
-    long now();
-
-    /**
      * Delete topic's consume queue file and unused stats.
      * This interface allows user delete system topic.
      *

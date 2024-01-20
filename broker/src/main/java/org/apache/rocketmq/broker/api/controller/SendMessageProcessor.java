@@ -338,7 +338,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             sendTransactionPrepareMessage = true;
         }
 
-        long beginTimeMillis = this.broker.getMessageStore().now();
+        long beginTimeMillis = TimeUtils.now();
         if (broker.getBrokerConfig().isAsyncSendEnable()) {
             return asyncSendMessage(msgInner, response, request, requestHeader, responseHeader, sendMessageContext, sendMessageCallback, ctx, queueIdInt, beginTimeMillis, sendTransactionPrepareMessage, mappingContext);
         }
@@ -509,7 +509,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         this.broker.getBrokerStatsManager().incTopicPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum(), 1);
         this.broker.getBrokerStatsManager().incTopicPutSize(msg.getTopic(), putMessageResult.getAppendMessageResult().getWroteBytes());
         this.broker.getBrokerStatsManager().incBrokerPutNums(msg.getTopic(), putMessageResult.getAppendMessageResult().getMsgNum());
-        this.broker.getBrokerStatsManager().incTopicPutLatency(msg.getTopic(), queueIdInt, (int) (this.broker.getMessageStore().now() - beginTimeMillis));
+        this.broker.getBrokerStatsManager().incTopicPutLatency(msg.getTopic(), queueIdInt, (int) (TimeUtils.now() - beginTimeMillis));
 
         if (BrokerMetricsManager.isRetryOrDlqTopic(msg.getTopic())) {
             return;
@@ -655,7 +655,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             isInnerBatch = true;
         }
 
-        long beginTimeMillis = this.broker.getMessageStore().now();
+        long beginTimeMillis = TimeUtils.now();
         if (this.broker.getBrokerConfig().isAsyncSendEnable()) {
             return asyncSendBatchMessage(response, request, messageExtBatch, responseHeader, sendMessageContext, ctx, queueIdInt, beginTimeMillis, mappingContext, isInnerBatch, requestHeader, sendMessageCallback);
         }
@@ -736,7 +736,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         LOGGER.debug("Receive SendMessage request command {}", request);
 
         final long startTimestamp = this.broker.getBrokerConfig().getStartAcceptSendRequestTimeStamp();
-        if (this.broker.getMessageStore().now() < startTimestamp) {
+        if (TimeUtils.now() < startTimestamp) {
             return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, String.format("broker unable to service, until %s", TimeUtils.timeMillisToHumanString2(startTimestamp)));
         }
 

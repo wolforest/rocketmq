@@ -36,6 +36,7 @@ import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.domain.message.MessageVersion;
 import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.BinaryUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
@@ -453,14 +454,14 @@ public class DLedgerCommitLog extends CommitLog {
             if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestampIndex()) {
                 log.info("dledger find check timestamp, {} {}",
                     storeTimestamp,
-                    UtilAll.timeMillisToHumanString(storeTimestamp));
+                    TimeUtils.timeMillisToHumanString(storeTimestamp));
                 return true;
             }
         } else {
             if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestamp()) {
                 log.info("dledger find check timestamp, {} {}",
                     storeTimestamp,
-                    UtilAll.timeMillisToHumanString(storeTimestamp));
+                    TimeUtils.timeMillisToHumanString(storeTimestamp));
                 return true;
             }
         }
@@ -831,7 +832,7 @@ public class DLedgerCommitLog extends CommitLog {
         long diff = 0;
         long begin = this.beginTimeInDledgerLock;
         if (begin > 0) {
-            diff = this.defaultMessageStore.now() - begin;
+            diff = TimeUtils.now() - begin;
         }
 
         if (diff < 0) {

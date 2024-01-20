@@ -44,6 +44,7 @@ import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
@@ -310,7 +311,7 @@ public class TransactionalMessageBridge {
             return;
         }
         this.broker.getBrokerStatsManager().recordDiskFallBehindTime(context.getGroup(), context.getTopic(), context.getQueueId(),
-            this.broker.getMessageStore().now() - context.getLastFound().getStoreTimestamp());
+            TimeUtils.now() - context.getLastFound().getStoreTimestamp());
 
         Attributes attributes = BrokerMetricsManager.newAttributesBuilder()
             .put(LABEL_TOPIC, context.getTopic())

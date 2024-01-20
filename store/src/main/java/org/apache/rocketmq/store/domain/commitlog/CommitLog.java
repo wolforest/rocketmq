@@ -849,7 +849,7 @@ public class CommitLog implements Swappable {
         long diff = 0;
         long begin = this.beginTimeInLock;
         if (begin > 0) {
-            diff = this.defaultMessageStore.now() - begin;
+            diff = TimeUtils.now() - begin;
         }
 
         if (diff < 0) {

@@ -38,6 +38,7 @@ import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.common.app.help.FAQUrl;
 import org.apache.rocketmq.common.domain.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -496,7 +497,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         }
 
         if (brokerAllowFlowCtrSuspend) {  // second arrived, which will not be held
-            PullRequest pullRequest = new PullRequest(request, channel, 1000, this.broker.getMessageStore().now(), requestHeader.getQueueOffset(), subscriptionData, messageFilter);
+            PullRequest pullRequest = new PullRequest(request, channel, 1000, TimeUtils.now(), requestHeader.getQueueOffset(), subscriptionData, messageFilter);
             this.broker.getColdDataPullRequestHoldService().suspendColdDataReadRequest(pullRequest);
 
             response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "second arrived, It has been flow control");

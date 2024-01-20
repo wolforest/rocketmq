@@ -26,6 +26,7 @@ import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
@@ -173,12 +174,12 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
             this.msgStoreItemMemory.putInt(CommitLog.BLANK_MAGIC_CODE);
             // 3 The remaining space may be any value
             // Here the length of the specially set maxBlank
-            final long beginTimeMills = defaultMessageStore.now();
+            final long beginTimeMills = TimeUtils.now();
             byteBuffer.put(this.msgStoreItemMemory.array(), 0, 8);
             return new AppendMessageResult(AppendMessageStatus.END_OF_FILE, wroteOffset,
                 maxBlank, /* only wrote 8 bytes, but declare wrote maxBlank for compute write position */
                 msgIdSupplier, msgInner.getStoreTimestamp(),
-                queueOffset, defaultMessageStore.now() - beginTimeMills);
+                queueOffset, TimeUtils.now() - beginTimeMills);
         }
 
         int pos = 4 + 4 + 4 + 4 + 4;
@@ -202,7 +203,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
             MessageDecoder.createCrc32(tmpBuffer, crc32);
         }
 
-        final long beginTimeMills = defaultMessageStore.now();
+        final long beginTimeMills = TimeUtils.now();
         defaultMessageStore.getPerfCounter().startTick("WRITE_MEMORY_TIME_MS");
         // Write messages to the queue buffer
         byteBuffer.put(preEncodeBuffer);
@@ -214,7 +215,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         }
 
         return new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, msgLen, msgIdSupplier,
-            msgInner.getStoreTimestamp(), queueOffset, defaultMessageStore.now() - beginTimeMills, messageNum);
+            msgInner.getStoreTimestamp(), queueOffset, TimeUtils.now() - beginTimeMills, messageNum);
     }
 
     public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
@@ -228,7 +229,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         int totalMsgLen = 0;
         int msgNum = 0;
 
-        final long beginTimeMills = defaultMessageStore.now();
+        final long beginTimeMills = TimeUtils.now();
         ByteBuffer messagesByteBuff = messageExtBatch.getEncodedBuff();
 
         int sysFlag = messageExtBatch.getSysFlag();
@@ -276,7 +277,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
                 byteBuffer.reset(); //ignore the previous appended messages
                 byteBuffer.put(this.msgStoreItemMemory.array(), 0, 8);
                 return new AppendMessageResult(AppendMessageStatus.END_OF_FILE, wroteOffset, maxBlank, msgIdSupplier, messageExtBatch.getStoreTimestamp(),
-                    beginQueueOffset, defaultMessageStore.now() - beginTimeMills);
+                    beginQueueOffset, TimeUtils.now() - beginTimeMills);
             }
             //move to add queue offset and commitlog offset
             int pos = msgPos + 20;
@@ -308,7 +309,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         byteBuffer.put(messagesByteBuff);
         messageExtBatch.setEncodedBuff(null);
         AppendMessageResult result = new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, totalMsgLen, msgIdSupplier,
-            messageExtBatch.getStoreTimestamp(), beginQueueOffset, defaultMessageStore.now() - beginTimeMills);
+            messageExtBatch.getStoreTimestamp(), beginQueueOffset, TimeUtils.now() - beginTimeMills);
         result.setMsgNum(msgNum);
 
         return result;

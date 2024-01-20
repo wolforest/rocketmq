@@ -40,6 +40,7 @@ import org.apache.rocketmq.common.domain.sysflag.PullSysFlag;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
@@ -172,10 +173,10 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
     }
 
     private RemotingCommand handleTransferMsgByHeap(PullMessageRequestHeader requestHeader, RemotingCommand response, GetMessageResult getMessageResult) {
-        final long beginTimeMills = this.broker.getMessageStore().now();
+        final long beginTimeMills = TimeUtils.now();
         final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
         this.broker.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
-            requestHeader.getTopic(), requestHeader.getQueueId(), (int) (this.broker.getMessageStore().now() - beginTimeMills));
+            requestHeader.getTopic(), requestHeader.getQueueId(), (int) (TimeUtils.now() - beginTimeMills));
         response.setBody(r);
         return response;
     }
@@ -196,7 +197,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         String topic = requestHeader.getTopic();
         long offset = requestHeader.getQueueOffset();
         int queueId = requestHeader.getQueueId();
-        PullRequest pullRequest = new PullRequest(request, channel, pollingTimeMills, this.broker.getMessageStore().now(), offset, subscriptionData, messageFilter);
+        PullRequest pullRequest = new PullRequest(request, channel, pollingTimeMills, TimeUtils.now(), offset, subscriptionData, messageFilter);
         this.broker.getBrokerNettyServer().getPullRequestHoldService().suspendPullRequest(topic, queueId, pullRequest);
         return false;
     }
@@ -269,7 +270,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
             getMessageResult.release();
         }
 
-        this.broker.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId, this.broker.getMessageStore().now() - storeTimestamp);
+        this.broker.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId, TimeUtils.now() - storeTimestamp);
         return byteBuffer.array();
     }
 

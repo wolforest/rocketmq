@@ -81,7 +81,7 @@ public class ReplyMessageProcessorTest {
         clientInfo = new ClientChannelInfo(channel, "127.0.0.1", LanguageCode.JAVA, 0);
         broker.setMessageStore(messageStore);
         when(broker.getBroker2Client()).thenReturn(broker2Client);
-        when(messageStore.now()).thenReturn(System.currentTimeMillis());
+        //when(messageStore.now()).thenReturn(System.currentTimeMillis());
         Channel mockChannel = mock(Channel.class);
         when(mockChannel.remoteAddress()).thenReturn(new InetSocketAddress(1024));
         when(handlerContext.channel()).thenReturn(mockChannel);
