@@ -19,6 +19,7 @@ package org.apache.rocketmq.store.server;
 import org.apache.rocketmq.store.api.service.KVService;
 import org.apache.rocketmq.store.api.service.MessageService;
 import org.apache.rocketmq.store.api.service.MonitorService;
+import org.apache.rocketmq.store.api.service.QueueService;
 import org.apache.rocketmq.store.server.config.StoreOption;
 
 public class Store {
@@ -53,6 +54,10 @@ public class Store {
     }
 
     public MonitorService getMonitorService() {
+        return null;
+    }
+
+    public QueueService getQueueService() {
         return null;
     }
 }

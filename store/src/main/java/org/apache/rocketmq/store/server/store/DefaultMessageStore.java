@@ -1528,6 +1528,10 @@ public class DefaultMessageStore implements MessageStore {
         return consumeQueueStore;
     }
 
+    public ConsumeQueueService getConsumeQueueService() {
+        return consumeQueueService;
+    }
+
     @Override
     public boolean isSyncDiskFlush() {
         return FlushDiskType.SYNC_FLUSH == this.getMessageStoreConfig().getFlushDiskType();
