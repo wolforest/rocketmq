@@ -20,6 +20,7 @@ import org.apache.rocketmq.store.api.service.KVService;
 import org.apache.rocketmq.store.api.service.MessageService;
 import org.apache.rocketmq.store.api.service.MonitorService;
 import org.apache.rocketmq.store.api.service.QueueService;
+import org.apache.rocketmq.store.api.service.TimerService;
 import org.apache.rocketmq.store.server.config.StoreOption;
 
 public class Store {
@@ -58,6 +59,10 @@ public class Store {
     }
 
     public QueueService getQueueService() {
+        return null;
+    }
+
+    public TimerService getTimerService() {
         return null;
     }
 }
