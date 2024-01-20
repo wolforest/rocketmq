@@ -88,9 +88,9 @@ public class RocksDBConsumeQueueStore extends AbstractConsumeQueueStore {
         this.rocksDBConsumeQueueOffsetTable = new RocksDBConsumeQueueOffsetTable(rocksDBConsumeQueueTable, rocksDBStorage, messageStore);
 
         this.writeBatch = new WriteBatch();
-        this.bufferDRList = new ArrayList(BATCH_SIZE);
-        this.cqBBPairList = new ArrayList(BATCH_SIZE);
-        this.offsetBBPairList = new ArrayList(BATCH_SIZE);
+        this.bufferDRList = new ArrayList<>(BATCH_SIZE);
+        this.cqBBPairList = new ArrayList<>(BATCH_SIZE);
+        this.offsetBBPairList = new ArrayList<>(BATCH_SIZE);
         for (int i = 0; i < BATCH_SIZE; i++) {
             this.cqBBPairList.add(RocksDBConsumeQueueTable.getCQByteBufferPair());
             this.offsetBBPairList.add(RocksDBConsumeQueueOffsetTable.getOffsetByteBufferPair());
@@ -104,13 +104,13 @@ public class RocksDBConsumeQueueStore extends AbstractConsumeQueueStore {
     @Override
     public void start() {
         log.info("RocksDB ConsumeQueueStore start!");
-        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
-            this.rocksDBStorage.statRocksdb(ROCKSDB_LOG);
-        }, 10, this.messageStoreConfig.getStatRocksDBCQIntervalSec(), TimeUnit.SECONDS);
+        this.scheduledExecutorService.scheduleAtFixedRate(
+            () -> this.rocksDBStorage.statRocksdb(ROCKSDB_LOG),
+            10, this.messageStoreConfig.getStatRocksDBCQIntervalSec(), TimeUnit.SECONDS);
 
-        this.scheduledExecutorService.scheduleWithFixedDelay(() -> {
-            cleanDirty(messageStore.getTopicConfigs().keySet());
-        }, 10, this.messageStoreConfig.getCleanRocksDBDirtyCQIntervalMin(), TimeUnit.MINUTES);
+        this.scheduledExecutorService.scheduleWithFixedDelay(
+            () -> cleanDirty(messageStore.getTopicConfigs().keySet()),
+            10, this.messageStoreConfig.getCleanRocksDBDirtyCQIntervalMin(), TimeUnit.MINUTES);
     }
 
     private void cleanDirty(final Set<String> existTopicSet) {
@@ -307,8 +307,7 @@ public class RocksDBConsumeQueueStore extends AbstractConsumeQueueStore {
             return;
         }
 
-        WriteBatch writeBatch = new WriteBatch();
-        try {
+        try (WriteBatch writeBatch = new WriteBatch()) {
             this.rocksDBConsumeQueueTable.destroyCQ(topic, queueId, writeBatch);
             this.rocksDBConsumeQueueOffsetTable.destroyOffset(topic, queueId, writeBatch);
 
@@ -317,7 +316,6 @@ public class RocksDBConsumeQueueStore extends AbstractConsumeQueueStore {
             ERROR_LOG.error("kv deleteTopic {} Failed.", topic, e);
             throw e;
         } finally {
-            writeBatch.close();
             this.rocksDBStorage.release();
         }
     }
@@ -326,7 +324,7 @@ public class RocksDBConsumeQueueStore extends AbstractConsumeQueueStore {
     public boolean flush(ConsumeQueueInterface consumeQueue, int flushLeastPages) {
         try {
             this.rocksDBStorage.flushWAL();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         return true;
     }
@@ -347,8 +345,8 @@ public class RocksDBConsumeQueueStore extends AbstractConsumeQueueStore {
      * will be rewritten by new KV when new messages are appended or will be cleaned up when topics are deleted.
      * But dirty offset info in RocksDBConsumeQueueOffsetTable must be truncated, because we use offset info in
      * RocksDBConsumeQueueOffsetTable to rebuild topicQueueTable(@see RocksDBConsumeQueue#increaseQueueOffset).
-     * @param offsetToTruncate
-     * @throws RocksDBException
+     * @param offsetToTruncate offset
+     * @throws RocksDBException e
      */
     @Override
     public void truncateDirty(long offsetToTruncate) throws RocksDBException {

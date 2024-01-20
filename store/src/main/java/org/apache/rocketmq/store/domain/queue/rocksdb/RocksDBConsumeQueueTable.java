@@ -119,10 +119,10 @@ public class RocksDBConsumeQueueTable {
 
     public List<ByteBuffer> rangeQuery(final String topic, final int queueId, final long startIndex, final int num) throws RocksDBException {
         final byte[] topicBytes = topic.getBytes(CHARSET_UTF8);
-        final List<ColumnFamilyHandle> defaultCFHList = new ArrayList(num);
+        final List<ColumnFamilyHandle> defaultCFHList = new ArrayList<>(num);
         final ByteBuffer[] resultList = new ByteBuffer[num];
-        final List<Integer> kvIndexList = new ArrayList(num);
-        final List<byte[]> kvKeyList = new ArrayList(num);
+        final List<Integer> kvIndexList = new ArrayList<>(num);
+        final List<byte[]> kvKeyList = new ArrayList<>(num);
         for (int i = 0; i < num; i++) {
             final ByteBuffer keyBB = buildCQKeyByteBuffer(topicBytes, queueId, startIndex + i);
             kvIndexList.add(i);
@@ -147,9 +147,8 @@ public class RocksDBConsumeQueueTable {
         }
 
         final int resultSize = resultList.length;
-        List<ByteBuffer> bbValueList = new ArrayList(resultSize);
-        for (int i = 0; i < resultSize; i++) {
-            ByteBuffer byteBuffer = resultList[i];
+        List<ByteBuffer> bbValueList = new ArrayList<>(resultSize);
+        for (ByteBuffer byteBuffer : resultList) {
             if (byteBuffer == null) {
                 break;
             }
@@ -160,9 +159,9 @@ public class RocksDBConsumeQueueTable {
 
     /**
      * When topic is deleted, we clean up its CqUnit in rocksdb.
-     * @param topic
-     * @param queueId
-     * @throws RocksDBException
+     * @param topic topic
+     * @param queueId queueId
+     * @throws RocksDBException e
      */
     public void destroyCQ(final String topic, final int queueId, WriteBatch writeBatch) throws RocksDBException {
         final byte[] topicBytes = topic.getBytes(CHARSET_UTF8);
