@@ -57,7 +57,7 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
     private final AtomicReference<String> masterAddress = new AtomicReference<>();
     private final ByteBuffer reportOffset = ByteBuffer.allocate(REPORT_HEADER_SIZE);
     private SocketChannel socketChannel;
-    private Selector selector;
+    private final Selector selector;
     /**
      * last time that slave reads date from master.
      */
@@ -71,9 +71,9 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
     private int dispatchPosition = 0;
     private ByteBuffer byteBufferRead = ByteBuffer.allocate(READ_MAX_BUFFER_SIZE);
     private ByteBuffer byteBufferBackup = ByteBuffer.allocate(READ_MAX_BUFFER_SIZE);
-    private DefaultMessageStore defaultMessageStore;
+    private final DefaultMessageStore defaultMessageStore;
     private volatile HAConnectionState currentState = HAConnectionState.READY;
-    private FlowMonitor flowMonitor;
+    private final FlowMonitor flowMonitor;
 
     public DefaultHAClient(DefaultMessageStore defaultMessageStore) throws IOException {
         this.selector = NetworkUtils.openSelector();
@@ -230,18 +230,20 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
     }
 
     private boolean reportSlaveMaxOffsetPlus() {
-        boolean result = true;
         long currentPhyOffset = this.defaultMessageStore.getMaxPhyOffset();
-        if (currentPhyOffset > this.currentReportedOffset) {
-            this.currentReportedOffset = currentPhyOffset;
-            result = this.reportSlaveMaxOffset(this.currentReportedOffset);
-            if (!result) {
-                this.closeMaster();
-                log.error("HAClient, reportSlaveMaxOffset error, " + this.currentReportedOffset);
-            }
+        if (currentPhyOffset <= this.currentReportedOffset) {
+            return true;
         }
 
-        return result;
+        this.currentReportedOffset = currentPhyOffset;
+        boolean result = this.reportSlaveMaxOffset(this.currentReportedOffset);
+        if (result) {
+            return true;
+        }
+
+        this.closeMaster();
+        log.error("HAClient, reportSlaveMaxOffset error, " + this.currentReportedOffset);
+        return false;
     }
 
     public void changeCurrentState(HAConnectionState currentState) {
@@ -250,22 +252,23 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
     }
 
     public boolean connectMaster() throws ClosedChannelException {
-        if (null == socketChannel) {
-            String addr = this.masterHaAddress.get();
-            if (addr != null) {
-                SocketAddress socketAddress = NetworkUtils.string2SocketAddress(addr);
-                this.socketChannel = RemotingHelper.connect(socketAddress);
-                if (this.socketChannel != null) {
-                    this.socketChannel.register(this.selector, SelectionKey.OP_READ);
-                    log.info("HAClient connect to master {}", addr);
-                    this.changeCurrentState(HAConnectionState.TRANSFER);
-                }
-            }
-
-            this.currentReportedOffset = this.defaultMessageStore.getMaxPhyOffset();
-
-            this.lastReadTimestamp = System.currentTimeMillis();
+        if (null != socketChannel) {
+            return true;
         }
+
+        String addr = this.masterHaAddress.get();
+        if (addr != null) {
+            SocketAddress socketAddress = NetworkUtils.string2SocketAddress(addr);
+            this.socketChannel = RemotingHelper.connect(socketAddress);
+            if (this.socketChannel != null) {
+                this.socketChannel.register(this.selector, SelectionKey.OP_READ);
+                log.info("HAClient connect to master {}", addr);
+                this.changeCurrentState(HAConnectionState.TRANSFER);
+            }
+        }
+
+        this.currentReportedOffset = this.defaultMessageStore.getMaxPhyOffset();
+        this.lastReadTimestamp = System.currentTimeMillis();
 
         return this.socketChannel != null;
     }
