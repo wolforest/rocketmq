@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.infra.network.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.ClusterClient;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -53,7 +53,7 @@ public class TopicQueueMappingCleanService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
     private TopicQueueMappingManager topicQueueMappingManager;
-    private NameServerClient nameServerClient;
+    private ClusterClient clusterClient;
     private RpcClient rpcClient;
     private MessageStoreConfig messageStoreConfig;
     private BrokerConfig brokerConfig;
@@ -65,7 +65,7 @@ public class TopicQueueMappingCleanService extends ServiceThread {
         this.rpcClient = broker.getBrokerOuterAPI().getRpcClient();
         this.messageStoreConfig = broker.getMessageStoreConfig();
         this.brokerConfig = broker.getBrokerConfig();
-        this.nameServerClient = broker.getBrokerOuterAPI();
+        this.clusterClient = broker.getBrokerOuterAPI();
     }
 
     @Override
@@ -249,7 +249,7 @@ public class TopicQueueMappingCleanService extends ServiceThread {
                         continue;
                     }
                     //find the topic route
-                    TopicRouteData topicRouteData = nameServerClient.getTopicRouteInfoFromNameServer(topic, brokerConfig.getForwardTimeout());
+                    TopicRouteData topicRouteData = clusterClient.getTopicRouteInfoFromNameServer(topic, brokerConfig.getForwardTimeout());
                     clientMetadata.freshTopicRoute(topic, topicRouteData);
                     Map<Integer, String> qid2RealLeaderBroker = new HashMap<>();
                     //fine the real leader

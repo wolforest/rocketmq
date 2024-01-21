@@ -21,7 +21,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineService;
-import org.apache.rocketmq.broker.infra.network.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.ClusterClient;
 import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageCheckService;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;
@@ -51,10 +51,10 @@ public class BrokerPreOnlineTest {
     private AbstractTransactionalMessageCheckListener listener;
 
     @Mock
-    private NameServerClient nameServerClient;
+    private ClusterClient clusterClient;
 
     public void init() throws Exception {
-        when(brokerContainer.getBrokerOuterAPI()).thenReturn(nameServerClient);
+        when(brokerContainer.getBrokerOuterAPI()).thenReturn(clusterClient);
 
         BrokerMemberGroup brokerMemberGroup1 = new BrokerMemberGroup();
         Map<Long, String> brokerAddrMap = new HashMap<>();

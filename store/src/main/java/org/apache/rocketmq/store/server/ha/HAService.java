@@ -32,15 +32,15 @@ public interface HAService {
     /**
      * Init HAService, must be called before other methods.
      *
-     * @param defaultMessageStore
-     * @throws IOException
+     * @param defaultMessageStore store
+     * @throws IOException e
      */
     void init(DefaultMessageStore defaultMessageStore) throws IOException;
 
     /**
      * Start HA Service
      *
-     * @throws Exception
+     * @throws Exception e
      */
     void start() throws Exception;
 
@@ -90,14 +90,14 @@ public interface HAService {
     /**
      * Update master address
      *
-     * @param newAddr
+     * @param newAddr newAddr
      */
     void updateMasterAddress(String newAddr);
 
     /**
      * Update ha master address
      *
-     * @param newAddr
+     * @param newAddr newAddr
      */
     void updateHaMasterAddress(String newAddr);
 
@@ -120,14 +120,14 @@ public interface HAService {
     /**
      * Put request to handle HA
      *
-     * @param request
+     * @param request request
      */
     void putRequest(final GroupCommitRequest request);
 
     /**
      * Put GroupConnectionStateRequest for preOnline
      *
-     * @param request
+     * @param request request
      */
     void putGroupConnectionStateRequest(HAConnectionStateNotificationRequest request);
 

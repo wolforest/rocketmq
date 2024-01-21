@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.infra.network.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.ClusterClient;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -52,7 +52,7 @@ public class BrokerServiceRegistry {
 
     private final BrokerConfig brokerConfig;
     private final Broker broker;
-    private NameServerClient nameServerClient;
+    private ClusterClient clusterClient;
 
     public BrokerServiceRegistry(Broker broker) {
         this.broker = broker;
@@ -64,18 +64,18 @@ public class BrokerServiceRegistry {
             return;
         }
 
-        this.nameServerClient = new NameServerClient(nettyClientConfig);
+        this.clusterClient = new ClusterClient(nettyClientConfig);
     }
 
     public void start() {
-        if (this.nameServerClient != null) {
-            this.nameServerClient.start();
+        if (this.clusterClient != null) {
+            this.clusterClient.start();
         }
     }
 
     public void shutdown() {
-        if (this.nameServerClient != null) {
-            this.nameServerClient.shutdown();
+        if (this.clusterClient != null) {
+            this.clusterClient.shutdown();
         }
     }
 
@@ -87,7 +87,7 @@ public class BrokerServiceRegistry {
             tmpTopic = new TopicConfig(topicConfig);
             tmpTopic.setPerm(topicConfig.getPerm() & this.brokerConfig.getBrokerPermission());
         }
-        this.nameServerClient.registerSingleTopicAll(this.brokerConfig.getBrokerName(), tmpTopic, 3000);
+        this.clusterClient.registerSingleTopicAll(this.brokerConfig.getBrokerName(), tmpTopic, 3000);
     }
 
     public synchronized void registerIncrementBrokerData(TopicConfig topicConfig, DataVersion dataVersion) {
@@ -173,7 +173,7 @@ public class BrokerServiceRegistry {
     }
 
     public void unregisterBrokerAll() {
-        this.nameServerClient.unregisterBrokerAll(
+        this.clusterClient.unregisterBrokerAll(
             this.brokerConfig.getBrokerClusterName(),
             broker.getBrokerAddr(),
             this.brokerConfig.getBrokerName(),
@@ -186,7 +186,7 @@ public class BrokerServiceRegistry {
             return;
         }
 
-        List<RegisterBrokerResult> registerBrokerResultList = this.nameServerClient.registerBrokerAll(
+        List<RegisterBrokerResult> registerBrokerResultList = this.clusterClient.registerBrokerAll(
             this.brokerConfig.getBrokerClusterName(),
             broker.getBrokerAddr(),
             this.brokerConfig.getBrokerName(),
@@ -212,7 +212,7 @@ public class BrokerServiceRegistry {
         final boolean isInBrokerContainer) {
 
         TopicConfigSerializeWrapper topicConfigWrapper = broker.getBrokerMetadataManager().getTopicConfigManager().buildTopicConfigSerializeWrapper();
-        List<Boolean> changeList = nameServerClient.needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigWrapper, timeoutMills, isInBrokerContainer);
+        List<Boolean> changeList = clusterClient.needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigWrapper, timeoutMills, isInBrokerContainer);
         boolean needRegister = false;
         for (Boolean changed : changeList) {
             if (changed) {
@@ -241,12 +241,12 @@ public class BrokerServiceRegistry {
         }
     }
 
-    public void setBrokerOuterAPI(NameServerClient nameServerClient) {
-        this.nameServerClient = nameServerClient;
+    public void setBrokerOuterAPI(ClusterClient clusterClient) {
+        this.clusterClient = clusterClient;
     }
 
-    public NameServerClient getBrokerOuterAPI() {
-        return nameServerClient;
+    public ClusterClient getBrokerOuterAPI() {
+        return clusterClient;
     }
 
 }

@@ -99,9 +99,9 @@ public class EscapeBridgeTest {
         when(broker.getTopicRouteInfoManager()).thenReturn(topicRouteInfoManager);
         when(topicRouteInfoManager.findBrokerAddressInSubscribe(anyString(), anyLong(), anyBoolean())).thenReturn("");
 
-        NameServerClient nameServerClient = mock(NameServerClient.class);
-        when(broker.getBrokerOuterAPI()).thenReturn(nameServerClient);
-        when(nameServerClient.pullMessageFromSpecificBrokerAsync(anyString(), anyString(), anyString(), anyString(), anyInt(), anyLong(), anyInt(), anyLong()))
+        ClusterClient clusterClient = mock(ClusterClient.class);
+        when(broker.getBrokerOuterAPI()).thenReturn(clusterClient);
+        when(clusterClient.pullMessageFromSpecificBrokerAsync(anyString(), anyString(), anyString(), anyString(), anyInt(), anyLong(), anyInt(), anyLong()))
             .thenReturn(CompletableFuture.completedFuture(new PullResult(PullStatus.FOUND, -1, -1, -1, new ArrayList<>())));
 
         brokerConfig.setEnableSlaveActingMaster(true);

@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.infra.network.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.ClusterClient;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.BrokerIdentity;
 import org.apache.rocketmq.remoting.RemotingServer;
@@ -131,7 +131,7 @@ public interface IBrokerContainer {
      *
      * @return the shared BrokerOuterAPI
      */
-    NameServerClient getBrokerOuterAPI();
+    ClusterClient getBrokerOuterAPI();
 
     /**
      * Return the shared RemotingServer

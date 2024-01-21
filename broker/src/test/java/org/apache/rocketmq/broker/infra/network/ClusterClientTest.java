@@ -71,7 +71,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class NameServerClientTest {
+public class ClusterClientTest {
     @Mock
     private ChannelHandlerContext handlerContext;
     @Spy
@@ -90,26 +90,26 @@ public class NameServerClientTest {
     @Mock
     private NettyRemotingClient nettyRemotingClient;
 
-    private NameServerClient nameServerClient;
+    private ClusterClient clusterClient;
 
     public void init() throws Exception {
-        nameServerClient = new NameServerClient(new NettyClientConfig());
-        Field field = NameServerClient.class.getDeclaredField("remotingClient");
+        clusterClient = new ClusterClient(new NettyClientConfig());
+        Field field = ClusterClient.class.getDeclaredField("remotingClient");
         field.setAccessible(true);
-        field.set(nameServerClient, nettyRemotingClient);
+        field.set(clusterClient, nettyRemotingClient);
     }
 
     @Test
     public void test_needRegister_normal() throws Exception {
         init();
-        nameServerClient.start();
+        clusterClient.start();
         final RemotingCommand response = buildResponse(Boolean.TRUE);
 
         TopicConfigSerializeWrapper topicConfigSerializeWrapper = new TopicConfigSerializeWrapper();
 
         when(nettyRemotingClient.getNameServerAddressList()).thenReturn(Lists.asList(nameserver1, nameserver2, new String[] {nameserver3}));
         when(nettyRemotingClient.invokeSync(anyString(), any(RemotingCommand.class), anyLong())).thenReturn(response);
-        List<Boolean> booleanList = nameServerClient.needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigSerializeWrapper, timeOut, false);
+        List<Boolean> booleanList = clusterClient.needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigSerializeWrapper, timeOut, false);
         assertTrue(booleanList.size() > 0);
         assertFalse(booleanList.contains(Boolean.FALSE));
     }
@@ -117,7 +117,7 @@ public class NameServerClientTest {
     @Test
     public void test_needRegister_timeout() throws Exception {
         init();
-        nameServerClient.start();
+        clusterClient.start();
 
         TopicConfigSerializeWrapper topicConfigSerializeWrapper = new TopicConfigSerializeWrapper();
 
@@ -137,7 +137,7 @@ public class NameServerClientTest {
                 return buildResponse(Boolean.TRUE);
             }
         });
-        List<Boolean> booleanList = nameServerClient.needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigSerializeWrapper, timeOut, false);
+        List<Boolean> booleanList = clusterClient.needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigSerializeWrapper, timeOut, false);
         assertEquals(2, booleanList.size());
         boolean success = Iterables.any(booleanList,
             new Predicate<Boolean>() {
@@ -153,7 +153,7 @@ public class NameServerClientTest {
     @Test
     public void test_register_normal() throws Exception {
         init();
-        nameServerClient.start();
+        clusterClient.start();
 
         final RemotingCommand response = RemotingCommand.createResponseCommand(RegisterBrokerResponseHeader.class);
         final RegisterBrokerResponseHeader responseHeader = (RegisterBrokerResponseHeader) response.readCustomHeader();
@@ -170,7 +170,7 @@ public class NameServerClientTest {
                 return response;
             }
         });
-        List<RegisterBrokerResult> registerBrokerResultList = nameServerClient.registerBrokerAll(clusterName, brokerAddr,
+        List<RegisterBrokerResult> registerBrokerResultList = clusterClient.registerBrokerAll(clusterName, brokerAddr,
             brokerName,
             brokerId,
             "hasServerAddr",
@@ -188,7 +188,7 @@ public class NameServerClientTest {
     @Test
     public void test_register_timeout() throws Exception {
         init();
-        nameServerClient.start();
+        clusterClient.start();
 
         final RemotingCommand response = RemotingCommand.createResponseCommand(RegisterBrokerResponseHeader.class);
         response.setCode(ResponseCode.SUCCESS);
@@ -201,7 +201,7 @@ public class NameServerClientTest {
         when(nettyRemotingClient.invokeSync(or(ArgumentMatchers.eq(nameserver1), ArgumentMatchers.eq(nameserver2)), any(RemotingCommand.class),
             timeoutMillisCaptor.capture())).thenReturn(response);
         when(nettyRemotingClient.invokeSync(ArgumentMatchers.eq(nameserver3), any(RemotingCommand.class), anyLong())).thenThrow(RemotingTimeoutException.class);
-        List<RegisterBrokerResult> registerBrokerResultList = nameServerClient.registerBrokerAll(clusterName, brokerAddr, brokerName, brokerId, "hasServerAddr", topicConfigSerializeWrapper, Lists.<String>newArrayList(), false, timeOut, false, true, new BrokerIdentity());
+        List<RegisterBrokerResult> registerBrokerResultList = clusterClient.registerBrokerAll(clusterName, brokerAddr, brokerName, brokerId, "hasServerAddr", topicConfigSerializeWrapper, Lists.<String>newArrayList(), false, timeOut, false, true, new BrokerIdentity());
 
         assertEquals(2, registerBrokerResultList.size());
     }
@@ -209,7 +209,7 @@ public class NameServerClientTest {
     @Test
     public void testGetBrokerClusterInfo() throws Exception {
         init();
-        nameServerClient.start();
+        clusterClient.start();
 
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         response.setCode(ResponseCode.SUCCESS);
@@ -220,7 +220,7 @@ public class NameServerClientTest {
         response.setBody(RemotingSerializable.encode(want));
 
         when(nettyRemotingClient.invokeSync(isNull(), argThat(argument -> argument.getCode() == RequestCode.GET_BROKER_CLUSTER_INFO), anyLong())).thenReturn(response);
-        ClusterInfo got = nameServerClient.getBrokerClusterInfo();
+        ClusterInfo got = clusterClient.getBrokerClusterInfo();
 
         assertEquals(want, got);
     }
@@ -237,11 +237,11 @@ public class NameServerClientTest {
     @Test
     public void testLookupAddressByDomain() throws Exception {
         init();
-        nameServerClient.start();
-        Class<NameServerClient> clazz = NameServerClient.class;
+        clusterClient.start();
+        Class<ClusterClient> clazz = ClusterClient.class;
         Method method = clazz.getDeclaredMethod("dnsLookupAddressByDomain", String.class);
         method.setAccessible(true);
-        List<String> addressList = (List<String>) method.invoke(nameServerClient, "localhost:6789");
+        List<String> addressList = (List<String>) method.invoke(clusterClient, "localhost:6789");
         AtomicBoolean result = new AtomicBoolean(false);
         addressList.forEach(s -> {
             if (s.contains("127.0.0.1:6789")) {

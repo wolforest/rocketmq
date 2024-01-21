@@ -31,7 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.infra.network.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.ClusterClient;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.Pair;
@@ -80,7 +80,7 @@ public class ReplicasManager {
     private final BrokerConfig brokerConfig;
     private final String brokerAddress;
 
-    private final NameServerClient nameServerClient;
+    private final ClusterClient clusterClient;
     private List<String> controllerAddresses;
     private final ConcurrentMap<String, Boolean> availableControllerAddresses;
 
@@ -107,7 +107,7 @@ public class ReplicasManager {
 
     public ReplicasManager(final Broker broker) {
         this.broker = broker;
-        this.nameServerClient = broker.getBrokerOuterAPI();
+        this.clusterClient = broker.getBrokerOuterAPI();
         this.scheduledService = ThreadUtils.newScheduledThreadPool(3, new ThreadFactoryImpl("ReplicasManager_ScheduledService_", broker.getBrokerIdentity()));
         this.executorService = ThreadUtils.newThreadPoolExecutor(3, new ThreadFactoryImpl("ReplicasManager_ExecutorService_", broker.getBrokerIdentity()));
         this.scanExecutor = ThreadUtils.newThreadPoolExecutor(4, 10, 60, TimeUnit.SECONDS,
@@ -450,7 +450,7 @@ public class ReplicasManager {
     private boolean brokerElect() {
         // Broker try to elect itself as a master in broker set.
         try {
-            Pair<ElectMasterResponseHeader, Set<Long>> tryElectResponsePair = this.nameServerClient.brokerElect(this.controllerLeaderAddress, this.brokerConfig.getBrokerClusterName(),
+            Pair<ElectMasterResponseHeader, Set<Long>> tryElectResponsePair = this.clusterClient.brokerElect(this.controllerLeaderAddress, this.brokerConfig.getBrokerClusterName(),
                 this.brokerConfig.getBrokerName(), this.brokerControllerId);
             ElectMasterResponseHeader tryElectResponse = tryElectResponsePair.getObject1();
             Set<Long> syncStateSet = tryElectResponsePair.getObject2();
@@ -478,7 +478,7 @@ public class ReplicasManager {
             return;
         }
 
-        this.nameServerClient.sendHeartbeatToController(
+        this.clusterClient.sendHeartbeatToController(
             controllerAddress,
             this.brokerConfig.getBrokerClusterName(),
             this.brokerAddress,
@@ -559,7 +559,7 @@ public class ReplicasManager {
      */
     private Long getNextBrokerId() {
         try {
-            GetNextBrokerIdResponseHeader nextBrokerIdResp = this.nameServerClient.getNextBrokerId(this.brokerConfig.getBrokerClusterName(), this.brokerConfig.getBrokerName(), this.controllerLeaderAddress);
+            GetNextBrokerIdResponseHeader nextBrokerIdResp = this.clusterClient.getNextBrokerId(this.brokerConfig.getBrokerClusterName(), this.brokerConfig.getBrokerName(), this.controllerLeaderAddress);
             return nextBrokerIdResp.getNextBrokerId();
         } catch (Exception e) {
             LOGGER.error("fail to get next broker id from controller", e);
@@ -593,7 +593,7 @@ public class ReplicasManager {
      */
     private boolean applyBrokerId() {
         try {
-            this.nameServerClient.applyBrokerId(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(),
+            this.clusterClient.applyBrokerId(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(),
                 tempBrokerMetadata.getBrokerId(), tempBrokerMetadata.getRegisterCheckCode(), this.controllerLeaderAddress);
             return true;
 
@@ -631,7 +631,7 @@ public class ReplicasManager {
      */
     private boolean registerBrokerToController() {
         try {
-            Pair<RegisterBrokerToControllerResponseHeader, Set<Long>> responsePair = this.nameServerClient.registerBrokerToController(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(), brokerControllerId, brokerAddress, controllerLeaderAddress);
+            Pair<RegisterBrokerToControllerResponseHeader, Set<Long>> responsePair = this.clusterClient.registerBrokerToController(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(), brokerControllerId, brokerAddress, controllerLeaderAddress);
             if (responsePair == null)
                 return false;
             RegisterBrokerToControllerResponseHeader response = responsePair.getObject1();
@@ -714,7 +714,7 @@ public class ReplicasManager {
     private void schedulingSyncBrokerMetadata() {
         this.scheduledService.scheduleAtFixedRate(() -> {
             try {
-                final Pair<GetReplicaInfoResponseHeader, SyncStateSet> result = this.nameServerClient.getReplicaInfo(this.controllerLeaderAddress, this.brokerConfig.getBrokerName());
+                final Pair<GetReplicaInfoResponseHeader, SyncStateSet> result = this.clusterClient.getReplicaInfo(this.controllerLeaderAddress, this.brokerConfig.getBrokerName());
                 final SyncStateSet syncStateSet = result.getObject2();
                 final GetReplicaInfoResponseHeader info = result.getObject1();
 
@@ -799,7 +799,7 @@ public class ReplicasManager {
 
     private boolean updateControllerMetadata(String address) {
         try {
-            final GetMetaDataResponseHeader responseHeader = this.nameServerClient.getControllerMetaData(address);
+            final GetMetaDataResponseHeader responseHeader = this.clusterClient.getControllerMetaData(address);
             if (responseHeader != null && StringUtils.isNoneEmpty(responseHeader.getControllerLeaderAddress())) {
                 this.controllerLeaderAddress = responseHeader.getControllerLeaderAddress();
                 LOGGER.info("Update controller leader address to {}", this.controllerLeaderAddress);
@@ -843,7 +843,7 @@ public class ReplicasManager {
 
     private void doReportSyncStateSetChanged(Set<Long> newSyncStateSet) {
         try {
-            final SyncStateSet result = this.nameServerClient.alterSyncStateSet(this.controllerLeaderAddress, this.brokerConfig.getBrokerName(), this.brokerControllerId, this.masterEpoch, newSyncStateSet, this.syncStateSetEpoch);
+            final SyncStateSet result = this.clusterClient.alterSyncStateSet(this.controllerLeaderAddress, this.brokerConfig.getBrokerName(), this.brokerControllerId, this.masterEpoch, newSyncStateSet, this.syncStateSetEpoch);
             if (result != null) {
                 changeSyncStateSet(result.getSyncStateSet(), result.getSyncStateSetEpoch());
             }
@@ -885,7 +885,7 @@ public class ReplicasManager {
 
     private void scanAvailableControllerAddress(String address) {
         scanExecutor.submit(() -> {
-            if (nameServerClient.checkAddressReachable(address)) {
+            if (clusterClient.checkAddressReachable(address)) {
                 availableControllerAddresses.putIfAbsent(address, true);
                 return;
             }
@@ -899,7 +899,7 @@ public class ReplicasManager {
 
     private void updateControllerAddr() {
         if (brokerConfig.isFetchControllerAddrByDnsLookup()) {
-            this.controllerAddresses = nameServerClient.dnsLookupAddressByDomain(this.brokerConfig.getControllerAddr());
+            this.controllerAddresses = clusterClient.dnsLookupAddressByDomain(this.brokerConfig.getControllerAddr());
             return;
         }
 

@@ -144,7 +144,14 @@ import java.util.concurrent.TimeUnit;
 import static org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode.SUCCESS;
 import static org.apache.rocketmq.remoting.protocol.ResponseCode.CONTROLLER_MASTER_STILL_EXIST;
 
-public class NameServerClient {
+/**
+ * @renamed from brokerOutApi to ClusterClient
+ *  - communicate with nameSrv
+ *  - communicate with other broker
+ *      - pull metadata from master
+ *      - pull offset info from master
+ */
+public class ClusterClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final RemotingClient remotingClient;
     private final TopAddressing topAddressing = new DefaultTopAddressing(NetworkUtils.getWSAddr());
@@ -154,11 +161,11 @@ public class NameServerClient {
     private final RpcClient rpcClient;
     private String nameSrvAddr = null;
 
-    public NameServerClient(final NettyClientConfig nettyClientConfig) {
+    public ClusterClient(final NettyClientConfig nettyClientConfig) {
         this(nettyClientConfig, new DynamicalExtFieldRPCHook(), new ClientMetadata());
     }
 
-    private NameServerClient(final NettyClientConfig nettyClientConfig, RPCHook rpcHook, ClientMetadata clientMetadata) {
+    private ClusterClient(final NettyClientConfig nettyClientConfig, RPCHook rpcHook, ClientMetadata clientMetadata) {
         this.remotingClient = new NettyRemotingClient(nettyClientConfig);
         this.clientMetadata = clientMetadata;
         this.remotingClient.registerRPCHook(rpcHook);
@@ -338,7 +345,7 @@ public class NameServerClient {
                     request.setBody(dataVersion.encode());
 
                     try {
-                        NameServerClient.this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMillis);
+                        ClusterClient.this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMillis);
                     } catch (Exception e) {
                         LOGGER.error("sendHeartbeat Exception " + namesrvAddr, e);
                     }
@@ -371,7 +378,7 @@ public class NameServerClient {
                     RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.BROKER_HEARTBEAT, requestHeader);
 
                     try {
-                        NameServerClient.this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMills);
+                        ClusterClient.this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMills);
                     } catch (Exception e) {
                         LOGGER.error("sendHeartbeat Exception " + namesrvAddr, e);
                     }
@@ -649,7 +656,7 @@ public class NameServerClient {
             try {
                 brokerOuterExecutor.execute(() -> {
                     try {
-                        RemotingCommand response = NameServerClient.this.remotingClient.invokeSync(namesrvAddr, request, timeoutMills);
+                        RemotingCommand response = ClusterClient.this.remotingClient.invokeSync(namesrvAddr, request, timeoutMills);
                         assert response != null;
                         LOGGER.info("Register single topic {} to broker {} with response code {}", topic, brokerName, response.getCode());
                     } catch (Exception e) {
@@ -1302,7 +1309,7 @@ public class NameServerClient {
                 RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.BROKER_HEARTBEAT, requestHeader);
 
                 try {
-                    NameServerClient.this.remotingClient.invokeOneway(controllerAddress, request, sendHeartBeatTimeoutMills);
+                    ClusterClient.this.remotingClient.invokeOneway(controllerAddress, request, sendHeartBeatTimeoutMills);
                 } catch (Exception e) {
                     LOGGER.error("Error happen when send heartbeat to controller {}", controllerAddress, e);
                 }

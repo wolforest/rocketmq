@@ -37,7 +37,7 @@ import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterManager;
 import org.apache.rocketmq.broker.domain.queue.offset.BroadcastOffsetManager;
 import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOrderInfoManager;
-import org.apache.rocketmq.broker.infra.network.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.ClusterClient;
 import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.server.daemon.schedule.ScheduleMessageService;
 import org.apache.rocketmq.broker.domain.metadata.subscription.SubscriptionGroupManager;
@@ -387,12 +387,12 @@ public class Broker {
         return shutdown;
     }
 
-    public NameServerClient getBrokerOuterAPI() {
+    public ClusterClient getBrokerOuterAPI() {
         return this.brokerServiceRegistry.getBrokerOuterAPI();
     }
 
-    public void setBrokerOuterAPI(NameServerClient nameServerClient) {
-        this.brokerServiceRegistry.setBrokerOuterAPI(nameServerClient);
+    public void setBrokerOuterAPI(ClusterClient clusterClient) {
+        this.brokerServiceRegistry.setBrokerOuterAPI(clusterClient);
     }
 
     public InetSocketAddress getStoreHost() {

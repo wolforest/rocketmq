@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.infra.network.NameServerClient;
+import org.apache.rocketmq.broker.infra.network.ClusterClient;
 import org.apache.rocketmq.broker.domain.metadata.topic.TopicConfigManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerClusterService;
@@ -86,7 +86,7 @@ public class ReplicasManagerTest {
     private BrokerConfig brokerConfig;
 
     @Mock
-    private NameServerClient nameServerClient;
+    private ClusterClient clusterClient;
 
     private GetNextBrokerIdResponseHeader getNextBrokerIdResponseHeader;
 
@@ -165,16 +165,16 @@ public class ReplicasManagerTest {
         when(broker.getBrokerClusterService()).thenReturn(brokerClusterService);
         when(broker.getBrokerClusterService().getSlaveSynchronize()).thenReturn(slaveSynchronize);
         when(broker.getBrokerMessageService()).thenReturn(brokerMessageService);
-        when(broker.getBrokerOuterAPI()).thenReturn(nameServerClient);
+        when(broker.getBrokerOuterAPI()).thenReturn(clusterClient);
         when(broker.getBrokerAddr()).thenReturn(OLD_MASTER_ADDRESS);
         when(broker.getTopicConfigManager()).thenReturn(topicConfigManager);
-        when(nameServerClient.getControllerMetaData(any())).thenReturn(getMetaDataResponseHeader);
-        when(nameServerClient.checkAddressReachable(any())).thenReturn(true);
-        when(nameServerClient.getNextBrokerId(any(), any(), any())).thenReturn(getNextBrokerIdResponseHeader);
-        when(nameServerClient.applyBrokerId(any(), any(), anyLong(), any(), any())).thenReturn(applyBrokerIdResponseHeader);
-        when(nameServerClient.registerBrokerToController(any(), any(), anyLong(), any(), any())).thenReturn(new Pair<>(new RegisterBrokerToControllerResponseHeader(), SYNC_STATE_SET_1));
-        when(nameServerClient.getReplicaInfo(any(), any())).thenReturn(result);
-        when(nameServerClient.brokerElect(any(), any(), any(), any())).thenReturn(new Pair<>(brokerTryElectResponseHeader, SYNC_STATE_SET_1));
+        when(clusterClient.getControllerMetaData(any())).thenReturn(getMetaDataResponseHeader);
+        when(clusterClient.checkAddressReachable(any())).thenReturn(true);
+        when(clusterClient.getNextBrokerId(any(), any(), any())).thenReturn(getNextBrokerIdResponseHeader);
+        when(clusterClient.applyBrokerId(any(), any(), anyLong(), any(), any())).thenReturn(applyBrokerIdResponseHeader);
+        when(clusterClient.registerBrokerToController(any(), any(), anyLong(), any(), any())).thenReturn(new Pair<>(new RegisterBrokerToControllerResponseHeader(), SYNC_STATE_SET_1));
+        when(clusterClient.getReplicaInfo(any(), any())).thenReturn(result);
+        when(clusterClient.brokerElect(any(), any(), any(), any())).thenReturn(new Pair<>(brokerTryElectResponseHeader, SYNC_STATE_SET_1));
         replicasManager = new ReplicasManager(broker);
         autoSwitchHAService.init(defaultMessageStore);
         replicasManager.start();
