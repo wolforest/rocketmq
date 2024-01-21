@@ -20,10 +20,9 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.FileRegion;
 import io.opentelemetry.api.common.Attributes;
-import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.infra.pagecache.OneMessageTransfer;
 import org.apache.rocketmq.broker.infra.pagecache.QueryMessageTransfer;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -40,6 +39,8 @@ import org.apache.rocketmq.remoting.protocol.header.QueryMessageResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.ViewMessageRequestHeader;
 import org.apache.rocketmq.store.api.dto.QueryMessageResult;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.apache.rocketmq.remoting.metrics.RemotingMetricsConstant.LABEL_REQUEST_CODE;
 import static org.apache.rocketmq.remoting.metrics.RemotingMetricsConstant.LABEL_RESPONSE_CODE;
@@ -144,6 +145,7 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
             response.setRemark(null);
 
             try {
+                //Create a FileRegion to write directly to the channel，zero-copy
                 FileRegion fileRegion =
                     new OneMessageTransfer(response.encodeHeader(selectMappedBufferResult.getSize()),
                         selectMappedBufferResult);
