@@ -18,11 +18,15 @@ package org.apache.rocketmq.broker.infra.pagecache;
 
 import io.netty.channel.FileRegion;
 import io.netty.util.AbstractReferenceCounted;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
-import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 
+/**
+ * Single message memory zero copy transfer
+ */
 public class OneMessageTransfer extends AbstractReferenceCounted implements FileRegion {
     private final ByteBuffer byteBufferHeader;
     private final SelectMappedBufferResult selectMappedBufferResult;
