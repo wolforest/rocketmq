@@ -42,11 +42,7 @@ public class BrokerMetadata extends MetadataFile {
 
     @Override
     public String encodeToStr() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(clusterName).append("#");
-        sb.append(brokerName).append("#");
-        sb.append(brokerId);
-        return sb.toString();
+        return clusterName + "#" + brokerName + "#" + brokerId;
     }
 
     @Override

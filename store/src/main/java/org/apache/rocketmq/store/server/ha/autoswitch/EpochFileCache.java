@@ -229,15 +229,15 @@ public class EpochFileCache {
         try {
             long consistentOffset = -1;
             final Map<Integer, EpochEntry> descendingMap = new TreeMap<>(this.epochMap).descendingMap();
-            final Iterator<Map.Entry<Integer, EpochEntry>> iter = descendingMap.entrySet().iterator();
-            while (iter.hasNext()) {
-                final Map.Entry<Integer, EpochEntry> curLocalEntry = iter.next();
+
+            for (Map.Entry<Integer, EpochEntry> curLocalEntry : descendingMap.entrySet()) {
                 final EpochEntry compareEntry = compareCache.getEntry(curLocalEntry.getKey());
                 if (compareEntry != null && compareEntry.getStartOffset() == curLocalEntry.getValue().getStartOffset()) {
                     consistentOffset = Math.min(curLocalEntry.getValue().getEndOffset(), compareEntry.getEndOffset());
                     break;
                 }
             }
+
             return consistentOffset;
         } finally {
             this.readLock.unlock();

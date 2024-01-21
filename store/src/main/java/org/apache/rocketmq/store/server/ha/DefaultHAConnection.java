@@ -25,6 +25,7 @@ import java.nio.channels.SocketChannel;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.NetworkUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettySystemConfig;
@@ -51,12 +52,12 @@ public class DefaultHAConnection implements HAConnection {
     private final DefaultHAService haService;
     private final SocketChannel socketChannel;
     private final String clientAddress;
-    private WriteSocketService writeSocketService;
-    private ReadSocketService readSocketService;
+    private final WriteSocketService writeSocketService;
+    private final ReadSocketService readSocketService;
     private volatile HAConnectionState currentState = HAConnectionState.TRANSFER;
     private volatile long slaveRequestOffset = -1;
     private volatile long slaveAckOffset = -1;
-    private FlowMonitor flowMonitor;
+    private final FlowMonitor flowMonitor;
 
     public DefaultHAConnection(final DefaultHAService haService, final SocketChannel socketChannel) throws IOException {
         this.haService = haService;
@@ -297,13 +298,11 @@ public class DefaultHAConnection implements HAConnection {
                         // syncing from the initial offset of the last commitLog file
                         if (0 == DefaultHAConnection.this.slaveRequestOffset) {
                             long masterOffset = DefaultHAConnection.this.haService.getDefaultMessageStore().getCommitLog().getMaxOffset();
+                            long commitLogFileSize = DefaultHAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig() .getMappedFileSizeCommitLog();
+
                             // Adjust the masterOffset to be a multiple of the size of the message log file,
                             // ensuring that it points to the beginning of a complete and newest commit log file.
-                            masterOffset =
-                                masterOffset
-                                    - (masterOffset % DefaultHAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig()
-                                    .getMappedFileSizeCommitLog());
-
+                            masterOffset = masterOffset - (masterOffset % commitLogFileSize);
                             if (masterOffset < 0) {
                                 masterOffset = 0;
                             }
@@ -318,13 +317,8 @@ public class DefaultHAConnection implements HAConnection {
                     }
 
                     if (this.lastWriteOver) {
-
-                        long interval =
-                            DefaultHAConnection.this.haService.getDefaultMessageStore().getSystemClock().now() - this.lastWriteTimestamp;
-
-                        if (interval > DefaultHAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig()
-                            .getHaSendHeartbeatInterval()) {
-
+                        long interval = TimeUtils.now() - this.lastWriteTimestamp;
+                        if (interval > DefaultHAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig().getHaSendHeartbeatInterval()) {
                             // Build Header
                             this.byteBufferHeader.position(0);
                             this.byteBufferHeader.limit(TRANSFER_HEADER_SIZE);
@@ -342,8 +336,7 @@ public class DefaultHAConnection implements HAConnection {
                             continue;
                     }
 
-                    SelectMappedBufferResult selectResult =
-                        DefaultHAConnection.this.haService.getDefaultMessageStore().getCommitLogData(this.nextTransferFromWhere);
+                    SelectMappedBufferResult selectResult = DefaultHAConnection.this.haService.getDefaultMessageStore().getCommitLogData(this.nextTransferFromWhere);
                     if (selectResult != null) {
                         int size = selectResult.getSize();
                         if (size > DefaultHAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize()) {
@@ -376,11 +369,9 @@ public class DefaultHAConnection implements HAConnection {
 
                         this.lastWriteOver = this.transferData();
                     } else {
-
                         DefaultHAConnection.this.haService.getWaitNotifyObject().allWaitForRunning(100);
                     }
                 } catch (Exception e) {
-
                     DefaultHAConnection.log.error(this.getServiceName() + " service has exception.", e);
                     break;
                 }
@@ -425,7 +416,7 @@ public class DefaultHAConnection implements HAConnection {
                 if (writeSize > 0) {
                     flowMonitor.addByteCountTransferred(writeSize);
                     writeSizeZeroTimes = 0;
-                    this.lastWriteTimestamp = DefaultHAConnection.this.haService.getDefaultMessageStore().getSystemClock().now();
+                    this.lastWriteTimestamp = TimeUtils.now();
                 } else if (writeSize == 0) {
                     if (++writeSizeZeroTimes >= 3) {
                         break;

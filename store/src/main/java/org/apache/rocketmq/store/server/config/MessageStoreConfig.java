@@ -46,7 +46,12 @@ public class MessageStoreConfig {
 
     private String readOnlyCommitLogStorePaths = null;
 
-    // CommitLog file size,default is 1G
+    /**
+     * CommitLog file size,default is 1G
+     *
+     * in test or low concurrency scenarios:
+     * set it to 10M or less
+     */
     private int mappedFileSizeCommitLog = 1024 * 1024 * 1024;
 
     // CompactionLog file size, default is 100M

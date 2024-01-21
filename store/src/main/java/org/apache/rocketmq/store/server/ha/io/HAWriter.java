@@ -34,9 +34,11 @@ public class HAWriter {
         int writeSizeZeroTimes = 0;
         while (byteBufferWrite.hasRemaining()) {
             int writeSize = socketChannel.write(byteBufferWrite);
+
             for (HAWriteHook writeHook : writeHookList) {
                 writeHook.afterWrite(writeSize);
             }
+
             if (writeSize > 0) {
                 writeSizeZeroTimes = 0;
             } else if (writeSize == 0) {
