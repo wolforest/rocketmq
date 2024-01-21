@@ -47,7 +47,7 @@ public class BrokerStartup {
     public static final SystemConfigFileHelper CONFIG_FILE_HELPER = new SystemConfigFileHelper();
 
     public static void main(String[] args) {
-        start(createBrokerController(args));
+        start(createBroker(args));
     }
 
     public static Broker start(Broker controller) {
@@ -70,16 +70,16 @@ public class BrokerStartup {
         }
     }
 
-    public static Broker createBrokerController(String[] args) {
+    public static Broker createBroker(String[] args) {
         try {
-            Broker controller = buildBrokerController(args);
-            boolean initResult = controller.initialize();
+            Broker broker = buildBroker(args);
+            boolean initResult = broker.initialize();
             if (!initResult) {
-                controller.shutdown();
+                broker.shutdown();
                 System.exit(-3);
             }
-            Runtime.getRuntime().addShutdownHook(new Thread(buildShutdownHook(controller)));
-            return controller;
+            Runtime.getRuntime().addShutdownHook(new Thread(buildShutdownHook(broker)));
+            return broker;
         } catch (Throwable e) {
             e.printStackTrace();
             System.exit(-1);
@@ -87,7 +87,7 @@ public class BrokerStartup {
         return null;
     }
 
-    private static Broker buildBrokerController(String[] args) throws Exception {
+    private static Broker buildBroker(String[] args) throws Exception {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
 
         final BrokerConfig brokerConfig = new BrokerConfig();

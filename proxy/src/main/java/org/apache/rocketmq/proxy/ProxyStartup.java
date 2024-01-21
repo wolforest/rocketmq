@@ -270,7 +270,7 @@ public class ProxyStartup {
             brokerStartupArgList.add(config.getNamesrvAddr());
         }
         String[] brokerStartupArgs = brokerStartupArgList.toArray(new String[0]);
-        return BrokerStartup.createBrokerController(brokerStartupArgs);
+        return BrokerStartup.createBroker(brokerStartupArgs);
     }
 
     public static ThreadPoolExecutor createServerExecutor() {

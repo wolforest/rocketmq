@@ -194,7 +194,7 @@ public class ProxyStartupTest {
             Mockito.when(brokerMetricsManagerMocked.getBrokerMeter()).thenReturn(OpenTelemetrySdk.builder().build().getMeter("test"));
             Mockito.when(brokerMocked.getBrokerServiceManager()).thenReturn(brokerServiceManager);
             Mockito.when(brokerMocked.getBrokerServiceManager().getBrokerMetricsManager()).thenReturn(brokerMetricsManagerMocked);
-            brokerStartupMocked.when(() -> BrokerStartup.createBrokerController((String[]) args.capture()))
+            brokerStartupMocked.when(() -> BrokerStartup.createBroker((String[]) args.capture()))
                 .thenReturn(brokerMocked);
             messagingProcessorMocked.when(() -> DefaultMessagingProcessor.createForLocalMode(any(), any()))
                 .thenReturn(mock(DefaultMessagingProcessor.class));
