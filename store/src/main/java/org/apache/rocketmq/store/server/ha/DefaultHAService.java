@@ -41,22 +41,18 @@ import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 public class DefaultHAService implements HAService {
-
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     protected final AtomicInteger connectionCount = new AtomicInteger(0);
-
     protected final List<HAConnection> connectionList = new LinkedList<>();
 
     protected AcceptSocketService acceptSocketService;
-
     protected DefaultMessageStore defaultMessageStore;
 
     protected WaitNotifyObject waitNotifyObject = new WaitNotifyObject();
     protected AtomicLong push2SlaveMaxOffset = new AtomicLong(0);
 
     protected GroupTransferService groupTransferService;
-
     protected HAClient haClient;
 
     protected HAConnectionStateNotificationService haConnectionStateNotificationService;
@@ -69,6 +65,7 @@ public class DefaultHAService implements HAService {
         this.defaultMessageStore = defaultMessageStore;
         this.acceptSocketService = new DefaultAcceptSocketService(defaultMessageStore.getMessageStoreConfig());
         this.groupTransferService = new GroupTransferService(this, defaultMessageStore);
+
         if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
             this.haClient = new DefaultHAClient(this.defaultMessageStore);
         }

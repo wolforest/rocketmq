@@ -333,8 +333,7 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
                 }
                 long interval = TimeUtils.now() - this.lastReadTimestamp;
                 if (interval > this.defaultMessageStore.getMessageStoreConfig().getHaHousekeepingInterval()) {
-                    log.warn("AutoRecoverHAClient, housekeeping, found this connection[" + this.masterHaAddress
-                        + "] expired, " + interval);
+                    log.warn("AutoRecoverHAClient, housekeeping, found this connection[" + this.masterHaAddress + "] expired, " + interval);
                     this.closeMaster();
                     log.warn("AutoRecoverHAClient, master not response some time, so close connection");
                 }

@@ -17,6 +17,9 @@
 
 package org.apache.rocketmq.store.server.ha;
 
+/**
+ * for slave, pull data from master
+ */
 public interface HAClient {
 
     /**
@@ -37,14 +40,14 @@ public interface HAClient {
     /**
      * Update master address
      *
-     * @param newAddress
+     * @param newAddress newAddress
      */
     void updateMasterAddress(String newAddress);
 
     /**
      * Update master ha address
      *
-     * @param newAddress
+     * @param newAddress newAddress
      */
     void updateHaMasterAddress(String newAddress);
 
@@ -86,7 +89,7 @@ public interface HAClient {
     /**
      * Change the current state for ha connection for testing
      *
-     * @param haConnectionState
+     * @param haConnectionState state
      */
     void changeCurrentState(HAConnectionState haConnectionState);
 

@@ -22,9 +22,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
@@ -50,8 +48,8 @@ public class HAServerTest {
     private DefaultMessageStore defaultMessageStore;
     private MessageStoreConfig storeConfig;
     private HAService haService;
-    private Random random = new Random();
-    private List<HAClient> haClientList = new ArrayList<>();
+    private final Random random = new Random();
+    private final List<HAClient> haClientList = new ArrayList<>();
 
     @Before
     public void setUp() throws Exception {
@@ -69,12 +67,9 @@ public class HAServerTest {
     public void tearDown() {
         tearDownAllHAClient();
 
-        await().atMost(Duration.ofMinutes(1)).until(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return HAServerTest.this.haService.getConnectionCount().get() == 0;
-            }
-        });
+        await().atMost(Duration.ofMinutes(1)).until(
+            () -> HAServerTest.this.haService.getConnectionCount().get() == 0
+        );
 
         this.haService.shutdown();
     }
@@ -83,12 +78,9 @@ public class HAServerTest {
     public void testConnectionList_OneHAClient() throws IOException {
         setUpOneHAClient();
 
-        await().atMost(Duration.ofMinutes(1)).until(new Callable<Boolean>() {
-            @Override
-            public Boolean call() {
-                return HAServerTest.this.haService.getConnectionCount().get() == 1;
-            }
-        });
+        await().atMost(Duration.ofMinutes(1)).until(
+            () -> HAServerTest.this.haService.getConnectionCount().get() == 1
+        );
     }
 
     @Test
@@ -97,21 +89,15 @@ public class HAServerTest {
         setUpOneHAClient();
         setUpOneHAClient();
 
-        await().atMost(Duration.ofMinutes(1)).until(new Callable<Boolean>() {
-            @Override
-            public Boolean call() {
-                return HAServerTest.this.haService.getConnectionCount().get() == 3;
-            }
-        });
+        await().atMost(Duration.ofMinutes(1)).until(
+            () -> HAServerTest.this.haService.getConnectionCount().get() == 3
+        );
 
         tearDownOneHAClient();
 
-        await().atMost(Duration.ofMinutes(1)).until(new Callable<Boolean>() {
-            @Override
-            public Boolean call() {
-                return HAServerTest.this.haService.getConnectionCount().get() == 2;
-            }
-        });
+        await().atMost(Duration.ofMinutes(1)).until(
+            () -> HAServerTest.this.haService.getConnectionCount().get() == 2
+        );
     }
 
     @Test
@@ -138,12 +124,9 @@ public class HAServerTest {
 
         final int haSlaveFallbehindMax = this.defaultMessageStore.getMessageStoreConfig().getHaMaxGapNotInSync();
 
-        await().atMost(Duration.ofMinutes(1)).until(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return HAServerTest.this.haService.inSyncReplicasNums(haSlaveFallbehindMax) == 5;
-            }
-        });
+        await().atMost(Duration.ofMinutes(1)).until(
+            () -> HAServerTest.this.haService.inSyncReplicasNums(haSlaveFallbehindMax) == 5
+        );
 
         assertThat(HAServerTest.this.haService.inSyncReplicasNums(123L + haSlaveFallbehindMax)).isEqualTo(3);
         assertThat(HAServerTest.this.haService.inSyncReplicasNums(124L + haSlaveFallbehindMax)).isEqualTo(2);
@@ -164,19 +147,16 @@ public class HAServerTest {
 
         final int haSlaveFallbehindMax = this.defaultMessageStore.getMessageStoreConfig().getHaMaxGapNotInSync();
 
-        await().atMost(Duration.ofMinutes(1)).until(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return HAServerTest.this.haService.isSlaveOK(haSlaveFallbehindMax + 123);
-            }
-        });
+        await().atMost(Duration.ofMinutes(1)).until(
+            () -> HAServerTest.this.haService.isSlaveOK(haSlaveFallbehindMax + 123)
+        );
 
         assertThat(HAServerTest.this.haService.isSlaveOK(122L + haSlaveFallbehindMax)).isTrue();
         assertThat(HAServerTest.this.haService.isSlaveOK(124L + haSlaveFallbehindMax)).isFalse();
     }
 
     @Test
-    public void putRequest_SingleAck() throws IOException, ExecutionException, InterruptedException, TimeoutException, RocksDBException {
+    public void putRequest_SingleAck() throws IOException, ExecutionException, InterruptedException, RocksDBException {
         GroupCommitRequest request = new GroupCommitRequest(124, 4000, 1);
         this.haService.putRequest(request);
 
@@ -235,12 +215,9 @@ public class HAServerTest {
         doReturn(125L).when(messageStore).getMasterFlushedOffset();
         setUpOneHAClient(messageStore);
 
-        await().atMost(Duration.ofMinutes(1)).until(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return HAServerTest.this.haService.getPush2SlaveMaxOffset().get() == 125L;
-            }
-        });
+        await().atMost(Duration.ofMinutes(1)).until(
+            () -> HAServerTest.this.haService.getPush2SlaveMaxOffset().get() == 125L
+        );
     }
 
     private void setUpOneHAClient(DefaultMessageStore defaultMessageStore) throws IOException {
@@ -257,7 +234,7 @@ public class HAServerTest {
         this.haClientList.add(haClient);
     }
 
-    private DefaultMessageStore mockMessageStore() throws IOException, RocksDBException {
+    private DefaultMessageStore mockMessageStore() throws RocksDBException {
         DefaultMessageStore messageStore = mock(DefaultMessageStore.class);
         BrokerConfig brokerConfig = mock(BrokerConfig.class);
 
