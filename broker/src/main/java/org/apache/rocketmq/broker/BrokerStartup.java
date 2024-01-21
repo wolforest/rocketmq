@@ -50,11 +50,11 @@ public class BrokerStartup {
         start(createBroker(args));
     }
 
-    public static Broker start(Broker controller) {
+    public static Broker start(Broker broker) {
         try {
-            controller.start();
-            printBrokerStartInfo(controller);
-            return controller;
+            broker.start();
+            printBrokerStartInfo(broker);
+            return broker;
         } catch (Throwable e) {
             e.printStackTrace();
             log.error("broker startup failure",e);
