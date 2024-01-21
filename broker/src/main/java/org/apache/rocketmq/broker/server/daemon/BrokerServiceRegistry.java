@@ -160,8 +160,7 @@ public class BrokerServiceRegistry {
             .map(entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), TopicQueueMappingDetail.cloneAsMappingInfo(entry.getValue())))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        TopicConfigAndMappingSerializeWrapper topicConfigWrapper = broker.getTopicConfigManager().
-            buildSerializeWrapper(topicConfigTable, topicQueueMappingInfoMap);
+        TopicConfigAndMappingSerializeWrapper topicConfigWrapper = broker.getTopicConfigManager().buildSerializeWrapper(topicConfigTable, topicQueueMappingInfoMap);
         if (this.brokerConfig.isEnableSplitRegistration() || forceRegister || needRegister(this.brokerConfig.getBrokerClusterName(),
             broker.getBrokerAddr(),
             this.brokerConfig.getBrokerName(),
@@ -204,40 +203,37 @@ public class BrokerServiceRegistry {
         handleRegisterBrokerResult(registerBrokerResultList, checkOrderConfig);
     }
 
-    private boolean needRegister(final String clusterName,
-        final String brokerAddr,
-        final String brokerName,
-        final long brokerId,
-        final int timeoutMills,
-        final boolean isInBrokerContainer) {
-
+    private boolean needRegister(String clusterName, String brokerAddr, String brokerName, long brokerId, int timeoutMills, boolean isInBrokerContainer) {
         TopicConfigSerializeWrapper topicConfigWrapper = broker.getBrokerMetadataManager().getTopicConfigManager().buildTopicConfigSerializeWrapper();
         List<Boolean> changeList = clusterClient.needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigWrapper, timeoutMills, isInBrokerContainer);
         boolean needRegister = false;
         for (Boolean changed : changeList) {
-            if (changed) {
-                needRegister = true;
-                break;
+            if (!changed) {
+                continue;
             }
+
+            needRegister = true;
+            break;
         }
         return needRegister;
     }
 
-    private void handleRegisterBrokerResult(List<RegisterBrokerResult> registerBrokerResultList,
-        boolean checkOrderConfig) {
+    private void handleRegisterBrokerResult(List<RegisterBrokerResult> registerBrokerResultList, boolean checkOrderConfig) {
         for (RegisterBrokerResult registerBrokerResult : registerBrokerResultList) {
-            if (registerBrokerResult != null) {
-                if (broker.getBrokerClusterService().isUpdateMasterHAServerAddrPeriodically() && registerBrokerResult.getHaServerAddr() != null) {
-                    broker.getMessageStore().updateHaMasterAddress(registerBrokerResult.getHaServerAddr());
-                    broker.getMessageStore().updateMasterAddress(registerBrokerResult.getMasterAddr());
-                }
-
-                broker.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(registerBrokerResult.getMasterAddr());
-                if (checkOrderConfig) {
-                    broker.getBrokerMetadataManager().getTopicConfigManager().updateOrderTopicConfig(registerBrokerResult.getKvTable());
-                }
-                break;
+            if (registerBrokerResult == null) {
+                continue;
             }
+
+            if (broker.getBrokerClusterService().isUpdateMasterHAServerAddrPeriodically() && registerBrokerResult.getHaServerAddr() != null) {
+                broker.getMessageStore().updateHaMasterAddress(registerBrokerResult.getHaServerAddr());
+                broker.getMessageStore().updateMasterAddress(registerBrokerResult.getMasterAddr());
+            }
+
+            broker.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(registerBrokerResult.getMasterAddr());
+            if (checkOrderConfig) {
+                broker.getBrokerMetadataManager().getTopicConfigManager().updateOrderTopicConfig(registerBrokerResult.getKvTable());
+            }
+            break;
         }
     }
 
@@ -245,7 +241,7 @@ public class BrokerServiceRegistry {
         this.clusterClient = clusterClient;
     }
 
-    public ClusterClient getBrokerOuterAPI() {
+    public ClusterClient getClusterClient() {
         return clusterClient;
     }
 

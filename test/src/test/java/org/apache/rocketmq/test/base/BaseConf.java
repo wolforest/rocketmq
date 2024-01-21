@@ -134,7 +134,7 @@ public class BaseConf {
                 return brokerDatas.size() == expectedBrokerNum;
             });
             for (Broker broker : brokerList) {
-                broker.getBrokerOuterAPI().refreshMetadata();
+                broker.getClusterClient().refreshMetadata();
             }
         } catch (Exception e) {
             log.error("init failed, please check BaseConf", e);

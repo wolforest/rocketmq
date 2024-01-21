@@ -100,7 +100,7 @@ public class EscapeBridgeTest {
         when(topicRouteInfoManager.findBrokerAddressInSubscribe(anyString(), anyLong(), anyBoolean())).thenReturn("");
 
         ClusterClient clusterClient = mock(ClusterClient.class);
-        when(broker.getBrokerOuterAPI()).thenReturn(clusterClient);
+        when(broker.getClusterClient()).thenReturn(clusterClient);
         when(clusterClient.pullMessageFromSpecificBrokerAsync(anyString(), anyString(), anyString(), anyString(), anyInt(), anyLong(), anyInt(), anyLong()))
             .thenReturn(CompletableFuture.completedFuture(new PullResult(PullStatus.FOUND, -1, -1, -1, new ArrayList<>())));
 

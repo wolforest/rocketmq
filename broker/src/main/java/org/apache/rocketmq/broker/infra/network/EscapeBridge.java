@@ -123,7 +123,7 @@ public class EscapeBridge {
 
         final long beginTimestamp = System.currentTimeMillis();
         try {
-            final SendResult sendResult = this.broker.getBrokerOuterAPI().sendMessageToSpecificBroker(
+            final SendResult sendResult = this.broker.getClusterClient().sendMessageToSpecificBroker(
                 brokerAddrToSend, brokerNameToSend,
                 messageToPut, this.getProducerGroup(messageToPut), SEND_TIMEOUT);
             if (null != sendResult && SendStatus.SEND_OK.equals(sendResult.getSendStatus())) {
@@ -168,7 +168,7 @@ public class EscapeBridge {
 
             final String brokerNameToSend = mqSelected.getBrokerName();
             final String brokerAddrToSend = this.broker.getTopicRouteInfoManager().findBrokerAddressInPublish(brokerNameToSend);
-            final CompletableFuture<SendResult> future = this.broker.getBrokerOuterAPI().sendMessageToSpecificBrokerAsync(brokerAddrToSend,
+            final CompletableFuture<SendResult> future = this.broker.getClusterClient().sendMessageToSpecificBrokerAsync(brokerAddrToSend,
                 brokerNameToSend, messageExt,
                 producerGroup, SEND_TIMEOUT);
 
@@ -222,7 +222,7 @@ public class EscapeBridge {
 
             String brokerNameToSend = mq.getBrokerName();
             String brokerAddrToSend = this.broker.getTopicRouteInfoManager().findBrokerAddressInPublish(brokerNameToSend);
-            final SendResult sendResult = this.broker.getBrokerOuterAPI().sendMessageToSpecificBroker(brokerAddrToSend, brokerNameToSend, messageExt, this.getProducerGroup(messageExt), SEND_TIMEOUT);
+            final SendResult sendResult = this.broker.getClusterClient().sendMessageToSpecificBroker(brokerAddrToSend, brokerNameToSend, messageExt, this.getProducerGroup(messageExt), SEND_TIMEOUT);
 
             return transformSendResult2PutResult(sendResult);
         } catch (Exception e) {
@@ -354,7 +354,7 @@ public class EscapeBridge {
                 }
             }
 
-            return this.broker.getBrokerOuterAPI().pullMessageFromSpecificBrokerAsync(brokerName,
+            return this.broker.getClusterClient().pullMessageFromSpecificBrokerAsync(brokerName,
                 brokerAddr, this.innerConsumerGroupName, topic, queueId, offset, 1, DEFAULT_PULL_TIMEOUT_MILLIS)
                 .thenApply(pullResult -> {
                     if (pullResult.getPullStatus().equals(PullStatus.FOUND) && !pullResult.getMsgFoundList().isEmpty()) {

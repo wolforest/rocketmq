@@ -245,7 +245,7 @@ public class HookUtils {
             while (it.hasNext()) {
                 MessageExt msg = it.next();
                 msg.setWaitStoreMsgOK(false);
-                broker.getBrokerOuterAPI().sendMessageToSpecificBroker(brokerAddr, brokerName, msg, "InnerSendMessageBackGroup", 3000);
+                broker.getClusterClient().sendMessageToSpecificBroker(brokerAddr, brokerName, msg, "InnerSendMessageBackGroup", 3000);
                 it.remove();
             }
         } catch (Exception e) {

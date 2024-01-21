@@ -94,7 +94,7 @@ public class TopicRouteInfoManager {
         try {
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
-                    final TopicRouteData topicRouteData = this.broker.getBrokerOuterAPI()
+                    final TopicRouteData topicRouteData = this.broker.getClusterClient()
                         .getTopicRouteInfoFromNameServer(topic, GET_TOPIC_ROUTE_TIMEOUT);
                     if (null == topicRouteData) {
                         log.warn("TopicRouteInfoManager: updateTopicRouteInfoFromNameServer, getTopicRouteInfoFromNameServer return null, Topic: {}.", topic);

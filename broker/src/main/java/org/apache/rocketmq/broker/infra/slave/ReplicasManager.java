@@ -107,7 +107,7 @@ public class ReplicasManager {
 
     public ReplicasManager(final Broker broker) {
         this.broker = broker;
-        this.clusterClient = broker.getBrokerOuterAPI();
+        this.clusterClient = broker.getClusterClient();
         this.scheduledService = ThreadUtils.newScheduledThreadPool(3, new ThreadFactoryImpl("ReplicasManager_ScheduledService_", broker.getBrokerIdentity()));
         this.executorService = ThreadUtils.newThreadPoolExecutor(3, new ThreadFactoryImpl("ReplicasManager_ExecutorService_", broker.getBrokerIdentity()));
         this.scanExecutor = ThreadUtils.newThreadPoolExecutor(4, 10, 60, TimeUnit.SECONDS,

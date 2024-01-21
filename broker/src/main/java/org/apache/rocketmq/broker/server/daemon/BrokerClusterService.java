@@ -113,7 +113,7 @@ public class BrokerClusterService {
         // close channels with master broker
         String masterAddr = this.slaveSynchronize.getMasterAddr();
         if (masterAddr != null) {
-            broker.getBrokerOuterAPI().getRemotingClient().closeChannels(
+            broker.getClusterClient().getRemotingClient().closeChannels(
                 Arrays.asList(masterAddr, NetworkUtils.brokerVIPChannel(true, masterAddr)));
         }
         // master not available, stop sync
@@ -139,7 +139,7 @@ public class BrokerClusterService {
 
     private void doSyncMasterFlushOffset(String masterAddr, String masterHaAddr, boolean needSyncMasterFlushOffset) {
         try {
-            BrokerSyncInfo brokerSyncInfo = broker.getBrokerOuterAPI().retrieveBrokerHaInfo(masterAddr);
+            BrokerSyncInfo brokerSyncInfo = broker.getClusterClient().retrieveBrokerHaInfo(masterAddr);
 
             if (needSyncMasterFlushOffset) {
                 LOG.info("Set master flush offset in slave to {}", brokerSyncInfo.getMasterFlushOffset());

@@ -387,8 +387,8 @@ public class Broker {
         return shutdown;
     }
 
-    public ClusterClient getBrokerOuterAPI() {
-        return this.brokerServiceRegistry.getBrokerOuterAPI();
+    public ClusterClient getClusterClient() {
+        return this.brokerServiceRegistry.getClusterClient();
     }
 
     public void setBrokerOuterAPI(ClusterClient clusterClient) {

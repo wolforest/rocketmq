@@ -129,7 +129,7 @@ public class BrokerPreOnlineService extends ServiceThread {
             String brokerAddrToWait = brokerMemberGroup.getBrokerAddrs().get(brokerIdList.get(waitBrokerIndex));
 
             try {
-                this.broker.getBrokerOuterAPI().
+                this.broker.getClusterClient().
                     sendBrokerHaInfo(brokerAddrToWait, this.broker.getHAServerAddr(),
                         this.broker.getMessageStore().getBrokerInitMaxOffset(), this.broker.getBrokerAddr());
             } catch (Exception e) {
@@ -175,7 +175,7 @@ public class BrokerPreOnlineService extends ServiceThread {
     }
 
     private void syncConsumerOffsetReverse(String brokerAddr) throws RemotingSendRequestException, RemotingConnectException, RemotingTimeoutException, MQBrokerException, InterruptedException {
-        ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper = this.broker.getBrokerOuterAPI().getAllConsumerOffset(brokerAddr);
+        ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper = this.broker.getClusterClient().getAllConsumerOffset(brokerAddr);
         if (null != consumerOffsetSerializeWrapper && broker.getConsumerOffsetManager().getDataVersion().compare(consumerOffsetSerializeWrapper.getDataVersion()) <= 0) {
             LOGGER.info("{}'s consumerOffset data version is larger than master broker, {}'s consumerOffset will be used.", brokerAddr, brokerAddr);
             this.broker.getConsumerOffsetManager().getOffsetTable()
@@ -186,7 +186,7 @@ public class BrokerPreOnlineService extends ServiceThread {
     }
 
     private void syncDelayOffsetReverse(String brokerAddr) throws InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException, MQBrokerException, UnsupportedEncodingException {
-        String delayOffset = this.broker.getBrokerOuterAPI().getAllDelayOffset(brokerAddr);
+        String delayOffset = this.broker.getClusterClient().getAllDelayOffset(brokerAddr);
         DelayOffsetSerializeWrapper delayOffsetSerializeWrapper =
             DelayOffsetSerializeWrapper.fromJson(delayOffset, DelayOffsetSerializeWrapper.class);
 
@@ -205,7 +205,7 @@ public class BrokerPreOnlineService extends ServiceThread {
     }
 
     private void syncTimerCheckPointReverse(String brokerAddr) throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException {
-        TimerCheckpoint timerCheckpoint = this.broker.getBrokerOuterAPI().getTimerCheckPoint(brokerAddr);
+        TimerCheckpoint timerCheckpoint = this.broker.getClusterClient().getTimerCheckPoint(brokerAddr);
         if (null != this.broker.getTimerCheckpoint() && this.broker.getTimerCheckpoint().getDataVersion().compare(timerCheckpoint.getDataVersion()) <= 0) {
             LOGGER.info("{}'s timerCheckpoint data version is larger than master broker, {}'s timerCheckpoint will be used.", brokerAddr, brokerAddr);
             this.broker.getTimerCheckpoint().setLastReadTimeMs(timerCheckpoint.getLastReadTimeMs());
@@ -226,7 +226,7 @@ public class BrokerPreOnlineService extends ServiceThread {
     private boolean prepareForSlaveOnline(BrokerMemberGroup brokerMemberGroup) {
         BrokerSyncInfo brokerSyncInfo;
         try {
-            brokerSyncInfo = this.broker.getBrokerOuterAPI()
+            brokerSyncInfo = this.broker.getClusterClient()
                 .retrieveBrokerHaInfo(brokerMemberGroup.getBrokerAddrs().get(MQConstants.MASTER_ID));
         } catch (Exception e) {
             LOGGER.error("retrieve master ha info exception, {}", e);
@@ -267,7 +267,7 @@ public class BrokerPreOnlineService extends ServiceThread {
     private boolean prepareForBrokerOnline() {
         BrokerMemberGroup brokerMemberGroup;
         try {
-            brokerMemberGroup = this.broker.getBrokerOuterAPI().syncBrokerMemberGroup(
+            brokerMemberGroup = this.broker.getClusterClient().syncBrokerMemberGroup(
                 this.broker.getBrokerConfig().getBrokerClusterName(),
                 this.broker.getBrokerConfig().getBrokerName(),
                 this.broker.getBrokerConfig().isCompatibleWithOldNameSrv());

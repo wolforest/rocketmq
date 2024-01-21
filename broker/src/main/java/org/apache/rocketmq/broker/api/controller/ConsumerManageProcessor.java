@@ -131,7 +131,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
                 return null;
             }
             RpcRequest rpcRequest = new RpcRequest(RequestCode.UPDATE_CONSUMER_OFFSET, requestHeader, null);
-            RpcResponse rpcResponse = this.broker.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
+            RpcResponse rpcResponse = this.broker.getClusterClient().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
             if (rpcResponse.getException() != null) {
                 throw rpcResponse.getException();
             }
@@ -242,7 +242,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
                     requestHeader.setLo(false);
                     requestHeader.setSetZeroIfNotFound(false);
                     RpcRequest rpcRequest = new RpcRequest(RequestCode.QUERY_CONSUMER_OFFSET, requestHeader, null);
-                    RpcResponse rpcResponse = this.broker.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
+                    RpcResponse rpcResponse = this.broker.getClusterClient().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
                     if (rpcResponse.getException() != null) {
                         throw rpcResponse.getException();
                     }

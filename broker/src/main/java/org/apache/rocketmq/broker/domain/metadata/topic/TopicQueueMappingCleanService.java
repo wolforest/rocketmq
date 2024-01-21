@@ -62,10 +62,10 @@ public class TopicQueueMappingCleanService extends ServiceThread {
     public TopicQueueMappingCleanService(Broker broker) {
         this.broker = broker;
         this.topicQueueMappingManager = broker.getTopicQueueMappingManager();
-        this.rpcClient = broker.getBrokerOuterAPI().getRpcClient();
+        this.rpcClient = broker.getClusterClient().getRpcClient();
         this.messageStoreConfig = broker.getMessageStoreConfig();
         this.brokerConfig = broker.getBrokerConfig();
-        this.clusterClient = broker.getBrokerOuterAPI();
+        this.clusterClient = broker.getClusterClient();
     }
 
     @Override

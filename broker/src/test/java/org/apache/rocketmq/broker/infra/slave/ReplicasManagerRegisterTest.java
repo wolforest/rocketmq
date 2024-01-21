@@ -120,7 +120,7 @@ public class ReplicasManagerRegisterTest {
         this.mockedClusterClient = Mockito.mock(ClusterClient.class);
         this.mockedAutoSwitchHAService = Mockito.mock(AutoSwitchHAService.class);
         TopicConfigManager mockedTopicConfigManager = new TopicConfigManager();
-        when(mockedBroker.getBrokerOuterAPI()).thenReturn(mockedClusterClient);
+        when(mockedBroker.getClusterClient()).thenReturn(mockedClusterClient);
         when(mockedBroker.getMessageStore()).thenReturn(mockedMessageStore);
         when(mockedBroker.getBrokerConfig()).thenReturn(BROKER_CONFIG);
         when(mockedBroker.getTopicConfigManager()).thenReturn(mockedTopicConfigManager);

@@ -142,8 +142,8 @@ public class InnerBrokerController extends Broker {
         return this.brokerConfig.getListenPort();
     }
 
-    public ClusterClient getBrokerOuterAPI() {
-        return brokerContainer == null ? super.getBrokerOuterAPI() : brokerContainer.getBrokerOuterAPI();
+    public ClusterClient getClusterClient() {
+        return brokerContainer == null ? super.getClusterClient() : brokerContainer.getBrokerOuterAPI();
     }
 
     public BrokerContainer getBrokerContainer() {

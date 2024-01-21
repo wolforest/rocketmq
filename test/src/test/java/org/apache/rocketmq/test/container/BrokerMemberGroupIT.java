@@ -31,7 +31,7 @@ public class BrokerMemberGroupIT extends ContainerIntegrationTestBase {
     public void testSyncBrokerMemberGroup() throws Exception {
         await().atMost(Duration.ofSeconds(5)).until(() -> {
             final BrokerConfig brokerConfig = master1With3Replicas.getBrokerConfig();
-            final BrokerMemberGroup memberGroup = master1With3Replicas.getBrokerOuterAPI()
+            final BrokerMemberGroup memberGroup = master1With3Replicas.getClusterClient()
                 .syncBrokerMemberGroup(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName());
 
             return memberGroup.getBrokerAddrs().size() == 3;
@@ -39,7 +39,7 @@ public class BrokerMemberGroupIT extends ContainerIntegrationTestBase {
 
         await().atMost(Duration.ofSeconds(5)).until(() -> {
             final BrokerConfig brokerConfig = master3With3Replicas.getBrokerConfig();
-            final BrokerMemberGroup memberGroup = master3With3Replicas.getBrokerOuterAPI()
+            final BrokerMemberGroup memberGroup = master3With3Replicas.getClusterClient()
                 .syncBrokerMemberGroup(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName());
 
             return memberGroup.getBrokerAddrs().size() == 3;
@@ -50,7 +50,7 @@ public class BrokerMemberGroupIT extends ContainerIntegrationTestBase {
 
         await().atMost(Duration.ofSeconds(5)).until(() -> {
             final BrokerConfig brokerConfig = master1With3Replicas.getBrokerConfig();
-            final BrokerMemberGroup memberGroup = master1With3Replicas.getBrokerOuterAPI()
+            final BrokerMemberGroup memberGroup = master1With3Replicas.getClusterClient()
                 .syncBrokerMemberGroup(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName());
 
             return memberGroup.getBrokerAddrs().size() == 2 && memberGroup.getBrokerAddrs().get(1L) == null;
@@ -58,7 +58,7 @@ public class BrokerMemberGroupIT extends ContainerIntegrationTestBase {
 
         await().atMost(Duration.ofSeconds(5)).until(() -> {
             final BrokerConfig brokerConfig = master3With3Replicas.getBrokerConfig();
-            final BrokerMemberGroup memberGroup = master3With3Replicas.getBrokerOuterAPI()
+            final BrokerMemberGroup memberGroup = master3With3Replicas.getClusterClient()
                 .syncBrokerMemberGroup(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName());
             return memberGroup.getBrokerAddrs().size() == 2 && memberGroup.getBrokerAddrs().get(1L) == null;
         });

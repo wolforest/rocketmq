@@ -82,7 +82,7 @@ public class SlaveSynchronize {
                 return;
             }
 
-            TimerCheckpoint checkpoint = this.broker.getBrokerOuterAPI().getTimerCheckPoint(masterAddrBak);
+            TimerCheckpoint checkpoint = this.broker.getClusterClient().getTimerCheckPoint(masterAddrBak);
             if (null != this.broker.getTimerCheckpoint()) {
                 this.broker.getTimerCheckpoint().setLastReadTimeMs(checkpoint.getLastReadTimeMs());
                 this.broker.getTimerCheckpoint().setMasterTimerQueueOffset(checkpoint.getMasterTimerQueueOffset());
@@ -101,7 +101,7 @@ public class SlaveSynchronize {
 
         try {
             TopicConfigAndMappingSerializeWrapper topicWrapper =
-                this.broker.getBrokerOuterAPI().getAllTopicConfig(masterAddrBak);
+                this.broker.getClusterClient().getAllTopicConfig(masterAddrBak);
             if (!this.broker.getTopicConfigManager().getDataVersion()
                 .equals(topicWrapper.getDataVersion())) {
 
@@ -145,7 +145,7 @@ public class SlaveSynchronize {
 
         try {
             ConsumerOffsetSerializeWrapper offsetWrapper =
-                this.broker.getBrokerOuterAPI().getAllConsumerOffset(masterAddrBak);
+                this.broker.getClusterClient().getAllConsumerOffset(masterAddrBak);
             this.broker.getConsumerOffsetManager().getOffsetTable()
                 .putAll(offsetWrapper.getOffsetTable());
             this.broker.getConsumerOffsetManager().getDataVersion().assignNewOne(offsetWrapper.getDataVersion());
@@ -163,7 +163,7 @@ public class SlaveSynchronize {
         }
 
         try {
-            String delayOffset = this.broker.getBrokerOuterAPI().getAllDelayOffset(masterAddrBak);
+            String delayOffset = this.broker.getClusterClient().getAllDelayOffset(masterAddrBak);
             if (delayOffset == null) {
                 return;
             }
@@ -192,7 +192,7 @@ public class SlaveSynchronize {
 
         try {
             SubscriptionGroupWrapper subscriptionWrapper =
-                this.broker.getBrokerOuterAPI()
+                this.broker.getClusterClient()
                     .getAllSubscriptionGroupConfig(masterAddrBak);
 
             if (!this.broker.getSubscriptionGroupManager().getDataVersion()
@@ -220,7 +220,7 @@ public class SlaveSynchronize {
 
         try {
             MessageRequestModeSerializeWrapper messageRequestModeSerializeWrapper =
-                this.broker.getBrokerOuterAPI().getAllMessageRequestMode(masterAddrBak);
+                this.broker.getClusterClient().getAllMessageRequestMode(masterAddrBak);
 
             MessageRequestModeManager messageRequestModeManager =
                 this.broker.getBrokerNettyServer().getQueryAssignmentProcessor().getMessageRequestModeManager();
@@ -247,7 +247,7 @@ public class SlaveSynchronize {
             }
 
             TimerMetrics.TimerMetricsSerializeWrapper metricsSerializeWrapper =
-                this.broker.getBrokerOuterAPI().getTimerMetrics(masterAddrBak);
+                this.broker.getClusterClient().getTimerMetrics(masterAddrBak);
             if (!broker.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().equals(metricsSerializeWrapper.getDataVersion())) {
                 this.broker.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().assignNewOne(metricsSerializeWrapper.getDataVersion());
                 this.broker.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().clear();

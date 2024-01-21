@@ -212,7 +212,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             prepareRequestHeader(requestHeader, mappingItem);
 
             RpcRequest rpcRequest = new RpcRequest(RequestCode.PULL_MESSAGE, requestHeader, null);
-            RpcResponse rpcResponse = this.broker.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
+            RpcResponse rpcResponse = this.broker.getClusterClient().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
             if (rpcResponse.getException() != null) {
                 throw rpcResponse.getException();
             }

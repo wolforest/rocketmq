@@ -1013,7 +1013,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                     requestHeader.setQueueId(item.getQueueId());
                     requestHeader.setBrokerName(item.getBname());
                     RpcRequest rpcRequest = new RpcRequest(RequestCode.SEARCH_OFFSET_BY_TIMESTAMP, requestHeader, null);
-                    RpcResponse rpcResponse = this.broker.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
+                    RpcResponse rpcResponse = this.broker.getClusterClient().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
                     if (rpcResponse.getException() != null) {
                         throw rpcResponse.getException();
                     }
@@ -1088,7 +1088,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 maxPhysicalOffset = this.broker.getMessageStore().getMaxOffsetInQueue(mappingContext.getTopic(), mappingItem.getQueueId());
             } else {
                 RpcRequest rpcRequest = new RpcRequest(RequestCode.GET_MAX_OFFSET, requestHeader, null);
-                RpcResponse rpcResponse = this.broker.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
+                RpcResponse rpcResponse = this.broker.getClusterClient().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
                 if (rpcResponse.getException() != null) {
                     throw rpcResponse.getException();
                 }
@@ -1153,7 +1153,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 physicalOffset = this.broker.getMessageStore().getMinOffsetInQueue(mappingDetail.getTopic(), mappingItem.getQueueId());
             } else {
                 RpcRequest rpcRequest = new RpcRequest(RequestCode.GET_MIN_OFFSET, requestHeader, null);
-                RpcResponse rpcResponse = this.broker.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
+                RpcResponse rpcResponse = this.broker.getClusterClient().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
                 if (rpcResponse.getException() != null) {
                     throw rpcResponse.getException();
                 }
@@ -1215,7 +1215,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             requestHeader.setLo(false);
             RpcRequest rpcRequest = new RpcRequest(RequestCode.GET_EARLIEST_MSG_STORETIME, requestHeader, null);
             //TO DO check if it is in current broker
-            RpcResponse rpcResponse = this.broker.getBrokerOuterAPI().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
+            RpcResponse rpcResponse = this.broker.getClusterClient().getRpcClient().invoke(rpcRequest, this.broker.getBrokerConfig().getForwardTimeout()).get();
             if (rpcResponse.getException() != null) {
                 throw rpcResponse.getException();
             }
@@ -1307,7 +1307,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                     requestBody.setOnlyThisBroker(true);
                     for (Long brokerId : addrMap.keySet()) {
                         try {
-                            this.broker.getBrokerOuterAPI().lockBatchMQAsync(addrMap.get(brokerId),
+                            this.broker.getClusterClient().lockBatchMQAsync(addrMap.get(brokerId),
                                 requestBody, 1000, new LockCallback() {
                                     @Override
                                     public void onSuccess(Set<MessageQueue> lockOKMQSet) {
@@ -1373,7 +1373,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 Map<Long, String> addrMap = memberGroup.getBrokerAddrs();
                 for (Long brokerId : addrMap.keySet()) {
                     try {
-                        this.broker.getBrokerOuterAPI().unlockBatchMQAsync(addrMap.get(brokerId), requestBody, 1000, new UnlockCallback() {
+                        this.broker.getClusterClient().unlockBatchMQAsync(addrMap.get(brokerId), requestBody, 1000, new UnlockCallback() {
                             @Override
                             public void onSuccess() {
 

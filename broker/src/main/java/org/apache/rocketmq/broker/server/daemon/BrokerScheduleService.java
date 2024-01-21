@@ -80,7 +80,7 @@ public class BrokerScheduleService {
             @Override
             public void run() {
                 try {
-                    getBrokerController().getBrokerOuterAPI().refreshMetadata();
+                    getBrokerController().getClusterClient().refreshMetadata();
                 } catch (Exception e) {
                     LOG.error("ScheduledTask refresh metadata exception", e);
                 }
@@ -111,7 +111,7 @@ public class BrokerScheduleService {
                 @Override
                 public void run() {
                     try {
-                        getBrokerController().getBrokerOuterAPI().fetchNameServerAddr();
+                        getBrokerController().getClusterClient().fetchNameServerAddr();
                     } catch (Throwable e) {
                         LOG.error("Failed to fetch nameServer address", e);
                     }
@@ -146,7 +146,7 @@ public class BrokerScheduleService {
 
         if (this.brokerConfig.isEnableSlaveActingMaster()) {
             if (this.brokerConfig.isCompatibleWithOldNameSrv()) {
-                getBrokerController().getBrokerOuterAPI().sendHeartbeatViaDataVersion(
+                getBrokerController().getClusterClient().sendHeartbeatViaDataVersion(
                     this.brokerConfig.getBrokerClusterName(),
                     getBrokerController().getBrokerAddr(),
                     this.brokerConfig.getBrokerName(),
@@ -155,7 +155,7 @@ public class BrokerScheduleService {
                     getBrokerController().getTopicConfigManager().getDataVersion(),
                     this.brokerConfig.isInBrokerContainer());
             } else {
-                getBrokerController().getBrokerOuterAPI().sendHeartbeat(
+                getBrokerController().getClusterClient().sendHeartbeat(
                     this.brokerConfig.getBrokerClusterName(),
                     getBrokerController().getBrokerAddr(),
                     this.brokerConfig.getBrokerName(),
@@ -221,7 +221,7 @@ public class BrokerScheduleService {
 
     public void syncBrokerMemberGroup() {
         try {
-            brokerMemberGroup = broker.getBrokerOuterAPI()
+            brokerMemberGroup = broker.getClusterClient()
                 .syncBrokerMemberGroup(this.brokerConfig.getBrokerClusterName(), this.brokerConfig.getBrokerName(), this.brokerConfig.isCompatibleWithOldNameSrv());
         } catch (Exception e) {
             LOG.error("syncBrokerMemberGroup from namesrv failed, ", e);
@@ -408,9 +408,9 @@ public class BrokerScheduleService {
 
     public void updateNamesrvAddr() {
         if (this.brokerConfig.isFetchNameSrvAddrByDnsLookup()) {
-            getBrokerController().getBrokerOuterAPI().updateNameServerAddressListByDnsLookup(this.brokerConfig.getNamesrvAddr());
+            getBrokerController().getClusterClient().updateNameServerAddressListByDnsLookup(this.brokerConfig.getNamesrvAddr());
         } else {
-            getBrokerController().getBrokerOuterAPI().updateNameServerAddressList(this.brokerConfig.getNamesrvAddr());
+            getBrokerController().getClusterClient().updateNameServerAddressList(this.brokerConfig.getNamesrvAddr());
         }
     }
 
