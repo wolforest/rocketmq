@@ -188,15 +188,14 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
         while (true) {
             int diff = this.byteBufferRead.position() - this.dispatchPosition;
             if (diff >= DefaultHAConnection.TRANSFER_HEADER_SIZE) {
-                long masterPhyOffset = this.byteBufferRead.getLong(this.dispatchPosition);
                 int bodySize = this.byteBufferRead.getInt(this.dispatchPosition + 8);
 
+                long masterPhyOffset = this.byteBufferRead.getLong(this.dispatchPosition);
                 long slavePhyOffset = this.defaultMessageStore.getMaxPhyOffset();
 
                 if (slavePhyOffset != 0) {
                     if (slavePhyOffset != masterPhyOffset) {
-                        log.error("master pushed offset not equal the max phy offset in slave, SLAVE: "
-                            + slavePhyOffset + " MASTER: " + masterPhyOffset);
+                        log.error("master pushed offset not equal the max phy offset in slave, SLAVE: " + slavePhyOffset + " MASTER: " + masterPhyOffset);
                         return false;
                     }
                 }
@@ -205,9 +204,7 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
                     byte[] bodyData = byteBufferRead.array();
                     int dataStart = this.dispatchPosition + DefaultHAConnection.TRANSFER_HEADER_SIZE;
 
-                    this.defaultMessageStore.appendToCommitLog(
-                        masterPhyOffset, bodyData, dataStart, bodySize);
-
+                    this.defaultMessageStore.appendToCommitLog(masterPhyOffset, bodyData, dataStart, bodySize);
                     this.byteBufferRead.position(readSocketPos);
                     this.dispatchPosition += DefaultHAConnection.TRANSFER_HEADER_SIZE + bodySize;
 

@@ -625,6 +625,16 @@ public class DefaultMessageStore implements MessageStore {
         return this.commitLog.getBulkData(offset, size);
     }
 
+    /**
+     * accept data from master, and save data to slave(self) commitLog
+     * and wake reputMessageService up
+     *
+     * @param startOffset starting offset.
+     * @param data        data to append.
+     * @param dataStart   the start index of data array
+     * @param dataLength  the length of data array
+     * @return status
+     */
     @Override
     public boolean appendToCommitLog(long startOffset, byte[] data, int dataStart, int dataLength) {
         if (this.shutdown) {
@@ -633,15 +643,13 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         boolean result = this.commitLog.appendData(startOffset, data, dataStart, dataLength);
-        if (result) {
-            this.reputMessageService.wakeup();
-        } else {
-            LOGGER.error(
-                "DefaultMessageStore#appendToCommitLog: failed to append data to commitLog, physical offset={}, data "
-                    + "length={}", startOffset, data.length);
+        if (!result) {
+            LOGGER.error("DefaultMessageStore#appendToCommitLog: failed to append data to commitLog, physical offset={}, data " + "length={}", startOffset, data.length);
+            return false;
         }
 
-        return result;
+        this.reputMessageService.wakeup();
+        return true;
     }
 
     @Override
