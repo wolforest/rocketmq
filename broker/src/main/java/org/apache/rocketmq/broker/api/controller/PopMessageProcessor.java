@@ -22,36 +22,29 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.FileRegion;
 import io.netty.util.concurrent.Future;
 import io.opentelemetry.api.common.Attributes;
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterData;
 import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterManager;
 import org.apache.rocketmq.broker.domain.metadata.filter.ExpressionMessageFilter;
+import org.apache.rocketmq.broker.infra.pagecache.ManyMessageTransfer;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.longpolling.PollingHeader;
 import org.apache.rocketmq.broker.server.daemon.longpolling.PollingResult;
 import org.apache.rocketmq.broker.server.daemon.longpolling.PopLongPollingService;
-import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
-import org.apache.rocketmq.broker.infra.pagecache.ManyMessageTransfer;
 import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
 import org.apache.rocketmq.broker.server.daemon.pop.QueueLockManager;
-import org.apache.rocketmq.common.domain.topic.KeyBuilder;
-import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
+import org.apache.rocketmq.common.app.help.FAQUrl;
 import org.apache.rocketmq.common.domain.constant.ConsumeInitMode;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.domain.constant.PermName;
 import org.apache.rocketmq.common.domain.filter.ExpressionType;
-import org.apache.rocketmq.common.app.help.FAQUrl;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExt;
+import org.apache.rocketmq.common.domain.topic.KeyBuilder;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
-import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -70,10 +63,18 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
+import org.apache.rocketmq.store.api.broker.pop.PopCheckPoint;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.api.broker.pop.PopCheckPoint;
+
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LABEL_CONSUMER_GROUP;
 import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LABEL_IS_RETRY;
@@ -421,6 +422,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         final GetMessageResult tmpGetMessageResult = getMessageResult;
         try {
+            //Create a FileRegion, wrap multiple messages, write directly to the channel,zero-copy
             FileRegion fileRegion = new ManyMessageTransfer(finalResponse.encodeHeader(getMessageResult.getBufferTotalSize()), getMessageResult);
             ctx.channel().writeAndFlush(fileRegion).addListener((ChannelFutureListener) future -> {
                 tmpGetMessageResult.release();
