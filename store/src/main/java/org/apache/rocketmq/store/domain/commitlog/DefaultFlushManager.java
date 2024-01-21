@@ -118,15 +118,15 @@ public class DefaultFlushManager implements FlushManager {
 
     private CompletableFuture<PutMessageStatus> handleSyncAppendFlush(AppendMessageResult result, MessageExt messageExt) {
         final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
-        if (messageExt.isWaitStoreMsgOK()) {
-            GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(), defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
-            commitLog.getFlushDiskWatcher().add(request);
-            service.putRequest(request);
-            return request.future();
-        } else {
+        if (!messageExt.isWaitStoreMsgOK()) {
             service.wakeup();
             return CompletableFuture.completedFuture(PutMessageStatus.PUT_OK);
         }
+
+        GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(), defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
+        commitLog.getFlushDiskWatcher().add(request);
+        service.putRequest(request);
+        return request.future();
     }
 
     private CompletableFuture<PutMessageStatus> handleAsyncAppendFlush() {
