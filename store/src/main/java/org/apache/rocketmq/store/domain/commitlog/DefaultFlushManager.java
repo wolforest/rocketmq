@@ -67,36 +67,43 @@ public class DefaultFlushManager implements FlushManager {
         }
     }
 
-    public void handleDiskFlush(AppendMessageResult result, PutMessageResult putMessageResult,
-                                MessageExt messageExt) {
-        // Synchronization flush
+    public void handleDiskFlush(AppendMessageResult result, PutMessageResult putMessageResult, MessageExt messageExt) {
         if (FlushDiskType.SYNC_FLUSH == defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
-            final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
-            if (messageExt.isWaitStoreMsgOK()) {
-                GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(), defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
-                service.putRequest(request);
-                CompletableFuture<PutMessageStatus> flushOkFuture = request.future();
-                PutMessageStatus flushStatus = null;
-                try {
-                    flushStatus = flushOkFuture.get(defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout(), TimeUnit.MILLISECONDS);
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    //flushOK=false;
-                }
-                if (flushStatus != PutMessageStatus.PUT_OK) {
-                    log.error("do groupcommit, wait for flush failed, topic: " + messageExt.getTopic() + " tags: " + messageExt.getTags() + " client address: " + messageExt.getBornHostString());
-                    putMessageResult.setPutMessageStatus(PutMessageStatus.FLUSH_DISK_TIMEOUT);
-                }
-            } else {
-                service.wakeup();
-            }
+            handleSyncFlush(result, putMessageResult, messageExt);
+        } else {
+           handleAsyncFlush();
         }
-        // Asynchronous flush
-        else {
-            if (!defaultMessageStore.isTransientStorePoolEnable()) {
-                flushCommitLogService.wakeup();
-            } else {
-                commitRealTimeService.wakeup();
-            }
+    }
+
+    private void handleSyncFlush(AppendMessageResult result, PutMessageResult putMessageResult, MessageExt messageExt) {
+        final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
+        if (!messageExt.isWaitStoreMsgOK()) {
+            service.wakeup();
+            return;
+        }
+
+        GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(), defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
+        service.putRequest(request);
+        CompletableFuture<PutMessageStatus> flushOkFuture = request.future();
+        PutMessageStatus flushStatus = null;
+
+        try {
+            flushStatus = flushOkFuture.get(defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            //flushOK=false;
+        }
+
+        if (flushStatus != PutMessageStatus.PUT_OK) {
+            log.error("do group commit, wait for flush failed, topic: " + messageExt.getTopic() + " tags: " + messageExt.getTags() + " client address: " + messageExt.getBornHostString());
+            putMessageResult.setPutMessageStatus(PutMessageStatus.FLUSH_DISK_TIMEOUT);
+        }
+    }
+
+    private void handleAsyncFlush() {
+        if (!defaultMessageStore.isTransientStorePoolEnable()) {
+            flushCommitLogService.wakeup();
+        } else {
+            commitRealTimeService.wakeup();
         }
     }
 
