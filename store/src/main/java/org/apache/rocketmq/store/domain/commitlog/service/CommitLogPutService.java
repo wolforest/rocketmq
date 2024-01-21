@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.store.domain.commitlog.service;
 
+import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageExt;
@@ -26,10 +27,12 @@ import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.SystemUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.message.MessageExtEncoder;
 import org.apache.rocketmq.store.domain.message.PutMessageContext;
@@ -257,17 +260,23 @@ public class CommitLogPutService {
     }
 
     private CompletableFuture<PutMessageResult> haCheck(CommitLogPutContext context) {
-        if (context.isNeedHandleHA() && this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-            if (this.defaultMessageStore.getHaService().inSyncReplicasNums(context.getCurrOffset()) < this.defaultMessageStore.getMessageStoreConfig().getMinInSyncReplicas()) {
+        if (!context.isNeedHandleHA()) {
+            return null;
+        }
+
+        MessageStoreConfig storeConfig = defaultMessageStore.getMessageStoreConfig();
+        BrokerConfig brokerConfig = defaultMessageStore.getBrokerConfig();
+
+        if (brokerConfig.isEnableControllerMode()) {
+            if (this.defaultMessageStore.getHaService().inSyncReplicasNums(context.getCurrOffset()) < storeConfig.getMinInSyncReplicas()) {
                 return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.IN_SYNC_REPLICAS_NOT_ENOUGH, null));
             }
-            if (this.defaultMessageStore.getMessageStoreConfig().isAllAckInSyncStateSet()) {
+            if (storeConfig.isAllAckInSyncStateSet()) {
                 // -1 means all ack in SyncStateSet
                 context.setNeedAckNums(MQConstants.ALL_ACK_IN_SYNC_STATE_SET);
             }
-        } else if (context.isNeedHandleHA() && this.defaultMessageStore.getBrokerConfig().isEnableSlaveActingMaster()) {
-            int inSyncReplicas = Math.min(this.defaultMessageStore.getAliveReplicaNumInGroup(),
-                this.defaultMessageStore.getHaService().inSyncReplicasNums(context.getCurrOffset()));
+        } else if (brokerConfig.isEnableSlaveActingMaster()) {
+            int inSyncReplicas = Math.min(this.defaultMessageStore.getAliveReplicaNumInGroup(), this.defaultMessageStore.getHaService().inSyncReplicasNums(context.getCurrOffset()));
             context.setNeedAckNums(calcNeedAckNums(inSyncReplicas));
             if (context.getNeedAckNums() > inSyncReplicas) {
                 // Tell the producer, don't have enough slaves to handle the send request
@@ -279,13 +288,8 @@ public class CommitLogPutService {
     }
 
     private boolean isNeedAssignOffset() {
-        boolean needAssignOffset = true;
-        if (defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()
-            && defaultMessageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE) {
-            needAssignOffset = false;
-        }
-
-        return needAssignOffset;
+        MessageStoreConfig config = defaultMessageStore.getMessageStoreConfig();
+        return !config.isDuplicationEnable() || config.getBrokerRole() == BrokerRole.SLAVE;
     }
 
     private CompletableFuture<PutMessageResult> parseResultStatus(CommitLogPutContext context, final MessageExtBrokerInner msg, PutMessageContext putMessageContext) {
@@ -366,7 +370,7 @@ public class CommitLogPutService {
                 return statusResult;
             }
 
-            context.setElapsedTimeInLock(this.defaultMessageStore.getSystemClock().now() - beginLockTimestamp);
+            context.setElapsedTimeInLock(TimeUtils.now() - beginLockTimestamp);
             commitLog.setBeginTimeInLock(0);
         } finally {
             commitLog.getPutMessageLock().unlock();
@@ -469,7 +473,6 @@ public class CommitLogPutService {
     }
 
     private boolean needHandleHA(MessageExt messageExt) {
-
         if (!messageExt.isWaitStoreMsgOK()) {
             /*
               No need to sync messages that special config to extra broker slaves.
@@ -482,12 +485,8 @@ public class CommitLogPutService {
             return false;
         }
 
-        if (BrokerRole.SYNC_MASTER != this.defaultMessageStore.getMessageStoreConfig().getBrokerRole()) {
-            // No need to check ha in async or slave broker
-            return false;
-        }
-
-        return true;
+        // No need to check ha in async or slave broker
+        return BrokerRole.SYNC_MASTER == this.defaultMessageStore.getMessageStoreConfig().getBrokerRole();
     }
 
     private CompletableFuture<PutMessageResult> handleDiskFlushAndHA(PutMessageResult putMessageResult, MessageExt messageExt, int needAckNums, boolean needHandleHA) {
@@ -519,17 +518,15 @@ public class CommitLogPutService {
         return commitLog.getFlushManager().handleDiskFlush(result, messageExt);
     }
 
-    private CompletableFuture<PutMessageStatus> handleHA(AppendMessageResult result, PutMessageResult putMessageResult,
-        int needAckNums) {
+    private CompletableFuture<PutMessageStatus> handleHA(AppendMessageResult result, PutMessageResult putMessageResult, int needAckNums) {
         if (needAckNums >= 0 && needAckNums <= 1) {
             return CompletableFuture.completedFuture(PutMessageStatus.PUT_OK);
         }
 
         HAService haService = this.defaultMessageStore.getHaService();
-
         long nextOffset = result.getWroteOffset() + result.getWroteBytes();
 
-        // Wait enough acks from different slaves
+        // Wait enough ack from different slaves
         GroupCommitRequest request = new GroupCommitRequest(nextOffset, this.defaultMessageStore.getMessageStoreConfig().getSlaveTimeout(), needAckNums);
         haService.putRequest(request);
         haService.getWaitNotifyObject().wakeupAll();

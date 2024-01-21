@@ -104,13 +104,12 @@ public class DefaultHAService implements HAService {
 
     public void notifyTransferSome(final long offset) {
         for (long value = this.push2SlaveMaxOffset.get(); offset > value; ) {
-            boolean ok = this.push2SlaveMaxOffset.compareAndSet(value, offset);
-            if (ok) {
+            if (this.push2SlaveMaxOffset.compareAndSet(value, offset)) {
                 this.groupTransferService.notifyTransferSome();
                 break;
-            } else {
-                value = this.push2SlaveMaxOffset.get();
             }
+
+            value = this.push2SlaveMaxOffset.get();
         }
     }
 
@@ -201,11 +200,7 @@ public class DefaultHAService implements HAService {
      * @return boolean
      */
     protected boolean isInSyncSlave(final long masterPutWhere, HAConnection conn) {
-        if (masterPutWhere - conn.getSlaveAckOffset() < this.defaultMessageStore.getMessageStoreConfig()
-            .getHaMaxGapNotInSync()) {
-            return true;
-        }
-        return false;
+        return masterPutWhere - conn.getSlaveAckOffset() < this.defaultMessageStore.getMessageStoreConfig().getHaMaxGapNotInSync();
     }
 
     @Override

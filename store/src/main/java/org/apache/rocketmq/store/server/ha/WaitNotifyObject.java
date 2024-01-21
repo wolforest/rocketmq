@@ -28,17 +28,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class WaitNotifyObject {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    protected final ConcurrentHashMap<Long/* thread id */, AtomicBoolean/* notified */> waitingThreadTable =
-        new ConcurrentHashMap<>(16);
+    protected final ConcurrentHashMap<Long/* thread id */, AtomicBoolean/* notified */> waitingThreadTable = new ConcurrentHashMap<>(16);
 
     protected AtomicBoolean hasNotified = new AtomicBoolean(false);
 
     public void wakeup() {
         boolean needNotify = hasNotified.compareAndSet(false, true);
-        if (needNotify) {
-            synchronized (this) {
-                this.notify();
-            }
+        if (!needNotify) {
+            return;
+        }
+
+        synchronized (this) {
+            this.notify();
         }
     }
 
@@ -47,6 +48,7 @@ public class WaitNotifyObject {
             this.onWaitEnd();
             return;
         }
+
         synchronized (this) {
             try {
                 if (this.hasNotified.compareAndSet(true, false)) {
@@ -73,6 +75,7 @@ public class WaitNotifyObject {
                 needNotify = true;
             }
         }
+
         if (needNotify) {
             synchronized (this) {
                 this.notifyAll();
