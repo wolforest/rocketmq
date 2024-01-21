@@ -36,7 +36,6 @@ import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAConnection;
  * GroupTransferService Service
  */
 public class GroupTransferService extends ServiceThread {
-
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final WaitNotifyObject notifyTransferObject = new WaitNotifyObject();
@@ -76,75 +75,96 @@ public class GroupTransferService extends ServiceThread {
         }
     }
 
-    private void doWaitTransfer() {
+    private void doWaitTransfer( ) {
         if (this.requestsRead.isEmpty()) {
             return;
         }
 
         for (GroupCommitRequest req : this.requestsRead) {
-            boolean transferOK = false;
-
-            long deadLine = req.getDeadLine();
             final boolean allAckInSyncStateSet = req.getAckNums() == MQConstants.ALL_ACK_IN_SYNC_STATE_SET;
-
-            for (int i = 0; !transferOK && deadLine - System.nanoTime() > 0; i++) {
-                if (i > 0) {
-                    this.notifyTransferObject.waitForRunning(1);
-                }
-
-                if (!allAckInSyncStateSet && req.getAckNums() <= 1) {
-                    transferOK = haService.getPush2SlaveMaxOffset().get() >= req.getNextOffset();
-                    continue;
-                }
-
-                if (allAckInSyncStateSet && this.haService instanceof AutoSwitchHAService) {
-                    // In this mode, we must wait for all replicas that in SyncStateSet.
-                    final AutoSwitchHAService autoSwitchHAService = (AutoSwitchHAService) this.haService;
-                    final Set<Long> syncStateSet = autoSwitchHAService.getSyncStateSet();
-                    if (syncStateSet.size() <= 1) {
-                        // Only master
-                        transferOK = true;
-                        break;
-                    }
-
-                    // Include master
-                    int ackNums = 1;
-                    for (HAConnection conn : haService.getConnectionList()) {
-                        final AutoSwitchHAConnection autoSwitchHAConnection = (AutoSwitchHAConnection) conn;
-                        if (syncStateSet.contains(autoSwitchHAConnection.getSlaveId()) && autoSwitchHAConnection.getSlaveAckOffset() >= req.getNextOffset()) {
-                            ackNums++;
-                        }
-                        if (ackNums >= syncStateSet.size()) {
-                            transferOK = true;
-                            break;
-                        }
-                    }
-                } else {
-                    // Include master
-                    int ackNums = 1;
-                    for (HAConnection conn : haService.getConnectionList()) {
-                        // TODO: We must ensure every HAConnection represents a different slave
-                        // Solution: Consider assign a unique and fixed IP:ADDR for each different slave
-                        if (conn.getSlaveAckOffset() >= req.getNextOffset()) {
-                            ackNums++;
-                        }
-                        if (ackNums >= req.getAckNums()) {
-                            transferOK = true;
-                            break;
-                        }
-                    }
-                }
-            }
+            boolean transferOK = doWaitTransfer(req, allAckInSyncStateSet);
 
             if (!transferOK) {
-                log.warn("transfer message to slave timeout, offset : {}, request acks: {}",
-                    req.getNextOffset(), req.getAckNums());
+                log.warn("transfer message to slave timeout, offset : {}, request ack: {}", req.getNextOffset(), req.getAckNums());
             }
 
-            req.wakeupCustomer(transferOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_SLAVE_TIMEOUT);
+            PutMessageStatus status = transferOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_SLAVE_TIMEOUT;
+            req.wakeupCustomer(status);
         }
 
         this.requestsRead = new LinkedList<>();
+    }
+
+    private boolean doWaitTransfer(GroupCommitRequest req, boolean allAckInSyncStateSet) {
+        boolean transferOK = false;
+
+        for (int i = 0; !transferOK && req.getDeadLine() - System.nanoTime() > 0; i++) {
+            if (i > 0) {
+                this.notifyTransferObject.waitForRunning(1);
+            }
+
+            if (!allAckInSyncStateSet && req.getAckNums() <= 1) {
+                transferOK = haService.getPush2SlaveMaxOffset().get() >= req.getNextOffset();
+                continue;
+            }
+
+            if (allAckInSyncStateSet && this.haService instanceof AutoSwitchHAService) {
+                // In this mode, we must wait for all replicas that in SyncStateSet.
+                final AutoSwitchHAService autoSwitchHAService = (AutoSwitchHAService) this.haService;
+                final Set<Long> syncStateSet = autoSwitchHAService.getSyncStateSet();
+                if (syncStateSet.size() <= 1) {
+                    // Only master
+                    transferOK = true;
+                    break;
+                }
+
+                transferOK = waitInAutoSwitchHAService(req, syncStateSet);
+            } else {
+                transferOK = waitInHAService(req);
+            }
+        }
+
+        return transferOK;
+    }
+
+    private boolean waitInAutoSwitchHAService(GroupCommitRequest req, Set<Long> syncStateSet) {
+        boolean transferOK = false;
+
+        // Include master
+        int ackNums = 1;
+        for (HAConnection conn : haService.getConnectionList()) {
+            final AutoSwitchHAConnection autoSwitchHAConnection = (AutoSwitchHAConnection) conn;
+            if (syncStateSet.contains(autoSwitchHAConnection.getSlaveId()) && autoSwitchHAConnection.getSlaveAckOffset() >= req.getNextOffset()) {
+                ackNums++;
+            }
+
+            if (ackNums >= syncStateSet.size()) {
+                transferOK = true;
+                break;
+            }
+        }
+
+        return transferOK;
+    }
+
+    private boolean waitInHAService(GroupCommitRequest req) {
+        boolean transferOK = false;
+
+        // Include master
+        int ackNums = 1;
+        for (HAConnection conn : haService.getConnectionList()) {
+            // TODO: We must ensure every HAConnection represents a different slave
+            // Solution: Consider assign a unique and fixed IP:ADDR for each different slave
+            if (conn.getSlaveAckOffset() >= req.getNextOffset()) {
+                ackNums++;
+            }
+            if (ackNums >= req.getAckNums()) {
+                transferOK = true;
+                break;
+            }
+        }
+
+        return transferOK;
     }
 
     @Override

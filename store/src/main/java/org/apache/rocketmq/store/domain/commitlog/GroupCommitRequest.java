@@ -22,9 +22,15 @@ import java.util.concurrent.CompletableFuture;
 
 public class GroupCommitRequest {
     private final long nextOffset;
-    // Indicate the GroupCommitRequest result: true or false
+    /**
+     * Indicate the GroupCommitRequest result: true or false
+     */
     private final CompletableFuture<PutMessageStatus> flushOKFuture = new CompletableFuture<>();
+    /**
+     * slave nums, in controller mode: -1
+     */
     private volatile int ackNums = 1;
+
     private final long deadLine;
 
     public GroupCommitRequest(long nextOffset, long timeoutMillis) {

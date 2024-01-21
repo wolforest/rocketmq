@@ -44,6 +44,7 @@ public class FlushDiskWatcher extends ServiceThread {
                 log.warn("take flush disk commit request, but interrupted, this may caused by shutdown");
                 continue;
             }
+
             while (!request.future().isDone()) {
                 long now = System.nanoTime();
                 if (now - request.getDeadLine() >= 0) {
@@ -57,11 +58,11 @@ public class FlushDiskWatcher extends ServiceThread {
                     request.wakeupCustomer(PutMessageStatus.FLUSH_DISK_TIMEOUT);
                     break;
                 }
+
                 try {
                     Thread.sleep(sleepTime);
                 } catch (InterruptedException e) {
-                    log.warn(
-                            "An exception occurred while waiting for flushing disk to complete. this may caused by shutdown");
+                    log.warn("An exception occurred while waiting for flushing disk to complete. this may caused by shutdown");
                     break;
                 }
             }

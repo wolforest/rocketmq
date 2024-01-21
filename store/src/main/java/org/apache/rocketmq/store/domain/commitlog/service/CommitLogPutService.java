@@ -527,7 +527,8 @@ public class CommitLogPutService {
         long nextOffset = result.getWroteOffset() + result.getWroteBytes();
 
         // Wait enough ack from different slaves
-        GroupCommitRequest request = new GroupCommitRequest(nextOffset, this.defaultMessageStore.getMessageStoreConfig().getSlaveTimeout(), needAckNums);
+        long timout = this.defaultMessageStore.getMessageStoreConfig().getSlaveTimeout();
+        GroupCommitRequest request = new GroupCommitRequest(nextOffset, timout, needAckNums);
         haService.putRequest(request);
         haService.getWaitNotifyObject().wakeupAll();
         return request.future();
