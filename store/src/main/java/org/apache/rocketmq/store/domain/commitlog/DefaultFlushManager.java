@@ -71,7 +71,7 @@ public class DefaultFlushManager implements FlushManager {
         if (FlushDiskType.SYNC_FLUSH == defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
             handleSyncFlush(result, putMessageResult, messageExt);
         } else {
-           handleAsyncFlush();
+            handleAsyncFlush();
         }
     }
 
@@ -109,28 +109,33 @@ public class DefaultFlushManager implements FlushManager {
 
     @Override
     public CompletableFuture<PutMessageStatus> handleDiskFlush(AppendMessageResult result, MessageExt messageExt) {
-        // Synchronization flush
         if (FlushDiskType.SYNC_FLUSH == defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
-            final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
-            if (messageExt.isWaitStoreMsgOK()) {
-                GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(), defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
-                commitLog.getFlushDiskWatcher().add(request);
-                service.putRequest(request);
-                return request.future();
-            } else {
-                service.wakeup();
-                return CompletableFuture.completedFuture(PutMessageStatus.PUT_OK);
-            }
+            return handleSyncAppendFlush(result, messageExt);
+        } else {
+            return handleAsyncAppendFlush();
         }
-        // Asynchronous flush
-        else {
-            if (!defaultMessageStore.isTransientStorePoolEnable()) {
-                flushCommitLogService.wakeup();
-            } else {
-                commitRealTimeService.wakeup();
-            }
+    }
+
+    private CompletableFuture<PutMessageStatus> handleSyncAppendFlush(AppendMessageResult result, MessageExt messageExt) {
+        final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
+        if (messageExt.isWaitStoreMsgOK()) {
+            GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(), defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
+            commitLog.getFlushDiskWatcher().add(request);
+            service.putRequest(request);
+            return request.future();
+        } else {
+            service.wakeup();
             return CompletableFuture.completedFuture(PutMessageStatus.PUT_OK);
         }
+    }
+
+    private CompletableFuture<PutMessageStatus> handleAsyncAppendFlush() {
+        if (!defaultMessageStore.isTransientStorePoolEnable()) {
+            flushCommitLogService.wakeup();
+        } else {
+            commitRealTimeService.wakeup();
+        }
+        return CompletableFuture.completedFuture(PutMessageStatus.PUT_OK);
     }
 
     @Override
