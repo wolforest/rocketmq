@@ -16,30 +16,31 @@
  */
 package org.apache.rocketmq.broker;
 
-import java.util.Properties;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.broker.server.daemon.BrokerShutdownThread;
 import org.apache.rocketmq.broker.server.daemon.SystemConfigFileHelper;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
-import org.apache.rocketmq.common.domain.constant.MQVersion;
+import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
-import org.apache.rocketmq.common.utils.NetworkUtils;
+import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.common.utils.BeanUtils;
+import org.apache.rocketmq.common.utils.NetworkUtils;
+import org.apache.rocketmq.common.utils.ServerUtil;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
-import org.apache.rocketmq.common.utils.ServerUtil;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+
+import java.util.Properties;
 
 public class BrokerStartup {
     public static Logger log;
@@ -56,6 +57,7 @@ public class BrokerStartup {
             return controller;
         } catch (Throwable e) {
             e.printStackTrace();
+            log.error("broker startup failure",e);
             System.exit(-1);
         }
 
