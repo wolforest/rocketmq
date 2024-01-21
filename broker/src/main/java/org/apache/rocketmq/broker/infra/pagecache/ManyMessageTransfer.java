@@ -18,12 +18,16 @@ package org.apache.rocketmq.broker.infra.pagecache;
 
 import io.netty.channel.FileRegion;
 import io.netty.util.AbstractReferenceCounted;
+import org.apache.rocketmq.store.api.dto.GetMessageResult;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 import java.util.List;
-import org.apache.rocketmq.store.api.dto.GetMessageResult;
 
+/**
+ * Multiple message memory zero copy transfer
+ */
 public class ManyMessageTransfer extends AbstractReferenceCounted implements FileRegion {
     private final ByteBuffer byteBufferHeader;
     private final GetMessageResult getMessageResult;
