@@ -68,90 +68,110 @@ public class WriteSocketThread extends ServiceThread {
                     continue;
                 }
 
-                if (-1 == this.nextTransferFromWhere) {
-                    // If it's a new slave and commit log files haven't been manually copied from the master server
-                    // syncing from the initial offset of the last commitLog file
-                    if (0 == haConnection.getSlaveRequestOffset()) {
-                        long masterOffset = haConnection.getHaService().getDefaultMessageStore().getCommitLog().getMaxOffset();
-                        long commitLogFileSize = haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getMappedFileSizeCommitLog();
-
-                        // Adjust the masterOffset to be a multiple of the size of the message log file,
-                        // ensuring that it points to the beginning of a complete and newest commit log file.
-                        masterOffset = masterOffset - (masterOffset % commitLogFileSize);
-                        if (masterOffset < 0) {
-                            masterOffset = 0;
-                        }
-
-                        this.nextTransferFromWhere = masterOffset;
-                    } else {
-                        this.nextTransferFromWhere = haConnection.getSlaveRequestOffset();
-                    }
-
-                    log.info("master transfer data from " + this.nextTransferFromWhere + " to slave[" + haConnection.getClientAddress()
-                        + "], and slave request " + haConnection.getSlaveRequestOffset());
+                initOffset();
+                if (!transferUnfinishedMessage()) {
+                    continue;
                 }
 
-                if (this.lastWriteOver) {
-                    long interval = TimeUtils.now() - this.lastWriteTimestamp;
-                    if (interval > haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getHaSendHeartbeatInterval()) {
-                        // Build Header
-                        this.byteBufferHeader.position(0);
-                        this.byteBufferHeader.limit(DefaultHAConnection.TRANSFER_HEADER_SIZE);
-                        this.byteBufferHeader.putLong(this.nextTransferFromWhere);
-                        this.byteBufferHeader.putInt(0);
-                        this.byteBufferHeader.flip();
-
-                        this.lastWriteOver = this.transferData();
-                        if (!this.lastWriteOver)
-                            continue;
-                    }
-                } else {
-                    this.lastWriteOver = this.transferData();
-                    if (!this.lastWriteOver)
-                        continue;
-                }
-
-                SelectMappedBufferResult selectResult = haConnection.getHaService().getDefaultMessageStore().getCommitLogData(this.nextTransferFromWhere);
-                if (selectResult != null) {
-                    int size = selectResult.getSize();
-                    if (size > haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize()) {
-                        size = haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize();
-                    }
-
-                    int canTransferMaxBytes = haConnection.getFlowMonitor().canTransferMaxByteNum();
-                    if (size > canTransferMaxBytes) {
-                        if (System.currentTimeMillis() - lastPrintTimestamp > 1000) {
-                            log.warn("Trigger HA flow control, max transfer speed {}KB/s, current speed: {}KB/s",
-                                String.format("%.2f", haConnection.getFlowMonitor().maxTransferByteInSecond() / 1024.0),
-                                String.format("%.2f", haConnection.getFlowMonitor().getTransferredByteInSecond() / 1024.0));
-                            lastPrintTimestamp = System.currentTimeMillis();
-                        }
-                        size = canTransferMaxBytes;
-                    }
-
-                    long thisOffset = this.nextTransferFromWhere;
-                    this.nextTransferFromWhere += size;
-
-                    selectResult.getByteBuffer().limit(size);
-                    this.selectMappedBufferResult = selectResult;
-
-                    // Build Header
-                    this.byteBufferHeader.position(0);
-                    this.byteBufferHeader.limit(DefaultHAConnection.TRANSFER_HEADER_SIZE);
-                    this.byteBufferHeader.putLong(thisOffset);
-                    this.byteBufferHeader.putInt(size);
-                    this.byteBufferHeader.flip();
-
-                    this.lastWriteOver = this.transferData();
-                } else {
-                    haConnection.getHaService().getWaitNotifyObject().allWaitForRunning(100);
-                }
+                transfer();
             } catch (Exception e) {
                 log.error(this.getServiceName() + " service has exception.", e);
                 break;
             }
         }
 
+        releaseResource();
+    }
+
+    private void transfer() throws Exception {
+        SelectMappedBufferResult selectResult = haConnection.getHaService().getDefaultMessageStore().getCommitLogData(this.nextTransferFromWhere);
+        if (selectResult == null) {
+            haConnection.getHaService().getWaitNotifyObject().allWaitForRunning(100);
+            return;
+        }
+
+        int size = selectResult.getSize();
+        if (size > haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize()) {
+            size = haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize();
+        }
+
+        int canTransferMaxBytes = haConnection.getFlowMonitor().canTransferMaxByteNum();
+        if (size > canTransferMaxBytes) {
+            if (System.currentTimeMillis() - lastPrintTimestamp > 1000) {
+                log.warn("Trigger HA flow control, max transfer speed {}KB/s, current speed: {}KB/s",
+                    String.format("%.2f", haConnection.getFlowMonitor().maxTransferByteInSecond() / 1024.0),
+                    String.format("%.2f", haConnection.getFlowMonitor().getTransferredByteInSecond() / 1024.0));
+                lastPrintTimestamp = System.currentTimeMillis();
+            }
+            size = canTransferMaxBytes;
+        }
+
+        long thisOffset = this.nextTransferFromWhere;
+        this.nextTransferFromWhere += size;
+
+        selectResult.getByteBuffer().limit(size);
+        this.selectMappedBufferResult = selectResult;
+
+        // Build Header
+        this.byteBufferHeader.position(0);
+        this.byteBufferHeader.limit(DefaultHAConnection.TRANSFER_HEADER_SIZE);
+        this.byteBufferHeader.putLong(thisOffset);
+        this.byteBufferHeader.putInt(size);
+        this.byteBufferHeader.flip();
+
+        this.lastWriteOver = this.transferData();
+    }
+
+    private boolean transferUnfinishedMessage() throws Exception {
+        if (!this.lastWriteOver) {
+            this.lastWriteOver = this.transferData();
+            return this.lastWriteOver;
+        }
+
+        long interval = TimeUtils.now() - this.lastWriteTimestamp;
+        if (interval <= haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getHaSendHeartbeatInterval()) {
+            return true;
+        }
+
+        // Build Header
+        this.byteBufferHeader.position(0);
+        this.byteBufferHeader.limit(DefaultHAConnection.TRANSFER_HEADER_SIZE);
+        this.byteBufferHeader.putLong(this.nextTransferFromWhere);
+        this.byteBufferHeader.putInt(0);
+        this.byteBufferHeader.flip();
+
+        this.lastWriteOver = this.transferData();
+        return this.lastWriteOver;
+    }
+
+    private void initOffset() {
+        if (-1 != this.nextTransferFromWhere) {
+            return;
+        }
+
+        // If it's a new slave and commit log files haven't been manually copied from the master server
+        // syncing from the initial offset of the last commitLog file
+        if (0 == haConnection.getSlaveRequestOffset()) {
+            long masterOffset = haConnection.getHaService().getDefaultMessageStore().getCommitLog().getMaxOffset();
+            long commitLogFileSize = haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getMappedFileSizeCommitLog();
+
+            // Adjust the masterOffset to be a multiple of the size of the message log file,
+            // ensuring that it points to the beginning of a complete and newest commit log file.
+            masterOffset = masterOffset - (masterOffset % commitLogFileSize);
+            if (masterOffset < 0) {
+                masterOffset = 0;
+            }
+
+            this.nextTransferFromWhere = masterOffset;
+        } else {
+            this.nextTransferFromWhere = haConnection.getSlaveRequestOffset();
+        }
+
+        log.info("master transfer data from " + this.nextTransferFromWhere + " to slave[" + haConnection.getClientAddress()
+            + "], and slave request " + haConnection.getSlaveRequestOffset());
+    }
+
+    private void releaseResource() {
         haConnection.getHaService().getWaitNotifyObject().removeFromWaitingThreadTable();
         if (this.selectMappedBufferResult != null) {
             this.selectMappedBufferResult.release();
