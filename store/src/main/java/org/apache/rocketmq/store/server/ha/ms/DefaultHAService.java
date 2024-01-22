@@ -38,7 +38,7 @@ import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
 import org.apache.rocketmq.store.server.ha.HAClient;
 import org.apache.rocketmq.store.server.ha.HAConnection;
 import org.apache.rocketmq.store.server.ha.HAService;
-import org.apache.rocketmq.store.server.ha.core.GroupTransferService;
+import org.apache.rocketmq.store.server.ha.core.GroupTransferThread;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationRequest;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationThread;
 import org.apache.rocketmq.store.server.ha.core.WaitNotifyObject;
@@ -59,7 +59,7 @@ public class DefaultHAService implements HAService {
     protected WaitNotifyObject waitNotifyObject = new WaitNotifyObject();
     protected AtomicLong push2SlaveMaxOffset = new AtomicLong(0);
 
-    protected GroupTransferService groupTransferService;
+    protected GroupTransferThread groupTransferThread;
     protected HAClient haClient;
 
     protected HAConnectionStateNotificationThread haConnectionStateNotificationThread;
@@ -71,7 +71,7 @@ public class DefaultHAService implements HAService {
     public void init(final DefaultMessageStore defaultMessageStore) throws IOException {
         this.defaultMessageStore = defaultMessageStore;
         this.acceptSocketService = new DefaultAcceptSocketService(defaultMessageStore.getMessageStoreConfig());
-        this.groupTransferService = new GroupTransferService(this, defaultMessageStore);
+        this.groupTransferThread = new GroupTransferThread(this, defaultMessageStore);
 
         if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
             this.haClient = new DefaultHAClient(this.defaultMessageStore);
@@ -95,7 +95,7 @@ public class DefaultHAService implements HAService {
 
     @Override
     public void putRequest(final GroupCommitRequest request) {
-        this.groupTransferService.putRequest(request);
+        this.groupTransferThread.putRequest(request);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class DefaultHAService implements HAService {
     public void notifyTransferSome(final long offset) {
         for (long value = this.push2SlaveMaxOffset.get(); offset > value; ) {
             if (this.push2SlaveMaxOffset.compareAndSet(value, offset)) {
-                this.groupTransferService.notifyTransferSome();
+                this.groupTransferThread.notifyTransferSome();
                 break;
             }
 
@@ -126,7 +126,7 @@ public class DefaultHAService implements HAService {
     public void start() throws Exception {
         this.acceptSocketService.beginAccept();
         this.acceptSocketService.start();
-        this.groupTransferService.start();
+        this.groupTransferThread.start();
         this.haConnectionStateNotificationThread.start();
         if (haClient != null) {
             this.haClient.start();
@@ -153,7 +153,7 @@ public class DefaultHAService implements HAService {
         }
         this.acceptSocketService.shutdown(true);
         this.destroyConnections();
-        this.groupTransferService.shutdown();
+        this.groupTransferThread.shutdown();
         this.haConnectionStateNotificationThread.shutdown();
     }
 

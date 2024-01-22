@@ -38,7 +38,7 @@ import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAConnection;
  * GroupTransferService Service
  * @renamed from GroupTransferService to GroupTransferThread
  */
-public class GroupTransferService extends ServiceThread {
+public class GroupTransferThread extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final WaitNotifyObject notifyTransferObject = new WaitNotifyObject();
@@ -48,7 +48,7 @@ public class GroupTransferService extends ServiceThread {
     private volatile List<GroupCommitRequest> requestsWrite = new LinkedList<>();
     private volatile List<GroupCommitRequest> requestsRead = new LinkedList<>();
 
-    public GroupTransferService(final HAService haService, final DefaultMessageStore defaultMessageStore) {
+    public GroupTransferThread(final HAService haService, final DefaultMessageStore defaultMessageStore) {
         this.haService = haService;
         this.defaultMessageStore = defaultMessageStore;
     }
@@ -194,8 +194,8 @@ public class GroupTransferService extends ServiceThread {
     @Override
     public String getServiceName() {
         if (defaultMessageStore != null && defaultMessageStore.getBrokerConfig().isInBrokerContainer()) {
-            return defaultMessageStore.getBrokerIdentity().getIdentifier() + GroupTransferService.class.getSimpleName();
+            return defaultMessageStore.getBrokerIdentity().getIdentifier() + GroupTransferThread.class.getSimpleName();
         }
-        return GroupTransferService.class.getSimpleName();
+        return GroupTransferThread.class.getSimpleName();
     }
 }
