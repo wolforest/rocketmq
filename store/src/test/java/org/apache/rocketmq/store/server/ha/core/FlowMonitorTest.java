@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.store.server.ha;
+package org.apache.rocketmq.store.server.ha.core;
 
 import java.time.Duration;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;

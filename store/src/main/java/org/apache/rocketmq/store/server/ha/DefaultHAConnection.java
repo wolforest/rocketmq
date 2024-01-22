@@ -30,6 +30,8 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettySystemConfig;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.server.ha.core.FlowMonitor;
+import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 
 public class DefaultHAConnection implements HAConnection {
 

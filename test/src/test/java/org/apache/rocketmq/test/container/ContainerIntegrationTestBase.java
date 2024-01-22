@@ -51,7 +51,7 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.ha.HAConnection;
-import org.apache.rocketmq.store.server.ha.HAConnectionState;
+import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.junit.Assert;
 import org.junit.BeforeClass;

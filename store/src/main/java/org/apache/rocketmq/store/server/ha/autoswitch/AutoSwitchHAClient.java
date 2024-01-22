@@ -36,9 +36,9 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.protocol.EpochEntry;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
-import org.apache.rocketmq.store.server.ha.FlowMonitor;
+import org.apache.rocketmq.store.server.ha.core.FlowMonitor;
 import org.apache.rocketmq.store.server.ha.HAClient;
-import org.apache.rocketmq.store.server.ha.HAConnectionState;
+import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 import org.apache.rocketmq.store.server.ha.io.AbstractHAReader;
 import org.apache.rocketmq.store.server.ha.io.HAWriter;
 

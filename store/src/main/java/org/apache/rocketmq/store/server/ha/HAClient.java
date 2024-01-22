@@ -17,6 +17,8 @@
 
 package org.apache.rocketmq.store.server.ha;
 
+import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
+
 /**
  * for slave, pull data from master
  */

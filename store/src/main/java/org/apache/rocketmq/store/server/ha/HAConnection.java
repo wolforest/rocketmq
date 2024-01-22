@@ -18,6 +18,7 @@
 package org.apache.rocketmq.store.server.ha;
 
 import java.nio.channels.SocketChannel;
+import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 
 public interface HAConnection {
     /**

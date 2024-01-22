@@ -32,9 +32,9 @@ import org.apache.rocketmq.remoting.netty.NettySystemConfig;
 import org.apache.rocketmq.remoting.protocol.EpochEntry;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.server.ha.FlowMonitor;
+import org.apache.rocketmq.store.server.ha.core.FlowMonitor;
 import org.apache.rocketmq.store.server.ha.HAConnection;
-import org.apache.rocketmq.store.server.ha.HAConnectionState;
+import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 import org.apache.rocketmq.store.server.ha.io.AbstractHAReader;
 import org.apache.rocketmq.store.server.ha.io.HAWriter;
 

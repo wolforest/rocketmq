@@ -145,10 +145,8 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
             response.setRemark(null);
 
             try {
-                //Create a FileRegion to write directly to the channel，zero-copy
-                FileRegion fileRegion =
-                    new OneMessageTransfer(response.encodeHeader(selectMappedBufferResult.getSize()),
-                        selectMappedBufferResult);
+                //Create a FileRegion to write directly to the channel, zero-copy
+                FileRegion fileRegion = new OneMessageTransfer(response.encodeHeader(selectMappedBufferResult.getSize()), selectMappedBufferResult);
                 ctx.channel()
                     .writeAndFlush(fileRegion)
                     .addListener((ChannelFutureListener) future -> {

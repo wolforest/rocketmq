@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.store.server.ha;
+package org.apache.rocketmq.store.server.ha.core;
 
 import java.util.concurrent.CompletableFuture;
 
