@@ -75,7 +75,7 @@ public class GroupTransferService extends ServiceThread {
         }
     }
 
-    private void doWaitTransfer( ) {
+    private void doWaitTransfer() {
         if (this.requestsRead.isEmpty()) {
             return;
         }
