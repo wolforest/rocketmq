@@ -22,12 +22,15 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
-public class FlowMonitor extends ServiceThread {
+/**
+ * @renamed from FlowMonitor to FlowMonitorThread
+ */
+public class FlowMonitorThread extends ServiceThread {
     private final AtomicLong transferredByte = new AtomicLong(0L);
     private volatile long transferredByteInSecond;
     protected MessageStoreConfig messageStoreConfig;
 
-    public FlowMonitor(MessageStoreConfig messageStoreConfig) {
+    public FlowMonitorThread(MessageStoreConfig messageStoreConfig) {
         this.messageStoreConfig = messageStoreConfig;
     }
 
@@ -63,7 +66,7 @@ public class FlowMonitor extends ServiceThread {
 
     @Override
     public String getServiceName() {
-        return FlowMonitor.class.getSimpleName();
+        return FlowMonitorThread.class.getSimpleName();
     }
 
     protected boolean isFlowControlEnable() {

@@ -23,7 +23,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettySystemConfig;
 import org.apache.rocketmq.store.server.ha.HAConnection;
-import org.apache.rocketmq.store.server.ha.core.FlowMonitor;
+import org.apache.rocketmq.store.server.ha.core.FlowMonitorThread;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 
 public class DefaultHAConnection implements HAConnection {
@@ -54,7 +54,7 @@ public class DefaultHAConnection implements HAConnection {
     private volatile long slaveRequestOffset = -1;
 
     private volatile long slaveAckOffset = -1;
-    private final FlowMonitor flowMonitor;
+    private final FlowMonitorThread flowMonitorThread;
 
     public DefaultHAConnection(final DefaultHAService haService, final SocketChannel socketChannel) throws IOException {
         this.haService = haService;
@@ -64,7 +64,7 @@ public class DefaultHAConnection implements HAConnection {
         this.writeSocketThread = new WriteSocketThread(this.socketChannel, this);
         this.readSocketThread = new ReadSocketThread(this.socketChannel, this);
         this.haService.getConnectionCount().incrementAndGet();
-        this.flowMonitor = new FlowMonitor(haService.getDefaultMessageStore().getMessageStoreConfig());
+        this.flowMonitorThread = new FlowMonitorThread(haService.getDefaultMessageStore().getMessageStoreConfig());
     }
 
     private void configureSocketChannel() throws IOException {
@@ -81,7 +81,7 @@ public class DefaultHAConnection implements HAConnection {
 
     public void start() {
         changeCurrentState(HAConnectionState.TRANSFER);
-        this.flowMonitor.start();
+        this.flowMonitorThread.start();
         this.readSocketThread.start();
         this.writeSocketThread.start();
     }
@@ -90,7 +90,7 @@ public class DefaultHAConnection implements HAConnection {
         changeCurrentState(HAConnectionState.SHUTDOWN);
         this.writeSocketThread.shutdown(true);
         this.readSocketThread.shutdown(true);
-        this.flowMonitor.shutdown(true);
+        this.flowMonitorThread.shutdown(true);
         this.close();
     }
 
@@ -131,7 +131,7 @@ public class DefaultHAConnection implements HAConnection {
     }
 
     public long getTransferredByteInSecond() {
-        return this.flowMonitor.getTransferredByteInSecond();
+        return this.flowMonitorThread.getTransferredByteInSecond();
     }
 
     public long getTransferFromWhere() {
@@ -150,8 +150,8 @@ public class DefaultHAConnection implements HAConnection {
         return slaveRequestOffset;
     }
 
-    public FlowMonitor getFlowMonitor() {
-        return flowMonitor;
+    public FlowMonitorThread getFlowMonitor() {
+        return flowMonitorThread;
     }
 
     public void setCurrentState(HAConnectionState currentState) {

@@ -33,7 +33,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.store.server.ha.HAClient;
-import org.apache.rocketmq.store.server.ha.core.FlowMonitor;
+import org.apache.rocketmq.store.server.ha.core.FlowMonitorThread;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 
@@ -76,12 +76,12 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
     private ByteBuffer byteBufferBackup = ByteBuffer.allocate(READ_MAX_BUFFER_SIZE);
     private final DefaultMessageStore defaultMessageStore;
     private volatile HAConnectionState currentState = HAConnectionState.READY;
-    private final FlowMonitor flowMonitor;
+    private final FlowMonitorThread flowMonitorThread;
 
     public DefaultHAClient(DefaultMessageStore defaultMessageStore) throws IOException {
         this.selector = NetworkUtils.openSelector();
         this.defaultMessageStore = defaultMessageStore;
-        this.flowMonitor = new FlowMonitor(defaultMessageStore.getMessageStoreConfig());
+        this.flowMonitorThread = new FlowMonitorThread(defaultMessageStore.getMessageStoreConfig());
     }
 
     public void updateHaMasterAddress(final String newAddr) {
@@ -160,7 +160,7 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
             try {
                 int readSize = this.socketChannel.read(this.byteBufferRead);
                 if (readSize > 0) {
-                    flowMonitor.addByteCountTransferred(readSize);
+                    flowMonitorThread.addByteCountTransferred(readSize);
                     readSizeZeroTimes = 0;
                     boolean result = this.dispatchReadRequest();
                     if (!result) {
@@ -307,13 +307,13 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
     public void run() {
         log.info(this.getServiceName() + " service started");
 
-        this.flowMonitor.start();
+        this.flowMonitorThread.start();
 
         while (!this.isStopped()) {
             try {
                 switch (this.currentState) {
                     case SHUTDOWN:
-                        this.flowMonitor.shutdown(true);
+                        this.flowMonitorThread.shutdown(true);
                         return;
                     case READY:
                         if (!this.connectMaster()) {
@@ -343,7 +343,7 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
             }
         }
 
-        this.flowMonitor.shutdown(true);
+        this.flowMonitorThread.shutdown(true);
         log.info(this.getServiceName() + " service end");
     }
 
@@ -387,13 +387,13 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
 
     @Override
     public long getTransferredByteInSecond() {
-        return flowMonitor.getTransferredByteInSecond();
+        return flowMonitorThread.getTransferredByteInSecond();
     }
 
     @Override
     public void shutdown() {
         this.changeCurrentState(HAConnectionState.SHUTDOWN);
-        this.flowMonitor.shutdown();
+        this.flowMonitorThread.shutdown();
         super.shutdown();
 
         closeMaster();

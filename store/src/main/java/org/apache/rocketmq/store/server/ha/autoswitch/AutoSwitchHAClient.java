@@ -36,7 +36,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.protocol.EpochEntry;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
-import org.apache.rocketmq.store.server.ha.core.FlowMonitor;
+import org.apache.rocketmq.store.server.ha.core.FlowMonitorThread;
 import org.apache.rocketmq.store.server.ha.HAClient;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 import org.apache.rocketmq.store.server.ha.io.AbstractHAReader;
@@ -120,7 +120,7 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
     private Selector selector;
     private AbstractHAReader haReader;
     private HAWriter haWriter;
-    private FlowMonitor flowMonitor;
+    private FlowMonitorThread flowMonitorThread;
     /**
      * last time that slave reads date from master.
      */
@@ -149,11 +149,11 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
 
     public void init() throws IOException {
         this.selector = NetworkUtils.openSelector();
-        this.flowMonitor = new FlowMonitor(this.messageStore.getMessageStoreConfig());
+        this.flowMonitorThread = new FlowMonitorThread(this.messageStore.getMessageStoreConfig());
         this.haReader = new HAClientReader();
         haReader.registerHook(readSize -> {
             if (readSize > 0) {
-                AutoSwitchHAClient.this.flowMonitor.addByteCountTransferred(readSize);
+                AutoSwitchHAClient.this.flowMonitorThread.addByteCountTransferred(readSize);
                 lastReadTimestamp = System.currentTimeMillis();
             }
         });
@@ -268,14 +268,14 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
 
     @Override
     public long getTransferredByteInSecond() {
-        return this.flowMonitor.getTransferredByteInSecond();
+        return this.flowMonitorThread.getTransferredByteInSecond();
     }
 
     @Override
     public void shutdown() {
         changeCurrentState(HAConnectionState.SHUTDOWN);
         // Shutdown thread firstly
-        this.flowMonitor.shutdown();
+        this.flowMonitorThread.shutdown();
         super.shutdown();
 
         closeMaster();
@@ -384,12 +384,12 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
     public void run() {
         LOGGER.info(this.getServiceName() + " service started");
 
-        this.flowMonitor.start();
+        this.flowMonitorThread.start();
         while (!this.isStopped()) {
             try {
                 switch (this.currentState) {
                     case SHUTDOWN:
-                        this.flowMonitor.shutdown(true);
+                        this.flowMonitorThread.shutdown(true);
                         return;
                     case READY:
                         // Truncate invalid msg first
@@ -429,7 +429,7 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
             }
         }
 
-        this.flowMonitor.shutdown(true);
+        this.flowMonitorThread.shutdown(true);
         LOGGER.info(this.getServiceName() + " service end");
     }
 

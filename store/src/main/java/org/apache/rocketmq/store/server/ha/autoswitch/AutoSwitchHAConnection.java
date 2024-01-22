@@ -32,7 +32,7 @@ import org.apache.rocketmq.remoting.netty.NettySystemConfig;
 import org.apache.rocketmq.remoting.protocol.EpochEntry;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.server.ha.core.FlowMonitor;
+import org.apache.rocketmq.store.server.ha.core.FlowMonitorThread;
 import org.apache.rocketmq.store.server.ha.HAConnection;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 import org.apache.rocketmq.store.server.ha.io.AbstractHAReader;
@@ -77,7 +77,7 @@ public class AutoSwitchHAConnection implements HAConnection {
     private final EpochFileCache epochCache;
     private final AbstractWriteSocketService writeSocketService;
     private final ReadSocketService readSocketService;
-    private final FlowMonitor flowMonitor;
+    private final FlowMonitorThread flowMonitorThread;
 
     private volatile HAConnectionState currentState = HAConnectionState.HANDSHAKE;
     private volatile long slaveRequestOffset = -1;
@@ -111,7 +111,7 @@ public class AutoSwitchHAConnection implements HAConnection {
         this.writeSocketService = new WriteSocketService(this.socketChannel);
         this.readSocketService = new ReadSocketService(this.socketChannel);
         this.haService.getConnectionCount().incrementAndGet();
-        this.flowMonitor = new FlowMonitor(haService.getDefaultMessageStore().getMessageStoreConfig());
+        this.flowMonitorThread = new FlowMonitorThread(haService.getDefaultMessageStore().getMessageStoreConfig());
     }
 
     private void configureSocketChannel() throws IOException {
@@ -129,7 +129,7 @@ public class AutoSwitchHAConnection implements HAConnection {
     @Override
     public void start() {
         changeCurrentState(HAConnectionState.HANDSHAKE);
-        this.flowMonitor.start();
+        this.flowMonitorThread.start();
         this.readSocketService.start();
         this.writeSocketService.start();
     }
@@ -137,7 +137,7 @@ public class AutoSwitchHAConnection implements HAConnection {
     @Override
     public void shutdown() {
         changeCurrentState(HAConnectionState.SHUTDOWN);
-        this.flowMonitor.shutdown(true);
+        this.flowMonitorThread.shutdown(true);
         this.writeSocketService.shutdown(true);
         this.readSocketService.shutdown(true);
         this.close();
@@ -185,7 +185,7 @@ public class AutoSwitchHAConnection implements HAConnection {
 
     @Override
     public long getTransferredByteInSecond() {
-        return flowMonitor.getTransferredByteInSecond();
+        return flowMonitorThread.getTransferredByteInSecond();
     }
 
     @Override
@@ -292,7 +292,7 @@ public class AutoSwitchHAConnection implements HAConnection {
                 AutoSwitchHAConnection.LOGGER.error("", e);
             }
 
-            flowMonitor.shutdown(true);
+            flowMonitorThread.shutdown(true);
 
             AutoSwitchHAConnection.LOGGER.info(this.getServiceName() + " service end");
         }
@@ -465,7 +465,7 @@ public class AutoSwitchHAConnection implements HAConnection {
             this.setDaemon(true);
             haWriter = new HAWriter();
             haWriter.registerHook(writeSize -> {
-                flowMonitor.addByteCountTransferred(writeSize);
+                flowMonitorThread.addByteCountTransferred(writeSize);
                 if (writeSize > 0) {
                     AbstractWriteSocketService.this.lastWriteTimestamp =
                         haService.getDefaultMessageStore().getSystemClock().now();
@@ -581,12 +581,12 @@ public class AutoSwitchHAConnection implements HAConnection {
                 if (size > haService.getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize()) {
                     size = haService.getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize();
                 }
-                int canTransferMaxBytes = flowMonitor.canTransferMaxByteNum();
+                int canTransferMaxBytes = flowMonitorThread.canTransferMaxByteNum();
                 if (size > canTransferMaxBytes) {
                     if (System.currentTimeMillis() - lastPrintTimestamp > 1000) {
                         LOGGER.warn("Trigger HA flow control, max transfer speed {}KB/s, current speed: {}KB/s",
-                            String.format("%.2f", flowMonitor.maxTransferByteInSecond() / 1024.0),
-                            String.format("%.2f", flowMonitor.getTransferredByteInSecond() / 1024.0));
+                            String.format("%.2f", flowMonitorThread.maxTransferByteInSecond() / 1024.0),
+                            String.format("%.2f", flowMonitorThread.getTransferredByteInSecond() / 1024.0));
                         lastPrintTimestamp = System.currentTimeMillis();
                     }
                     size = canTransferMaxBytes;
@@ -732,7 +732,7 @@ public class AutoSwitchHAConnection implements HAConnection {
                 AutoSwitchHAConnection.LOGGER.error("", e);
             }
 
-            flowMonitor.shutdown(true);
+            flowMonitorThread.shutdown(true);
 
             AutoSwitchHAConnection.LOGGER.info(this.getServiceName() + " service end");
         }

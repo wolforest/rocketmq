@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import static org.awaitility.Awaitility.await;
 
-public class FlowMonitorTest {
+public class FlowMonitorThreadTest {
 
     @Test
     public void testLimit() throws Exception {
@@ -32,15 +32,15 @@ public class FlowMonitorTest {
         messageStoreConfig.setHaFlowControlEnable(true);
         messageStoreConfig.setMaxHaTransferByteInSecond(10);
 
-        FlowMonitor flowMonitor = new FlowMonitor(messageStoreConfig);
-        flowMonitor.start();
+        FlowMonitorThread flowMonitorThread = new FlowMonitorThread(messageStoreConfig);
+        flowMonitorThread.start();
 
-        flowMonitor.addByteCountTransferred(3);
-        Boolean flag = await().atMost(Duration.ofSeconds(2)).until(() -> 7 == flowMonitor.canTransferMaxByteNum(), item -> item);
-        flag &= await().atMost(Duration.ofSeconds(2)).until(() -> 10 == flowMonitor.canTransferMaxByteNum(), item -> item);
+        flowMonitorThread.addByteCountTransferred(3);
+        Boolean flag = await().atMost(Duration.ofSeconds(2)).until(() -> 7 == flowMonitorThread.canTransferMaxByteNum(), item -> item);
+        flag &= await().atMost(Duration.ofSeconds(2)).until(() -> 10 == flowMonitorThread.canTransferMaxByteNum(), item -> item);
         Assert.assertTrue(flag);
 
-        flowMonitor.shutdown();
+        flowMonitorThread.shutdown();
     }
 
     @Test
@@ -49,14 +49,14 @@ public class FlowMonitorTest {
         messageStoreConfig.setHaFlowControlEnable(true);
         messageStoreConfig.setMaxHaTransferByteInSecond(10);
 
-        FlowMonitor flowMonitor = new FlowMonitor(messageStoreConfig);
+        FlowMonitorThread flowMonitorThread = new FlowMonitorThread(messageStoreConfig);
 
-        flowMonitor.addByteCountTransferred(3);
-        flowMonitor.calculateSpeed();
-        Assert.assertEquals(3, flowMonitor.getTransferredByteInSecond());
+        flowMonitorThread.addByteCountTransferred(3);
+        flowMonitorThread.calculateSpeed();
+        Assert.assertEquals(3, flowMonitorThread.getTransferredByteInSecond());
 
-        flowMonitor.addByteCountTransferred(5);
-        flowMonitor.calculateSpeed();
-        Assert.assertEquals(5, flowMonitor.getTransferredByteInSecond());
+        flowMonitorThread.addByteCountTransferred(5);
+        flowMonitorThread.calculateSpeed();
+        Assert.assertEquals(5, flowMonitorThread.getTransferredByteInSecond());
     }
 }
