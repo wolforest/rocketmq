@@ -29,7 +29,10 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 
-public class ReadSocketService extends ServiceThread {
+/**
+ * @renamed from ReadSocketService to ReadSocketThread
+ */
+public class ReadSocketThread extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private static final int READ_MAX_BUFFER_SIZE = 1024 * 1024;
@@ -41,7 +44,7 @@ public class ReadSocketService extends ServiceThread {
 
     private final DefaultHAConnection haConnection;
 
-    public ReadSocketService(final SocketChannel socketChannel, DefaultHAConnection haConnection) throws IOException {
+    public ReadSocketThread(final SocketChannel socketChannel, DefaultHAConnection haConnection) throws IOException {
         this.haConnection = haConnection;
 
         this.selector = NetworkUtils.openSelector();
@@ -104,9 +107,9 @@ public class ReadSocketService extends ServiceThread {
     @Override
     public String getServiceName() {
         if (haConnection.getHaService().getDefaultMessageStore().getBrokerConfig().isInBrokerContainer()) {
-            return haConnection.getHaService().getDefaultMessageStore().getBrokerIdentity().getIdentifier() + ReadSocketService.class.getSimpleName();
+            return haConnection.getHaService().getDefaultMessageStore().getBrokerIdentity().getIdentifier() + ReadSocketThread.class.getSimpleName();
         }
-        return ReadSocketService.class.getSimpleName();
+        return ReadSocketThread.class.getSimpleName();
     }
 
     private boolean processReadEvent() {

@@ -49,7 +49,7 @@ public class DefaultHAConnection implements HAConnection {
     private final String clientAddress;
 
     private final WriteSocketService writeSocketService;
-    private final ReadSocketService readSocketService;
+    private final ReadSocketThread readSocketThread;
     private volatile HAConnectionState currentState = HAConnectionState.TRANSFER;
     private volatile long slaveRequestOffset = -1;
 
@@ -62,7 +62,7 @@ public class DefaultHAConnection implements HAConnection {
         this.configureSocketChannel();
         this.clientAddress = this.socketChannel.socket().getRemoteSocketAddress().toString();
         this.writeSocketService = new WriteSocketService(this.socketChannel, this);
-        this.readSocketService = new ReadSocketService(this.socketChannel, this);
+        this.readSocketThread = new ReadSocketThread(this.socketChannel, this);
         this.haService.getConnectionCount().incrementAndGet();
         this.flowMonitor = new FlowMonitor(haService.getDefaultMessageStore().getMessageStoreConfig());
     }
@@ -82,14 +82,14 @@ public class DefaultHAConnection implements HAConnection {
     public void start() {
         changeCurrentState(HAConnectionState.TRANSFER);
         this.flowMonitor.start();
-        this.readSocketService.start();
+        this.readSocketThread.start();
         this.writeSocketService.start();
     }
 
     public void shutdown() {
         changeCurrentState(HAConnectionState.SHUTDOWN);
         this.writeSocketService.shutdown(true);
-        this.readSocketService.shutdown(true);
+        this.readSocketThread.shutdown(true);
         this.flowMonitor.shutdown(true);
         this.close();
     }
@@ -142,8 +142,8 @@ public class DefaultHAConnection implements HAConnection {
         return writeSocketService;
     }
 
-    public ReadSocketService getReadSocketService() {
-        return readSocketService;
+    public ReadSocketThread getReadSocketService() {
+        return readSocketThread;
     }
 
     public long getSlaveRequestOffset() {
