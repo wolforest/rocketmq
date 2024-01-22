@@ -30,7 +30,10 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 
-public class WriteSocketService extends ServiceThread {
+/**
+ * @renamed from WriteSocketService to WriteSocketThread
+ */
+public class WriteSocketThread extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final Selector selector;
@@ -45,7 +48,7 @@ public class WriteSocketService extends ServiceThread {
 
     private final DefaultHAConnection haConnection;
 
-    public WriteSocketService(final SocketChannel socketChannel, DefaultHAConnection haConnection) throws IOException {
+    public WriteSocketThread(final SocketChannel socketChannel, DefaultHAConnection haConnection) throws IOException {
         this.haConnection = haConnection;
         this.selector = NetworkUtils.openSelector();
         this.socketChannel = socketChannel;
@@ -235,9 +238,9 @@ public class WriteSocketService extends ServiceThread {
     @Override
     public String getServiceName() {
         if (haConnection.getHaService().getDefaultMessageStore().getBrokerConfig().isInBrokerContainer()) {
-            return haConnection.getHaService().getDefaultMessageStore().getBrokerIdentity().getIdentifier() + WriteSocketService.class.getSimpleName();
+            return haConnection.getHaService().getDefaultMessageStore().getBrokerIdentity().getIdentifier() + WriteSocketThread.class.getSimpleName();
         }
-        return WriteSocketService.class.getSimpleName();
+        return WriteSocketThread.class.getSimpleName();
     }
 
     @Override

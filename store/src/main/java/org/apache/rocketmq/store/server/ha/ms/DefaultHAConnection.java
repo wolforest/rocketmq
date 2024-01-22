@@ -48,7 +48,7 @@ public class DefaultHAConnection implements HAConnection {
     private final SocketChannel socketChannel;
     private final String clientAddress;
 
-    private final WriteSocketService writeSocketService;
+    private final WriteSocketThread writeSocketThread;
     private final ReadSocketThread readSocketThread;
     private volatile HAConnectionState currentState = HAConnectionState.TRANSFER;
     private volatile long slaveRequestOffset = -1;
@@ -61,7 +61,7 @@ public class DefaultHAConnection implements HAConnection {
         this.socketChannel = socketChannel;
         this.configureSocketChannel();
         this.clientAddress = this.socketChannel.socket().getRemoteSocketAddress().toString();
-        this.writeSocketService = new WriteSocketService(this.socketChannel, this);
+        this.writeSocketThread = new WriteSocketThread(this.socketChannel, this);
         this.readSocketThread = new ReadSocketThread(this.socketChannel, this);
         this.haService.getConnectionCount().incrementAndGet();
         this.flowMonitor = new FlowMonitor(haService.getDefaultMessageStore().getMessageStoreConfig());
@@ -83,12 +83,12 @@ public class DefaultHAConnection implements HAConnection {
         changeCurrentState(HAConnectionState.TRANSFER);
         this.flowMonitor.start();
         this.readSocketThread.start();
-        this.writeSocketService.start();
+        this.writeSocketThread.start();
     }
 
     public void shutdown() {
         changeCurrentState(HAConnectionState.SHUTDOWN);
-        this.writeSocketService.shutdown(true);
+        this.writeSocketThread.shutdown(true);
         this.readSocketThread.shutdown(true);
         this.flowMonitor.shutdown(true);
         this.close();
@@ -135,11 +135,11 @@ public class DefaultHAConnection implements HAConnection {
     }
 
     public long getTransferFromWhere() {
-        return writeSocketService.getNextTransferFromWhere();
+        return writeSocketThread.getNextTransferFromWhere();
     }
 
-    public WriteSocketService getWriteSocketService() {
-        return writeSocketService;
+    public WriteSocketThread getWriteSocketService() {
+        return writeSocketThread;
     }
 
     public ReadSocketThread getReadSocketService() {
