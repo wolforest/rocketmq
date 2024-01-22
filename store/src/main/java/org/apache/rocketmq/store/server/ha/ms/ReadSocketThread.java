@@ -78,13 +78,9 @@ public class ReadSocketThread extends ServiceThread {
         }
 
         haConnection.changeCurrentState(HAConnectionState.SHUTDOWN);
-
         this.makeStop();
-
         haConnection.getWriteSocketService().makeStop();
-
         haConnection.getHaService().removeConnection(haConnection);
-
         haConnection.getHaService().getConnectionCount().decrementAndGet();
 
         SelectionKey sk = this.socketChannel.keyFor(this.selector);
@@ -100,7 +96,6 @@ public class ReadSocketThread extends ServiceThread {
         }
 
         haConnection.getFlowMonitor().shutdown(true);
-
         log.info(this.getServiceName() + " service end");
     }
 
@@ -123,34 +118,39 @@ public class ReadSocketThread extends ServiceThread {
         while (this.byteBufferRead.hasRemaining()) {
             try {
                 int readSize = this.socketChannel.read(this.byteBufferRead);
-                if (readSize > 0) {
-                    readSizeZeroTimes = 0;
-                    this.lastReadTimestamp = haConnection.getHaService().getDefaultMessageStore().getSystemClock().now();
-                    if ((this.byteBufferRead.position() - this.processPosition) >= DefaultHAClient.REPORT_HEADER_SIZE) {
-                        // Adjust the read position to the nearest multiple of REPORT_HEADER size by computing
-                        // the remainder of the current position divided by the size of the REPORT_HEADER
-                        int pos = this.byteBufferRead.position() - (this.byteBufferRead.position() % DefaultHAClient.REPORT_HEADER_SIZE);
-                        long readOffset = this.byteBufferRead.getLong(pos - 8);
-                        // and after the reading is finished, set the current processing position to the adjusted position,
-                        // ensuring that the next read starts from the correct position.
-                        this.processPosition = pos;
-
-                        haConnection.setSlaveAckOffset(readOffset);
-                        if (haConnection.getSlaveRequestOffset() < 0) {
-                            haConnection.setSlaveRequestOffset(readOffset);
-                            log.info("slave[" + haConnection.getClientAddress() + "] request offset " + readOffset);
-                        }
-
-                        haConnection.getHaService().notifyTransferSome(haConnection.getSlaveAckOffset());
-                    }
-                } else if (readSize == 0) {
-                    if (++readSizeZeroTimes >= 3) {
-                        break;
-                    }
-                } else {
+                if (readSize < 0) {
                     log.error("read socket[" + haConnection.getClientAddress() + "] < 0");
                     return false;
                 }
+
+                if (readSize == 0) {
+                    if (++readSizeZeroTimes >= 3) {
+                        break;
+                    }
+                    continue;
+                }
+
+                readSizeZeroTimes = 0;
+                this.lastReadTimestamp = TimeUtils.now();
+                if ((this.byteBufferRead.position() - this.processPosition) < DefaultHAClient.REPORT_HEADER_SIZE) {
+                    continue;
+                }
+
+                // Adjust the read position to the nearest multiple of REPORT_HEADER size by computing
+                // the remainder of the current position divided by the size of the REPORT_HEADER
+                int pos = this.byteBufferRead.position() - (this.byteBufferRead.position() % DefaultHAClient.REPORT_HEADER_SIZE);
+                long readOffset = this.byteBufferRead.getLong(pos - 8);
+                // and after the reading is finished, set the current processing position to the adjusted position,
+                // ensuring that the next read starts from the correct position.
+                this.processPosition = pos;
+
+                haConnection.setSlaveAckOffset(readOffset);
+                if (haConnection.getSlaveRequestOffset() < 0) {
+                    haConnection.setSlaveRequestOffset(readOffset);
+                    log.info("slave[" + haConnection.getClientAddress() + "] request offset " + readOffset);
+                }
+
+                haConnection.getHaService().notifyTransferSome(haConnection.getSlaveAckOffset());
             } catch (IOException e) {
                 log.error("processReadEvent exception", e);
                 return false;
