@@ -36,6 +36,7 @@ import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAConnection;
 
 /**
  * GroupTransferService Service
+ *
  */
 public class GroupTransferService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);

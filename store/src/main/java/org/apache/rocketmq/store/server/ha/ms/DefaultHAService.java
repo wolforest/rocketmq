@@ -40,7 +40,7 @@ import org.apache.rocketmq.store.server.ha.HAConnection;
 import org.apache.rocketmq.store.server.ha.HAService;
 import org.apache.rocketmq.store.server.ha.core.GroupTransferService;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationRequest;
-import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationService;
+import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationThread;
 import org.apache.rocketmq.store.server.ha.core.WaitNotifyObject;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.commitlog.GroupCommitRequest;
@@ -62,7 +62,7 @@ public class DefaultHAService implements HAService {
     protected GroupTransferService groupTransferService;
     protected HAClient haClient;
 
-    protected HAConnectionStateNotificationService haConnectionStateNotificationService;
+    protected HAConnectionStateNotificationThread haConnectionStateNotificationThread;
 
     public DefaultHAService() {
     }
@@ -76,7 +76,7 @@ public class DefaultHAService implements HAService {
         if (this.defaultMessageStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
             this.haClient = new DefaultHAClient(this.defaultMessageStore);
         }
-        this.haConnectionStateNotificationService = new HAConnectionStateNotificationService(this, defaultMessageStore);
+        this.haConnectionStateNotificationThread = new HAConnectionStateNotificationThread(this, defaultMessageStore);
     }
 
     @Override
@@ -127,7 +127,7 @@ public class DefaultHAService implements HAService {
         this.acceptSocketService.beginAccept();
         this.acceptSocketService.start();
         this.groupTransferService.start();
-        this.haConnectionStateNotificationService.start();
+        this.haConnectionStateNotificationThread.start();
         if (haClient != null) {
             this.haClient.start();
         }
@@ -140,7 +140,7 @@ public class DefaultHAService implements HAService {
     }
 
     public void removeConnection(final HAConnection conn) {
-        this.haConnectionStateNotificationService.checkConnectionStateAndNotify(conn);
+        this.haConnectionStateNotificationThread.checkConnectionStateAndNotify(conn);
         synchronized (this.connectionList) {
             this.connectionList.remove(conn);
         }
@@ -154,7 +154,7 @@ public class DefaultHAService implements HAService {
         this.acceptSocketService.shutdown(true);
         this.destroyConnections();
         this.groupTransferService.shutdown();
-        this.haConnectionStateNotificationService.shutdown();
+        this.haConnectionStateNotificationThread.shutdown();
     }
 
     public void destroyConnections() {
@@ -209,7 +209,7 @@ public class DefaultHAService implements HAService {
 
     @Override
     public void putGroupConnectionStateRequest(HAConnectionStateNotificationRequest request) {
-        this.haConnectionStateNotificationService.setRequest(request);
+        this.haConnectionStateNotificationThread.setRequest(request);
     }
 
     @Override

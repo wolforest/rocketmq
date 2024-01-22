@@ -50,7 +50,7 @@ import org.apache.rocketmq.store.server.ha.ms.DefaultHAService;
 import org.apache.rocketmq.store.server.ha.core.GroupTransferService;
 import org.apache.rocketmq.store.server.ha.HAClient;
 import org.apache.rocketmq.store.server.ha.HAConnection;
-import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationService;
+import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationThread;
 import org.rocksdb.RocksDBException;
 
 /**
@@ -85,7 +85,7 @@ public class AutoSwitchHAService extends DefaultHAService {
         this.defaultMessageStore = defaultMessageStore;
         this.acceptSocketService = new AutoSwitchAcceptSocketService(defaultMessageStore.getMessageStoreConfig());
         this.groupTransferService = new GroupTransferService(this, defaultMessageStore);
-        this.haConnectionStateNotificationService = new HAConnectionStateNotificationService(this, defaultMessageStore);
+        this.haConnectionStateNotificationThread = new HAConnectionStateNotificationThread(this, defaultMessageStore);
     }
 
     @Override

@@ -29,8 +29,9 @@ import org.apache.rocketmq.store.server.config.BrokerRole;
 
 /**
  * Service to periodically check and notify for certain connection state.
+ * @renamed from HAConnectionStateNotificationService to HAConnectionStateNotificationThread
  */
-public class HAConnectionStateNotificationService extends ServiceThread {
+public class HAConnectionStateNotificationThread extends ServiceThread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -38,10 +39,10 @@ public class HAConnectionStateNotificationService extends ServiceThread {
 
     private volatile HAConnectionStateNotificationRequest request;
     private volatile long lastCheckTimeStamp = -1;
-    private HAService haService;
-    private DefaultMessageStore defaultMessageStore;
+    private final HAService haService;
+    private final DefaultMessageStore defaultMessageStore;
 
-    public HAConnectionStateNotificationService(HAService haService, DefaultMessageStore defaultMessageStore) {
+    public HAConnectionStateNotificationThread(HAService haService, DefaultMessageStore defaultMessageStore) {
         this.haService = haService;
         this.defaultMessageStore = defaultMessageStore;
     }
@@ -49,9 +50,9 @@ public class HAConnectionStateNotificationService extends ServiceThread {
     @Override
     public String getServiceName() {
         if (defaultMessageStore != null && defaultMessageStore.getBrokerConfig().isInBrokerContainer()) {
-            return defaultMessageStore.getBrokerIdentity().getIdentifier() + HAConnectionStateNotificationService.class.getSimpleName();
+            return defaultMessageStore.getBrokerIdentity().getIdentifier() + HAConnectionStateNotificationThread.class.getSimpleName();
         }
-        return HAConnectionStateNotificationService.class.getSimpleName();
+        return HAConnectionStateNotificationThread.class.getSimpleName();
     }
 
     public synchronized void setRequest(HAConnectionStateNotificationRequest request) {
