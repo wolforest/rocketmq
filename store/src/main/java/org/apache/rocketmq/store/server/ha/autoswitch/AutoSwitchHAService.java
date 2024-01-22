@@ -46,7 +46,7 @@ import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.server.ha.DefaultHAService;
+import org.apache.rocketmq.store.server.ha.ms.DefaultHAService;
 import org.apache.rocketmq.store.server.ha.core.GroupTransferService;
 import org.apache.rocketmq.store.server.ha.HAClient;
 import org.apache.rocketmq.store.server.ha.HAConnection;

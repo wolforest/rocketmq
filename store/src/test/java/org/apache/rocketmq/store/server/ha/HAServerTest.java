@@ -29,6 +29,8 @@ import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.domain.commitlog.GroupCommitRequest;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.ha.ms.DefaultHAClient;
+import org.apache.rocketmq.store.server.ha.ms.DefaultHAService;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.junit.After;
 import org.junit.Before;

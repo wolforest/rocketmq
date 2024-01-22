@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.store.server.ha;
+package org.apache.rocketmq.store.server.ha.ms;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -35,6 +35,9 @@ import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
+import org.apache.rocketmq.store.server.ha.HAClient;
+import org.apache.rocketmq.store.server.ha.HAConnection;
+import org.apache.rocketmq.store.server.ha.HAService;
 import org.apache.rocketmq.store.server.ha.core.GroupTransferService;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationRequest;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationService;
