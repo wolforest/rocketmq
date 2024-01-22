@@ -63,7 +63,6 @@ public class WriteSocketThread extends ServiceThread {
         while (!this.isStopped()) {
             try {
                 this.selector.select(1000);
-
                 if (-1 == haConnection.getSlaveRequestOffset()) {
                     Thread.sleep(10);
                     continue;
@@ -74,7 +73,7 @@ public class WriteSocketThread extends ServiceThread {
                     // syncing from the initial offset of the last commitLog file
                     if (0 == haConnection.getSlaveRequestOffset()) {
                         long masterOffset = haConnection.getHaService().getDefaultMessageStore().getCommitLog().getMaxOffset();
-                        long commitLogFileSize = haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig() .getMappedFileSizeCommitLog();
+                        long commitLogFileSize = haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getMappedFileSizeCommitLog();
 
                         // Adjust the masterOffset to be a multiple of the size of the message log file,
                         // ensuring that it points to the beginning of a complete and newest commit log file.
@@ -154,17 +153,13 @@ public class WriteSocketThread extends ServiceThread {
         }
 
         haConnection.getHaService().getWaitNotifyObject().removeFromWaitingThreadTable();
-
         if (this.selectMappedBufferResult != null) {
             this.selectMappedBufferResult.release();
         }
 
         haConnection.changeCurrentState(HAConnectionState.SHUTDOWN);
-
         this.makeStop();
-
         haConnection.getReadSocketService().makeStop();
-
         haConnection.getHaService().removeConnection(haConnection);
 
         SelectionKey sk = this.socketChannel.keyFor(this.selector);
@@ -180,11 +175,28 @@ public class WriteSocketThread extends ServiceThread {
         }
 
         haConnection.getFlowMonitor().shutdown(true);
-
         log.info(this.getServiceName() + " service end");
     }
 
     private boolean transferData() throws Exception {
+        writeHeader();
+
+        if (null == this.selectMappedBufferResult) {
+            return !this.byteBufferHeader.hasRemaining();
+        }
+
+        writeBody();
+
+        boolean result = !this.byteBufferHeader.hasRemaining() && !this.selectMappedBufferResult.getByteBuffer().hasRemaining();
+        if (!this.selectMappedBufferResult.getByteBuffer().hasRemaining()) {
+            this.selectMappedBufferResult.release();
+            this.selectMappedBufferResult = null;
+        }
+
+        return result;
+    }
+
+    private void writeHeader() throws Exception {
         int writeSizeZeroTimes = 0;
         // Write Header
         while (this.byteBufferHeader.hasRemaining()) {
@@ -201,38 +213,28 @@ public class WriteSocketThread extends ServiceThread {
                 throw new Exception("ha master write header error < 0");
             }
         }
+    }
 
-        if (null == this.selectMappedBufferResult) {
-            return !this.byteBufferHeader.hasRemaining();
+    private void writeBody() throws Exception {
+        // Write Body
+        int writeSizeZeroTimes = 0;
+        if (this.byteBufferHeader.hasRemaining()) {
+            return;
         }
 
-        writeSizeZeroTimes = 0;
-
-        // Write Body
-        if (!this.byteBufferHeader.hasRemaining()) {
-            while (this.selectMappedBufferResult.getByteBuffer().hasRemaining()) {
-                int writeSize = this.socketChannel.write(this.selectMappedBufferResult.getByteBuffer());
-                if (writeSize > 0) {
-                    writeSizeZeroTimes = 0;
-                    this.lastWriteTimestamp = haConnection.getHaService().getDefaultMessageStore().getSystemClock().now();
-                } else if (writeSize == 0) {
-                    if (++writeSizeZeroTimes >= 3) {
-                        break;
-                    }
-                } else {
-                    throw new Exception("ha master write body error < 0");
+        while (this.selectMappedBufferResult.getByteBuffer().hasRemaining()) {
+            int writeSize = this.socketChannel.write(this.selectMappedBufferResult.getByteBuffer());
+            if (writeSize > 0) {
+                writeSizeZeroTimes = 0;
+                this.lastWriteTimestamp = TimeUtils.now();
+            } else if (writeSize == 0) {
+                if (++writeSizeZeroTimes >= 3) {
+                    break;
                 }
+            } else {
+                throw new Exception("ha master write body error < 0");
             }
         }
-
-        boolean result = !this.byteBufferHeader.hasRemaining() && !this.selectMappedBufferResult.getByteBuffer().hasRemaining();
-
-        if (!this.selectMappedBufferResult.getByteBuffer().hasRemaining()) {
-            this.selectMappedBufferResult.release();
-            this.selectMappedBufferResult = null;
-        }
-
-        return result;
     }
 
     @Override
