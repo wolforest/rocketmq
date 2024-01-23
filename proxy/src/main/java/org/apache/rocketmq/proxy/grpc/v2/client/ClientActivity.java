@@ -37,7 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
+import org.apache.rocketmq.broker.server.connection.ClientChannelInfo;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupEvent;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerIdsChangeListener;
 import org.apache.rocketmq.broker.domain.producer.ProducerChangeListener;

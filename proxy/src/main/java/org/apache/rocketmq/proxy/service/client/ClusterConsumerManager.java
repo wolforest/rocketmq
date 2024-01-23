@@ -18,7 +18,7 @@
 package org.apache.rocketmq.proxy.service.client;
 
 import java.util.Set;
-import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
+import org.apache.rocketmq.broker.server.connection.ClientChannelInfo;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerIdsChangeListener;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
 import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;

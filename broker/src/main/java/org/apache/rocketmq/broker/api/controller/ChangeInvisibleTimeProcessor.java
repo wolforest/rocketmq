@@ -22,7 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.metrics.PopMetricsManager;
 import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOffsetManager;
-import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
+import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeThread;
 import org.apache.rocketmq.broker.server.daemon.pop.QueueLockManager;
 import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -216,7 +216,7 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
         this.broker.getBrokerStatsManager().incBrokerAckNums(1);
         this.broker.getBrokerStatsManager().incGroupAckNums(requestHeader.getConsumerGroup(), requestHeader.getTopic(), 1);
 
-        PopBufferMergeService ackService = broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        PopBufferMergeThread ackService = broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
         if (ackService.addAckMsg(rqId, ackMsg)) {
             return;
         }

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
+import org.apache.rocketmq.broker.server.bootstrap.BrokerNettyServer;
 import org.apache.rocketmq.broker.api.controller.AckMessageProcessor;
 import org.apache.rocketmq.broker.api.controller.ChangeInvisibleTimeProcessor;
 import org.apache.rocketmq.broker.api.controller.EndTransactionProcessor;

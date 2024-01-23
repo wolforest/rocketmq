@@ -37,7 +37,7 @@ import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
 import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOffsetManager;
 import org.apache.rocketmq.broker.server.daemon.schedule.ScheduleMessageService;
-import org.apache.rocketmq.broker.server.daemon.BrokerServiceManager;
+import org.apache.rocketmq.broker.server.bootstrap.BrokerServiceManager;
 import org.apache.rocketmq.broker.domain.metadata.subscription.RocksDBSubscriptionGroupManager;
 import org.apache.rocketmq.broker.domain.metadata.topic.RocksDBTopicConfigManager;
 import org.apache.rocketmq.broker.domain.metadata.topic.TopicConfigManager;

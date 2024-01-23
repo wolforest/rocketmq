@@ -21,7 +21,7 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.rocketmq.broker.api.controller.PopMessageProcessor;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
+import org.apache.rocketmq.broker.server.bootstrap.BrokerNettyServer;
 import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.assertj.core.util.Lists;

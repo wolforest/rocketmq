@@ -20,7 +20,7 @@ import com.alibaba.fastjson.JSON;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.daemon.longpolling.PopLongPollingService;
+import org.apache.rocketmq.broker.server.daemon.longpolling.PopLongPollingThread;
 import org.apache.rocketmq.broker.server.daemon.longpolling.PopRequest;
 import org.apache.rocketmq.broker.api.controller.NotificationProcessor;
 import org.apache.rocketmq.broker.api.controller.PopMessageProcessor;
@@ -43,49 +43,49 @@ public class PopServiceManager {
     private final String reviveTopic;
     private final QueueLockManager queueLockManager;
 
-    private final PopReviveService[] popReviveServices;
-    private final PopBufferMergeService popBufferMergeService;
+    private final PopReviveThread[] popReviveThreads;
+    private final PopBufferMergeThread popBufferMergeThread;
 
-    private final PopLongPollingService popPollingService;
-    private final PopLongPollingService notificationPollingService;
+    private final PopLongPollingThread popPollingService;
+    private final PopLongPollingThread notificationPollingService;
 
 
     public PopServiceManager(final Broker broker, PopMessageProcessor popMessageProcessor, NotificationProcessor notificationProcessor) {
         this.broker = broker;
         this.reviveTopic = KeyBuilder.buildClusterReviveTopic(this.broker.getBrokerConfig().getBrokerClusterName());
 
-        this.popPollingService = new PopLongPollingService(broker, popMessageProcessor);
-        this.notificationPollingService = new PopLongPollingService(broker, notificationProcessor);
+        this.popPollingService = new PopLongPollingThread(broker, popMessageProcessor);
+        this.notificationPollingService = new PopLongPollingThread(broker, notificationProcessor);
 
         this.queueLockManager = new QueueLockManager(broker);
-        this.popBufferMergeService = new PopBufferMergeService(this.broker);
+        this.popBufferMergeThread = new PopBufferMergeThread(this.broker);
 
-        this.popReviveServices = new PopReviveService[this.broker.getBrokerConfig().getReviveQueueNum()];
+        this.popReviveThreads = new PopReviveThread[this.broker.getBrokerConfig().getReviveQueueNum()];
         for (int i = 0; i < this.broker.getBrokerConfig().getReviveQueueNum(); i++) {
-            this.popReviveServices[i] = new PopReviveService(broker, reviveTopic, i);
-            this.popReviveServices[i].setShouldRunPopRevive(broker.getBrokerConfig().getBrokerId() == 0);
+            this.popReviveThreads[i] = new PopReviveThread(broker, reviveTopic, i);
+            this.popReviveThreads[i].setShouldRunPopRevive(broker.getBrokerConfig().getBrokerId() == 0);
         }
     }
 
     public void start() {
         this.popPollingService.start();
         this.notificationPollingService.start();
-        this.popBufferMergeService.start();
+        this.popBufferMergeThread.start();
         this.queueLockManager.start();
 
-        for (PopReviveService popReviveService : popReviveServices) {
-            popReviveService.start();
+        for (PopReviveThread popReviveThread : popReviveThreads) {
+            popReviveThread.start();
         }
     }
 
     public void shutdown() {
         this.popPollingService.shutdown();
         this.notificationPollingService.shutdown();
-        this.popBufferMergeService.shutdown();
+        this.popBufferMergeThread.shutdown();
         this.queueLockManager.shutdown();
 
-        for (PopReviveService popReviveService : popReviveServices) {
-            popReviveService.shutdown();
+        for (PopReviveThread popReviveThread : popReviveThreads) {
+            popReviveThread.shutdown();
         }
     }
 
@@ -107,14 +107,14 @@ public class PopServiceManager {
     }
 
     public void setReviveStatus(boolean shouldStart) {
-        for (PopReviveService popReviveService : popReviveServices) {
-            popReviveService.setShouldRunPopRevive(shouldStart);
+        for (PopReviveThread popReviveThread : popReviveThreads) {
+            popReviveThread.setShouldRunPopRevive(shouldStart);
         }
     }
 
     public boolean isReviveRunning() {
-        for (PopReviveService popReviveService : popReviveServices) {
-            if (popReviveService.isShouldRunPopRevive()) {
+        for (PopReviveThread popReviveThread : popReviveThreads) {
+            if (popReviveThread.isShouldRunPopRevive()) {
                 return true;
             }
         }
@@ -164,23 +164,23 @@ public class PopServiceManager {
         return reviveTopic;
     }
 
-    public PopReviveService[] getPopReviveServices() {
-        return popReviveServices;
+    public PopReviveThread[] getPopReviveServices() {
+        return popReviveThreads;
     }
 
-    public PopLongPollingService getPopPollingService() {
+    public PopLongPollingThread getPopPollingService() {
         return popPollingService;
     }
 
-    public PopBufferMergeService getPopBufferMergeService() {
-        return this.popBufferMergeService;
+    public PopBufferMergeThread getPopBufferMergeService() {
+        return this.popBufferMergeThread;
     }
 
     public QueueLockManager getQueueLockManager() {
         return queueLockManager;
     }
 
-    public PopLongPollingService getNotificationPollingService() {
+    public PopLongPollingThread getNotificationPollingService() {
         return notificationPollingService;
     }
 }

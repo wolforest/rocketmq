@@ -20,6 +20,9 @@ import org.apache.rocketmq.common.app.config.ConfigManager;
 
 /**
  * store ConfigManager data
+ * - FileKV
+ * - rocksdb
+ *
  * @see ConfigManager
  */
 public class KVService {

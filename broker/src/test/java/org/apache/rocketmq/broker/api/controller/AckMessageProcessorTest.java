@@ -19,11 +19,11 @@ package org.apache.rocketmq.broker.api.controller;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
-import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
-import org.apache.rocketmq.broker.infra.network.Broker2Client;
-import org.apache.rocketmq.broker.infra.network.EscapeBridge;
-import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
+import org.apache.rocketmq.broker.server.bootstrap.BrokerNettyServer;
+import org.apache.rocketmq.broker.server.connection.ClientChannelInfo;
+import org.apache.rocketmq.broker.infra.Broker2Client;
+import org.apache.rocketmq.broker.infra.EscapeBridge;
+import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeThread;
 import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
@@ -123,9 +123,9 @@ public class AckMessageProcessorTest {
     @Test
     public void testProcessRequest_Success() throws RemotingCommandException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException {
         when(messageStore.putMessage(any(MessageExtBrokerInner.class))).thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK)));
-        PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
-        when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(false);
-        when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
+        PopBufferMergeThread popBufferMergeThread = mock(PopBufferMergeThread.class);
+        when(popBufferMergeThread.addAckMsg(anyInt(), any())).thenReturn(false);
+        when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeThread);
 
         int queueId = 0;
         long queueOffset = 0;
@@ -261,9 +261,9 @@ public class AckMessageProcessorTest {
     public void testSingleAck_appendAck() throws RemotingCommandException {
         {
             // buffer addAk OK
-            PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
-            when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(true);
-            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
+            PopBufferMergeThread popBufferMergeThread = mock(PopBufferMergeThread.class);
+            when(popBufferMergeThread.addAckMsg(anyInt(), any())).thenReturn(true);
+            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeThread);
 
             AckMessageRequestHeader requestHeader = new AckMessageRequestHeader();
             long ackOffset = MIN_OFFSET_IN_QUEUE + 10;
@@ -281,9 +281,9 @@ public class AckMessageProcessorTest {
 
         {
             // buffer addAk fail
-            PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
-            when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(false);
-            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
+            PopBufferMergeThread popBufferMergeThread = mock(PopBufferMergeThread.class);
+            when(popBufferMergeThread.addAckMsg(anyInt(), any())).thenReturn(false);
+            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeThread);
             // store putMessage OK
             PutMessageResult putMessageResult = new PutMessageResult(PutMessageStatus.PUT_OK, null);
             when(messageStore.putMessage(any())).thenReturn(putMessageResult);
@@ -307,9 +307,9 @@ public class AckMessageProcessorTest {
     public void testBatchAck_appendAck() throws RemotingCommandException {
         {
             // buffer addAk OK
-            PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
-            when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(true);
-            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
+            PopBufferMergeThread popBufferMergeThread = mock(PopBufferMergeThread.class);
+            when(popBufferMergeThread.addAckMsg(anyInt(), any())).thenReturn(true);
+            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeThread);
 
             BatchAck bAck1 = new BatchAck();
             bAck1.setConsumerGroup(MQConstants.DEFAULT_CONSUMER_GROUP);
@@ -331,9 +331,9 @@ public class AckMessageProcessorTest {
 
         {
             // buffer addAk fail
-            PopBufferMergeService popBufferMergeService = mock(PopBufferMergeService.class);
-            when(popBufferMergeService.addAckMsg(anyInt(), any())).thenReturn(false);
-            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeService);
+            PopBufferMergeThread popBufferMergeThread = mock(PopBufferMergeThread.class);
+            when(popBufferMergeThread.addAckMsg(anyInt(), any())).thenReturn(false);
+            when(broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService()).thenReturn(popBufferMergeThread);
             // store putMessage OK
             PutMessageResult putMessageResult = new PutMessageResult(PutMessageStatus.PUT_OK, null);
             when(messageStore.putMessage(any())).thenReturn(putMessageResult);

@@ -22,7 +22,7 @@ import io.netty.channel.ChannelHandlerContext;
 import java.util.BitSet;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.metrics.PopMetricsManager;
-import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
+import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeThread;
 import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.server.daemon.pop.QueueLockManager;
 import org.apache.rocketmq.common.domain.topic.KeyBuilder;
@@ -188,7 +188,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         this.broker.getBrokerStatsManager().incGroupAckNums(ackMsg.getConsumerGroup(), ackMsg.getTopic(), msgCount);
 
         PopInflightMessageCounter messageCounter = broker.getPopInflightMessageCounter();
-        PopBufferMergeService ackService = this.broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        PopBufferMergeThread ackService = this.broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
         if (ackService.addAckMsg(rqId, ackMsg)) {
             messageCounter.decrementInFlightMessageNum(ackMsg.getTopic(), ackMsg.getConsumerGroup(), ackMsg.getPopTime(), ackMsg.getQueueId(), msgCount);
             return;

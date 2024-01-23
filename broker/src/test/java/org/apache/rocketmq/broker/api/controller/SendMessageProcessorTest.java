@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.daemon.BrokerNettyServer;
+import org.apache.rocketmq.broker.server.bootstrap.BrokerNettyServer;
 import org.apache.rocketmq.common.app.AbortProcessException;
 import org.apache.rocketmq.broker.domain.mqtrace.ConsumeMessageContext;
 import org.apache.rocketmq.broker.domain.mqtrace.ConsumeMessageHook;

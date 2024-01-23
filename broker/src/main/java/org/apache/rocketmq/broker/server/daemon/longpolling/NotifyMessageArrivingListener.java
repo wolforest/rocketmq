@@ -22,18 +22,18 @@ import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
 import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
 
 public class NotifyMessageArrivingListener implements MessageArrivingListener {
-    private final PullRequestHoldService pullRequestHoldService;
+    private final PullRequestHoldThread pullRequestHoldThread;
     private final PopServiceManager popServiceManager;
 
-    public NotifyMessageArrivingListener(final PullRequestHoldService pullRequestHoldService, final PopServiceManager popServiceManager) {
-        this.pullRequestHoldService = pullRequestHoldService;
+    public NotifyMessageArrivingListener(final PullRequestHoldThread pullRequestHoldThread, final PopServiceManager popServiceManager) {
+        this.pullRequestHoldThread = pullRequestHoldThread;
         this.popServiceManager = popServiceManager;
     }
 
     @Override
     public void arriving(String topic, int queueId, long logicOffset, long tagsCode,
                          long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) {
-        this.pullRequestHoldService.notifyMessageArriving(topic, queueId, logicOffset, tagsCode, msgStoreTime, filterBitMap, properties);
+        this.pullRequestHoldThread.notifyMessageArriving(topic, queueId, logicOffset, tagsCode, msgStoreTime, filterBitMap, properties);
         this.popServiceManager.popArriving(topic, queueId);
         this.popServiceManager.notificationArriving(topic, queueId);
     }

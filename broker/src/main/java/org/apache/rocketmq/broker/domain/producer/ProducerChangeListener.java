@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.broker.domain.producer;
 
-import org.apache.rocketmq.broker.server.client.ClientChannelInfo;
+import org.apache.rocketmq.broker.server.connection.ClientChannelInfo;
 
 /**
  * producer manager will call this listener when something happen

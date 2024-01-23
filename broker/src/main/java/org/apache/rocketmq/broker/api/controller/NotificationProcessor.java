@@ -23,7 +23,7 @@ import java.util.Random;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.longpolling.PollingHeader;
 import org.apache.rocketmq.broker.server.daemon.longpolling.PollingResult;
-import org.apache.rocketmq.broker.server.daemon.longpolling.PopLongPollingService;
+import org.apache.rocketmq.broker.server.daemon.longpolling.PopLongPollingThread;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.help.FAQUrl;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
@@ -45,12 +45,12 @@ public class NotificationProcessor implements NettyRequestProcessor {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
     private final Broker broker;
     private final Random random = new Random(System.currentTimeMillis());
-    private final PopLongPollingService popLongPollingService;
+    private final PopLongPollingThread popLongPollingThread;
     private static final String BORN_TIME = "bornTime";
 
     public NotificationProcessor(final Broker broker) {
         this.broker = broker;
-        this.popLongPollingService = new PopLongPollingService(broker, this);
+        this.popLongPollingThread = new PopLongPollingThread(broker, this);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class NotificationProcessor implements NettyRequestProcessor {
     }
 
     public void notifyMessageArriving(final String topic, final int queueId) {
-        popLongPollingService.notifyMessageArrivingWithRetryTopic(topic, queueId);
+        popLongPollingThread.notifyMessageArrivingWithRetryTopic(topic, queueId);
     }
 
     @Override
@@ -151,7 +151,7 @@ public class NotificationProcessor implements NettyRequestProcessor {
         }
 
         if (!hasMsg) {
-            if (popLongPollingService.polling(ctx, request, new PollingHeader(requestHeader)) == PollingResult.POLLING_SUC) {
+            if (popLongPollingThread.polling(ctx, request, new PollingHeader(requestHeader)) == PollingResult.POLLING_SUC) {
                 return null;
             }
         }
@@ -205,7 +205,7 @@ public class NotificationProcessor implements NettyRequestProcessor {
         }
     }
 
-    public PopLongPollingService getPopLongPollingService() {
-        return popLongPollingService;
+    public PopLongPollingThread getPopLongPollingService() {
+        return popLongPollingThread;
     }
 }

@@ -19,7 +19,7 @@ package org.apache.rocketmq.container;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
-import org.apache.rocketmq.broker.infra.network.ClusterClient;
+import org.apache.rocketmq.broker.infra.ClusterClient;
 import org.apache.rocketmq.common.app.AbstractBrokerRunnable;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.BrokerIdentity;

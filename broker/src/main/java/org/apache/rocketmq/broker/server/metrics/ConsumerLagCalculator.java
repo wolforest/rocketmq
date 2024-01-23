@@ -27,7 +27,7 @@ import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterData;
 import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterManager;
 import org.apache.rocketmq.broker.domain.metadata.filter.ExpressionMessageFilter;
 import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOffsetManager;
-import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeService;
+import org.apache.rocketmq.broker.server.daemon.pop.PopBufferMergeThread;
 import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.domain.metadata.subscription.SubscriptionGroupManager;
 import org.apache.rocketmq.broker.domain.metadata.topic.TopicConfigManager;
@@ -57,7 +57,7 @@ public class ConsumerLagCalculator {
     private final ConsumerFilterManager consumerFilterManager;
     private final SubscriptionGroupManager subscriptionGroupManager;
     private final MessageStore messageStore;
-    private final PopBufferMergeService popBufferMergeService;
+    private final PopBufferMergeThread popBufferMergeThread;
     private final PopInflightMessageCounter popInflightMessageCounter;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
@@ -70,7 +70,7 @@ public class ConsumerLagCalculator {
         this.consumerFilterManager = broker.getConsumerFilterManager();
         this.subscriptionGroupManager = broker.getSubscriptionGroupManager();
         this.messageStore = broker.getMessageStore();
-        this.popBufferMergeService = broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+        this.popBufferMergeThread = broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
         this.popInflightMessageCounter = broker.getPopInflightMessageCounter();
     }
 
@@ -305,7 +305,7 @@ public class ConsumerLagCalculator {
         }
 
         if (isPop) {
-            long pullOffset = popBufferMergeService.getLatestOffset(topic, group, queueId);
+            long pullOffset = popBufferMergeThread.getLatestOffset(topic, group, queueId);
             if (pullOffset < 0) {
                 pullOffset = offsetManager.queryOffset(group, topic, queueId);
             }
@@ -358,7 +358,7 @@ public class ConsumerLagCalculator {
     public Pair<Long, Long> getInFlightMsgStats(String group, String topic, int queueId, boolean isPop) {
         if (isPop) {
             long inflight = popInflightMessageCounter.getGroupPopInFlightMessageNum(topic, group, queueId);
-            long pullOffset = popBufferMergeService.getLatestOffset(topic, group, queueId);
+            long pullOffset = popBufferMergeThread.getLatestOffset(topic, group, queueId);
             if (pullOffset < 0) {
                 pullOffset = offsetManager.queryOffset(group, topic, queueId);
             }
@@ -411,7 +411,7 @@ public class ConsumerLagCalculator {
 
         long pullOffset;
         if (isPop) {
-            pullOffset = popBufferMergeService.getLatestOffset(topic, group, queueId);
+            pullOffset = popBufferMergeThread.getLatestOffset(topic, group, queueId);
             if (pullOffset < 0) {
                 pullOffset = offsetManager.queryOffset(group, topic, queueId);
             }

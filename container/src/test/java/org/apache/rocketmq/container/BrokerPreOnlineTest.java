@@ -21,7 +21,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineService;
-import org.apache.rocketmq.broker.infra.network.ClusterClient;
+import org.apache.rocketmq.broker.infra.ClusterClient;
 import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageCheckService;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;

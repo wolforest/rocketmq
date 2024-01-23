@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.longpolling.PullRequest;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
-import org.apache.rocketmq.broker.infra.pagecache.ManyMessageTransfer;
+import org.apache.rocketmq.broker.infra.zerocopy.ManyMessageTransfer;
 import org.apache.rocketmq.common.app.AbortProcessException;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.topic.TopicFilterType;
