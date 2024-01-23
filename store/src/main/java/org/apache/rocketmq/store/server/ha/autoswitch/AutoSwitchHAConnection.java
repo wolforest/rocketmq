@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.NetworkUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettySystemConfig;
@@ -259,7 +260,7 @@ public class AutoSwitchHAConnection implements HAConnection {
                         break;
                     }
 
-                    long interval = haService.getDefaultMessageStore().getSystemClock().now() - this.lastReadTimestamp;
+                    long interval = TimeUtils.now() - this.lastReadTimestamp;
                     if (interval > haService.getDefaultMessageStore().getMessageStoreConfig().getHaHousekeepingInterval()) {
                         LOGGER.warn("ha housekeeping, found this connection[" + clientAddress + "] expired, " + interval);
                         break;
@@ -557,7 +558,7 @@ public class AutoSwitchHAConnection implements HAConnection {
         }
 
         private boolean sendHeartbeatIfNeeded() throws Exception {
-            long interval = haService.getDefaultMessageStore().getSystemClock().now() - this.lastWriteTimestamp;
+            long interval = TimeUtils.now() - this.lastWriteTimestamp;
             if (interval > haService.getDefaultMessageStore().getMessageStoreConfig().getHaSendHeartbeatInterval()) {
                 buildTransferHeaderBuffer(this.nextTransferFromWhere, 0);
                 return this.transferData(0);
