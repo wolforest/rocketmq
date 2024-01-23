@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.server.slave;
+package org.apache.rocketmq.broker.server.synchronizer;
 
 import java.util.ArrayList;
 import java.util.Arrays;

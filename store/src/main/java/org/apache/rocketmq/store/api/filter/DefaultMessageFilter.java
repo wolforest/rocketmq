@@ -23,7 +23,7 @@ import org.apache.rocketmq.store.domain.queue.CqExtUnit;
 
 public class DefaultMessageFilter implements MessageFilter {
 
-    private SubscriptionData subscriptionData;
+    private final SubscriptionData subscriptionData;
 
     public DefaultMessageFilter(final SubscriptionData subscriptionData) {
         this.subscriptionData = subscriptionData;
