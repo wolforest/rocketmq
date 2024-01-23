@@ -86,7 +86,7 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
                 return;
             }
             //The client may not have the setting object yet
-            if(null == settings){
+            if (null == settings) {
                 log.warn("Can not execute popMessage,because settings is null! Client may not have the setting object yet.");
                 writer.writeAndComplete(ctx, request, new NullPointerException());
                 return;
