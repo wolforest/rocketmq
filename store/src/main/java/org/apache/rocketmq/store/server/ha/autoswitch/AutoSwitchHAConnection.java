@@ -67,7 +67,7 @@ public class AutoSwitchHAConnection implements HAConnection {
     private final String clientAddress;
     private final EpochFileCache epochCache;
     private final AbstractWriteSocketService writeSocketService;
-    private final ReadSocketService readSocketService;
+    private final ReadSocketThread readSocketThread;
     private final FlowMonitorThread flowMonitorThread;
 
     private volatile HAConnectionState currentState = HAConnectionState.HANDSHAKE;
@@ -100,7 +100,7 @@ public class AutoSwitchHAConnection implements HAConnection {
         this.clientAddress = this.socketChannel.socket().getRemoteSocketAddress().toString();
         this.epochCache = epochCache;
         this.writeSocketService = new WriteSocketService(this.socketChannel, this);
-        this.readSocketService = new ReadSocketService(this.socketChannel, this);
+        this.readSocketThread = new ReadSocketThread(this.socketChannel, this);
         this.haService.getConnectionCount().incrementAndGet();
         this.flowMonitorThread = new FlowMonitorThread(haService.getDefaultMessageStore().getMessageStoreConfig());
     }
@@ -121,7 +121,7 @@ public class AutoSwitchHAConnection implements HAConnection {
     public void start() {
         changeCurrentState(HAConnectionState.HANDSHAKE);
         this.flowMonitorThread.start();
-        this.readSocketService.start();
+        this.readSocketThread.start();
         this.writeSocketService.start();
     }
 
@@ -130,7 +130,7 @@ public class AutoSwitchHAConnection implements HAConnection {
         changeCurrentState(HAConnectionState.SHUTDOWN);
         this.flowMonitorThread.shutdown(true);
         this.writeSocketService.shutdown(true);
-        this.readSocketService.shutdown(true);
+        this.readSocketThread.shutdown(true);
         this.close();
     }
 
@@ -226,8 +226,8 @@ public class AutoSwitchHAConnection implements HAConnection {
         return writeSocketService;
     }
 
-    public ReadSocketService getReadSocketService() {
-        return readSocketService;
+    public ReadSocketThread getReadSocketService() {
+        return readSocketThread;
     }
 
     public FlowMonitorThread getFlowMonitorThread() {

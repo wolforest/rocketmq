@@ -31,7 +31,10 @@ import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 import org.apache.rocketmq.store.server.ha.io.AbstractHAReader;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 
-public class ReadSocketService extends ServiceThread {
+/**
+ * @renamed from ReadSocketService to ReadSocketThread
+ */
+public class ReadSocketThread extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private static final int READ_MAX_BUFFER_SIZE = 1024 * 1024;
 
@@ -44,7 +47,7 @@ public class ReadSocketService extends ServiceThread {
     private int processPosition = 0;
     private volatile long lastReadTimestamp = System.currentTimeMillis();
 
-    public ReadSocketService(final SocketChannel socketChannel, AutoSwitchHAConnection haConnection) throws IOException {
+    public ReadSocketThread(final SocketChannel socketChannel, AutoSwitchHAConnection haConnection) throws IOException {
         this.haConnection = haConnection;
 
         this.selector = NetworkUtils.openSelector();
@@ -56,7 +59,7 @@ public class ReadSocketService extends ServiceThread {
         haReader = new HAServerReader(haConnection, this);
         haReader.registerHook(readSize -> {
             if (readSize > 0) {
-                ReadSocketService.this.setLastReadTimestamp(TimeUtils.now());
+                ReadSocketThread.this.setLastReadTimestamp(TimeUtils.now());
             }
         });
     }
@@ -112,9 +115,9 @@ public class ReadSocketService extends ServiceThread {
     public String getServiceName() {
         DefaultMessageStore store = haConnection.getHaService().getDefaultMessageStore();
         if (store.getBrokerConfig().isInBrokerContainer()) {
-            return store.getBrokerIdentity().getIdentifier() + ReadSocketService.class.getSimpleName();
+            return store.getBrokerIdentity().getIdentifier() + ReadSocketThread.class.getSimpleName();
         }
-        return ReadSocketService.class.getSimpleName();
+        return ReadSocketThread.class.getSimpleName();
     }
 
     public int getProcessPosition() {

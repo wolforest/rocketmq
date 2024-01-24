@@ -27,20 +27,20 @@ public class HAServerReader extends AbstractHAReader {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final AutoSwitchHAConnection haConnection;
-    private final ReadSocketService readSocketService;
+    private final ReadSocketThread readSocketThread;
 
-    public HAServerReader(AutoSwitchHAConnection haConnection, ReadSocketService readSocketService) {
+    public HAServerReader(AutoSwitchHAConnection haConnection, ReadSocketThread readSocketThread) {
         this.haConnection = haConnection;
-        this.readSocketService = readSocketService;
+        this.readSocketThread = readSocketThread;
     }
 
     @Override
     protected boolean processReadResult(ByteBuffer byteBufferRead) {
         while (true) {
-            int diff = byteBufferRead.position() - readSocketService.getProcessPosition();
+            int diff = byteBufferRead.position() - readSocketThread.getProcessPosition();
 
             if (diff >= AutoSwitchHAClient.MIN_HEADER_SIZE) {
-                int readPosition = readSocketService.getProcessPosition();
+                int readPosition = readSocketThread.getProcessPosition();
                 HAConnectionState slaveState = HAConnectionState.values()[byteBufferRead.getInt(readPosition)];
 
                 if (!processSlaveState(slaveState, byteBufferRead, byteBufferRead.position(), readPosition)) {
@@ -92,14 +92,14 @@ public class HAServerReader extends AbstractHAReader {
 
         haConnection.setSlaveSendHandshake(true);
         byteBufferRead.position(readSocketPos);
-        readSocketService.setProcessPosition(readSocketService.getProcessPosition() + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE);
+        readSocketThread.setProcessPosition(readSocketThread.getProcessPosition() + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE);
         LOGGER.info("Receive slave handshake, slaveBrokerId:{}, isSyncFromLastFile:{}, isAsyncLearner:{}",
             haConnection.getSlaveId(), haConnection.isSyncFromLastFile(), haConnection.isAsyncLearner());
     }
 
     private void processTransferState(ByteBuffer byteBufferRead, int readSocketPos, int readPosition) {
         long slaveMaxOffset = byteBufferRead.getLong(readPosition + 4);
-        readSocketService.setProcessPosition(readSocketService.getProcessPosition() + AutoSwitchHAClient.TRANSFER_HEADER_SIZE);
+        readSocketThread.setProcessPosition(readSocketThread.getProcessPosition() + AutoSwitchHAClient.TRANSFER_HEADER_SIZE);
 
         haConnection.setSlaveAckOffset(slaveMaxOffset);
         if (haConnection.getSlaveRequestOffset() < 0) {
@@ -126,9 +126,9 @@ public class HAServerReader extends AbstractHAReader {
             return;
         }
 
-        byteBufferRead.position(readSocketService.getProcessPosition());
+        byteBufferRead.position(readSocketThread.getProcessPosition());
         byteBufferRead.compact();
-        readSocketService.setProcessPosition(0);
+        readSocketThread.setProcessPosition(0);
     }
 }
 
