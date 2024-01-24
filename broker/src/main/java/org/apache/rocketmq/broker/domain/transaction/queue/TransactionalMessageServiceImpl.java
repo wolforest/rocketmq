@@ -18,7 +18,9 @@ package org.apache.rocketmq.broker.domain.transaction.queue;
 
 import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.OperationResult;
+import org.apache.rocketmq.broker.domain.transaction.TransactionMetrics;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
+import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.Message;
@@ -42,11 +44,19 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
 
     private final TransactionalMessageBridge transactionalMessageBridge;
     private final ServiceThread transactionalOpBatchService;
+    private TransactionMetrics transactionMetrics;
 
     public TransactionalMessageServiceImpl(TransactionalMessageBridge transactionBridge) {
         this.transactionalMessageBridge = transactionBridge;
         transactionalOpBatchService = new TransactionalOpBatchService(transactionalMessageBridge.getBrokerController(), this);
         transactionalOpBatchService.start();
+
+        transactionMetrics = new TransactionMetrics(
+            BrokerPathConfigHelper.getTransactionMetricsPath(
+                transactionalMessageBridge.getBrokerController().getMessageStoreConfig().getStorePathRootDir()
+            )
+        );
+        transactionMetrics.load();
     }
 
     @Override
@@ -138,6 +148,8 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
         if (this.transactionalOpBatchService != null) {
             this.transactionalOpBatchService.shutdown();
         }
+
+        this.getTransactionMetrics().persist();
     }
 
     public Message getOpMessage(int queueId, String moreData) {
@@ -247,4 +259,15 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
     public TransactionalMessageBridge getTransactionalMessageBridge() {
         return transactionalMessageBridge;
     }
+
+    @Override
+    public TransactionMetrics getTransactionMetrics() {
+        return transactionMetrics;
+    }
+
+    @Override
+    public void setTransactionMetrics(TransactionMetrics transactionMetrics) {
+        this.transactionMetrics = transactionMetrics;
+    }
+
 }

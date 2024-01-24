@@ -14,7 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.infra;
 
-public class StoreClient {
+package org.apache.rocketmq.remoting.protocol.header;
+
+import org.apache.rocketmq.remoting.exception.RemotingCommandException;
+import org.apache.rocketmq.remoting.rpc.RpcRequestHeader;
+
+public class LockBatchMqRequestHeader extends RpcRequestHeader {
+    @Override
+    public void checkFields() throws RemotingCommandException {
+
+    }
 }

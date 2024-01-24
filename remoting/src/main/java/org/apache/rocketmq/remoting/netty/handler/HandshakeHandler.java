@@ -51,7 +51,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
             }
             if (detectionResult.state() == ProtocolDetectionState.DETECTED) {
                 ctx.pipeline().addAfter(server.getDefaultEventExecutorGroup(), ctx.name(), HA_PROXY_DECODER, new HAProxyMessageDecoder())
-                    .addAfter(server.getDefaultEventExecutorGroup(), HA_PROXY_DECODER, HA_PROXY_HANDLER, new HAProxyMessageHandler())
+                    .addAfter(server.getDefaultEventExecutorGroup(), HA_PROXY_DECODER, HA_PROXY_HANDLER, new HAProxyMessageHandler(server))
                     .addAfter(server.getDefaultEventExecutorGroup(), HA_PROXY_HANDLER, TlsModeHandler.TLS_MODE_HANDLER, server.getTlsModeHandler());
             } else {
                 ctx.pipeline().addAfter(server.getDefaultEventExecutorGroup(), ctx.name(), TlsModeHandler.TLS_MODE_HANDLER, server.getTlsModeHandler());

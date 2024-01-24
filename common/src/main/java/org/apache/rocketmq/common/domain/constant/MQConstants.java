@@ -39,6 +39,9 @@ public class MQConstants {
     public static final String ROCKETMQ_ZONE_MODE_PROPERTY = "rocketmq.zone.mode";
     public static final String ZONE_NAME = "__ZONE_NAME";
     public static final String ZONE_MODE = "__ZONE_MODE";
+    public final static String RPC_REQUEST_HEADER_NAMESPACED_FIELD = "nsd";
+    public final static String RPC_REQUEST_HEADER_NAMESPACE_FIELD = "ns";
+
     public static final String MESSAGE_COMPRESS_TYPE = "rocketmq.message.compressType";
     public static final String MESSAGE_COMPRESS_LEVEL = "rocketmq.message.compressLevel";
     public static final String DEFAULT_PRODUCER_GROUP = "DEFAULT_PRODUCER";
@@ -62,6 +65,7 @@ public class MQConstants {
     public final static int ALL_ACK_IN_SYNC_STATE_SET = -1;
     public static final String CID_SYS_RMQ_TRANS = "CID_RMQ_SYS_TRANS";
     public static final String ACL_CONF_TOOLS_FILE = "/conf/tools.yml";
+    public static final String REPLY_MESSAGE_FLAG = "reply";
     public static final String MULTI_DISPATCH_QUEUE_SPLITTER = ",";
     public static final String REQ_T = "ReqT";
     public static final String LOGICAL_QUEUE_MOCK_BROKER_PREFIX = "__syslo__";

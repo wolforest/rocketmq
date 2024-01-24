@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.store.domain.timer.transit;
 
+import io.opentelemetry.api.common.Attributes;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
@@ -34,6 +35,8 @@ import org.apache.rocketmq.store.domain.queue.ReferredIterator;
 import org.apache.rocketmq.store.domain.timer.MessageOperator;
 import org.apache.rocketmq.store.domain.timer.TimerRequest;
 import org.apache.rocketmq.store.domain.timer.TimerState;
+import org.apache.rocketmq.store.server.metrics.DefaultStoreMetricsConstant;
+import org.apache.rocketmq.store.server.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
 
 /**
@@ -134,6 +137,10 @@ public class TimerMessageAccepter extends ServiceThread {
                         if (!loopOffer(timerRequest)) {
                             return false;
                         }
+
+                        Attributes attributes = DefaultStoreMetricsManager.newAttributesBuilder()
+                            .put(DefaultStoreMetricsConstant.LABEL_TOPIC, msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC)).build();
+                        DefaultStoreMetricsManager.timerMessageSetLatency.record((delayedTime - msgExt.getBornTimestamp()) / 1000, attributes);
                     }
                 } catch (Exception e) {
                     deferThrow(e);

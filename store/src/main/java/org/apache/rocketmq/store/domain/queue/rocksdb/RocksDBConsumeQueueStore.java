@@ -47,6 +47,7 @@ import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.Statistics;
 import org.rocksdb.WriteBatch;
 
 public class RocksDBConsumeQueueStore extends AbstractConsumeQueueStore {
@@ -268,6 +269,9 @@ public class RocksDBConsumeQueueStore extends AbstractConsumeQueueStore {
         }
     }
 
+    public Statistics getStatistics() {
+        return rocksDBStorage.getStatistics();
+    }
     @Override
     public List<ByteBuffer> rangeQuery(final String topic, final int queueId, final long startIndex, final int num) throws RocksDBException {
         return this.rocksDBConsumeQueueTable.rangeQuery(topic, queueId, startIndex, num);

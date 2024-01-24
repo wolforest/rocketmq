@@ -58,6 +58,7 @@ import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingContex
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingDetail;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
+import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
@@ -330,12 +331,14 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
         // Map<String, String> oriProps = MessageDecoder.string2messageProperties(requestHeader.getProperties());
         String traFlag = oriProps.get(MessageConst.PROPERTY_TRANSACTION_PREPARED);
-        boolean sendTransactionPrepareMessage = false;
+        boolean sendTransactionPrepareMessage;
         if (Boolean.parseBoolean(traFlag) && !(msgInner.getReconsumeTimes() > 0 && msgInner.getDelayTimeLevel() > 0)) { //For client under version 4.6.1
             if (isRejectTransactionMessage(response)) {
                 return response;
             }
             sendTransactionPrepareMessage = true;
+        } else {
+            sendTransactionPrepareMessage = false;
         }
 
         long beginTimeMillis = TimeUtils.now();
@@ -373,6 +376,12 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             if (responseFuture != null) {
                 doResponse(ctx, request, responseFuture);
             }
+
+            // record the transaction metrics, responseFuture == null means put successfully
+            if (sendTransactionPrepareMessage && (responseFuture == null || responseFuture.getCode() == ResponseCode.SUCCESS)) {
+                this.broker.getBrokerMessageService().getTransactionalMessageService().getTransactionMetrics().addAndGet(msgInner.getProperty(MessageConst.PROPERTY_REAL_TOPIC), 1);
+            }
+
             sendMessageCallback.onComplete(sendMessageContext, response);
         }, this.broker.getBrokerNettyServer().getPutMessageFutureExecutor());
         // Returns null to release the send message thread
@@ -390,6 +399,12 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             putMessageResult = this.broker.getMessageStore().putMessage(msgInner);
         }
         handlePutMessageResult(putMessageResult, response, request, msgInner, responseHeader, sendMessageContext, ctx, queueIdInt, beginTimeMillis, mappingContext, BrokerMetricsManager.getMessageType(requestHeader));
+
+        // record the transaction metrics
+        if (putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK && putMessageResult.getAppendMessageResult().isOk()) {
+            this.broker.getBrokerMessageService().getTransactionalMessageService().getTransactionMetrics().addAndGet(msgInner.getProperty(MessageConst.PROPERTY_REAL_TOPIC), 1);
+        }
+
         sendMessageCallback.onComplete(sendMessageContext, response);
         return response;
     }

@@ -16,21 +16,22 @@
  */
 package org.apache.rocketmq.remoting.netty.handler;
 
-import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
-import io.netty.util.AttributeKey;
-import io.netty.util.CharsetUtil;
-import java.nio.charset.StandardCharsets;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.domain.constant.HAProxyConstants;
-import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.remoting.netty.AttributeKeys;
+import org.apache.rocketmq.remoting.netty.NettyRemotingServer;
 
 public class HAProxyMessageHandler extends ChannelInboundHandlerAdapter {
+
+    private final NettyRemotingServer server;
+
+    public HAProxyMessageHandler(NettyRemotingServer server) {
+        this.server = server;
+    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -45,8 +46,8 @@ public class HAProxyMessageHandler extends ChannelInboundHandlerAdapter {
     /**
      * The definition of key refers to the implementation of nginx
      * <a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#var_proxy_protocol_addr">ngx_http_core_module</a>
-     * @param msg
-     * @param channel
+     * @param msg msg
+     * @param channel channel
      */
     private void handleWithMessage(HAProxyMessage msg, Channel channel) {
         try {
@@ -64,20 +65,14 @@ public class HAProxyMessageHandler extends ChannelInboundHandlerAdapter {
             }
             if (CollectionUtils.isNotEmpty(msg.tlvs())) {
                 msg.tlvs().forEach(tlv -> {
-                    AttributeKey<String> key = AttributeKeys.valueOf(
-                        HAProxyConstants.PROXY_PROTOCOL_TLV_PREFIX + String.format("%02x", tlv.typeByteValue()));
-                    byte[] valueBytes = ByteBufUtil.getBytes(tlv.content());
-                    String value = StringUtils.trim(new String(valueBytes, CharsetUtil.UTF_8));
-                    if (!BinaryUtils.isAscii(value.getBytes(StandardCharsets.UTF_8))) {
-                        return;
-                    }
-                    channel.attr(key).set(value);
+                    server.handleHAProxyTLV(tlv, channel);
                 });
             }
         } finally {
             msg.release();
         }
     }
+
 }
 
 

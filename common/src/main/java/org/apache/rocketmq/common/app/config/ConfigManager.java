@@ -22,6 +22,7 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.rocksdb.Statistics;
 
 public abstract class ConfigManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
@@ -104,4 +105,8 @@ public abstract class ConfigManager {
     public abstract String encode(final boolean prettyFormat);
 
     public abstract void decode(final String jsonString);
+
+    public Statistics getStatistics() {
+        return rocksDBConfigManager == null ? null : rocksDBConfigManager.getStatistics();
+    }
 }

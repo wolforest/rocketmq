@@ -90,4 +90,8 @@ public interface TransactionalMessageService {
     void close();
 
     TransactionalMessageBridge getTransactionalMessageBridge();
+
+    TransactionMetrics getTransactionMetrics();
+
+    void setTransactionMetrics(TransactionMetrics transactionMetrics);
 }

@@ -23,6 +23,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.rocksdb.FlushOptions;
 import org.rocksdb.RocksIterator;
+import org.rocksdb.Statistics;
 import org.rocksdb.WriteBatch;
 
 public class RocksDBConfigManager {
@@ -101,5 +102,13 @@ public class RocksDBConfigManager {
 
     public void batchPutWithWal(final WriteBatch batch) throws Exception {
         this.configRocksDBStorage.batchPutWithWal(batch);
+    }
+
+    public Statistics getStatistics() {
+        if (this.configRocksDBStorage == null) {
+            return null;
+        }
+
+        return configRocksDBStorage.getStatistics();
     }
 }

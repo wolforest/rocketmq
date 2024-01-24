@@ -20,6 +20,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.transaction.OperationResult;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageUtil;
+import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.common.domain.topic.TopicFilterType;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageAccessor;
@@ -39,6 +40,8 @@ import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.header.EndTransactionRequestHeader;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.server.config.BrokerRole;
+
+import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LABEL_TOPIC;
 
 /**
  * EndTransaction processor: process commit and rollback message
@@ -110,6 +113,16 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         RemotingCommand sendResult = sendFinalMessage(msgInner);
         if (sendResult.getCode() == ResponseCode.SUCCESS) {
             this.broker.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
+            // successful committed, then total num of half-messages minus 1
+            this.broker.getBrokerMessageService().getTransactionalMessageService().getTransactionMetrics().addAndGet(msgInner.getTopic(), -1);
+            BrokerMetricsManager.commitMessagesTotal.add(1, BrokerMetricsManager.newAttributesBuilder()
+                .put(LABEL_TOPIC, msgInner.getTopic())
+                .build());
+            // record the commit latency.
+            Long commitLatency = (System.currentTimeMillis() - result.getPrepareMessage().getBornTimestamp()) / 1000;
+            BrokerMetricsManager.transactionFinishLatency.record(commitLatency, BrokerMetricsManager.newAttributesBuilder()
+                .put(LABEL_TOPIC, msgInner.getTopic())
+                .build());
         }
         return sendResult;
     }
@@ -129,6 +142,11 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
         if (res.getCode() == ResponseCode.SUCCESS) {
             this.broker.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
+            // roll back, then total num of half-messages minus 1
+            this.broker.getBrokerMessageService().getTransactionalMessageService().getTransactionMetrics().addAndGet(result.getPrepareMessage().getProperty(MessageConst.PROPERTY_REAL_TOPIC), -1);
+            BrokerMetricsManager.rollBackMessagesTotal.add(1, BrokerMetricsManager.newAttributesBuilder()
+                .put(LABEL_TOPIC, result.getPrepareMessage().getProperty(MessageConst.PROPERTY_REAL_TOPIC))
+                .build());
         }
         return res;
     }

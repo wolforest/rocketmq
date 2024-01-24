@@ -14,7 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.infra;
+package org.apache.rocketmq.common.metrics;
 
-public class StoreClient {
+import io.opentelemetry.api.metrics.ObservableDoubleGauge;
+
+public class NopObservableDoubleGauge implements ObservableDoubleGauge {
 }

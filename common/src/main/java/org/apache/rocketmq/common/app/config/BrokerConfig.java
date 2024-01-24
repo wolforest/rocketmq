@@ -356,6 +356,8 @@ public class BrokerConfig extends BrokerIdentity {
     @ImportantField
     private long transactionCheckInterval = 30 * 1000;
 
+    private long transactionMetricFlushInterval = 3 * 1000;
+
     /**
      * transaction batch op message
      */
@@ -1394,6 +1396,14 @@ public class BrokerConfig extends BrokerIdentity {
 
     public int getSplitRegistrationSize() {
         return splitRegistrationSize;
+    }
+
+    public long getTransactionMetricFlushInterval() {
+        return transactionMetricFlushInterval;
+    }
+
+    public void setTransactionMetricFlushInterval(long transactionMetricFlushInterval) {
+        this.transactionMetricFlushInterval = transactionMetricFlushInterval;
     }
 
 }

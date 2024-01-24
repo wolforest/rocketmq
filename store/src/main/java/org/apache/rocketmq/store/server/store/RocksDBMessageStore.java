@@ -16,9 +16,12 @@
  */
 package org.apache.rocketmq.store.server.store;
 
+import io.opentelemetry.api.common.AttributesBuilder;
+import io.opentelemetry.api.metrics.Meter;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
@@ -35,6 +38,8 @@ import org.apache.rocketmq.store.server.daemon.CleanConsumeQueueService;
 import org.apache.rocketmq.store.server.daemon.CorrectLogicOffsetService;
 import org.apache.rocketmq.store.server.daemon.FlushConsumeQueueService;
 import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.server.metrics.DefaultStoreMetricsManager;
+import org.apache.rocketmq.store.server.metrics.RocksDBStoreMetricsManager;
 import org.rocksdb.RocksDBException;
 
 public class RocksDBMessageStore extends DefaultMessageStore {
@@ -95,5 +100,12 @@ public class RocksDBMessageStore extends DefaultMessageStore {
     public long estimateMessageCount(String topic, int queueId, long from, long to, MessageFilter filter) {
         // todo
         return 0;
+    }
+
+    @Override
+    public void initMetrics(Meter meter, Supplier<AttributesBuilder> attributesBuilderSupplier) {
+        DefaultStoreMetricsManager.init(meter, attributesBuilderSupplier, this);
+        // Also add some metrics for rocksdb's monitoring.
+        RocksDBStoreMetricsManager.init(meter, attributesBuilderSupplier, this);
     }
 }

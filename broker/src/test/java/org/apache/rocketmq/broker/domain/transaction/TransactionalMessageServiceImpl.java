@@ -73,4 +73,13 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
         return null;
     }
 
+    @Override
+    public TransactionMetrics getTransactionMetrics() {
+        return null;
+    }
+
+    @Override
+    public void setTransactionMetrics(TransactionMetrics transactionMetrics) {
+
+    }
 }

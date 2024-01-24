@@ -19,6 +19,7 @@ package org.apache.rocketmq.broker.server.bootstrap;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.rocketmq.broker.domain.transaction.TransactionMetricsFlushService;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.broker.infra.EscapeBridge;
@@ -80,6 +81,7 @@ public class BrokerMessageService {
     protected TransactionalMessageCheckService transactionalMessageCheckService;
     protected TransactionalMessageService transactionalMessageService;
     protected AbstractTransactionalMessageCheckListener transactionalMessageCheckListener;
+    protected TransactionMetricsFlushService transactionMetricsFlushService;
 
     private MessageStore messageStore;
     private TimerMessageStore timerMessageStore;
@@ -121,6 +123,10 @@ public class BrokerMessageService {
     }
 
     public void start() throws Exception {
+        if (this.transactionMetricsFlushService != null) {
+            this.transactionMetricsFlushService.start();
+        }
+
         if (this.messageStore != null) {
             this.messageStore.start();
         }
@@ -138,6 +144,10 @@ public class BrokerMessageService {
         //it is better to make sure the timerMessageStore shutdown firstly
         if (this.timerMessageStore != null) {
             this.timerMessageStore.shutdown();
+        }
+
+        if (this.transactionMetricsFlushService != null) {
+            this.transactionMetricsFlushService.shutdown();
         }
 
         if (this.messageStore != null) {
@@ -306,6 +316,7 @@ public class BrokerMessageService {
         }
         this.transactionalMessageCheckListener.setBrokerController(broker);
         this.transactionalMessageCheckService = new TransactionalMessageCheckService(broker, transactionalMessageBridge, this.transactionalMessageCheckListener);
+        this.transactionMetricsFlushService = new TransactionMetricsFlushService(broker);
     }
 
     private void addCheckBeforePutMessageHook() {
