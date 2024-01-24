@@ -70,7 +70,7 @@ public class HAServerReader extends AbstractHAReader {
                         break;
                     case TRANSFER:
                         long slaveMaxOffset = byteBufferRead.getLong(readPosition + 4);
-                        readSocketService.setProcessPosition(readSocketService.getProcessPosition() + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE);
+                        readSocketService.setProcessPosition(readSocketService.getProcessPosition() + AutoSwitchHAClient.TRANSFER_HEADER_SIZE);
 
                         haConnection.setSlaveAckOffset(slaveMaxOffset);
                         if (haConnection.getSlaveRequestOffset() < 0) {

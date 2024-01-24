@@ -93,8 +93,7 @@ public class AutoSwitchHAConnection implements HAConnection {
      */
     private volatile long lastTransferTimeMs = 0;
 
-    public AutoSwitchHAConnection(AutoSwitchHAService haService, SocketChannel socketChannel,
-        EpochFileCache epochCache) throws IOException {
+    public AutoSwitchHAConnection(AutoSwitchHAService haService, SocketChannel socketChannel, EpochFileCache epochCache) throws IOException {
         this.haService = haService;
         this.socketChannel = socketChannel;
         this.configureSocketChannel();

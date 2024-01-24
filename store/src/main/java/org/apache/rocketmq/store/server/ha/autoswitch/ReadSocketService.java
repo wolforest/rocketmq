@@ -56,7 +56,7 @@ public class ReadSocketService extends ServiceThread {
         haReader = new HAServerReader(haConnection, this);
         haReader.registerHook(readSize -> {
             if (readSize > 0) {
-                ReadSocketService.this.lastReadTimestamp = TimeUtils.now();
+                ReadSocketService.this.setLastReadTimestamp(TimeUtils.now());
             }
         });
     }
@@ -125,5 +125,8 @@ public class ReadSocketService extends ServiceThread {
         this.processPosition = processPosition;
     }
 
+    public void setLastReadTimestamp(long lastReadTimestamp) {
+        this.lastReadTimestamp = lastReadTimestamp;
+    }
 
 }
