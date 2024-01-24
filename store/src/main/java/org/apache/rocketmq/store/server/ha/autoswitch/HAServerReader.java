@@ -37,74 +37,98 @@ public class HAServerReader extends AbstractHAReader {
     @Override
     protected boolean processReadResult(ByteBuffer byteBufferRead) {
         while (true) {
-            boolean processSuccess = true;
-            int readSocketPos = byteBufferRead.position();
             int diff = byteBufferRead.position() - readSocketService.getProcessPosition();
 
             if (diff >= AutoSwitchHAClient.MIN_HEADER_SIZE) {
                 int readPosition = readSocketService.getProcessPosition();
                 HAConnectionState slaveState = HAConnectionState.values()[byteBufferRead.getInt(readPosition)];
 
-                switch (slaveState) {
-                    case HANDSHAKE:
-                        // SlaveBrokerId
-                        long slaveBrokerId = byteBufferRead.getLong(readPosition + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE - 8);
-                        haConnection.setSlaveId(slaveBrokerId);
-
-                        // Flag(isSyncFromLastFile)
-                        short syncFromLastFileFlag = byteBufferRead.getShort(readPosition + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE - 12);
-                        if (syncFromLastFileFlag == 1) {
-                            haConnection.setSyncFromLastFile(true);
-                        }
-                        // Flag(isAsyncLearner role)
-                        short isAsyncLearner = byteBufferRead.getShort(readPosition + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE - 10);
-                        if (isAsyncLearner == 1) {
-                            haConnection.setAsyncLearner(true);
-                        }
-
-                        haConnection.setSlaveSendHandshake(true);
-                        byteBufferRead.position(readSocketPos);
-                        readSocketService.setProcessPosition(readSocketService.getProcessPosition() + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE);
-                        LOGGER.info("Receive slave handshake, slaveBrokerId:{}, isSyncFromLastFile:{}, isAsyncLearner:{}",
-                            haConnection.getSlaveId(), haConnection.isSyncFromLastFile(), haConnection.isAsyncLearner());
-                        break;
-                    case TRANSFER:
-                        long slaveMaxOffset = byteBufferRead.getLong(readPosition + 4);
-                        readSocketService.setProcessPosition(readSocketService.getProcessPosition() + AutoSwitchHAClient.TRANSFER_HEADER_SIZE);
-
-                        haConnection.setSlaveAckOffset(slaveMaxOffset);
-                        if (haConnection.getSlaveRequestOffset() < 0) {
-                            haConnection.setSlaveRequestOffset(slaveMaxOffset);
-                        }
-
-                        byteBufferRead.position(readSocketPos);
-                        haConnection.maybeExpandInSyncStateSet(slaveMaxOffset);
-                        haConnection.getHaService().updateConfirmOffsetWhenSlaveAck(haConnection.getSlaveId());
-                        haConnection.getHaService().notifyTransferSome(haConnection.getSlaveAckOffset());
-                        break;
-                    default:
-                        LOGGER.error("Current state illegal {}", haConnection.getCurrentState());
-                        return false;
+                if (!processSlaveState(slaveState, byteBufferRead, byteBufferRead.position(), readPosition)) {
+                    return false;
                 }
 
-                if (!slaveState.equals(haConnection.getCurrentState())) {
-                    LOGGER.warn("Master change state from {} to {}", haConnection.getCurrentState(), slaveState);
-                    haConnection.changeCurrentState(slaveState);
-                }
-                if (processSuccess) {
-                    continue;
-                }
+                changeCurrentState(slaveState);
+                continue;
             }
 
-            if (!byteBufferRead.hasRemaining()) {
-                byteBufferRead.position(readSocketService.getProcessPosition());
-                byteBufferRead.compact();
-                readSocketService.setProcessPosition(0);
-            }
+            resetProcessPosition(byteBufferRead);
             break;
         }
 
         return true;
+    }
+
+    private boolean processSlaveState(HAConnectionState slaveState, ByteBuffer byteBufferRead, int readSocketPos, int readPosition) {
+        switch (slaveState) {
+            case HANDSHAKE:
+                processHandshakeState(byteBufferRead, readSocketPos, readPosition);
+                break;
+            case TRANSFER:
+                processTransferState(byteBufferRead, readSocketPos, readPosition);
+                break;
+            default:
+                LOGGER.error("Current state illegal {}", haConnection.getCurrentState());
+                return false;
+        }
+
+        return true;
+    }
+
+    private void processHandshakeState(ByteBuffer byteBufferRead, int readSocketPos, int readPosition) {
+        // SlaveBrokerId
+        long slaveBrokerId = byteBufferRead.getLong(readPosition + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE - 8);
+        haConnection.setSlaveId(slaveBrokerId);
+
+        // Flag(isSyncFromLastFile)
+        short syncFromLastFileFlag = byteBufferRead.getShort(readPosition + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE - 12);
+        if (syncFromLastFileFlag == 1) {
+            haConnection.setSyncFromLastFile(true);
+        }
+        // Flag(isAsyncLearner role)
+        short isAsyncLearner = byteBufferRead.getShort(readPosition + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE - 10);
+        if (isAsyncLearner == 1) {
+            haConnection.setAsyncLearner(true);
+        }
+
+        haConnection.setSlaveSendHandshake(true);
+        byteBufferRead.position(readSocketPos);
+        readSocketService.setProcessPosition(readSocketService.getProcessPosition() + AutoSwitchHAClient.HANDSHAKE_HEADER_SIZE);
+        LOGGER.info("Receive slave handshake, slaveBrokerId:{}, isSyncFromLastFile:{}, isAsyncLearner:{}",
+            haConnection.getSlaveId(), haConnection.isSyncFromLastFile(), haConnection.isAsyncLearner());
+    }
+
+    private void processTransferState(ByteBuffer byteBufferRead, int readSocketPos, int readPosition) {
+        long slaveMaxOffset = byteBufferRead.getLong(readPosition + 4);
+        readSocketService.setProcessPosition(readSocketService.getProcessPosition() + AutoSwitchHAClient.TRANSFER_HEADER_SIZE);
+
+        haConnection.setSlaveAckOffset(slaveMaxOffset);
+        if (haConnection.getSlaveRequestOffset() < 0) {
+            haConnection.setSlaveRequestOffset(slaveMaxOffset);
+        }
+
+        byteBufferRead.position(readSocketPos);
+        haConnection.maybeExpandInSyncStateSet(slaveMaxOffset);
+        haConnection.getHaService().updateConfirmOffsetWhenSlaveAck(haConnection.getSlaveId());
+        haConnection.getHaService().notifyTransferSome(haConnection.getSlaveAckOffset());
+    }
+
+    private void changeCurrentState(HAConnectionState slaveState) {
+        if (slaveState.equals(haConnection.getCurrentState())) {
+            return;
+        }
+
+        LOGGER.warn("Master change state from {} to {}", haConnection.getCurrentState(), slaveState);
+        haConnection.changeCurrentState(slaveState);
+    }
+
+    private void resetProcessPosition(ByteBuffer byteBufferRead) {
+        if (byteBufferRead.hasRemaining()) {
+            return;
+        }
+
+        byteBufferRead.position(readSocketService.getProcessPosition());
+        byteBufferRead.compact();
+        readSocketService.setProcessPosition(0);
     }
 }
 
