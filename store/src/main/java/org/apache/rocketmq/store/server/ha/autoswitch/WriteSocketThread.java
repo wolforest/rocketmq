@@ -21,10 +21,13 @@ import java.nio.channels.SocketChannel;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 
-public class WriteSocketService extends AbstractWriteSocketService {
+/**
+ * @renamed from WriteSocketService to WriteSocketThread
+ */
+public class WriteSocketThread extends AbstractWriteSocketService {
     private SelectMappedBufferResult selectMappedBufferResult;
 
-    public WriteSocketService(final SocketChannel socketChannel, AutoSwitchHAConnection haConnection) throws IOException {
+    public WriteSocketThread(final SocketChannel socketChannel, AutoSwitchHAConnection haConnection) throws IOException {
         super(socketChannel, haConnection);
     }
 
@@ -80,9 +83,9 @@ public class WriteSocketService extends AbstractWriteSocketService {
     public String getServiceName() {
         DefaultMessageStore store = haConnection.getHaService().getDefaultMessageStore();
         if (store.getBrokerConfig().isInBrokerContainer()) {
-            return store.getBrokerIdentity().getIdentifier() + WriteSocketService.class.getSimpleName();
+            return store.getBrokerIdentity().getIdentifier() + WriteSocketThread.class.getSimpleName();
         }
-        return WriteSocketService.class.getSimpleName();
+        return WriteSocketThread.class.getSimpleName();
     }
 }
 

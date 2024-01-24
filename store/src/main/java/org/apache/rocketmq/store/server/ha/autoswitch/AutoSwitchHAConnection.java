@@ -99,7 +99,7 @@ public class AutoSwitchHAConnection implements HAConnection {
         this.configureSocketChannel();
         this.clientAddress = this.socketChannel.socket().getRemoteSocketAddress().toString();
         this.epochCache = epochCache;
-        this.writeSocketService = new WriteSocketService(this.socketChannel, this);
+        this.writeSocketService = new WriteSocketThread(this.socketChannel, this);
         this.readSocketThread = new ReadSocketThread(this.socketChannel, this);
         this.haService.getConnectionCount().incrementAndGet();
         this.flowMonitorThread = new FlowMonitorThread(haService.getDefaultMessageStore().getMessageStoreConfig());
