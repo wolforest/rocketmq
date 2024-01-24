@@ -141,10 +141,8 @@ public class SlaveSynchronize {
         }
 
         try {
-            ConsumerOffsetSerializeWrapper offsetWrapper =
-                this.broker.getClusterClient().getAllConsumerOffset(masterAddrBak);
-            this.broker.getConsumerOffsetManager().getOffsetTable()
-                .putAll(offsetWrapper.getOffsetTable());
+            ConsumerOffsetSerializeWrapper offsetWrapper = this.broker.getClusterClient().getAllConsumerOffset(masterAddrBak);
+            this.broker.getConsumerOffsetManager().getOffsetTable().putAll(offsetWrapper.getOffsetTable());
             this.broker.getConsumerOffsetManager().getDataVersion().assignNewOne(offsetWrapper.getDataVersion());
             this.broker.getConsumerOffsetManager().persist();
             LOGGER.info("Update slave consumer offset from master, {}", masterAddrBak);
@@ -188,22 +186,17 @@ public class SlaveSynchronize {
         }
 
         try {
-            SubscriptionGroupWrapper subscriptionWrapper =
-                this.broker.getClusterClient()
-                    .getAllSubscriptionGroupConfig(masterAddrBak);
-
-            if (!this.broker.getSubscriptionGroupManager().getDataVersion()
-                .equals(subscriptionWrapper.getDataVersion())) {
-                SubscriptionGroupManager subscriptionGroupManager =
-                    this.broker.getSubscriptionGroupManager();
-                subscriptionGroupManager.getDataVersion().assignNewOne(
-                    subscriptionWrapper.getDataVersion());
-                subscriptionGroupManager.getSubscriptionGroupTable().clear();
-                subscriptionGroupManager.getSubscriptionGroupTable().putAll(
-                    subscriptionWrapper.getSubscriptionGroupTable());
-                subscriptionGroupManager.persist();
-                LOGGER.info("Update slave Subscription Group from master, {}", masterAddrBak);
+            SubscriptionGroupWrapper subscription = this.broker.getClusterClient().getAllSubscriptionGroupConfig(masterAddrBak);
+            if (this.broker.getSubscriptionGroupManager().getDataVersion().equals(subscription.getDataVersion())) {
+                return;
             }
+
+            SubscriptionGroupManager manager = this.broker.getSubscriptionGroupManager();
+            manager.getDataVersion().assignNewOne(subscription.getDataVersion());
+            manager.getSubscriptionGroupTable().clear();
+            manager.getSubscriptionGroupTable().putAll(subscription.getSubscriptionGroupTable());
+            manager.persist();
+            LOGGER.info("Update slave Subscription Group from master, {}", masterAddrBak);
         } catch (Exception e) {
             LOGGER.error("SyncSubscriptionGroup Exception, {}", masterAddrBak, e);
         }
@@ -216,16 +209,12 @@ public class SlaveSynchronize {
         }
 
         try {
-            MessageRequestModeSerializeWrapper messageRequestModeSerializeWrapper =
-                this.broker.getClusterClient().getAllMessageRequestMode(masterAddrBak);
+            MessageRequestModeSerializeWrapper requestMode = this.broker.getClusterClient().getAllMessageRequestMode(masterAddrBak);
+            MessageRequestModeManager manager = this.broker.getBrokerNettyServer().getQueryAssignmentProcessor().getMessageRequestModeManager();
 
-            MessageRequestModeManager messageRequestModeManager =
-                this.broker.getBrokerNettyServer().getQueryAssignmentProcessor().getMessageRequestModeManager();
-            messageRequestModeManager.getMessageRequestModeMap().clear();
-            messageRequestModeManager.getMessageRequestModeMap().putAll(
-                messageRequestModeSerializeWrapper.getMessageRequestModeMap()
-            );
-            messageRequestModeManager.persist();
+            manager.getMessageRequestModeMap().clear();
+            manager.getMessageRequestModeMap().putAll(requestMode.getMessageRequestModeMap());
+            manager.persist();
             LOGGER.info("Update slave Message Request Mode from master, {}", masterAddrBak);
         } catch (Exception e) {
             LOGGER.error("SyncMessageRequestMode Exception, {}", masterAddrBak, e);
@@ -243,14 +232,16 @@ public class SlaveSynchronize {
                 return;
             }
 
-            TimerMetrics.TimerMetricsSerializeWrapper metricsSerializeWrapper =
-                this.broker.getClusterClient().getTimerMetrics(masterAddrBak);
-            if (!broker.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().equals(metricsSerializeWrapper.getDataVersion())) {
-                this.broker.getMessageStore().getTimerMessageStore().getTimerMetrics().getDataVersion().assignNewOne(metricsSerializeWrapper.getDataVersion());
-                this.broker.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().clear();
-                this.broker.getMessageStore().getTimerMessageStore().getTimerMetrics().getTimingCount().putAll(metricsSerializeWrapper.getTimingCount());
-                this.broker.getMessageStore().getTimerMessageStore().getTimerMetrics().persist();
+            TimerMetrics.TimerMetricsSerializeWrapper metrics = this.broker.getClusterClient().getTimerMetrics(masterAddrBak);
+            TimerMetrics timerMetrics = broker.getMessageStore().getTimerMessageStore().getTimerMetrics();
+            if (timerMetrics.getDataVersion().equals(metrics.getDataVersion())) {
+                return;
             }
+
+            timerMetrics.getDataVersion().assignNewOne(metrics.getDataVersion());
+            timerMetrics.getTimingCount().clear();
+            timerMetrics.getTimingCount().putAll(metrics.getTimingCount());
+            timerMetrics.persist();
         } catch (Exception e) {
             LOGGER.error("SyncTimerMetrics Exception, {}", masterAddrBak, e);
         }

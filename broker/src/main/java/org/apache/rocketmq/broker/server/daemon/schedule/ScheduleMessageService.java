@@ -57,7 +57,7 @@ public class ScheduleMessageService extends ConfigManager {
     private ScheduledExecutorService deliverExecutorService;
     private int maxDelayLevel;
     private DataVersion dataVersion = new DataVersion();
-    private boolean enableAsyncDeliver = false;
+    private final boolean enableAsyncDeliver;
 
     private ScheduledExecutorService handleExecutorService;
     private final ScheduledExecutorService scheduledPersistService;
@@ -372,8 +372,6 @@ public class ScheduleMessageService extends ConfigManager {
 
         return msgInner;
     }
-
-
 
     public ConcurrentMap<Integer, Long> getOffsetTable() {
         return offsetTable;
