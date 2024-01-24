@@ -172,54 +172,55 @@ public abstract class AbstractWriteSocketService extends ServiceThread {
         }
 
         int size = this.getNextTransferDataSize();
-        if (size > 0) {
-            if (size > haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize()) {
-                size = haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig().getHaTransferBatchSize();
-            }
-
-            int canTransferMaxBytes = haConnection.getFlowMonitorThread().canTransferMaxByteNum();
-            if (size > canTransferMaxBytes) {
-                if (System.currentTimeMillis() - lastPrintTimestamp > 1000) {
-                    LOGGER.warn("Trigger HA flow control, max transfer speed {}KB/s, current speed: {}KB/s",
-                        String.format("%.2f", haConnection.getFlowMonitorThread().maxTransferByteInSecond() / 1024.0),
-                        String.format("%.2f", haConnection.getFlowMonitorThread().getTransferredByteInSecond() / 1024.0));
-                    lastPrintTimestamp = System.currentTimeMillis();
-                }
-                size = canTransferMaxBytes;
-            }
-            if (size <= 0) {
-                this.releaseData();
-                this.waitForRunning(100);
-                return;
-            }
-
-            // We must ensure that the transmitted logs are within the same epoch
-            // If currentEpochEndOffset == -1, means that currentTransferEpoch = last epoch, so the endOffset = Long.max
-            final long currentEpochEndOffset = haConnection.getCurrentTransferEpochEndOffset();
-            if (currentEpochEndOffset != -1 && this.nextTransferFromWhere + size > currentEpochEndOffset) {
-                final EpochEntry epochEntry = haConnection.getEpochCache().nextEntry(haConnection.getCurrentTransferEpoch());
-                if (epochEntry == null) {
-                    LOGGER.error("Can't find a bigger epochEntry than epoch {}", haConnection.getCurrentTransferEpoch());
-                    waitForRunning(100);
-                    return;
-                }
-                size = (int) (currentEpochEndOffset - this.nextTransferFromWhere);
-                haConnection.changeTransferEpochToNext(epochEntry);
-            }
-
-            this.transferOffset = this.nextTransferFromWhere;
-            this.nextTransferFromWhere += size;
-            haConnection.updateLastTransferInfo();
-
-            // Build Header
-            buildTransferHeaderBuffer(this.transferOffset, size);
-
-            this.lastWriteOver = this.transferData(size);
-        } else {
+        if (size <= 0) {
             // If size == 0, we should update the lastCatchupTimeMs
             haConnection.getHaService().updateConnectionLastCaughtUpTime(haConnection.getSlaveId(), System.currentTimeMillis());
             haConnection.getHaService().getWaitNotifyObject().allWaitForRunning(100);
+            return;
         }
+
+        MessageStoreConfig storeConfig = haConnection.getHaService().getDefaultMessageStore().getMessageStoreConfig();
+        if (size > storeConfig.getHaTransferBatchSize()) {
+            size = storeConfig.getHaTransferBatchSize();
+        }
+
+        int canTransferMaxBytes = haConnection.getFlowMonitorThread().canTransferMaxByteNum();
+        if (size > canTransferMaxBytes) {
+            if (System.currentTimeMillis() - lastPrintTimestamp > 1000) {
+                LOGGER.warn("Trigger HA flow control, max transfer speed {}KB/s, current speed: {}KB/s",
+                    String.format("%.2f", haConnection.getFlowMonitorThread().maxTransferByteInSecond() / 1024.0),
+                    String.format("%.2f", haConnection.getFlowMonitorThread().getTransferredByteInSecond() / 1024.0));
+                lastPrintTimestamp = System.currentTimeMillis();
+            }
+            size = canTransferMaxBytes;
+        }
+
+        if (size <= 0) {
+            this.releaseData();
+            this.waitForRunning(100);
+            return;
+        }
+
+        // We must ensure that the transmitted logs are within the same epoch
+        // If currentEpochEndOffset == -1, means that currentTransferEpoch = last epoch, so the endOffset = Long.max
+        final long currentEpochEndOffset = haConnection.getCurrentTransferEpochEndOffset();
+        if (currentEpochEndOffset != -1 && this.nextTransferFromWhere + size > currentEpochEndOffset) {
+            final EpochEntry epochEntry = haConnection.getEpochCache().nextEntry(haConnection.getCurrentTransferEpoch());
+            if (epochEntry == null) {
+                LOGGER.error("Can't find a bigger epochEntry than epoch {}", haConnection.getCurrentTransferEpoch());
+                waitForRunning(100);
+                return;
+            }
+            size = (int) (currentEpochEndOffset - this.nextTransferFromWhere);
+            haConnection.changeTransferEpochToNext(epochEntry);
+        }
+
+        this.transferOffset = this.nextTransferFromWhere;
+        this.nextTransferFromWhere += size;
+        haConnection.updateLastTransferInfo();
+        // Build Header
+        buildTransferHeaderBuffer(this.transferOffset, size);
+        this.lastWriteOver = this.transferData(size);
     }
 
     @Override
