@@ -65,7 +65,7 @@ public class AutoSwitchHATest {
     private final String storeMessage = "Once, there was a chance for me!";
     private final int defaultMappedFileSize = 1024 * 1024;
     private int queueTotal = 100;
-    private AtomicInteger queueId = new AtomicInteger(0);
+    private final AtomicInteger queueId = new AtomicInteger(0);
     private SocketAddress bornHost;
     private SocketAddress storeHost;
     private byte[] messageBody;
@@ -79,11 +79,11 @@ public class AutoSwitchHATest {
     private String store1HaAddress;
     private String store2HaAddress;
 
-    private BrokerStatsManager brokerStatsManager = new BrokerStatsManager("simpleTest", true);
-    private String tmpdir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test";
-    private String storePathRootParentDir = (StringUtils.endsWith(tmpdir, File.separator) ? tmpdir : tmpdir + File.separator) + UUID.randomUUID();
-    private String storePathRootDir = storePathRootParentDir + File.separator + "store";
-    private Random random = new Random();
+    private final BrokerStatsManager brokerStatsManager = new BrokerStatsManager("simpleTest", true);
+    private final String tmpdir = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test";
+    private final String storePathRootParentDir = (StringUtils.endsWith(tmpdir, File.separator) ? tmpdir : tmpdir + File.separator) + UUID.randomUUID();
+    private final String storePathRootDir = storePathRootParentDir + File.separator + "store";
+    private final Random random = new Random();
 
     public void init(int mappedFileSize) throws Exception {
         String brokerName = "AutoSwitchHATest_" + random.nextInt(65535);
