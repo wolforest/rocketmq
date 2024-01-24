@@ -24,7 +24,7 @@ import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 /**
  * @renamed from WriteSocketService to WriteSocketThread
  */
-public class WriteSocketThread extends AbstractWriteSocketService {
+public class WriteSocketThread extends AbstractWriteSocketThread {
     private SelectMappedBufferResult selectMappedBufferResult;
 
     public WriteSocketThread(final SocketChannel socketChannel, AutoSwitchHAConnection haConnection) throws IOException {

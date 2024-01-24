@@ -33,7 +33,10 @@ import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 import org.apache.rocketmq.store.server.ha.io.HAWriter;
 
-public abstract class AbstractWriteSocketService extends ServiceThread {
+/**
+ * @renamed from AbstractWriteSocketService to AbstractWriteSocketThread
+ */
+public abstract class AbstractWriteSocketThread extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     protected final AutoSwitchHAConnection haConnection;
@@ -51,7 +54,7 @@ public abstract class AbstractWriteSocketService extends ServiceThread {
     protected long lastPrintTimestamp = System.currentTimeMillis();
     protected long transferOffset = 0;
 
-    public AbstractWriteSocketService(final SocketChannel socketChannel, AutoSwitchHAConnection haConnection) throws IOException {
+    public AbstractWriteSocketThread(final SocketChannel socketChannel, AutoSwitchHAConnection haConnection) throws IOException {
         this.haConnection = haConnection;
         this.selector = NetworkUtils.openSelector();
         this.socketChannel = socketChannel;
@@ -62,7 +65,7 @@ public abstract class AbstractWriteSocketService extends ServiceThread {
         haWriter.registerHook(writeSize -> {
             haConnection.getFlowMonitorThread().addByteCountTransferred(writeSize);
             if (writeSize > 0) {
-                AbstractWriteSocketService.this.lastWriteTimestamp = TimeUtils.now();
+                AbstractWriteSocketThread.this.lastWriteTimestamp = TimeUtils.now();
             }
         });
     }

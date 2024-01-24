@@ -66,7 +66,7 @@ public class AutoSwitchHAConnection implements HAConnection {
     private final SocketChannel socketChannel;
     private final String clientAddress;
     private final EpochFileCache epochCache;
-    private final AbstractWriteSocketService writeSocketService;
+    private final AbstractWriteSocketThread writeSocketService;
     private final ReadSocketThread readSocketThread;
     private final FlowMonitorThread flowMonitorThread;
 
@@ -222,7 +222,7 @@ public class AutoSwitchHAConnection implements HAConnection {
         return epochCache;
     }
 
-    public AbstractWriteSocketService getWriteSocketService() {
+    public AbstractWriteSocketThread getWriteSocketService() {
         return writeSocketService;
     }
 
