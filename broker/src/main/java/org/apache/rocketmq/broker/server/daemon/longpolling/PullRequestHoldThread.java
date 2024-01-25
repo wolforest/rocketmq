@@ -71,11 +71,7 @@ public class PullRequestHoldThread extends ServiceThread {
         log.info("{} service started", this.getServiceName());
         while (!this.isStopped()) {
             try {
-                if (this.broker.getBrokerConfig().isLongPollingEnable()) {
-                    this.waitForRunning(5 * 1000);
-                } else {
-                    this.waitForRunning(this.broker.getBrokerConfig().getShortPollingTimeMills());
-                }
+                waitForRun();
 
                 long beginLockTimestamp = TimeUtils.now();
                 this.checkHoldRequest();
@@ -89,6 +85,14 @@ public class PullRequestHoldThread extends ServiceThread {
         }
 
         log.info("{} service end", this.getServiceName());
+    }
+
+    private void waitForRun() {
+        if (this.broker.getBrokerConfig().isLongPollingEnable()) {
+            this.waitForRunning(5 * 1000);
+        } else {
+            this.waitForRunning(this.broker.getBrokerConfig().getShortPollingTimeMills());
+        }
     }
 
     @Override

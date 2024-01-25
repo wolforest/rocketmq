@@ -19,16 +19,18 @@ package org.apache.rocketmq.broker.domain.coldctr;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.rocketmq.broker.api.controller.PullMessageProcessor;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.longpolling.PullRequest;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
-import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 /**
  * @renamed from ColdDataPullRequestHoldService to ColdDataPullRequestHoldThread
+ * @see PullMessageProcessor just for PullMessageProcessor
  *
  * just requests are type of pull have the qualification to be put into this hold queue.
  * if the pull request is reading cold data and that request will be cold at the first time,
@@ -41,7 +43,6 @@ public class ColdDataPullRequestHoldThread extends ServiceThread {
     public static final String NO_SUSPEND_KEY = "_noSuspend_";
 
     private final long coldHoldTimeoutMillis = 3000;
-    private final SystemClock systemClock = new SystemClock();
     private final Broker broker;
     private final LinkedBlockingQueue<PullRequest> pullRequestColdHoldQueue = new LinkedBlockingQueue<>(10000);
 
@@ -70,9 +71,10 @@ public class ColdDataPullRequestHoldThread extends ServiceThread {
                 } else {
                     this.waitForRunning(5 * 1000);
                 }
-                long beginClockTimestamp = this.systemClock.now();
+
+                long beginClockTimestamp = TimeUtils.now();
                 this.checkColdDataPullRequest();
-                long costTime = this.systemClock.now() - beginClockTimestamp;
+                long costTime = TimeUtils.now() - beginClockTimestamp;
                 log.info("[{}] checkColdDataPullRequest-cost {} ms.", costTime > 5 * 1000 ? "NOTIFYME" : "OK", costTime);
             } catch (Throwable e) {
                 log.warn(this.getServiceName() + " service has exception", e);
