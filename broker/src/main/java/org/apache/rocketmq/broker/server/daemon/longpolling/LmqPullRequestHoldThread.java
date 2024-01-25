@@ -41,7 +41,7 @@ public class LmqPullRequestHoldThread extends PullRequestHoldThread {
     @Override
     public void checkHoldRequest() {
         for (String key : pullRequestTable.keySet()) {
-            int idx = key.lastIndexOf(TOPIC_QUEUEID_SEPARATOR);
+            int idx = key.lastIndexOf(TOPIC_QUEUE_ID_SEPARATOR);
             if (idx <= 0 || idx >= key.length() - 1) {
                 pullRequestTable.remove(key);
                 continue;

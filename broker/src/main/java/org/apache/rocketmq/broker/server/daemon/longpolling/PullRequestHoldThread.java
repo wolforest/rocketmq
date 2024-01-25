@@ -31,7 +31,7 @@ import org.apache.rocketmq.store.domain.queue.CqExtUnit;
 
 public class PullRequestHoldThread extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-    protected static final String TOPIC_QUEUEID_SEPARATOR = "@";
+    protected static final String TOPIC_QUEUE_ID_SEPARATOR = "@";
     protected final Broker broker;
     private final SystemClock systemClock = new SystemClock();
     protected ConcurrentMap<String/* topic@queueId */, ManyPullRequest> pullRequestTable =
@@ -42,26 +42,30 @@ public class PullRequestHoldThread extends ServiceThread {
     }
 
     public void suspendPullRequest(final String topic, final int queueId, final PullRequest pullRequest) {
-        String key = this.buildKey(topic, queueId);
-        ManyPullRequest mpr = this.pullRequestTable.get(key);
-        if (null == mpr) {
-            mpr = new ManyPullRequest();
-            ManyPullRequest prev = this.pullRequestTable.putIfAbsent(key, mpr);
-            if (prev != null) {
-                mpr = prev;
-            }
-        }
+        ManyPullRequest mpr = getManyPullRequest(topic, queueId);
 
         pullRequest.getRequestCommand().setSuspended(true);
         mpr.addPullRequest(pullRequest);
     }
 
+    private ManyPullRequest getManyPullRequest(final String topic, final int queueId) {
+        String key = this.buildKey(topic, queueId);
+        ManyPullRequest mpr = this.pullRequestTable.get(key);
+        if (null != mpr) {
+            return mpr;
+        }
+
+        mpr = new ManyPullRequest();
+        ManyPullRequest prev = this.pullRequestTable.putIfAbsent(key, mpr);
+        if (prev != null) {
+            mpr = prev;
+        }
+
+        return mpr;
+    }
+
     private String buildKey(final String topic, final int queueId) {
-        StringBuilder sb = new StringBuilder(topic.length() + 5);
-        sb.append(topic);
-        sb.append(TOPIC_QUEUEID_SEPARATOR);
-        sb.append(queueId);
-        return sb.toString();
+        return topic + TOPIC_QUEUE_ID_SEPARATOR + queueId;
     }
 
     @Override
@@ -99,18 +103,19 @@ public class PullRequestHoldThread extends ServiceThread {
 
     protected void checkHoldRequest() {
         for (String key : this.pullRequestTable.keySet()) {
-            String[] kArray = key.split(TOPIC_QUEUEID_SEPARATOR);
-            if (2 == kArray.length) {
-                String topic = kArray[0];
-                int queueId = Integer.parseInt(kArray[1]);
-                final long offset = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId);
-                try {
-                    this.notifyMessageArriving(topic, queueId, offset);
-                } catch (Throwable e) {
-                    log.error(
-                        "PullRequestHoldService: failed to check hold request failed, topic={}, queueId={}", topic,
-                        queueId, e);
-                }
+            String[] kArray = key.split(TOPIC_QUEUE_ID_SEPARATOR);
+            if (2 != kArray.length) {
+                continue;
+            }
+
+            String topic = kArray[0];
+            int queueId = Integer.parseInt(kArray[1]);
+            final long offset = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId);
+
+            try {
+                this.notifyMessageArriving(topic, queueId, offset);
+            } catch (Throwable e) {
+                log.error("PullRequestHoldService: failed to check hold request failed, topic={}, queueId={}", topic, queueId, e);
             }
         }
     }
@@ -134,41 +139,11 @@ public class PullRequestHoldThread extends ServiceThread {
 
         List<PullRequest> replayList = new ArrayList<>();
         for (PullRequest request : requestList) {
-            long newestOffset = maxOffset;
-            if (newestOffset <= request.getPullFromThisOffset()) {
-                newestOffset = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId);
+            if (!notifyByOffset(request, topic, queueId, maxOffset, tagsCode, msgStoreTime, filterBitMap, properties)) {
+                continue;
             }
 
-            if (newestOffset > request.getPullFromThisOffset()) {
-                boolean match = request.getMessageFilter().isMatchedByConsumeQueue(tagsCode,
-                    new CqExtUnit(tagsCode, msgStoreTime, filterBitMap));
-                // match by bit map, need eval again when properties is not null.
-                if (match && properties != null) {
-                    match = request.getMessageFilter().isMatchedByCommitLog(null, properties);
-                }
-
-                if (match) {
-                    try {
-                        this.broker.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
-                            request.getRequestCommand());
-                    } catch (Throwable e) {
-                        log.error(
-                            "PullRequestHoldService#notifyMessageArriving: failed to execute request when "
-                                + "message matched, topic={}, queueId={}", topic, queueId, e);
-                    }
-                    continue;
-                }
-            }
-
-            if (System.currentTimeMillis() >= (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
-                try {
-                    this.broker.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
-                        request.getRequestCommand());
-                } catch (Throwable e) {
-                    log.error(
-                        "PullRequestHoldService#notifyMessageArriving: failed to execute request when time's "
-                            + "up, topic={}, queueId={}", topic, queueId, e);
-                }
+            if (!notifyBySuspendTime(request)) {
                 continue;
             }
 
@@ -181,21 +156,67 @@ public class PullRequestHoldThread extends ServiceThread {
 
     }
 
+    private boolean notifyByOffset(PullRequest request, String topic, int queueId, long maxOffset, Long tagsCode, long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) {
+        long newestOffset = maxOffset;
+        if (newestOffset <= request.getPullFromThisOffset()) {
+            newestOffset = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId);
+        }
+
+        if (newestOffset <= request.getPullFromThisOffset()) {
+            return true;
+        }
+
+        boolean match = request.getMessageFilter().isMatchedByConsumeQueue(tagsCode, new CqExtUnit(tagsCode, msgStoreTime, filterBitMap));
+        // match by bit map, need eval again when properties are not null.
+        if (match && properties != null) {
+            match = request.getMessageFilter().isMatchedByCommitLog(null, properties);
+        }
+
+        if (!match) {
+            return true;
+        }
+
+        try {
+            this.broker.getBrokerNettyServer().executePullRequest(request.getClientChannel(), request.getRequestCommand());
+        } catch (Throwable e) {
+            log.error("PullRequestHoldService#notifyMessageArriving: failed to execute request when message matched, topic={}, queueId={}", topic, queueId, e);
+        }
+
+        return false;
+    }
+
+    private boolean notifyBySuspendTime(PullRequest request) {
+        if (System.currentTimeMillis() < (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
+            return true;
+        }
+
+        try {
+            this.broker.getBrokerNettyServer().executePullRequest(request.getClientChannel(), request.getRequestCommand());
+        } catch (Throwable e) {
+            log.error("PullRequestHoldService#notifyMessageArriving: failed to execute request when time's up, topic={}, queueId={}", topic, queueId, e);
+        }
+        return false;
+    }
+
     public void notifyMasterOnline() {
         for (ManyPullRequest mpr : this.pullRequestTable.values()) {
             if (mpr == null || mpr.isEmpty()) {
                 continue;
             }
-            for (PullRequest request : mpr.cloneListAndClear()) {
-                try {
-                    log.info("notify master online, wakeup {} {}", request.getClientChannel(), request.getRequestCommand());
-                    this.broker.getBrokerNettyServer().executePullRequest(request.getClientChannel(),
-                        request.getRequestCommand());
-                } catch (Throwable e) {
-                    log.error("execute request when master online failed.", e);
-                }
+
+            notifyMasterOnline(mpr);
+        }
+    }
+
+    private void notifyMasterOnline(ManyPullRequest mpr) {
+        for (PullRequest request : mpr.cloneListAndClear()) {
+            try {
+                log.info("notify master online, wakeup {} {}", request.getClientChannel(), request.getRequestCommand());
+                this.broker.getBrokerNettyServer().executePullRequest(request.getClientChannel(), request.getRequestCommand());
+            } catch (Throwable e) {
+                log.error("execute request when master online failed.", e);
             }
         }
-
     }
+
 }

@@ -340,7 +340,7 @@ public class BrokerNettyServer {
                 final RemotingCommand response = BrokerNettyServer.this.getPullMessageProcessor().processRequest(channel, request, false, brokerAllowFlowCtrSuspend);
                 writeResponse(channel, request, response);
             } catch (RemotingCommandException e1) {
-                LOG.error("excuteRequestWhenWakeup run", e1);
+                LOG.error("executeRequestWhenWakeup run", e1);
             }
         };
         this.broker.getBrokerNettyServer().getPullMessageExecutor().submit(new RequestTask(run, channel, request));

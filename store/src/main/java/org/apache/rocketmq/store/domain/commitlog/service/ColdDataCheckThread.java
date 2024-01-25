@@ -156,6 +156,7 @@ public class ColdDataCheckThread extends ServiceThread {
     /**
      * scan system page cache, sample the page cache result
      * and store the sampling result in pageCacheMap
+     * and clear expired mapped files
      */
     private void scanFilesInPageCache() {
         if (SystemUtils.isWindows()
@@ -168,6 +169,7 @@ public class ColdDataCheckThread extends ServiceThread {
         try {
             log.info("pageCacheMap key size: {}", pageCacheMap.size());
             clearExpireMappedFile();
+
             defaultMessageStore.getCommitLog().getMappedFileQueue().getMappedFiles().forEach(mappedFile -> {
                 byte[] pageCacheTable = checkFileInPageCache(mappedFile);
                 if (sampleSteps > 1) {
