@@ -23,6 +23,7 @@ import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.SystemUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
@@ -46,7 +47,6 @@ public class ColdDataCheckThread extends ServiceThread {
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final DefaultMessageStore defaultMessageStore;
-    private final SystemClock systemClock = new SystemClock();
     private final ConcurrentHashMap<String, byte[]> pageCacheMap = new ConcurrentHashMap<>();
     private int pageSize = -1;
     private int sampleSteps = 32;
@@ -86,9 +86,9 @@ public class ColdDataCheckThread extends ServiceThread {
                     initPageSize();
                 }
 
-                long beginClockTimestamp = this.systemClock.now();
+                long beginClockTimestamp = TimeUtils.now();
                 scanFilesInPageCache();
-                long costTime = this.systemClock.now() - beginClockTimestamp;
+                long costTime = TimeUtils.now() - beginClockTimestamp;
                 log.info("[{}] scanFilesInPageCache-cost {} ms.", costTime > 30 * 1000 ? "NOTIFYME" : "OK", costTime);
             } catch (Throwable e) {
                 log.warn(this.getServiceName() + " service has e: {}", e);
