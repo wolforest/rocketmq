@@ -16,26 +16,23 @@
  */
 package org.apache.rocketmq.store.domain.commitlog.service;
 
-
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
-import org.apache.rocketmq.common.lang.thread.ServiceThread;
-import org.apache.rocketmq.common.utils.SystemClock;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
-import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.infra.memory.LibC;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import sun.nio.ch.DirectBuffer;
-
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * @renamed from ColdDataCheckService to ColdDataCheckThread
@@ -49,7 +46,7 @@ public class ColdDataCheckThread extends ServiceThread {
     private final DefaultMessageStore defaultMessageStore;
     private final ConcurrentHashMap<String, byte[]> pageCacheMap = new ConcurrentHashMap<>();
     private int pageSize = -1;
-    private int sampleSteps = 32;
+    private int sampleSteps;
 
     public ColdDataCheckThread(final DefaultMessageStore messageStore) {
         defaultMessageStore = messageStore;
