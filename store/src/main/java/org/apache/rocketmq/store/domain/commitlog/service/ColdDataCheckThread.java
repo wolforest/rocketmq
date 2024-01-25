@@ -153,6 +153,10 @@ public class ColdDataCheckThread extends ServiceThread {
         return false;
     }
 
+    /**
+     * scan system page cache, sample the page cache result
+     * and store the sampling result in pageCacheMap
+     */
     private void scanFilesInPageCache() {
         if (SystemUtils.isWindows()
             || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()
