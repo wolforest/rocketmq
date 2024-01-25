@@ -25,6 +25,7 @@ import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.utils.CleanupPolicyUtils;
 import org.apache.rocketmq.common.utils.SystemUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
@@ -69,7 +70,7 @@ public class GetMessageService {
             return compactionResult;
         }
 
-        long beginTime = messageStore.getSystemClock().now();
+        long beginTime = TimeUtils.now();
         GetMessageResult getResult = getMessageFromQueue(group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize, messageFilter);
 
         setMonitorMatrix(getResult.getStatus(), beginTime);
@@ -315,7 +316,7 @@ public class GetMessageService {
         } else {
             messageStore.getStoreStatsService().getGetMessageTimesTotalMiss().add(1);
         }
-        long elapsedTime = messageStore.getSystemClock().now() - beginTime;
+        long elapsedTime = TimeUtils.now() - beginTime;
         messageStore.getStoreStatsService().setGetMessageEntireTimeMax(elapsedTime);
     }
 

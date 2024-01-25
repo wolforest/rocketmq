@@ -580,7 +580,7 @@ public class DLedgerCommitLog extends CommitLog {
             long elapsedTimeInLock;
             long queueOffset;
             try {
-                beginTimeInDledgerLock = this.defaultMessageStore.getSystemClock().now();
+                beginTimeInDledgerLock = TimeUtils.now();
                 queueOffset = getQueueOffsetByKey(msg, tranType);
                 encodeResult.setQueueOffsetKey(queueOffset, false);
                 AppendEntryRequest request = new AppendEntryRequest();
@@ -597,7 +597,7 @@ public class DLedgerCommitLog extends CommitLog {
                 ByteBuffer buffer = ByteBuffer.allocate(msgIdLength);
 
                 String msgId = MessageDecoder.createMessageId(buffer, msg.getStoreHostBytes(), wroteOffset);
-                elapsedTimeInLock = this.defaultMessageStore.getSystemClock().now() - beginTimeInDledgerLock;
+                elapsedTimeInLock = TimeUtils.now() - beginTimeInDledgerLock;
                 appendResult = new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, encodeResult.getData().length, msgId, System.currentTimeMillis(), queueOffset, elapsedTimeInLock);
             } finally {
                 beginTimeInDledgerLock = 0;
@@ -701,7 +701,7 @@ public class DLedgerCommitLog extends CommitLog {
             long queueOffset;
             int msgNum = 0;
             try {
-                beginTimeInDledgerLock = this.defaultMessageStore.getSystemClock().now();
+                beginTimeInDledgerLock = TimeUtils.now();
                 queueOffset = getQueueOffsetByKey(messageExtBatch, tranType);
                 encodeResult.setQueueOffsetKey(queueOffset, true);
                 BatchAppendEntryRequest request = new BatchAppendEntryRequest();
@@ -737,7 +737,7 @@ public class DLedgerCommitLog extends CommitLog {
                     msgNum++;
                 }
 
-                elapsedTimeInLock = this.defaultMessageStore.getSystemClock().now() - beginTimeInDledgerLock;
+                elapsedTimeInLock = TimeUtils.now() - beginTimeInDledgerLock;
                 appendResult = new AppendMessageResult(AppendMessageStatus.PUT_OK, firstWroteOffset, encodeResult.totalMsgLen,
                     msgIdBuilder.toString(), System.currentTimeMillis(), queueOffset, elapsedTimeInLock);
                 appendResult.setMsgNum(msgNum);

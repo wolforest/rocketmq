@@ -28,35 +28,34 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import org.apache.rocketmq.common.lang.Pair;
-import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.message.MessageExtBatch;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
-import org.apache.rocketmq.store.api.dto.AppendMessageResult;
-import org.apache.rocketmq.store.domain.dispatcher.CommitLogDispatcher;
-import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
-import org.apache.rocketmq.store.api.dto.GetMessageResult;
-import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.broker.stats.StoreStatsService;
+import org.apache.rocketmq.store.api.dto.AppendMessageResult;
+import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.QueryMessageResult;
-import org.apache.rocketmq.store.server.config.RunningFlags;
-import org.apache.rocketmq.store.server.store.StoreCheckpoint;
-import org.apache.rocketmq.store.infra.memory.TransientStorePool;
+import org.apache.rocketmq.store.api.filter.MessageFilter;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
-import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.server.ha.HAService;
+import org.apache.rocketmq.store.domain.dispatcher.CommitLogDispatcher;
+import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
+import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
+import org.apache.rocketmq.store.domain.queue.ConsumeQueueStoreInterface;
+import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
 import org.apache.rocketmq.store.infra.mappedfile.AllocateMappedFileService;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
-import org.apache.rocketmq.store.domain.queue.ConsumeQueueStoreInterface;
-import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.api.broker.stats.StoreStatsService;
-import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
+import org.apache.rocketmq.store.infra.memory.TransientStorePool;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.RunningFlags;
+import org.apache.rocketmq.store.server.ha.HAService;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
+import org.apache.rocketmq.store.server.store.StoreCheckpoint;
 import org.rocksdb.RocksDBException;
 
 /**
@@ -528,11 +527,6 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     @Override
     public StoreCheckpoint getStoreCheckpoint() {
         return next.getStoreCheckpoint();
-    }
-
-    @Override
-    public SystemClock getSystemClock() {
-        return next.getSystemClock();
     }
 
     @Override

@@ -26,10 +26,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
-import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.domain.coldctr.AccAndTimeStamp;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
@@ -41,7 +41,6 @@ import org.apache.rocketmq.store.server.config.MessageStoreConfig;
  */
 public class ColdDataCgCtrThread extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_COLDCTR_LOGGER_NAME);
-    private final SystemClock systemClock = new SystemClock();
     private final long cgColdAccResideTimeoutMills = 60 * 1000;
     private static final AtomicLong GLOBAL_ACC = new AtomicLong(0L);
     private static final String ADAPTIVE = "||adaptive";
@@ -85,12 +84,12 @@ public class ColdDataCgCtrThread extends ServiceThread {
                     this.waitForRunning(180 * 1000);
                 }
 
-                long beginLockTimestamp = this.systemClock.now();
+                long beginLockTimestamp = TimeUtils.now();
                 clearDataAcc();
                 if (!brokerConfig.isColdCtrStrategyEnable()) {
                     clearAdaptiveConfig();
                 }
-                long costTime = this.systemClock.now() - beginLockTimestamp;
+                long costTime = TimeUtils.now() - beginLockTimestamp;
                 log.info("[{}] clearTheDataAcc-cost {} ms.", costTime > 3 * 1000 ? "NOTIFYME" : "OK", costTime);
             } catch (Throwable e) {
                 log.warn(this.getServiceName() + " service has exception", e);

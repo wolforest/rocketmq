@@ -30,6 +30,7 @@ import org.apache.rocketmq.common.domain.message.MessageExtBatch;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
@@ -124,7 +125,7 @@ public class PutMessageService {
     }
 
     private CompletableFuture<PutMessageResult> asyncPutAndAddCallback(MessageExtBrokerInner msg) {
-        long beginTime = messageStore.getSystemClock().now();
+        long beginTime = TimeUtils.now();
         CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessage(msg);
         putResultFuture.thenAccept(result -> {
             PutMessageService.this.recodeRequestTime(beginTime, msg);
@@ -135,7 +136,7 @@ public class PutMessageService {
     }
 
     private CompletableFuture<PutMessageResult> asyncPutAndAddCallback(MessageExtBatch messageExtBatch) {
-        long beginTime = messageStore.getSystemClock().now();
+        long beginTime = TimeUtils.now();
         CompletableFuture<PutMessageResult> putResultFuture = messageStore.getCommitLog().asyncPutMessages(messageExtBatch);
 
         putResultFuture.thenAccept(result -> {
@@ -147,7 +148,7 @@ public class PutMessageService {
     }
 
     private void recodeRequestTime(long beginTime, MessageExtBrokerInner msg) {
-        long elapsedTime = messageStore.getSystemClock().now() - beginTime;
+        long elapsedTime = TimeUtils.now() - beginTime;
         if (elapsedTime > 500) {
             LOGGER.warn("DefaultMessageStore#putMessage: CommitLog#putMessage cost {}ms, topic={}, bodyLength={}",
                 elapsedTime, msg.getTopic(), msg.getBody().length);
@@ -156,7 +157,7 @@ public class PutMessageService {
     }
 
     private void recodeRequestTime(long beginTime, MessageExtBatch messageExtBatch) {
-        long eclipseTime = messageStore.getSystemClock().now() - beginTime;
+        long eclipseTime = TimeUtils.now() - beginTime;
         if (eclipseTime > 500) {
             LOGGER.warn("not in lock eclipse time(ms)={}, bodyLength={}", eclipseTime, messageExtBatch.getBody().length);
         }

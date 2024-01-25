@@ -61,6 +61,7 @@ import org.apache.rocketmq.common.utils.ServiceProvider;
 import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.body.HARuntimeInfo;
@@ -153,7 +154,6 @@ public class DefaultMessageStore implements MessageStore {
     public final PerfCounter.Ticks perfs = new PerfCounter.Ticks(LOGGER);
 
     protected final RunningFlags runningFlags = new RunningFlags();
-    private final SystemClock systemClock = new SystemClock();
 
     private LinkedList<CommitLogDispatcher> dispatcherList;
     private final MessageArrivingListener messageArrivingListener;
@@ -373,7 +373,7 @@ public class DefaultMessageStore implements MessageStore {
     @Override
     public boolean isOSPageCacheBusy() {
         long begin = this.getCommitLog().getBeginTimeInLock();
-        long diff = this.systemClock.now() - begin;
+        long diff = TimeUtils.now() - begin;
 
         return diff < 10000000
             && diff > this.messageStoreConfig.getOsPageCacheBusyTimeOutMills();
@@ -1410,10 +1410,6 @@ public class DefaultMessageStore implements MessageStore {
     @Override
     public void setBrokerInitMaxOffset(long brokerInitMaxOffset) {
         this.brokerInitMaxOffset = brokerInitMaxOffset;
-    }
-
-    public SystemClock getSystemClock() {
-        return systemClock;
     }
 
     @Override

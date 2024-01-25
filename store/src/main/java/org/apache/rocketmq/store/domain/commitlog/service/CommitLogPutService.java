@@ -165,7 +165,7 @@ public class CommitLogPutService {
 
             commitLog.getPutMessageLock().lock();
             try {
-                long beginLockTimestamp = this.defaultMessageStore.getSystemClock().now();
+                long beginLockTimestamp = TimeUtils.now();
                 commitLog.setBeginTimeInLock(beginLockTimestamp);
 
                 // Here settings are stored timestamp, in order to ensure an orderly
@@ -213,7 +213,7 @@ public class CommitLogPutService {
                         return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.UNKNOWN_ERROR, result));
                 }
 
-                elapsedTimeInLock = this.defaultMessageStore.getSystemClock().now() - beginLockTimestamp;
+                elapsedTimeInLock = TimeUtils.now() - beginLockTimestamp;
                 commitLog.setBeginTimeInLock(0);
             } finally {
                 commitLog.getPutMessageLock().unlock();
@@ -345,7 +345,7 @@ public class CommitLogPutService {
         PutMessageContext putMessageContext = new PutMessageContext(context.getTopicQueueKey());
         commitLog.getPutMessageLock().lock(); //spin or ReentrantLock ,depending on store config
         try {
-            long beginLockTimestamp = this.defaultMessageStore.getSystemClock().now();
+            long beginLockTimestamp = TimeUtils.now();
             commitLog.setBeginTimeInLock(beginLockTimestamp);
 
             // Here settings are stored timestamp, in order to ensure an orderly

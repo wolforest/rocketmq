@@ -24,6 +24,7 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.utils.SystemUtils;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
@@ -568,7 +569,7 @@ public class CompactionLog {
             } else {
                 this.defaultMessageStore.getStoreStatsService().getGetMessageTimesTotalMiss().add(getResult.getMessageCount());
             }
-            long elapsedTime = this.defaultMessageStore.getSystemClock().now() - beginTime;
+            long elapsedTime = TimeUtils.now() - beginTime;
             this.defaultMessageStore.getStoreStatsService().setGetMessageEntireTimeMax(elapsedTime);
 
             getResult.setStatus(status);

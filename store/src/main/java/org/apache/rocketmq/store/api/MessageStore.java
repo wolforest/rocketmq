@@ -691,13 +691,6 @@ public interface MessageStore {
     StoreCheckpoint getStoreCheckpoint();
 
     /**
-     * Get the system clock
-     *
-     * @return the system clock
-     */
-    SystemClock getSystemClock();
-
-    /**
      * Get the commit log
      *
      * @return the commit log
