@@ -95,7 +95,7 @@ public class ColdDataCheckService extends ServiceThread {
         if (pageSize <= 0 || sampleSteps <= 0) {
             return true;
         }
-        if (!defaultMessageStore.checkInColdAreaByCommitOffset(offset, defaultMessageStore.getCommitLog().getMaxOffset())) {
+        if (!checkInColdAreaByCommitOffset(offset, defaultMessageStore.getCommitLog().getMaxOffset())) {
             return true;
         }
         if (!defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable()) {
@@ -203,11 +203,21 @@ public class ColdDataCheckService extends ServiceThread {
                 return false;
             }
             long offsetPy = bufferConsumeQueue.getByteBuffer().getLong();
-            return defaultMessageStore.checkInColdAreaByCommitOffset(offsetPy, defaultMessageStore.getCommitLog().getMaxOffset());
+            return checkInColdAreaByCommitOffset(offsetPy, defaultMessageStore.getCommitLog().getMaxOffset());
         } catch (Exception e) {
             log.error("isMsgInColdArea group: {}, topic: {}, queueId: {}, offset: {}",
                 group, topic, queueId, offset, e);
         }
         return false;
+    }
+
+    /**
+     * The ratio val is estimated by the experiment and experience
+     * so that the result is not high accurate for different business
+     * @return bool
+     */
+    private boolean checkInColdAreaByCommitOffset(long offsetPy, long maxOffsetPy) {
+        long memory = (long)(SystemUtils.TOTAL_PHYSICAL_MEMORY_SIZE * (defaultMessageStore.getMessageStoreConfig().getAccessMessageInMemoryHotRatio() / 100.0));
+        return (maxOffsetPy - offsetPy) > memory;
     }
 }

@@ -814,15 +814,6 @@ public class DefaultMessageStore implements MessageStore {
     public ConsumeQueueInterface findConsumeQueue(String topic, int queueId) {
         return consumeQueueService.findConsumeQueue(topic, queueId);
     }
-    /**
-     * The ratio val is estimated by the experiment and experience
-     * so that the result is not high accurate for different business
-     * @return bool
-     */
-    public boolean checkInColdAreaByCommitOffset(long offsetPy, long maxOffsetPy) {
-        long memory = (long)(SystemUtils.TOTAL_PHYSICAL_MEMORY_SIZE * (this.messageStoreConfig.getAccessMessageInMemoryHotRatio() / 100.0));
-        return (maxOffsetPy - offsetPy) > memory;
-    }
 
     @Override
     public long getTimingMessageCount(String topic) {

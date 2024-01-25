@@ -62,7 +62,11 @@ public class ColdDataCgCtrThread extends ServiceThread {
     public ColdDataCgCtrThread(Broker broker) {
         this.brokerConfig = broker.getBrokerConfig();
         this.messageStoreConfig = broker.getMessageStoreConfig();
-        this.coldCtrStrategy = brokerConfig.isUsePIDColdCtrStrategy() ? new PIDAdaptiveColdCtrStrategy(this, (long)(brokerConfig.getGlobalColdReadThreshold() * 0.8)) : new SimpleColdCtrStrategy(this);
+
+        // brokerConfig.usePIDColdCtrStrategy default value is true
+        this.coldCtrStrategy = brokerConfig.isUsePIDColdCtrStrategy()
+            ? new PIDAdaptiveColdCtrStrategy(this, (long)(brokerConfig.getGlobalColdReadThreshold() * 0.8))
+            : new SimpleColdCtrStrategy(this);
     }
 
     @Override
