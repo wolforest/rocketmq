@@ -58,7 +58,6 @@ import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.ServiceProvider;
-import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;

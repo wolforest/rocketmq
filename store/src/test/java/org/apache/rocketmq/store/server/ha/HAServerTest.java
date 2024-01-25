@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
-import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.domain.commitlog.GroupCommitRequest;
