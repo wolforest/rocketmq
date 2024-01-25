@@ -25,6 +25,7 @@ import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.queue.CqExtUnit;
@@ -33,9 +34,7 @@ public class PullRequestHoldThread extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     protected static final String TOPIC_QUEUE_ID_SEPARATOR = "@";
     protected final Broker broker;
-    private final SystemClock systemClock = new SystemClock();
-    protected ConcurrentMap<String/* topic@queueId */, ManyPullRequest> pullRequestTable =
-        new ConcurrentHashMap<>(1024);
+    protected ConcurrentMap<String/* topic@queueId */, ManyPullRequest> pullRequestTable = new ConcurrentHashMap<>(1024);
 
     public PullRequestHoldThread(final Broker broker) {
         this.broker = broker;
@@ -79,9 +78,9 @@ public class PullRequestHoldThread extends ServiceThread {
                     this.waitForRunning(this.broker.getBrokerConfig().getShortPollingTimeMills());
                 }
 
-                long beginLockTimestamp = this.systemClock.now();
+                long beginLockTimestamp = TimeUtils.now();
                 this.checkHoldRequest();
-                long costTime = this.systemClock.now() - beginLockTimestamp;
+                long costTime = TimeUtils.now() - beginLockTimestamp;
                 if (costTime > 5 * 1000) {
                     log.warn("PullRequestHoldService: check hold pull request cost {}ms", costTime);
                 }
