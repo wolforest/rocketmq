@@ -18,30 +18,27 @@ package org.apache.rocketmq.broker.server.bootstrap;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.ShutdownHook;
-import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
-import org.apache.rocketmq.broker.domain.producer.ProducerManager;
-import org.apache.rocketmq.broker.infra.Broker2Client;
+import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
 import org.apache.rocketmq.broker.domain.coldctr.ColdDataCgCtrThread;
 import org.apache.rocketmq.broker.domain.coldctr.ColdDataPullRequestHoldThread;
-import org.apache.rocketmq.broker.server.daemon.BrokerFastFailure;
-import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineService;
-import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
-import org.apache.rocketmq.broker.domain.queue.offset.BroadcastOffsetManager;
-import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
-import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
+import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
 import org.apache.rocketmq.broker.domain.metadata.topic.TopicQueueMappingCleanService;
 import org.apache.rocketmq.broker.domain.metadata.topic.TopicRouteInfoManager;
+import org.apache.rocketmq.broker.domain.producer.ProducerManager;
+import org.apache.rocketmq.broker.domain.queue.offset.BroadcastOffsetManager;
+import org.apache.rocketmq.broker.infra.Broker2Client;
+import org.apache.rocketmq.broker.server.Broker;
+import org.apache.rocketmq.broker.server.daemon.BrokerFastFailure;
+import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineService;
+import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
+import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
-import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
-import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.api.broker.stats.BrokerStats;
 import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.api.broker.stats.LmqBrokerStatsManager;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 /**
  * manager services type like
@@ -52,8 +49,6 @@ import org.apache.rocketmq.store.api.broker.stats.LmqBrokerStatsManager;
  *      5, shutdown hook
  */
 public class BrokerServiceManager {
-    private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-
     private final Broker broker;
     private final BrokerConfig brokerConfig;
     private final MessageStoreConfig messageStoreConfig;
@@ -83,7 +78,7 @@ public class BrokerServiceManager {
     /* monitor servie end */
 
     /*  broker plugin start */
-    private List<BrokerPlugin> brokerPlugins = new ArrayList<>();
+    private final List<BrokerPlugin> brokerPlugins = new ArrayList<>();
     /*  broker plugin end */
 
     private ShutdownHook shutdownHook;
@@ -237,28 +232,22 @@ public class BrokerServiceManager {
     }
 
     private void initProducerStateGetter() {
-        this.brokerStatsManager.setProduerStateGetter(new BrokerStatsManager.StateGetter() {
-            @Override
-            public boolean online(String instanceId, String group, String topic) {
-                if (broker.getTopicConfigManager().getTopicConfigTable().containsKey(NamespaceUtil.wrapNamespace(instanceId, topic))) {
-                    return getProducerManager().groupOnline(NamespaceUtil.wrapNamespace(instanceId, group));
-                } else {
-                    return getProducerManager().groupOnline(group);
-                }
+        this.brokerStatsManager.setProduerStateGetter((instanceId, group, topic) -> {
+            if (broker.getTopicConfigManager().getTopicConfigTable().containsKey(NamespaceUtil.wrapNamespace(instanceId, topic))) {
+                return getProducerManager().groupOnline(NamespaceUtil.wrapNamespace(instanceId, group));
+            } else {
+                return getProducerManager().groupOnline(group);
             }
         });
     }
 
     private void initConsumerStateGetter() {
-        this.brokerStatsManager.setConsumerStateGetter(new BrokerStatsManager.StateGetter() {
-            @Override
-            public boolean online(String instanceId, String group, String topic) {
-                String topicFullName = NamespaceUtil.wrapNamespace(instanceId, topic);
-                if (broker.getTopicConfigManager().getTopicConfigTable().containsKey(topicFullName)) {
-                    return getConsumerManager().findSubscriptionData(NamespaceUtil.wrapNamespace(instanceId, group), topicFullName) != null;
-                } else {
-                    return getConsumerManager().findSubscriptionData(group, topic) != null;
-                }
+        this.brokerStatsManager.setConsumerStateGetter((instanceId, group, topic) -> {
+            String topicFullName = NamespaceUtil.wrapNamespace(instanceId, topic);
+            if (broker.getTopicConfigManager().getTopicConfigTable().containsKey(topicFullName)) {
+                return getConsumerManager().findSubscriptionData(NamespaceUtil.wrapNamespace(instanceId, group), topicFullName) != null;
+            } else {
+                return getConsumerManager().findSubscriptionData(group, topic) != null;
             }
         });
     }
@@ -269,10 +258,6 @@ public class BrokerServiceManager {
 
     public BrokerStats getBrokerStats() {
         return brokerStats;
-    }
-
-    public ShutdownHook getShutdownHook() {
-        return shutdownHook;
     }
 
     public void setShutdownHook(ShutdownHook shutdownHook) {
@@ -313,14 +298,6 @@ public class BrokerServiceManager {
 
     public TopicRouteInfoManager getTopicRouteInfoManager() {
         return topicRouteInfoManager;
-    }
-
-    public BrokerFastFailure getBrokerFastFailure() {
-        return brokerFastFailure;
-    }
-
-    public BrokerPreOnlineService getBrokerPreOnlineService() {
-        return brokerPreOnlineService;
     }
 
     public ColdDataPullRequestHoldThread getColdDataPullRequestHoldService() {
