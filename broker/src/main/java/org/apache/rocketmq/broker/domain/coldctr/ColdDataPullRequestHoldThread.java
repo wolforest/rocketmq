@@ -28,12 +28,14 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 /**
+ * @renamed from ColdDataPullRequestHoldService to ColdDataPullRequestHoldThread
+ *
  * just requests are type of pull have the qualification to be put into this hold queue.
  * if the pull request is reading cold data and that request will be cold at the first time,
  * then the pull request will be cold in this @code pullRequestLinkedBlockingQueue,
- * in @code coldTimeoutMillis later the pull request will be warm and marked holded
+ * in @code coldTimeoutMillis later the pull request will be warm and marked hold
  */
-public class ColdDataPullRequestHoldService extends ServiceThread {
+public class ColdDataPullRequestHoldThread extends ServiceThread {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_COLDCTR_LOGGER_NAME);
     public static final String NO_SUSPEND_KEY = "_noSuspend_";
@@ -49,13 +51,13 @@ public class ColdDataPullRequestHoldService extends ServiceThread {
         }
     }
 
-    public ColdDataPullRequestHoldService(Broker broker) {
+    public ColdDataPullRequestHoldThread(Broker broker) {
         this.broker = broker;
     }
 
     @Override
     public String getServiceName() {
-        return ColdDataPullRequestHoldService.class.getSimpleName();
+        return ColdDataPullRequestHoldThread.class.getSimpleName();
     }
 
     @Override

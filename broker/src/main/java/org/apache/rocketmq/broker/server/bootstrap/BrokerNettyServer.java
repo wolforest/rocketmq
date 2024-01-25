@@ -32,7 +32,7 @@ import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.connection.ClientHousekeepingService;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerIdsChangeListener;
 import org.apache.rocketmq.broker.domain.consumer.DefaultConsumerIdsChangeListener;
-import org.apache.rocketmq.broker.domain.coldctr.ColdDataPullRequestHoldService;
+import org.apache.rocketmq.broker.domain.coldctr.ColdDataPullRequestHoldThread;
 import org.apache.rocketmq.broker.server.daemon.BrokerFastFailure;
 import org.apache.rocketmq.broker.server.daemon.longpolling.LmqPullRequestHoldThread;
 import org.apache.rocketmq.broker.server.daemon.longpolling.NotifyMessageArrivingListener;
@@ -344,7 +344,7 @@ public class BrokerNettyServer {
     public void executePullRequest(final Channel channel, final RemotingCommand request) {
         Runnable run = () -> {
             try {
-                boolean brokerAllowFlowCtrSuspend = !(request.getExtFields() != null && request.getExtFields().containsKey(ColdDataPullRequestHoldService.NO_SUSPEND_KEY));
+                boolean brokerAllowFlowCtrSuspend = !(request.getExtFields() != null && request.getExtFields().containsKey(ColdDataPullRequestHoldThread.NO_SUSPEND_KEY));
                 final RemotingCommand response = BrokerNettyServer.this.getPullMessageProcessor().processRequest(channel, request, false, brokerAllowFlowCtrSuspend);
                 writeResponse(channel, request, response);
             } catch (RemotingCommandException e1) {

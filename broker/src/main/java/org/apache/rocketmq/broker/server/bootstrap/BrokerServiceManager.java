@@ -24,7 +24,7 @@ import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
 import org.apache.rocketmq.broker.domain.producer.ProducerManager;
 import org.apache.rocketmq.broker.infra.Broker2Client;
 import org.apache.rocketmq.broker.domain.coldctr.ColdDataCgCtrService;
-import org.apache.rocketmq.broker.domain.coldctr.ColdDataPullRequestHoldService;
+import org.apache.rocketmq.broker.domain.coldctr.ColdDataPullRequestHoldThread;
 import org.apache.rocketmq.broker.server.daemon.BrokerFastFailure;
 import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineService;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
@@ -72,7 +72,7 @@ public class BrokerServiceManager {
     private BrokerPreOnlineService brokerPreOnlineService;
     private TopicQueueMappingCleanService topicQueueMappingCleanService;
 
-    private ColdDataPullRequestHoldService coldDataPullRequestHoldService;
+    private ColdDataPullRequestHoldThread coldDataPullRequestHoldThread;
     private ColdDataCgCtrService coldDataCgCtrService;
     /* ServiceWithStartAndShutdown start */
 
@@ -131,8 +131,8 @@ public class BrokerServiceManager {
             this.brokerPreOnlineService.start();
         }
 
-        if (this.coldDataPullRequestHoldService != null) {
-            this.coldDataPullRequestHoldService.start();
+        if (this.coldDataPullRequestHoldThread != null) {
+            this.coldDataPullRequestHoldThread.start();
         }
 
         if (this.coldDataCgCtrService != null) {
@@ -171,8 +171,8 @@ public class BrokerServiceManager {
             this.brokerPreOnlineService.shutdown();
         }
 
-        if (this.coldDataPullRequestHoldService != null) {
-            this.coldDataPullRequestHoldService.shutdown();
+        if (this.coldDataPullRequestHoldThread != null) {
+            this.coldDataPullRequestHoldThread.shutdown();
         }
 
         if (this.coldDataCgCtrService != null) {
@@ -216,7 +216,7 @@ public class BrokerServiceManager {
         this.brokerFastFailure = new BrokerFastFailure(broker);
         this.topicRouteInfoManager = new TopicRouteInfoManager(broker);
 
-        this.coldDataPullRequestHoldService = new ColdDataPullRequestHoldService(broker);
+        this.coldDataPullRequestHoldThread = new ColdDataPullRequestHoldThread(broker);
         this.coldDataCgCtrService = new ColdDataCgCtrService(broker);
 
         this.topicQueueMappingCleanService = new TopicQueueMappingCleanService(broker);
@@ -323,8 +323,8 @@ public class BrokerServiceManager {
         return brokerPreOnlineService;
     }
 
-    public ColdDataPullRequestHoldService getColdDataPullRequestHoldService() {
-        return coldDataPullRequestHoldService;
+    public ColdDataPullRequestHoldThread getColdDataPullRequestHoldService() {
+        return coldDataPullRequestHoldThread;
     }
 
     public ColdDataCgCtrService getColdDataCgCtrService() {
