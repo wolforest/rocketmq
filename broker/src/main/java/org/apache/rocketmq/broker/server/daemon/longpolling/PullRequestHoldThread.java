@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
-import org.apache.rocketmq.common.utils.SystemClock;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -142,7 +141,7 @@ public class PullRequestHoldThread extends ServiceThread {
                 continue;
             }
 
-            if (!notifyBySuspendTime(request)) {
+            if (!notifyBySuspendTime(request, topic, queueId)) {
                 continue;
             }
 
@@ -184,7 +183,7 @@ public class PullRequestHoldThread extends ServiceThread {
         return false;
     }
 
-    private boolean notifyBySuspendTime(PullRequest request) {
+    private boolean notifyBySuspendTime(PullRequest request, String topic, int queueId) {
         if (System.currentTimeMillis() < (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
             return true;
         }
