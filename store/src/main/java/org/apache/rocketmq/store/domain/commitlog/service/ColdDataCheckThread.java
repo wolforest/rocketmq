@@ -38,6 +38,9 @@ import java.util.stream.Collectors;
 
 /**
  * @renamed from ColdDataCheckService to ColdDataCheckThread
+ *
+ * This method will do nothing, in default setting.
+ *
  */
 public class ColdDataCheckThread extends ServiceThread {
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -68,7 +71,10 @@ public class ColdDataCheckThread extends ServiceThread {
         log.info("{} service started", this.getServiceName());
         while (!this.isStopped()) {
             try {
-                if (SystemUtils.isWindows() || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable() || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable()) {
+                if (SystemUtils.isWindows()
+                    || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()
+                    || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable()) {
+
                     pageCacheMap.clear();
                     this.waitForRunning(180 * 1000);
                     continue;
@@ -91,6 +97,11 @@ public class ColdDataCheckThread extends ServiceThread {
         log.info("{} service end", this.getServiceName());
     }
 
+    /**
+     *
+     * @param offset offset of commitLog while getMessage
+     * @return status
+     */
     public boolean isDataInPageCache(final long offset) {
         if (!defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
             return true;
@@ -119,10 +130,37 @@ public class ColdDataCheckThread extends ServiceThread {
         return bytes.length - 1 >= realIndex && bytes[realIndex] != 0;
     }
 
+    /**
+     * this result is not high accurate.
+     */
+    public boolean isMsgInColdArea(String group, String topic, int queueId, long offset) {
+        if (!defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
+            return false;
+        }
+
+        try {
+            ConsumeQueue consumeQueue = (ConsumeQueue) defaultMessageStore.findConsumeQueue(topic, queueId);
+            if (null == consumeQueue) {
+                return false;
+            }
+            SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(offset);
+            if (null == bufferConsumeQueue || null == bufferConsumeQueue.getByteBuffer()) {
+                return false;
+            }
+            long offsetPy = bufferConsumeQueue.getByteBuffer().getLong();
+            return checkInColdAreaByCommitOffset(offsetPy, defaultMessageStore.getCommitLog().getMaxOffset());
+        } catch (Exception e) {
+            log.error("isMsgInColdArea group: {}, topic: {}, queueId: {}, offset: {}",
+                group, topic, queueId, offset, e);
+        }
+        return false;
+    }
+
     private void scanFilesInPageCache() {
         if (SystemUtils.isWindows() || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable() || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable() || pageSize <= 0) {
             return;
         }
+
         try {
             log.info("pageCacheMap key size: {}", pageCacheMap.size());
             clearExpireMappedFile();
@@ -200,34 +238,11 @@ public class ColdDataCheckThread extends ServiceThread {
     }
 
     /**
-     * this result is not high accurate.
-     */
-    public boolean isMsgInColdArea(String group, String topic, int queueId, long offset) {
-        if (!defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
-            return false;
-        }
-
-        try {
-            ConsumeQueue consumeQueue = (ConsumeQueue) defaultMessageStore.findConsumeQueue(topic, queueId);
-            if (null == consumeQueue) {
-                return false;
-            }
-            SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(offset);
-            if (null == bufferConsumeQueue || null == bufferConsumeQueue.getByteBuffer()) {
-                return false;
-            }
-            long offsetPy = bufferConsumeQueue.getByteBuffer().getLong();
-            return checkInColdAreaByCommitOffset(offsetPy, defaultMessageStore.getCommitLog().getMaxOffset());
-        } catch (Exception e) {
-            log.error("isMsgInColdArea group: {}, topic: {}, queueId: {}, offset: {}",
-                group, topic, queueId, offset, e);
-        }
-        return false;
-    }
-
-    /**
      * The ratio val is estimated by the experiment and experience
      * so that the result is not high accurate for different business
+     *
+     * @param  offsetPy start offset of getting message process
+     * @param maxOffsetPy commitLog maxOffset
      * @return bool
      */
     private boolean checkInColdAreaByCommitOffset(long offsetPy, long maxOffsetPy) {

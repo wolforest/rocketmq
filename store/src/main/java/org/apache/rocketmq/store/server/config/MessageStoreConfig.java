@@ -414,6 +414,9 @@ public class MessageStoreConfig {
     private boolean dataReadAheadEnable = true;
     private int timerColdDataCheckIntervalMs = 60 * 1000;
     private int sampleSteps = 32;
+    /**
+     * max ratio of hot message data in total physical memory
+     */
     private int accessMessageInMemoryHotRatio = 26;
     /**
      * Build ConsumeQueue concurrently with multi-thread
