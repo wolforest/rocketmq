@@ -139,7 +139,14 @@ public class ColdDataCheckThread extends ServiceThread {
     }
 
     private void clearExpireMappedFile() {
-        Set<String> currentFileSet = defaultMessageStore.getCommitLog().getMappedFileQueue().getMappedFiles().stream().map(MappedFile::getFileName).collect(Collectors.toSet());
+        Set<String> currentFileSet = defaultMessageStore
+            .getCommitLog()
+            .getMappedFileQueue()
+            .getMappedFiles()
+            .stream()
+            .map(MappedFile::getFileName)
+            .collect(Collectors.toSet());
+
         pageCacheMap.forEach((key, value) -> {
             if (!currentFileSet.contains(key)) {
                 pageCacheMap.remove(key);
@@ -162,30 +169,33 @@ public class ColdDataCheckThread extends ServiceThread {
         int pageNums = (int) (fileSize + this.pageSize - 1) / this.pageSize;
         byte[] pageCacheRst = new byte[pageNums];
         int mincore = LibC.INSTANCE.mincore(new Pointer(address), new NativeLong(fileSize), pageCacheRst);
-        if (mincore != 0) {
-            log.error("checkFileInPageCache call the LibC.INSTANCE.mincore error, fileName: {}, fileSize: {}",
-                mappedFile.getFileName(), fileSize);
-            for (int i = 0; i < pageNums; i++) {
-                pageCacheRst[i] = 1;
-            }
+        if (mincore == 0) {
+            return pageCacheRst;
+        }
+
+        log.error("checkFileInPageCache call the LibC.INSTANCE.mincore error, fileName: {}, fileSize: {}", mappedFile.getFileName(), fileSize);
+        for (int i = 0; i < pageNums; i++) {
+            pageCacheRst[i] = 1;
         }
         return pageCacheRst;
     }
 
     private void initPageSize() {
-        if (pageSize < 0 && defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
-            try {
-                if (!SystemUtils.isWindows()) {
-                    pageSize = LibC.INSTANCE.getpagesize();
-                } else {
-                    defaultMessageStore.getMessageStoreConfig().setColdDataFlowControlEnable(false);
-                    log.info("windows os, coldDataCheckEnable force setting to be false");
-                }
-                log.info("initPageSize pageSize: {}", pageSize);
-            } catch (Exception e) {
+        if (pageSize >= 0 || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
+            return;
+        }
+
+        try {
+            if (!SystemUtils.isWindows()) {
+                pageSize = LibC.INSTANCE.getpagesize();
+            } else {
                 defaultMessageStore.getMessageStoreConfig().setColdDataFlowControlEnable(false);
-                log.error("initPageSize error, coldDataCheckEnable force setting to be false ", e);
+                log.info("windows os, coldDataCheckEnable force setting to be false");
             }
+            log.info("initPageSize pageSize: {}", pageSize);
+        } catch (Exception e) {
+            defaultMessageStore.getMessageStoreConfig().setColdDataFlowControlEnable(false);
+            log.error("initPageSize error, coldDataCheckEnable force setting to be false ", e);
         }
     }
 
@@ -196,6 +206,7 @@ public class ColdDataCheckThread extends ServiceThread {
         if (!defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
             return false;
         }
+
         try {
             ConsumeQueue consumeQueue = (ConsumeQueue) defaultMessageStore.findConsumeQueue(topic, queueId);
             if (null == consumeQueue) {
