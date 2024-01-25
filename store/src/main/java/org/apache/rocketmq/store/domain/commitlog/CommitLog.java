@@ -57,7 +57,7 @@ import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.domain.message.PutMessageSpinLock;
 import org.apache.rocketmq.store.infra.memory.Swappable;
 import org.apache.rocketmq.store.domain.queue.TopicQueueLock;
-import org.apache.rocketmq.store.domain.commitlog.service.ColdDataCheckService;
+import org.apache.rocketmq.store.domain.commitlog.service.ColdDataCheckThread;
 import org.apache.rocketmq.store.domain.commitlog.service.CommitLogPutService;
 import org.apache.rocketmq.store.domain.commitlog.service.CommitLogRecoverService;
 import org.apache.rocketmq.store.server.config.BrokerRole;
@@ -90,7 +90,7 @@ public class CommitLog implements Swappable {
     protected final DefaultMessageStore defaultMessageStore;
 
     private final FlushManager flushManager;
-    private final ColdDataCheckService coldDataCheckService;
+    private final ColdDataCheckThread coldDataCheckThread;
     private final CommitLogRecoverService commitLogRecoverService;
 
     private final AppendMessageCallback appendMessageCallback;
@@ -116,7 +116,7 @@ public class CommitLog implements Swappable {
 
         this.defaultMessageStore = messageStore;
         this.flushManager = new DefaultFlushManager(messageStore, this);
-        this.coldDataCheckService = new ColdDataCheckService(messageStore);
+        this.coldDataCheckThread = new ColdDataCheckThread(messageStore);
         this.commitLogRecoverService = new CommitLogRecoverService(messageStore, this);
         this.appendMessageCallback = new DefaultAppendMessageCallback(messageStore, this);
 
@@ -164,8 +164,8 @@ public class CommitLog implements Swappable {
         log.info("start commitLog successfully. storeRoot: {}", this.defaultMessageStore.getMessageStoreConfig().getStorePathRootDir());
         flushDiskWatcher.setDaemon(true);
         flushDiskWatcher.start();
-        if (this.coldDataCheckService != null) {
-            this.coldDataCheckService.start();
+        if (this.coldDataCheckThread != null) {
+            this.coldDataCheckThread.start();
         }
     }
 
@@ -173,8 +173,8 @@ public class CommitLog implements Swappable {
         this.flushManager.shutdown();
         log.info("shutdown commitLog successfully. storeRoot: {}", this.defaultMessageStore.getMessageStoreConfig().getStorePathRootDir());
         flushDiskWatcher.shutdown(true);
-        if (this.coldDataCheckService != null) {
-            this.coldDataCheckService.shutdown();
+        if (this.coldDataCheckThread != null) {
+            this.coldDataCheckThread.shutdown();
         }
     }
 
@@ -809,7 +809,7 @@ public class CommitLog implements Swappable {
             return null;
         }
 
-        selectMappedBufferResult.setInCache(coldDataCheckService.isDataInPageCache(offset));
+        selectMappedBufferResult.setInCache(coldDataCheckThread.isDataInPageCache(offset));
         return selectMappedBufferResult;
     }
 
@@ -946,7 +946,7 @@ public class CommitLog implements Swappable {
         return madvise;
     }
 
-    public ColdDataCheckService getColdDataCheckService() {
-        return coldDataCheckService;
+    public ColdDataCheckThread getColdDataCheckService() {
+        return coldDataCheckThread;
     }
 }

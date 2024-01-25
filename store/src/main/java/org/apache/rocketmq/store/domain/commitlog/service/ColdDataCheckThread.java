@@ -36,7 +36,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class ColdDataCheckService extends ServiceThread {
+/**
+ * @renamed from ColdDataCheckService to ColdDataCheckThread
+ */
+public class ColdDataCheckThread extends ServiceThread {
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final DefaultMessageStore defaultMessageStore;
@@ -45,7 +48,7 @@ public class ColdDataCheckService extends ServiceThread {
     private int pageSize = -1;
     private int sampleSteps = 32;
 
-    public ColdDataCheckService(final DefaultMessageStore messageStore) {
+    public ColdDataCheckThread(final DefaultMessageStore messageStore) {
         defaultMessageStore = messageStore;
         sampleSteps = defaultMessageStore.getMessageStoreConfig().getSampleSteps();
         if (sampleSteps <= 0) {
@@ -57,7 +60,7 @@ public class ColdDataCheckService extends ServiceThread {
 
     @Override
     public String getServiceName() {
-        return ColdDataCheckService.class.getSimpleName();
+        return ColdDataCheckThread.class.getSimpleName();
     }
 
     @Override
