@@ -157,7 +157,10 @@ public class ColdDataCheckThread extends ServiceThread {
     }
 
     private void scanFilesInPageCache() {
-        if (SystemUtils.isWindows() || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable() || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable() || pageSize <= 0) {
+        if (SystemUtils.isWindows()
+            || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()
+            || !defaultMessageStore.getMessageStoreConfig().isColdDataScanEnable()
+            || pageSize <= 0) {
             return;
         }
 
@@ -194,7 +197,9 @@ public class ColdDataCheckThread extends ServiceThread {
     }
 
     private byte[] sampling(byte[] pageCacheTable, int sampleStep) {
-        byte[] sample = new byte[(pageCacheTable.length + sampleStep - 1) / sampleStep];
+        int sampleLength = (pageCacheTable.length + sampleStep - 1) / sampleStep;
+        byte[] sample = new byte[sampleLength];
+
         for (int i = 0, j = 0; i < pageCacheTable.length && j < sample.length; i += sampleStep) {
             sample[j++] = pageCacheTable[i];
         }
@@ -218,6 +223,9 @@ public class ColdDataCheckThread extends ServiceThread {
         return pageCacheRst;
     }
 
+    /**
+     * get system page size by LibC, disable cold data control if windows
+     */
     private void initPageSize() {
         if (pageSize >= 0 || !defaultMessageStore.getMessageStoreConfig().isColdDataFlowControlEnable()) {
             return;
