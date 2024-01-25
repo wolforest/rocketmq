@@ -86,21 +86,23 @@ public class ColdDataPullRequestHoldThread extends ServiceThread {
         Iterator<PullRequest> iterator = pullRequestColdHoldQueue.iterator();
         while (iterator.hasNext()) {
             PullRequest pullRequest = iterator.next();
-            if (System.currentTimeMillis() >= pullRequest.getSuspendTimestamp() + coldHoldTimeoutMillis) {
-                try {
-                    pullRequest.getRequestCommand().addExtField(NO_SUSPEND_KEY, "1");
-                    this.broker.getBrokerNettyServer().executePullRequest(pullRequest.getClientChannel(), pullRequest.getRequestCommand());
-                    succTotal++;
-                } catch (Exception e) {
-                    log.error("PullRequestColdHoldService checkColdDataPullRequest error", e);
-                    errorTotal++;
-                }
-                //remove the timeout request from the iterator
-                iterator.remove();
+            if (System.currentTimeMillis() < pullRequest.getSuspendTimestamp() + coldHoldTimeoutMillis) {
+                continue;
             }
+
+            try {
+                pullRequest.getRequestCommand().addExtField(NO_SUSPEND_KEY, "1");
+                this.broker.getBrokerNettyServer().executePullRequest(pullRequest.getClientChannel(), pullRequest.getRequestCommand());
+                succTotal++;
+            } catch (Exception e) {
+                log.error("PullRequestColdHoldService checkColdDataPullRequest error", e);
+                errorTotal++;
+            }
+            //remove the timeout request from the iterator
+            iterator.remove();
         }
-        log.info("checkColdPullRequest-info-finish, queueSize: {} successTotal: {} errorTotal: {}",
-            queueSize, succTotal, errorTotal);
+
+        log.info("checkColdPullRequest-info-finish, queueSize: {} successTotal: {} errorTotal: {}", queueSize, succTotal, errorTotal);
     }
 
 }

@@ -115,6 +115,7 @@ public class ColdDataCgCtrThread extends ServiceThread {
         if (brokerConfig.isColdCtrStrategyEnable()) {
             coldCtrStrategy.collect(GLOBAL_ACC.get());
         }
+
         Iterator<Entry<String, AccAndTimeStamp>> iterator = cgColdThresholdMapRuntime.entrySet().iterator();
         while (iterator.hasNext()) {
             Entry<String, AccAndTimeStamp> next = iterator.next();
@@ -131,6 +132,7 @@ public class ColdDataCgCtrThread extends ServiceThread {
             }
             next.getValue().getColdAcc().set(0L);
         }
+
         if (isGlobalColdCtr()) {
             log.info("ColdCtr global acc: {}, threshold: {}", GLOBAL_ACC.get(), this.brokerConfig.getGlobalColdReadThreshold());
         }
@@ -148,10 +150,12 @@ public class ColdDataCgCtrThread extends ServiceThread {
         int maxDecelerate = 3;
         while (iterator.hasNext() && maxDecelerate > 0) {
             Entry<String, Long> next = iterator.next();
-            if (!isAdminConfig(next.getKey())) {
-                coldCtrStrategy.decelerate(next.getKey(), getThresholdByConsumerGroup(next.getKey()));
-                maxDecelerate --;
+            if (isAdminConfig(next.getKey())) {
+                continue;
             }
+
+            coldCtrStrategy.decelerate(next.getKey(), getThresholdByConsumerGroup(next.getKey()));
+            maxDecelerate --;
         }
     }
 

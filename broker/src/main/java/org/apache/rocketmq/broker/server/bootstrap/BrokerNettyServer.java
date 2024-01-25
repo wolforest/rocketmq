@@ -144,15 +144,10 @@ public class BrokerNettyServer {
     private RemotingServer remotingServer;
     private RemotingServer fastRemotingServer;
 
-    public BrokerNettyServer(
-        final BrokerConfig brokerConfig,
-        final MessageStoreConfig messageStoreConfig,
-        final NettyServerConfig nettyServerConfig,
-        final Broker broker
-    ) {
+    public BrokerNettyServer(BrokerConfig brokerConfig, MessageStoreConfig storeConfig, NettyServerConfig serverConfig, Broker broker) {
         this.brokerConfig = brokerConfig;
-        this.messageStoreConfig = messageStoreConfig;
-        this.nettyServerConfig = nettyServerConfig;
+        this.messageStoreConfig = storeConfig;
+        this.nettyServerConfig = serverConfig;
         this.broker = broker;
 
         this.setStoreHost(new InetSocketAddress(this.getBrokerConfig().getBrokerIP1(), broker.getListenPort()));
@@ -177,45 +172,50 @@ public class BrokerNettyServer {
 
         // Register a listener to reload SslContext
         try {
-            fileWatchService = new FileWatchService(
-                new String[] {
-                    TlsSystemConfig.tlsServerCertPath,
-                    TlsSystemConfig.tlsServerKeyPath,
-                    TlsSystemConfig.tlsServerTrustCertPath
-                },
-                new FileWatchService.Listener() {
-                    boolean certChanged, keyChanged = false;
+            String[] files = new String[] {
+                TlsSystemConfig.tlsServerCertPath,
+                TlsSystemConfig.tlsServerKeyPath,
+                TlsSystemConfig.tlsServerTrustCertPath
+            };
 
-                    @Override
-                    public void onChanged(String path) {
-                        if (path.equals(TlsSystemConfig.tlsServerTrustCertPath)) {
-                            LOG.info("The trust certificate changed, reload the ssl context");
-                            reloadServerSslContext();
-                        }
-                        if (path.equals(TlsSystemConfig.tlsServerCertPath)) {
-                            certChanged = true;
-                        }
-                        if (path.equals(TlsSystemConfig.tlsServerKeyPath)) {
-                            keyChanged = true;
-                        }
-                        if (certChanged && keyChanged) {
-                            LOG.info("The certificate and private key changed, reload the ssl context");
-                            certChanged = keyChanged = false;
-                            reloadServerSslContext();
-                        }
-                    }
+            fileWatchService = new FileWatchService(files, createFileWatchListener());
 
-                    private void reloadServerSslContext() {
-                        ((NettyRemotingServer) getRemotingServer()).loadSslContext();
-                        ((NettyRemotingServer) getFastRemotingServer()).loadSslContext();
-                    }
-                });
         } catch (Exception e) {
             LOG.warn("FileWatchService created error, can't load the certificate dynamically");
             return false;
         }
 
         return true;
+    }
+
+    private FileWatchService.Listener createFileWatchListener() {
+        return new FileWatchService.Listener() {
+            boolean certChanged, keyChanged = false;
+
+            @Override
+            public void onChanged(String path) {
+                if (path.equals(TlsSystemConfig.tlsServerTrustCertPath)) {
+                    LOG.info("The trust certificate changed, reload the ssl context");
+                    reloadServerSslContext();
+                }
+                if (path.equals(TlsSystemConfig.tlsServerCertPath)) {
+                    certChanged = true;
+                }
+                if (path.equals(TlsSystemConfig.tlsServerKeyPath)) {
+                    keyChanged = true;
+                }
+                if (certChanged && keyChanged) {
+                    LOG.info("The certificate and private key changed, reload the ssl context");
+                    certChanged = keyChanged = false;
+                    reloadServerSslContext();
+                }
+            }
+
+            private void reloadServerSslContext() {
+                ((NettyRemotingServer) getRemotingServer()).loadSslContext();
+                ((NettyRemotingServer) getFastRemotingServer()).loadSslContext();
+            }
+        }
     }
 
     public void registerServerRPCHook(RPCHook rpcHook) {
@@ -227,10 +227,6 @@ public class BrokerNettyServer {
         if (this.popServiceManager != null) {
             this.popServiceManager.start();
         }
-
-//        if (this.notificationProcessor != null) {
-//            this.notificationProcessor.getPopLongPollingService().start();
-//        }
 
         if (this.pullRequestHoldThread != null) {
             this.pullRequestHoldThread.start();
@@ -315,10 +311,6 @@ public class BrokerNettyServer {
             this.popServiceManager.shutdown();
         }
 
-//        if (this.notificationProcessor != null) {
-//            this.notificationProcessor.getPopLongPollingService().shutdown();
-//        }
-
         if (this.consumerIdsChangeListener != null) {
             this.consumerIdsChangeListener.shutdown();
         }
@@ -395,22 +387,22 @@ public class BrokerNettyServer {
         this.fastRemotingServer.registerProcessor(RequestCode.SEND_MESSAGE_V2, sendMessageProcessor, this.sendMessageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.SEND_BATCH_MESSAGE, sendMessageProcessor, this.sendMessageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.CONSUMER_SEND_MSG_BACK, sendMessageProcessor, this.sendMessageExecutor);
-        /**
+        /*
          * PullMessageProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.PULL_MESSAGE, this.pullMessageProcessor, this.pullMessageExecutor);
         this.remotingServer.registerProcessor(RequestCode.LITE_PULL_MESSAGE, this.pullMessageProcessor, this.litePullMessageExecutor);
         this.pullMessageProcessor.registerConsumeMessageHook(consumeMessageHookList);
-        /**
+        /*
          * PeekMessageProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.PEEK_MESSAGE, this.peekMessageProcessor, this.pullMessageExecutor);
-        /**
+        /*
          * PopMessageProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.POP_MESSAGE, this.popMessageProcessor, this.pullMessageExecutor);
 
-        /**
+        /*
          * AckMessageProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.ACK_MESSAGE, this.ackMessageProcessor, this.ackMessageExecutor);
@@ -418,22 +410,22 @@ public class BrokerNettyServer {
 
         this.remotingServer.registerProcessor(RequestCode.BATCH_ACK_MESSAGE, this.ackMessageProcessor, this.ackMessageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.BATCH_ACK_MESSAGE, this.ackMessageProcessor, this.ackMessageExecutor);
-        /**
+        /*
          * ChangeInvisibleTimeProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.CHANGE_MESSAGE_INVISIBLETIME, this.changeInvisibleTimeProcessor, this.ackMessageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.CHANGE_MESSAGE_INVISIBLETIME, this.changeInvisibleTimeProcessor, this.ackMessageExecutor);
-        /**
+        /*
          * notificationProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.NOTIFICATION, this.notificationProcessor, this.pullMessageExecutor);
 
-        /**
+        /*
          * pollingInfoProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.POLLING_INFO, this.pollingInfoProcessor, this.pullMessageExecutor);
 
-        /**
+        /*
          * ReplyMessageProcessor
          */
 
@@ -444,7 +436,7 @@ public class BrokerNettyServer {
         this.fastRemotingServer.registerProcessor(RequestCode.SEND_REPLY_MESSAGE, replyMessageProcessor, replyMessageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.SEND_REPLY_MESSAGE_V2, replyMessageProcessor, replyMessageExecutor);
 
-        /**
+        /*
          * QueryMessageProcessor
          */
         NettyRequestProcessor queryProcessor = new QueryMessageProcessor(getBrokerController());
@@ -454,7 +446,7 @@ public class BrokerNettyServer {
         this.fastRemotingServer.registerProcessor(RequestCode.QUERY_MESSAGE, queryProcessor, this.queryMessageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.VIEW_MESSAGE_BY_ID, queryProcessor, this.queryMessageExecutor);
 
-        /**
+        /*
          * ClientManageProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.HEART_BEAT, clientManageProcessor, this.heartbeatExecutor);
@@ -465,7 +457,7 @@ public class BrokerNettyServer {
         this.fastRemotingServer.registerProcessor(RequestCode.UNREGISTER_CLIENT, clientManageProcessor, this.clientManageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.CHECK_CLIENT_CONFIG, clientManageProcessor, this.clientManageExecutor);
 
-        /**
+        /*
          * ConsumerManageProcessor
          */
         ConsumerManageProcessor consumerManageProcessor = new ConsumerManageProcessor(getBrokerController());
@@ -477,7 +469,7 @@ public class BrokerNettyServer {
         this.fastRemotingServer.registerProcessor(RequestCode.UPDATE_CONSUMER_OFFSET, consumerManageProcessor, this.consumerManageExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.QUERY_CONSUMER_OFFSET, consumerManageProcessor, this.consumerManageExecutor);
 
-        /**
+        /*
          * QueryAssignmentProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.QUERY_ASSIGNMENT, queryAssignmentProcessor, loadBalanceExecutor);
@@ -485,7 +477,7 @@ public class BrokerNettyServer {
         this.remotingServer.registerProcessor(RequestCode.SET_MESSAGE_REQUEST_MODE, queryAssignmentProcessor, loadBalanceExecutor);
         this.fastRemotingServer.registerProcessor(RequestCode.SET_MESSAGE_REQUEST_MODE, queryAssignmentProcessor, loadBalanceExecutor);
 
-        /**
+        /*
          * EndTransactionProcessor
          */
         this.remotingServer.registerProcessor(RequestCode.END_TRANSACTION, endTransactionProcessor, this.endTransactionExecutor);
@@ -699,7 +691,7 @@ public class BrokerNettyServer {
 
     private void initRpcHooks() {
         List<RPCHook> rpcHooks = ServiceProvider.load(RPCHook.class);
-        if (rpcHooks == null || rpcHooks.isEmpty()) {
+        if (rpcHooks.isEmpty()) {
             return;
         }
         for (RPCHook rpcHook : rpcHooks) {
@@ -735,10 +727,6 @@ public class BrokerNettyServer {
         return putMessageFutureExecutor;
     }
 
-    public void setPullMessageExecutor(ExecutorService pullMessageExecutor) {
-        this.pullMessageExecutor = pullMessageExecutor;
-    }
-
     public BlockingQueue<Runnable> getSendThreadPoolQueue() {
         return sendThreadPoolQueue;
     }
@@ -747,24 +735,12 @@ public class BrokerNettyServer {
         return ackThreadPoolQueue;
     }
 
-    public List<SendMessageHook> getSendMessageHookList() {
-        return sendMessageHookList;
-    }
-
-    public List<ConsumeMessageHook> getConsumeMessageHookList() {
-        return consumeMessageHookList;
-    }
-
     public BlockingQueue<Runnable> getHeartbeatThreadPoolQueue() {
         return heartbeatThreadPoolQueue;
     }
 
     public BlockingQueue<Runnable> getEndTransactionThreadPoolQueue() {
         return endTransactionThreadPoolQueue;
-    }
-
-    public ExecutorService getAdminBrokerExecutor() {
-        return adminBrokerExecutor;
     }
 
     public BlockingQueue<Runnable> getLitePullThreadPoolQueue() {
@@ -813,10 +789,6 @@ public class BrokerNettyServer {
 
     public PopMessageProcessor getPopMessageProcessor() {
         return popMessageProcessor;
-    }
-
-    public NotificationProcessor getNotificationProcessor() {
-        return notificationProcessor;
     }
 
     public PullMessageProcessor getPullMessageProcessor() {
@@ -874,16 +846,6 @@ public class BrokerNettyServer {
 
     public void setStoreHost(InetSocketAddress storeHost) {
         this.storeHost = storeHost;
-    }
-
-    public void registerSendMessageHook(final SendMessageHook hook) {
-        this.sendMessageHookList.add(hook);
-        LOG.info("register SendMessageHook Hook, {}", hook.hookName());
-    }
-
-    public void registerConsumeMessageHook(final ConsumeMessageHook hook) {
-        this.consumeMessageHookList.add(hook);
-        LOG.info("register ConsumeMessageHook Hook, {}", hook.hookName());
     }
 
     public long headSlowTimeMills(BlockingQueue<Runnable> q) {
