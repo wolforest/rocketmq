@@ -215,7 +215,7 @@ public class BrokerNettyServer {
                 ((NettyRemotingServer) getRemotingServer()).loadSslContext();
                 ((NettyRemotingServer) getFastRemotingServer()).loadSslContext();
             }
-        }
+        };
     }
 
     public void registerServerRPCHook(RPCHook rpcHook) {
