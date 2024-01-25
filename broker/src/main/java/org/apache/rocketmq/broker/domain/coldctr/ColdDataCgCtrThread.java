@@ -35,10 +35,11 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 /**
+ * @renamed from ColdDataCgCtrService to ColdDataCgCtrThread
  * store the cg cold read ctr table and acc the size of the cold
  * reading msg, timing to clear the table and set acc to zero
  */
-public class ColdDataCgCtrService extends ServiceThread {
+public class ColdDataCgCtrThread extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_COLDCTR_LOGGER_NAME);
     private final SystemClock systemClock = new SystemClock();
     private final long cgColdAccResideTimeoutMills = 60 * 1000;
@@ -58,7 +59,7 @@ public class ColdDataCgCtrService extends ServiceThread {
     private final MessageStoreConfig messageStoreConfig;
     private final ColdCtrStrategy coldCtrStrategy;
 
-    public ColdDataCgCtrService(Broker broker) {
+    public ColdDataCgCtrThread(Broker broker) {
         this.brokerConfig = broker.getBrokerConfig();
         this.messageStoreConfig = broker.getMessageStoreConfig();
         this.coldCtrStrategy = brokerConfig.isUsePIDColdCtrStrategy() ? new PIDAdaptiveColdCtrStrategy(this, (long)(brokerConfig.getGlobalColdReadThreshold() * 0.8)) : new SimpleColdCtrStrategy(this);
@@ -66,7 +67,7 @@ public class ColdDataCgCtrService extends ServiceThread {
 
     @Override
     public String getServiceName() {
-        return ColdDataCgCtrService.class.getSimpleName();
+        return ColdDataCgCtrThread.class.getSimpleName();
     }
 
     @Override

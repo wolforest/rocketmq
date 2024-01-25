@@ -17,10 +17,10 @@
 package org.apache.rocketmq.broker.domain.coldctr;
 
 public class SimpleColdCtrStrategy implements ColdCtrStrategy {
-    private final ColdDataCgCtrService coldDataCgCtrService;
+    private final ColdDataCgCtrThread coldDataCgCtrThread;
 
-    public SimpleColdCtrStrategy(ColdDataCgCtrService coldDataCgCtrService) {
-        this.coldDataCgCtrService = coldDataCgCtrService;
+    public SimpleColdCtrStrategy(ColdDataCgCtrThread coldDataCgCtrThread) {
+        this.coldDataCgCtrThread = coldDataCgCtrThread;
     }
 
     @Override
@@ -30,19 +30,19 @@ public class SimpleColdCtrStrategy implements ColdCtrStrategy {
 
     @Override
     public void promote(String consumerGroup, Long currentThreshold) {
-        coldDataCgCtrService.addOrUpdateGroupConfig(consumerGroup, (long)(currentThreshold * 1.5));
+        coldDataCgCtrThread.addOrUpdateGroupConfig(consumerGroup, (long)(currentThreshold * 1.5));
     }
 
     @Override
     public void decelerate(String consumerGroup, Long currentThreshold) {
-        if (!coldDataCgCtrService.isGlobalColdCtr()) {
+        if (!coldDataCgCtrThread.isGlobalColdCtr()) {
             return;
         }
         long changedThresholdVal = (long)(currentThreshold * 0.8);
-        if (changedThresholdVal < coldDataCgCtrService.getBrokerConfig().getCgColdReadThreshold()) {
-            changedThresholdVal = coldDataCgCtrService.getBrokerConfig().getCgColdReadThreshold();
+        if (changedThresholdVal < coldDataCgCtrThread.getBrokerConfig().getCgColdReadThreshold()) {
+            changedThresholdVal = coldDataCgCtrThread.getBrokerConfig().getCgColdReadThreshold();
         }
-        coldDataCgCtrService.addOrUpdateGroupConfig(consumerGroup, changedThresholdVal);
+        coldDataCgCtrThread.addOrUpdateGroupConfig(consumerGroup, changedThresholdVal);
     }
 
     @Override

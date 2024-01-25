@@ -23,7 +23,7 @@ import org.apache.rocketmq.broker.ShutdownHook;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
 import org.apache.rocketmq.broker.domain.producer.ProducerManager;
 import org.apache.rocketmq.broker.infra.Broker2Client;
-import org.apache.rocketmq.broker.domain.coldctr.ColdDataCgCtrService;
+import org.apache.rocketmq.broker.domain.coldctr.ColdDataCgCtrThread;
 import org.apache.rocketmq.broker.domain.coldctr.ColdDataPullRequestHoldThread;
 import org.apache.rocketmq.broker.server.daemon.BrokerFastFailure;
 import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineService;
@@ -73,7 +73,7 @@ public class BrokerServiceManager {
     private TopicQueueMappingCleanService topicQueueMappingCleanService;
 
     private ColdDataPullRequestHoldThread coldDataPullRequestHoldThread;
-    private ColdDataCgCtrService coldDataCgCtrService;
+    private ColdDataCgCtrThread coldDataCgCtrThread;
     /* ServiceWithStartAndShutdown start */
 
     /* monitor servie start */
@@ -135,8 +135,8 @@ public class BrokerServiceManager {
             this.coldDataPullRequestHoldThread.start();
         }
 
-        if (this.coldDataCgCtrService != null) {
-            this.coldDataCgCtrService.start();
+        if (this.coldDataCgCtrThread != null) {
+            this.coldDataCgCtrThread.start();
         }
 
         if (this.topicQueueMappingCleanService != null) {
@@ -175,8 +175,8 @@ public class BrokerServiceManager {
             this.coldDataPullRequestHoldThread.shutdown();
         }
 
-        if (this.coldDataCgCtrService != null) {
-            this.coldDataCgCtrService.shutdown();
+        if (this.coldDataCgCtrThread != null) {
+            this.coldDataCgCtrThread.shutdown();
         }
 
         if (this.topicQueueMappingCleanService != null) {
@@ -217,7 +217,7 @@ public class BrokerServiceManager {
         this.topicRouteInfoManager = new TopicRouteInfoManager(broker);
 
         this.coldDataPullRequestHoldThread = new ColdDataPullRequestHoldThread(broker);
-        this.coldDataCgCtrService = new ColdDataCgCtrService(broker);
+        this.coldDataCgCtrThread = new ColdDataCgCtrThread(broker);
 
         this.topicQueueMappingCleanService = new TopicQueueMappingCleanService(broker);
 
@@ -327,8 +327,8 @@ public class BrokerServiceManager {
         return coldDataPullRequestHoldThread;
     }
 
-    public ColdDataCgCtrService getColdDataCgCtrService() {
-        return coldDataCgCtrService;
+    public ColdDataCgCtrThread getColdDataCgCtrService() {
+        return coldDataCgCtrThread;
     }
 
     public TopicQueueMappingCleanService getTopicQueueMappingCleanService() {

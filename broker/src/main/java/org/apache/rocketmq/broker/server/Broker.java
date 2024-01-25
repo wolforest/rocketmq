@@ -30,7 +30,7 @@ import org.apache.rocketmq.broker.server.bootstrap.BrokerServiceRegistry;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
 import org.apache.rocketmq.broker.domain.producer.ProducerManager;
 import org.apache.rocketmq.broker.infra.Broker2Client;
-import org.apache.rocketmq.broker.domain.coldctr.ColdDataCgCtrService;
+import org.apache.rocketmq.broker.domain.coldctr.ColdDataCgCtrThread;
 import org.apache.rocketmq.broker.domain.coldctr.ColdDataPullRequestHoldThread;
 import org.apache.rocketmq.broker.infra.EscapeBridge;
 import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterManager;
@@ -455,7 +455,7 @@ public class Broker {
         return brokerServiceManager.getColdDataPullRequestHoldService();
     }
 
-    public ColdDataCgCtrService getColdDataCgCtrService() {
+    public ColdDataCgCtrThread getColdDataCgCtrService() {
         return brokerServiceManager.getColdDataCgCtrService();
     }
 

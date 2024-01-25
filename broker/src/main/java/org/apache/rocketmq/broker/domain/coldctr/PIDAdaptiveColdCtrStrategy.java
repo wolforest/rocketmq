@@ -30,12 +30,12 @@ public class PIDAdaptiveColdCtrStrategy implements ColdCtrStrategy {
      */
     private static final Double KP = 0.5, KI = 0.3, KD = 0.2;
     private final List<Long> historyEtValList = new ArrayList<>();
-    private final ColdDataCgCtrService coldDataCgCtrService;
+    private final ColdDataCgCtrThread coldDataCgCtrThread;
     private final Long expectGlobalVal;
     private long et = 0L;
 
-    public PIDAdaptiveColdCtrStrategy(ColdDataCgCtrService coldDataCgCtrService, Long expectGlobalVal) {
-        this.coldDataCgCtrService = coldDataCgCtrService;
+    public PIDAdaptiveColdCtrStrategy(ColdDataCgCtrThread coldDataCgCtrThread, Long expectGlobalVal) {
+        this.coldDataCgCtrThread = coldDataCgCtrThread;
         this.expectGlobalVal = expectGlobalVal;
     }
 
@@ -57,7 +57,7 @@ public class PIDAdaptiveColdCtrStrategy implements ColdCtrStrategy {
     @Override
     public void promote(String consumerGroup, Long currentThreshold) {
         if (decisionFactor() > 0) {
-            coldDataCgCtrService.addOrUpdateGroupConfig(consumerGroup, (long)(currentThreshold * 1.5));
+            coldDataCgCtrThread.addOrUpdateGroupConfig(consumerGroup, (long)(currentThreshold * 1.5));
         }
     }
 
@@ -65,10 +65,10 @@ public class PIDAdaptiveColdCtrStrategy implements ColdCtrStrategy {
     public void decelerate(String consumerGroup, Long currentThreshold) {
         if (decisionFactor() < 0) {
             long changedThresholdVal = (long)(currentThreshold * 0.8);
-            if (changedThresholdVal < coldDataCgCtrService.getBrokerConfig().getCgColdReadThreshold()) {
-                changedThresholdVal = coldDataCgCtrService.getBrokerConfig().getCgColdReadThreshold();
+            if (changedThresholdVal < coldDataCgCtrThread.getBrokerConfig().getCgColdReadThreshold()) {
+                changedThresholdVal = coldDataCgCtrThread.getBrokerConfig().getCgColdReadThreshold();
             }
-            coldDataCgCtrService.addOrUpdateGroupConfig(consumerGroup, changedThresholdVal);
+            coldDataCgCtrThread.addOrUpdateGroupConfig(consumerGroup, changedThresholdVal);
         }
     }
 
