@@ -55,8 +55,7 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
     }
 
     @Override
-    public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request)
-        throws RemotingCommandException {
+    public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         switch (request.getCode()) {
             case RequestCode.QUERY_MESSAGE:
                 return this.queryMessage(ctx, request);
@@ -75,9 +74,9 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand queryMessage(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
-        final RemotingCommand response = RemotingCommand.createResponseCommand(QueryMessageResponseHeader.class);
-        final QueryMessageResponseHeader responseHeader = (QueryMessageResponseHeader) response.readCustomHeader();
-        final QueryMessageRequestHeader requestHeader = (QueryMessageRequestHeader) request.decodeCommandCustomHeader(QueryMessageRequestHeader.class);
+        RemotingCommand response = RemotingCommand.createResponseCommand(QueryMessageResponseHeader.class);
+        QueryMessageResponseHeader responseHeader = (QueryMessageResponseHeader) response.readCustomHeader();
+        QueryMessageRequestHeader requestHeader = (QueryMessageRequestHeader) request.decodeCommandCustomHeader(QueryMessageRequestHeader.class);
 
         response.setOpaque(request.getOpaque());
 
@@ -86,30 +85,36 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
             requestHeader.setMaxNum(this.broker.getMessageStoreConfig().getDefaultQueryMaxNum());
         }
 
-        final QueryMessageResult queryMessageResult = this.broker.getMessageStore().queryMessage(requestHeader.getTopic(),
-                requestHeader.getKey(), requestHeader.getMaxNum(), requestHeader.getBeginTimestamp(), requestHeader.getEndTimestamp());
-        assert queryMessageResult != null;
+        final QueryMessageResult queryResult = this.broker.getMessageStore().queryMessage(
+            requestHeader.getTopic(),
+            requestHeader.getKey(),
+            requestHeader.getMaxNum(),
+            requestHeader.getBeginTimestamp(),
+            requestHeader.getEndTimestamp()
+        );
+        assert queryResult != null;
 
-        responseHeader.setIndexLastUpdatePhyoffset(queryMessageResult.getIndexLastUpdatePhyoffset());
-        responseHeader.setIndexLastUpdateTimestamp(queryMessageResult.getIndexLastUpdateTimestamp());
-        if (queryMessageResult.getBufferTotalSize() <= 0) {
+        responseHeader.setIndexLastUpdatePhyoffset(queryResult.getIndexLastUpdateOffset());
+        responseHeader.setIndexLastUpdateTimestamp(queryResult.getIndexLastUpdateTimestamp());
+
+        if (queryResult.getBufferTotalSize() <= 0) {
             return response.setCodeAndRemark(ResponseCode.QUERY_NOT_FOUND, "can not find message, maybe time range not correct");
         }
 
-        return handleQueryResult(queryMessageResult, request, response, ctx);
+        return handleQueryResult(queryResult, request, response, ctx);
     }
 
-    private RemotingCommand handleQueryResult(QueryMessageResult queryMessageResult, RemotingCommand request, RemotingCommand response, ChannelHandlerContext ctx) {
+    private RemotingCommand handleQueryResult(QueryMessageResult queryResult, RemotingCommand request, RemotingCommand response, ChannelHandlerContext ctx) {
         response.setCodeAndRemark(ResponseCode.SUCCESS, null);
 
         try {
-            FileRegion fileRegion = new QueryMessageTransfer(response.encodeHeader(queryMessageResult.getBufferTotalSize()), queryMessageResult);
+            FileRegion fileRegion = new QueryMessageTransfer(response.encodeHeader(queryResult.getBufferTotalSize()), queryResult);
             ctx.channel()
                 .writeAndFlush(fileRegion)
-                .addListener(createQueryListener(queryMessageResult, request, response));
+                .addListener(createQueryListener(queryResult, request, response));
         } catch (Throwable e) {
             LOGGER.error("", e);
-            queryMessageResult.release();
+            queryResult.release();
         }
 
         return null;
