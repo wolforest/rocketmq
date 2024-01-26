@@ -115,17 +115,37 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
         return null;
     }
 
-    private ChannelFutureListener createQueryListener(QueryMessageResult queryMessageResult, RemotingCommand request, RemotingCommand response) {
+    private ChannelFutureListener createQueryListener(QueryMessageResult queryResult, RemotingCommand request, RemotingCommand response) {
         return future -> {
-            queryMessageResult.release();
+            queryResult.release();
+
+            Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
+                .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
+                .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(response.getCode()))
+                .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
+                .build();
+
+            RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
+
+            if (!future.isSuccess()) {
+                LOGGER.error("transfer query message by page cache failed, ", future.cause());
+            }
+        };
+    }
+
+    private ChannelFutureListener createViewListener(SelectMappedBufferResult viewResult, RemotingCommand request, RemotingCommand response) {
+        return future -> {
+            viewResult.release();
+
             Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
                 .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
                 .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(response.getCode()))
                 .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
                 .build();
             RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
+
             if (!future.isSuccess()) {
-                LOGGER.error("transfer query message by page cache failed, ", future.cause());
+                LOGGER.error("Transfer one message from page cache failed, ", future.cause());
             }
         };
     }
@@ -133,45 +153,28 @@ public class QueryMessageProcessor implements NettyRequestProcessor {
     private RemotingCommand viewMessageById(ChannelHandlerContext ctx, RemotingCommand request)
         throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        final ViewMessageRequestHeader requestHeader =
-            (ViewMessageRequestHeader) request.decodeCommandCustomHeader(ViewMessageRequestHeader.class);
+        final ViewMessageRequestHeader requestHeader = (ViewMessageRequestHeader) request.decodeCommandCustomHeader(ViewMessageRequestHeader.class);
 
         response.setOpaque(request.getOpaque());
 
-        final SelectMappedBufferResult selectMappedBufferResult =
-            this.broker.getMessageStore().selectOneMessageByOffset(requestHeader.getOffset());
-        if (selectMappedBufferResult != null) {
-            response.setCode(ResponseCode.SUCCESS);
-            response.setRemark(null);
-
-            try {
-                //Create a FileRegion to write directly to the channel, zero-copy
-                FileRegion fileRegion = new OneMessageTransfer(response.encodeHeader(selectMappedBufferResult.getSize()), selectMappedBufferResult);
-                ctx.channel()
-                    .writeAndFlush(fileRegion)
-                    .addListener((ChannelFutureListener) future -> {
-                        selectMappedBufferResult.release();
-                        Attributes attributes = RemotingMetricsManager.newAttributesBuilder()
-                            .put(LABEL_REQUEST_CODE, RemotingHelper.getRequestCodeDesc(request.getCode()))
-                            .put(LABEL_RESPONSE_CODE, RemotingHelper.getResponseCodeDesc(response.getCode()))
-                            .put(LABEL_RESULT, RemotingMetricsManager.getWriteAndFlushResult(future))
-                            .build();
-                        RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
-                        if (!future.isSuccess()) {
-                            LOGGER.error("Transfer one message from page cache failed, ", future.cause());
-                        }
-                    });
-            } catch (Throwable e) {
-                LOGGER.error("", e);
-                selectMappedBufferResult.release();
-            }
-
-            return null;
-        } else {
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark("can not find message by the offset, " + requestHeader.getOffset());
+        final SelectMappedBufferResult result = this.broker.getMessageStore().selectOneMessageByOffset(requestHeader.getOffset());
+        if (result == null) {
+            return response.setCodeAndRemark(ResponseCode.SYSTEM_ERROR, "can not find message by the offset, " + requestHeader.getOffset());
         }
 
-        return response;
+        response.setCodeAndRemark(ResponseCode.SUCCESS, null);
+
+        try {
+            //Create a FileRegion to write directly to the channel, zero-copy
+            FileRegion fileRegion = new OneMessageTransfer(response.encodeHeader(result.getSize()), result);
+            ctx.channel()
+                .writeAndFlush(fileRegion)
+                .addListener(createViewListener(result, request, response));
+        } catch (Throwable e) {
+            LOGGER.error("", e);
+            result.release();
+        }
+
+        return null;
     }
 }
