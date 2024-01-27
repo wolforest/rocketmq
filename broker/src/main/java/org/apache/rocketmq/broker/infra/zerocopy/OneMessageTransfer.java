@@ -66,7 +66,9 @@ public class OneMessageTransfer extends AbstractReferenceCounted implements File
         if (this.byteBufferHeader.hasRemaining()) {
             transferred += target.write(this.byteBufferHeader);
             return transferred;
-        } else if (this.selectMappedBufferResult.getByteBuffer().hasRemaining()) {
+        }
+
+        if (this.selectMappedBufferResult.getByteBuffer().hasRemaining()) {
             transferred += target.write(this.selectMappedBufferResult.getByteBuffer());
             return transferred;
         }

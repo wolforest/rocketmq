@@ -68,14 +68,16 @@ public class QueryMessageTransfer extends AbstractReferenceCounted implements Fi
         if (this.byteBufferHeader.hasRemaining()) {
             transferred += target.write(this.byteBufferHeader);
             return transferred;
-        } else {
-            List<ByteBuffer> messageBufferList = this.queryMessageResult.getMessageBufferList();
-            for (ByteBuffer bb : messageBufferList) {
-                if (bb.hasRemaining()) {
-                    transferred += target.write(bb);
-                    return transferred;
-                }
+        }
+
+        List<ByteBuffer> messageBufferList = this.queryMessageResult.getMessageBufferList();
+        for (ByteBuffer bb : messageBufferList) {
+            if (!bb.hasRemaining()) {
+                continue;
             }
+
+            transferred += target.write(bb);
+            return transferred;
         }
 
         return 0;
