@@ -40,31 +40,21 @@ import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 public class BrokerScheduleService {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final Logger LOG_PROTECTION = LoggerFactory.getLogger(LoggerName.PROTECTION_LOGGER_NAME);
-
     private static final int HA_ADDRESS_MIN_LENGTH = 6;
 
     private long lastSyncTimeMs = System.currentTimeMillis();
-
     protected final List<ScheduledFuture<?>> scheduledFutures = new ArrayList<>();
 
-
     protected volatile BrokerMemberGroup brokerMemberGroup;
-
     private final BrokerConfig brokerConfig;
     private final MessageStoreConfig messageStoreConfig;
     private final Broker broker;
 
     private ScheduledExecutorService scheduledExecutorService;
-
-
     private ScheduledExecutorService syncBrokerMemberGroupExecutorService;
     private ScheduledExecutorService brokerHeartbeatExecutorService;
 
-    public BrokerScheduleService(
-        final BrokerConfig brokerConfig,
-        final MessageStoreConfig messageStoreConfig,
-        final Broker broker
-    ) {
+    public BrokerScheduleService(BrokerConfig brokerConfig, MessageStoreConfig messageStoreConfig, Broker broker) {
         this.brokerConfig = brokerConfig;
         this.messageStoreConfig = messageStoreConfig;
         this.broker = broker;

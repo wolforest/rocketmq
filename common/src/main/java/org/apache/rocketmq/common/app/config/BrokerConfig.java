@@ -147,8 +147,7 @@ public class BrokerConfig extends BrokerIdentity {
     /**
      * Thread numbers for EndTransactionProcessor
      */
-    private int endTransactionThreadPoolNums = Math.max(8 + PROCESSOR_NUMBER * 2,
-            sendMessageThreadPoolNums * 4);
+    private int endTransactionThreadPoolNums = Math.max(8 + PROCESSOR_NUMBER * 2, sendMessageThreadPoolNums * 4);
 
     /**
      * interval of consume offset storage
@@ -166,6 +165,7 @@ public class BrokerConfig extends BrokerIdentity {
      * default: false
      */
     @ImportantField
+    @Deprecated
     private boolean rejectTransactionMessage = false;
 
     private int sendThreadPoolQueueCapacity = 10000;
