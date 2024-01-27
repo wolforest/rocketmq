@@ -87,15 +87,9 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         addSystemTopic(TopicValidator.RMQ_SYS_BENCHMARK_TOPIC, 1024, 1024);
-
-        addSystemTopic(this.broker.getBrokerConfig().getBrokerClusterName(), null, null,
-            getPerm(this.broker.getBrokerConfig().isClusterTopicEnable()));
-
-        addSystemTopic(this.broker.getBrokerConfig().getBrokerName(), 1, 1,
-            getPerm(this.broker.getBrokerConfig().isBrokerTopicEnable()));
-
+        addSystemTopic(this.broker.getBrokerConfig().getBrokerClusterName(), null, null, getPerm(this.broker.getBrokerConfig().isClusterTopicEnable()));
+        addSystemTopic(this.broker.getBrokerConfig().getBrokerName(), 1, 1, getPerm(this.broker.getBrokerConfig().isBrokerTopicEnable()));
         addSystemTopic(TopicValidator.RMQ_SYS_OFFSET_MOVED_EVENT, 1, 1);
-
         addSystemTopic(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, SCHEDULE_TOPIC_QUEUE_NUM, SCHEDULE_TOPIC_QUEUE_NUM);
 
         if (this.broker.getBrokerConfig().isTraceTopicEnable()) {
@@ -169,8 +163,7 @@ public class TopicConfigManager extends ConfigManager {
         return getTopicConfig(topic);
     }
 
-    public TopicConfig createTopicInSendMessageMethod(final String topic, final String defaultTopic,
-        final String remoteAddress, final int clientDefaultTopicQueueNums, final int topicSysFlag) {
+    public TopicConfig createTopicInSendMessageMethod(final String topic, final String defaultTopic, final String remoteAddress, final int clientDefaultTopicQueueNums, final int topicSysFlag) {
         TopicConfig topicConfig = null;
         boolean createNew = false;
 
@@ -207,17 +200,14 @@ public class TopicConfigManager extends ConfigManager {
                             topicConfig.setTopicSysFlag(topicSysFlag);
                             topicConfig.setTopicFilterType(defaultTopicConfig.getTopicFilterType());
                         } else {
-                            log.warn("Create new topic failed, because the default topic[{}] has no perm [{}] producer:[{}]",
-                                defaultTopic, defaultTopicConfig.getPerm(), remoteAddress);
+                            log.warn("Create new topic failed, because the default topic[{}] has no perm [{}] producer:[{}]", defaultTopic, defaultTopicConfig.getPerm(), remoteAddress);
                         }
                     } else {
-                        log.warn("Create new topic failed, because the default topic[{}] not exist. producer:[{}]",
-                            defaultTopic, remoteAddress);
+                        log.warn("Create new topic failed, because the default topic[{}] not exist. producer:[{}]", defaultTopic, remoteAddress);
                     }
 
                     if (topicConfig != null) {
-                        log.info("Create new topic by default topic:[{}] config:[{}] producer:[{}]",
-                            defaultTopic, topicConfig, remoteAddress);
+                        log.info("Create new topic by default topic:[{}] config:[{}] producer:[{}]", defaultTopic, topicConfig, remoteAddress);
 
                         putTopicConfig(topicConfig);
 
@@ -545,13 +535,10 @@ public class TopicConfigManager extends ConfigManager {
         return buildSerializeWrapper(topicConfigTable, Maps.newHashMap());
     }
 
-    public TopicConfigAndMappingSerializeWrapper buildSerializeWrapper(
-        final ConcurrentMap<String, TopicConfig> topicConfigTable,
-        final Map<String, TopicQueueMappingInfo> topicQueueMappingInfoMap
-    ) {
+    public TopicConfigAndMappingSerializeWrapper buildSerializeWrapper(ConcurrentMap<String, TopicConfig> configTable, Map<String, TopicQueueMappingInfo> infoMap) {
         TopicConfigAndMappingSerializeWrapper topicConfigWrapper = new TopicConfigAndMappingSerializeWrapper();
-        topicConfigWrapper.setTopicConfigTable(topicConfigTable);
-        topicConfigWrapper.setTopicQueueMappingInfoMap(topicQueueMappingInfoMap);
+        topicConfigWrapper.setTopicConfigTable(configTable);
+        topicConfigWrapper.setTopicQueueMappingInfoMap(infoMap);
         topicConfigWrapper.setDataVersion(this.getDataVersion());
         if (this.broker.getBrokerConfig().isEnableSplitRegistration()) {
             this.getDataVersion().nextVersion();
@@ -602,8 +589,7 @@ public class TopicConfigManager extends ConfigManager {
         return dataVersion;
     }
 
-    public void setTopicConfigTable(
-        ConcurrentMap<String, TopicConfig> topicConfigTable) {
+    public void setTopicConfigTable(ConcurrentMap<String, TopicConfig> topicConfigTable) {
         this.topicConfigTable = topicConfigTable;
     }
 
