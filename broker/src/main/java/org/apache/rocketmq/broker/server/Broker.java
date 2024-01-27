@@ -86,42 +86,28 @@ public class Broker {
     private final BrokerClusterService brokerClusterService;
     private final BrokerMessageService brokerMessageService;
 
-    public Broker(
-        final BrokerConfig brokerConfig,
-        final NettyServerConfig nettyServerConfig,
-        final NettyClientConfig nettyClientConfig,
-        final MessageStoreConfig messageStoreConfig,
-        final ShutdownHook shutdownHook
-    ) {
-        this(brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
+    public Broker(BrokerConfig brokerConfig, NettyServerConfig serverConfig, NettyClientConfig clientConfig, MessageStoreConfig storeConfig, ShutdownHook shutdownHook) {
+        this(brokerConfig, serverConfig, clientConfig, storeConfig);
         this.brokerServiceManager.setShutdownHook(shutdownHook);
     }
 
-    public Broker(
-        final BrokerConfig brokerConfig,
-        final MessageStoreConfig messageStoreConfig
-    ) {
+    public Broker(final BrokerConfig brokerConfig, final MessageStoreConfig messageStoreConfig) {
         this(brokerConfig, null, null, messageStoreConfig);
     }
 
-    public Broker(
-        final BrokerConfig brokerConfig,
-        final NettyServerConfig nettyServerConfig,
-        final NettyClientConfig nettyClientConfig,
-        final MessageStoreConfig messageStoreConfig
-    ) {
+    public Broker(BrokerConfig brokerConfig, NettyServerConfig serverConfig, NettyClientConfig clientConfig, MessageStoreConfig storeConfig) {
         this.brokerConfig = brokerConfig;
-        this.nettyServerConfig = nettyServerConfig;
-        this.nettyClientConfig = nettyClientConfig;
-        this.messageStoreConfig = messageStoreConfig;
+        this.nettyServerConfig = serverConfig;
+        this.nettyClientConfig = clientConfig;
+        this.messageStoreConfig = storeConfig;
         initConfiguration();
 
         /* the instance creating order matters, do not change it. start ... */
         this.brokerMetadataService = new BrokerMetadataService(this);
-        this.brokerNettyServer = new BrokerNettyServer(brokerConfig, messageStoreConfig, nettyServerConfig, this);
+        this.brokerNettyServer = new BrokerNettyServer(brokerConfig, storeConfig, serverConfig, this);
         this.brokerServiceRegistry = new BrokerServiceRegistry(this);
         this.brokerServiceManager = new BrokerServiceManager(this);
-        this.brokerScheduleService = new BrokerScheduleService(brokerConfig, messageStoreConfig, this);
+        this.brokerScheduleService = new BrokerScheduleService(brokerConfig, storeConfig, this);
         this.brokerClusterService = new BrokerClusterService(this);
         this.brokerMessageService = new BrokerMessageService(this);
         /* the instance creating order matters, do not change it. ... end */
@@ -222,6 +208,7 @@ public class Broker {
         } else {
             brokerConfigPath = BrokerPathConfigHelper.getBrokerConfigPath();
         }
+
         this.configuration = new Configuration(
             LOG,
             brokerConfigPath,
@@ -417,10 +404,6 @@ public class Broker {
 
     public BrokerMemberGroup getBrokerMemberGroup() {
         return this.getBrokerScheduleService().getBrokerMemberGroup();
-    }
-
-    public int getListenPort() {
-        return this.nettyServerConfig.getListenPort();
     }
 
     public EscapeBridge getEscapeBridge() {
