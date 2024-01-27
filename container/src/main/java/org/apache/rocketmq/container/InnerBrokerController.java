@@ -137,11 +137,6 @@ public class InnerBrokerController extends Broker {
         return this.getBrokerClusterService().getMinBrokerIdInGroup();
     }
 
-    @Override
-    public int getListenPort() {
-        return this.brokerConfig.getListenPort();
-    }
-
     public ClusterClient getClusterClient() {
         return brokerContainer == null ? super.getClusterClient() : brokerContainer.getBrokerOuterAPI();
     }
