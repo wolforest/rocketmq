@@ -509,16 +509,21 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         StringBuilder msgOffsetInfo, StringBuilder orderCountInfo) {
 
         // originally initialize offset and getPopOffset here, move to try lock block
-        long offset;
-        CompletableFuture<Long> future = new CompletableFuture<>();
         String lockKey = KeyBuilder.buildConsumeKey(topic, requestHeader.getConsumerGroup(), queueId);
+        long offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), false, lockKey, false);
+        CompletableFuture<Long> future = new CompletableFuture<>();
 
         // try lock
         QueueLockManager queueLockManager = broker.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
         if (!queueLockManager.tryLock(lockKey)) {
             // move from offset initialization
-            offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), false, lockKey, false);
+            restNum = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
+            future.complete(restNum);
+            return future;
+        }
 
+        if (isPopShouldStop(topic, requestHeader.getConsumerGroup(), queueId)) {
+            POP_LOGGER.warn("Too much msgs are not ack, then stop popping. topic={}, group={}, queueId={}", topic, requestHeader.getConsumerGroup(), queueId);
             restNum = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
             future.complete(restNum);
             return future;
@@ -807,9 +812,13 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             getMessageResult.release();
         }
 
-        this.broker.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId,
-            TimeUtils.now() - storeTimestamp);
+        this.broker.getBrokerStatsManager().recordDiskFallBehindTime(group, topic, queueId, TimeUtils.now() - storeTimestamp);
         return byteBuffer.array();
+    }
+
+    private boolean isPopShouldStop(String topic, String group, int queueId) {
+        return broker.getBrokerConfig().isEnablePopMessageThreshold() &&
+            broker.getPopInflightMessageCounter().getGroupPopInFlightMessageNum(topic, group, queueId) > broker.getBrokerConfig().getPopInflightMessageThreshold();
     }
 
     public Broker getBrokerController() {
