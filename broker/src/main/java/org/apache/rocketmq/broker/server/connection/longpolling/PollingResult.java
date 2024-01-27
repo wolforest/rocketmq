@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.server.daemon.longpolling;
+package org.apache.rocketmq.broker.server.connection.longpolling;
 
 public enum PollingResult {
     POLLING_SUC,

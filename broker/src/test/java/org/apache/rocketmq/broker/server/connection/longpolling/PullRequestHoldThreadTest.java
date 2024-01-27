@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.server.daemon.longpolling;
+package org.apache.rocketmq.broker.server.connection.longpolling;
 
 import io.netty.channel.Channel;
 import java.util.HashMap;

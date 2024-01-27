@@ -108,10 +108,12 @@ public class ReplicasManager {
     public ReplicasManager(final Broker broker) {
         this.broker = broker;
         this.clusterClient = broker.getClusterClient();
+
         this.scheduledService = ThreadUtils.newScheduledThreadPool(3, new ThreadFactoryImpl("ReplicasManager_ScheduledService_", broker.getBrokerIdentity()));
         this.executorService = ThreadUtils.newThreadPoolExecutor(3, new ThreadFactoryImpl("ReplicasManager_ExecutorService_", broker.getBrokerIdentity()));
         this.scanExecutor = ThreadUtils.newThreadPoolExecutor(4, 10, 60, TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(32), new ThreadFactoryImpl("ReplicasManager_scan_thread_", broker.getBrokerIdentity()));
+
         this.haService = (AutoSwitchHAService) broker.getMessageStore().getHaService();
         this.brokerConfig = broker.getBrokerConfig();
         this.availableControllerAddresses = new ConcurrentHashMap<>();
@@ -142,6 +144,7 @@ public class ReplicasManager {
         this.state = State.INITIAL;
         updateControllerAddr();
         scanAvailableControllerAddresses();
+
         this.scheduledService.scheduleAtFixedRate(this::updateControllerAddr, 2 * 60 * 1000, 2 * 60 * 1000, TimeUnit.MILLISECONDS);
         this.scheduledService.scheduleAtFixedRate(this::scanAvailableControllerAddresses, 3 * 1000, 3 * 1000, TimeUnit.MILLISECONDS);
 

@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.daemon.longpolling.PullRequest;
+import org.apache.rocketmq.broker.server.connection.longpolling.PullRequest;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.broker.infra.zerocopy.ManyMessageTransfer;
 import org.apache.rocketmq.common.app.AbortProcessException;

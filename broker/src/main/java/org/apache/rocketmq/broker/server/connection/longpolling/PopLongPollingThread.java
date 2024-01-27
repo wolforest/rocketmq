@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.server.daemon.longpolling;
+package org.apache.rocketmq.broker.server.connection.longpolling;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.netty.channel.ChannelHandlerContext;
@@ -36,10 +36,10 @@ import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
 import org.apache.rocketmq.remoting.netty.RequestTask;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
-import static org.apache.rocketmq.broker.server.daemon.longpolling.PollingResult.NOT_POLLING;
-import static org.apache.rocketmq.broker.server.daemon.longpolling.PollingResult.POLLING_FULL;
-import static org.apache.rocketmq.broker.server.daemon.longpolling.PollingResult.POLLING_SUC;
-import static org.apache.rocketmq.broker.server.daemon.longpolling.PollingResult.POLLING_TIMEOUT;
+import static org.apache.rocketmq.broker.server.connection.longpolling.PollingResult.NOT_POLLING;
+import static org.apache.rocketmq.broker.server.connection.longpolling.PollingResult.POLLING_FULL;
+import static org.apache.rocketmq.broker.server.connection.longpolling.PollingResult.POLLING_SUC;
+import static org.apache.rocketmq.broker.server.connection.longpolling.PollingResult.POLLING_TIMEOUT;
 
 public class PopLongPollingThread extends ServiceThread {
     private static final Logger POP_LOGGER =

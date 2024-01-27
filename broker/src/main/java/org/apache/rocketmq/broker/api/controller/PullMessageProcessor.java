@@ -28,7 +28,7 @@ import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterData;
 import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterManager;
 import org.apache.rocketmq.broker.domain.metadata.filter.ExpressionForRetryMessageFilter;
 import org.apache.rocketmq.broker.domain.metadata.filter.ExpressionMessageFilter;
-import org.apache.rocketmq.broker.server.daemon.longpolling.PullRequest;
+import org.apache.rocketmq.broker.server.connection.longpolling.PullRequest;
 import org.apache.rocketmq.broker.domain.mqtrace.ConsumeMessageContext;
 import org.apache.rocketmq.broker.domain.mqtrace.ConsumeMessageHook;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;

@@ -38,9 +38,10 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.config.StoreType;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
+/**
+ *
+ */
 public class BrokerMetadataService {
-    private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-
     private final MessageStoreConfig messageStoreConfig;
     private final Broker broker;
 

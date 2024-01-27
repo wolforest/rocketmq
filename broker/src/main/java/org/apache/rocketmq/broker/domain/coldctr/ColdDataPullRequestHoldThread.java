@@ -21,7 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.rocketmq.broker.api.controller.PullMessageProcessor;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.daemon.longpolling.PullRequest;
+import org.apache.rocketmq.broker.server.connection.longpolling.PullRequest;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.TimeUtils;

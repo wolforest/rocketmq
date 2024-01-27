@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.server.daemon.longpolling;
+package org.apache.rocketmq.broker.server.connection.longpolling;
 
 import org.apache.rocketmq.remoting.protocol.header.NotificationRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.PopMessageRequestHeader;
