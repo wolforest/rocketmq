@@ -21,7 +21,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.server.daemon.BrokerShutdownThread;
+import org.apache.rocketmq.broker.server.daemon.BrokerShutdownHook;
 import org.apache.rocketmq.broker.server.daemon.SystemConfigFileHelper;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
@@ -272,7 +272,7 @@ public class BrokerStartup {
     }
 
     private static Runnable buildShutdownHook(Broker broker) {
-        return new BrokerShutdownThread(broker);
+        return new BrokerShutdownHook(broker);
     }
 
     private static void printBrokerStartInfo(Broker controller) {

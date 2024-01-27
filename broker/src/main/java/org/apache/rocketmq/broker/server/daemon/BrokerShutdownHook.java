@@ -22,13 +22,17 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
-public class BrokerShutdownThread implements Runnable {
+/**
+ * ShutdownHook, invoke by BrokerStartup
+ * -> Runtime.getRuntime().addShutdownHook(new Thread(new BrokerShutdownThread()))
+ */
+public class BrokerShutdownHook implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private volatile boolean hasShutdown = false;
     private final AtomicInteger shutdownTimes = new AtomicInteger(0);
     private final Broker broker;
 
-    public BrokerShutdownThread(Broker broker) {
+    public BrokerShutdownHook(Broker broker) {
         this.broker = broker;
     }
 
