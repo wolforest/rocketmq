@@ -65,6 +65,9 @@ import static org.apache.rocketmq.remoting.protocol.ResponseCode.CONTROLLER_BROK
  *      both master and slave will start this timed task.
  * 2.regularly expanding and Shrinking syncStateSet,
  *      only master will start this timed task.
+ *
+ * it's useless, in default setting
+ * because Broker.enableControllerMode default value is false
  */
 public class ReplicasManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
