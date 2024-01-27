@@ -59,21 +59,21 @@ public interface BrokerPlugin {
     /**
      * Sync metadata reverse from slave
      *
-     * @param brokerAddr
+     * @param brokerAddr brokerAddr
      */
     void syncMetadataReverse(String brokerAddr) throws Exception;
 
     /**
      * Some plugin need build runningInfo when prepare runtime info.
      *
-     * @param runtimeInfo
+     * @param runtimeInfo runtimeInfo
      */
     void buildRuntimeInfo(Map<String, String> runtimeInfo);
 
     /**
      * Some plugin need do something when status changed. For example, brokerRole change to master or slave.
      *
-     * @param shouldStart
+     * @param shouldStart shouldStart
      */
     void statusChanged(boolean shouldStart);
 
