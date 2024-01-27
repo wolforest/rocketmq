@@ -252,9 +252,7 @@ public class AutoSwitchHAService extends DefaultHAService {
     }
 
     public void notifySyncStateSetChanged(final Set<Long> newSyncStateSet) {
-        this.executorService.submit(() -> {
-            syncStateSetChangedListeners.forEach(listener -> listener.accept(newSyncStateSet));
-        });
+        this.executorService.submit(() -> syncStateSetChangedListeners.forEach(listener -> listener.accept(newSyncStateSet)));
         LOGGER.info("Notify the syncStateSet has been changed into {}.", newSyncStateSet);
     }
 
@@ -268,12 +266,14 @@ public class AutoSwitchHAService extends DefaultHAService {
         final long haMaxTimeSlaveNotCatchup = this.defaultMessageStore.getMessageStoreConfig().getHaMaxTimeSlaveNotCatchup();
         for (Map.Entry<Long, Long> next : this.connectionCaughtUpTimeTable.entrySet()) {
             final Long slaveBrokerId = next.getKey();
-            if (newSyncStateSet.contains(slaveBrokerId)) {
-                final Long lastCaughtUpTimeMs = next.getValue();
-                if ((System.currentTimeMillis() - lastCaughtUpTimeMs) > haMaxTimeSlaveNotCatchup) {
-                    newSyncStateSet.remove(slaveBrokerId);
-                    isSyncStateSetChanged = true;
-                }
+            if (!newSyncStateSet.contains(slaveBrokerId)) {
+                continue;
+            }
+
+            final Long lastCaughtUpTimeMs = next.getValue();
+            if ((System.currentTimeMillis() - lastCaughtUpTimeMs) > haMaxTimeSlaveNotCatchup) {
+                newSyncStateSet.remove(slaveBrokerId);
+                isSyncStateSetChanged = true;
             }
         }
 
@@ -304,17 +304,21 @@ public class AutoSwitchHAService extends DefaultHAService {
             return;
         }
         final long confirmOffset = this.defaultMessageStore.getConfirmOffset();
-        if (slaveMaxOffset >= confirmOffset) {
-            final EpochEntry currentLeaderEpoch = this.epochCache.lastEntry();
-            if (slaveMaxOffset >= currentLeaderEpoch.getStartOffset()) {
-                LOGGER.info("The slave {} has caught up, slaveMaxOffset: {}, confirmOffset: {}, epoch: {}, leader epoch startOffset: {}.",
-                    slaveBrokerId, slaveMaxOffset, confirmOffset, currentLeaderEpoch.getEpoch(), currentLeaderEpoch.getStartOffset());
-                currentSyncStateSet.add(slaveBrokerId);
-                markSynchronizingSyncStateSet(currentSyncStateSet);
-                // Notify the upper layer that syncStateSet changed.
-                notifySyncStateSetChanged(currentSyncStateSet);
-            }
+        if (slaveMaxOffset < confirmOffset) {
+            return;
         }
+
+        final EpochEntry currentLeaderEpoch = this.epochCache.lastEntry();
+        if (slaveMaxOffset < currentLeaderEpoch.getStartOffset()) {
+            return;
+        }
+
+        LOGGER.info("The slave {} has caught up, slaveMaxOffset: {}, confirmOffset: {}, epoch: {}, leader epoch startOffset: {}.",
+            slaveBrokerId, slaveMaxOffset, confirmOffset, currentLeaderEpoch.getEpoch(), currentLeaderEpoch.getStartOffset());
+        currentSyncStateSet.add(slaveBrokerId);
+        markSynchronizingSyncStateSet(currentSyncStateSet);
+        // Notify the upper layer that syncStateSet changed.
+        notifySyncStateSetChanged(currentSyncStateSet);
     }
 
     private void markSynchronizingSyncStateSet(final Set<Long> newSyncStateSet) {
@@ -380,28 +384,29 @@ public class AutoSwitchHAService extends DefaultHAService {
             info.getHaClientRuntimeInfo().setLastWriteTimestamp(this.haClient.getLastWriteTimestamp());
             info.getHaClientRuntimeInfo().setTransferredByteInSecond(this.haClient.getTransferredByteInSecond());
             info.getHaClientRuntimeInfo().setMasterFlushOffset(this.defaultMessageStore.getMasterFlushedOffset());
-        } else {
-            info.setMaster(true);
 
-            info.setMasterCommitLogMaxOffset(masterPutWhere);
-
-            Set<Long> localSyncStateSet = getLocalSyncStateSet();
-            for (HAConnection conn : this.connectionList) {
-                HARuntimeInfo.HAConnectionRuntimeInfo cInfo = new HARuntimeInfo.HAConnectionRuntimeInfo();
-
-                long slaveAckOffset = conn.getSlaveAckOffset();
-                cInfo.setSlaveAckOffset(slaveAckOffset);
-                cInfo.setDiff(masterPutWhere - slaveAckOffset);
-                cInfo.setAddr(conn.getClientAddress().substring(1));
-                cInfo.setTransferredByteInSecond(conn.getTransferredByteInSecond());
-                cInfo.setTransferFromWhere(conn.getTransferFromWhere());
-
-                cInfo.setInSync(localSyncStateSet.contains(((AutoSwitchHAConnection) conn).getSlaveId()));
-
-                info.getHaConnectionInfo().add(cInfo);
-            }
-            info.setInSyncSlaveNums(localSyncStateSet.size() - 1);
+            return info;
         }
+
+        info.setMaster(true);
+        info.setMasterCommitLogMaxOffset(masterPutWhere);
+
+        Set<Long> localSyncStateSet = getLocalSyncStateSet();
+        for (HAConnection conn : this.connectionList) {
+            HARuntimeInfo.HAConnectionRuntimeInfo cInfo = new HARuntimeInfo.HAConnectionRuntimeInfo();
+
+            long slaveAckOffset = conn.getSlaveAckOffset();
+            cInfo.setSlaveAckOffset(slaveAckOffset);
+            cInfo.setDiff(masterPutWhere - slaveAckOffset);
+            cInfo.setAddr(conn.getClientAddress().substring(1));
+            cInfo.setTransferredByteInSecond(conn.getTransferredByteInSecond());
+            cInfo.setTransferFromWhere(conn.getTransferFromWhere());
+
+            cInfo.setInSync(localSyncStateSet.contains(((AutoSwitchHAConnection) conn).getSlaveId()));
+
+            info.getHaConnectionInfo().add(cInfo);
+        }
+        info.setInSyncSlaveNums(localSyncStateSet.size() - 1);
         return info;
     }
 
@@ -507,19 +512,19 @@ public class AutoSwitchHAService extends DefaultHAService {
                 int readSize = 0;
                 while (readSize < result.getSize()) {
                     DispatchRequest dispatchRequest = this.defaultMessageStore.getCommitLog().checkMessageAndReturnSize(result.getByteBuffer(), false, false);
-                    if (dispatchRequest.isSuccess()) {
-                        int size = dispatchRequest.getMsgSize();
-                        if (size > 0) {
-                            reputFromOffset += size;
-                            readSize += size;
-                        } else {
-                            reputFromOffset = this.defaultMessageStore.getCommitLog().rollNextFile(reputFromOffset);
-                            break;
-                        }
-                    } else {
+                    if (!dispatchRequest.isSuccess()) {
                         doNext = false;
                         break;
                     }
+
+                    int size = dispatchRequest.getMsgSize();
+                    if (size <= 0) {
+                        reputFromOffset = this.defaultMessageStore.getCommitLog().rollNextFile(reputFromOffset);
+                        break;
+                    }
+
+                    reputFromOffset += size;
+                    readSize += size;
                 }
             } finally {
                 result.release();
