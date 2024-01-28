@@ -92,8 +92,7 @@ public class BrokerPreOnlineService extends ServiceThread {
 
     CompletableFuture<Boolean> waitForHaHandshakeComplete(String brokerAddr) {
         LOGGER.info("wait for handshake completion with {}", brokerAddr);
-        HAConnectionStateNotificationRequest request =
-            new HAConnectionStateNotificationRequest(HAConnectionState.TRANSFER, RemotingHelper.parseHostFromAddress(brokerAddr), true);
+        HAConnectionStateNotificationRequest request = new HAConnectionStateNotificationRequest(HAConnectionState.TRANSFER, RemotingHelper.parseHostFromAddress(brokerAddr), true);
         if (this.broker.getMessageStore().getHaService() != null) {
             this.broker.getMessageStore().getHaService().putGroupConnectionStateRequest(request);
         } else {
@@ -176,43 +175,45 @@ public class BrokerPreOnlineService extends ServiceThread {
 
     private void syncConsumerOffsetReverse(String brokerAddr) throws RemotingSendRequestException, RemotingConnectException, RemotingTimeoutException, MQBrokerException, InterruptedException {
         ConsumerOffsetSerializeWrapper consumerOffsetSerializeWrapper = this.broker.getClusterClient().getAllConsumerOffset(brokerAddr);
-        if (null != consumerOffsetSerializeWrapper && broker.getConsumerOffsetManager().getDataVersion().compare(consumerOffsetSerializeWrapper.getDataVersion()) <= 0) {
-            LOGGER.info("{}'s consumerOffset data version is larger than master broker, {}'s consumerOffset will be used.", brokerAddr, brokerAddr);
-            this.broker.getConsumerOffsetManager().getOffsetTable()
-                .putAll(consumerOffsetSerializeWrapper.getOffsetTable());
-            this.broker.getConsumerOffsetManager().getDataVersion().assignNewOne(consumerOffsetSerializeWrapper.getDataVersion());
-            this.broker.getConsumerOffsetManager().persist();
+        if (null == consumerOffsetSerializeWrapper || broker.getConsumerOffsetManager().getDataVersion().compare(consumerOffsetSerializeWrapper.getDataVersion()) > 0) {
+            return;
         }
+
+        LOGGER.info("{}'s consumerOffset data version is larger than master broker, {}'s consumerOffset will be used.", brokerAddr, brokerAddr);
+        this.broker.getConsumerOffsetManager().getOffsetTable().putAll(consumerOffsetSerializeWrapper.getOffsetTable());
+        this.broker.getConsumerOffsetManager().getDataVersion().assignNewOne(consumerOffsetSerializeWrapper.getDataVersion());
+        this.broker.getConsumerOffsetManager().persist();
     }
 
     private void syncDelayOffsetReverse(String brokerAddr) throws InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException, MQBrokerException, UnsupportedEncodingException {
         String delayOffset = this.broker.getClusterClient().getAllDelayOffset(brokerAddr);
-        DelayOffsetSerializeWrapper delayOffsetSerializeWrapper =
-            DelayOffsetSerializeWrapper.fromJson(delayOffset, DelayOffsetSerializeWrapper.class);
+        DelayOffsetSerializeWrapper delayOffsetSerializeWrapper = DelayOffsetSerializeWrapper.fromJson(delayOffset, DelayOffsetSerializeWrapper.class);
 
-        if (null != delayOffset && broker.getScheduleMessageService().getDataVersion().compare(delayOffsetSerializeWrapper.getDataVersion()) <= 0) {
-            LOGGER.info("{}'s scheduleMessageService data version is larger than master broker, {}'s delayOffset will be used.", brokerAddr, brokerAddr);
-            String fileName =
-                StorePathConfigHelper.getDelayOffsetStorePath(this.broker
-                    .getMessageStoreConfig().getStorePathRootDir());
-            try {
-                IOUtils.string2File(delayOffset, fileName);
-                this.broker.getScheduleMessageService().load();
-            } catch (IOException e) {
-                LOGGER.error("Persist file Exception, {}", fileName, e);
-            }
+        if (null == delayOffset || broker.getScheduleMessageService().getDataVersion().compare(delayOffsetSerializeWrapper.getDataVersion()) > 0) {
+            return;
+        }
+
+        LOGGER.info("{}'s scheduleMessageService data version is larger than master broker, {}'s delayOffset will be used.", brokerAddr, brokerAddr);
+        String fileName = StorePathConfigHelper.getDelayOffsetStorePath(this.broker.getMessageStoreConfig().getStorePathRootDir());
+        try {
+            IOUtils.string2File(delayOffset, fileName);
+            this.broker.getScheduleMessageService().load();
+        } catch (IOException e) {
+            LOGGER.error("Persist file Exception, {}", fileName, e);
         }
     }
 
     private void syncTimerCheckPointReverse(String brokerAddr) throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException {
         TimerCheckpoint timerCheckpoint = this.broker.getClusterClient().getTimerCheckPoint(brokerAddr);
-        if (null != this.broker.getTimerCheckpoint() && this.broker.getTimerCheckpoint().getDataVersion().compare(timerCheckpoint.getDataVersion()) <= 0) {
-            LOGGER.info("{}'s timerCheckpoint data version is larger than master broker, {}'s timerCheckpoint will be used.", brokerAddr, brokerAddr);
-            this.broker.getTimerCheckpoint().setLastReadTimeMs(timerCheckpoint.getLastReadTimeMs());
-            this.broker.getTimerCheckpoint().setMasterTimerQueueOffset(timerCheckpoint.getMasterTimerQueueOffset());
-            this.broker.getTimerCheckpoint().getDataVersion().assignNewOne(timerCheckpoint.getDataVersion());
-            this.broker.getTimerCheckpoint().flush();
+        if (null == this.broker.getTimerCheckpoint() || this.broker.getTimerCheckpoint().getDataVersion().compare(timerCheckpoint.getDataVersion()) > 0) {
+            return;
         }
+
+        LOGGER.info("{}'s timerCheckpoint data version is larger than master broker, {}'s timerCheckpoint will be used.", brokerAddr, brokerAddr);
+        this.broker.getTimerCheckpoint().setLastReadTimeMs(timerCheckpoint.getLastReadTimeMs());
+        this.broker.getTimerCheckpoint().setMasterTimerQueueOffset(timerCheckpoint.getMasterTimerQueueOffset());
+        this.broker.getTimerCheckpoint().getDataVersion().assignNewOne(timerCheckpoint.getDataVersion());
+        this.broker.getTimerCheckpoint().flush();
     }
 
     private void brokerAttachedPluginSyncMetadataReverse(String brokerAddr) throws Exception {
@@ -297,8 +298,8 @@ public class BrokerPreOnlineService extends ServiceThread {
 
     /**
      * move from BrokerController.startService()
-     * @param minBrokerId
-     * @param minBrokerAddr
+     * @param minBrokerId minBrokerId
+     * @param minBrokerAddr minBrokerAddr
      */
     public void registerBroker(long minBrokerId, String minBrokerAddr) {
         BrokerConfig brokerConfig = broker.getBrokerConfig();

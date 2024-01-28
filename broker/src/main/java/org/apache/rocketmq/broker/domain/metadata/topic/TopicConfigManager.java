@@ -80,10 +80,7 @@ public class TopicConfigManager extends ConfigManager {
         addSystemTopic(TopicValidator.RMQ_SYS_SELF_TEST_TOPIC, 1, 1);
 
         if (this.broker.getBrokerConfig().isAutoCreateTopicEnable()) {
-            addSystemTopic(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC,
-                this.broker.getBrokerConfig().getDefaultTopicQueueNums(),
-                this.broker.getBrokerConfig().getDefaultTopicQueueNums(),
-                PermName.PERM_INHERIT | PermName.PERM_READ | PermName.PERM_WRITE);
+            addSystemTopic(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC, this.broker.getBrokerConfig().getDefaultTopicQueueNums(), this.broker.getBrokerConfig().getDefaultTopicQueueNums(), PermName.PERM_INHERIT | PermName.PERM_READ | PermName.PERM_WRITE);
         }
 
         addSystemTopic(TopicValidator.RMQ_SYS_BENCHMARK_TOPIC, 1024, 1024);
@@ -96,17 +93,13 @@ public class TopicConfigManager extends ConfigManager {
             addSystemTopic(this.broker.getBrokerConfig().getMsgTraceTopicName(), 1, 1);
         }
 
-        addSystemTopic(this.broker.getBrokerConfig().getBrokerClusterName() + "_" + MQConstants.REPLY_TOPIC_POSTFIX,
-            1, 1);
+        addSystemTopic(this.broker.getBrokerConfig().getBrokerClusterName() + "_" + MQConstants.REPLY_TOPIC_POSTFIX, 1, 1);
 
         // PopAckConstants.REVIVE_TOPIC
-        addSystemTopic(KeyBuilder.buildClusterReviveTopic(this.broker.getBrokerConfig().getBrokerClusterName()),
-            this.broker.getBrokerConfig().getReviveQueueNum(),
-            this.broker.getBrokerConfig().getReviveQueueNum());
+        addSystemTopic(KeyBuilder.buildClusterReviveTopic(this.broker.getBrokerConfig().getBrokerClusterName()), this.broker.getBrokerConfig().getReviveQueueNum(), this.broker.getBrokerConfig().getReviveQueueNum());
 
         // sync broker member group topic
-        addSystemTopic(TopicValidator.SYNC_BROKER_MEMBER_GROUP_PREFIX + this.broker.getBrokerConfig().getBrokerName(),
-            1, 1, PermName.PERM_INHERIT);
+        addSystemTopic(TopicValidator.SYNC_BROKER_MEMBER_GROUP_PREFIX + this.broker.getBrokerConfig().getBrokerName(), 1, 1, PermName.PERM_INHERIT);
 
         // TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC
         addSystemTopic(TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC, 1,1);
