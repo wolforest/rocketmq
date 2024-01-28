@@ -30,7 +30,7 @@ import org.apache.rocketmq.broker.domain.queue.offset.BroadcastOffsetManager;
 import org.apache.rocketmq.broker.infra.Broker2Client;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.daemon.BrokerFastFailure;
-import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineService;
+import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineThread;
 import org.apache.rocketmq.broker.server.daemon.pop.PopInflightMessageCounter;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
@@ -64,7 +64,7 @@ public class BrokerServiceManager {
     private BroadcastOffsetManager broadcastOffsetManager;
     private TopicRouteInfoManager topicRouteInfoManager;
     private BrokerFastFailure brokerFastFailure;
-    private BrokerPreOnlineService brokerPreOnlineService;
+    private BrokerPreOnlineThread brokerPreOnlineThread;
     private TopicQueueMappingCleanService topicQueueMappingCleanService;
 
     private ColdDataPullRequestHoldThread coldDataPullRequestHoldThread;
@@ -122,8 +122,8 @@ public class BrokerServiceManager {
             this.topicRouteInfoManager.start();
         }
 
-        if (this.brokerPreOnlineService != null) {
-            this.brokerPreOnlineService.start();
+        if (this.brokerPreOnlineThread != null) {
+            this.brokerPreOnlineThread.start();
         }
 
         if (this.coldDataPullRequestHoldThread != null) {
@@ -162,8 +162,8 @@ public class BrokerServiceManager {
             this.topicRouteInfoManager.shutdown();
         }
 
-        if (this.brokerPreOnlineService != null && !this.brokerPreOnlineService.isStopped()) {
-            this.brokerPreOnlineService.shutdown();
+        if (this.brokerPreOnlineThread != null && !this.brokerPreOnlineThread.isStopped()) {
+            this.brokerPreOnlineThread.shutdown();
         }
 
         if (this.coldDataPullRequestHoldThread != null) {
@@ -217,7 +217,7 @@ public class BrokerServiceManager {
         this.topicQueueMappingCleanService = new TopicQueueMappingCleanService(broker);
 
         if (this.brokerConfig.isEnableSlaveActingMaster() && !this.brokerConfig.isSkipPreOnline()) {
-            this.brokerPreOnlineService = new BrokerPreOnlineService(broker);
+            this.brokerPreOnlineThread = new BrokerPreOnlineThread(broker);
         }
     }
 

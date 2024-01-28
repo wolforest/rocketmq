@@ -20,7 +20,7 @@ package org.apache.rocketmq.container;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineService;
+import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineThread;
 import org.apache.rocketmq.broker.infra.ClusterClient;
 import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageCheckService;
@@ -81,9 +81,9 @@ public class BrokerPreOnlineTest {
     @Test
     public void testMasterOnlineConnTimeout() throws Exception {
         init();
-        BrokerPreOnlineService brokerPreOnlineService = new BrokerPreOnlineService(innerBrokerController);
+        BrokerPreOnlineThread brokerPreOnlineThread = new BrokerPreOnlineThread(innerBrokerController);
 
-        brokerPreOnlineService.start();
+        brokerPreOnlineThread.start();
 
         await().atMost(Duration.ofSeconds(30)).until(() -> !innerBrokerController.isIsolated());
     }
