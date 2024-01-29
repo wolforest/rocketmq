@@ -91,6 +91,12 @@ public class ClientActivity extends AbstractMessingActivity {
         this.messagingProcessor.registerProducerListener(new ProducerChangeListenerImpl());
     }
 
+    /**
+     * Handles heartbeats from clients
+     * @param ctx
+     * @param request
+     * @return
+     */
     public CompletableFuture<HeartbeatResponse> heartbeat(ProxyContext ctx, HeartbeatRequest request) {
         CompletableFuture<HeartbeatResponse> future = new CompletableFuture<>();
 
