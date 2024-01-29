@@ -250,10 +250,32 @@ public class ClientActivity extends AbstractMessingActivity {
         responseObserver.onError(exception);
     }
 
+    /**
+     * Handle client settings request
+     * @param ctx
+     * @param request
+     * @param responseObserver
+     */
     protected void processAndWriteClientSettings(ProxyContext ctx, TelemetryCommand request,
                                                  StreamObserver<TelemetryCommand> responseObserver) {
-        GrpcClientChannel grpcClientChannel = null;
         Settings settings = request.getSettings();
+        GrpcClientChannel grpcClientChannel = registerClient(ctx, responseObserver, settings);
+        if (Settings.PubSubCase.PUBSUB_NOT_SET.equals(settings.getPubSubCase())) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("there is no publishing or subscription data in settings")
+                    .asRuntimeException());
+            return;
+        }
+        TelemetryCommand command = processClientSettings(ctx, request);
+        if (grpcClientChannel != null) {
+            grpcClientChannel.writeTelemetryCommand(command);
+        } else {
+            responseObserver.onNext(command);
+        }
+    }
+
+    private GrpcClientChannel registerClient(ProxyContext ctx, StreamObserver<TelemetryCommand> responseObserver, Settings settings) {
+        GrpcClientChannel grpcClientChannel = null;
         switch (settings.getPubSubCase()) {
             case PUBLISHING:
                 for (Resource topic : settings.getPublishing().getTopicsList()) {
@@ -272,18 +294,7 @@ public class ClientActivity extends AbstractMessingActivity {
             default:
                 break;
         }
-        if (Settings.PubSubCase.PUBSUB_NOT_SET.equals(settings.getPubSubCase())) {
-            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
-                    .withDescription("there is no publishing or subscription data in settings")
-                    .asRuntimeException());
-            return;
-        }
-        TelemetryCommand command = processClientSettings(ctx, request);
-        if (grpcClientChannel != null) {
-            grpcClientChannel.writeTelemetryCommand(command);
-        } else {
-            responseObserver.onNext(command);
-        }
+        return grpcClientChannel;
     }
 
     protected TelemetryCommand processClientSettings(ProxyContext ctx, TelemetryCommand request) {
