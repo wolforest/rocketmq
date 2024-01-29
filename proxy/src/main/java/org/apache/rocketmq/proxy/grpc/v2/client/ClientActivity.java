@@ -308,7 +308,7 @@ public class ClientActivity extends AbstractMessingActivity {
 
     protected TelemetryCommand processClientSettings(ProxyContext ctx, TelemetryCommand request) {
         String clientId = ctx.getClientID();
-        grpcClientSettingsManager.updateClientSettings(ctx, clientId, request.getSettings());
+        grpcClientSettingsManager.updateClientSettings(clientId, request.getSettings());
         Settings settings = grpcClientSettingsManager.getClientSettings(ctx);
         return TelemetryCommand.newBuilder()
                 .setStatus(ResponseBuilder.getInstance().buildStatus(Code.OK, Code.OK.name()))
@@ -496,7 +496,6 @@ public class ClientActivity extends AbstractMessingActivity {
                         return;
                     }
                     grpcClientSettingsManager.updateClientSettings(
-                            ProxyContext.createForInner(this.getClass()),
                             clientChannelInfo.getClientId(),
                             settings
                     );

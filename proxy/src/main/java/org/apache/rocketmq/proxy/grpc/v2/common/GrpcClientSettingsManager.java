@@ -27,16 +27,9 @@ import apache.rocketmq.v2.Metric;
 import apache.rocketmq.v2.Settings;
 import com.google.protobuf.Duration;
 import com.google.protobuf.util.Durations;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupInfo;
-import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.utils.StartAndShutdown;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -50,6 +43,14 @@ import org.apache.rocketmq.remoting.protocol.subscription.ExponentialRetryPolicy
 import org.apache.rocketmq.remoting.protocol.subscription.GroupRetryPolicy;
 import org.apache.rocketmq.remoting.protocol.subscription.GroupRetryPolicyType;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class GrpcClientSettingsManager extends ServiceThread implements StartAndShutdown {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.PROXY_LOGGER_NAME);
@@ -180,7 +181,7 @@ public class GrpcClientSettingsManager extends ServiceThread implements StartAnd
             .build();
     }
 
-    public void updateClientSettings(ProxyContext ctx, String clientId, Settings settings) {
+    public void updateClientSettings(String clientId, Settings settings) {
         if (settings.hasSubscription()) {
             settings = createDefaultConsumerSettingsBuilder().mergeFrom(settings).build();
         }
