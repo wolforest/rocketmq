@@ -267,7 +267,7 @@ public class ClientActivity extends AbstractMessingActivity {
                     .asRuntimeException());
             return;
         }
-        TelemetryCommand command = processClientSettings(ctx, request);
+        TelemetryCommand command = processClientSettings(ctx, settings);
         if (grpcClientChannel != null) {
             grpcClientChannel.writeTelemetryCommand(command);
         } else {
@@ -306,13 +306,13 @@ public class ClientActivity extends AbstractMessingActivity {
         return grpcClientChannel;
     }
 
-    protected TelemetryCommand processClientSettings(ProxyContext ctx, TelemetryCommand request) {
+    protected TelemetryCommand processClientSettings(ProxyContext ctx, Settings settings) {
         String clientId = ctx.getClientID();
-        grpcClientSettingsManager.updateClientSettings(clientId, request.getSettings());
-        Settings settings = grpcClientSettingsManager.getClientSettings(ctx);
+        grpcClientSettingsManager.updateClientSettings(clientId, settings);
+        Settings mergedSettings = grpcClientSettingsManager.getClientSettings(ctx);
         return TelemetryCommand.newBuilder()
                 .setStatus(ResponseBuilder.getInstance().buildStatus(Code.OK, Code.OK.name()))
-                .setSettings(settings)
+                .setSettings(mergedSettings)
                 .build();
     }
 
