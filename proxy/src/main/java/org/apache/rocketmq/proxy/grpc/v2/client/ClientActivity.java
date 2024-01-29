@@ -252,6 +252,7 @@ public class ClientActivity extends AbstractMessingActivity {
 
     /**
      * Handle client settings request
+     *
      * @param ctx
      * @param request
      * @param responseObserver
@@ -274,6 +275,14 @@ public class ClientActivity extends AbstractMessingActivity {
         }
     }
 
+    /**
+     * register client by settings case: PUBLISHING or SUBSCRIPTION
+     *
+     * @param ctx
+     * @param responseObserver
+     * @param settings
+     * @return
+     */
     private GrpcClientChannel registerClient(ProxyContext ctx, StreamObserver<TelemetryCommand> responseObserver, Settings settings) {
         GrpcClientChannel grpcClientChannel = null;
         switch (settings.getPubSubCase()) {
