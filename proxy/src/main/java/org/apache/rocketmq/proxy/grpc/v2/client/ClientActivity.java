@@ -33,19 +33,15 @@ import apache.rocketmq.v2.VerifyMessageResult;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.netty.channel.Channel;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.server.connection.ClientChannelInfo;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupEvent;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerIdsChangeListener;
 import org.apache.rocketmq.broker.domain.producer.ProducerChangeListener;
 import org.apache.rocketmq.broker.domain.producer.ProducerGroupEvent;
-import org.apache.rocketmq.common.domain.constant.MQVersion;
-import org.apache.rocketmq.common.domain.topic.TopicMessageType;
+import org.apache.rocketmq.broker.server.connection.ClientChannelInfo;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.constant.MQVersion;
 import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
+import org.apache.rocketmq.common.domain.topic.TopicMessageType;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -71,6 +67,14 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * Handle control commands between clients and server
+ */
 public class ClientActivity extends AbstractMessingActivity {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.PROXY_LOGGER_NAME);
