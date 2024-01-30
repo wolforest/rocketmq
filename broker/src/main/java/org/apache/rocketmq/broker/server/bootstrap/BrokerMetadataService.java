@@ -16,13 +16,7 @@
  */
 package org.apache.rocketmq.broker.server.bootstrap;
 
-import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterManager;
-import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOffsetManager;
-import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOrderInfoManager;
-import org.apache.rocketmq.broker.domain.queue.offset.LmqConsumerOffsetManager;
-import org.apache.rocketmq.broker.domain.queue.offset.RocksDBConsumerOffsetManager;
-import org.apache.rocketmq.broker.domain.queue.offset.RocksDBLmqConsumerOffsetManager;
 import org.apache.rocketmq.broker.domain.metadata.subscription.LmqSubscriptionGroupManager;
 import org.apache.rocketmq.broker.domain.metadata.subscription.RocksDBLmqSubscriptionGroupManager;
 import org.apache.rocketmq.broker.domain.metadata.subscription.RocksDBSubscriptionGroupManager;
@@ -32,11 +26,14 @@ import org.apache.rocketmq.broker.domain.metadata.topic.RocksDBLmqTopicConfigMan
 import org.apache.rocketmq.broker.domain.metadata.topic.RocksDBTopicConfigManager;
 import org.apache.rocketmq.broker.domain.metadata.topic.TopicConfigManager;
 import org.apache.rocketmq.broker.domain.metadata.topic.TopicQueueMappingManager;
-import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.config.StoreType;
+import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.ConsumerOrderInfoManager;
+import org.apache.rocketmq.broker.domain.queue.offset.LmqConsumerOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.RocksDBConsumerOffsetManager;
+import org.apache.rocketmq.broker.domain.queue.offset.RocksDBLmqConsumerOffsetManager;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.config.StoreType;
 
 /**
  *

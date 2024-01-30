@@ -16,9 +16,14 @@
  */
 package org.apache.rocketmq.controller.impl.heartbeat;
 
-import java.util.Objects;
+import java.io.Serializable;
 
-public class BrokerIdentityInfo {
+import java.util.Objects;
+import org.apache.rocketmq.common.utils.StringUtils;
+
+public class BrokerIdentityInfo implements Serializable {
+
+    private static final long serialVersionUID = 883597359635995567L;
     private final String clusterName;
 
     private final String brokerName;
@@ -44,7 +49,7 @@ public class BrokerIdentityInfo {
     }
 
     public boolean isEmpty() {
-        return clusterName.isEmpty() && brokerName.isEmpty() && brokerId == null;
+        return StringUtils.isBlank(clusterName) && StringUtils.isBlank(brokerName) && brokerId == null;
     }
 
     @Override
@@ -71,9 +76,9 @@ public class BrokerIdentityInfo {
     @Override
     public String toString() {
         return "BrokerIdentityInfo{" +
-                "clusterName='" + clusterName + '\'' +
-                ", brokerName='" + brokerName + '\'' +
-                ", brokerId=" + brokerId +
-                '}';
+            "clusterName='" + clusterName + '\'' +
+            ", brokerName='" + brokerName + '\'' +
+            ", brokerId=" + brokerId +
+            '}';
     }
 }

@@ -14,34 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.rocketmq.controller.impl.task;
 
-package org.apache.rocketmq.client.common;
+import org.apache.rocketmq.remoting.CommandCustomHeader;
+import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 
-import java.util.Random;
-
-public class ThreadLocalIndex {
-    private final ThreadLocal<Integer> threadLocalIndex = new ThreadLocal<>();
-    private final Random random = new Random();
-    private final static int POSITIVE_MASK = 0x7FFFFFFF;
-
-    public int incrementAndGet() {
-        Integer index = this.threadLocalIndex.get();
-        if (null == index) {
-            index = random.nextInt();
-        }
-        this.threadLocalIndex.set(++index);
-        return index & POSITIVE_MASK;
+public class CheckNotActiveBrokerResponse implements CommandCustomHeader {
+    public CheckNotActiveBrokerResponse() {
     }
 
-    public void reset() {
-        int index = Math.abs(random.nextInt(Integer.MAX_VALUE));
-        this.threadLocalIndex.set(index);
+    @Override
+    public void checkFields() throws RemotingCommandException {
+
     }
 
     @Override
     public String toString() {
-        return "ThreadLocalIndex{" +
-            "threadLocalIndex=" + threadLocalIndex.get() +
-            '}';
+        return "CheckNotActiveBrokerResponse{}";
     }
 }

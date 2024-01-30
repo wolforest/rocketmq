@@ -31,6 +31,7 @@ import org.apache.rocketmq.common.app.config.ControllerConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.BeanUtils;
+import org.apache.rocketmq.common.app.config.JraftConfig;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -75,6 +76,8 @@ public class ControllerStartup {
         }
 
         final ControllerConfig controllerConfig = new ControllerConfig();
+        final JraftConfig jraftConfig = new JraftConfig();
+        controllerConfig.setJraftConfig(jraftConfig);
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
         final NettyClientConfig nettyClientConfig = new NettyClientConfig();
         nettyServerConfig.setListenPort(19876);
@@ -86,6 +89,7 @@ public class ControllerStartup {
                 properties = new Properties();
                 properties.load(in);
                 BeanUtils.properties2Object(properties, controllerConfig);
+                BeanUtils.properties2Object(properties, jraftConfig);
                 BeanUtils.properties2Object(properties, nettyServerConfig);
                 BeanUtils.properties2Object(properties, nettyClientConfig);
 
@@ -97,6 +101,7 @@ public class ControllerStartup {
         if (commandLine.hasOption('p')) {
             Logger console = LoggerFactory.getLogger(LoggerName.CONTROLLER_CONSOLE_NAME);
             BeanUtils.printObjectProperties(console, controllerConfig);
+            BeanUtils.printObjectProperties(console, jraftConfig);
             BeanUtils.printObjectProperties(console, nettyServerConfig);
             BeanUtils.printObjectProperties(console, nettyClientConfig);
             System.exit(0);

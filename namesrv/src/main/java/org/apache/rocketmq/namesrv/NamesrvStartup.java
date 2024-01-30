@@ -32,6 +32,7 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.BeanUtils;
+import org.apache.rocketmq.common.app.config.JraftConfig;
 import org.apache.rocketmq.controller.ControllerManager;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
@@ -106,7 +107,10 @@ public class NamesrvStartup {
                 BeanUtils.properties2Object(properties, nettyClientConfig);
                 if (namesrvConfig.isEnableControllerInNamesrv()) {
                     controllerConfig = new ControllerConfig();
+                    JraftConfig jraftConfig = new JraftConfig();
+                    controllerConfig.setJraftConfig(jraftConfig);
                     BeanUtils.properties2Object(properties, controllerConfig);
+                    BeanUtils.properties2Object(properties, jraftConfig);
                 }
                 namesrvConfig.setConfigStorePath(file);
 

@@ -44,8 +44,8 @@ public class DefaultBrokerHeartbeatManagerTest {
         this.heartbeatManager.registerBrokerLifecycleListener((clusterName, brokerName, brokerId) -> {
             latch.countDown();
         });
-        this.heartbeatManager.onBrokerHeartbeat("cluster1", "broker1", "127.0.0.1:7000", 1L,3000L, null,
-            1, 1L,-1L, 0);
+        this.heartbeatManager.onBrokerHeartbeat("cluster1", "broker1", "127.0.0.1:7000", 1L, 3000L, null,
+            1, 1L, -1L, 0);
         assertTrue(latch.await(5000, TimeUnit.MILLISECONDS));
         this.heartbeatManager.shutdown();
     }
