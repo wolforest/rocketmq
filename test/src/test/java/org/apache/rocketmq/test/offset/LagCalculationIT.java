@@ -25,6 +25,7 @@ import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterData;
 import org.apache.rocketmq.broker.domain.metadata.filter.ExpressionMessageFilter;
 import org.apache.rocketmq.client.consumer.MessageSelector;
+import org.apache.rocketmq.common.domain.filter.ExpressionType;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.domain.message.Message;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
@@ -171,6 +172,13 @@ public class LagCalculationIT extends BaseConf {
         RMQSqlConsumer sqlConsumer = ConsumerFactory.getRMQSqlConsumer(NAMESRV_ADDR, initConsumerGroup(), topic, selector, sqlListener);
         RMQBlockListener tagListener = new RMQBlockListener(true);
         RMQNormalConsumer tagConsumer = getConsumer(NAMESRV_ADDR, topic, tag, tagListener);
+
+        //init subscriptionData & consumerFilterData for sql
+        SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(topic, sql, ExpressionType.SQL92);
+        for (Broker controller : brokerList) {
+            controller.getConsumerFilterManager().register(topic, sqlConsumer.getConsumerGroup(), sql, ExpressionType.SQL92, subscriptionData.getSubVersion());
+        }
+
         // wait for building filter data
         await().atMost(5, TimeUnit.SECONDS).until(() -> sqlListener.isBlocked() && tagListener.isBlocked());
 
@@ -210,7 +218,6 @@ public class LagCalculationIT extends BaseConf {
             for (MessageQueue mq : mqs) {
                 if (mq.getBrokerName().equals(controller.getBrokerConfig().getBrokerName())) {
                     long brokerOffset = controller.getMessageStore().getMaxOffsetInQueue(topic, mq.getQueueId());
-                    SubscriptionData subscriptionData = controller.getConsumerManager().findSubscriptionData(sqlConsumer.getConsumerGroup(), topic);
                     ConsumerFilterData consumerFilterData = controller.getConsumerFilterManager().get(topic, sqlConsumer.getConsumerGroup());
                     long estimateMessageCount = controller.getMessageStore()
                         .estimateMessageCount(topic, mq.getQueueId(), 0, brokerOffset,
