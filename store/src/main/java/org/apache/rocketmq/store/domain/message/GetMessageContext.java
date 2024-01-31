@@ -36,9 +36,9 @@ public class GetMessageContext {
 
     private long nextPhyFileStartOffset;
 
-    private DefaultMessageStore messageStore;
-    private ConsumeQueueInterface consumeQueue;
-    private GetMessageResult getResult;
+    private final DefaultMessageStore messageStore;
+    private final ConsumeQueueInterface consumeQueue;
+    private final GetMessageResult getResult;
 
     private final String group;
     private final String topic;
@@ -82,7 +82,7 @@ public class GetMessageContext {
     }
 
     private void init() {
-        this.maxFilterMessageSize = Math.max(16000, maxMsgNums * consumeQueue.getUnitSize());
+        this.maxFilterMessageSize = Math.max(messageStore.getMessageStoreConfig().getMaxFilterMessageSize(), maxMsgNums * consumeQueue.getUnitSize());
 
         this.nextBeginOffset = offset;
         this.maxOffsetPy = messageStore.getCommitLog().getMaxOffset();
