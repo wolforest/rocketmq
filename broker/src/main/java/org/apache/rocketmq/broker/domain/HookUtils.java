@@ -127,8 +127,7 @@ public class HookUtils {
         return null;
     }
 
-    public static PutMessageResult handleScheduleMessage(Broker broker,
-        final MessageExtBrokerInner msg) {
+    public static PutMessageResult handleScheduleMessage(Broker broker, final MessageExtBrokerInner msg) {
         final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
         if (tranType != MessageSysFlag.TRANSACTION_NOT_TYPE && tranType != MessageSysFlag.TRANSACTION_COMMIT_TYPE) {
             return null;
@@ -180,8 +179,7 @@ public class HookUtils {
         return null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELIVER_MS) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_MS) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_SEC);
     }
 
-    private static PutMessageResult transformTimerMessage(Broker broker,
-        MessageExtBrokerInner msg) {
+    private static PutMessageResult transformTimerMessage(Broker broker, MessageExtBrokerInner msg) {
         //do transform
         int delayLevel = msg.getDelayTimeLevel();
         long deliverMs;
@@ -238,8 +236,7 @@ public class HookUtils {
         msg.setQueueId(ScheduleMessageService.delayLevel2QueueId(msg.getDelayTimeLevel()));
     }
 
-    public static boolean sendMessageBack(Broker broker, List<MessageExt> msgList,
-        String brokerName, String brokerAddr) {
+    public static boolean sendMessageBack(Broker broker, List<MessageExt> msgList, String brokerName, String brokerAddr) {
         try {
             Iterator<MessageExt> it = msgList.iterator();
             while (it.hasNext()) {

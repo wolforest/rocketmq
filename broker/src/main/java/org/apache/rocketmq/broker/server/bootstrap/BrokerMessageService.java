@@ -17,48 +17,46 @@
 package org.apache.rocketmq.broker.server.bootstrap;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.rocketmq.broker.domain.transaction.TransactionMetricsFlushService;
-import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
-import org.apache.rocketmq.broker.infra.EscapeBridge;
-import org.apache.rocketmq.broker.domain.metadata.filter.CommitLogDispatcherCalcBitMap;
-import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
 import org.apache.rocketmq.broker.api.controller.AckMessageProcessor;
-import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
-import org.apache.rocketmq.broker.server.daemon.schedule.ScheduleMessageService;
+import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
+import org.apache.rocketmq.broker.domain.HookUtils;
+import org.apache.rocketmq.broker.domain.metadata.filter.CommitLogDispatcherCalcBitMap;
 import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;
+import org.apache.rocketmq.broker.domain.transaction.TransactionMetricsFlushService;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageCheckService;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
 import org.apache.rocketmq.broker.domain.transaction.queue.DefaultTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageServiceImpl;
-import org.apache.rocketmq.broker.domain.HookUtils;
+import org.apache.rocketmq.broker.infra.EscapeBridge;
+import org.apache.rocketmq.broker.server.Broker;
+import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
+import org.apache.rocketmq.broker.server.daemon.schedule.ScheduleMessageService;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
-import org.apache.rocketmq.common.domain.topic.TopicConfig;
+import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.utils.ServiceProvider;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.store.DefaultMessageStore;
-import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
 import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
-import org.apache.rocketmq.store.server.store.RocksDBMessageStore;
-import org.apache.rocketmq.store.server.config.StoreType;
-import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
-import org.apache.rocketmq.store.api.plugin.PutMessageHook;
-import org.apache.rocketmq.store.api.plugin.SendMessageBackHook;
+import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
 import org.apache.rocketmq.store.api.plugin.MessagePluginFactory;
 import org.apache.rocketmq.store.api.plugin.MessageStorePluginContext;
-import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
+import org.apache.rocketmq.store.api.plugin.PutMessageHook;
+import org.apache.rocketmq.store.api.plugin.SendMessageBackHook;
+import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
 import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
 import org.apache.rocketmq.store.domain.timer.TimerMetrics;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
+import org.apache.rocketmq.store.server.store.RocksDBMessageStore;
 
 public class BrokerMessageService {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
@@ -269,7 +267,7 @@ public class BrokerMessageService {
         this.timerCheckpoint = new TimerCheckpoint(BrokerPathConfigHelper.getTimerCheckPath(messageStoreConfig.getStorePathRootDir()));
         TimerMetrics timerMetrics = new TimerMetrics(BrokerPathConfigHelper.getTimerMetricsPath(messageStoreConfig.getStorePathRootDir()));
         this.timerMessageStore = new TimerMessageStore(messageStore, messageStoreConfig, timerCheckpoint, timerMetrics, brokerStatsManager);
-        this.timerMessageStore.registerEscapeBridgeHook(msg -> escapeBridge.putMessage(msg));
+        this.timerMessageStore.registerEscapeBridgeHook(escapeBridge::putMessage);
         this.messageStore.setTimerMessageStore(this.timerMessageStore);
     }
 
@@ -368,12 +366,7 @@ public class BrokerMessageService {
     }
 
     private SendMessageBackHook createSendMessageBackHook() {
-        return new SendMessageBackHook() {
-            @Override
-            public boolean executeSendMessageBack(List<MessageExt> msgList, String brokerName, String brokerAddr) {
-                return HookUtils.sendMessageBack(broker, msgList, brokerName, brokerAddr);
-            }
-        };
+        return (msgList, brokerName, brokerAddr) -> HookUtils.sendMessageBack(broker, msgList, brokerName, brokerAddr);
     }
 
     private void registerMessageStoreHook() {
@@ -430,10 +423,6 @@ public class BrokerMessageService {
 
     public boolean isScheduleServiceStart() {
         return isScheduleServiceStart;
-    }
-
-    public boolean isEnableRocksDBStore() {
-        return StoreType.DEFAULT_ROCKSDB.getStoreType().equalsIgnoreCase(this.messageStoreConfig.getStoreType());
     }
 
 }

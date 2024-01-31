@@ -97,7 +97,7 @@ public class LmqConsumerOffsetManager extends ConsumerOffsetManager {
         if (obj == null) {
             return;
         }
-        
+
         super.setOffsetTable(obj.getOffsetTable());
         this.lmqOffsetTable = obj.lmqOffsetTable;
     }
