@@ -106,20 +106,8 @@ public class GetMessageContext {
         this.nextBeginOffset = nextBeginOffset;
     }
 
-    public void setMaxOffsetPy(long maxOffsetPy) {
-        this.maxOffsetPy = maxOffsetPy;
-    }
-
-    public void setMaxPullSize(long maxPullSize) {
-        this.maxPullSize = maxPullSize;
-    }
-
     public void setMaxPhyOffsetPulling(long maxPhyOffsetPulling) {
         this.maxPhyOffsetPulling = maxPhyOffsetPulling;
-    }
-
-    public void setMaxFilterMessageSize(int maxFilterMessageSize) {
-        this.maxFilterMessageSize = maxFilterMessageSize;
     }
 
     public long getNextPhyFileStartOffset() {
@@ -180,10 +168,6 @@ public class GetMessageContext {
 
     public int getMaxMsgNums() {
         return maxMsgNums;
-    }
-
-    public int getMaxTotalMsgSize() {
-        return maxTotalMsgSize;
     }
 
     public MessageFilter getMessageFilter() {
