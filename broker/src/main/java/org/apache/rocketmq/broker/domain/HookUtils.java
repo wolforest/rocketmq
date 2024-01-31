@@ -87,14 +87,12 @@ public class HookUtils {
         final byte[] topicData = msg.getTopic().getBytes(MessageDecoder.CHARSET_UTF8);
         boolean retryTopic = msg.getTopic() != null && msg.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX);
         if (!retryTopic && topicData.length > Byte.MAX_VALUE) {
-            LOG.warn("putMessage message topic[{}] length too long {}, but it is not supported by broker",
-                msg.getTopic(), topicData.length);
+            LOG.warn("putMessage message topic[{}] length too long {}, but it is not supported by broker", msg.getTopic(), topicData.length);
             return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, null);
         }
 
         if (topicData.length > MAX_TOPIC_LENGTH) {
-            LOG.warn("putMessage message topic[{}] length too long {}, but it is not supported by broker",
-                msg.getTopic(), topicData.length);
+            LOG.warn("putMessage message topic[{}] length too long {}, but it is not supported by broker", msg.getTopic(), topicData.length);
             return new PutMessageResult(PutMessageStatus.MESSAGE_ILLEGAL, null);
         }
 
