@@ -79,6 +79,10 @@ public class BrokerConfig extends BrokerIdentity {
      * @renamed from defaultTopicQueueNums to queueNumPerTopic
      */
     private int defaultTopicQueueNums = 8;
+
+    /**
+     * should be false in production env
+     */
     @ImportantField
     private boolean autoCreateTopicEnable = true;
 
@@ -93,6 +97,9 @@ public class BrokerConfig extends BrokerIdentity {
      */
     private boolean brokerTopicEnable = true;
 
+    /**
+     * should be true in production env
+     */
     @ImportantField
     private boolean autoCreateSubscriptionGroup = true;
 
@@ -209,9 +216,15 @@ public class BrokerConfig extends BrokerIdentity {
 
     private boolean slaveReadEnable = false;
 
+    /**
+     * should be false in production env
+     */
     private boolean disableConsumeIfConsumerReadSlowly = false;
     private long consumerFallbehindThreshold = 1024L * 1024 * 1024 * 16;
 
+    /**
+     * should be true,
+     */
     private boolean brokerFastFailureEnable = true;
     private long waitTimeMillsInSendQueue = 200;
     private long waitTimeMillsInPullQueue = 5 * 1000;
