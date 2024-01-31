@@ -89,13 +89,17 @@ public class LmqConsumerOffsetManager extends ConsumerOffsetManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            LmqConsumerOffsetManager obj = RemotingSerializable.fromJson(jsonString, LmqConsumerOffsetManager.class);
-            if (obj != null) {
-                super.setOffsetTable(obj.getOffsetTable());
-                this.lmqOffsetTable = obj.lmqOffsetTable;
-            }
+        if (jsonString == null) {
+            return;
         }
+
+        LmqConsumerOffsetManager obj = RemotingSerializable.fromJson(jsonString, LmqConsumerOffsetManager.class);
+        if (obj == null) {
+            return;
+        }
+        
+        super.setOffsetTable(obj.getOffsetTable());
+        this.lmqOffsetTable = obj.lmqOffsetTable;
     }
 
     @Override

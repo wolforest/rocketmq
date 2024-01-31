@@ -256,8 +256,7 @@ public class ConsumerOffsetManager extends ConfigManager {
     /**
      * Just for PullMessageProcessor
      */
-    public void commitPullOffset(final String clientHost, final String group, final String topic, final int queueId,
-        final long offset) {
+    public void commitPullOffset(final String clientHost, final String group, final String topic, final int queueId, final long offset) {
         // topic@group
         String key = topic + TOPIC_GROUP_SEPARATOR + group;
         ConcurrentMap<Integer, Long> map = this.pullOffsetTable.computeIfAbsent(
