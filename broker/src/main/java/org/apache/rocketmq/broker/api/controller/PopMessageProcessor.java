@@ -631,7 +631,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private void parseGetResult(GetMessageResult result, GetMessageResult getMessageResult, PopMessageRequestHeader requestHeader, String topic, boolean isRetry, int reviveQid, long popTime, long finalOffset) {
-        String brokerName = broker.getBrokerConfig().getBrokerName();
+
         for (SelectMappedBufferResult mappedBuffer : result.getMessageMapedList()) {
             // We should not recode buffer when popResponseReturnActualRetryTopic is true or topic is not retry topic
             if (broker.getBrokerConfig().isPopResponseReturnActualRetryTopic() || !isRetry) {
@@ -641,29 +641,33 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
             List<MessageExt> messageExtList = MessageDecoder.decodesBatch(mappedBuffer.getByteBuffer(),true, false, true);
             mappedBuffer.release();
-            for (MessageExt messageExt : messageExtList) {
-                try {
-                    String ckInfo = ExtraInfoUtil.buildExtraInfo(finalOffset, popTime, requestHeader.getInvisibleTime(),
-                        reviveQid, messageExt.getTopic(), brokerName, messageExt.getQueueId(), messageExt.getQueueOffset());
-                    messageExt.getProperties().putIfAbsent(MessageConst.PROPERTY_POP_CK, ckInfo);
 
-                    // Set retry message topic to origin topic and clear message store size to recode
-                    messageExt.setTopic(requestHeader.getTopic());
-                    messageExt.setStoreSize(0);
-
-                    byte[] encode = MessageDecoder.encode(messageExt, false);
-                    ByteBuffer buffer = ByteBuffer.wrap(encode);
-                    SelectMappedBufferResult tmpResult =
-                        new SelectMappedBufferResult(mappedBuffer.getStartOffset(), buffer, encode.length, null);
-                    getMessageResult.addMessage(tmpResult);
-                } catch (Exception e) {
-                    POP_LOGGER.error("Exception in recode retry message buffer, topic={}", topic, e);
-                }
-            }
-
+            parseGetResult(getMessageResult, requestHeader, topic, reviveQid, popTime, finalOffset, mappedBuffer, messageExtList);
         }
     }
 
+    private void parseGetResult(GetMessageResult getMessageResult, PopMessageRequestHeader requestHeader, String topic, int reviveQid, long popTime, long finalOffset, SelectMappedBufferResult mappedBuffer, List<MessageExt> messageExtList) {
+        String brokerName = broker.getBrokerConfig().getBrokerName();
+        for (MessageExt messageExt : messageExtList) {
+            try {
+                String ckInfo = ExtraInfoUtil.buildExtraInfo(finalOffset, popTime, requestHeader.getInvisibleTime(),
+                    reviveQid, messageExt.getTopic(), brokerName, messageExt.getQueueId(), messageExt.getQueueOffset());
+                messageExt.getProperties().putIfAbsent(MessageConst.PROPERTY_POP_CK, ckInfo);
+
+                // Set retry message topic to origin topic and clear message store size to recode
+                messageExt.setTopic(requestHeader.getTopic());
+                messageExt.setStoreSize(0);
+
+                byte[] encode = MessageDecoder.encode(messageExt, false);
+                ByteBuffer buffer = ByteBuffer.wrap(encode);
+                SelectMappedBufferResult tmpResult =
+                    new SelectMappedBufferResult(mappedBuffer.getStartOffset(), buffer, encode.length, null);
+                getMessageResult.addMessage(tmpResult);
+            } catch (Exception e) {
+                POP_LOGGER.error("Exception in recode retry message buffer, topic={}", topic, e);
+            }
+        }
+    }
     /**
      * get consume offset for pop mode
      *
@@ -805,10 +809,6 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     private boolean isPopShouldStop(String topic, String group, int queueId) {
         return broker.getBrokerConfig().isEnablePopMessageThreshold() &&
             broker.getPopInflightMessageCounter().getGroupPopInFlightMessageNum(topic, group, queueId) > broker.getBrokerConfig().getPopInflightMessageThreshold();
-    }
-
-    public Broker getBrokerController() {
-        return broker;
     }
 
 }
