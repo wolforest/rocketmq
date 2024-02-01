@@ -66,9 +66,8 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
     }
 
     @Override
-    public RemotingCommand processRequest(final ChannelHandlerContext ctx,
-        RemotingCommand request) throws RemotingCommandException {
-        return this.processRequest(ctx.channel(), request, true);
+    public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
+        return this.processRequest(ctx.channel(), request);
     }
 
     @Override
@@ -76,7 +75,7 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
         return false;
     }
 
-    private RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend) throws RemotingCommandException {
+    private RemotingCommand processRequest(final Channel channel, RemotingCommand request) throws RemotingCommandException {
         ChangeInvisibleTimeRequestHeader requestHeader = (ChangeInvisibleTimeRequestHeader) request.decodeCommandCustomHeader(ChangeInvisibleTimeRequestHeader.class);
         RemotingCommand response = createResponse(request);
         ChangeInvisibleTimeResponseHeader responseHeader = (ChangeInvisibleTimeResponseHeader) response.readCustomHeader();
@@ -278,8 +277,7 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
         POP_LOGGER.error("change Invisible, put ack msg fail: {}, {}", ackMsg, putMessageResult);
     }
 
-    private PutMessageResult appendCheckPoint(final ChangeInvisibleTimeRequestHeader requestHeader, int reviveQid,
-        int queueId, long offset, long popTime, String brokerName) {
+    private PutMessageResult appendCheckPoint(final ChangeInvisibleTimeRequestHeader requestHeader, int reviveQid, int queueId, long offset, long popTime, String brokerName) {
         PopCheckPoint ck = createPopCheckPoint(requestHeader, queueId, offset, popTime, brokerName);
         MessageExtBrokerInner msgInner = createCheckPointMessage(reviveQid, ck);
 
@@ -296,8 +294,7 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
         return putMessageResult;
     }
 
-    private PopCheckPoint createPopCheckPoint(ChangeInvisibleTimeRequestHeader requestHeader,
-        int queueId, long offset, long popTime, String brokerName) {
+    private PopCheckPoint createPopCheckPoint(ChangeInvisibleTimeRequestHeader requestHeader, int queueId, long offset, long popTime, String brokerName) {
         PopCheckPoint ck = new PopCheckPoint();
         ck.setBitMap(0);
         ck.setNum((byte) 1);

@@ -303,6 +303,10 @@ public class BrokerConfig extends BrokerIdentity {
     private long reviveInterval = 1000;
     private long reviveMaxSlow = 3;
     private long reviveScanTime = 10000;
+
+    /**
+     * if true: will mock checkPoint for ackMsg
+     */
     private boolean enableSkipLongAwaitingAck = false;
     private long reviveAckWaitMs = TimeUnit.MINUTES.toMillis(3);
     private boolean enablePopLog = false;

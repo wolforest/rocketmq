@@ -318,6 +318,7 @@ public class PopBufferMergeThread extends ServiceThread {
         if (!broker.getBrokerConfig().isEnablePopBufferMerge()) {
             return false;
         }
+
         if (!serving) {
             return false;
         }

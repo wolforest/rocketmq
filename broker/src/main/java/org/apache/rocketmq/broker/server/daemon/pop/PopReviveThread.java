@@ -289,6 +289,15 @@ public class PopReviveThread extends ServiceThread {
         initPopRetryOffset(topic, consumerGroup);
     }
 
+    /**
+     * Get Message from revive queue, and commit offset if
+     *  - offset is illegal
+     *  - there is no matched msgs
+     *
+     * @param offset offset
+     * @param queueId queueId
+     * @return message list
+     */
     protected List<MessageExt> getReviveMessage(long offset, int queueId) {
         PullResult pullResult = getMessage(PopConstants.REVIVE_GROUP, reviveTopic, queueId, offset, 32, true);
         if (pullResult == null) {
@@ -299,7 +308,10 @@ public class PopReviveThread extends ServiceThread {
             if (this.broker.getBrokerConfig().isEnablePopLog()) {
                 POP_LOGGER.info("reviveQueueId={}, reach tail,offset {}", queueId, offset);
             }
-        } else if (pullResult.getPullStatus() == PullStatus.OFFSET_ILLEGAL || pullResult.getPullStatus() == PullStatus.NO_MATCHED_MSG) {
+            return pullResult.getMsgFoundList();
+        }
+
+        if (pullResult.getPullStatus() == PullStatus.OFFSET_ILLEGAL || pullResult.getPullStatus() == PullStatus.NO_MATCHED_MSG) {
             POP_LOGGER.error("reviveQueueId={}, OFFSET_ILLEGAL {}, result is {}", queueId, offset, pullResult);
             if (!shouldRunPopRevive) {
                 POP_LOGGER.info("slave skip offset correct topic={}, reviveQueueId={}", reviveTopic, queueId);
@@ -520,10 +532,13 @@ public class PopReviveThread extends ServiceThread {
         if (broker.getBrokerConfig().isEnablePopLog()) {
             POP_LOGGER.info("reviveQueueId={}, find ack, offset:{}, raw : {}", messageExt.getQueueId(), messageExt.getQueueOffset(), raw);
         }
+
         AckMsg ackMsg = JSON.parseObject(raw, AckMsg.class);
         PopMetricsManager.incPopReviveAckGetCount(ackMsg, queueId);
+
         String mergeKey = PopKeyBuilder.buildReviveKey(ackMsg);
         PopCheckPoint point = context.getMap().get(mergeKey);
+
         if (point == null) {
             if (!broker.getBrokerConfig().isEnableSkipLongAwaitingAck()) {
                 return false;

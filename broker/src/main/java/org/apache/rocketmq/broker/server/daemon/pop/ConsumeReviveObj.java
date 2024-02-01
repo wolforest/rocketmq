@@ -21,6 +21,17 @@ import java.util.HashMap;
 import org.apache.rocketmq.store.api.broker.pop.PopCheckPoint;
 
 public class ConsumeReviveObj {
+    /**
+     * data model
+     * key: PopKeyBuilder.buildReviveKey
+     *      = topic + group + queueId + startOffset + popTime
+     * value: PopCheckPoint
+     *
+     * put by:
+     *  - PopReviveThread.mockCKForAck
+     *    if brokerConfig.enableSkipLongAwaitingAck == true
+     *  - PopReviveThread.parseCheckPointMessage
+     */
     private final HashMap<String, PopCheckPoint> map = new HashMap<>();
     private ArrayList<PopCheckPoint> sortList;
 
