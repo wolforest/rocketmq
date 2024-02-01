@@ -306,6 +306,8 @@ public class PopBufferMergeThread extends ServiceThread {
 
     /**
      * add ackMsg to buffer, ackMsgs will be stored in buffer(memory) and persist periodically
+     * This method will do nothing, in default setting
+     *
      * @renamed from addAk to addAckMsg
      *
      * @param reviveQid reviveQid

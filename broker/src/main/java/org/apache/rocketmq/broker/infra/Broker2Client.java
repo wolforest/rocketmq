@@ -254,24 +254,28 @@ public class Broker2Client {
                 log.warn("[get-consumer-status] the client does not support this feature. channel={}, version={}",
                         RemotingHelper.parseChannelRemoteAddr(entry.getKey()), MQVersion.getVersionDesc(version));
                 return result;
-            } else if (StringUtils.isBlank(originClientId) || originClientId.equals(clientId)) {
-                try {
-                    RemotingCommand response = this.broker.getRemotingServer().invokeSync(entry.getKey(), request, 5000);
-                    assert response != null;
-                    if (response.getCode() == ResponseCode.SUCCESS) {
-                        if (response.getBody() != null) {
-                            GetConsumerStatusBody body = GetConsumerStatusBody.decode(response.getBody(), GetConsumerStatusBody.class);
-                            consumerStatusTable.put(clientId, body.getMessageQueueTable());
-                            log.info("[get-consumer-status] get consumer status success. topic={}, group={}, channelRemoteAddr={}", topic, group, clientId);
-                        }
-                    }
-                } catch (Exception e) {
-                    log.error("[get-consumer-status] get consumer status exception. topic={}, group={}, error={}", topic, group, e.toString());
-                }
+            }
 
-                if (!StringUtils.isBlank(originClientId) && originClientId.equals(clientId)) {
-                    break;
+            if (!StringUtils.isBlank(originClientId) && !originClientId.equals(clientId)) {
+                continue;
+            }
+
+            try {
+                RemotingCommand response = this.broker.getRemotingServer().invokeSync(entry.getKey(), request, 5000);
+                assert response != null;
+                if (response.getCode() == ResponseCode.SUCCESS) {
+                    if (response.getBody() != null) {
+                        GetConsumerStatusBody body = GetConsumerStatusBody.decode(response.getBody(), GetConsumerStatusBody.class);
+                        consumerStatusTable.put(clientId, body.getMessageQueueTable());
+                        log.info("[get-consumer-status] get consumer status success. topic={}, group={}, channelRemoteAddr={}", topic, group, clientId);
+                    }
                 }
+            } catch (Exception e) {
+                log.error("[get-consumer-status] get consumer status exception. topic={}, group={}, error={}", topic, group, e.toString());
+            }
+
+            if (!StringUtils.isBlank(originClientId) && originClientId.equals(clientId)) {
+                break;
             }
         }
 

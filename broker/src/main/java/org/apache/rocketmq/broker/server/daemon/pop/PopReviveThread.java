@@ -543,6 +543,16 @@ public class PopReviveThread extends ServiceThread {
         return true;
     }
 
+    private boolean parseNullCheckPoint(ReviveContext context, MessageExt messageExt, BatchAckMsg bAckMsg, String mergeKey) {
+        if (!broker.getBrokerConfig().isEnableSkipLongAwaitingAck()) {
+            return false;
+        }
+        if (mockCkForAck(messageExt, bAckMsg, mergeKey, context.getMockPointMap()) && context.getFirstRt() == 0) {
+            context.setFirstRt(context.getMockPointMap().get(mergeKey).getReviveTime());
+        }
+        return true;
+    }
+
     private boolean parseBatchAckMessage(ReviveContext context, MessageExt messageExt) {
         String raw = new String(messageExt.getBody(), DataConverter.CHARSET_UTF8);
         if (broker.getBrokerConfig().isEnablePopLog()) {
@@ -554,13 +564,7 @@ public class PopReviveThread extends ServiceThread {
         String mergeKey = PopKeyBuilder.buildReviveKey(bAckMsg);
         PopCheckPoint point = context.getMap().get(mergeKey);
         if (point == null) {
-            if (!broker.getBrokerConfig().isEnableSkipLongAwaitingAck()) {
-                return false;
-            }
-            if (mockCkForAck(messageExt, bAckMsg, mergeKey, context.getMockPointMap()) && context.getFirstRt() == 0) {
-                context.setFirstRt(context.getMockPointMap().get(mergeKey).getReviveTime());
-            }
-            return true;
+            return parseNullCheckPoint(context, messageExt, bAckMsg, mergeKey);
         }
 
         List<Long> ackOffsetList = bAckMsg.getAckOffsetList();

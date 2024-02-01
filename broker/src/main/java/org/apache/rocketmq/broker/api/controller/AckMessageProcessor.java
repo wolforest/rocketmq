@@ -61,9 +61,8 @@ public class AckMessageProcessor implements NettyRequestProcessor {
     }
 
     @Override
-    public RemotingCommand processRequest(final ChannelHandlerContext ctx,
-                                          RemotingCommand request) throws RemotingCommandException {
-        return this.processRequest(ctx.channel(), request, true);
+    public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
+        return this.processRequest(ctx.channel(), request);
     }
 
     @Override
@@ -71,7 +70,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         return false;
     }
 
-    private RemotingCommand processRequest(final Channel channel, RemotingCommand request, boolean brokerAllowSuspend) throws RemotingCommandException {
+    private RemotingCommand processRequest(final Channel channel, RemotingCommand request) throws RemotingCommandException {
         if (request.getCode() == RequestCode.ACK_MESSAGE) {
             return handleAckMessage(channel, request);
         } else if (request.getCode() == RequestCode.BATCH_ACK_MESSAGE) {
@@ -189,16 +188,18 @@ public class AckMessageProcessor implements NettyRequestProcessor {
 
         PopInflightMessageCounter messageCounter = broker.getPopInflightMessageCounter();
         PopBufferMergeThread ackService = this.broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
+
+        // this action will do nothing in default setting
         if (ackService.addAckMsg(rqId, ackMsg)) {
             messageCounter.decrementInFlightMessageNum(ackMsg.getTopic(), ackMsg.getConsumerGroup(), ackMsg.getPopTime(), ackMsg.getQueueId(), msgCount);
             return;
         }
 
         // double ack, if the foregoing ack failed, convert ack to msg and put the message to revive queue
+        // async ack: enqueue ack msg to revive queue, the msg will be processed by (PopReviveThread)PopReviveService
         MessageExtBrokerInner msgInner = initMessageInner(ackMsg, requestHeader, batchAck);
         PutMessageResult putMessageResult = this.broker.getEscapeBridge().putMessageToSpecificQueue(msgInner);
         logPutMessageResult(putMessageResult);
-
 
         PopMetricsManager.incPopReviveAckPutCount(ackMsg, putMessageResult.getPutMessageStatus());
         messageCounter.decrementInFlightMessageNum(ackMsg.getTopic(), ackMsg.getConsumerGroup(), ackMsg.getPopTime(), ackMsg.getQueueId(), msgCount);

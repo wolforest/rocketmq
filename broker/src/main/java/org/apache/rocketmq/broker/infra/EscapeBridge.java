@@ -123,6 +123,8 @@ public class EscapeBridge {
     }
 
     /**
+     * depends on config(!canNotEscape())
+     *
      * called by
      *  - TransactionalMessageBridge
      *  - TimerMessageStore
@@ -136,7 +138,7 @@ public class EscapeBridge {
             return masterBroker.getMessageStore().putMessage(messageExt);
         }
 
-        if (!canEscape()) {
+        if (canNotEscape()) {
             LOG.warn("Put message failed, enableSlaveActingMaster={}, enableRemoteEscape={}.",
                 this.broker.getBrokerConfig().isEnableSlaveActingMaster(), this.broker.getBrokerConfig().isEnableRemoteEscape());
             return new PutMessageResult(PutMessageStatus.SERVICE_NOT_AVAILABLE, null);
@@ -153,6 +155,8 @@ public class EscapeBridge {
     }
 
     /**
+     * depends on config(!canNotEscape())
+     *
      * called by DeliverDelayedMessageTimerTask
      * @param messageExt msg
      * @return future result
@@ -163,7 +167,7 @@ public class EscapeBridge {
             return masterBroker.getMessageStore().asyncPutMessage(messageExt);
         }
 
-        if (!canEscape()) {
+        if (canNotEscape()) {
             LOG.warn("Put message failed, enableSlaveActingMaster={}, enableRemoteEscape={}.",
                 this.broker.getBrokerConfig().isEnableSlaveActingMaster(), this.broker.getBrokerConfig().isEnableRemoteEscape());
             return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.SERVICE_NOT_AVAILABLE, null));
@@ -195,6 +199,8 @@ public class EscapeBridge {
     }
 
     /**
+     * depends on config(!canNotEscape())
+     *
      * called by
      *  - AckMessageProcessor
      *  - ChangeInvisibleTimeProcessor
@@ -210,7 +216,7 @@ public class EscapeBridge {
             return masterBroker.getMessageStore().putMessage(messageExt);
         }
 
-        if (!canEscape()) {
+        if (canNotEscape()) {
             LOG.warn("Put message to specific queue failed, enableSlaveActingMaster={}, enableRemoteEscape={}.", this.broker.getBrokerConfig().isEnableSlaveActingMaster(), this.broker.getBrokerConfig().isEnableRemoteEscape());
             return new PutMessageResult(PutMessageStatus.SERVICE_NOT_AVAILABLE, null);
         }
@@ -349,16 +355,16 @@ public class EscapeBridge {
         return getMessageFromRemoteAsync(topic, offset, queueId, brokerName).join();
     }
 
-    private boolean canEscape() {
+    private boolean canNotEscape() {
         if (!this.broker.getBrokerConfig().isEnableSlaveActingMaster()) {
-            return false;
+            return true;
         }
 
-        return this.broker.getBrokerConfig().isEnableRemoteEscape();
+        return !this.broker.getBrokerConfig().isEnableRemoteEscape();
     }
 
     private void initAsyncSenderExecutor() {
-        if (!canEscape()) {
+        if (canNotEscape()) {
             return;
         }
 
