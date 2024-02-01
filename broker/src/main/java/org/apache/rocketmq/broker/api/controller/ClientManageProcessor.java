@@ -46,7 +46,7 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 
 /**
- * handle client heartbeat、unregister, checkClientConfig requests
+ * handle client heartbeat,unregister,checkClientConfig requests
  * in heartbeat:
  *  - registerProducer
  *  - registerConsumer
