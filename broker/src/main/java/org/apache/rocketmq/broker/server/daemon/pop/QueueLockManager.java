@@ -20,10 +20,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.api.controller.PopMessageProcessor;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.PopConstants;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
-import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
@@ -79,9 +78,7 @@ public class QueueLockManager extends ServiceThread {
 
             if (System.currentTimeMillis() - entry.getValue().getLockTime() > usedExpireMillis) {
                 iterator.remove();
-                POP_LOGGER.info("Remove unused queue lock: {}, {}, {}", entry.getKey(),
-                    entry.getValue().getLockTime(),
-                    entry.getValue().isLock());
+                POP_LOGGER.info("Remove unused queue lock: {}, {}, {}", entry.getKey(), entry.getValue().getLockTime(), entry.getValue().isLock());
             }
 
             total++;
@@ -103,9 +100,8 @@ public class QueueLockManager extends ServiceThread {
 
     @Override
     public String getServiceName() {
-        PopMessageProcessor popMessageProcessor = broker.getBrokerNettyServer().getPopMessageProcessor();
-        if (popMessageProcessor.getBrokerController().getBrokerConfig().isInBrokerContainer()) {
-            return popMessageProcessor.getBrokerController().getBrokerIdentity().getIdentifier() + QueueLockManager.class.getSimpleName();
+        if (broker.getBrokerConfig().isInBrokerContainer()) {
+            return broker.getBrokerIdentity().getIdentifier() + QueueLockManager.class.getSimpleName();
         }
         return QueueLockManager.class.getSimpleName();
     }
