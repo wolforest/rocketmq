@@ -66,10 +66,10 @@ import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LA
 import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LABEL_TOPIC;
 
 /**
- *
- *
  * this is a standalone thread service, do not accept any input
  * only api is the run method
+ *
+ * @renamed from PopReviveService to PopReviveThread
  */
 public class PopReviveThread extends ServiceThread {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
