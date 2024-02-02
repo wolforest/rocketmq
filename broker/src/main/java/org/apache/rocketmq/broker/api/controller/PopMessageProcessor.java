@@ -22,6 +22,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.FileRegion;
 import io.netty.util.concurrent.Future;
 import io.opentelemetry.api.common.Attributes;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterData;
 import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterManager;
 import org.apache.rocketmq.broker.domain.metadata.filter.ExpressionMessageFilter;
@@ -349,15 +351,14 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private TopicConfig getTopicConfig(boolean needRetryV1, PopMessageRequestHeader requestHeader) {
-        TopicConfig topicConfig;
+        String retryTopic;
         if (needRetryV1) {
-            String retryTopic = KeyBuilder.buildPopRetryTopicV1(requestHeader.getTopic(), requestHeader.getConsumerGroup());
-            topicConfig = this.broker.getTopicConfigManager().selectTopicConfig(retryTopic);
+            retryTopic = KeyBuilder.buildPopRetryTopicV1(requestHeader.getTopic(), requestHeader.getConsumerGroup());
         } else {
-            String retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup(), broker.getBrokerConfig().isEnableRetryTopicV2());
-            topicConfig = this.broker.getTopicConfigManager().selectTopicConfig(retryTopic);
+            retryTopic = KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup(), broker.getBrokerConfig().isEnableRetryTopicV2());
         }
-        return topicConfig;
+
+        return this.broker.getTopicConfigManager().selectTopicConfig(retryTopic);
     }
 
     private boolean handlePollingAction(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse, long restNum) {
@@ -519,8 +520,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             future.whenComplete((result, throwable) -> queueLockManager.unLock(lockKey));
             offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), true, lockKey, true);
 
-            if (requestHeader.isOrder() && broker.getConsumerOrderInfoManager().checkBlock(attemptId, topic,
-                requestHeader.getConsumerGroup(), queueId, requestHeader.getInvisibleTime())) {
+            if (requestHeader.isOrder() && broker.getConsumerOrderInfoManager().checkBlock(attemptId, topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInvisibleTime())) {
                 future.complete(this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum);
                 return future;
             }
@@ -544,60 +544,74 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         AtomicLong atomicOffset = new AtomicLong(offset);
         int maxMsgNums = requestHeader.getMaxMsgNums() - getMessageResult.getMessageMapedList().size();
         long finalOffset = offset;
-        return this.broker.getMessageStore()
-            .getMessageAsync(requestHeader.getConsumerGroup(), topic, queueId, offset, maxMsgNums, messageFilter)
-            .thenCompose(result -> {
-                if (result == null) {
-                    return CompletableFuture.completedFuture(null);
-                }
-                // maybe store offset is not correct.
-                if (GetMessageStatus.OFFSET_TOO_SMALL.equals(result.getStatus())
-                    || GetMessageStatus.OFFSET_OVERFLOW_BADLY.equals(result.getStatus())
-                    || GetMessageStatus.OFFSET_FOUND_NULL.equals(result.getStatus())) {
-                    // commit offset, because the offset is not correct
-                    // If offset in store is greater than cq offset, it will cause duplicate messages,
-                    // because offset in PopBuffer is not committed.
-                    POP_LOGGER.warn("Pop initial offset, because store is no correct, {}, {}->{}", lockKey, atomicOffset.get(), result.getNextBeginOffset());
-                    this.broker.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic, queueId, result.getNextBeginOffset());
-                    atomicOffset.set(result.getNextBeginOffset());
-                    return this.broker.getMessageStore().getMessageAsync(requestHeader.getConsumerGroup(), topic, queueId, atomicOffset.get(), requestHeader.getMaxMsgNums() - getMessageResult.getMessageMapedList().size(), messageFilter);
-                }
-                return CompletableFuture.completedFuture(result);
-            }).thenApply(result -> {
-                if (result == null) {
-                    atomicRestNum.set(broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - atomicOffset.get() + atomicRestNum.get());
-                    return atomicRestNum.get();
-                }
+        return this.broker.getMessageStore().getMessageAsync(requestHeader.getConsumerGroup(), topic, queueId, offset, maxMsgNums, messageFilter)
+            .thenCompose(createComposeCallback(channel, requestHeader, getMessageResult, topic, lockKey, atomicOffset, queueId, messageFilter))
+            .thenApply(createApplyCallback(channel, requestHeader, getMessageResult, topic, atomicOffset, atomicRestNum, queueId, reviveQid, popTime, isRetry, finalOffset, startOffsetInfo, msgOffsetInfo, orderCountInfo))
+            .whenComplete(createCompleteCallback(queueLockManager, lockKey));
+    }
 
-                if (result.getMessageMapedList().isEmpty()) {
-                    handleEmptyGetResult(result, requestHeader, topic, queueId, reviveQid, popTime, finalOffset);
-                } else {
-                    updatePopMetrics(result, requestHeader, topic, isRetry);
+    private BiConsumer<Long, Throwable> createCompleteCallback(QueueLockManager queueLockManager, String lockKey) {
+        return (result, throwable) -> {
+            if (throwable != null) {
+                POP_LOGGER.error("Pop message error, {}", lockKey, throwable);
+            }
+            queueLockManager.unLock(lockKey);
+        };
+    }
 
-                    if (requestHeader.isOrder()) {
-                        this.broker.getConsumerOrderInfoManager().update(requestHeader.getAttemptId(), isRetry, topic, requestHeader.getConsumerGroup(), queueId, popTime, requestHeader.getInvisibleTime(), result.getMessageQueueOffset(), orderCountInfo);
-                        this.broker.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic, queueId, finalOffset);
-                    } else {
-                        if (!appendCheckPoint(requestHeader, topic, reviveQid, queueId, finalOffset, result, popTime, this.broker.getBrokerConfig().getBrokerName())) {
-                            return atomicRestNum.get() + result.getMessageCount();
-                        }
-                    }
-                    ExtraInfoUtil.buildStartOffsetInfo(startOffsetInfo, topic, queueId, finalOffset);
-                    ExtraInfoUtil.buildMsgOffsetInfo(msgOffsetInfo, topic, queueId, result.getMessageQueueOffset());
-                }
-
-                atomicRestNum.set(result.getMaxOffset() - result.getNextBeginOffset() + atomicRestNum.get());
-
-                parseGetResult(result, getMessageResult, requestHeader, topic, isRetry, reviveQid, popTime, finalOffset);
-
-                this.broker.getPopInflightMessageCounter().incrementInFlightMessageNum(topic, requestHeader.getConsumerGroup(), queueId, result.getMessageCount());
+    private Function<GetMessageResult, Long> createApplyCallback(Channel channel, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, String topic,
+        AtomicLong atomicOffset, AtomicLong atomicRestNum, int queueId, int reviveQid, long popTime, boolean isRetry, long finalOffset, StringBuilder startOffsetInfo, StringBuilder msgOffsetInfo, StringBuilder orderCountInfo) {
+        return result -> {
+            if (result == null) {
+                atomicRestNum.set(broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - atomicOffset.get() + atomicRestNum.get());
                 return atomicRestNum.get();
-            }).whenComplete((result, throwable) -> {
-                if (throwable != null) {
-                    POP_LOGGER.error("Pop message error, {}", lockKey, throwable);
+            }
+
+            if (result.getMessageMapedList().isEmpty()) {
+                handleEmptyGetResult(result, requestHeader, topic, queueId, reviveQid, popTime, finalOffset);
+            } else {
+                updatePopMetrics(result, requestHeader, topic, isRetry);
+
+                if (requestHeader.isOrder()) {
+                    this.broker.getConsumerOrderInfoManager().update(requestHeader.getAttemptId(), isRetry, topic, requestHeader.getConsumerGroup(), queueId, popTime, requestHeader.getInvisibleTime(), result.getMessageQueueOffset(), orderCountInfo);
+                    this.broker.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic, queueId, finalOffset);
+                } else {
+                    if (!appendCheckPoint(requestHeader, topic, reviveQid, queueId, finalOffset, result, popTime, this.broker.getBrokerConfig().getBrokerName())) {
+                        return atomicRestNum.get() + result.getMessageCount();
+                    }
                 }
-                queueLockManager.unLock(lockKey);
-            });
+                ExtraInfoUtil.buildStartOffsetInfo(startOffsetInfo, topic, queueId, finalOffset);
+                ExtraInfoUtil.buildMsgOffsetInfo(msgOffsetInfo, topic, queueId, result.getMessageQueueOffset());
+            }
+
+            atomicRestNum.set(result.getMaxOffset() - result.getNextBeginOffset() + atomicRestNum.get());
+
+            parseGetResult(result, getMessageResult, requestHeader, topic, isRetry, reviveQid, popTime, finalOffset);
+
+            this.broker.getPopInflightMessageCounter().incrementInFlightMessageNum(topic, requestHeader.getConsumerGroup(), queueId, result.getMessageCount());
+            return atomicRestNum.get();
+        };
+    }
+
+    private Function<GetMessageResult, CompletableFuture<GetMessageResult>> createComposeCallback(Channel channel, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, String topic, String lockKey, AtomicLong atomicOffset, int queueId, ExpressionMessageFilter messageFilter) {
+        return result -> {
+            if (result == null) {
+                return CompletableFuture.completedFuture(null);
+            }
+            // maybe store offset is not correct.
+            if (GetMessageStatus.OFFSET_TOO_SMALL.equals(result.getStatus())
+                || GetMessageStatus.OFFSET_OVERFLOW_BADLY.equals(result.getStatus())
+                || GetMessageStatus.OFFSET_FOUND_NULL.equals(result.getStatus())) {
+                // commit offset, because the offset is not correct
+                // If offset in store is greater than cq offset, it will cause duplicate messages,
+                // because offset in PopBuffer is not committed.
+                POP_LOGGER.warn("Pop initial offset, because store is no correct, {}, {}->{}", lockKey, atomicOffset.get(), result.getNextBeginOffset());
+                this.broker.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic, queueId, result.getNextBeginOffset());
+                atomicOffset.set(result.getNextBeginOffset());
+                return this.broker.getMessageStore().getMessageAsync(requestHeader.getConsumerGroup(), topic, queueId, atomicOffset.get(), requestHeader.getMaxMsgNums() - getMessageResult.getMessageMapedList().size(), messageFilter);
+            }
+            return CompletableFuture.completedFuture(result);
+        };
     }
 
     private void updatePopMetrics(GetMessageResult result, PopMessageRequestHeader requestHeader, String topic, boolean isRetry) {
@@ -670,6 +684,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
     /**
      * get consume offset for pop mode
+     * called by this.popMsgFromQueue()
      *
      * @param topic topic
      * @param group group
@@ -680,17 +695,17 @@ public class PopMessageProcessor implements NettyRequestProcessor {
      * @param checkResetOffset flag of whether resetPopOffset
      * @return offset
      */
-    private long getPopOffset(String topic, String group, int queueId, int initMode, boolean init, String lockKey,
-        boolean checkResetOffset) {
-
+    private long getPopOffset(String topic, String group, int queueId, int initMode, boolean init, String lockKey, boolean checkResetOffset) {
         long offset = this.broker.getConsumerOffsetManager().queryOffset(group, topic, queueId);
         if (offset < 0) {
             //the first time consume, pop the latest message
             offset = this.getInitOffset(topic, group, queueId, initMode, init);
         }
 
+        // before lock checkResetOffset is false
+        // after lock checkResetOffset is true
         if (checkResetOffset) {
-            // admin related feature, can ignore
+            //admin related feature
             Long resetOffset = resetPopOffset(topic, group, queueId);
             if (resetOffset != null) {
                 return resetOffset;
@@ -714,8 +729,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         long offset = getMaxOffset(topic, queueId);
 
         if (init) {
-            this.broker.getConsumerOffsetManager().commitOffset(
-                "getPopOffset", group, topic, queueId, offset);
+            this.broker.getConsumerOffsetManager().commitOffset("getPopOffset", group, topic, queueId, offset);
         }
         return offset;
     }
@@ -742,7 +756,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         final PopCheckPoint ck = buildCheckPoint(requestHeader, topic, queueId, offset, getMessageTmpResult, popTime, brokerName);
 
-        // add check point msg to revive log
+        //in default setting, this process will be skipped
+        //add check point msg to revive log
         PopBufferMergeThread ackService = broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
         if (ackService.addCheckPoint(ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset())) {
             return true;
@@ -772,6 +787,19 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return ck;
     }
 
+    /**
+     * if reset offset was not set by admin, do nothing,
+     * else get reset offset, then
+     *  - remove offset from ConsumeOffsetManager.resetOffsetTable
+     *  - clear orderInfor block
+     *  - clear pop buffer merge service's offset queue
+     *  - commit offset
+     *
+     * @param topic topic
+     * @param group group
+     * @param queueId queueId
+     * @return offset
+     */
     private Long resetPopOffset(String topic, String group, int queueId) {
         String lockKey = KeyBuilder.buildConsumeKey(topic, group, queueId);
         Long resetOffset = this.broker.getConsumerOffsetManager().queryThenEraseResetOffset(topic, group, queueId);
@@ -782,6 +810,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         this.broker.getConsumerOrderInfoManager().clearBlock(topic, group, queueId);
         this.broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService().clearOffsetQueue(lockKey);
+
         this.broker.getConsumerOffsetManager().commitOffset("ResetPopOffset", group, topic, queueId, resetOffset);
         return resetOffset;
     }
