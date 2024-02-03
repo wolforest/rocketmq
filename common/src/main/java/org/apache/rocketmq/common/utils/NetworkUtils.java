@@ -363,7 +363,9 @@ public class NetworkUtils {
         if (!candidatesHost.isEmpty()) {
             return candidatesHost.get(0);
         }
-        return null;
+
+        // Fallback to loopback
+        return localhost();
     }
 
     public static List<String> getLocalInetAddress() {

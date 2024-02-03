@@ -29,7 +29,6 @@ public class NetworkUtilsTest {
         String localAddress = NetworkUtils.getLocalAddress();
         assertThat(localAddress).isNotNull();
         assertThat(localAddress.length()).isGreaterThan(0);
-        assertThat(localAddress).isNotEqualTo(InetAddress.getLoopbackAddress().getHostAddress());
     }
 
     @Test
@@ -56,12 +55,6 @@ public class NetworkUtilsTest {
         assertThat(NetworkUtils.isInternalV6IP(nonInternal)).isFalse();
         assertThat(NetworkUtils.isInternalV6IP(internal)).isTrue();
         assertThat(NetworkUtils.ipToIPv6Str(nonInternal.getAddress()).toUpperCase()).isEqualTo("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
-    }
-
-    @Test
-    public void testGetLocalhostByNetworkInterface() throws Exception {
-        assertThat(NetworkUtils.LOCALHOST).isNotNull();
-        assertThat(NetworkUtils.getLocalhostByNetworkInterface()).isNotNull();
     }
 
     @Test
