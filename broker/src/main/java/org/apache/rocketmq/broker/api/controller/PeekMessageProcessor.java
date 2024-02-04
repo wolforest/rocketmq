@@ -129,6 +129,8 @@ public class PeekMessageProcessor implements NettyRequestProcessor {
             response.setRemark("subscription group no permission, " + requestHeader.getConsumerGroup());
             return response;
         }
+
+        final long beginTimeMills = TimeUtils.now();
         int randomQ = random.nextInt(100);
         int reviveQid = randomQ % this.broker.getBrokerConfig().getReviveQueueNum();
         GetMessageResult getMessageResult = new GetMessageResult(requestHeader.getMaxMsgNums());
@@ -189,7 +191,6 @@ public class PeekMessageProcessor implements NettyRequestProcessor {
                 this.broker.getBrokerStatsManager().incBrokerGetNums(requestHeader.getTopic(), getMessageResult.getMessageCount());
 
                 if (this.broker.getBrokerConfig().isTransferMsgByHeap()) {
-                    final long beginTimeMills = TimeUtils.now();
                     final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
                     this.broker.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
                         requestHeader.getTopic(), requestHeader.getQueueId(),

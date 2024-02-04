@@ -145,18 +145,19 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             return response;
         }
 
+        final long beginTimeMills = TimeUtils.now();
         final boolean useResetOffsetFeature = broker.getBrokerConfig().isUseServerSideResetOffset();
         Long resetOffset = broker.getConsumerOffsetManager().queryThenEraseResetOffset(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
         if (useResetOffsetFeature && null != resetOffset) {
-            return handlePullResult(resetOffset, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
+            return handlePullResult(resetOffset, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext, beginTimeMills);
         }
 
         long broadcastInitOffset = queryBroadcastPullInitOffset(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId(), requestHeader, channel);
         if (broadcastInitOffset >= 0) {
-            return handleBroadcastResult(broadcastInitOffset, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
+            return handleBroadcastResult(broadcastInitOffset, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext, beginTimeMills);
         }
 
-        return handleAsyncResult(request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
+        return handleAsyncResult(request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext, beginTimeMills);
     }
 
     private void prepareRequestHeader(PullMessageRequestHeader requestHeader, LogicQueueMappingItem mappingItem) {
@@ -609,7 +610,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand handleAsyncResult(RemotingCommand request, PullMessageRequestHeader requestHeader, Channel channel, SubscriptionData subscriptionData,
-                                              SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext) {
+                                              SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext, long beginTimeMills) {
         broker.getMessageStore().getMessageAsync(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), requestHeader.getQueueOffset(), requestHeader.getMaxMsgNums(), messageFilter)
         .thenApply(result -> {
             if (null == result) {
@@ -617,22 +618,22 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             }
 
             broker.getColdDataCgCtrService().coldAcc(requestHeader.getConsumerGroup(), result.getColdDataSum());
-            return pullMessageResultHandler.handle(result, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
+            return pullMessageResultHandler.handle(result, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext, beginTimeMills);
         })
         .thenAccept(result -> NettyRemotingAbstract.writeResponse(channel, request, result));
 
         return null;
     }
 
-    private RemotingCommand handleBroadcastResult(Long broadcastInitOffset, RemotingCommand request, PullMessageRequestHeader requestHeader, Channel channel, SubscriptionData subscriptionData, SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext) {
+    private RemotingCommand handleBroadcastResult(Long broadcastInitOffset, RemotingCommand request, PullMessageRequestHeader requestHeader, Channel channel, SubscriptionData subscriptionData, SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext, long beginTimeMills) {
         GetMessageResult getMessageResult = new GetMessageResult();
         getMessageResult.setStatus(GetMessageStatus.OFFSET_RESET);
         getMessageResult.setNextBeginOffset(broadcastInitOffset);
 
-        return this.pullMessageResultHandler.handle(getMessageResult, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
+        return this.pullMessageResultHandler.handle(getMessageResult, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext, beginTimeMills);
     }
 
-    private RemotingCommand handlePullResult(Long resetOffset, RemotingCommand request, PullMessageRequestHeader requestHeader, Channel channel, SubscriptionData subscriptionData, SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext) {
+    private RemotingCommand handlePullResult(Long resetOffset, RemotingCommand request, PullMessageRequestHeader requestHeader, Channel channel, SubscriptionData subscriptionData, SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext, long beginTimeMills) {
         GetMessageResult getMessageResult = new GetMessageResult();
         getMessageResult.setStatus(GetMessageStatus.OFFSET_RESET);
         getMessageResult.setNextBeginOffset(resetOffset);
@@ -640,7 +641,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
         getMessageResult.setMaxOffset(broker.getMessageStore().getMaxOffsetInQueue(requestHeader.getTopic(), requestHeader.getQueueId()));
         getMessageResult.setSuggestPullingFromSlave(false);
 
-        return this.pullMessageResultHandler.handle(getMessageResult, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext);
+        return this.pullMessageResultHandler.handle(getMessageResult, request, requestHeader, channel, subscriptionData, subscriptionGroupConfig, brokerAllowSuspend, messageFilter, response, mappingContext, beginTimeMills);
     }
 
     protected boolean hasConsumeMessageHook() {

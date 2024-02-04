@@ -75,7 +75,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
     }
 
     @Override
-    public RemotingCommand handle(final GetMessageResult getMessageResult, final RemotingCommand request, final PullMessageRequestHeader requestHeader, final Channel channel, final SubscriptionData subscriptionData, final SubscriptionGroupConfig subscriptionGroupConfig, final boolean brokerAllowSuspend, final MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext) {
+    public RemotingCommand handle(final GetMessageResult getMessageResult, final RemotingCommand request, final PullMessageRequestHeader requestHeader, final Channel channel, final SubscriptionData subscriptionData, final SubscriptionGroupConfig subscriptionGroupConfig, final boolean brokerAllowSuspend, final MessageFilter messageFilter, RemotingCommand response, TopicQueueMappingContext mappingContext, long beginTimeMills) {
         PullMessageProcessor processor = broker.getBrokerNettyServer().getPullMessageProcessor();
         final String clientAddress = RemotingHelper.parseChannelRemoteAddr(channel);
         TopicConfig topicConfig = this.broker.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
@@ -97,13 +97,13 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         processor.updateBroadcastPulledOffset(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId(), requestHeader, channel, response, getMessageResult.getNextBeginOffset());
         processor.tryCommitOffset(brokerAllowSuspend, requestHeader, getMessageResult.getNextBeginOffset(), clientAddress);
 
-        return formatResponseByCode(requestHeader, request, subscriptionGroupConfig, brokerAllowSuspend, channel, response, responseHeader, subscriptionData, messageFilter, getMessageResult);
+        return formatResponseByCode(requestHeader, request, subscriptionGroupConfig, brokerAllowSuspend, channel, response, responseHeader, subscriptionData, messageFilter, getMessageResult, beginTimeMills);
     }
 
-    private RemotingCommand formatResponseByCode(PullMessageRequestHeader requestHeader, RemotingCommand request, SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, Channel channel, RemotingCommand response,  PullMessageResponseHeader responseHeader, SubscriptionData subscriptionData, MessageFilter messageFilter, GetMessageResult getMessageResult) {
+    private RemotingCommand formatResponseByCode(PullMessageRequestHeader requestHeader, RemotingCommand request, SubscriptionGroupConfig subscriptionGroupConfig, boolean brokerAllowSuspend, Channel channel, RemotingCommand response,  PullMessageResponseHeader responseHeader, SubscriptionData subscriptionData, MessageFilter messageFilter, GetMessageResult getMessageResult, long beginTimeMills) {
         switch (response.getCode()) {
             case ResponseCode.SUCCESS:
-                return handleSuccess(requestHeader, request, channel, response, getMessageResult);
+                return handleSuccess(requestHeader, request, channel, response, getMessageResult, beginTimeMills);
             case ResponseCode.PULL_NOT_FOUND:
                 if (!handlePullNotFound(requestHeader, brokerAllowSuspend, request, channel, subscriptionData, messageFilter)) {
                     return null;
@@ -121,7 +121,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         return response;
     }
 
-    private RemotingCommand handleSuccess(PullMessageRequestHeader requestHeader, RemotingCommand request, Channel channel, RemotingCommand response, GetMessageResult getMessageResult) {
+    private RemotingCommand handleSuccess(PullMessageRequestHeader requestHeader, RemotingCommand request, Channel channel, RemotingCommand response, GetMessageResult getMessageResult, long beginTimeMills) {
         this.broker.getBrokerStatsManager().incGroupGetNums(requestHeader.getConsumerGroup(), requestHeader.getTopic(), getMessageResult.getMessageCount());
         this.broker.getBrokerStatsManager().incGroupGetSize(requestHeader.getConsumerGroup(), requestHeader.getTopic(), getMessageResult.getBufferTotalSize());
         this.broker.getBrokerStatsManager().incBrokerGetNums(requestHeader.getTopic(), getMessageResult.getMessageCount());
@@ -143,7 +143,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         }
 
         if (this.broker.getBrokerConfig().isTransferMsgByHeap()) {
-            return handleTransferMsgByHeap(requestHeader, response, getMessageResult);
+            return handleTransferMsgByHeap(requestHeader, response, getMessageResult, beginTimeMills);
         } else {
             return handleSuccessMsg(request, channel, response, getMessageResult);
         }
@@ -172,8 +172,7 @@ public class DefaultPullMessageResultHandler implements PullMessageResultHandler
         return null;
     }
 
-    private RemotingCommand handleTransferMsgByHeap(PullMessageRequestHeader requestHeader, RemotingCommand response, GetMessageResult getMessageResult) {
-        final long beginTimeMills = TimeUtils.now();
+    private RemotingCommand handleTransferMsgByHeap(PullMessageRequestHeader requestHeader, RemotingCommand response, GetMessageResult getMessageResult, long beginTimeMills) {
         final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
         this.broker.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(),
             requestHeader.getTopic(), requestHeader.getQueueId(), (int) (TimeUtils.now() - beginTimeMills));

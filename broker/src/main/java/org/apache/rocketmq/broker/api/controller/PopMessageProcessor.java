@@ -131,9 +131,10 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         int reviveQid = getReviveQid(requestHeader);
         long popTime = System.currentTimeMillis();
 
+        final long beginTimeMills = TimeUtils.now();
         GetMessageResult getMessageResult = new GetMessageResult(requestHeader.getMaxMsgNums());
         CompletableFuture<Long> getMessageFuture = popMessage(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime);
-        bindGetMessageFutureCallback(ctx, requestHeader, getMessageResult, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime, getMessageFuture, response, request);
+        bindGetMessageFutureCallback(ctx, requestHeader, getMessageResult, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime, getMessageFuture, response, request, beginTimeMills);
 
         return null;
     }
@@ -398,9 +399,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
     }
 
-    private boolean handleSuccessResponse(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse) {
+    private boolean handleSuccessResponse(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse, long beginTimeMills) {
         if (this.broker.getBrokerConfig().isTransferMsgByHeap()) {
-            final long beginTimeMills = TimeUtils.now();
             final byte[] r = this.readGetMessageResult(getMessageResult, requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId());
             this.broker.getBrokerStatsManager().incGroupGetLatency(requestHeader.getConsumerGroup(), requestHeader.getTopic(), requestHeader.getQueueId(), (int) (TimeUtils.now() - beginTimeMills));
             finalResponse.setBody(r);
@@ -436,19 +436,19 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         RemotingMetricsManager.rpcLatency.record(request.getProcessTimer().elapsed(TimeUnit.MILLISECONDS), attributes);
     }
 
-    private RemotingCommand handleFutureResponse(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse) {
+    private RemotingCommand handleFutureResponse(ChannelHandlerContext ctx, RemotingCommand request, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, RemotingCommand finalResponse, long beginTimeMills) {
         if (finalResponse.getCode() != ResponseCode.SUCCESS) {
             return finalResponse;
         }
 
-        if (!handleSuccessResponse(ctx, request, requestHeader, getMessageResult, finalResponse)) {
+        if (!handleSuccessResponse(ctx, request, requestHeader, getMessageResult, finalResponse, beginTimeMills)) {
             return null;
         }
         return finalResponse;
     }
 
     private void bindGetMessageFutureCallback(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, StringBuilder startOffsetInfo,
-        StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, CompletableFuture<Long> getMessageFuture, RemotingCommand response, RemotingCommand request) {
+        StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, CompletableFuture<Long> getMessageFuture, RemotingCommand response, RemotingCommand request, long beginTimeMills) {
 
         final PopMessageResponseHeader responseHeader = (PopMessageResponseHeader) response.readCustomHeader();
         final RemotingCommand finalResponse = response;
@@ -460,7 +460,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             initResponseHeader(responseHeader, requestHeader, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo, reviveQid, popTime, restNum);
             finalResponse.setRemark(getMessageResult.getStatus().name());
 
-            return handleFutureResponse(ctx, request, requestHeader, getMessageResult, finalResponse);
+            return handleFutureResponse(ctx, request, requestHeader, getMessageResult, finalResponse, beginTimeMills);
         }).thenAccept(result -> NettyRemotingAbstract.writeResponse(ctx.channel(), request, result));
     }
 
