@@ -109,10 +109,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         RemotingCommand response = RemotingCommand.createResponseCommand(PopMessageResponseHeader.class);
         PopMessageRequestHeader requestHeader = (PopMessageRequestHeader) request.decodeCommandCustomHeader(PopMessageRequestHeader.class, true);
 
-        StringBuilder startOffsetInfo = new StringBuilder(64);
-        StringBuilder msgOffsetInfo = new StringBuilder(64);
-        // if not consume orderly, orderCountInfo = null
-        StringBuilder orderCountInfo = initOrderCountInfo(requestHeader);
+
 
         initRequestAndResponse(request, response, requestHeader);
         if (!allowAccess(requestHeader, ctx.channel(), response)) {
@@ -130,11 +127,15 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         int reviveQid = getReviveQid(requestHeader);
         long popTime = System.currentTimeMillis();
+        long beginTimeMills = TimeUtils.now();
+        StringBuilder startOffsetInfo = new StringBuilder(64);
+        StringBuilder msgOffsetInfo = new StringBuilder(64);
+        StringBuilder orderCountInfo = initOrderCountInfo(requestHeader);
 
-        final long beginTimeMills = TimeUtils.now();
         GetMessageResult getMessageResult = new GetMessageResult(requestHeader.getMaxMsgNums());
+
         CompletableFuture<Long> getMessageFuture = popMessage(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime);
-        bindGetMessageFutureCallback(ctx, requestHeader, getMessageResult, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime, getMessageFuture, response, request, beginTimeMills);
+        bindPopFutureCallback(ctx, requestHeader, getMessageResult, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime, getMessageFuture, response, request, beginTimeMills);
 
         return null;
     }
@@ -372,17 +373,21 @@ public class PopMessageProcessor implements NettyRequestProcessor {
                 // all queue pop can not notify specified queue pop, and vice versa
                 popLongPollingThread.notifyMessageArriving(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getQueueId());
             }
-        } else {
-            PollingResult pollingResult = popLongPollingThread.polling(ctx, request, new PollingHeader(requestHeader));
-            if (PollingResult.POLLING_SUC == pollingResult) {
-                return false;
-            } else if (PollingResult.POLLING_FULL == pollingResult) {
-                finalResponse.setCode(ResponseCode.POLLING_FULL);
-            } else {
-                finalResponse.setCode(ResponseCode.POLLING_TIMEOUT);
-            }
-            getMessageResult.setStatus(GetMessageStatus.NO_MESSAGE_IN_QUEUE);
+
+            return true;
         }
+
+        PollingResult pollingResult = popLongPollingThread.polling(ctx, request, new PollingHeader(requestHeader));
+        if (PollingResult.POLLING_SUC == pollingResult) {
+            return false;
+        }
+
+        if (PollingResult.POLLING_FULL == pollingResult) {
+            finalResponse.setCode(ResponseCode.POLLING_FULL);
+        } else {
+            finalResponse.setCode(ResponseCode.POLLING_TIMEOUT);
+        }
+        getMessageResult.setStatus(GetMessageStatus.NO_MESSAGE_IN_QUEUE);
 
         return true;
     }
@@ -447,7 +452,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return finalResponse;
     }
 
-    private void bindGetMessageFutureCallback(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, StringBuilder startOffsetInfo,
+    private void bindPopFutureCallback(ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, CompletableFuture<Long> getMessageFuture, RemotingCommand response, RemotingCommand request, long beginTimeMills) {
 
         final PopMessageResponseHeader responseHeader = (PopMessageResponseHeader) response.readCustomHeader();
@@ -465,7 +470,9 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private StringBuilder initOrderCountInfo(PopMessageRequestHeader requestHeader) {
+        // if not consume orderly, orderCountInfo = null
         StringBuilder orderCountInfo = null;
+
         if (requestHeader.isOrder()) {
             orderCountInfo = new StringBuilder(64);
         }
@@ -575,11 +582,11 @@ public class PopMessageProcessor implements NettyRequestProcessor {
                 if (requestHeader.isOrder()) {
                     this.broker.getConsumerOrderInfoManager().update(requestHeader.getAttemptId(), isRetry, topic, requestHeader.getConsumerGroup(), queueId, popTime, requestHeader.getInvisibleTime(), result.getMessageQueueOffset(), orderCountInfo);
                     this.broker.getConsumerOffsetManager().commitOffset(channel.remoteAddress().toString(), requestHeader.getConsumerGroup(), topic, queueId, finalOffset);
-                } else {
-                    if (!appendCheckPoint(requestHeader, topic, reviveQid, queueId, finalOffset, result, popTime, this.broker.getBrokerConfig().getBrokerName())) {
-                        return atomicRestNum.get() + result.getMessageCount();
-                    }
+
+                } else if (!appendCheckPoint(requestHeader, topic, reviveQid, queueId, finalOffset, result, popTime, this.broker.getBrokerConfig().getBrokerName())) {
+                    return atomicRestNum.get() + result.getMessageCount();
                 }
+
                 ExtraInfoUtil.buildStartOffsetInfo(startOffsetInfo, topic, queueId, finalOffset);
                 ExtraInfoUtil.buildMsgOffsetInfo(msgOffsetInfo, topic, queueId, result.getMessageQueueOffset());
             }
@@ -661,27 +668,30 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private void parseGetResult(GetMessageResult getMessageResult, PopMessageRequestHeader requestHeader, String topic, int reviveQid, long popTime, long finalOffset, SelectMappedBufferResult mappedBuffer, List<MessageExt> messageExtList) {
-        String brokerName = broker.getBrokerConfig().getBrokerName();
         for (MessageExt messageExt : messageExtList) {
-            try {
-                String ckInfo = ExtraInfoUtil.buildExtraInfo(finalOffset, popTime, requestHeader.getInvisibleTime(),
-                    reviveQid, messageExt.getTopic(), brokerName, messageExt.getQueueId(), messageExt.getQueueOffset());
-                messageExt.getProperties().putIfAbsent(MessageConst.PROPERTY_POP_CK, ckInfo);
-
-                // Set retry message topic to origin topic and clear message store size to recode
-                messageExt.setTopic(requestHeader.getTopic());
-                messageExt.setStoreSize(0);
-
-                byte[] encode = MessageDecoder.encode(messageExt, false);
-                ByteBuffer buffer = ByteBuffer.wrap(encode);
-                SelectMappedBufferResult tmpResult =
-                    new SelectMappedBufferResult(mappedBuffer.getStartOffset(), buffer, encode.length, null);
-                getMessageResult.addMessage(tmpResult);
-            } catch (Exception e) {
-                POP_LOGGER.error("Exception in recode retry message buffer, topic={}", topic, e);
-            }
+            parseGetResult(getMessageResult, requestHeader, topic, reviveQid, popTime, finalOffset, mappedBuffer, messageExt);
         }
     }
+
+    private void parseGetResult(GetMessageResult getMessageResult, PopMessageRequestHeader requestHeader, String topic, int reviveQid, long popTime, long finalOffset, SelectMappedBufferResult mappedBuffer, MessageExt messageExt) {
+        try {
+            String brokerName = broker.getBrokerConfig().getBrokerName();
+            String ckInfo = ExtraInfoUtil.buildExtraInfo(finalOffset, popTime, requestHeader.getInvisibleTime(), reviveQid, messageExt.getTopic(), brokerName, messageExt.getQueueId(), messageExt.getQueueOffset());
+            messageExt.getProperties().putIfAbsent(MessageConst.PROPERTY_POP_CK, ckInfo);
+
+            // Set retry message topic to origin topic and clear message store size to recode
+            messageExt.setTopic(requestHeader.getTopic());
+            messageExt.setStoreSize(0);
+
+            byte[] encode = MessageDecoder.encode(messageExt, false);
+            ByteBuffer buffer = ByteBuffer.wrap(encode);
+            SelectMappedBufferResult tmpResult = new SelectMappedBufferResult(mappedBuffer.getStartOffset(), buffer, encode.length, null);
+            getMessageResult.addMessage(tmpResult);
+        } catch (Exception e) {
+            POP_LOGGER.error("Exception in recode retry message buffer, topic={}", topic, e);
+        }
+    }
+
     /**
      * get consume offset for pop mode
      * called by this.popMsgFromQueue()
