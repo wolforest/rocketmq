@@ -109,8 +109,6 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         RemotingCommand response = RemotingCommand.createResponseCommand(PopMessageResponseHeader.class);
         PopMessageRequestHeader requestHeader = (PopMessageRequestHeader) request.decodeCommandCustomHeader(PopMessageRequestHeader.class, true);
 
-
-
         initRequestAndResponse(request, response, requestHeader);
         if (!allowAccess(requestHeader, ctx.channel(), response)) {
             return response;
@@ -230,12 +228,11 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             SubscriptionData retrySubscriptionData = FilterAPI.build(retryTopic, SubscriptionData.SUB_ALL, requestHeader.getExpType());
             broker.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(), retryTopic, retrySubscriptionData);
 
-            ConsumerFilterData consumerFilterData = null;
             if (ExpressionType.isTagType(subscriptionData.getExpressionType())) {
-                return new ExpressionMessageFilter(subscriptionData, consumerFilterData, broker.getConsumerFilterManager());
+                return new ExpressionMessageFilter(subscriptionData, null, broker.getConsumerFilterManager());
             }
 
-            consumerFilterData = ConsumerFilterManager.build(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getExp(), requestHeader.getExpType(), System.currentTimeMillis());
+            ConsumerFilterData consumerFilterData = ConsumerFilterManager.build(requestHeader.getTopic(), requestHeader.getConsumerGroup(), requestHeader.getExp(), requestHeader.getExpType(), System.currentTimeMillis());
             if (consumerFilterData != null) {
                 return new ExpressionMessageFilter(subscriptionData, consumerFilterData, broker.getConsumerFilterManager());
             }
