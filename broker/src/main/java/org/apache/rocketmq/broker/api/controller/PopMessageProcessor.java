@@ -476,6 +476,22 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return orderCountInfo;
     }
 
+    private CompletableFuture<Long> stopPopping(PopMessageRequestHeader requestHeader, String topic, int queueId, long offset, long restNum) {
+        CompletableFuture<Long> future = new CompletableFuture<>();
+        POP_LOGGER.warn("Too much msgs are not ack, then stop popping. topic={}, group={}, queueId={}", topic, requestHeader.getConsumerGroup(), queueId);
+        restNum = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
+        future.complete(restNum);
+        return future;
+    }
+
+    private CompletableFuture<Long> lockFailed(String topic, int queueId, long offset, long restNum) {
+        CompletableFuture<Long> future = new CompletableFuture<>();
+        // move from offset initialization
+        restNum = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
+        future.complete(restNum);
+        return future;
+    }
+
     /**
      *
      * @param attemptId request attempt id
@@ -502,25 +518,16 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         String lockKey = KeyBuilder.buildConsumeKey(topic, requestHeader.getConsumerGroup(), queueId);
         long offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), false, lockKey, false);
 
-        CompletableFuture<Long> future = new CompletableFuture<>();
         if (isPopShouldStop(topic, requestHeader.getConsumerGroup(), queueId)) {
-            POP_LOGGER.warn("Too much msgs are not ack, then stop popping. topic={}, group={}, queueId={}", topic, requestHeader.getConsumerGroup(), queueId);
-            restNum = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
-            future.complete(restNum);
-            return future;
+            return stopPopping(requestHeader, topic, queueId, offset, restNum);
         }
 
-        // try lock
         QueueLockManager queueLockManager = broker.getBrokerNettyServer().getPopServiceManager().getQueueLockManager();
         if (!queueLockManager.tryLock(lockKey)) {
-            // move from offset initialization
-            restNum = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
-            future.complete(restNum);
-            return future;
+            return lockFailed(topic, queueId, offset, restNum);
         }
 
-
-
+        CompletableFuture<Long> future = new CompletableFuture<>();
         try {
             future.whenComplete((result, throwable) -> queueLockManager.unLock(lockKey));
             offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId, requestHeader.getInitMode(), true, lockKey, true);
