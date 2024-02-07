@@ -557,12 +557,12 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         int maxMsgNums = requestHeader.getMaxMsgNums() - getMessageResult.getMessageMapedList().size();
         long finalOffset = offset;
         return this.broker.getMessageStore().getMessageAsync(requestHeader.getConsumerGroup(), topic, queueId, offset, maxMsgNums, messageFilter)
-            .thenCompose(createComposeCallback(channel, requestHeader, getMessageResult, topic, lockKey, atomicOffset, queueId, messageFilter))
-            .thenApply(createApplyCallback(channel, requestHeader, getMessageResult, topic, atomicOffset, atomicRestNum, queueId, reviveQid, popTime, isRetry, finalOffset, startOffsetInfo, msgOffsetInfo, orderCountInfo))
-            .whenComplete(createCompleteCallback(queueLockManager, lockKey));
+            .thenCompose(reGetIfOffsetInvalid(channel, requestHeader, getMessageResult, topic, lockKey, atomicOffset, queueId, messageFilter))
+            .thenApply(handlePopResult(channel, requestHeader, getMessageResult, topic, atomicOffset, atomicRestNum, queueId, reviveQid, popTime, isRetry, finalOffset, startOffsetInfo, msgOffsetInfo, orderCountInfo))
+            .whenComplete(unlockQueueLock(queueLockManager, lockKey));
     }
 
-    private BiConsumer<Long, Throwable> createCompleteCallback(QueueLockManager queueLockManager, String lockKey) {
+    private BiConsumer<Long, Throwable> unlockQueueLock(QueueLockManager queueLockManager, String lockKey) {
         return (result, throwable) -> {
             if (throwable != null) {
                 POP_LOGGER.error("Pop message error, {}", lockKey, throwable);
@@ -571,7 +571,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         };
     }
 
-    private Function<GetMessageResult, Long> createApplyCallback(Channel channel, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, String topic,
+    private Function<GetMessageResult, Long> handlePopResult(Channel channel, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, String topic,
         AtomicLong atomicOffset, AtomicLong atomicRestNum, int queueId, int reviveQid, long popTime, boolean isRetry, long finalOffset, StringBuilder startOffsetInfo, StringBuilder msgOffsetInfo, StringBuilder orderCountInfo) {
         return result -> {
             if (result == null) {
@@ -605,7 +605,10 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         };
     }
 
-    private Function<GetMessageResult, CompletableFuture<GetMessageResult>> createComposeCallback(Channel channel, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, String topic, String lockKey, AtomicLong atomicOffset, int queueId, ExpressionMessageFilter messageFilter) {
+    /**
+     * if offset is not correct reGet message from store
+     */
+    private Function<GetMessageResult, CompletableFuture<GetMessageResult>> reGetIfOffsetInvalid(Channel channel, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, String topic, String lockKey, AtomicLong atomicOffset, int queueId, ExpressionMessageFilter messageFilter) {
         return result -> {
             if (result == null) {
                 return CompletableFuture.completedFuture(null);
