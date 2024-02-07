@@ -182,6 +182,7 @@ public class PopBufferMergeThread extends ServiceThread {
 
     /**
      * put to store && add to buffer.
+     * @renamed from addCkJustOffset to storeCheckPoint
      *
      * @param point check point
      * @param reviveQueueId revive queue id
@@ -216,6 +217,8 @@ public class PopBufferMergeThread extends ServiceThread {
     }
 
     /**
+     * @renamed from addCkMock to mockCheckPoint
+     *
      * add check point when pop message is:
      * - NO_MATCHED_MESSAGE
      * - OFFSET_FOUND_NULL
