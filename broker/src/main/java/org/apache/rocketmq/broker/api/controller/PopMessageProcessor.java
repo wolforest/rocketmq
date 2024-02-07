@@ -571,6 +571,12 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         };
     }
 
+    /**
+     * handle offset and parse popResult
+     *  - commit offset for orderly message
+     *  - append checkPoint for other message
+     *  - parseGetResult
+     */
     private Function<GetMessageResult, Long> handlePopResult(Channel channel, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, String topic,
         AtomicLong atomicOffset, AtomicLong atomicRestNum, int queueId, int reviveQid, long popTime, boolean isRetry, long finalOffset, StringBuilder startOffsetInfo, StringBuilder msgOffsetInfo, StringBuilder orderCountInfo) {
         return result -> {
@@ -597,9 +603,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             }
 
             atomicRestNum.set(result.getMaxOffset() - result.getNextBeginOffset() + atomicRestNum.get());
-
             parseGetResult(result, getMessageResult, requestHeader, topic, isRetry, reviveQid, popTime, finalOffset);
-
             this.broker.getPopInflightMessageCounter().incrementInFlightMessageNum(topic, requestHeader.getConsumerGroup(), queueId, result.getMessageCount());
             return atomicRestNum.get();
         };
@@ -660,7 +664,6 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private void parseGetResult(GetMessageResult result, GetMessageResult getMessageResult, PopMessageRequestHeader requestHeader, String topic, boolean isRetry, int reviveQid, long popTime, long finalOffset) {
-
         for (SelectMappedBufferResult mappedBuffer : result.getMessageMapedList()) {
             // We should not recode buffer when popResponseReturnActualRetryTopic is true or topic is not retry topic
             if (broker.getBrokerConfig().isPopResponseReturnActualRetryTopic() || !isRetry) {
