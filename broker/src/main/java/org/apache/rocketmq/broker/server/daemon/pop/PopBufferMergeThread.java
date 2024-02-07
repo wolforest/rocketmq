@@ -246,6 +246,8 @@ public class PopBufferMergeThread extends ServiceThread {
 
     /**
      * with default config, this method is useless, always return false
+     * @renamed from addCk to addCheckPoint
+     * @renamed from addCheckPoint to cacheCheckPoint
      *
      * add pop checkPoint to buffer(memory), after stored in memory:
      * 1. checkPoints will be stored periodically
@@ -260,7 +262,7 @@ public class PopBufferMergeThread extends ServiceThread {
      * @param nextBeginOffset nextBeginOffset
      * @return boolean add status
      */
-    public boolean addCheckPoint(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
+    public boolean cacheCheckPoint(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
         // key: point.getT() + point.getC() + point.getQ() + point.getSo() + point.getPt()
         if (!broker.getBrokerConfig().isEnablePopBufferMerge()) {
             return false;

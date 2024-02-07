@@ -780,7 +780,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         //in default setting, this process will be skipped
         //add check point msg to revive log
         PopBufferMergeThread ackService = broker.getBrokerNettyServer().getPopServiceManager().getPopBufferMergeService();
-        if (ackService.addCheckPoint(ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset())) {
+        if (ackService.cacheCheckPoint(ck, reviveQid, -1, getMessageTmpResult.getNextBeginOffset())) {
             return true;
         }
 
