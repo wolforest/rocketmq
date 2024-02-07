@@ -124,8 +124,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         compensateSubscribeData(requestHeader);
 
         int reviveQid = getReviveQid(requestHeader);
-        long popTime = System.currentTimeMillis();
-        long beginTimeMills = TimeUtils.now();
+        long popTime = TimeUtils.now();
         StringBuilder startOffsetInfo = new StringBuilder(64);
         StringBuilder msgOffsetInfo = new StringBuilder(64);
         StringBuilder orderCountInfo = initOrderCountInfo(requestHeader);
@@ -133,7 +132,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         GetMessageResult getMessageResult = new GetMessageResult(requestHeader.getMaxMsgNums());
 
         CompletableFuture<Long> getMessageFuture = popMessage(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime);
-        bindPopFutureCallback(ctx, requestHeader, getMessageResult, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime, getMessageFuture, response, request, beginTimeMills);
+        bindPopFutureCallback(ctx, requestHeader, getMessageResult, startOffsetInfo, msgOffsetInfo, orderCountInfo, reviveQid, popTime, getMessageFuture, response, request, popTime);
 
         return null;
     }
