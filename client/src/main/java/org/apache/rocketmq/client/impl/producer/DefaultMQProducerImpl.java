@@ -1924,4 +1924,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     public DefaultMQProducer getDefaultMQProducer() {
         return defaultMQProducer;
     }
+
+    public MQFaultStrategy getMqFaultStrategy() {
+        return mqFaultStrategy;
+    }
 }
