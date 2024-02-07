@@ -84,7 +84,7 @@ public class PopBufferMergeThread extends ServiceThread {
      * Key: topic@cid@queueId
      * Value: check point queue of specific consumer and queue
      */
-    ConcurrentHashMap<String/*topic@cid@queueId*/, QueueWithTime<PopCheckPointWrapper>> commitOffsets = new ConcurrentHashMap<>();
+    ConcurrentHashMap<String/*topic@cid@queueId*/, QueueWithTime<PopCheckPointWrapper>> checkPointQueueMap = new ConcurrentHashMap<>();
     private volatile boolean serving = true;
     private final AtomicInteger counter = new AtomicInteger(0);
     private int scanTimes = 0;
@@ -165,7 +165,7 @@ public class PopBufferMergeThread extends ServiceThread {
      * @return offset
      */
     public long getLatestOffset(String lockKey) {
-        QueueWithTime<PopCheckPointWrapper> queue = this.commitOffsets.get(lockKey);
+        QueueWithTime<PopCheckPointWrapper> queue = this.checkPointQueueMap.get(lockKey);
         if (queue == null) {
             return -1;
         }
@@ -390,7 +390,7 @@ public class PopBufferMergeThread extends ServiceThread {
     }
 
     public void clearOffsetQueue(String lockKey) {
-        this.commitOffsets.remove(lockKey);
+        this.checkPointQueueMap.remove(lockKey);
     }
 
     /**
@@ -417,11 +417,11 @@ public class PopBufferMergeThread extends ServiceThread {
         POP_LOGGER.info("Broker is {}, {}, clear all data",
             broker.getMessageStoreConfig().getBrokerRole(), this.master);
         this.buffer.clear();
-        this.commitOffsets.clear();
+        this.checkPointQueueMap.clear();
     }
 
     private int scanCommitOffset() {
-        Iterator<Map.Entry<String, QueueWithTime<PopCheckPointWrapper>>> iterator = this.commitOffsets.entrySet().iterator();
+        Iterator<Map.Entry<String, QueueWithTime<PopCheckPointWrapper>>> iterator = this.checkPointQueueMap.entrySet().iterator();
         int count = 0;
         while (iterator.hasNext()) {
             Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry = iterator.next();
@@ -461,7 +461,7 @@ public class PopBufferMergeThread extends ServiceThread {
     }
 
     private void scanGarbage() {
-        Iterator<Map.Entry<String, QueueWithTime<PopCheckPointWrapper>>> iterator = commitOffsets.entrySet().iterator();
+        Iterator<Map.Entry<String, QueueWithTime<PopCheckPointWrapper>>> iterator = checkPointQueueMap.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry = iterator.next();
             if (entry.getKey() == null) {
@@ -710,7 +710,7 @@ public class PopBufferMergeThread extends ServiceThread {
 
     public int getOffsetTotalSize() {
         int count = 0;
-        for (Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry : this.commitOffsets.entrySet()) {
+        for (Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry : this.checkPointQueueMap.entrySet()) {
             LinkedBlockingDeque<PopCheckPointWrapper> queue = entry.getValue().get();
             count += queue.size();
         }
@@ -768,10 +768,10 @@ public class PopBufferMergeThread extends ServiceThread {
     }
 
     private void putOffsetQueue(PopCheckPointWrapper pointWrapper) {
-        QueueWithTime<PopCheckPointWrapper> queue = this.commitOffsets.get(pointWrapper.getLockKey());
+        QueueWithTime<PopCheckPointWrapper> queue = this.checkPointQueueMap.get(pointWrapper.getLockKey());
         if (queue == null) {
             queue = new QueueWithTime<>();
-            QueueWithTime<PopCheckPointWrapper> old = this.commitOffsets.putIfAbsent(pointWrapper.getLockKey(), queue);
+            QueueWithTime<PopCheckPointWrapper> old = this.checkPointQueueMap.putIfAbsent(pointWrapper.getLockKey(), queue);
             if (old != null) {
                 queue = old;
             }
@@ -784,7 +784,7 @@ public class PopBufferMergeThread extends ServiceThread {
      * @renamed from checkQueueOk to isQueueFull
      */
     private boolean isQueueFull(PopCheckPointWrapper pointWrapper) {
-        QueueWithTime<PopCheckPointWrapper> queue = this.commitOffsets.get(pointWrapper.getLockKey());
+        QueueWithTime<PopCheckPointWrapper> queue = this.checkPointQueueMap.get(pointWrapper.getLockKey());
         if (queue == null) {
             return false;
         }
