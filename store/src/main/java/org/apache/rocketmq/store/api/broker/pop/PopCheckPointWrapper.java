@@ -32,7 +32,7 @@ public class PopCheckPointWrapper {
     private final String lockKey;
     private final String mergeKey;
     /**
-     * with default config, this property is uesless
+     * with default config, this property is useless
      */
     private final boolean justOffset;
     /**

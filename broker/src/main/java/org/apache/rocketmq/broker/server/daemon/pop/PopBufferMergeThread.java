@@ -64,8 +64,8 @@ public class PopBufferMergeThread extends ServiceThread {
      * @renamed from buffer to checkPointMap
      *
      * use cases:
-     * - scan
-     * - addAckMsg: mark ack state of Check Point
+     * - scan: iterate buffer
+     * - addAckMsg: get check point from buffer and mark ack state of Check Point
      *
      * Key: topic + group + queueId + startOffset + popTime + brokerName
      */
@@ -126,7 +126,7 @@ public class PopBufferMergeThread extends ServiceThread {
         // scan
         while (!this.isStopped()) {
             try {
-                if (!shouldRun()) {
+                if (shouldSkip()) {
                     clearBuffer();
                     continue;
                 }
@@ -150,7 +150,7 @@ public class PopBufferMergeThread extends ServiceThread {
 
         this.serving = false;
         ThreadUtils.sleep(2000);
-        if (!shouldRun()) {
+        if (shouldSkip()) {
             return;
         }
 
@@ -205,7 +205,7 @@ public class PopBufferMergeThread extends ServiceThread {
         // put pointWrapper to commitOffsets and buffer
         // with default config, the following two operations are useless,
         // and they are better to be deleted
-        putOffsetQueue(pointWrapper);
+        putCheckPointQueue(pointWrapper);
         this.buffer.put(pointWrapper.getMergeKey(), pointWrapper);
 
 
@@ -241,7 +241,7 @@ public class PopBufferMergeThread extends ServiceThread {
         PopCheckPointWrapper pointWrapper = new PopCheckPointWrapper(reviveQueueId, Long.MAX_VALUE, ck, nextBeginOffset, true);
         pointWrapper.setCkStored(true);
 
-        putOffsetQueue(pointWrapper);
+        putCheckPointQueue(pointWrapper);
         if (broker.getBrokerConfig().isEnablePopLog()) {
             POP_LOGGER.info("[PopBuffer]add ck just offset, mocked, {}", pointWrapper);
         }
@@ -300,7 +300,7 @@ public class PopBufferMergeThread extends ServiceThread {
             return false;
         }
 
-        putOffsetQueue(pointWrapper);
+        putCheckPointQueue(pointWrapper);
         this.buffer.put(pointWrapper.getMergeKey(), pointWrapper);
         this.counter.incrementAndGet();
         if (broker.getBrokerConfig().isEnablePopLog()) {
@@ -407,13 +407,13 @@ public class PopBufferMergeThread extends ServiceThread {
      *
      * @return service running flag:
      */
-    private boolean shouldRun() {
+    private boolean shouldSkip() {
         if (this.broker.getBrokerConfig().isEnableSlaveActingMaster()) {
-            return true;
+            return false;
         }
 
         this.master = broker.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE;
-        return this.master;
+        return !this.master;
     }
 
     private void clearBuffer() {
@@ -425,14 +425,18 @@ public class PopBufferMergeThread extends ServiceThread {
         this.checkPointQueueMap.clear();
     }
 
-    private int scanCommitOffset() {
+    /**
+     *
+     * @renamed from scanCommitOffset CheckPointQueueMap
+     */
+    private int scanCheckPointQueueMap() {
         Iterator<Map.Entry<String, QueueWithTime<PopCheckPointWrapper>>> iterator = this.checkPointQueueMap.entrySet().iterator();
         int count = 0;
         while (iterator.hasNext()) {
             Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry = iterator.next();
             LinkedBlockingDeque<PopCheckPointWrapper> queue = entry.getValue().get();
 
-            scanCommitOffset(queue);
+            scanCheckPointQueueMap(queue);
 
             final int qs = queue.size();
             count += qs;
@@ -443,7 +447,7 @@ public class PopBufferMergeThread extends ServiceThread {
         return count;
     }
 
-    private void scanCommitOffset(LinkedBlockingDeque<PopCheckPointWrapper> queue) {
+    private void scanCheckPointQueueMap(LinkedBlockingDeque<PopCheckPointWrapper> queue) {
         PopCheckPointWrapper pointWrapper;
         while ((pointWrapper = queue.peek()) != null) {
             if (isPointValid(pointWrapper)) {
@@ -452,16 +456,15 @@ public class PopBufferMergeThread extends ServiceThread {
                 }
 
                 queue.poll();
-            } else {
-                long popCkStayBufferTime = broker.getBrokerConfig().getPopCkStayBufferTime();
-                long tsFromPop = System.currentTimeMillis() - pointWrapper.getCk().getPopTime();
-
-                if (tsFromPop > popCkStayBufferTime * 2L) {
-                    POP_LOGGER.warn("[PopBuffer] ck offset long time not commit, {}", pointWrapper);
-                }
-
-                break;
+                continue;
             }
+
+            long popCkStayBufferTime = broker.getBrokerConfig().getPopCkStayBufferTime();
+            long tsFromPop = System.currentTimeMillis() - pointWrapper.getCk().getPopTime();
+            if (tsFromPop > popCkStayBufferTime * 2L) {
+                POP_LOGGER.warn("[PopBuffer] ck offset long time not commit, {}", pointWrapper);
+            }
+            break;
         }
     }
 
@@ -548,7 +551,7 @@ public class PopBufferMergeThread extends ServiceThread {
             removeIterator(iterator, pointWrapper);
         }
 
-        int offsetBufferSize = scanCommitOffset();
+        int offsetBufferSize = scanCheckPointQueueMap();
 
         long eclipse = System.currentTimeMillis() - startTime;
         resetServing(eclipse, count, countCk, offsetBufferSize);
@@ -689,16 +692,13 @@ public class PopBufferMergeThread extends ServiceThread {
 
     private void resetServing(long eclipse, int count, int countCk, int offsetBufferSize) {
         if (eclipse > broker.getBrokerConfig().getPopCkStayBufferTimeOut() - 1000) {
-            POP_LOGGER.warn("[PopBuffer]scan stop, because eclipse too long, PopBufferEclipse={}, " +
-                    "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
-                eclipse, count, countCk, counter.get(), offsetBufferSize);
+            POP_LOGGER.warn("[PopBuffer]scan stop, because eclipse too long, PopBufferEclipse={}, PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}", eclipse, count, countCk, counter.get(), offsetBufferSize);
             this.serving = false;
-        } else {
-            if (scanTimes % countOfSecond1 == 0) {
-                POP_LOGGER.info("[PopBuffer]scan, PopBufferEclipse={}, " +
-                        "PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}",
-                    eclipse, count, countCk, counter.get(), offsetBufferSize);
-            }
+            return;
+        }
+
+        if (scanTimes % countOfSecond1 == 0) {
+            POP_LOGGER.info("[PopBuffer]scan, PopBufferEclipse={}, PopBufferToStoreAck={}, PopBufferToStoreCk={}, PopBufferSize={}, PopBufferOffsetSize={}", eclipse, count, countCk, counter.get(), offsetBufferSize);
         }
     }
 
@@ -772,17 +772,30 @@ public class PopBufferMergeThread extends ServiceThread {
         return true;
     }
 
-    private void putOffsetQueue(PopCheckPointWrapper pointWrapper) {
-        QueueWithTime<PopCheckPointWrapper> queue = this.checkPointQueueMap.get(pointWrapper.getLockKey());
-        if (queue == null) {
-            queue = new QueueWithTime<>();
-            QueueWithTime<PopCheckPointWrapper> old = this.checkPointQueueMap.putIfAbsent(pointWrapper.getLockKey(), queue);
-            if (old != null) {
-                queue = old;
-            }
-        }
+    /**
+     * @renamed from putOffsetQueue to putCheckPointQueue
+     *
+     * @param pointWrapper checkPointWrapper
+     */
+    private void putCheckPointQueue(PopCheckPointWrapper pointWrapper) {
+        QueueWithTime<PopCheckPointWrapper> queue = initCheckPointQueue(pointWrapper);
         queue.setTime(pointWrapper.getCk().getPopTime());
         queue.get().offer(pointWrapper);
+    }
+
+    private QueueWithTime<PopCheckPointWrapper> initCheckPointQueue(PopCheckPointWrapper pointWrapper) {
+        QueueWithTime<PopCheckPointWrapper> queue = this.checkPointQueueMap.get(pointWrapper.getLockKey());
+        if (queue != null) {
+            return queue;
+        }
+
+        queue = new QueueWithTime<>();
+        QueueWithTime<PopCheckPointWrapper> tmp = this.checkPointQueueMap.putIfAbsent(pointWrapper.getLockKey(), queue);
+        if (tmp != null) {
+            return tmp;
+        }
+
+        return queue;
     }
 
     /**
