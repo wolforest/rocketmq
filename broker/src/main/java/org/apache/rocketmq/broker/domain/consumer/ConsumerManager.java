@@ -138,18 +138,25 @@ public class ConsumerManager {
                 continue;
             }
 
-            callConsumerIdsChangeListener(ConsumerGroupEvent.CLIENT_UNREGISTER, next.getKey(), clientChannelInfo, info.getSubscribeTopics());
-            if (info.getChannelInfoTable().isEmpty()) {
-                ConsumerGroupInfo remove = this.consumerTable.remove(next.getKey());
-                if (remove != null) {
-                    LOGGER.info("unregister consumer ok, no any connection, and remove consumer group, {}", next.getKey());
-                    callConsumerIdsChangeListener(ConsumerGroupEvent.UNREGISTER, next.getKey());
-                }
-            }
-
+            invokeClientUnregisterEvent(next, info, clientChannelInfo);
             callConsumerIdsChangeListener(ConsumerGroupEvent.CHANGE, next.getKey(), info.getAllChannel());
         }
         return removed;
+    }
+
+    private void invokeClientUnregisterEvent(Entry<String, ConsumerGroupInfo> next, ConsumerGroupInfo info, ClientChannelInfo clientChannelInfo) {
+        callConsumerIdsChangeListener(ConsumerGroupEvent.CLIENT_UNREGISTER, next.getKey(), clientChannelInfo, info.getSubscribeTopics());
+        if (!info.getChannelInfoTable().isEmpty()) {
+            return;
+        }
+
+        ConsumerGroupInfo remove = this.consumerTable.remove(next.getKey());
+        if (remove == null) {
+            return;
+        }
+
+        LOGGER.info("unregister consumer ok, no any connection, and remove consumer group, {}", next.getKey());
+        callConsumerIdsChangeListener(ConsumerGroupEvent.UNREGISTER, next.getKey());
     }
 
     // compensate consumer info for consumer without heartbeat
