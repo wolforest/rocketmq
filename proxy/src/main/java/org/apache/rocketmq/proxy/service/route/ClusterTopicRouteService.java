@@ -47,6 +47,7 @@ public class ClusterTopicRouteService extends TopicRouteService {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
             proxyBrokerData.setCluster(brokerData.getCluster());
             proxyBrokerData.setBrokerName(brokerData.getBrokerName());
+            // rewrite. use proxy address to replace broker real address
             for (Long brokerId : brokerData.getBrokerAddrs().keySet()) {
                 proxyBrokerData.getBrokerAddrs().put(brokerId, requestHostAndPortList);
             }
