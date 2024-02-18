@@ -156,6 +156,7 @@ public class DefaultReceiptHandleManager extends AbstractStartAndShutdown implem
                 group.scan((msgID, handleStr, v) -> {
                     long current = System.currentTimeMillis();
                     ReceiptHandle handle = ReceiptHandle.decode(v.getReceiptHandleStr());
+                    // 10 seconds ahead
                     if (handle.getNextVisibleTime() - current > proxyConfig.getRenewAheadTimeMillis()) {
                         return;
                     }
