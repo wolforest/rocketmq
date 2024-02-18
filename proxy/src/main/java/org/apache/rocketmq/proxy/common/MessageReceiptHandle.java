@@ -28,6 +28,7 @@ public class MessageReceiptHandle {
     private final int queueId;
     private final String messageId;
     private final long queueOffset;
+    // this original means where the MessageReceiptHandle property data from
     private final String originalReceiptHandleStr;
     private final ReceiptHandle originalReceiptHandle;
     private final int reconsumeTimes;
