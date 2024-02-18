@@ -41,11 +41,11 @@ import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 
 public class ConsumerManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
-    private final ConcurrentMap<String, ConsumerGroupInfo> consumerTable =
-        new ConcurrentHashMap<>(1024);
-    private final ConcurrentMap<String, ConsumerGroupInfo> consumerCompensationTable =
-        new ConcurrentHashMap<>(1024);
+
+    private final ConcurrentMap<String, ConsumerGroupInfo> consumerTable = new ConcurrentHashMap<>(1024);
+    private final ConcurrentMap<String, ConsumerGroupInfo> consumerCompensationTable = new ConcurrentHashMap<>(1024);
     private final List<ConsumerIdsChangeListener> consumerIdsChangeListenerList = new CopyOnWriteArrayList<>();
+
     protected final BrokerStatsManager brokerStatsManager;
     private final long channelExpiredTimeout;
     private final long subscriptionExpiredTimeout;
