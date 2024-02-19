@@ -880,6 +880,9 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     @Override
     public CompletableFuture<ResponseFuture> invokeImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis) {
         Stopwatch stopwatch = Stopwatch.createStarted();
+        String channelRemoteAddr = RemotingHelper.parseChannelRemoteAddr(channel);
+        doBeforeRpcHooks(channelRemoteAddr, request);
+
         return super.invokeImpl(channel, request, timeoutMillis).thenCompose(responseFuture -> {
             RemotingCommand response = responseFuture.getResponseCommand();
             if (response.getCode() != ResponseCode.GO_AWAY) {
@@ -924,6 +927,10 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 return super.invokeImpl(retryChannel, retryRequest, timeoutMillis - duration);
             }
             return CompletableFuture.completedFuture(responseFuture);
+        }).whenComplete((v, t) -> {
+            if (t == null) {
+                doAfterRpcHooks(channelRemoteAddr, request, v.getResponseCommand());
+            }
         });
     }
 
