@@ -1,5 +1,5 @@
 ## 本文内容逻辑图
-<img src="docs/book/cn/image/rocketmq_wolf_branch.jpg" width="600px" height="600px" align="center" />
+<img src="docs/book/cn/image/rocketmq_wolf_branch.jpg" width="600px" height="600px" />
 
 
 ## Why another RocketMQ branch?
