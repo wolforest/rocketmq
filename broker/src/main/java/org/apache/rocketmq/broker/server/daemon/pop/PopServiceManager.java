@@ -54,8 +54,8 @@ public class PopServiceManager {
         this.broker = broker;
         this.reviveTopic = KeyBuilder.buildClusterReviveTopic(this.broker.getBrokerConfig().getBrokerClusterName());
 
-        this.popPollingService = new PopLongPollingThread(broker, popMessageProcessor);
-        this.notificationPollingService = new PopLongPollingThread(broker, notificationProcessor);
+        this.popPollingService = new PopLongPollingThread(broker, popMessageProcessor, false);
+        this.notificationPollingService = new PopLongPollingThread(broker, notificationProcessor, true);
 
         this.queueLockManager = new QueueLockManager(broker);
         this.popBufferMergeThread = new PopBufferMergeThread(this.broker);

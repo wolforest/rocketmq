@@ -190,7 +190,7 @@ public class LocalFileOffsetStore implements OffsetStore {
             String jsonString = offsetSerializeWrapper.toJson(true);
             if (jsonString != null) {
                 try {
-                    MixAll.string2File(jsonString, this.storePath);
+                    IOUtils.string2File(jsonString, this.storePath);
                 } catch (IOException e) {
                     log.error("persist consumer offset exception, " + this.storePath, e);
                 }
