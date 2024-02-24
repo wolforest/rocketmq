@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.apache.rocketmq</groupId>
         <artifactId>rocketmq-all</artifactId>
-        <version>5.1.5-SNAPSHOT</version>
+        <version>5.2.1-SNAPSHOT</version>
     </parent>
 
 <!--    <groupId>org.apache.rocketmq</groupId>-->
@@ -30,13 +30,11 @@
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-common</artifactId>
-<!--            <version>5.1.5-SNAPSHOT</version>-->
         </dependency>
 
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-remoting</artifactId>
-<!--            <version>5.1.5-SNAPSHOT</version>-->
         </dependency>
 
         <dependency>
@@ -48,7 +46,6 @@
         <dependency>
             <groupId>io.github.aliyunmq</groupId>
             <artifactId>rocketmq-logback-classic</artifactId>
-<!--            <version>1.0.1</version>-->
         </dependency>
     </dependencies>
 

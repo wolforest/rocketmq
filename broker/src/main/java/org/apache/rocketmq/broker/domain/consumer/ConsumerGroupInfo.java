@@ -37,10 +37,8 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 public class ConsumerGroupInfo {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final String groupName;
-    private final ConcurrentMap<String/* Topic */, SubscriptionData> subscriptionTable =
-        new ConcurrentHashMap<>();
-    private final ConcurrentMap<Channel, ClientChannelInfo> channelInfoTable =
-        new ConcurrentHashMap<>(16);
+    private final ConcurrentMap<String/* Topic */, SubscriptionData> subscriptionTable = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Channel, ClientChannelInfo> channelInfoTable = new ConcurrentHashMap<>(16);
     private volatile ConsumeType consumeType;
     private volatile MessageModel messageModel;
     private volatile ConsumeFromWhere consumeFromWhere;
@@ -59,9 +57,7 @@ public class ConsumerGroupInfo {
     }
 
     public ClientChannelInfo findChannel(final String clientId) {
-        Iterator<Entry<Channel, ClientChannelInfo>> it = this.channelInfoTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<Channel, ClientChannelInfo> next = it.next();
+        for (Entry<Channel, ClientChannelInfo> next : this.channelInfoTable.entrySet()) {
             if (next.getValue().getClientId().equals(clientId)) {
                 return next.getValue();
             }
@@ -83,20 +79,13 @@ public class ConsumerGroupInfo {
     }
 
     public List<Channel> getAllChannel() {
-        List<Channel> result = new ArrayList<>();
-
-        result.addAll(this.channelInfoTable.keySet());
-
-        return result;
+        return new ArrayList<>(this.channelInfoTable.keySet());
     }
 
     public List<String> getAllClientId() {
         List<String> result = new ArrayList<>();
 
-        Iterator<Entry<Channel, ClientChannelInfo>> it = this.channelInfoTable.entrySet().iterator();
-
-        while (it.hasNext()) {
-            Entry<Channel, ClientChannelInfo> entry = it.next();
+        for (Entry<Channel, ClientChannelInfo> entry : this.channelInfoTable.entrySet()) {
             ClientChannelInfo clientChannelInfo = entry.getValue();
             result.add(clientChannelInfo.getClientId());
         }
@@ -205,16 +194,14 @@ public class ConsumerGroupInfo {
             Entry<String, SubscriptionData> next = it.next();
             String oldTopic = next.getKey();
             // Check HashSet with O(1) time complexity
-            if (!topicSet.contains(oldTopic)) {
-                log.warn("subscription changed, group: {} remove topic {} {}",
-                    this.groupName,
-                    oldTopic,
-                    next.getValue().toString()
-                );
-
-                it.remove();
-                updated = true;
+            if (topicSet.contains(oldTopic)) {
+                continue;
             }
+
+            log.warn("subscription changed, group: {} remove topic {} {}", this.groupName, oldTopic, next.getValue().toString());
+
+            it.remove();
+            updated = true;
         }
 
         this.lastUpdateTimestamp = System.currentTimeMillis();

@@ -57,6 +57,7 @@ public class DefaultConsumerIdsChangeListener implements ConsumerIdsChangeListen
         }, 30, 15, TimeUnit.SECONDS);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void handle(ConsumerGroupEvent event, String group, Object... args) {
         if (event == null) {
