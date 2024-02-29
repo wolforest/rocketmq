@@ -22,6 +22,7 @@ import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.transaction.OperationResult;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.common.app.stats.Stats;
 import org.apache.rocketmq.common.domain.message.MessageAccessor;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageExt;
@@ -55,6 +56,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EndTransactionProcessorTest {
+    private static final String TOPIC = "trans_topic_test";
 
     private EndTransactionProcessor endTransactionProcessor;
 
@@ -95,20 +97,26 @@ public class EndTransactionProcessorTest {
     public void testProcessRequest() throws RemotingCommandException {
         when(transactionMsgService.commitMessage(any(EndTransactionRequestHeader.class))).thenReturn(createResponse(ResponseCode.SUCCESS));
         when(messageStore.putMessage(any(MessageExtBrokerInner.class)))
-                .thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK)));
+            .thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, createAppendMessageResult(AppendMessageStatus.PUT_OK)));
         RemotingCommand request = createEndTransactionMsgCommand(MessageSysFlag.TRANSACTION_COMMIT_TYPE, false);
         RemotingCommand response = endTransactionProcessor.processRequest(handlerContext, request);
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
+        assertThat(broker.getBrokerStatsManager().getStatsItem(Stats.BROKER_PUT_NUMS, broker.getBrokerConfig().getBrokerClusterName()).getValue().sum()).isEqualTo(1);
+        assertThat(broker.getBrokerStatsManager().getStatsItem(Stats.TOPIC_PUT_NUMS, TOPIC).getValue().sum()).isEqualTo(1L);
+        assertThat(broker.getBrokerStatsManager().getStatsItem(Stats.TOPIC_PUT_SIZE, TOPIC).getValue().sum()).isEqualTo(1L);
     }
 
     @Test
     public void testProcessRequest_CheckMessage() throws RemotingCommandException {
         when(transactionMsgService.commitMessage(any(EndTransactionRequestHeader.class))).thenReturn(createResponse(ResponseCode.SUCCESS));
         when(messageStore.putMessage(any(MessageExtBrokerInner.class)))
-                .thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK)));
+            .thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, createAppendMessageResult(AppendMessageStatus.PUT_OK)));
         RemotingCommand request = createEndTransactionMsgCommand(MessageSysFlag.TRANSACTION_COMMIT_TYPE, true);
         RemotingCommand response = endTransactionProcessor.processRequest(handlerContext, request);
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
+        assertThat(broker.getBrokerStatsManager().getStatsItem(Stats.BROKER_PUT_NUMS, broker.getBrokerConfig().getBrokerClusterName()).getValue().sum()).isEqualTo(1);
+        assertThat(broker.getBrokerStatsManager().getStatsItem(Stats.TOPIC_PUT_NUMS, TOPIC).getValue().sum()).isEqualTo(1L);
+        assertThat(broker.getBrokerStatsManager().getStatsItem(Stats.TOPIC_PUT_SIZE, TOPIC).getValue().sum()).isEqualTo(1L);
     }
 
     @Test
@@ -148,6 +156,7 @@ public class EndTransactionProcessorTest {
         messageExt.setQueueId(0);
         messageExt.setCommitLogOffset(123456789L);
         messageExt.setQueueOffset(1234);
+        MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_REAL_TOPIC, TOPIC);
         MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_REAL_QUEUE_ID, "0");
         MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_TRANSACTION_PREPARED, "true");
         MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_PRODUCER_GROUP, "testTransactionGroup");
@@ -195,4 +204,13 @@ public class EndTransactionProcessorTest {
         MessageAccessor.putProperty(messageExt, MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS, "60");
         return messageExt;
     }
+
+    private AppendMessageResult createAppendMessageResult(AppendMessageStatus status) {
+        AppendMessageResult result = new AppendMessageResult(status);
+        result.setMsgId("12345678");
+        result.setMsgNum(1);
+        result.setWroteBytes(1);
+        return result;
+    }
+
 }
