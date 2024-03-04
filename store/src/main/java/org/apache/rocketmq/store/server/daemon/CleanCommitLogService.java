@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.store.server.daemon;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
@@ -35,7 +36,7 @@ public class CleanCommitLogService {
 
     private final String diskSpaceCleanForciblyRatio = System.getProperty("rocketmq.broker.diskSpaceCleanForciblyRatio", "");
     private long lastRedeleteTimestamp = 0;
-    private volatile int manualDeleteFileSeveralTimes = 0;
+    private final AtomicInteger manualDeleteFileSeveralTimes = new AtomicInteger();
     private volatile boolean cleanImmediately = false;
     private int forceCleanFailedTimes = 0;
     private final DefaultMessageStore messageStore;
@@ -81,7 +82,7 @@ public class CleanCommitLogService {
     }
 
     public void executeDeleteFilesManually() {
-        this.manualDeleteFileSeveralTimes = MAX_MANUAL_DELETE_FILE_TIMES;
+        this.manualDeleteFileSeveralTimes.set(MAX_MANUAL_DELETE_FILE_TIMES);
         LOGGER.info("executeDeleteFilesManually was invoked");
     }
 
@@ -103,14 +104,14 @@ public class CleanCommitLogService {
 
         boolean isTimeUp = this.isTimeToDelete();
         boolean isUsageExceedsThreshold = this.isSpaceToDelete();
-        boolean isManualDelete = this.manualDeleteFileSeveralTimes > 0;
+        boolean isManualDelete = this.manualDeleteFileSeveralTimes.get() > 0;
 
         if (isTimeUp && isUsageExceedsThreshold && isManualDelete) {
             return;
         }
 
         if (isManualDelete) {
-            this.manualDeleteFileSeveralTimes--;
+            this.manualDeleteFileSeveralTimes.decrementAndGet();
         }
 
         boolean cleanAtOnce = messageStore.getMessageStoreConfig().isCleanFileForciblyEnable() && this.cleanImmediately;
@@ -119,7 +120,7 @@ public class CleanCommitLogService {
             fileReservedTime,
             isTimeUp,
             isUsageExceedsThreshold,
-            manualDeleteFileSeveralTimes,
+            manualDeleteFileSeveralTimes.get(),
             cleanAtOnce,
             deleteFileBatchMax);
 
@@ -268,11 +269,11 @@ public class CleanCommitLogService {
     }
 
     public int getManualDeleteFileSeveralTimes() {
-        return manualDeleteFileSeveralTimes;
+        return manualDeleteFileSeveralTimes.get();
     }
 
     public void setManualDeleteFileSeveralTimes(int manualDeleteFileSeveralTimes) {
-        this.manualDeleteFileSeveralTimes = manualDeleteFileSeveralTimes;
+        this.manualDeleteFileSeveralTimes.set(manualDeleteFileSeveralTimes);
     }
 
     public double calcStorePathPhysicRatio() {
