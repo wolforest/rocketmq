@@ -1,8 +1,6 @@
-## 本文内容逻辑图
-<img src="docs/book/cn/image/rocketmq_wolf_branch.jpg" />
-
-
 ## Why another RocketMQ branch?
+<img src="docs/book/cn/image/rocketmq_wolf_branch.jpg" height="300px" alt="wolf" />
+
 ### 官方分支的难处
 大家试想，如下两件相加会发生什么：
 * 码龄超过10年的大型软件项目
