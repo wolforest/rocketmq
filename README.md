@@ -208,3 +208,9 @@ MQ这一层其实是可以无须实现，而砍掉这些复杂的功能特性后
 
 <img src="docs/book/cn/image/rocketmq_catalog.jpg" width="100%" alt="wolf" />
 
+
+## 联系我们
+请关注我们的公众号，《RocketMQ源码分析与改进》的内容我们会周更到公众号上：
+
+<img src="docs/book/cn/image/qr_code_for_team.jpg" alt="面向同事编程" />
+
