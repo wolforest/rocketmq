@@ -37,7 +37,7 @@ import org.apache.rocketmq.common.domain.consumer.ReceiptHandle;
 import org.apache.rocketmq.common.domain.message.Message;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.lang.thread.ThreadPoolMonitor;
-import org.apache.rocketmq.common.utils.AbstractStartAndShutdown;
+import org.apache.rocketmq.common.domain.server.AbstractStartAndShutdown;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.proxy.common.Address;
 import org.apache.rocketmq.proxy.common.MessageReceiptHandle;

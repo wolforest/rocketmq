@@ -14,13 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common.utils;
+package org.apache.rocketmq.common.domain.server;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.apache.rocketmq.common.lang.Shutdown;
-import org.apache.rocketmq.common.lang.Start;
-import org.apache.rocketmq.common.lang.StartAndShutdown;
 
 public abstract class AbstractStartAndShutdown implements StartAndShutdown {
 

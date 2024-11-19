@@ -41,7 +41,7 @@ import java.util.function.Supplier;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.app.metrics.MetricsExporterType;
-import org.apache.rocketmq.common.lang.StartAndShutdown;
+import org.apache.rocketmq.common.domain.server.StartAndShutdown;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;

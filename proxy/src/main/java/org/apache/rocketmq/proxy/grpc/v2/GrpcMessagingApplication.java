@@ -53,7 +53,7 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.lang.thread.ThreadPoolMonitor;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.proxy.common.ProxyContext;
-import org.apache.rocketmq.common.lang.StartAndShutdown;
+import org.apache.rocketmq.common.domain.server.StartAndShutdown;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.config.ProxyConfig;
 import org.apache.rocketmq.proxy.grpc.interceptor.InterceptorConstants;

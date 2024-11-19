@@ -31,7 +31,7 @@ import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.common.lang.StartAndShutdown;
+import org.apache.rocketmq.common.domain.server.StartAndShutdown;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 
 public class TransactionDataManager implements StartAndShutdown {
