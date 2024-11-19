@@ -17,7 +17,7 @@
 package org.apache.rocketmq.controller.impl.event;
 
 import org.apache.commons.lang3.SerializationException;
-import org.apache.rocketmq.common.utils.FastJsonSerializer;
+import org.apache.rocketmq.common.lang.fastjson.FastJsonSerializer;
 
 /**
  * EventMessage serializer

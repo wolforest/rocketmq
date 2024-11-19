@@ -14,12 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common.utils;
+package org.apache.rocketmq.common.lang.fastjson;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.support.config.FastJsonConfig;
 import org.apache.commons.lang3.SerializationException;
-import org.apache.rocketmq.common.lang.Serializer;
 
 /**
  * The object serializer based on fastJson

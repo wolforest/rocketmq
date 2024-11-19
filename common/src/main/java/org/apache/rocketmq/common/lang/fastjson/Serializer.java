@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common.lang;
+package org.apache.rocketmq.common.lang.fastjson;
 
 import org.apache.commons.lang3.SerializationException;
 
