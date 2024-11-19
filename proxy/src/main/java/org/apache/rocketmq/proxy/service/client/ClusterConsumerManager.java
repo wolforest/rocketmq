@@ -22,7 +22,7 @@ import org.apache.rocketmq.broker.server.connection.ClientChannelInfo;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerIdsChangeListener;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
 import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
-import org.apache.rocketmq.common.utils.StartAndShutdown;
+import org.apache.rocketmq.common.lang.StartAndShutdown;
 import org.apache.rocketmq.proxy.service.admin.AdminService;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIFactory;
 import org.apache.rocketmq.proxy.service.route.TopicRouteService;

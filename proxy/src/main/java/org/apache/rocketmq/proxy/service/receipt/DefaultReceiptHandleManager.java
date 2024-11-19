@@ -40,7 +40,7 @@ import org.apache.rocketmq.common.lang.state.StateEventListener;
 import org.apache.rocketmq.common.lang.thread.ThreadPoolMonitor;
 import org.apache.rocketmq.common.utils.AbstractStartAndShutdown;
 import org.apache.rocketmq.common.utils.MapUtils;
-import org.apache.rocketmq.common.utils.StartAndShutdown;
+import org.apache.rocketmq.common.lang.StartAndShutdown;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;

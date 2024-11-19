@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.common.utils;
+package org.apache.rocketmq.common.lang;
 
-public interface Shutdown {
-    void shutdown() throws Exception;
+public interface StartAndShutdown extends Start, Shutdown {
+    default void preShutdown() throws Exception {}
 }

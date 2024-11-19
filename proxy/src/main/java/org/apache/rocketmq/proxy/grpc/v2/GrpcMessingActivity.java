@@ -41,7 +41,7 @@ import apache.rocketmq.v2.TelemetryCommand;
 import io.grpc.stub.StreamObserver;
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.proxy.common.ProxyContext;
-import org.apache.rocketmq.common.utils.StartAndShutdown;
+import org.apache.rocketmq.common.lang.StartAndShutdown;
 
 public interface GrpcMessingActivity extends StartAndShutdown {
 

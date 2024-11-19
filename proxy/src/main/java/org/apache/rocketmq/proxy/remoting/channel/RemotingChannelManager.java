@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.common.utils.StartAndShutdown;
+import org.apache.rocketmq.common.lang.StartAndShutdown;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.remoting.RemotingProxyOutClient;
 import org.apache.rocketmq.proxy.service.relay.ProxyRelayService;

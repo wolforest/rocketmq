@@ -30,7 +30,7 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.lang.future.FutureTaskExt;
 import org.apache.rocketmq.common.lang.thread.ThreadPoolMonitor;
 import org.apache.rocketmq.common.lang.thread.ThreadPoolStatusMonitor;
-import org.apache.rocketmq.common.utils.StartAndShutdown;
+import org.apache.rocketmq.common.lang.StartAndShutdown;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;

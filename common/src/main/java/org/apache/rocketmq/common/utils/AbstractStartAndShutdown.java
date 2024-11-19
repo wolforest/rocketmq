@@ -18,6 +18,9 @@ package org.apache.rocketmq.common.utils;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.apache.rocketmq.common.lang.Shutdown;
+import org.apache.rocketmq.common.lang.Start;
+import org.apache.rocketmq.common.lang.StartAndShutdown;
 
 public abstract class AbstractStartAndShutdown implements StartAndShutdown {
 
