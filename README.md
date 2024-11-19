@@ -100,7 +100,7 @@ RocketMQ有些名字，确实是看完十多遍代码，外加小组讨论后，
 <h4 id="jQ8CI">配置项需要文档</h4>
 先来看一张模糊的图，这个是rocketMQ的所有配置项
 
-<img src="docs/book/cn/image/rocketmq_config_map.jpg" width="100%" alt="wolf" />
+<img src="docs/book/cn/image/rocketmq_config_map.png" width="100%" alt="wolf" />
 
 不多说了，相信这张图，一定能呼唤出对文档的需求
 
