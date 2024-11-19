@@ -19,6 +19,7 @@ package org.apache.rocketmq.common.utils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.support.config.FastJsonConfig;
 import org.apache.commons.lang3.SerializationException;
+import org.apache.rocketmq.common.lang.Serializer;
 
 /**
  * The object serializer based on fastJson

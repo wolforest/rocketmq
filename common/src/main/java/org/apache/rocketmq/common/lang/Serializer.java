@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.common.utils;
+package org.apache.rocketmq.common.lang;
 
 import org.apache.commons.lang3.SerializationException;
 
