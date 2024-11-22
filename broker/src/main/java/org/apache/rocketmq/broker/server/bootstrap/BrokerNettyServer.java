@@ -76,6 +76,7 @@ import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
 import org.apache.rocketmq.common.lang.thread.FileWatchService;
+import org.apache.rocketmq.remoting.protocol.RequestHeaderRegistry;
 import org.apache.rocketmq.store.api.plugin.MessageArrivingListener;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
@@ -489,6 +490,11 @@ public class BrokerNettyServer {
         AdminBrokerProcessor adminProcessor = new AdminBrokerProcessor(getBrokerController());
         this.remotingServer.registerDefaultProcessor(adminProcessor, this.adminBrokerExecutor);
         this.fastRemotingServer.registerDefaultProcessor(adminProcessor, this.adminBrokerExecutor);
+
+        /*
+         * Initialize the mapping of request codes to request headers.
+         */
+        RequestHeaderRegistry.getInstance().initialize();
     }
 
     private void initRemotingServer() throws CloneNotSupportedException {
@@ -538,7 +544,7 @@ public class BrokerNettyServer {
             1000 * 60,
             TimeUnit.MILLISECONDS,
             this.putThreadPoolQueue,
-            new ThreadFactoryImpl("SendMessageThread_", getBrokerController().getBrokerIdentity()));
+            new ThreadFactoryImpl("PutMessageThread_", getBrokerController().getBrokerIdentity()));
 
         this.ackMessageExecutor = ThreadUtils.newThreadPoolExecutor(
             this.brokerConfig.getAckMessageThreadPoolNums(),

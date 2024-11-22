@@ -50,6 +50,7 @@ public class EndTransactionActivity extends AbstractMessingActivity {
             TransactionStatus transactionStatus = getTransactionStatus(request);
             future = this.messagingProcessor.endTransaction(
                 ctx,
+                request.getTopic().getName(),
                 request.getTransactionId(),
                 request.getMessageId(),
                 request.getTopic().getName(),

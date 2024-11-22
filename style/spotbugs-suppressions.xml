@@ -26,7 +26,7 @@
         <Bug pattern="MS_SHOULD_BE_FINAL"/>
     </Match>
     <Match>
-        <Class name="org.apache.rocketmq.store.index.IndexFile"/>
+        <Class name="org.apache.rocketmq.store.domain.index.IndexFile"/>
         <Method name="indexKeyHashMethod" />
         <Bug pattern="RV_ABSOLUTE_VALUE_OF_HASHCODE"/>
     </Match>

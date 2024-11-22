@@ -20,16 +20,23 @@
  */
 package org.apache.rocketmq.remoting.protocol.header.namesrv;
 
+import org.apache.rocketmq.common.domain.action.Action;
+import org.apache.rocketmq.common.domain.action.RocketMQAction;
+import org.apache.rocketmq.common.domain.resource.ResourceType;
+import org.apache.rocketmq.common.domain.resource.RocketMQResource;
 import org.apache.rocketmq.remoting.CommandCustomHeader;
 import org.apache.rocketmq.remoting.annotation.CFNotNull;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
 
+@RocketMQAction(value = RequestCode.UNREGISTER_BROKER, resource = ResourceType.CLUSTER, action = Action.UPDATE)
 public class UnRegisterBrokerRequestHeader implements CommandCustomHeader {
     @CFNotNull
     private String brokerName;
     @CFNotNull
     private String brokerAddr;
     @CFNotNull
+    @RocketMQResource(ResourceType.CLUSTER)
     private String clusterName;
     @CFNotNull
     private Long brokerId;

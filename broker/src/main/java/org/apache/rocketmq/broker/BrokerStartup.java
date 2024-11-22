@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.broker;
 
+import java.io.File;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
@@ -39,6 +40,7 @@ import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.auth.config.AuthConfig;
 
 import java.util.Properties;
 
@@ -94,11 +96,18 @@ public class BrokerStartup {
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
         final NettyClientConfig nettyClientConfig = new NettyClientConfig();
         final MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
+
+        final AuthConfig authConfig = new AuthConfig();
+        authConfig.setConfigName(brokerConfig.getBrokerName());
+        authConfig.setClusterName(brokerConfig.getBrokerClusterName());
+        authConfig.setAuthConfigPath(messageStoreConfig.getStorePathRootDir() + File.separator + "config");
+
+
         nettyServerConfig.setListenPort(10911);
         messageStoreConfig.setHaListenPort(0);
 
         CommandLine commandLine = initCommandLine(args);
-        Properties properties = initProperties(commandLine, brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
+        Properties properties = initProperties(commandLine, brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig, authConfig);
         commandLineToBrokerConfig(commandLine, brokerConfig);
 
         validateNamesrvAddr(brokerConfig);
@@ -110,7 +119,7 @@ public class BrokerStartup {
         setBrokerLogDir(brokerConfig, messageStoreConfig);
         printConfigInfo(commandLine, brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
 
-        Broker controller = new Broker(brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
+        Broker controller = new Broker(brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig, authConfig);
 
         // Remember all configs to prevent discard
         controller.getConfiguration().registerConfig(properties);
@@ -121,7 +130,7 @@ public class BrokerStartup {
     /**
      * load broker config data if command line parameter c is set.
      */
-    private static Properties initProperties(CommandLine commandLine, BrokerConfig brokerConfig, NettyServerConfig nettyServerConfig, NettyClientConfig nettyClientConfig, MessageStoreConfig messageStoreConfig) throws Exception {
+    private static Properties initProperties(CommandLine commandLine, BrokerConfig brokerConfig, NettyServerConfig nettyServerConfig, NettyClientConfig nettyClientConfig, MessageStoreConfig messageStoreConfig, AuthConfig authConfig) throws Exception {
         Properties properties = null;
         if (!commandLine.hasOption('c')) {
             return null;
@@ -140,6 +149,7 @@ public class BrokerStartup {
             BeanUtils.properties2Object(properties, nettyServerConfig);
             BeanUtils.properties2Object(properties, nettyClientConfig);
             BeanUtils.properties2Object(properties, messageStoreConfig);
+            BeanUtils.properties2Object(properties, authConfig);
         }
 
         return properties;

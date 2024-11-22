@@ -57,7 +57,7 @@ public class ReputMessageService extends ServiceThread {
             try {
                 TimeUnit.MILLISECONDS.sleep(1);
                 this.doReput();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 LOGGER.warn(this.getServiceName() + " service has exception. ", e);
             }
         }

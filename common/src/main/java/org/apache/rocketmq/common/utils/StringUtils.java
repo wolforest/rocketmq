@@ -186,12 +186,22 @@ public class StringUtils {
         return org.apache.commons.lang3.StringUtils.defaultString(str);
     }
 
+
+
     public static String defaultString(final String str, final String str2) {
         return org.apache.commons.lang3.StringUtils.defaultString(str, str2);
     }
 
+    public static String substringBefore(final String str, final String str2) {
+        return org.apache.commons.lang3.StringUtils.substringBefore(str, str2);
+    }
+
     public static String substringAfter(final String str, final String str2) {
         return org.apache.commons.lang3.StringUtils.substringAfter(str, str2);
+    }
+
+    public static String substringAfterLast(final String str, final String str2) {
+        return org.apache.commons.lang3.StringUtils.substringAfterLast(str, str2);
     }
 
     public static String upperCase(final String str) {

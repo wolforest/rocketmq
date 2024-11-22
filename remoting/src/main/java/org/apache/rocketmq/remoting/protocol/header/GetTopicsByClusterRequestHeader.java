@@ -17,10 +17,15 @@
 
 package org.apache.rocketmq.remoting.protocol.header;
 
+import org.apache.rocketmq.common.domain.action.Action;
+import org.apache.rocketmq.common.domain.action.RocketMQAction;
+import org.apache.rocketmq.common.domain.resource.ResourceType;
 import org.apache.rocketmq.remoting.CommandCustomHeader;
 import org.apache.rocketmq.remoting.annotation.CFNotNull;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
 
+@RocketMQAction(value = RequestCode.GET_TOPICS_BY_CLUSTER, resource = ResourceType.TOPIC, action = Action.LIST)
 public class GetTopicsByClusterRequestHeader implements CommandCustomHeader {
     @CFNotNull
     private String cluster;

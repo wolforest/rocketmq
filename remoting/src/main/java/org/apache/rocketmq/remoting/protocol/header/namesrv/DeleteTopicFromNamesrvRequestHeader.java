@@ -16,14 +16,21 @@
  */
 package org.apache.rocketmq.remoting.protocol.header.namesrv;
 
+import org.apache.rocketmq.common.domain.action.Action;
+import org.apache.rocketmq.common.domain.action.RocketMQAction;
+import org.apache.rocketmq.common.domain.resource.ResourceType;
+import org.apache.rocketmq.common.domain.resource.RocketMQResource;
 import org.apache.rocketmq.remoting.annotation.CFNotNull;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
 import org.apache.rocketmq.remoting.rpc.TopicRequestHeader;
 
+@RocketMQAction(value = RequestCode.DELETE_TOPIC_IN_NAMESRV, resource = ResourceType.CLUSTER, action = Action.UPDATE)
 public class DeleteTopicFromNamesrvRequestHeader extends TopicRequestHeader {
     @CFNotNull
     private String topic;
 
+    @RocketMQResource(ResourceType.CLUSTER)
     private String clusterName;
 
     @Override

@@ -16,6 +16,24 @@
  */
 package org.apache.rocketmq.broker.infra;
 
+import com.alibaba.fastjson2.JSON;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.acl.common.AclClientRPCHook;
+import org.apache.rocketmq.acl.common.SessionCredentials;
+import org.apache.rocketmq.auth.config.AuthConfig;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
 import org.apache.rocketmq.client.exception.MQBrokerException;
@@ -46,7 +64,6 @@ import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtils;
-import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -129,25 +146,11 @@ import org.apache.rocketmq.remoting.rpchook.DynamicalExtFieldRPCHook;
 import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.TimerMetrics;
 
-import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import static org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode.SUCCESS;
 import static org.apache.rocketmq.remoting.protocol.ResponseCode.CONTROLLER_MASTER_STILL_EXIST;
 
 /**
- * @renamed from brokerOutApi to ClusterClient
+ * @renamed from BrokerOuterAPI to ClusterClient
  *  - communicate with nameSrv
  *  - communicate with other broker
  *      - pull metadata from master
@@ -163,15 +166,28 @@ public class ClusterClient {
     private final RpcClient rpcClient;
     private String nameSrvAddr = null;
 
-    public ClusterClient(final NettyClientConfig nettyClientConfig) {
-        this(nettyClientConfig, new DynamicalExtFieldRPCHook(), new ClientMetadata());
+    public ClusterClient(final NettyClientConfig nettyClientConfig, AuthConfig authConfig) {
+        this(nettyClientConfig, new DynamicalExtFieldRPCHook(), new ClientMetadata(), authConfig);
     }
 
-    private ClusterClient(final NettyClientConfig nettyClientConfig, RPCHook rpcHook, ClientMetadata clientMetadata) {
+    private ClusterClient(final NettyClientConfig nettyClientConfig, RPCHook rpcHook, ClientMetadata clientMetadata, AuthConfig authConfig) {
         this.remotingClient = new NettyRemotingClient(nettyClientConfig);
         this.clientMetadata = clientMetadata;
         this.remotingClient.registerRPCHook(rpcHook);
+        this.remotingClient.registerRPCHook(newAclRPCHook(authConfig));
         this.rpcClient = new RpcClientImpl(this.clientMetadata, this.remotingClient);
+    }
+
+    private RPCHook newAclRPCHook(AuthConfig config) {
+        if (config == null || StringUtils.isBlank(config.getInnerClientAuthenticationCredentials())) {
+            return null;
+        }
+        SessionCredentials sessionCredentials =
+            JSON.parseObject(config.getInnerClientAuthenticationCredentials(), SessionCredentials.class);
+        if (StringUtils.isBlank(sessionCredentials.getAccessKey()) || StringUtils.isBlank(sessionCredentials.getSecretKey())) {
+            return null;
+        }
+        return new AclClientRPCHook(sessionCredentials);
     }
 
     public void start() {

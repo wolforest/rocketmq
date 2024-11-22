@@ -17,10 +17,15 @@
 
 package org.apache.rocketmq.remoting.protocol.header;
 
+import org.apache.rocketmq.common.domain.action.Action;
+import org.apache.rocketmq.common.domain.action.RocketMQAction;
+import org.apache.rocketmq.common.domain.resource.ResourceType;
 import org.apache.rocketmq.remoting.CommandCustomHeader;
 import org.apache.rocketmq.remoting.annotation.CFNullable;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
 
+@RocketMQAction(value = RequestCode.NOTIFY_MIN_BROKER_ID_CHANGE, resource = ResourceType.CLUSTER, action = Action.UPDATE)
 public class NotifyMinBrokerIdChangeRequestHeader implements CommandCustomHeader {
     @CFNullable
     private Long minBrokerId;

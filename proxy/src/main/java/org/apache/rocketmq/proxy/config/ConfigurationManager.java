@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.auth.config.AuthConfig;
 
 public class ConfigurationManager {
     public static final String RMQ_PROXY_HOME = "RMQ_PROXY_HOME";
@@ -50,6 +51,10 @@ public class ConfigurationManager {
 
     public static ProxyConfig getProxyConfig() {
         return configuration.getProxyConfig();
+    }
+
+    public static AuthConfig getAuthConfig() {
+        return configuration.getAuthConfig();
     }
 
     public static String formatProxyConfig() {

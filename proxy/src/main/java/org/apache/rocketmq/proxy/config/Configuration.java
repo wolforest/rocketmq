@@ -31,10 +31,12 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.auth.config.AuthConfig;
 
 public class Configuration {
     private final static Logger log = LoggerFactory.getLogger(LoggerName.PROXY_LOGGER_NAME);
     private final AtomicReference<ProxyConfig> proxyConfigReference = new AtomicReference<>();
+    private final AtomicReference<AuthConfig> authConfigReference = new AtomicReference<>();
     public static final String CONFIG_PATH_PROPERTY = "com.rocketmq.proxy.configPath";
 
     public void init() throws Exception {
@@ -42,11 +44,12 @@ public class Configuration {
 
         ProxyConfig proxyConfig = JSON.parseObject(proxyConfigData, ProxyConfig.class);
         proxyConfig.initData();
-        proxyConfigReference.set(proxyConfig);
-    }
+        setProxyConfig(proxyConfig);
 
-    public ProxyConfig getProxyConfig() {
-        return proxyConfigReference.get();
+        AuthConfig authConfig = JSON.parseObject(proxyConfigData, AuthConfig.class);
+        setAuthConfig(authConfig);
+        authConfig.setConfigName(proxyConfig.getProxyName());
+        authConfig.setClusterName(proxyConfig.getRocketMQClusterName());
     }
 
     private static String loadJsonConfig() throws Exception {
@@ -96,4 +99,19 @@ public class Configuration {
         return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
     }
 
+    public ProxyConfig getProxyConfig() {
+        return proxyConfigReference.get();
+    }
+
+    public void setProxyConfig(ProxyConfig proxyConfig) {
+        proxyConfigReference.set(proxyConfig);
+    }
+
+    public AuthConfig getAuthConfig() {
+        return authConfigReference.get();
+    }
+
+    public void setAuthConfig(AuthConfig authConfig) {
+        authConfigReference.set(authConfig);
+    }
 }

@@ -19,7 +19,9 @@ package org.apache.rocketmq.broker.server;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import org.apache.rocketmq.acl.AccessValidator;
+import org.apache.rocketmq.auth.config.AuthConfig;
 import org.apache.rocketmq.broker.ShutdownHook;
+import org.apache.rocketmq.broker.server.bootstrap.BrokerAuthService;
 import org.apache.rocketmq.broker.server.bootstrap.BrokerClusterService;
 import org.apache.rocketmq.broker.server.bootstrap.BrokerMessageService;
 import org.apache.rocketmq.broker.server.bootstrap.BrokerMetadataService;
@@ -72,6 +74,7 @@ public class Broker {
     private final NettyServerConfig nettyServerConfig;
     private final NettyClientConfig nettyClientConfig;
     protected final MessageStoreConfig messageStoreConfig;
+    private final AuthConfig authConfig;
     private Configuration configuration;
 
     protected volatile boolean shutdown = false;
@@ -79,6 +82,7 @@ public class Broker {
     protected volatile boolean isIsolated = false;
 
     private final BrokerNettyServer brokerNettyServer;
+    private final BrokerAuthService brokerAuthService;
     private final BrokerScheduleService brokerScheduleService;
     private final BrokerMetadataService brokerMetadataService;
     private final BrokerServiceRegistry brokerServiceRegistry;
@@ -86,25 +90,37 @@ public class Broker {
     private final BrokerClusterService brokerClusterService;
     private final BrokerMessageService brokerMessageService;
 
-    public Broker(BrokerConfig brokerConfig, NettyServerConfig serverConfig, NettyClientConfig clientConfig, MessageStoreConfig storeConfig, ShutdownHook shutdownHook) {
-        this(brokerConfig, serverConfig, clientConfig, storeConfig);
+    public Broker(BrokerConfig brokerConfig, NettyServerConfig serverConfig, NettyClientConfig clientConfig, MessageStoreConfig storeConfig, AuthConfig authConfig, ShutdownHook shutdownHook) {
+        this(brokerConfig, serverConfig, clientConfig, storeConfig, authConfig);
         this.brokerServiceManager.setShutdownHook(shutdownHook);
     }
 
     public Broker(final BrokerConfig brokerConfig, final MessageStoreConfig messageStoreConfig) {
-        this(brokerConfig, null, null, messageStoreConfig);
+        this(brokerConfig, null, null, messageStoreConfig, null);
     }
 
-    public Broker(BrokerConfig brokerConfig, NettyServerConfig serverConfig, NettyClientConfig clientConfig, MessageStoreConfig storeConfig) {
+    public Broker(
+        final BrokerConfig brokerConfig,
+        final NettyServerConfig nettyServerConfig,
+        final NettyClientConfig nettyClientConfig,
+        final MessageStoreConfig messageStoreConfig
+    ) {
+        this(brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig, null);
+    }
+
+    public Broker(BrokerConfig brokerConfig, NettyServerConfig serverConfig, NettyClientConfig clientConfig, MessageStoreConfig storeConfig, AuthConfig authConfig) {
         this.brokerConfig = brokerConfig;
         this.nettyServerConfig = serverConfig;
         this.nettyClientConfig = clientConfig;
         this.messageStoreConfig = storeConfig;
+        this.authConfig = authConfig;
+
         initConfiguration();
 
         /* the instance creating order matters, do not change it. start ... */
         this.brokerMetadataService = new BrokerMetadataService(this);
         this.brokerNettyServer = new BrokerNettyServer(brokerConfig, storeConfig, serverConfig, this);
+        this.brokerAuthService = new BrokerAuthService(this);
         this.brokerServiceRegistry = new BrokerServiceRegistry(this);
         this.brokerServiceManager = new BrokerServiceManager(this);
         this.brokerScheduleService = new BrokerScheduleService(brokerConfig, storeConfig, this);
@@ -128,6 +144,8 @@ public class Broker {
         }
         brokerServiceManager.initialize();
         initializeRemotingServer();
+
+        brokerAuthService.initialize();
         initializeScheduledTasks();
         return brokerNettyServer.initFileWatchService();
     }
@@ -135,6 +153,7 @@ public class Broker {
     public void shutdown() {
         shutdownBasicService();
         this.brokerServiceRegistry.shutdown();
+        this.brokerAuthService.shutdown();
     }
 
     public void start() throws Exception {
@@ -238,6 +257,10 @@ public class Broker {
 
     //**************************************** getter and setter start ****************************************************
 
+    public BrokerAuthService getBrokerAuthService() {
+        return brokerAuthService;
+    }
+
     public BrokerClusterService getBrokerClusterService() {
         return brokerClusterService;
     }
@@ -260,6 +283,10 @@ public class Broker {
 
     public BrokerConfig getBrokerConfig() {
         return brokerConfig;
+    }
+
+    public AuthConfig getAuthConfig() {
+        return authConfig;
     }
 
     public NettyServerConfig getNettyServerConfig() {

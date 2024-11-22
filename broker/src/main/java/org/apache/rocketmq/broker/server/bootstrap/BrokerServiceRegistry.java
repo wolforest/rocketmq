@@ -64,7 +64,7 @@ public class BrokerServiceRegistry {
             return;
         }
 
-        this.clusterClient = new ClusterClient(nettyClientConfig);
+        this.clusterClient = new ClusterClient(nettyClientConfig, broker.getAuthConfig());
     }
 
     public void start() {

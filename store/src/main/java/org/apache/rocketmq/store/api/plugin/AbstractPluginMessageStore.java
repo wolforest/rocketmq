@@ -638,4 +638,19 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     public void initMetrics(Meter meter, Supplier<AttributesBuilder> attributesBuilderSupplier) {
         next.initMetrics(meter, attributesBuilderSupplier);
     }
+
+    @Override
+    public void finishCommitLogDispatch() {
+        next.finishCommitLogDispatch();
+    }
+
+    @Override
+    public void recoverTopicQueueTable() {
+        next.recoverTopicQueueTable();
+    }
+
+    @Override
+    public void notifyMessageArriveIfNecessary(DispatchRequest dispatchRequest) {
+        next.notifyMessageArriveIfNecessary(dispatchRequest);
+    }
 }

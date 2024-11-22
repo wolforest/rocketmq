@@ -26,6 +26,7 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import org.apache.rocketmq.common.domain.constant.HAProxyConstants;
 import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.constant.GrpcConstants;
 import org.apache.rocketmq.proxy.grpc.constant.AttributeKeys;
 
 import java.net.InetSocketAddress;
@@ -39,11 +40,11 @@ public class HeaderInterceptor implements ServerInterceptor {
             SocketAddress remoteSocketAddress = call.getAttributes().get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
             remoteAddress = parseSocketAddress(remoteSocketAddress);
         }
-        headers.put(InterceptorConstants.REMOTE_ADDRESS, remoteAddress);
+        headers.put(GrpcConstants.REMOTE_ADDRESS, remoteAddress);
 
         SocketAddress localSocketAddress = call.getAttributes().get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
         String localAddress = parseSocketAddress(localSocketAddress);
-        headers.put(InterceptorConstants.LOCAL_ADDRESS, localAddress);
+        headers.put(GrpcConstants.LOCAL_ADDRESS, localAddress);
 
         for (Attributes.Key<?> key : call.getAttributes().keys()) {
             if (!StringUtils.startsWith(key.toString(), HAProxyConstants.PROXY_PROTOCOL_PREFIX)) {
@@ -52,6 +53,11 @@ public class HeaderInterceptor implements ServerInterceptor {
             Metadata.Key<String> headerKey = Metadata.Key.of(key.toString(), Metadata.ASCII_STRING_MARSHALLER);
             String headerValue = String.valueOf(call.getAttributes().get(key));
             headers.put(headerKey, headerValue);
+        }
+
+        String channelId = call.getAttributes().get(AttributeKeys.CHANNEL_ID);
+        if (StringUtils.isNotBlank(channelId)) {
+            headers.put(GrpcConstants.CHANNEL_ID, channelId);
         }
 
         return next.startCall(call, headers);

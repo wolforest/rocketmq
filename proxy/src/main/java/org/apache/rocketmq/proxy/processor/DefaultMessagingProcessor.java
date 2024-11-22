@@ -16,18 +16,23 @@
  */
 package org.apache.rocketmq.proxy.processor;
 
+import com.alibaba.fastjson2.JSON;
 import io.netty.channel.Channel;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.acl.common.AclClientRPCHook;
 import org.apache.rocketmq.acl.common.AclUtils;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.connection.ClientChannelInfo;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerGroupInfo;
 import org.apache.rocketmq.broker.domain.consumer.ConsumerIdsChangeListener;
 import org.apache.rocketmq.broker.domain.producer.ProducerChangeListener;
+import org.apache.rocketmq.acl.common.SessionCredentials;
+import org.apache.rocketmq.auth.config.AuthConfig;
 import org.apache.rocketmq.client.consumer.AckResult;
 import org.apache.rocketmq.client.consumer.PopResult;
 import org.apache.rocketmq.client.consumer.PullResult;
@@ -112,7 +117,17 @@ public class DefaultMessagingProcessor extends AbstractStartAndShutdown implemen
 
     public static DefaultMessagingProcessor createForClusterMode() {
         RPCHook rpcHook = null;
-        if (ConfigurationManager.getProxyConfig().isEnableAclRpcHookForClusterMode()) {
+        if (!ConfigurationManager.getProxyConfig().isEnableAclRpcHookForClusterMode()) {
+            return createForClusterMode(rpcHook);
+        }
+        AuthConfig authConfig = ConfigurationManager.getAuthConfig();
+        if (StringUtils.isNotBlank(authConfig.getInnerClientAuthenticationCredentials())) {
+            SessionCredentials sessionCredentials =
+                JSON.parseObject(authConfig.getInnerClientAuthenticationCredentials(), SessionCredentials.class);
+            if (StringUtils.isNotBlank(sessionCredentials.getAccessKey()) && StringUtils.isNotBlank(sessionCredentials.getSecretKey())) {
+                rpcHook = new AclClientRPCHook(sessionCredentials);
+            }
+        } else {
             rpcHook = AclUtils.getAclRPCHook(ROCKETMQ_HOME + MQConstants.ACL_CONF_TOOLS_FILE);
         }
         return createForClusterMode(rpcHook);
@@ -160,10 +175,10 @@ public class DefaultMessagingProcessor extends AbstractStartAndShutdown implemen
     }
 
     @Override
-    public CompletableFuture<Void> endTransaction(ProxyContext ctx, String transactionId, String messageId, String producerGroup,
+    public CompletableFuture<Void> endTransaction(ProxyContext ctx, String topic, String transactionId, String messageId, String producerGroup,
         TransactionStatus transactionStatus, boolean fromTransactionCheck,
         long timeoutMillis) {
-        return this.transactionProcessor.endTransaction(ctx, transactionId, messageId, producerGroup, transactionStatus, fromTransactionCheck, timeoutMillis);
+        return this.transactionProcessor.endTransaction(ctx, topic, transactionId, messageId, producerGroup, transactionStatus, fromTransactionCheck, timeoutMillis);
     }
 
     @Override

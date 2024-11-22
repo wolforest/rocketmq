@@ -747,11 +747,6 @@ public class PopReviveThread extends ServiceThread {
 
                 }
             }
-            //skip ck from last epoch
-            if (popCheckPoint.getPopTime() < message.getStoreTimestamp()) {
-                POP_LOGGER.warn("reviveQueueId={}, skip ck from last epoch {}", queueId, popCheckPoint);
-                return new Pair<>(msgOffset, true);
-            }
 
             boolean result = reviveRetry(popCheckPoint, message);
             return new Pair<>(msgOffset, result);

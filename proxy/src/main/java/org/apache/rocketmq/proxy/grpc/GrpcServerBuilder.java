@@ -106,7 +106,10 @@ public class GrpcServerBuilder {
 
     public GrpcServerBuilder configInterceptor(List<AccessValidator> accessValidators) {
         // grpc interceptors, including acl, logging etc.
-        this.serverBuilder.intercept(new AuthenticationInterceptor(accessValidators))
+        this.serverBuilder
+            .intercept(new AuthenticationInterceptor(accessValidators));
+
+        this.serverBuilder
             .intercept(new GlobalExceptionInterceptor())
             .intercept(new ContextInterceptor())
             .intercept(new HeaderInterceptor());

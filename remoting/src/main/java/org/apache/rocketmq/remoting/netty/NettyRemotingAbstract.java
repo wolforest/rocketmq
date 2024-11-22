@@ -64,6 +64,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import org.apache.rocketmq.remoting.pipeline.RequestPipeline;
+
 
 import static org.apache.rocketmq.remoting.metrics.RemotingMetricsConstant.LABEL_IS_LONG_POLLING;
 import static org.apache.rocketmq.remoting.metrics.RemotingMetricsConstant.LABEL_REQUEST_CODE;
@@ -125,6 +127,8 @@ public abstract class NettyRemotingAbstract {
      * custom rpc hooks
      */
     protected List<RPCHook> rpcHooks = new ArrayList<>();
+
+    protected RequestPipeline requestPipeline;
 
     protected AtomicBoolean isShuttingDown = new AtomicBoolean(false);
 
@@ -330,6 +334,10 @@ public abstract class NettyRemotingAbstract {
                     exception = e;
                 }
 
+                if (this.requestPipeline != null) {
+                    this.requestPipeline.execute(ctx, cmd);
+                }
+
                 if (exception == null) {
                     response = pair.getObject1().processRequest(ctx, cmd);
                 } else {
@@ -441,6 +449,10 @@ public abstract class NettyRemotingAbstract {
         if (rpcHook != null && !rpcHooks.contains(rpcHook)) {
             rpcHooks.add(rpcHook);
         }
+    }
+
+    public void setRequestPipeline(RequestPipeline pipeline) {
+        this.requestPipeline = pipeline;
     }
 
     public void clearRPCHook() {

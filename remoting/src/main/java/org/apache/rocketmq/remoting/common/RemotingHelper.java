@@ -257,6 +257,22 @@ public class RemotingHelper {
         return addr;
     }
 
+    public static String parseChannelLocalAddr(final Channel channel) {
+        SocketAddress remote = channel.localAddress();
+        final String addr = remote != null ? remote.toString() : "";
+
+        if (addr.length() > 0) {
+            int index = addr.lastIndexOf("/");
+            if (index >= 0) {
+                return addr.substring(index + 1);
+            }
+
+            return addr;
+        }
+
+        return "";
+    }
+
     public static String parseHostFromAddress(String address) {
         if (address == null) {
             return "";

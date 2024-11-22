@@ -17,13 +17,20 @@
 
 package org.apache.rocketmq.remoting.protocol.header.namesrv;
 
+import org.apache.rocketmq.common.domain.action.Action;
+import org.apache.rocketmq.common.domain.action.RocketMQAction;
+import org.apache.rocketmq.common.domain.resource.ResourceType;
+import org.apache.rocketmq.common.domain.resource.RocketMQResource;
 import org.apache.rocketmq.remoting.CommandCustomHeader;
 import org.apache.rocketmq.remoting.annotation.CFNotNull;
 import org.apache.rocketmq.remoting.annotation.CFNullable;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
 
+@RocketMQAction(value = RequestCode.BROKER_HEARTBEAT, resource = ResourceType.CLUSTER, action = Action.UPDATE)
 public class BrokerHeartbeatRequestHeader implements CommandCustomHeader {
     @CFNotNull
+    @RocketMQResource(ResourceType.CLUSTER)
     private String clusterName;
     @CFNotNull
     private String brokerAddr;

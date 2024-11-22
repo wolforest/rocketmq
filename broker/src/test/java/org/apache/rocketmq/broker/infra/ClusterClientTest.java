@@ -32,6 +32,7 @@ import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.BrokerIdentity;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.auth.config.AuthConfig;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyRemotingClient;
@@ -93,8 +94,9 @@ public class ClusterClientTest {
     private ClusterClient clusterClient;
 
     public void init() throws Exception {
-        clusterClient = new ClusterClient(new NettyClientConfig());
+        clusterClient = new ClusterClient(new NettyClientConfig(), new AuthConfig());
         Field field = ClusterClient.class.getDeclaredField("remotingClient");
+
         field.setAccessible(true);
         field.set(clusterClient, nettyRemotingClient);
     }

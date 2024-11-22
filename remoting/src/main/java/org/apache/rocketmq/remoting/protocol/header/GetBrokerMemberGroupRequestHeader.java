@@ -17,12 +17,19 @@
 
 package org.apache.rocketmq.remoting.protocol.header;
 
+import org.apache.rocketmq.common.domain.action.Action;
+import org.apache.rocketmq.common.domain.action.RocketMQAction;
+import org.apache.rocketmq.common.domain.resource.ResourceType;
+import org.apache.rocketmq.common.domain.resource.RocketMQResource;
 import org.apache.rocketmq.remoting.CommandCustomHeader;
 import org.apache.rocketmq.remoting.annotation.CFNotNull;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
 
+@RocketMQAction(value = RequestCode.GET_BROKER_MEMBER_GROUP, action = Action.GET)
 public class GetBrokerMemberGroupRequestHeader implements CommandCustomHeader {
     @CFNotNull
+    @RocketMQResource(ResourceType.CLUSTER)
     private String clusterName;
 
     @CFNotNull

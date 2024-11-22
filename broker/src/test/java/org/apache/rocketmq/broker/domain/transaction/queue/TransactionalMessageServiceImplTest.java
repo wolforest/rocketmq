@@ -122,6 +122,7 @@ public class TransactionalMessageServiceImplTest {
 
     private EndTransactionRequestHeader createEndTransactionRequestHeader(int status) {
         EndTransactionRequestHeader header = new EndTransactionRequestHeader();
+        header.setTopic("topic");
         header.setCommitLogOffset(123456789L);
         header.setCommitOrRollback(status);
         header.setMsgId("12345678");
