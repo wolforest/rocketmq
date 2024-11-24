@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ConfigManagerTest {
-    private static final String PATH_FILE = System.getProperty("java.io.tmpdir") + "rocketmq-test" + File.separator + "org.apache.rocketmq.common.app.ConfigManagerTest";
+    private static final String PATH_FILE = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "ConfigManagerTest";
     private static final String CONTENT_ENCODE = "Encode content for ConfigManager";
 
     @Test
@@ -50,7 +50,7 @@ public class ConfigManagerTest {
         declaredMethod.setAccessible(true);
         Boolean loadBakResult = (Boolean) declaredMethod.invoke(testConfigManager);
         assertTrue(loadBakResult);
-        file.delete();
+        IOUtils.delete(file);
 
         Boolean loadBakResult2 = (Boolean) declaredMethod.invoke(testConfigManager);
         assertTrue(loadBakResult2);
@@ -92,7 +92,7 @@ public class ConfigManagerTest {
     private File createAndWriteFile(String fileName) throws Exception {
         File file = new File(fileName);
         if (file.exists()) {
-            file.delete();
+            IOUtils.delete(file);
         }
         file.createNewFile();
         PrintWriter out = new PrintWriter(fileName);

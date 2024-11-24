@@ -77,7 +77,7 @@ public class IOUtilsTest {
         String fileName = System.getProperty("java.io.tmpdir") + File.separator + "rocketmq-test" + File.separator + "StringUtilsTest" + System.currentTimeMillis();
         File file = new File(fileName);
         if (file.exists()) {
-            file.delete();
+            IOUtils.delete(file);
         }
         file.createNewFile();
         PrintWriter out = new PrintWriter(fileName);
@@ -85,7 +85,7 @@ public class IOUtilsTest {
         out.close();
         String string = IOUtils.file2String(fileName);
         assertThat(string).isEqualTo("TestForStringUtils");
-        file.delete();
+        IOUtils.delete(file);
     }
 
     @Test
