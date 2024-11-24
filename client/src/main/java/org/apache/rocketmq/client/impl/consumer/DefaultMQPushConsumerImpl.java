@@ -582,8 +582,6 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                         DefaultMQPushConsumerImpl.this.executePopPullRequestImmediately(popRequest);
                         break;
                     case POLLING_FULL:
-                        DefaultMQPushConsumerImpl.this.executePopPullRequestLater(popRequest, pullTimeDelayMillsWhenException);
-                        break;
                     default:
                         DefaultMQPushConsumerImpl.this.executePopPullRequestLater(popRequest, pullTimeDelayMillsWhenException);
                         break;
@@ -624,10 +622,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     private PopResult processPopResult(final PopResult popResult, final SubscriptionData subscriptionData) {
         if (PopStatus.FOUND == popResult.getPopStatus()) {
             List<MessageExt> msgFoundList = popResult.getMsgFoundList();
-            List<MessageExt> msgListFilterAgain = msgFoundList;
+            List<MessageExt> msgListFilterAgain = new ArrayList<>(popResult.getMsgFoundList().size());
             if (!subscriptionData.getTagsSet().isEmpty() && !subscriptionData.isClassFilterMode()
                 && popResult.getMsgFoundList().size() > 0) {
-                msgListFilterAgain = new ArrayList<>(popResult.getMsgFoundList().size());
                 for (MessageExt msg : popResult.getMsgFoundList()) {
                     if (msg.getTags() != null) {
                         if (subscriptionData.getTagsSet().contains(msg.getTags())) {
@@ -635,6 +632,8 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                         }
                     }
                 }
+            } else {
+                msgListFilterAgain.addAll(msgFoundList);
             }
 
             if (!this.filterMessageHookList.isEmpty()) {
@@ -649,6 +648,15 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                             log.error("execute hook error. hookName={}", hook.hookName());
                         }
                     }
+                }
+            }
+
+            Iterator<MessageExt> iterator = msgListFilterAgain.iterator();
+            while (iterator.hasNext()) {
+                MessageExt msg = iterator.next();
+                if (msg.getReconsumeTimes() > getMaxReconsumeTimes()) {
+                    iterator.remove();
+                    log.info("Reconsume times has reached {}, so ack msg={}", msg.getReconsumeTimes(), msg);
                 }
             }
 
@@ -745,7 +753,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
     public void sendMessageBack(MessageExt msg, int delayLevel, final MessageQueue mq)
             throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
-        sendMessageBack(msg, delayLevel, null, mq);
+        sendMessageBack(msg, delayLevel, msg.getBrokerName(), mq);
     }
 
 
@@ -999,10 +1007,16 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 break;
         }
 
-        this.updateTopicSubscribeInfoWhenSubscriptionChanged();
-        this.mQClientFactory.checkClientInBroker();
-        if (this.mQClientFactory.sendHeartbeatToAllBrokerWithLock()) {
-            this.mQClientFactory.rebalanceImmediately();
+        try {
+            this.updateTopicSubscribeInfoWhenSubscriptionChanged();
+            this.mQClientFactory.checkClientInBroker();
+            if (this.mQClientFactory.sendHeartbeatToAllBrokerWithLock()) {
+                this.mQClientFactory.rebalanceImmediately();
+            }
+        } catch (Exception e) {
+            log.warn("Start the consumer {} fail.", this.defaultMQPushConsumer.getConsumerGroup(), e);
+            shutdown();
+            throw e;
         }
     }
 

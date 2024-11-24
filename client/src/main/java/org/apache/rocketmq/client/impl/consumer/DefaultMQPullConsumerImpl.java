@@ -292,12 +292,12 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
         }
 
         //If namespace not null , reset Topic without namespace.
-        for (MessageExt messageExt : msgList) {
-            if (null != this.getDefaultMQPullConsumer().getNamespace()) {
-                messageExt.setTopic(NamespaceUtil.withoutNamespace(messageExt.getTopic(), this.defaultMQPullConsumer.getNamespace()));
+        String namespace = this.getDefaultMQPullConsumer().getNamespace();
+        if (namespace != null) {
+            for (MessageExt messageExt : msgList) {
+                messageExt.setTopic(NamespaceUtil.withoutNamespace(messageExt.getTopic(), namespace));
             }
         }
-
     }
 
     public void subscriptionAutomatically(final String topic) {
@@ -383,6 +383,9 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
 
     @Override
     public void doRebalance() {
+        if (!defaultMQPullConsumer.isEnableRebalance()) {
+            return;
+        }
         if (this.rebalanceImpl != null) {
             this.rebalanceImpl.doRebalance(false);
         }
@@ -390,6 +393,10 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
 
     @Override
     public boolean tryRebalance() {
+        if (!defaultMQPullConsumer.isEnableRebalance()) {
+            return true;
+        }
+
         if (this.rebalanceImpl != null) {
             return this.rebalanceImpl.doRebalance(false);
         }
@@ -590,6 +597,21 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
         this.pullAsyncImpl(mq, subscriptionData, offset, maxNums, pullCallback, true,
             this.getDefaultMQPullConsumer().getConsumerPullTimeoutMillis());
     }
+
+    public void pullBlockIfNotFoundWithMessageSelector(MessageQueue mq, MessageSelector messageSelector, long offset, int maxNums,
+        PullCallback pullCallback)
+        throws MQClientException, RemotingException, InterruptedException {
+        SubscriptionData subscriptionData = getSubscriptionData(mq, messageSelector);
+        this.pullAsyncImpl(mq, subscriptionData, offset, maxNums, pullCallback, true,
+            this.getDefaultMQPullConsumer().getConsumerPullTimeoutMillis());
+    }
+
+    public PullResult pullBlockIfNotFoundWithMessageSelector(MessageQueue mq, MessageSelector messageSelector, long offset, int maxNums)
+        throws MQClientException, RemotingException, InterruptedException, MQBrokerException {
+        SubscriptionData subscriptionData = getSubscriptionData(mq, messageSelector);
+        return this.pullSyncImpl(mq, subscriptionData, offset, maxNums, true, this.getDefaultMQPullConsumer().getConsumerPullTimeoutMillis());
+    }
+
 
     public QueryResult queryMessage(String topic, String key, int maxNum, long begin, long end)
         throws MQClientException, InterruptedException {

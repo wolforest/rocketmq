@@ -19,6 +19,7 @@ package org.apache.rocketmq.broker.server.connection.longpolling;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.netty.channel.ChannelHandlerContext;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,17 +32,26 @@ import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.remoting.CommandCallback;
 import org.apache.rocketmq.remoting.netty.NettyRemotingAbstract;
 import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
 import org.apache.rocketmq.remoting.netty.RequestTask;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
+import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
+import org.apache.rocketmq.store.ConsumeQueueExt;
+import org.apache.rocketmq.store.MessageFilter;
 
 import static org.apache.rocketmq.broker.server.connection.longpolling.PollingResult.NOT_POLLING;
 import static org.apache.rocketmq.broker.server.connection.longpolling.PollingResult.POLLING_FULL;
 import static org.apache.rocketmq.broker.server.connection.longpolling.PollingResult.POLLING_SUC;
 import static org.apache.rocketmq.broker.server.connection.longpolling.PollingResult.POLLING_TIMEOUT;
 
+<<<<<<< HEAD:broker/src/main/java/org/apache/rocketmq/broker/server/connection/longpolling/PopLongPollingThread.java
 public class PopLongPollingThread extends ServiceThread {
+=======
+public class PopLongPollingService extends ServiceThread {
+
+>>>>>>> develop:broker/src/main/java/org/apache/rocketmq/broker/longpolling/PopLongPollingService.java
     private static final Logger POP_LOGGER =
         LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
     private final Broker broker;
@@ -164,50 +174,108 @@ public class PopLongPollingThread extends ServiceThread {
     }
 
     public void notifyMessageArrivingWithRetryTopic(final String topic, final int queueId) {
+        this.notifyMessageArrivingWithRetryTopic(topic, queueId, -1L, null, 0L, null, null);
+    }
+
+    public void notifyMessageArrivingWithRetryTopic(final String topic, final int queueId, long offset,
+        Long tagsCode, long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) {
         String notifyTopic;
         if (KeyBuilder.isPopRetryTopicV2(topic)) {
             notifyTopic = KeyBuilder.parseNormalTopic(topic);
         } else {
             notifyTopic = topic;
         }
-        notifyMessageArriving(notifyTopic, queueId);
+        notifyMessageArriving(notifyTopic, queueId, offset, tagsCode, msgStoreTime, filterBitMap, properties);
     }
 
-    public void notifyMessageArriving(final String topic, final int queueId) {
+    public void notifyMessageArriving(final String topic, final int queueId, long offset,
+        Long tagsCode, long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) {
         ConcurrentHashMap<String, Byte> cids = topicCidMap.get(topic);
         if (cids == null) {
             return;
         }
+        long interval = brokerController.getBrokerConfig().getPopLongPollingForceNotifyInterval();
+        boolean force = interval > 0L && offset % interval == 0L;
         for (Map.Entry<String, Byte> cid : cids.entrySet()) {
             if (queueId >= 0) {
-                notifyMessageArriving(topic, cid.getKey(), -1);
+                notifyMessageArriving(topic, -1, cid.getKey(), force, tagsCode, msgStoreTime, filterBitMap, properties);
             }
-            notifyMessageArriving(topic, cid.getKey(), queueId);
+            notifyMessageArriving(topic, queueId, cid.getKey(), force, tagsCode, msgStoreTime, filterBitMap, properties);
         }
     }
 
+<<<<<<< HEAD:broker/src/main/java/org/apache/rocketmq/broker/server/connection/longpolling/PopLongPollingThread.java
     public boolean notifyMessageArriving(final String topic, final String cid, final int queueId) {
         ConcurrentSkipListSet<PopRequest> remotingCommands = pollingMap.get(KeyBuilder.buildConsumeKey(topic, cid, queueId));
+=======
+    public boolean notifyMessageArriving(final String topic, final int queueId, final String cid,
+        Long tagsCode, long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) {
+        return notifyMessageArriving(topic, queueId, cid, false, tagsCode, msgStoreTime, filterBitMap, properties, null);
+    }
+
+    public boolean notifyMessageArriving(final String topic, final int queueId, final String cid, boolean force,
+        Long tagsCode, long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) {
+        return notifyMessageArriving(topic, queueId, cid, force, tagsCode, msgStoreTime, filterBitMap, properties, null);
+    }
+
+    public boolean notifyMessageArriving(final String topic, final int queueId, final String cid, boolean force,
+        Long tagsCode, long msgStoreTime, byte[] filterBitMap, Map<String, String> properties, CommandCallback callback) {
+        ConcurrentSkipListSet<PopRequest> remotingCommands = pollingMap.get(KeyBuilder.buildPollingKey(topic, cid, queueId));
+>>>>>>> develop:broker/src/main/java/org/apache/rocketmq/broker/longpolling/PopLongPollingService.java
         if (remotingCommands == null || remotingCommands.isEmpty()) {
             return false;
         }
+
         PopRequest popRequest = pollRemotingCommands(remotingCommands);
         if (popRequest == null) {
             return false;
         }
+<<<<<<< HEAD:broker/src/main/java/org/apache/rocketmq/broker/server/connection/longpolling/PopLongPollingThread.java
         if (broker.getBrokerConfig().isEnablePopLog()) {
             POP_LOGGER.info("lock release , new msg arrive , wakeUp : {}", popRequest);
+=======
+
+        if (!force && popRequest.getMessageFilter() != null && popRequest.getSubscriptionData() != null) {
+            boolean match = popRequest.getMessageFilter().isMatchedByConsumeQueue(tagsCode,
+                new ConsumeQueueExt.CqExtUnit(tagsCode, msgStoreTime, filterBitMap));
+            if (match && properties != null) {
+                match = popRequest.getMessageFilter().isMatchedByCommitLog(null, properties);
+            }
+            if (!match) {
+                remotingCommands.add(popRequest);
+                totalPollingNum.incrementAndGet();
+                return false;
+            }
+>>>>>>> develop:broker/src/main/java/org/apache/rocketmq/broker/longpolling/PopLongPollingService.java
         }
-        return wakeUp(popRequest);
+
+        if (brokerController.getBrokerConfig().isEnablePopLog()) {
+            POP_LOGGER.info("lock release, new msg arrive, wakeUp: {}", popRequest);
+        }
+
+        return wakeUp(popRequest, callback);
     }
 
     public boolean wakeUp(final PopRequest request) {
+        return wakeUp(request, null);
+    }
+
+    public boolean wakeUp(final PopRequest request, CommandCallback callback) {
         if (request == null || !request.complete()) {
             return false;
         }
+
+        if (callback != null && request.getRemotingCommand() != null) {
+            if (request.getRemotingCommand().getCallbackList() == null) {
+                request.getRemotingCommand().setCallbackList(new ArrayList<>());
+            }
+            request.getRemotingCommand().getCallbackList().add(callback);
+        }
+
         if (!request.getCtx().channel().isActive()) {
             return false;
         }
+
         Runnable run = () -> {
             try {
                 final RemotingCommand response = processor.processRequest(request.getCtx(), request.getRemotingCommand());
@@ -226,7 +294,13 @@ public class PopLongPollingThread extends ServiceThread {
                 POP_LOGGER.error("ExecuteRequestWhenWakeup run", e1);
             }
         };
+<<<<<<< HEAD:broker/src/main/java/org/apache/rocketmq/broker/server/connection/longpolling/PopLongPollingThread.java
         this.broker.getBrokerNettyServer().getPullMessageExecutor().submit(new RequestTask(run, request.getChannel(), request.getRemotingCommand()));
+=======
+
+        this.brokerController.getPullMessageExecutor().submit(
+            new RequestTask(run, request.getChannel(), request.getRemotingCommand()));
+>>>>>>> develop:broker/src/main/java/org/apache/rocketmq/broker/longpolling/PopLongPollingService.java
         return true;
     }
 
@@ -238,6 +312,11 @@ public class PopLongPollingThread extends ServiceThread {
      */
     public PollingResult polling(final ChannelHandlerContext ctx, RemotingCommand remotingCommand,
         final PollingHeader requestHeader) {
+        return this.polling(ctx, remotingCommand, requestHeader, null, null);
+    }
+
+    public PollingResult polling(final ChannelHandlerContext ctx, RemotingCommand remotingCommand,
+        final PollingHeader requestHeader, SubscriptionData subscriptionData, MessageFilter messageFilter) {
         if (requestHeader.getPollTime() <= 0 || this.isStopped()) {
             return NOT_POLLING;
         }
@@ -251,8 +330,13 @@ public class PopLongPollingThread extends ServiceThread {
         }
         cids.putIfAbsent(requestHeader.getConsumerGroup(), Byte.MIN_VALUE);
         long expired = requestHeader.getBornTime() + requestHeader.getPollTime();
+<<<<<<< HEAD:broker/src/main/java/org/apache/rocketmq/broker/server/connection/longpolling/PopLongPollingThread.java
         final PopRequest request = new PopRequest(remotingCommand, ctx, expired);
         boolean isFull = totalPollingNum.get() >= this.broker.getBrokerConfig().getMaxPopPollingSize();
+=======
+        final PopRequest request = new PopRequest(remotingCommand, ctx, expired, subscriptionData, messageFilter);
+        boolean isFull = totalPollingNum.get() >= this.brokerController.getBrokerConfig().getMaxPopPollingSize();
+>>>>>>> develop:broker/src/main/java/org/apache/rocketmq/broker/longpolling/PopLongPollingService.java
         if (isFull) {
             POP_LOGGER.info("polling {}, result POLLING_FULL, total:{}", remotingCommand, totalPollingNum.get());
             return POLLING_FULL;

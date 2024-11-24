@@ -199,16 +199,35 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         return mq;
     }
 
-    private void statusToConsumeMessageDirectlyResult(ConsumeMessageDirectlyResult result, ConsumeConcurrentlyStatus status) {
-        switch (status) {
-            case CONSUME_SUCCESS:
-                result.setConsumeResult(CMResult.CR_SUCCESS);
-                break;
-            case RECONSUME_LATER:
-                result.setConsumeResult(CMResult.CR_LATER);
-                break;
-            default:
-                break;
+        final long beginTime = System.currentTimeMillis();
+
+        log.info("consumeMessageDirectly receive new message: {}", msg);
+
+        try {
+            ConsumeConcurrentlyStatus status = this.messageListener.consumeMessage(msgs, context);
+            if (status != null) {
+                switch (status) {
+                    case CONSUME_SUCCESS:
+                        result.setConsumeResult(CMResult.CR_SUCCESS);
+                        break;
+                    case RECONSUME_LATER:
+                        result.setConsumeResult(CMResult.CR_LATER);
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                result.setConsumeResult(CMResult.CR_RETURN_NULL);
+            }
+        } catch (Throwable e) {
+            result.setConsumeResult(CMResult.CR_THROW_EXCEPTION);
+            result.setRemark(UtilAll.exceptionSimpleDesc(e));
+
+            log.warn("consumeMessageDirectly exception: {} Group: {} Msgs: {} MQ: {}",
+                UtilAll.exceptionSimpleDesc(e),
+                ConsumeMessageConcurrentlyService.this.consumerGroup,
+                msgs,
+                mq, e);
         }
     }
 
@@ -489,6 +508,22 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
 
         private ConsumeReturnType getConsumeReturnType(long consumeRT, boolean hasException, ConsumeConcurrentlyStatus status) {
             ConsumeReturnType returnType = ConsumeReturnType.SUCCESS;
+            try {
+                if (msgs != null && !msgs.isEmpty()) {
+                    for (MessageExt msg : msgs) {
+                        MessageAccessor.setConsumeStartTimeStamp(msg, String.valueOf(System.currentTimeMillis()));
+                    }
+                }
+                status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);
+            } catch (Throwable e) {
+                log.warn("consumeMessage exception: {} Group: {} Msgs: {} MQ: {}",
+                    UtilAll.exceptionSimpleDesc(e),
+                    ConsumeMessageConcurrentlyService.this.consumerGroup,
+                    msgs,
+                    messageQueue, e);
+                hasException = true;
+            }
+            long consumeRT = System.currentTimeMillis() - beginTimestamp;
             if (null == status) {
                 if (hasException) {
                     returnType = ConsumeReturnType.EXCEPTION;

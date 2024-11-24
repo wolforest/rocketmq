@@ -176,11 +176,11 @@ public class ConsumeMessagePopOrderlyService implements ConsumeMessageService {
             result.setConsumeResult(CMResult.CR_THROW_EXCEPTION);
             result.setRemark(IOUtils.exceptionSimpleDesc(e));
 
-            log.warn(String.format("consumeMessageDirectly exception: %s Group: %s Msgs: %s MQ: %s",
+            log.warn("consumeMessageDirectly exception: {} Group: {} Msgs: {} MQ: {}",
                 IOUtils.exceptionSimpleDesc(e),
                 ConsumeMessagePopOrderlyService.this.consumerGroup,
                 msgs,
-                mq), e);
+                mq, e);
         }
 
         result.setAutoCommit(context.isAutoCommit());

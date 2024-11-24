@@ -21,6 +21,7 @@ import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.app.config.ConfigManager;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -41,7 +42,7 @@ public class ConsumerOffsetManager extends ConfigManager {
     protected static final Logger LOG = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     public static final String TOPIC_GROUP_SEPARATOR = "@";
 
-    private DataVersion dataVersion = new DataVersion();
+    protected DataVersion dataVersion = new DataVersion();
 
     /**
      * consume metadata
@@ -445,6 +446,25 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     public void setDataVersion(DataVersion dataVersion) {
         this.dataVersion = dataVersion;
+    }
+
+    public boolean loadDataVersion() {
+        String fileName = null;
+        try {
+            fileName = this.configFilePath();
+            String jsonString = IOUtils.file2String(fileName);
+            if (jsonString != null) {
+                ConsumerOffsetManager obj = RemotingSerializable.fromJson(jsonString, ConsumerOffsetManager.class);
+                if (obj != null) {
+                    this.dataVersion = obj.dataVersion;
+                }
+                LOG.info("load consumer offset dataVersion success,{},{} ", fileName, jsonString);
+            }
+            return true;
+        } catch (Exception e) {
+            LOG.error("load consumer offset dataVersion failed " + fileName, e);
+            return false;
+        }
     }
 
     public void removeOffset(final String group) {

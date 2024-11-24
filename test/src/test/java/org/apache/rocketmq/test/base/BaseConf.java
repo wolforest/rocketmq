@@ -100,8 +100,8 @@ public class BaseConf {
             broker2.getBrokerConfig().getListenPort());
 
         broker3 = IntegrationTestBase.createAndStartBroker(NAMESRV_ADDR);
-        log.debug("Broker {} started, listening: {}", broker2.getBrokerConfig().getBrokerName(),
-            broker2.getBrokerConfig().getListenPort());
+        log.debug("Broker {} started, listening: {}", broker3.getBrokerConfig().getBrokerName(),
+            broker3.getBrokerConfig().getListenPort());
 
         CLUSTER_NAME = broker1.getBrokerConfig().getBrokerClusterName();
         BROKER1_NAME = broker1.getBrokerConfig().getBrokerName();
@@ -287,8 +287,7 @@ public class BaseConf {
             consumer.setDebug();
         }
         mqClients.add(consumer);
-        log.info(String.format("consumer[%s] start,topic[%s],subExpression[%s]", consumerGroup,
-                topic, subExpression));
+        log.info("consumer[{}] start,topic[{}],subExpression[{}]", consumerGroup, topic, subExpression);
         return consumer;
     }
 

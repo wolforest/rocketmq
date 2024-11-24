@@ -16,9 +16,12 @@
  */
 package org.apache.rocketmq.common.domain.message;
 
+import com.google.common.base.Strings;
 import java.nio.ByteBuffer;
 
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.domain.topic.TopicFilterType;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.utils.MessageUtils;
 
 public class MessageExtBrokerInner extends MessageExt {
@@ -41,7 +44,7 @@ public class MessageExtBrokerInner extends MessageExt {
     }
 
     public static long tagsString2tagsCode(final TopicFilterType filter, final String tags) {
-        if (null == tags || tags.length() == 0) { return 0; }
+        if (Strings.isNullOrEmpty(tags)) { return 0; }
 
         return tags.hashCode();
     }
@@ -101,5 +104,10 @@ public class MessageExtBrokerInner extends MessageExt {
 
     public void setEncodeCompleted(boolean encodeCompleted) {
         this.encodeCompleted = encodeCompleted;
+    }
+
+    public boolean needDispatchLMQ() {
+        return StringUtils.isNoneBlank(getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH))
+            && MQConstants.topicAllowsLMQ(getTopic());
     }
 }

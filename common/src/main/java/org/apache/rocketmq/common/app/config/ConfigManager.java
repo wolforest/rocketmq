@@ -22,12 +22,9 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.rocksdb.Statistics;
 
 public abstract class ConfigManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
-
-    protected RocksDBConfigManager rocksDBConfigManager;
 
     public boolean load() {
         String fileName = null;
@@ -51,8 +48,8 @@ public abstract class ConfigManager {
     private boolean loadBak() {
         String fileName = null;
         try {
-            fileName = this.configFilePath();
-            String jsonString = IOUtils.file2String(fileName + ".bak");
+            fileName = this.configFilePath() + ".bak";
+            String jsonString = IOUtils.file2String(fileName);
             if (jsonString != null && jsonString.length() > 0) {
                 this.decode(jsonString);
                 log.info("load " + fileName + " OK");
@@ -90,10 +87,6 @@ public abstract class ConfigManager {
         }
     }
 
-    protected void decode0(final byte[] key, final byte[] body) {
-
-    }
-
     public boolean stop() {
         return true;
     }
@@ -105,8 +98,4 @@ public abstract class ConfigManager {
     public abstract String encode(final boolean prettyFormat);
 
     public abstract void decode(final String jsonString);
-
-    public Statistics getStatistics() {
-        return rocksDBConfigManager == null ? null : rocksDBConfigManager.getStatistics();
-    }
 }

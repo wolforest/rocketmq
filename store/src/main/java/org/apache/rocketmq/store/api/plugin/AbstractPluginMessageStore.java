@@ -56,6 +56,7 @@ import org.apache.rocketmq.store.server.config.RunningFlags;
 import org.apache.rocketmq.store.server.ha.HAService;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
 import org.apache.rocketmq.store.server.store.StoreCheckpoint;
+import org.apache.rocketmq.store.exception.ConsumeQueueException;
 import org.rocksdb.RocksDBException;
 
 /**
@@ -65,7 +66,7 @@ import org.rocksdb.RocksDBException;
  * should be deleted in inheritance scenario
  */
 public abstract class AbstractPluginMessageStore implements MessageStore {
-    protected MessageStore next = null;
+    protected MessageStore next;
     protected MessageStorePluginContext context;
 
     public AbstractPluginMessageStore(MessageStorePluginContext context, MessageStore next) {
@@ -141,12 +142,12 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     }
 
     @Override
-    public long getMaxOffsetInQueue(String topic, int queueId) {
+    public long getMaxOffsetInQueue(String topic, int queueId) throws ConsumeQueueException {
         return next.getMaxOffsetInQueue(topic, queueId);
     }
 
     @Override
-    public long getMaxOffsetInQueue(String topic, int queueId, boolean committed) {
+    public long getMaxOffsetInQueue(String topic, int queueId, boolean committed) throws ConsumeQueueException {
         return next.getMaxOffsetInQueue(topic, queueId, committed);
     }
 
@@ -640,11 +641,6 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     }
 
     @Override
-    public void finishCommitLogDispatch() {
-        next.finishCommitLogDispatch();
-    }
-
-    @Override
     public void recoverTopicQueueTable() {
         next.recoverTopicQueueTable();
     }
@@ -652,5 +648,9 @@ public abstract class AbstractPluginMessageStore implements MessageStore {
     @Override
     public void notifyMessageArriveIfNecessary(DispatchRequest dispatchRequest) {
         next.notifyMessageArriveIfNecessary(dispatchRequest);
+    }
+
+    public MessageStore getNext() {
+        return next;
     }
 }

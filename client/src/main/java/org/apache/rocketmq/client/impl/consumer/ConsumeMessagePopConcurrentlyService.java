@@ -157,11 +157,11 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
             result.setConsumeResult(CMResult.CR_THROW_EXCEPTION);
             result.setRemark(IOUtils.exceptionSimpleDesc(e));
 
-            log.warn(String.format("consumeMessageDirectly exception: %s Group: %s Msgs: %s MQ: %s",
+            log.warn("consumeMessageDirectly exception: {} Group: {} Msgs: {} MQ: {}",
                 IOUtils.exceptionSimpleDesc(e),
                 ConsumeMessagePopConcurrentlyService.this.consumerGroup,
                 msgs,
-                mq), e);
+                mq, e);
         }
 
         result.setSpentTimeMills(System.currentTimeMillis() - beginTime);
@@ -475,7 +475,7 @@ public class ConsumeMessagePopConcurrentlyService implements ConsumeMessageServi
                     processQueue.decFoundMsg(-msgs.size());
                 }
 
-                log.warn("processQueue invalid. isDropped={}, isPopTimeout={}, messageQueue={}, msgs={}",
+                log.warn("processQueue invalid or popTimeout. isDropped={}, isPopTimeout={}, messageQueue={}, msgs={}",
                         processQueue.isDropped(), isPopTimeout(), messageQueue, msgs);
             }
         }

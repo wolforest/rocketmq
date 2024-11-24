@@ -69,6 +69,7 @@ import org.apache.rocketmq.store.server.config.FlushDiskType;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
 import org.apache.rocketmq.store.server.config.StoreType;
+import org.apache.rocketmq.store.exception.ConsumeQueueException;
 import org.assertj.core.util.Strings;
 import org.awaitility.Awaitility;
 import org.junit.After;
@@ -444,7 +445,7 @@ public class RocksDBMessageStoreTest {
     }
 
     @Test
-    public void testPutMessage_whenMessagePropertyIsTooLong() {
+    public void testPutMessage_whenMessagePropertyIsTooLong() throws ConsumeQueueException {
         if (notExecuted()) {
             return;
         }
@@ -613,7 +614,7 @@ public class RocksDBMessageStoreTest {
     }
 
     @Test
-    public void testMaxOffset() {
+    public void testMaxOffset() throws ConsumeQueueException {
         if (notExecuted()) {
             return;
         }

@@ -18,7 +18,7 @@ package org.apache.rocketmq.common.domain.constant;
 
 public class MQVersion {
 
-    public static final int CURRENT_VERSION = Version.V5_2_0.ordinal();
+    public static final int CURRENT_VERSION = Version.V5_3_1.ordinal();
 
     public static String getVersionDesc(int value) {
         int length = Version.values().length;

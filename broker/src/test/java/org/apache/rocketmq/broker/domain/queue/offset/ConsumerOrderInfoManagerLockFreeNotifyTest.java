@@ -24,6 +24,7 @@ import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.bootstrap.BrokerNettyServer;
 import org.apache.rocketmq.broker.server.daemon.pop.PopServiceManager;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
+import org.apache.rocketmq.store.exception.ConsumeQueueException;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +54,7 @@ public class ConsumerOrderInfoManagerLockFreeNotifyTest {
     private final BrokerNettyServer brokerNettyServer = mock(BrokerNettyServer.class);
     private final PopServiceManager popServiceManager = mock(PopServiceManager.class);
     @Before
-    public void before() {
+    public void before() throws ConsumeQueueException {
         notified = new AtomicBoolean(false);
         brokerConfig.setEnableNotifyAfterPopOrderLockRelease(true);
         when(broker.getBrokerNettyServer()).thenReturn(brokerNettyServer);

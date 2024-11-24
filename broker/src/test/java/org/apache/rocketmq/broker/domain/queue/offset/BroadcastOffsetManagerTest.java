@@ -20,11 +20,11 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.broker.domain.consumer.ConsumerManager;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.server.connection.ClientChannelInfo;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.exception.ConsumeQueueException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +51,7 @@ public class BroadcastOffsetManagerTest {
     private BroadcastOffsetManager broadcastOffsetManager;
 
     @Before
-    public void before() {
+    public void before() throws ConsumeQueueException {
         brokerConfig.setEnableBroadcastOffsetStore(true);
         brokerConfig.setBroadcastOffsetExpireSecond(1);
         brokerConfig.setBroadcastOffsetExpireMaxSecond(5);
@@ -84,7 +84,7 @@ public class BroadcastOffsetManagerTest {
     }
 
     @Test
-    public void testBroadcastOffsetSwitch() {
+    public void testBroadcastOffsetSwitch() throws ConsumeQueueException {
         // client1 connect to broker
         onlineClientIdSet.add("client1");
         long offset = broadcastOffsetManager.queryInitOffset("group", "topic", 0, "client1", 0, false);

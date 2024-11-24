@@ -30,15 +30,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.broker.server.Broker;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.infra.ClusterClient;
+import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
-import org.apache.rocketmq.common.lang.Pair;
-import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
-import org.apache.rocketmq.common.utils.StringUtils;
+import org.apache.rocketmq.common.lang.Pair;
+import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -604,7 +605,7 @@ public class ReplicasManager {
             return true;
 
         } catch (Exception e) {
-            LOGGER.error("fail to apply broker id: {}", e, tempBrokerMetadata.getBrokerId());
+            LOGGER.error("fail to apply broker id: {}", tempBrokerMetadata.getBrokerId(), e);
             return false;
         }
     }
@@ -772,7 +773,7 @@ public class ReplicasManager {
     }
 
     /**
-     * Scheduling sync controller medata.
+     * Scheduling sync controller metadata.
      */
     private boolean schedulingSyncControllerMetadata() {
         // Get controller metadata first.
@@ -905,14 +906,16 @@ public class ReplicasManager {
 
     private void updateControllerAddr() {
         if (brokerConfig.isFetchControllerAddrByDnsLookup()) {
-            this.controllerAddresses = clusterClient.dnsLookupAddressByDomain(this.brokerConfig.getControllerAddr());
-            return;
+            List<String> adders = clusterClient.dnsLookupAddressByDomain(this.brokerConfig.getControllerAddr());
+            if (CollectionUtils.isNotEmpty(adders)) {
+                this.controllerAddresses = adders;
+            }
+        } else {
+            final String controllerPaths = this.brokerConfig.getControllerAddr();
+            final String[] controllers = controllerPaths.split(";");
+            assert controllers.length > 0;
+            this.controllerAddresses = Arrays.asList(controllers);
         }
-
-        final String controllerPaths = this.brokerConfig.getControllerAddr();
-        final String[] controllers = controllerPaths.split(";");
-        assert controllers.length > 0;
-        this.controllerAddresses = Arrays.asList(controllers);
     }
 
     public int getLastEpoch() {

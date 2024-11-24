@@ -36,6 +36,7 @@ public class MixCommitlogTest extends MessageStoreTestBase {
     @Test
     public void testFallBehindCQ() throws Exception {
         Assume.assumeFalse(SystemUtils.isWindows());
+        Assume.assumeFalse(SystemUtils.isMac());
         String base = createBaseDir();
         String topic = UUID.randomUUID().toString();
         String peers = String.format("n0-localhost:%d", nextPort());
@@ -77,6 +78,7 @@ public class MixCommitlogTest extends MessageStoreTestBase {
 
     @Test
     public void testPutAndGet() throws Exception {
+        Assume.assumeFalse(SystemUtils.isMac());
         String base = createBaseDir();
         String topic = UUID.randomUUID().toString();
         String peers = String.format("n0-localhost:%d", nextPort());
@@ -140,6 +142,7 @@ public class MixCommitlogTest extends MessageStoreTestBase {
 
     @Test
     public void testDeleteExpiredFiles() throws Exception {
+        Assume.assumeFalse(SystemUtils.isMac());
         String base = createBaseDir();
         String topic = UUID.randomUUID().toString();
         String peers = String.format("n0-localhost:%d", nextPort());

@@ -277,11 +277,12 @@ public abstract class NettyRemotingAbstract {
         Runnable run = buildProcessRequestHandler(ctx, cmd, pair, opaque);
 
         if (isShuttingDown.get()) {
-            if (cmd.getVersion() > MQVersion.Version.V5_1_4.ordinal()) {
+            if (cmd.getVersion() > MQVersion.Version.V5_3_1.ordinal()) {
                 final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.GO_AWAY,
                     "please go away");
                 response.setOpaque(opaque);
                 writeResponse(ctx.channel(), cmd, response);
+                log.info("proxy is shutting down, write response GO_AWAY. channel={}, requestCode={}, opaque={}", ctx.channel(), cmd.getCode(), opaque);
                 return;
             }
         }
@@ -396,7 +397,7 @@ public abstract class NettyRemotingAbstract {
                 responseFuture.release();
             }
         } else {
-            log.warn("receive response, cmd={}, but not matched any request, address={}", cmd, RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
+            log.warn("receive response, cmd={}, but not matched any request, address={}, channelId={}", cmd, RemotingHelper.parseChannelRemoteAddr(ctx.channel()), ctx.channel().id());
         }
     }
 
@@ -563,13 +564,13 @@ public abstract class NettyRemotingAbstract {
                         return;
                     }
                     requestFail(opaque);
-                    log.warn("send a request command to channel <{}> failed.", RemotingHelper.parseChannelRemoteAddr(channel));
+                    log.warn("send a request command to channel <{}>, channelId={}, failed.", RemotingHelper.parseChannelRemoteAddr(channel), channel.id());
                 });
                 return future;
             } catch (Exception e) {
                 responseTable.remove(opaque);
                 responseFuture.release();
-                log.warn("send a request command to channel <" + RemotingHelper.parseChannelRemoteAddr(channel) + "> Exception", e);
+                log.warn("send a request command to channel <{}> channelId={} Exception", RemotingHelper.parseChannelRemoteAddr(channel), channel.id(), e);
                 future.completeExceptionally(new RemotingSendRequestException(RemotingHelper.parseChannelRemoteAddr(channel), e));
                 return future;
             }

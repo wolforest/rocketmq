@@ -22,8 +22,7 @@ import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
-
-public class LmqPullRequestHoldThread extends PullRequestHoldThread {
+public class LmqPullRequestHoldService extends PullRequestHoldService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
     public LmqPullRequestHoldThread(Broker broker) {
@@ -48,8 +47,8 @@ public class LmqPullRequestHoldThread extends PullRequestHoldThread {
             }
             String topic = key.substring(0, idx);
             int queueId = Integer.parseInt(key.substring(idx + 1));
-            final long offset = broker.getMessageStore().getMaxOffsetInQueue(topic, queueId);
             try {
+                final long offset = brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
                 this.notifyMessageArriving(topic, queueId, offset);
             } catch (Throwable e) {
                 LOGGER.error("check hold request failed. topic={}, queueId={}", topic, queueId, e);

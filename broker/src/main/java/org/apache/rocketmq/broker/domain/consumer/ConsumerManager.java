@@ -134,29 +134,22 @@ public class ConsumerManager {
         for (Entry<String, ConsumerGroupInfo> next : this.consumerTable.entrySet()) {
             ConsumerGroupInfo info = next.getValue();
             ClientChannelInfo clientChannelInfo = info.doChannelCloseEvent(remoteAddr, channel);
-            if (clientChannelInfo == null) {
-                continue;
+            if (clientChannelInfo != null) {
+                callConsumerIdsChangeListener(ConsumerGroupEvent.CLIENT_UNREGISTER, next.getKey(), clientChannelInfo, info.getSubscribeTopics());
+                if (info.getChannelInfoTable().isEmpty()) {
+                    ConsumerGroupInfo remove = this.consumerTable.remove(next.getKey());
+                    if (remove != null) {
+                        LOGGER.info("unregister consumer ok, no any connection, and remove consumer group, {}",
+                            next.getKey());
+                        callConsumerIdsChangeListener(ConsumerGroupEvent.UNREGISTER, next.getKey());
+                    }
+                }
+                if (!isBroadcastMode(info.getMessageModel())) {
+                    callConsumerIdsChangeListener(ConsumerGroupEvent.CHANGE, next.getKey(), info.getAllChannel());
+                }
             }
-
-            invokeClientUnregisterEvent(next, info, clientChannelInfo);
-            callConsumerIdsChangeListener(ConsumerGroupEvent.CHANGE, next.getKey(), info.getAllChannel());
         }
         return removed;
-    }
-
-    private void invokeClientUnregisterEvent(Entry<String, ConsumerGroupInfo> next, ConsumerGroupInfo info, ClientChannelInfo clientChannelInfo) {
-        callConsumerIdsChangeListener(ConsumerGroupEvent.CLIENT_UNREGISTER, next.getKey(), clientChannelInfo, info.getSubscribeTopics());
-        if (!info.getChannelInfoTable().isEmpty()) {
-            return;
-        }
-
-        ConsumerGroupInfo remove = this.consumerTable.remove(next.getKey());
-        if (remove == null) {
-            return;
-        }
-
-        LOGGER.info("unregister consumer ok, no any connection, and remove consumer group, {}", next.getKey());
-        callConsumerIdsChangeListener(ConsumerGroupEvent.UNREGISTER, next.getKey());
     }
 
     // compensate consumer info for consumer without heartbeat
@@ -185,21 +178,25 @@ public class ConsumerManager {
         long start = System.currentTimeMillis();
         ConsumerGroupInfo consumerGroupInfo = this.consumerTable.get(group);
         if (null == consumerGroupInfo) {
-            callConsumerIdsChangeListener(ConsumerGroupEvent.CLIENT_REGISTER, group, clientChannelInfo,
-                subList.stream().map(SubscriptionData::getTopic).collect(Collectors.toSet()));
             ConsumerGroupInfo tmp = new ConsumerGroupInfo(group, consumeType, messageModel, consumeFromWhere);
             ConsumerGroupInfo prev = this.consumerTable.putIfAbsent(group, tmp);
             consumerGroupInfo = prev != null ? prev : tmp;
         }
 
-        boolean r1 = consumerGroupInfo.updateChannel(clientChannelInfo, consumeType, messageModel, consumeFromWhere);
+        boolean r1 =
+            consumerGroupInfo.updateChannel(clientChannelInfo, consumeType, messageModel,
+                consumeFromWhere);
+        if (r1) {
+            callConsumerIdsChangeListener(ConsumerGroupEvent.CLIENT_REGISTER, group, clientChannelInfo,
+                subList.stream().map(SubscriptionData::getTopic).collect(Collectors.toSet()));
+        }
         boolean r2 = false;
         if (updateSubscription) {
             r2 = consumerGroupInfo.updateSubscription(subList);
         }
 
         if (r1 || r2) {
-            if (isNotifyConsumerIdsChangedEnable) {
+            if (isNotifyConsumerIdsChangedEnable && !isBroadcastMode(consumerGroupInfo.getMessageModel())) {
                 callConsumerIdsChangeListener(ConsumerGroupEvent.CHANGE, group, consumerGroupInfo.getAllChannel());
             }
         }
@@ -222,7 +219,7 @@ public class ConsumerManager {
             consumerGroupInfo = prev != null ? prev : tmp;
         }
         boolean updateChannelRst = consumerGroupInfo.updateChannel(clientChannelInfo, consumeType, messageModel, consumeFromWhere);
-        if (updateChannelRst && isNotifyConsumerIdsChangedEnable) {
+        if (updateChannelRst && isNotifyConsumerIdsChangedEnable && !isBroadcastMode(consumerGroupInfo.getMessageModel())) {
             callConsumerIdsChangeListener(ConsumerGroupEvent.CHANGE, group, consumerGroupInfo.getAllChannel());
         }
         if (null != this.brokerStatsManager) {
@@ -247,11 +244,12 @@ public class ConsumerManager {
             if (remove != null) {
                 LOGGER.info("unregister consumer ok, no any connection, and remove consumer group, {}", group);
 
-                callConsumerIdsChangeListener(ConsumerGroupEvent.UNREGISTER, group);
+                    callConsumerIdsChangeListener(ConsumerGroupEvent.UNREGISTER, group);
+                }
             }
-        }
-        if (isNotifyConsumerIdsChangedEnable) {
-            callConsumerIdsChangeListener(ConsumerGroupEvent.CHANGE, group, consumerGroupInfo.getAllChannel());
+            if (isNotifyConsumerIdsChangedEnable && !isBroadcastMode(consumerGroupInfo.getMessageModel())) {
+                callConsumerIdsChangeListener(ConsumerGroupEvent.CHANGE, group, consumerGroupInfo.getAllChannel());
+            }
         }
     }
 
@@ -334,5 +332,9 @@ public class ConsumerManager {
                 LOGGER.error("err when call consumerIdsChangeListener", t);
             }
         }
+    }
+
+    private boolean isBroadcastMode(final MessageModel messageModel) {
+        return MessageModel.BROADCASTING.equals(messageModel);
     }
 }

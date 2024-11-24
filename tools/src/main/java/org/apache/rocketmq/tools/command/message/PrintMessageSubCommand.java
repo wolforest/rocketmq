@@ -28,6 +28,7 @@ import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.utils.DateUtils;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.client.impl.FindBrokerResult;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
@@ -97,6 +98,12 @@ public class PrintMessageSubCommand implements SubCommand {
         opt.setRequired(false);
         options.addOption(opt);
 
+        opt =
+            new Option("l", "lmqParentTopic", true,
+                "Lmq parent topic, lmq is used to find the route.");
+        opt.setRequired(false);
+        options.addOption(opt);
+
         return options;
     }
 
@@ -113,11 +120,20 @@ public class PrintMessageSubCommand implements SubCommand {
             String subExpression =
                 !commandLine.hasOption('s') ? "*" : commandLine.getOptionValue('s').trim();
 
+            String lmqParentTopic =
+                !commandLine.hasOption('l') ? null : commandLine.getOptionValue('l').trim();
+
             boolean printBody = !commandLine.hasOption('d') || Boolean.parseBoolean(commandLine.getOptionValue('d').trim());
 
             consumer.start();
 
-            Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues(topic);
+            Set<MessageQueue> mqs;
+            if (lmqParentTopic != null) {
+                mqs = consumer.fetchSubscribeMessageQueues(lmqParentTopic);
+                mqs.forEach(mq -> mq.setTopic(topic));
+            } else {
+                mqs = consumer.fetchSubscribeMessageQueues(topic);
+            }
             for (MessageQueue mq : mqs) {
                 long minOffset = consumer.minOffset(mq);
                 long maxOffset = consumer.maxOffset(mq);
@@ -139,6 +155,7 @@ public class PrintMessageSubCommand implements SubCommand {
                 READQ:
                 for (long offset = minOffset; offset < maxOffset; ) {
                     try {
+                        fillBrokerAddrIfNotExist(consumer, mq, lmqParentTopic);
                         PullResult pullResult = consumer.pull(mq, subExpression, offset, 32);
                         offset = pullResult.getNextBeginOffset();
                         switch (pullResult.getPullStatus()) {
@@ -166,5 +183,18 @@ public class PrintMessageSubCommand implements SubCommand {
         } finally {
             consumer.shutdown();
         }
+    }
+
+    public void fillBrokerAddrIfNotExist(DefaultMQPullConsumer defaultMQPullConsumer, MessageQueue messageQueue,
+        String routeTopic) {
+
+        FindBrokerResult findBrokerResult = defaultMQPullConsumer.getDefaultMQPullConsumerImpl().getRebalanceImpl().getmQClientFactory()
+            .findBrokerAddressInSubscribe(messageQueue.getBrokerName(), 0, false);
+        if (findBrokerResult == null) {
+            // use lmq parent topic to fill up broker addr table
+            defaultMQPullConsumer.getDefaultMQPullConsumerImpl().getRebalanceImpl().getmQClientFactory()
+                .updateTopicRouteInfoFromNameServer(routeTopic);
+        }
+
     }
 }

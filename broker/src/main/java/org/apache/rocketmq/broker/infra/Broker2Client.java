@@ -31,6 +31,7 @@ import org.apache.rocketmq.common.utils.StringUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -43,6 +44,7 @@ import org.apache.rocketmq.remoting.protocol.header.CheckTransactionStateRequest
 import org.apache.rocketmq.remoting.protocol.header.GetConsumerStatusRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.NotifyConsumerIdsChangedRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.ResetOffsetRequestHeader;
+import org.apache.rocketmq.store.exception.ConsumeQueueException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -112,11 +114,12 @@ public class Broker2Client {
         }
     }
 
-    public RemotingCommand resetOffset(String topic, String group, long timeStamp, boolean isForce) {
+    public RemotingCommand resetOffset(String topic, String group, long timeStamp, boolean isForce) throws RemotingCommandException {
         return resetOffset(topic, group, timeStamp, isForce, false);
     }
 
-    public RemotingCommand resetOffset(String topic, String group, long timeStamp, boolean isForce, boolean isC) {
+    public RemotingCommand resetOffset(String topic, String group, long timeStamp, boolean isForce,
+        boolean isC) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
 
         TopicConfig topicConfig = this.broker.getTopicConfigManager().selectTopicConfig(topic);
@@ -145,8 +148,11 @@ public class Broker2Client {
 
             long timeStampOffset;
             if (timeStamp == -1) {
-
-                timeStampOffset = this.broker.getMessageStore().getMaxOffsetInQueue(topic, i);
+                try {
+                    timeStampOffset = this.broker.getMessageStore().getMaxOffsetInQueue(topic, i);
+                } catch (ConsumeQueueException e) {
+                    throw new RemotingCommandException("Failed to get max offset in queue", e);
+                }
             } else {
                 timeStampOffset = this.broker.getMessageStore().getOffsetInQueueByTime(topic, i, timeStamp);
             }

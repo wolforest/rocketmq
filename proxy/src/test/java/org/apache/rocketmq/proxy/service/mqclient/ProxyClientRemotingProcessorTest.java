@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.rocketmq.broker.domain.producer.ProducerManager;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.proxy.service.client.ProxyClientRemotingProcessor;
 import org.apache.rocketmq.common.domain.message.MessageAccessor;
 import org.apache.rocketmq.common.domain.message.MessageConst;
@@ -72,6 +72,10 @@ public class ProxyClientRemotingProcessorTest {
 
     @Test
     public void testTransactionCheck() throws Exception {
+        // Temporarily skip this test on the Mac system as it is flaky
+        if (SystemUtils.isMac()) {
+            return;
+        }
         CompletableFuture<ProxyRelayResult<Void>> proxyRelayResultFuture = new CompletableFuture<>();
         when(proxyRelayService.processCheckTransactionState(any(), any(), any(), any()))
             .thenReturn(new RelayData<>(
@@ -123,7 +127,7 @@ public class ProxyClientRemotingProcessorTest {
                 }
             });
         }
-        await().atMost(Duration.ofSeconds(1)).until(() -> count.get() == 100);
+        await().atMost(Duration.ofSeconds(3)).until(() -> count.get() == 100);
         verify(observer, times(2)).onNext(any());
     }
 

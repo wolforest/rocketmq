@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.broker.domain.metadata.topic;
 
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,8 @@ import org.apache.rocketmq.common.lang.attribute.Attribute;
 import org.apache.rocketmq.common.lang.attribute.BooleanAttribute;
 import org.apache.rocketmq.common.lang.attribute.EnumAttribute;
 import org.apache.rocketmq.common.lang.attribute.LongRangeAttribute;
+import java.util.UUID;
+
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
@@ -37,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static com.google.common.collect.Sets.newHashSet;
@@ -45,6 +49,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TopicConfigManagerTest {
+
+    private final String basePath = Paths.get(System.getProperty("user.home"),
+            "unit-test-store", UUID.randomUUID().toString().substring(0, 16).toUpperCase()).toString();
     private TopicConfigManager topicConfigManager;
     @Mock
     private Broker broker;
@@ -57,8 +64,9 @@ public class TopicConfigManagerTest {
         BrokerConfig brokerConfig = new BrokerConfig();
         when(broker.getBrokerConfig()).thenReturn(brokerConfig);
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
+        messageStoreConfig.setStorePathRootDir(basePath);
         when(broker.getMessageStoreConfig()).thenReturn(messageStoreConfig);
-        when(broker.getMessageStore()).thenReturn(defaultMessageStore);
+        Mockito.lenient().when(broker.getMessageStore()).thenReturn(defaultMessageStore);
         when(defaultMessageStore.getStateMachineVersion()).thenReturn(0L);
         topicConfigManager = new TopicConfigManager(broker);
     }

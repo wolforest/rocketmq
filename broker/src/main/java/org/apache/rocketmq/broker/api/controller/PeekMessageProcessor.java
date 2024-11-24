@@ -52,6 +52,7 @@ import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfi
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.exception.ConsumeQueueException;
 
 import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LABEL_CONSUMER_GROUP;
 import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LABEL_IS_SYSTEM;
@@ -231,13 +232,18 @@ public class PeekMessageProcessor implements NettyRequestProcessor {
 
     private long peekMsgFromQueue(boolean isRetry, GetMessageResult getMessageResult,
         PeekMessageRequestHeader requestHeader, int queueId, long restNum, int reviveQid, Channel channel,
-        long popTime) {
+        long popTime) throws RemotingCommandException {
         String topic = isRetry ?
             KeyBuilder.buildPopRetryTopic(requestHeader.getTopic(), requestHeader.getConsumerGroup(), broker.getBrokerConfig().isEnableRetryTopicV2())
             : requestHeader.getTopic();
         GetMessageResult getMessageTmpResult;
         long offset = getPopOffset(topic, requestHeader.getConsumerGroup(), queueId);
-        restNum = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
+        try {
+            restNum = this.broker.getMessageStore().getMaxOffsetInQueue(topic, queueId) - offset + restNum;
+        } catch (ConsumeQueueException e) {
+            LOG.error("Failed to get max offset in queue. topic={}, queue-id={}", topic, queueId, e);
+            throw new RemotingCommandException("Failed to get max offset in queue", e);
+        }
         if (getMessageResult.getMessageMapedList().size() >= requestHeader.getMaxMsgNums()) {
             return restNum;
         }
@@ -260,8 +266,8 @@ public class PeekMessageProcessor implements NettyRequestProcessor {
                 BrokerMetricsManager.throughputOutTotal.add(getMessageResult.getBufferTotalSize(), attributes);
             }
 
-            for (SelectMappedBufferResult mapedBuffer : getMessageTmpResult.getMessageMapedList()) {
-                getMessageResult.addMessage(mapedBuffer);
+            for (SelectMappedBufferResult mappedBuffer : getMessageTmpResult.getMessageMapedList()) {
+                getMessageResult.addMessage(mappedBuffer);
             }
         }
         return restNum;

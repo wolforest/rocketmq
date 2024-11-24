@@ -78,6 +78,10 @@ public class ResetOffsetByTimeCommand implements SubCommand {
         opt.setRequired(false);
         options.addOption(opt);
 
+        opt = new Option("c", "cluster", true, "Cluster name or lmq parent topic, lmq is used to find the route.");
+        opt.setRequired(false);
+        options.addOption(opt);
+
         return options;
     }
 
@@ -89,6 +93,7 @@ public class ResetOffsetByTimeCommand implements SubCommand {
             String group = commandLine.getOptionValue("g").trim();
             String topic = commandLine.getOptionValue("t").trim();
             String timeStampStr = commandLine.getOptionValue("s").trim();
+            String clusterName = commandLine.hasOption('c') ? commandLine.getOptionValue('c').trim() : null;
             long timestamp = "now".equals(timeStampStr) ? System.currentTimeMillis() : 0;
 
             try {
@@ -130,7 +135,7 @@ public class ResetOffsetByTimeCommand implements SubCommand {
             if (brokerAddr != null && queueId >= 0) {
                 System.out.printf("start reset consumer offset by specified, " +
                         "group[%s], topic[%s], queueId[%s], broker[%s], timestamp(string)[%s], timestamp(long)[%s]%n",
-                        group, topic, queueId, brokerAddr, timeStampStr, timestamp);
+                    group, topic, queueId, brokerAddr, timeStampStr, timestamp);
 
                 long resetOffset = null != offset ? offset :
                     defaultMQAdminExt.searchOffset(brokerAddr, topic, queueId, timestamp, 3000);
@@ -144,11 +149,11 @@ public class ResetOffsetByTimeCommand implements SubCommand {
 
             Map<MessageQueue, Long> offsetTable;
             try {
-                offsetTable = defaultMQAdminExt.resetOffsetByTimestamp(topic, group, timestamp, force, isC);
+                offsetTable = defaultMQAdminExt.resetOffsetByTimestamp(clusterName, topic, group, timestamp, force, isC);
             } catch (MQClientException e) {
-                // if consumer not online, use old command to reset reset
+                // if consumer not online, use old command to reset
                 if (ResponseCode.CONSUMER_NOT_ONLINE == e.getResponseCode()) {
-                    ResetOffsetByTimeOldCommand.resetOffset(defaultMQAdminExt, group, topic, timestamp, force, timeStampStr);
+                    ResetOffsetByTimeOldCommand.resetOffset(defaultMQAdminExt, clusterName, group, topic, timestamp, force, timeStampStr);
                     return;
                 }
                 throw e;

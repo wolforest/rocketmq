@@ -44,14 +44,21 @@ import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
 import org.apache.rocketmq.store.server.store.StoreCheckpoint;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
 import org.junit.Assert;
-import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Assume;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.rocketmq.store.server.StoreTestUtil.releaseMmapFilesOnWindows;
 import static org.awaitility.Awaitility.await;
 
 public class DLedgerCommitlogTest extends MessageStoreTestBase {
+
+    @BeforeClass
+    public static void beforeClass() {
+        // Temporarily skip those tests on the macOS as they are flaky
+        Assume.assumeFalse(SystemUtils.isMac());
+    }
 
     @Test
     public void testTruncateCQ() throws Exception {

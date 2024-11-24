@@ -133,7 +133,8 @@ public class LocalMessageService implements MessageService {
     }
 
     @Override
-    public CompletableFuture<Void> endTransactionOneway(ProxyContext ctx, String brokerName, EndTransactionRequestHeader requestHeader,
+    public CompletableFuture<Void> endTransactionOneway(ProxyContext ctx, String brokerName,
+        EndTransactionRequestHeader requestHeader,
         long timeoutMillis) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         SimpleChannel channel = channelManager.createChannel(ctx);
@@ -152,7 +153,7 @@ public class LocalMessageService implements MessageService {
     @Override
     public CompletableFuture<PopResult> popMessage(ProxyContext ctx, AddressableMessageQueue messageQueue,
         PopMessageRequestHeader requestHeader, long timeoutMillis) {
-
+        requestHeader.setBornTime(System.currentTimeMillis());
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         processPopRequest(ctx, requestHeader, future);
 
@@ -167,9 +168,8 @@ public class LocalMessageService implements MessageService {
         RemotingCommand command = LocalRemotingCommand.createRequestCommand(RequestCode.CHANGE_MESSAGE_INVISIBLETIME, requestHeader, ctx.getLanguage());
         CompletableFuture<RemotingCommand> future = new CompletableFuture<>();
         try {
-            RemotingCommand response = broker.getBrokerNettyServer().getChangeInvisibleTimeProcessor()
-                .processRequest(channelHandlerContext, command);
-            future.complete(response);
+            future = broker.getBrokerNettyServer().getChangeInvisibleTimeProcessor()
+                .processRequestAsync(channelHandlerContext.channel(), command, true);
         } catch (Exception e) {
             log.error("Fail to process changeInvisibleTime command", e);
             future.completeExceptionally(e);
@@ -234,6 +234,12 @@ public class LocalMessageService implements MessageService {
     public CompletableFuture<Void> updateConsumerOffset(ProxyContext ctx, AddressableMessageQueue messageQueue,
         UpdateConsumerOffsetRequestHeader requestHeader, long timeoutMillis) {
         throw new NotImplementedException("updateConsumerOffset is not implemented in LocalMessageService");
+    }
+
+    @Override
+    public CompletableFuture<Void> updateConsumerOffsetAsync(ProxyContext ctx, AddressableMessageQueue messageQueue,
+        UpdateConsumerOffsetRequestHeader requestHeader, long timeoutMillis) {
+        throw new NotImplementedException("updateConsumerOffsetAsync is not implemented in LocalMessageService");
     }
 
     @Override

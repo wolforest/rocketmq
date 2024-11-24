@@ -587,26 +587,30 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
         this.byteBufferItem.putInt(0); // 4 bytes reserved
 
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(this.mappedFileQueue.getMaxOffset());
-        if (null == mappedFile) {
-            return false;
-        }
-
-        boolean isNewFile = isNewFile(mappedFile);
-        boolean appendRes = mappedFile.appendMessage(this.byteBufferItem.array());
-        if (appendRes) {
-            maxMsgPhyOffsetInCommitLog = offset;
-            maxOffsetInQueue = msgBaseOffset + batchSize;
-            //only the first time need to correct the minOffsetInQueue
-            //the other correctness is done in correctLogicMinoffsetService
-            if (mappedFile.isFirstCreateInQueue() && minOffsetInQueue == -1) {
-                reviseMinOffsetInQueue();
+        if (mappedFile != null) {
+            boolean isNewFile = isNewFile(mappedFile);
+            boolean appendRes;
+            if (messageStore.getMessageStoreConfig().isPutConsumeQueueDataByFileChannel()) {
+                appendRes = mappedFile.appendMessageUsingFileChannel(this.byteBufferItem.array());
+            } else {
+                appendRes = mappedFile.appendMessage(this.byteBufferItem.array());
             }
-            if (isNewFile) {
-                // cache new file
-                this.cacheBcq(mappedFile);
+            if (appendRes) {
+                maxMsgPhyOffsetInCommitLog = offset;
+                maxOffsetInQueue = msgBaseOffset + batchSize;
+                //only the first time need to correct the minOffsetInQueue
+                //the other correctness is done in correctLogicMinoffsetService
+                if (mappedFile.isFirstCreateInQueue() && minOffsetInQueue == -1) {
+                    reviseMinOffsetInQueue();
+                }
+                if (isNewFile) {
+                    // cache new file
+                    this.cacheBcq(mappedFile);
+                }
             }
+            return appendRes;
         }
-        return appendRes;
+        return false;
     }
 
     protected BatchOffsetIndex getMinMsgOffset(MappedFile mappedFile, boolean getBatchSize, boolean getStoreTime) {

@@ -68,6 +68,7 @@ import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.FlushDiskType;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
+import org.apache.rocketmq.store.exception.ConsumeQueueException;
 import org.assertj.core.util.Strings;
 import org.junit.After;
 import org.junit.Assert;
@@ -385,7 +386,7 @@ public class DefaultMessageStoreTest {
     }
 
     @Test
-    public void testPutMessage_whenMessagePropertyIsTooLong() {
+    public void testPutMessage_whenMessagePropertyIsTooLong() throws ConsumeQueueException {
         String topicName = "messagePropertyIsTooLongTest";
         MessageExtBrokerInner illegalMessage = buildSpecifyLengthPropertyMessage("123".getBytes(StandardCharsets.UTF_8), topicName, Short.MAX_VALUE + 1);
         assertEquals(messageStore.putMessage(illegalMessage).getPutMessageStatus(), PutMessageStatus.PROPERTIES_SIZE_EXCEEDED);
@@ -550,7 +551,7 @@ public class DefaultMessageStoreTest {
     }
 
     @Test
-    public void testMaxOffset() throws InterruptedException {
+    public void testMaxOffset() throws InterruptedException, ConsumeQueueException {
         int firstBatchMessages = 3;
         int queueId = 0;
         messageBody = storeMessage.getBytes();

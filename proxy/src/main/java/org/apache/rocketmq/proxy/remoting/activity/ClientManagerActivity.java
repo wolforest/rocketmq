@@ -137,32 +137,36 @@ public class ClientManagerActivity extends AbstractRemotingActivity {
 
     private void unRegisterProducer(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context, UnregisterClientRequestHeader requestHeader) {
         final String producerGroup = requestHeader.getProducerGroup();
-        if (producerGroup == null) {
-            return;
+        if (producerGroup != null) {
+            RemotingChannel channel = this.remotingChannelManager.removeProducerChannel(context, producerGroup, ctx.channel());
+            if (channel != null) {
+                ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
+                    channel,
+                    requestHeader.getClientID(),
+                    request.getLanguage(),
+                    request.getVersion());
+                this.messagingProcessor.unRegisterProducer(context, producerGroup, clientChannelInfo);
+            } else {
+                log.warn("unregister producer failed, channel not exist, may has been removed, producerGroup={}, channel={}", producerGroup, ctx.channel());
+            }
         }
-
-        RemotingChannel channel = this.remotingChannelManager.removeProducerChannel(context, producerGroup, ctx.channel());
-        ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
-            channel,
-            requestHeader.getClientID(),
-            request.getLanguage(),
-            request.getVersion());
-        this.messagingProcessor.unRegisterProducer(context, producerGroup, clientChannelInfo);
-    }
-
-    private void unRegisterConsumer(ChannelHandlerContext ctx, RemotingCommand request, ProxyContext context, UnregisterClientRequestHeader requestHeader) {
         final String consumerGroup = requestHeader.getConsumerGroup();
-        if (consumerGroup == null) {
-            return;
+        if (consumerGroup != null) {
+            RemotingChannel channel = this.remotingChannelManager.removeConsumerChannel(context, consumerGroup, ctx.channel());
+            if (channel != null) {
+                ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
+                    channel,
+                    requestHeader.getClientID(),
+                    request.getLanguage(),
+                    request.getVersion());
+                this.messagingProcessor.unRegisterConsumer(context, consumerGroup, clientChannelInfo);
+            } else {
+                log.warn("unregister consumer failed, channel not exist, may has been removed, consumerGroup={}, channel={}", consumerGroup, ctx.channel());
+            }
         }
-
-        RemotingChannel channel = this.remotingChannelManager.removeConsumerChannel(context, consumerGroup, ctx.channel());
-        ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
-            channel,
-            requestHeader.getClientID(),
-            request.getLanguage(),
-            request.getVersion());
-        this.messagingProcessor.unRegisterConsumer(context, consumerGroup, clientChannelInfo);
+        response.setCode(ResponseCode.SUCCESS);
+        response.setRemark("");
+        return response;
     }
 
     protected RemotingCommand checkClientConfig(ChannelHandlerContext ctx, RemotingCommand request,

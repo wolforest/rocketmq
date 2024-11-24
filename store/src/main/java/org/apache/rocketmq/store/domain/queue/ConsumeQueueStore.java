@@ -47,6 +47,7 @@ import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.exception.StoreException;
 
 import static java.lang.String.format;
 import static org.apache.rocketmq.store.server.config.StorePathConfigHelper.getStorePathBatchConsumeQueue;
@@ -124,6 +125,12 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
 
     @Override
     public boolean shutdown() {
+        try {
+            flush();
+        } catch (StoreException e) {
+            log.error("Failed to flush all consume queues", e);
+            return false;
+        }
         return true;
     }
 
@@ -382,6 +389,15 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
     public boolean flush(ConsumeQueueInterface consumeQueue, int flushLeastPages) {
         FileQueueLifeCycle fileQueueLifeCycle = getLifeCycle(consumeQueue.getTopic(), consumeQueue.getQueueId());
         return fileQueueLifeCycle.flush(flushLeastPages);
+    }
+
+    @Override
+    public void flush() throws StoreException {
+        for (Map.Entry<String, ConcurrentMap<Integer, ConsumeQueueInterface>> topicEntry : this.consumeQueueTable.entrySet()) {
+            for (Map.Entry<Integer, ConsumeQueueInterface> cqEntry : topicEntry.getValue().entrySet()) {
+                flush(cqEntry.getValue(), 0);
+            }
+        }
     }
 
     @Override

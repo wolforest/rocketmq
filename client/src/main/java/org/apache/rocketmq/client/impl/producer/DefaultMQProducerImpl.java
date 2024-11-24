@@ -34,6 +34,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.rocketmq.client.QueryResult;
 import org.apache.rocketmq.client.Validators;
 import org.apache.rocketmq.client.common.ClientErrorCode;
@@ -67,9 +68,6 @@ import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.apache.rocketmq.client.producer.TransactionSendResult;
 import org.apache.rocketmq.common.lang.thread.ServiceState;
 import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
-import org.apache.rocketmq.common.lang.compression.CompressionType;
-import org.apache.rocketmq.common.lang.compression.Compressor;
-import org.apache.rocketmq.common.lang.compression.CompressorFactory;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.app.help.FAQUrl;
 import org.apache.rocketmq.common.domain.message.Message;
@@ -117,11 +115,6 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     private ArrayList<CheckForbiddenHook> checkForbiddenHookList = new ArrayList<>();
     private MQFaultStrategy mqFaultStrategy;
     private ExecutorService asyncSenderExecutor;
-
-    // compression related
-    private int compressLevel = Integer.parseInt(System.getProperty(MQConstants.MESSAGE_COMPRESS_LEVEL, "5"));
-    private CompressionType compressType = CompressionType.of(System.getProperty(MQConstants.MESSAGE_COMPRESS_TYPE, "ZLIB"));
-    private final Compressor compressor = CompressorFactory.getCompressor(compressType);
 
     // backpressure related
     private Semaphore semaphoreAsyncSendNum;
@@ -200,7 +193,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     private Optional<String> pickTopic() {
         if (topicPublishInfoTable.isEmpty()) {
-            return Optional.absent();
+            return Optional.empty();
         }
         return Optional.of(topicPublishInfoTable.keySet().iterator().next());
     }
@@ -216,6 +209,14 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     public void setSemaphoreAsyncSendSize(int size) {
         semaphoreAsyncSendSize = new Semaphore(size, true);
+    }
+
+    public int getSemaphoreAsyncSendNumAvailablePermits() {
+        return semaphoreAsyncSendNum == null ? 0 : semaphoreAsyncSendNum.availablePermits();
+    }
+
+    public int getSemaphoreAsyncSendSizeAvailablePermits() {
+        return semaphoreAsyncSendSize == null ? 0 : semaphoreAsyncSendSize.availablePermits();
     }
 
     public void initTransactionEnv() {
@@ -285,13 +286,15 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
         this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQProducer, rpcHook);
 
-        boolean registerOK = mQClientFactory.registerProducer(this.defaultMQProducer.getProducerGroup(), this);
-        if (!registerOK) {
-            this.serviceState = ServiceState.CREATE_JUST;
-            throw new MQClientException("The producer group[" + this.defaultMQProducer.getProducerGroup()
-                + "] has been created before, specify another name please." + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
-                null);
-        }
+                defaultMQProducer.initProduceAccumulator();
+
+                boolean registerOK = mQClientFactory.registerProducer(this.defaultMQProducer.getProducerGroup(), this);
+                if (!registerOK) {
+                    this.serviceState = ServiceState.CREATE_JUST;
+                    throw new MQClientException("The producer group[" + this.defaultMQProducer.getProducerGroup()
+                        + "] has been created before, specify another name please." + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
+                        null);
+                }
 
         if (startFactory) {
             this.mQClientFactory.start();
@@ -612,8 +615,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     }
 
     class BackpressureSendCallBack implements SendCallback {
-        public boolean isSemaphoreAsyncSizeAquired = false;
-        public boolean isSemaphoreAsyncNumAquired = false;
+        public boolean isSemaphoreAsyncSizeAcquired = false;
+        public boolean isSemaphoreAsyncNumAcquired = false;
         public int msgLen;
         private final SendCallback sendCallback;
 
@@ -623,24 +626,49 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
         @Override
         public void onSuccess(SendResult sendResult) {
-            if (isSemaphoreAsyncSizeAquired) {
-                semaphoreAsyncSendSize.release(msgLen);
-            }
-            if (isSemaphoreAsyncNumAquired) {
-                semaphoreAsyncSendNum.release();
-            }
+            semaphoreProcessor();
             sendCallback.onSuccess(sendResult);
         }
 
         @Override
         public void onException(Throwable e) {
-            if (isSemaphoreAsyncSizeAquired) {
-                semaphoreAsyncSendSize.release(msgLen);
-            }
-            if (isSemaphoreAsyncNumAquired) {
-                semaphoreAsyncSendNum.release();
-            }
+            semaphoreProcessor();
             sendCallback.onException(e);
+        }
+
+        public void semaphoreProcessor() {
+            if (isSemaphoreAsyncSizeAcquired) {
+                defaultMQProducer.acquireBackPressureForAsyncSendSizeLock();
+                semaphoreAsyncSendSize.release(msgLen);
+                defaultMQProducer.releaseBackPressureForAsyncSendSizeLock();
+            }
+            if (isSemaphoreAsyncNumAcquired) {
+                defaultMQProducer.acquireBackPressureForAsyncSendNumLock();
+                semaphoreAsyncSendNum.release();
+                defaultMQProducer.releaseBackPressureForAsyncSendNumLock();
+            }
+        }
+
+        public void semaphoreAsyncAdjust(int semaphoreAsyncNum, int semaphoreAsyncSize) throws InterruptedException {
+            defaultMQProducer.acquireBackPressureForAsyncSendNumLock();
+            if (semaphoreAsyncNum > 0) {
+                semaphoreAsyncSendNum.release(semaphoreAsyncNum);
+            } else {
+                semaphoreAsyncSendNum.acquire(- semaphoreAsyncNum);
+            }
+            defaultMQProducer.setBackPressureForAsyncSendNumInsideAdjust(defaultMQProducer.getBackPressureForAsyncSendNum()
+                    + semaphoreAsyncNum);
+            defaultMQProducer.releaseBackPressureForAsyncSendNumLock();
+
+            defaultMQProducer.acquireBackPressureForAsyncSendSizeLock();
+            if (semaphoreAsyncSize > 0) {
+                semaphoreAsyncSendSize.release(semaphoreAsyncSize);
+            } else {
+                semaphoreAsyncSendSize.acquire(- semaphoreAsyncSize);
+            }
+            defaultMQProducer.setBackPressureForAsyncSendSizeInsideAdjust(defaultMQProducer.getBackPressureForAsyncSendSize()
+                    + semaphoreAsyncSize);
+            defaultMQProducer.releaseBackPressureForAsyncSendSizeLock();
         }
     }
 
@@ -649,32 +677,40 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         throws MQClientException, InterruptedException {
         ExecutorService executor = this.getAsyncSenderExecutor();
         boolean isEnableBackpressureForAsyncMode = this.getDefaultMQProducer().isEnableBackpressureForAsyncMode();
-        boolean isSemaphoreAsyncNumAquired = false;
-        boolean isSemaphoreAsyncSizeAquired = false;
+        boolean isSemaphoreAsyncNumAcquired = false;
+        boolean isSemaphoreAsyncSizeAcquired = false;
         int msgLen = msg.getBody() == null ? 1 : msg.getBody().length;
+        sendCallback.msgLen = msgLen;
 
         try {
             if (isEnableBackpressureForAsyncMode) {
+                defaultMQProducer.acquireBackPressureForAsyncSendNumLock();
                 long costTime = System.currentTimeMillis() - beginStartTime;
-                isSemaphoreAsyncNumAquired = timeout - costTime > 0
+
+                isSemaphoreAsyncNumAcquired = timeout - costTime > 0
                     && semaphoreAsyncSendNum.tryAcquire(timeout - costTime, TimeUnit.MILLISECONDS);
-                if (!isSemaphoreAsyncNumAquired) {
+                sendCallback.isSemaphoreAsyncNumAcquired = isSemaphoreAsyncNumAcquired;
+                defaultMQProducer.releaseBackPressureForAsyncSendNumLock();
+                if (!isSemaphoreAsyncNumAcquired) {
                     sendCallback.onException(
                         new RemotingTooMuchRequestException("send message tryAcquire semaphoreAsyncNum timeout"));
                     return;
                 }
+
+                defaultMQProducer.acquireBackPressureForAsyncSendSizeLock();
                 costTime = System.currentTimeMillis() - beginStartTime;
-                isSemaphoreAsyncSizeAquired = timeout - costTime > 0
+
+                isSemaphoreAsyncSizeAcquired = timeout - costTime > 0
                     && semaphoreAsyncSendSize.tryAcquire(msgLen, timeout - costTime, TimeUnit.MILLISECONDS);
-                if (!isSemaphoreAsyncSizeAquired) {
+                sendCallback.isSemaphoreAsyncSizeAcquired = isSemaphoreAsyncSizeAcquired;
+                defaultMQProducer.releaseBackPressureForAsyncSendSizeLock();
+                if (!isSemaphoreAsyncSizeAcquired) {
                     sendCallback.onException(
                         new RemotingTooMuchRequestException("send message tryAcquire semaphoreAsyncSize timeout"));
                     return;
                 }
             }
-            sendCallback.isSemaphoreAsyncSizeAquired = isSemaphoreAsyncSizeAquired;
-            sendCallback.isSemaphoreAsyncNumAquired = isSemaphoreAsyncNumAquired;
-            sendCallback.msgLen = msgLen;
+
             executor.submit(runnable);
         } catch (RejectedExecutionException e) {
             if (isEnableBackpressureForAsyncMode) {
@@ -805,86 +841,62 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             }
                         }
 
-                        return sendResult;
-                    default:
-                        break;
+                                return sendResult;
+                            default:
+                                break;
+                        }
+                    } catch (MQClientException e) {
+                        endTimestamp = System.currentTimeMillis();
+                        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
+                        log.warn("sendKernelImpl exception, resend at once, InvokeID: {}, RT: {}ms, Broker: {}", invokeID, endTimestamp - beginTimestampPrev, mq, e);
+                        log.warn(msg.toString());
+                        exception = e;
+                        continue;
+                    } catch (RemotingException e) {
+                        endTimestamp = System.currentTimeMillis();
+                        if (this.mqFaultStrategy.isStartDetectorEnable()) {
+                            // Set this broker unreachable when detecting schedule task is running for RemotingException.
+                            this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
+                        } else {
+                            // Otherwise, isolate this broker.
+                            this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, true);
+                        }
+                        log.warn("sendKernelImpl exception, resend at once, InvokeID: {}, RT: {}ms, Broker: {}", invokeID, endTimestamp - beginTimestampPrev, mq, e);
+                        if (log.isDebugEnabled()) {
+                            log.debug(msg.toString());
+                        }
+                        exception = e;
+                        continue;
+                    } catch (MQBrokerException e) {
+                        endTimestamp = System.currentTimeMillis();
+                        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
+                        log.warn("sendKernelImpl exception, resend at once, InvokeID: {}, RT: {}ms, Broker: {}", invokeID, endTimestamp - beginTimestampPrev, mq, e);
+                        if (log.isDebugEnabled()) {
+                            log.debug(msg.toString());
+                        }
+                        exception = e;
+                        if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) {
+                            continue;
+                        } else {
+                            if (sendResult != null) {
+                                return sendResult;
+                            }
+
+                            throw e;
+                        }
+                    } catch (InterruptedException e) {
+                        endTimestamp = System.currentTimeMillis();
+                        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
+                        log.warn("sendKernelImpl exception, throw exception, InvokeID: {}, RT: {}ms, Broker: {}", invokeID, endTimestamp - beginTimestampPrev, mq, e);
+                        if (log.isDebugEnabled()) {
+                            log.debug(msg.toString());
+                        }
+                        throw e;
+                    }
+                } else {
+                    break;
                 }
-            } catch (MQClientException e) {
-                exception = e;
-                handleSendMQClientException(msg, mq, invokeID, beginTimestampPrev, e);
-                continue;
-            } catch (RemotingException e) {
-                handleSendRemotingException(msg, mq, invokeID, beginTimestampPrev, e);
-                exception = e;
-                continue;
-            } catch (MQBrokerException e) {
-                exception = e;
-                SendResult tmpResult = handleSendMQBrokerException(msg, mq, invokeID, beginTimestampPrev, e, sendResult);
-                if (tmpResult != null) {
-                    return tmpResult;
-                }
-            } catch (InterruptedException e) {
-                return throwSendInterruptedException(msg, mq,invokeID, beginTimestampPrev, e);
             }
-
-        }
-
-        if (sendResult != null) {
-            return sendResult;
-        }
-        return throwSendException(msg, callTimeout, times, beginTimestampFirst, brokersSent, exception);
-    }
-
-    private void handleSendMQClientException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, MQClientException e) {
-        long endTimestamp = System.currentTimeMillis();
-        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
-        log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
-        log.warn(msg.toString());
-    }
-
-    private void handleSendRemotingException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, RemotingException e) {
-        long endTimestamp = System.currentTimeMillis();
-        if (this.mqFaultStrategy.isStartDetectorEnable()) {
-            // Set this broker unreachable when detecting schedule task is running for RemotingException.
-            this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
-        } else {
-            // Otherwise, isolate this broker.
-            this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, true);
-        }
-        log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
-        if (log.isDebugEnabled()) {
-            log.debug(msg.toString());
-        }
-    }
-
-    private SendResult handleSendMQBrokerException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, MQBrokerException e, SendResult sendResult) throws MQBrokerException {
-        long endTimestamp = System.currentTimeMillis();
-        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
-        log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
-        if (log.isDebugEnabled()) {
-            log.debug(msg.toString());
-        }
-
-        if (this.defaultMQProducer.getRetryResponseCodes().contains(e.getResponseCode())) {
-            return null;
-        } else {
-            if (sendResult != null) {
-                return sendResult;
-            }
-
-            throw e;
-        }
-    }
-
-    private SendResult throwSendInterruptedException(Message msg, MessageQueue mq, long invokeID, long beginTimestampPrev, InterruptedException e) throws InterruptedException {
-        long endTimestamp = System.currentTimeMillis();
-        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
-        log.warn("sendKernelImpl exception, throw exception, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
-        if (log.isDebugEnabled()) {
-            log.debug(msg.toString());
-        }
-        throw e;
-    }
 
     private SendResult throwSendException(Message msg, boolean callTimeout, int times, long beginTimestampFirst, String[] brokersSent, Exception exception) throws RemotingTooMuchRequestException, MQClientException {
         String info = String.format("Send [%d] times, still failed, cost [%d]ms, Topic: %s, BrokersSent: %s",
@@ -965,13 +977,13 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 topicWithNamespace = true;
             }
 
-            int sysFlag = 0;
-            boolean msgBodyCompressed = false;
-            if (this.tryToCompressMessage(msg)) {
-                sysFlag |= MessageSysFlag.COMPRESSED_FLAG;
-                sysFlag |= compressType.getCompressionFlag();
-                msgBodyCompressed = true;
-            }
+                int sysFlag = 0;
+                boolean msgBodyCompressed = false;
+                if (this.tryToCompressMessage(msg)) {
+                    sysFlag |= MessageSysFlag.COMPRESSED_FLAG;
+                    sysFlag |= this.defaultMQProducer.getCompressType().getCompressionFlag();
+                    msgBodyCompressed = true;
+                }
 
             final String tranMsg = msg.getProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED);
             if (Boolean.parseBoolean(tranMsg)) {
@@ -984,21 +996,47 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 this.executeSendMessageHookBefore(context);
             }
 
-            SendMessageRequestHeader requestHeader = initSendMessageRequestHeader(msg, mq, brokerName, sysFlag);
-            SendResult sendResult = null;
-
-            switch (communicationMode) {
-                case ASYNC:
-                    Message tmpMessage = msg;
-                    boolean messageCloned = false;
-                    if (msgBodyCompressed) {
-                        //If msg body was compressed, msgbody should be reset using prevBody.
-                        //Clone new message using commpressed message body and recover origin massage.
-                        //Fix bug:https://github.com/apache/rocketmq-externals/issues/66
-                        tmpMessage = MessageAccessor.cloneMessage(msg);
-                        messageCloned = true;
-                        msg.setBody(prevBody);
+                SendMessageRequestHeader requestHeader = new SendMessageRequestHeader();
+                requestHeader.setProducerGroup(this.defaultMQProducer.getProducerGroup());
+                requestHeader.setTopic(msg.getTopic());
+                requestHeader.setDefaultTopic(this.defaultMQProducer.getCreateTopicKey());
+                requestHeader.setDefaultTopicQueueNums(this.defaultMQProducer.getDefaultTopicQueueNums());
+                requestHeader.setQueueId(mq.getQueueId());
+                requestHeader.setSysFlag(sysFlag);
+                requestHeader.setBornTimestamp(System.currentTimeMillis());
+                requestHeader.setFlag(msg.getFlag());
+                requestHeader.setProperties(MessageDecoder.messageProperties2String(msg.getProperties()));
+                requestHeader.setReconsumeTimes(0);
+                requestHeader.setUnitMode(this.isUnitMode());
+                requestHeader.setBatch(msg instanceof MessageBatch);
+                requestHeader.setBrokerName(brokerName);
+                if (requestHeader.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX)) {
+                    String reconsumeTimes = MessageAccessor.getReconsumeTime(msg);
+                    if (reconsumeTimes != null) {
+                        requestHeader.setReconsumeTimes(Integer.valueOf(reconsumeTimes));
+                        MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_RECONSUME_TIME);
                     }
+
+                    String maxReconsumeTimes = MessageAccessor.getMaxReconsumeTimes(msg);
+                    if (maxReconsumeTimes != null) {
+                        requestHeader.setMaxReconsumeTimes(Integer.valueOf(maxReconsumeTimes));
+                        MessageAccessor.clearProperty(msg, MessageConst.PROPERTY_MAX_RECONSUME_TIMES);
+                    }
+                }
+
+                SendResult sendResult = null;
+                switch (communicationMode) {
+                    case ASYNC:
+                        Message tmpMessage = msg;
+                        boolean messageCloned = false;
+                        if (msgBodyCompressed) {
+                            //If msg body was compressed, msgbody should be reset using prevBody.
+                            //Clone new message using compressed message body and recover origin massage.
+                            //Fix bug:https://github.com/apache/rocketmq-externals/issues/66
+                            tmpMessage = MessageAccessor.cloneMessage(msg);
+                            messageCloned = true;
+                            msg.setBody(prevBody);
+                        }
 
                     if (topicWithNamespace) {
                         if (!messageCloned) {
@@ -1153,24 +1191,20 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             return false;
         }
         byte[] body = msg.getBody();
-        if (body == null) {
-            return false;
-        }
-
-        if (body.length < this.defaultMQProducer.getCompressMsgBodyOverHowmuch()) {
-            return false;
-        }
-
-        try {
-            byte[] data = compressor.compress(body, compressLevel);
-            if (data != null) {
-                msg.setBody(data);
-                return true;
-            }
-        } catch (IOException e) {
-            log.error("tryToCompressMessage exception", e);
-            if (log.isDebugEnabled()) {
-                log.debug(msg.toString());
+        if (body != null) {
+            if (body.length >= this.defaultMQProducer.getCompressMsgBodyOverHowmuch()) {
+                try {
+                    byte[] data = this.defaultMQProducer.getCompressor().compress(body, this.defaultMQProducer.getCompressLevel());
+                    if (data != null) {
+                        msg.setBody(data);
+                        return true;
+                    }
+                } catch (IOException e) {
+                    log.error("tryToCompressMessage exception", e);
+                    if (log.isDebugEnabled()) {
+                        log.debug(msg.toString());
+                    }
+                }
             }
         }
 
@@ -1668,6 +1702,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 @Override
                 public void onSuccess(SendResult sendResult) {
                     requestResponseFuture.setSendRequestOk(true);
+                    requestResponseFuture.acquireCountDownLatch();
                 }
 
                 @Override
@@ -1725,6 +1760,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 @Override
                 public void onSuccess(SendResult sendResult) {
                     requestResponseFuture.setSendRequestOk(true);
+                    requestResponseFuture.acquireCountDownLatch();
                 }
 
                 @Override
@@ -1782,6 +1818,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 @Override
                 public void onSuccess(SendResult sendResult) {
                     requestResponseFuture.setSendRequestOk(true);
+                    requestResponseFuture.acquireCountDownLatch();
                 }
 
                 @Override
@@ -1875,22 +1912,6 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     public ConcurrentMap<String, TopicPublishInfo> getTopicPublishInfoTable() {
         return topicPublishInfoTable;
-    }
-
-    public int getCompressLevel() {
-        return compressLevel;
-    }
-
-    public void setCompressLevel(int compressLevel) {
-        this.compressLevel = compressLevel;
-    }
-
-    public CompressionType getCompressType() {
-        return compressType;
-    }
-
-    public void setCompressType(CompressionType compressType) {
-        this.compressType = compressType;
     }
 
     public ServiceState getServiceState() {

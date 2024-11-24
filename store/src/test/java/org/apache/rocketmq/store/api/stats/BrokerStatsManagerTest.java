@@ -140,8 +140,11 @@ public class BrokerStatsManagerTest {
         brokerStatsManager.incTopicPutSize(TOPIC, 100);
         brokerStatsManager.incQueuePutNums(TOPIC, QUEUE_ID);
         brokerStatsManager.incQueuePutSize(TOPIC, QUEUE_ID, 100);
+        brokerStatsManager.incTopicPutLatency(TOPIC, QUEUE_ID, 10);
         brokerStatsManager.incGroupGetNums(GROUP_NAME, TOPIC, 1);
         brokerStatsManager.incGroupGetSize(GROUP_NAME, TOPIC, 100);
+        brokerStatsManager.incGroupCkNums(GROUP_NAME, TOPIC, 1);
+        brokerStatsManager.incGroupAckNums(GROUP_NAME, TOPIC, 1);
         brokerStatsManager.incQueueGetNums(GROUP_NAME, TOPIC, QUEUE_ID, 1);
         brokerStatsManager.incQueueGetSize(GROUP_NAME, TOPIC, QUEUE_ID, 100);
         brokerStatsManager.incSendBackNums(GROUP_NAME, TOPIC);
@@ -163,6 +166,9 @@ public class BrokerStatsManagerTest {
         Assert.assertNull(brokerStatsManager.getStatsItem(GROUP_GET_LATENCY, "1@" + TOPIC + "@" + GROUP_NAME));
         Assert.assertNull(brokerStatsManager.getStatsItem(GROUP_GET_FALL_SIZE, "1@" + TOPIC + "@" + GROUP_NAME));
         Assert.assertNull(brokerStatsManager.getStatsItem(GROUP_GET_FALL_TIME, "1@" + TOPIC + "@" + GROUP_NAME));
+        Assert.assertNull(brokerStatsManager.getStatsItem(GROUP_CK_NUMS, TOPIC + "@" + GROUP_NAME));
+        Assert.assertNull(brokerStatsManager.getStatsItem(GROUP_ACK_NUMS, TOPIC + "@" + GROUP_NAME));
+        Assert.assertNull(brokerStatsManager.getStatsItem(TOPIC_PUT_LATENCY, QUEUE_ID + "@" + TOPIC));
     }
 
     @Test
@@ -175,6 +181,8 @@ public class BrokerStatsManagerTest {
         brokerStatsManager.incGroupGetLatency(GROUP_NAME, TOPIC, 1, 1);
         brokerStatsManager.recordDiskFallBehindTime(GROUP_NAME, TOPIC, 1, 11L);
         brokerStatsManager.recordDiskFallBehindSize(GROUP_NAME, TOPIC, 1, 11L);
+        brokerStatsManager.incGroupCkNums(GROUP_NAME, TOPIC, 1);
+        brokerStatsManager.incGroupAckNums(GROUP_NAME, TOPIC, 1);
 
         brokerStatsManager.onGroupDeleted(GROUP_NAME);
 
@@ -186,6 +194,8 @@ public class BrokerStatsManagerTest {
         Assert.assertNull(brokerStatsManager.getStatsItem(GROUP_GET_LATENCY, "1@" + TOPIC + "@" + GROUP_NAME));
         Assert.assertNull(brokerStatsManager.getStatsItem(GROUP_GET_FALL_SIZE, "1@" + TOPIC + "@" + GROUP_NAME));
         Assert.assertNull(brokerStatsManager.getStatsItem(GROUP_GET_FALL_TIME, "1@" + TOPIC + "@" + GROUP_NAME));
+        Assert.assertNull(brokerStatsManager.getStatsItem(GROUP_CK_NUMS, TOPIC + "@" + GROUP_NAME));
+        Assert.assertNull(brokerStatsManager.getStatsItem(GROUP_ACK_NUMS, TOPIC + "@" + GROUP_NAME));
     }
 
     @Test

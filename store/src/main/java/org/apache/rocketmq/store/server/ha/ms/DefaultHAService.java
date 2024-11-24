@@ -355,24 +355,22 @@ public class DefaultHAService implements HAService {
                         if (k.isAcceptable()) {
                             SocketChannel sc = ((ServerSocketChannel) k.channel()).accept();
 
-                            if (null == sc) {
-                                continue;
+                                if (sc != null) {
+                                    DefaultHAService.log.info("HAService receive new connection, "
+                                        + sc.socket().getRemoteSocketAddress());
+                                    try {
+                                        HAConnection conn = createConnection(sc);
+                                        DefaultHAService.this.addConnection(conn);
+                                        conn.start();
+                                    } catch (Exception e) {
+                                        log.error("new HAConnection exception", e);
+                                        sc.close();
+                                    }
+                                }
+                            } else {
+                                log.warn("Unexpected ops in select " + k.readyOps());
                             }
-
-                            DefaultHAService.log.info("HAService receive new connection, "
-                                + sc.socket().getRemoteSocketAddress());
-                            try {
-                                HAConnection conn = createConnection(sc);
-                                conn.start();
-                                DefaultHAService.this.addConnection(conn);
-                            } catch (Exception e) {
-                                log.error("new HAConnection exception", e);
-                                sc.close();
-                            }
-                        } else {
-                            log.warn("Unexpected ops in select " + k.readyOps());
                         }
-                    }
 
                     selected.clear();
                 } catch (Exception e) {

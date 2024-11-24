@@ -21,6 +21,7 @@ import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.utils.IOUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.api.filter.MessageFilter;
@@ -35,6 +36,8 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.rocketmq.store.RocksDBMessageStore;
+
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -84,7 +87,26 @@ public class ConsumeQueueTest extends QueueTestBase {
         return master;
     }
 
-    protected void putMsg(DefaultMessageStore messageStore) throws Exception {
+    protected RocksDBMessageStore genRocksdbMessageStore() throws Exception {
+        MessageStoreConfig messageStoreConfig = buildStoreConfig(
+            COMMIT_LOG_FILE_SIZE, CQ_FILE_SIZE, true, CQ_EXT_FILE_SIZE
+        );
+
+        BrokerConfig brokerConfig = new BrokerConfig();
+
+        RocksDBMessageStore master = new RocksDBMessageStore(
+            messageStoreConfig, new BrokerStatsManager(brokerConfig),
+            (topic, queueId, logicOffset, tagsCode, msgStoreTime, filterBitMap, properties) -> {
+            }, brokerConfig, new ConcurrentHashMap<>());
+
+        assertThat(master.load()).isTrue();
+
+        master.start();
+
+        return master;
+    }
+
+    protected void putMsg(MessageStore messageStore) {
         int totalMsgs = 200;
         for (int i = 0; i < totalMsgs; i++) {
             MessageExtBrokerInner message = buildMessage();
@@ -184,9 +206,33 @@ public class ConsumeQueueTest extends QueueTestBase {
 
     @Test
     public void testEstimateMessageCountInEmptyConsumeQueue() {
-        DefaultMessageStore master = null;
+        DefaultMessageStore messageStore = null;
         try {
-            master = gen();
+            messageStore = gen();
+            doTestEstimateMessageCountInEmptyConsumeQueue(messageStore);
+        } catch (Exception e) {
+            e.printStackTrace();
+            assertThat(Boolean.FALSE).isTrue();
+        }
+    }
+
+    @Test
+    public void testEstimateRocksdbMessageCountInEmptyConsumeQueue() {
+        if (notExecuted()) {
+            return;
+        }
+        DefaultMessageStore messageStore = null;
+        try {
+            messageStore = genRocksdbMessageStore();
+            doTestEstimateMessageCountInEmptyConsumeQueue(messageStore);
+        } catch (Exception e) {
+            e.printStackTrace();
+            assertThat(Boolean.FALSE).isTrue();
+        }
+    }
+
+    public void doTestEstimateMessageCountInEmptyConsumeQueue(MessageStore master) {
+        try {
             ConsumeQueueInterface consumeQueue = master.findConsumeQueue(TOPIC, QUEUE_ID);
             MessageFilter filter = new MessageFilter() {
                 @Override
@@ -220,15 +266,33 @@ public class ConsumeQueueTest extends QueueTestBase {
     }
 
     @Test
-    public void testEstimateMessageCount() {
+    public void testEstimateRocksdbMessageCount() {
+        if (notExecuted()) {
+            return;
+        }
         DefaultMessageStore messageStore = null;
         try {
-            messageStore = gen();
+            messageStore = genRocksdbMessageStore();
+            doTestEstimateMessageCount(messageStore);
         } catch (Exception e) {
             e.printStackTrace();
             assertThat(Boolean.FALSE).isTrue();
         }
+    }
 
+    @Test
+    public void testEstimateMessageCount() {
+        DefaultMessageStore messageStore = null;
+        try {
+            messageStore = gen();
+            doTestEstimateMessageCount(messageStore);
+        } catch (Exception e) {
+            e.printStackTrace();
+            assertThat(Boolean.FALSE).isTrue();
+        }
+    }
+
+    public void doTestEstimateMessageCount(MessageStore messageStore) {
         try {
             try {
                 putMsg(messageStore);
@@ -266,14 +330,33 @@ public class ConsumeQueueTest extends QueueTestBase {
     }
 
     @Test
-    public void testEstimateMessageCountSample() {
+    public void testEstimateRocksdbMessageCountSample() {
+        if (notExecuted()) {
+            return;
+        }
         DefaultMessageStore messageStore = null;
         try {
-            messageStore = gen();
+            messageStore = genRocksdbMessageStore();
+            doTestEstimateMessageCountSample(messageStore);
         } catch (Exception e) {
             e.printStackTrace();
             assertThat(Boolean.FALSE).isTrue();
         }
+    }
+
+    @Test
+    public void testEstimateMessageCountSample() {
+        DefaultMessageStore messageStore = null;
+        try {
+            messageStore = gen();
+            doTestEstimateMessageCountSample(messageStore);
+        } catch (Exception e) {
+            e.printStackTrace();
+            assertThat(Boolean.FALSE).isTrue();
+        }
+    }
+
+    public void doTestEstimateMessageCountSample(MessageStore messageStore) {
 
         try {
             try {
@@ -302,5 +385,9 @@ public class ConsumeQueueTest extends QueueTestBase {
             messageStore.destroy();
             IOUtils.deleteFile(new File(STORE_PATH));
         }
+    }
+
+    private boolean notExecuted() {
+        return SystemUtils.isMac();
     }
 }

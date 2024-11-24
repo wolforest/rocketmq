@@ -116,10 +116,10 @@ public class ReplyMessageProcessor extends AbstractSendMessageProcessor {
         response.addExtField(MessageConst.PROPERTY_TRACE_SWITCH, String.valueOf(this.broker.getBrokerConfig().isTraceOn()));
 
         log.debug("receive SendReplyMessage request command, {}", request);
-        final long startTimstamp = this.broker.getBrokerConfig().getStartAcceptSendRequestTimeStamp();
-        if (TimeUtils.now() < startTimstamp) {
+        final long startTimestamp = this.broker.getBrokerConfig().getStartAcceptSendRequestTimeStamp();
+        if (TimeUtils.now() < startTimestamp) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark(String.format("broker unable to service, until %s", TimeUtils.timeMillisToHumanString2(startTimstamp)));
+            response.setRemark(String.format("broker unable to service, until %s", UtilAll.timeMillisToHumanString2(startTimestamp)));
             return response;
         }
 
