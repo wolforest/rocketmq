@@ -172,7 +172,7 @@ public class TimerState {
         }
         int checkNum = 0;
         while (true) {
-            if (timerMessageDeliverQueue.size() > 0
+            if (!timerMessageDeliverQueue.isEmpty()
                     || !checkStateForTimerMessageQueries(timerMessageQueries, AbstractStateService.WAITING)
                     || !checkStateForTimerMessageDelivers(timerMessageDelivers, AbstractStateService.WAITING)) {
                 //let it go

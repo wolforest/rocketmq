@@ -42,7 +42,6 @@ import org.apache.rocketmq.store.server.metrics.PerfCounter;
 /**
  * Consume the original topic queue, convert message to TimerTask and put it into the in-memory pending queue
  * @renamed from TimerEnqueueGetService to TimerMessageAccepter
- *
  * pull message directly from consume queue with predefined queueId
  * and put message to TimerMessageStore.fetchedTimerMessageQueue
  *
@@ -103,10 +102,10 @@ public class TimerMessageAccepter extends ServiceThread {
         }
 
         long currQueueOffset = timerState.currQueueOffset;
-        return fetch(cq, currQueueOffset);
+        return fetchByQueue(cq, currQueueOffset);
     }
 
-    private boolean fetch(ConsumeQueueInterface cq, long offset) {
+    private boolean fetchByQueue(ConsumeQueueInterface cq, long offset) {
         ReferredIterator<CqUnit> iterator = null;
         try {
             iterator = cq.iterateFrom(offset);
@@ -117,36 +116,11 @@ public class TimerMessageAccepter extends ServiceThread {
             int i = 0;
             while (iterator.hasNext()) {
                 i++;
-                perfCounterTicks.startTick("enqueue_get");
-                try {
-                    CqUnit cqUnit = iterator.next();
-                    long offsetPy = cqUnit.getPos();
-                    int sizePy = cqUnit.getSize();
-                    cqUnit.getTagsCode(); //tags code
-                    MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
-                    if (null == msgExt) {
-                        perfCounterTicks.getCounter("enqueue_get_miss");
-                    } else {
-                        timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
-                        timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
-                        long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
-                        // use CQ offset, not offset in Message
-                        msgExt.setQueueOffset(offset + i);
-                        TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
 
-                        if (!loopOffer(timerRequest)) {
-                            return false;
-                        }
-
-                        Attributes attributes = DefaultStoreMetricsManager.newAttributesBuilder()
-                            .put(DefaultStoreMetricsConstant.LABEL_TOPIC, msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC)).build();
-                        DefaultStoreMetricsManager.timerMessageSetLatency.record((delayedTime - msgExt.getBornTimestamp()) / 1000, attributes);
-                    }
-                } catch (Exception e) {
-                    deferThrow(e);
-                } finally {
-                    perfCounterTicks.endTick("enqueue_get");
+                if (!fetchByIterator(iterator, offset, i)) {
+                    return false;
                 }
+
                 // if broker role changes, ignore last enqueue
                 if (!isRunningEnqueue()) {
                     return false;
@@ -164,6 +138,41 @@ public class TimerMessageAccepter extends ServiceThread {
             }
         }
         return false;
+    }
+
+    private boolean fetchByIterator(ReferredIterator<CqUnit> iterator, long offset, int i) throws Exception {
+        perfCounterTicks.startTick("enqueue_get");
+        try {
+            CqUnit cqUnit = iterator.next();
+            long offsetPy = cqUnit.getPos();
+            int sizePy = cqUnit.getSize();
+            cqUnit.getTagsCode(); //tags code
+            MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
+            if (null == msgExt) {
+                perfCounterTicks.getCounter("enqueue_get_miss");
+            } else {
+                timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
+                timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
+                long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
+                // use CQ offset, not offset in Message
+                msgExt.setQueueOffset(offset + i);
+                TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
+
+                if (!loopOffer(timerRequest)) {
+                    return false;
+                }
+
+                Attributes attributes = DefaultStoreMetricsManager.newAttributesBuilder()
+                    .put(DefaultStoreMetricsConstant.LABEL_TOPIC, msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC)).build();
+                DefaultStoreMetricsManager.timerMessageSetLatency.record((delayedTime - msgExt.getBornTimestamp()) / 1000, attributes);
+            }
+        } catch (Exception e) {
+            deferThrow(e);
+        } finally {
+            perfCounterTicks.endTick("enqueue_get");
+        }
+
+        return true;
     }
 
     private void deferThrow(Exception e) throws Exception {
