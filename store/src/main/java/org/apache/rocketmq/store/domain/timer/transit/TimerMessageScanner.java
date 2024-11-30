@@ -16,25 +16,25 @@
  */
 package org.apache.rocketmq.store.domain.timer.transit;
 
-import org.apache.rocketmq.common.lang.thread.ServiceThread;
-import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerLog;
-import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
-import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheelPersistence;
-import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
-import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
-import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
-import org.apache.rocketmq.store.domain.timer.model.TimerState;
-import org.apache.rocketmq.store.server.metrics.PerfCounter;
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.lang.thread.ServiceThread;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
+import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerState;
+import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
+import org.apache.rocketmq.store.domain.timer.persistence.ScanResult;
+import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerLog;
+import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
+import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheelPersistence;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
+import org.apache.rocketmq.store.server.metrics.PerfCounter;
 
 /**
  * @renamed from TimerDequeueGetService to TimerMessageScanner
@@ -123,7 +123,7 @@ public class TimerMessageScanner extends ServiceThread {
             return -1;
         }
 
-        Persistence.ScannResult result = persistence.scan();
+        ScanResult result = persistence.scan();
         if (result.getCode() == 0) {
             return result.getCode();
         }

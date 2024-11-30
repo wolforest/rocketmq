@@ -16,23 +16,23 @@
  */
 package org.apache.rocketmq.store.domain.timer.persistence.wheel;
 
+import java.sql.Timestamp;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
+import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
 import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
 import org.apache.rocketmq.store.domain.timer.model.TimerState;
-import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
+import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
+import org.apache.rocketmq.store.domain.timer.persistence.ScanResult;
+import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
-
-import java.sql.Timestamp;
-import java.util.LinkedList;
-import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 public class TimerWheelPersistence implements Persistence {
 
@@ -98,8 +98,8 @@ public class TimerWheelPersistence implements Persistence {
 
 
     @Override
-    public ScannResult scan() {
-        ScannResult result = new ScannResult();
+    public ScanResult scan() {
+        ScanResult result = new ScanResult();
         Slot slot = timerWheel.getSlot(timerState.currReadTimeMs);
         if (-1 == slot.timeMs) {
             timerState.moveReadTime(precisionMs);

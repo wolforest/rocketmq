@@ -43,7 +43,9 @@ import static org.apache.rocketmq.store.domain.timer.TimerMessageStore.DEQUEUE_P
 
 /**
  * @renamed from TimerDequeuePutMessageService to TimerMessageDeliver
- * put timer messages which should run back to commitLog
+ * pull task from timerMessageDeliverQueue
+ * convert task to  messages
+ * put message back to commitLog
  */
 public class TimerMessageDeliver extends AbstractStateThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -161,6 +163,7 @@ public class TimerMessageDeliver extends AbstractStateThread {
         if (enqueueTime != -1) {
             MessageAccessor.putProperty(messageExt, TimerState.TIMER_ENQUEUE_MS, enqueueTime + "");
         }
+
         if (needRoll) {
             if (messageExt.getProperty(TimerState.TIMER_ROLL_TIMES) != null) {
                 MessageAccessor.putProperty(messageExt, TimerState.TIMER_ROLL_TIMES, Integer.parseInt(messageExt.getProperty(TimerState.TIMER_ROLL_TIMES)) + 1 + "");

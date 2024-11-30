@@ -16,9 +16,9 @@
  */
 package org.apache.rocketmq.store.domain.timer.persistence.rocksdb;
 
-
-import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
 import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
+import org.apache.rocketmq.store.domain.timer.persistence.ScanResult;
 
 public class RocksDBPersistence implements Persistence {
     @Override
@@ -27,7 +27,7 @@ public class RocksDBPersistence implements Persistence {
     }
 
     @Override
-    public ScannResult scan() {
+    public ScanResult scan() {
         return null;
     }
 }

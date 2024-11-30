@@ -174,17 +174,22 @@ public class TimerWheel {
         for (int i = 0; i < slotsTotal * 2; i++) {
             int slotIndex = (firstSlotIndex + i) % (slotsTotal * 2);
             localBuffer.get().position(slotIndex * Slot.SIZE);
-            if ((timeStartMs + i * precisionMs) / precisionMs != localBuffer.get().getLong()) {
+            if ((timeStartMs + (long) i * precisionMs) / precisionMs != localBuffer.get().getLong()) {
                 continue;
             }
-            long first = localBuffer.get().getLong();
-            long last = localBuffer.get().getLong();
-            if (last > maxOffset) {
-                if (first < minFirst) {
-                    minFirst = first;
-                }
-            }
+
+            minFirst = calculateMinFirst(minFirst, maxOffset);
         }
+        return minFirst;
+    }
+
+    private long calculateMinFirst(long minFirst, long maxOffset) {
+        long first = localBuffer.get().getLong();
+        long last = localBuffer.get().getLong();
+        if (last > maxOffset && first < minFirst) {
+            return first;
+        }
+
         return minFirst;
     }
 

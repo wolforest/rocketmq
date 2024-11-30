@@ -16,9 +16,43 @@
  */
 package org.apache.rocketmq.store.domain.timer.persistence;
 
+import java.util.LinkedList;
 import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
 
-public interface Persistence {
-    boolean save(TimerRequest timerRequest);
-    ScanResult scan();
+public class ScanResult {
+    LinkedList<TimerRequest> normalMsgStack = new LinkedList<>();
+    LinkedList<TimerRequest> deleteMsgStack = new LinkedList<>();
+    int code = 0;
+
+    public LinkedList<TimerRequest> getNormalMsgStack() {
+        return normalMsgStack;
+    }
+
+    public LinkedList<TimerRequest> getDeleteMsgStack() {
+        return deleteMsgStack;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public void addDeleteMsgStack(TimerRequest timerRequest) {
+        deleteMsgStack.add(timerRequest);
+    }
+
+    public void addNormalMsgStack(TimerRequest timerRequest) {
+        normalMsgStack.addFirst(timerRequest);
+    }
+
+    public int sizeOfDeleteMsgStack() {
+        return deleteMsgStack.size();
+    }
+
+    public int sizeOfNormalMsgStack() {
+        return normalMsgStack.size();
+    }
 }
