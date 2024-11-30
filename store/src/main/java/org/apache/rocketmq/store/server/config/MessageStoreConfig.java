@@ -73,7 +73,11 @@ public class MessageStoreConfig {
 
     private int timerPrecisionMs = 1000;
 
+    /**
+     * timer wheel slots number
+     */
     private int timerRollWindowSlot = 3600 * 24 * 2;
+
     private int timerFlushIntervalMs = 1000;
     private int timerGetMessageThreadNum = 3;
     private int timerPutMessageThreadNum = 3;
@@ -82,6 +86,9 @@ public class MessageStoreConfig {
 
     private boolean timerEnableCheckMetrics = true;
     private boolean timerInterceptDelayLevel = false;
+    /**
+     * max delay time
+     */
     private int timerMaxDelaySec = 3600 * 24 * 3;
     private boolean timerWheelEnable = true;
 

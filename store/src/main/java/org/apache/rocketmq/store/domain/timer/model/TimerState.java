@@ -50,6 +50,9 @@ public class TimerState {
     public static final String TIMER_ROLL_TIMES = MessageConst.PROPERTY_TIMER_ROLL_TIMES;
     public static final String TIMER_DELETE_UNIQUE_KEY = MessageConst.PROPERTY_TIMER_DEL_UNIQKEY;
 
+    /**
+     *
+     */
     public static final int TIMER_BLANK_SLOTS = 60;
     /**
      * last read timestamp of persistence.scan()
@@ -86,13 +89,14 @@ public class TimerState {
     public final int precisionMs;
 
     /**
-     *
+     * timer wheel slots number
+     * default: 2 * 24 * 3600
      */
     public final int timerRollWindowSlots;
     /**
      * @renamed from slotsTotal = totalSlots
      * slotsTotal = TIMER_WHEEL_TTL_DAY * DAY_SECS
-     * default = 7 * 24 * 3600
+     * default: 7 * 24 * 3600
      */
     public final int totalSlots;
 

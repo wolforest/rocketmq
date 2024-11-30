@@ -62,21 +62,18 @@ public class TimerWheelPersistence implements Persistence {
     @Override
     public boolean save(TimerRequest timerRequest) {
         long delayedTime = timerRequest.getDelayTime();
+        int magic = TimerState.MAGIC_DEFAULT;
         MessageExt messageExt = timerRequest.getMsg();
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
 
         //copy the value first, avoid concurrent problem
-        boolean needRoll = delayedTime - timerState.currWriteTimeMs >= (long) timerState.timerRollWindowSlots * timerState.precisionMs;
-        int magic = TimerState.MAGIC_DEFAULT;
+        long tmpWriteTimeMs = timerState.currWriteTimeMs;
 
+        // needRoll is true when delayedTime greater than timer wheel slots (default is 2 days)
+        boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) timerState.timerRollWindowSlots * timerState.precisionMs;
         if (needRoll) {
             magic = magic | TimerState.MAGIC_ROLL;
-            if (delayedTime - timerState.currWriteTimeMs - (long) timerState.timerRollWindowSlots * timerState.precisionMs < (long) timerState.timerRollWindowSlots / 3 * timerState.precisionMs) {
-                //give enough time to next roll
-                delayedTime = timerState.currWriteTimeMs + (long) (timerState.timerRollWindowSlots / 2) * timerState.precisionMs;
-            } else {
-                delayedTime = timerState.currWriteTimeMs + (long) timerState.timerRollWindowSlots * timerState.precisionMs;
-            }
+            delayedTime = getRolledDelayedTime(tmpWriteTimeMs, delayedTime);
         }
 
         boolean isDelete = messageExt.getProperty(TimerState.TIMER_DELETE_UNIQUE_KEY) != null;
@@ -86,17 +83,12 @@ public class TimerWheelPersistence implements Persistence {
 
         String realTopic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
         Slot slot = timerWheel.getSlot(delayedTime);
-        long ret = appendTimerLog(timerRequest.getCommitLogOffset(), timerRequest.getMessageSize(), delayedTime, timerState.currWriteTimeMs, magic, realTopic, slot.lastPos);
-        if (-1 != ret) {
-            // If it's a delete message, then slot's total num -1
-            // TODO: check if the delete msg is in the same slot with "the msg to be deleted".
-            timerWheel.putSlot(delayedTime, slot.firstPos == -1 ? ret : slot.firstPos, ret,
-                    isDelete ? slot.num - 1 : slot.num + 1, slot.magic);
-            metricManager.addMetric(messageExt, isDelete ? -1 : 1);
-        }
+
+        long ret = appendTimerLog(timerRequest.getCommitLogOffset(), timerRequest.getMessageSize(), delayedTime, tmpWriteTimeMs, magic, realTopic, slot.lastPos);
+        putTimerWheelSlot(ret, delayedTime, slot,  messageExt);
+
         return -1 != ret;
     }
-
 
     @Override
     public ScanResult scan() {
@@ -168,6 +160,39 @@ public class TimerWheelPersistence implements Persistence {
             }
         }
         return result;
+    }
+
+    private long getRolledDelayedTime(long tmpWriteTimeMs, long delayedTime) {
+        if (delayedTime - tmpWriteTimeMs - (long) timerState.timerRollWindowSlots * timerState.precisionMs < (long) timerState.timerRollWindowSlots / 3 * timerState.precisionMs) {
+            // if delayedTime less than 4/3 times timerWheel slots
+            // set delayedTime to 1/2 times timeWheel slots * precision
+            // for example:
+            // if timerWheel slots is 2 days
+            // delayedTime between 2days and 2.667 days
+            // the delayedTime will set to slot corresponding to 1 day
+
+            //give enough time to next roll
+            return tmpWriteTimeMs + (long) (timerState.timerRollWindowSlots / 2) * timerState.precisionMs;
+        }
+
+        // else set delayedTime to timerWheel slots * precision
+        // for example:
+        // if timerWheel slots is 2 days
+        // the delayedTime will be set to slot corresponding to 2day
+        return tmpWriteTimeMs + (long) timerState.timerRollWindowSlots * timerState.precisionMs;
+    }
+
+    private void putTimerWheelSlot(long timerLogReturn, long delayedTime, Slot slot,  MessageExt messageExt) {
+        if (-1 == timerLogReturn) {
+            return;
+        }
+
+        // If it's a delete message, then slot's total num -1
+        // TODO: check if the delete msg is in the same slot with "the msg to be deleted".
+        boolean isDelete = messageExt.getProperty(TimerState.TIMER_DELETE_UNIQUE_KEY) != null;
+        timerWheel.putSlot(delayedTime, slot.firstPos == -1 ? timerLogReturn : slot.firstPos, timerLogReturn,
+            isDelete ? slot.num - 1 : slot.num + 1, slot.magic);
+        metricManager.addMetric(messageExt, isDelete ? -1 : 1);
     }
 
     private long appendTimerLog(long commitLogOffset, int messageSize, long delayedTime, long tmpWriteTimeMs, int magic, String realTopic, long lastPos) {

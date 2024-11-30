@@ -30,13 +30,13 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
 public class TimerWheel {
-
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     public static final int BLANK = -1, IGNORE = -2;
+
     public final int slotsTotal;
     public final int precisionMs;
-    private final String fileName;
-    private final RandomAccessFile randomAccessFile;
+    private final int wheelLength;
+
     private final FileChannel fileChannel;
     private final MappedByteBuffer mappedByteBuffer;
     private final ByteBuffer byteBuffer;
@@ -46,19 +46,17 @@ public class TimerWheel {
             return byteBuffer.duplicate();
         }
     };
-    private final int wheelLength;
 
     public TimerWheel(String fileName, int slotsTotal, int precisionMs) throws IOException {
         this.slotsTotal = slotsTotal;
         this.precisionMs = precisionMs;
-        this.fileName = fileName;
         this.wheelLength = this.slotsTotal * 2 * Slot.SIZE;
 
         File file = new File(fileName);
         IOUtils.ensureDirOK(file.getParent());
 
         try {
-            randomAccessFile = new RandomAccessFile(this.fileName, "rw");
+            RandomAccessFile randomAccessFile = new RandomAccessFile(fileName, "rw");
             if (file.exists() && randomAccessFile.length() != 0 &&
                 randomAccessFile.length() != wheelLength) {
                 throw new RuntimeException(String.format("Timer wheel length:%d != expected:%s",
@@ -71,10 +69,10 @@ public class TimerWheel {
             this.byteBuffer = ByteBuffer.allocateDirect(wheelLength);
             this.byteBuffer.put(mappedByteBuffer);
         } catch (FileNotFoundException e) {
-            log.error("create file channel " + this.fileName + " Failed. ", e);
+            log.error("create file channel " + fileName + " Failed. ", e);
             throw e;
         } catch (IOException e) {
-            log.error("map file " + this.fileName + " Failed. ", e);
+            log.error("map file " + fileName + " Failed. ", e);
             throw e;
         }
     }
@@ -167,7 +165,7 @@ public class TimerWheel {
         }
     }
 
-    //check the timerwheel to see if its stored offset > maxOffset in timerlog
+    //check the timerWheel to see if its stored offset > maxOffset in timerlog
     public long checkPhyPos(long timeStartMs, long maxOffset) {
         long minFirst = Long.MAX_VALUE;
         int firstSlotIndex = getSlotIndex(timeStartMs);
