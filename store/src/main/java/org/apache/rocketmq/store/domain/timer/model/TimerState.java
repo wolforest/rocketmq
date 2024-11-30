@@ -206,14 +206,16 @@ public class TimerState {
     }
 
     public String getServiceThreadName() {
-        String brokerIdentifier = "";
-        if (this.messageStore instanceof DefaultMessageStore) {
-            DefaultMessageStore messageStore = (DefaultMessageStore) this.messageStore;
-            if (messageStore.getBrokerConfig().isInBrokerContainer()) {
-                brokerIdentifier = messageStore.getBrokerConfig().getIdentifier();
-            }
+        if (!(this.messageStore instanceof DefaultMessageStore)) {
+            return "";
         }
-        return brokerIdentifier;
+
+        DefaultMessageStore messageStore = (DefaultMessageStore) this.messageStore;
+        if (messageStore.getBrokerConfig().isInBrokerContainer()) {
+            return messageStore.getBrokerConfig().getIdentifier();
+        }
+
+        return "";
     }
 
     private long formatTimeMs(long timeMs) {

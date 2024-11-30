@@ -171,15 +171,15 @@ public class TimerWheelPersistence implements Persistence {
         return result;
     }
 
-    private long appendTimerLog(long offsetPy, int sizePy, long delayedTime, long tmpWriteTimeMs, int magic, String realTopic, long lastPos) {
+    private long appendTimerLog(long commitLogOffset, int messageSize, long delayedTime, long tmpWriteTimeMs, int magic, String realTopic, long lastPos) {
         Block block = new Block(
                 Block.SIZE,
                 lastPos,
                 magic,
                 tmpWriteTimeMs,
                 (int) (delayedTime - tmpWriteTimeMs),
-                offsetPy,
-                sizePy,
+                commitLogOffset,
+                messageSize,
                 metricManager.hashTopicForMetrics(realTopic),
                 0);
 
