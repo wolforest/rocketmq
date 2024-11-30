@@ -28,12 +28,14 @@ public class TimerRequest {
 
     /**
      * commitLog offset
+     * @renamed from offsetPy to commitLogOffset
      */
-    private final long offsetPy;
+    private final long commitLogOffset;
     /**
      * size of message in the commitLog
+     * @renamed from sizePy to messageSize
      */
-    private final int sizePy;
+    private final int messageSize;
     /**
      * delayTime of message, stored in message property map
      */
@@ -62,25 +64,25 @@ public class TimerRequest {
 
     private Set<String> deleteList;
 
-    public TimerRequest(long offsetPy, int sizePy, long delayTime, long enqueueTime, int magic) {
-        this(offsetPy, sizePy, delayTime, enqueueTime, magic, null);
+    public TimerRequest(long commitLogOffset, int messageSize, long delayTime, long enqueueTime, int magic) {
+        this(commitLogOffset, messageSize, delayTime, enqueueTime, magic, null);
     }
 
-    public TimerRequest(long offsetPy, int sizePy, long delayTime, long enqueueTime, int magic, MessageExt msg) {
-        this.offsetPy = offsetPy;
-        this.sizePy = sizePy;
+    public TimerRequest(long commitLogOffset, int messageSize, long delayTime, long enqueueTime, int magic, MessageExt msg) {
+        this.commitLogOffset = commitLogOffset;
+        this.messageSize = messageSize;
         this.delayTime = delayTime;
         this.enqueueTime = enqueueTime;
         this.magic = magic;
         this.msg = msg;
     }
 
-    public long getOffsetPy() {
-        return offsetPy;
+    public long getCommitLogOffset() {
+        return commitLogOffset;
     }
 
-    public int getSizePy() {
-        return sizePy;
+    public int getMessageSize() {
+        return messageSize;
     }
 
     public long getDelayTime() {
@@ -136,8 +138,8 @@ public class TimerRequest {
     @Override
     public String toString() {
         return "TimerRequest{" +
-            "offsetPy=" + offsetPy +
-            ", sizePy=" + sizePy +
+            "offsetPy=" + commitLogOffset +
+            ", sizePy=" + messageSize +
             ", delayTime=" + delayTime +
             ", enqueueTime=" + enqueueTime +
             ", magic=" + magic +

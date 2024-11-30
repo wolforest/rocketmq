@@ -61,15 +61,15 @@ public class TimerWheelPersistence implements Persistence {
 
     @Override
     public boolean save(TimerRequest timerRequest) {
-        long offsetPy = timerRequest.getOffsetPy();
-        int sizePy = timerRequest.getSizePy();
         long delayedTime = timerRequest.getDelayTime();
         MessageExt messageExt = timerRequest.getMsg();
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
+
         //copy the value first, avoid concurrent problem
         long tmpWriteTimeMs = timerState.currWriteTimeMs;
         boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) timerState.timerRollWindowSlots * timerState.precisionMs;
         int magic = TimerState.MAGIC_DEFAULT;
+
         if (needRoll) {
             magic = magic | TimerState.MAGIC_ROLL;
             if (delayedTime - tmpWriteTimeMs - (long) timerState.timerRollWindowSlots * timerState.precisionMs < (long) timerState.timerRollWindowSlots / 3 * timerState.precisionMs) {
@@ -79,13 +79,15 @@ public class TimerWheelPersistence implements Persistence {
                 delayedTime = tmpWriteTimeMs + (long) timerState.timerRollWindowSlots * timerState.precisionMs;
             }
         }
+
         boolean isDelete = messageExt.getProperty(TimerState.TIMER_DELETE_UNIQUE_KEY) != null;
         if (isDelete) {
             magic = magic | TimerState.MAGIC_DELETE;
         }
+
         String realTopic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
         Slot slot = timerWheel.getSlot(delayedTime);
-        long ret = appendTimerLog(offsetPy, sizePy, delayedTime, tmpWriteTimeMs, magic, realTopic, slot.lastPos);
+        long ret = appendTimerLog(timerRequest.getCommitLogOffset(), timerRequest.getMessageSize(), delayedTime, tmpWriteTimeMs, magic, realTopic, slot.lastPos);
         if (-1 != ret) {
             // If it's a delete message, then slot's total num -1
             // TODO: check if the delete msg is in the same slot with "the msg to be deleted".

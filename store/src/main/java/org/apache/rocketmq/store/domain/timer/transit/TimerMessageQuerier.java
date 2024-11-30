@@ -104,7 +104,7 @@ public class TimerMessageQuerier extends AbstractStateThread {
         boolean doRes = false;
         try {
             long start = System.currentTimeMillis();
-            MessageExt msgExt = messageReader.readMessageByCommitOffset(timerRequest.getOffsetPy(), timerRequest.getSizePy());
+            MessageExt msgExt = messageReader.readMessageByCommitOffset(timerRequest.getCommitLogOffset(), timerRequest.getMessageSize());
             if (null == msgExt) {
                 doRes = handleNoMsgFound(doRes, timerRequest, start);
                 return i;
