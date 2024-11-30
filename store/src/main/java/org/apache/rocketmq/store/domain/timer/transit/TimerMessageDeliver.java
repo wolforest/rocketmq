@@ -32,7 +32,7 @@ import org.apache.rocketmq.store.domain.timer.TimerMetricManager;
 import org.apache.rocketmq.store.domain.timer.TimerState;
 import org.apache.rocketmq.store.server.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.domain.timer.AbstractStateService;
+import org.apache.rocketmq.store.domain.timer.AbstractStateThread;
 import org.apache.rocketmq.store.domain.timer.MessageOperator;
 import org.apache.rocketmq.store.domain.timer.TimerRequest;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
@@ -46,7 +46,7 @@ import static org.apache.rocketmq.store.domain.timer.TimerMessageStore.DEQUEUE_P
 /**
  * put timer message back to commitLog
  */
-public class TimerMessageDeliver extends AbstractStateService {
+public class TimerMessageDeliver extends AbstractStateThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
@@ -85,12 +85,12 @@ public class TimerMessageDeliver extends AbstractStateService {
 
     @Override
     public void run() {
-        setState(AbstractStateService.START);
+        setState(AbstractStateThread.START);
         LOGGER.info(this.getServiceName() + " service start");
 
         while (!this.isStopped() || timerMessageDeliverQueue.size() != 0) {
             try {
-                setState(AbstractStateService.WAITING);
+                setState(AbstractStateThread.WAITING);
                 TimerRequest timerRequest = timerMessageDeliverQueue.poll(10, TimeUnit.MILLISECONDS);
                 if (null == timerRequest) {
                     continue;
@@ -103,11 +103,11 @@ public class TimerMessageDeliver extends AbstractStateService {
             }
         }
         LOGGER.info(this.getServiceName() + " service end");
-        setState(AbstractStateService.END);
+        setState(AbstractStateThread.END);
     }
 
     private void run(TimerRequest timerRequest) {
-        setState(AbstractStateService.RUNNING);
+        setState(AbstractStateThread.RUNNING);
         boolean doRes = false;
         boolean tmpDequeueChangeFlag = false;
         try {

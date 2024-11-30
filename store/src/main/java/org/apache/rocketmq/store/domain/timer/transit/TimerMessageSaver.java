@@ -44,7 +44,7 @@ import static org.apache.rocketmq.store.domain.timer.TimerMessageStore.ENQUEUE_P
 
 /**
  * poll message from fetchedTimerMessageQueue
- *      put message to timerWheel
+ *      put message to timerWheel persistent storage
  *      or enqueue TimerMessageStore.timerMessageDeliverQueue
  *
  */
@@ -118,7 +118,7 @@ public class TimerMessageSaver extends ServiceThread {
             CountDownLatch latch = new CountDownLatch(timerRequests.size());
             for (TimerRequest req : timerRequests) {
                 req.setLatch(latch);
-                this.putMessageToTimerWheel(req);
+                this.putToTimerWheelOrEnqueueDeliverQueue(req);
             }
 
             timerState.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue, timerMessageDelivers, timerMessageQueries, -1);
@@ -167,7 +167,7 @@ public class TimerMessageSaver extends ServiceThread {
         }
     }
 
-    private void putMessageToTimerWheel(TimerRequest timerRequest) {
+    private void putToTimerWheelOrEnqueueDeliverQueue(TimerRequest timerRequest) {
         try {
             perfCounterTicks.startTick(ENQUEUE_PUT);
 

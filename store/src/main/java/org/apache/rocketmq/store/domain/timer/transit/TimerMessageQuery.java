@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.domain.timer.AbstractStateService;
+import org.apache.rocketmq.store.domain.timer.AbstractStateThread;
 import org.apache.rocketmq.store.domain.timer.MessageOperator;
 import org.apache.rocketmq.store.domain.timer.TimerRequest;
 import org.apache.rocketmq.store.domain.timer.TimerState;
@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  *  1. release the msg should be deleted
  *  2. enqueue timerMessageDeliverQueue
  */
-public class TimerMessageQuery extends AbstractStateService {
+public class TimerMessageQuery extends AbstractStateThread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -72,17 +72,17 @@ public class TimerMessageQuery extends AbstractStateService {
 
     @Override
     public void run() {
-        setState(AbstractStateService.START);
+        setState(AbstractStateThread.START);
         LOGGER.info(this.getServiceName() + " service start");
         while (!this.isStopped()) {
             try {
-                setState(AbstractStateService.WAITING);
+                setState(AbstractStateThread.WAITING);
                 List<TimerRequest> timerRequestList = timerMessageQueryQueue.poll(100L * timerState.precisionMs / 1000, TimeUnit.MILLISECONDS);
                 if (null == timerRequestList || timerRequestList.size() == 0) {
                     continue;
                 }
 
-                setState(AbstractStateService.RUNNING);
+                setState(AbstractStateThread.RUNNING);
                 run(timerRequestList);
                 timerRequestList.clear();
             } catch (Throwable e) {
@@ -90,7 +90,7 @@ public class TimerMessageQuery extends AbstractStateService {
             }
         }
         LOGGER.info(this.getServiceName() + " service end");
-        setState(AbstractStateService.END);
+        setState(AbstractStateThread.END);
     }
 
     private void run(List<TimerRequest> timerRequestList) {

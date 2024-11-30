@@ -149,7 +149,7 @@ public class TimerState {
     }
 
     public boolean checkStateForTimerMessageDelivers(TimerMessageDeliver[] timerMessageDelivers, int state) {
-        for (AbstractStateService service : timerMessageDelivers) {
+        for (AbstractStateThread service : timerMessageDelivers) {
             if (!service.isState(state)) {
                 return false;
             }
@@ -158,7 +158,7 @@ public class TimerState {
     }
 
     public boolean checkStateForTimerMessageQueries(TimerMessageQuery[] timerMessageQueries, int state) {
-        for (AbstractStateService service : timerMessageQueries) {
+        for (AbstractStateThread service : timerMessageQueries) {
             if (!service.isState(state)) {
                 return false;
             }
@@ -173,8 +173,8 @@ public class TimerState {
         int checkNum = 0;
         while (true) {
             if (!timerMessageDeliverQueue.isEmpty()
-                    || !checkStateForTimerMessageQueries(timerMessageQueries, AbstractStateService.WAITING)
-                    || !checkStateForTimerMessageDelivers(timerMessageDelivers, AbstractStateService.WAITING)) {
+                    || !checkStateForTimerMessageQueries(timerMessageQueries, AbstractStateThread.WAITING)
+                    || !checkStateForTimerMessageDelivers(timerMessageDelivers, AbstractStateThread.WAITING)) {
                 //let it go
             } else {
                 checkNum++;
