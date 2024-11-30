@@ -66,17 +66,16 @@ public class TimerWheelPersistence implements Persistence {
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
 
         //copy the value first, avoid concurrent problem
-        long tmpWriteTimeMs = timerState.currWriteTimeMs;
-        boolean needRoll = delayedTime - tmpWriteTimeMs >= (long) timerState.timerRollWindowSlots * timerState.precisionMs;
+        boolean needRoll = delayedTime - timerState.currWriteTimeMs >= (long) timerState.timerRollWindowSlots * timerState.precisionMs;
         int magic = TimerState.MAGIC_DEFAULT;
 
         if (needRoll) {
             magic = magic | TimerState.MAGIC_ROLL;
-            if (delayedTime - tmpWriteTimeMs - (long) timerState.timerRollWindowSlots * timerState.precisionMs < (long) timerState.timerRollWindowSlots / 3 * timerState.precisionMs) {
+            if (delayedTime - timerState.currWriteTimeMs - (long) timerState.timerRollWindowSlots * timerState.precisionMs < (long) timerState.timerRollWindowSlots / 3 * timerState.precisionMs) {
                 //give enough time to next roll
-                delayedTime = tmpWriteTimeMs + (long) (timerState.timerRollWindowSlots / 2) * timerState.precisionMs;
+                delayedTime = timerState.currWriteTimeMs + (long) (timerState.timerRollWindowSlots / 2) * timerState.precisionMs;
             } else {
-                delayedTime = tmpWriteTimeMs + (long) timerState.timerRollWindowSlots * timerState.precisionMs;
+                delayedTime = timerState.currWriteTimeMs + (long) timerState.timerRollWindowSlots * timerState.precisionMs;
             }
         }
 
@@ -87,7 +86,7 @@ public class TimerWheelPersistence implements Persistence {
 
         String realTopic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
         Slot slot = timerWheel.getSlot(delayedTime);
-        long ret = appendTimerLog(timerRequest.getCommitLogOffset(), timerRequest.getMessageSize(), delayedTime, tmpWriteTimeMs, magic, realTopic, slot.lastPos);
+        long ret = appendTimerLog(timerRequest.getCommitLogOffset(), timerRequest.getMessageSize(), delayedTime, timerState.currWriteTimeMs, magic, realTopic, slot.lastPos);
         if (-1 != ret) {
             // If it's a delete message, then slot's total num -1
             // TODO: check if the delete msg is in the same slot with "the msg to be deleted".

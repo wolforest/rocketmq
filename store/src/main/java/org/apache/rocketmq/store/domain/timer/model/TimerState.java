@@ -61,6 +61,7 @@ public class TimerState {
      * may be updated by TimerMessageDeliver
      */
     public volatile long currWriteTimeMs;
+
     public volatile long preReadTimeMs;
     public volatile long commitReadTimeMs;
     public volatile long currQueueOffset; //only one queue that is 0
@@ -83,10 +84,19 @@ public class TimerState {
     private final MessageStore messageStore;
     private final MessageStoreConfig storeConfig;
     public final int precisionMs;
-    public final int timerRollWindowSlots;
-    public final int slotsTotal;
 
-    public TimerState(TimerCheckpoint timerCheckpoint, MessageStoreConfig storeConfig, TimerLog timerLog, int slotsTotal, TimerWheel timerWheel, MessageStore messageStore) {
+    /**
+     *
+     */
+    public final int timerRollWindowSlots;
+    /**
+     * @renamed from slotsTotal = totalSlots
+     * slotsTotal = TIMER_WHEEL_TTL_DAY * DAY_SECS
+     * default = 7 * 24 * 3600
+     */
+    public final int totalSlots;
+
+    public TimerState(TimerCheckpoint timerCheckpoint, MessageStoreConfig storeConfig, TimerLog timerLog, int totalSlots, TimerWheel timerWheel, MessageStore messageStore) {
         this.timerCheckpoint = timerCheckpoint;
         this.storeConfig = storeConfig;
         this.timerLog = timerLog;
@@ -94,11 +104,12 @@ public class TimerState {
         this.messageStore = messageStore;
         this.precisionMs = storeConfig.getTimerPrecisionMs();
         // TimerWheel contains the fixed number of slots regardless of precision.
-        this.slotsTotal = slotsTotal;
+        this.totalSlots = totalSlots;
+
         // timerRollWindow contains the fixed number of slots regardless of precision.
-        if (storeConfig.getTimerRollWindowSlot() > slotsTotal - TIMER_BLANK_SLOTS
+        if (storeConfig.getTimerRollWindowSlot() > totalSlots - TIMER_BLANK_SLOTS
                 || storeConfig.getTimerRollWindowSlot() < 2) {
-            this.timerRollWindowSlots = slotsTotal - TIMER_BLANK_SLOTS;
+            this.timerRollWindowSlots = totalSlots - TIMER_BLANK_SLOTS;
         } else {
             this.timerRollWindowSlots = storeConfig.getTimerRollWindowSlot();
         }
@@ -128,6 +139,7 @@ public class TimerState {
     public void prepareTimerCheckPoint() {
         timerCheckpoint.setLastTimerLogFlushPos(timerLog.getMappedFileQueue().getFlushedWhere());
         timerCheckpoint.setLastReadTimeMs(commitReadTimeMs);
+
         if (shouldRunningDequeue) {
             timerCheckpoint.setMasterTimerQueueOffset(commitQueueOffset);
             if (commitReadTimeMs != lastCommitReadTimeMs || commitQueueOffset != lastCommitQueueOffset) {
@@ -136,6 +148,7 @@ public class TimerState {
                 lastCommitQueueOffset = commitQueueOffset;
             }
         }
+
         timerCheckpoint.setLastTimerQueueOffset(Math.min(commitQueueOffset, timerCheckpoint.getMasterTimerQueueOffset()));
     }
 

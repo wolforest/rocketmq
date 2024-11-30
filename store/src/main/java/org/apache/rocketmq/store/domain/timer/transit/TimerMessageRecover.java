@@ -87,7 +87,7 @@ public class TimerMessageRecover {
         //check timer wheel
         timerState.currReadTimeMs = timerCheckpoint.getLastReadTimeMs();
         long nextReadTimeMs = formatTimeMs(
-                System.currentTimeMillis()) - (long) timerState.slotsTotal * precisionMs + (long) TimerState.TIMER_BLANK_SLOTS * precisionMs;
+                System.currentTimeMillis()) - (long) timerState.totalSlots * precisionMs + (long) TimerState.TIMER_BLANK_SLOTS * precisionMs;
         if (timerState.currReadTimeMs < nextReadTimeMs) {
             timerState.currReadTimeMs = nextReadTimeMs;
         }
