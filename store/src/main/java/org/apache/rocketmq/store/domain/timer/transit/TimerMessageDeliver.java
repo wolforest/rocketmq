@@ -42,7 +42,8 @@ import java.util.function.Function;
 import static org.apache.rocketmq.store.domain.timer.TimerMessageStore.DEQUEUE_PUT;
 
 /**
- * put timer message back to commitLog
+ * @renamed from TimerDequeuePutMessageService to TimerMessageDeliver
+ * put timer messages which should run back to commitLog
  */
 public class TimerMessageDeliver extends AbstractStateThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);

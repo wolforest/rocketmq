@@ -37,6 +37,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
 /**
+ * @renamed from TimerDequeueGetService to TimerMessageScanner
  * scan persistence and put message to:
  *  1. timerMessageQueries
  *  2. timerMessageDeliverQueue -> then timerState.checkDeliverQueueLatch()
@@ -51,7 +52,7 @@ public class TimerMessageScanner extends ServiceThread {
     private final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private final TimerMessageDeliver[] timerMessageDelivers;
-    private final TimerMessageQuery[] timerMessageQueries;
+    private final TimerMessageQuerier[] timerMessageQueries;
 
     private final Persistence persistence;
     private long shouldStartTime;
@@ -64,7 +65,7 @@ public class TimerMessageScanner extends ServiceThread {
                                BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                                BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                                TimerMessageDeliver[] timerMessageDelivers,
-                               TimerMessageQuery[] timerMessageQueries,
+                               TimerMessageQuerier[] timerMessageQueries,
                                TimerMetricManager metricManager,
                                PerfCounter.Ticks perfCounterTicks) {
         this.timerState = timerState;

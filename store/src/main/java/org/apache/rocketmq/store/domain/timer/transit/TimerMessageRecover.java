@@ -33,6 +33,9 @@ import org.apache.rocketmq.store.domain.timer.model.TimerState;
 
 import static org.apache.rocketmq.store.domain.timer.model.TimerState.TIMER_TOPIC;
 
+/**
+ *
+ */
 public class TimerMessageRecover {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 

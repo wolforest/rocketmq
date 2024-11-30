@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import static org.apache.rocketmq.store.domain.timer.TimerMessageStore.ENQUEUE_PUT;
 
 /**
+ * @renamed from TimerEnqueuePutService to TimerMessageSaver
  * poll message from fetchedTimerMessageQueue
  *      put message to timerWheel persistent storage
  *      or enqueue TimerMessageStore.timerMessageDeliverQueue
@@ -58,7 +59,7 @@ public class TimerMessageSaver extends ServiceThread {
     private final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     private final TimerMessageDeliver[] timerMessageDelivers;
-    private final TimerMessageQuery[] timerMessageQueries;
+    private final TimerMessageQuerier[] timerMessageQueries;
     private final PerfCounter.Ticks perfCounterTicks;
 
     private final Persistence persistence;
@@ -70,7 +71,7 @@ public class TimerMessageSaver extends ServiceThread {
                              BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
                              TimerMessageDeliver[] timerMessageDelivers,
-                             TimerMessageQuery[] timerMessageQueries,
+                             TimerMessageQuerier[] timerMessageQueries,
                              TimerMetricManager metricManager,
                              PerfCounter.Ticks perfCounterTicks) {
         this.timerState = timerState;

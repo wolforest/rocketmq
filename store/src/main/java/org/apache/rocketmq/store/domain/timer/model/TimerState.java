@@ -28,7 +28,7 @@ import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerLog;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
-import org.apache.rocketmq.store.domain.timer.transit.TimerMessageQuery;
+import org.apache.rocketmq.store.domain.timer.transit.TimerMessageQuerier;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageDeliver;
 
 import java.util.concurrent.BlockingQueue;
@@ -159,7 +159,7 @@ public class TimerState {
         return true;
     }
 
-    public boolean checkStateForTimerMessageQueries(TimerMessageQuery[] timerMessageQueries, int state) {
+    public boolean checkStateForTimerMessageQueries(TimerMessageQuerier[] timerMessageQueries, int state) {
         for (AbstractStateThread service : timerMessageQueries) {
             if (!service.isState(state)) {
                 return false;
@@ -168,7 +168,7 @@ public class TimerState {
         return true;
     }
 
-    public void checkDeliverQueueLatch(CountDownLatch latch, BlockingQueue<TimerRequest> timerMessageDeliverQueue, TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuery[] timerMessageQueries, long delayedTime) throws Exception {
+    public void checkDeliverQueueLatch(CountDownLatch latch, BlockingQueue<TimerRequest> timerMessageDeliverQueue, TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuerier[] timerMessageQueries, long delayedTime) throws Exception {
         if (latch.await(1, TimeUnit.SECONDS)) {
             return;
         }

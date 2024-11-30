@@ -33,11 +33,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * @renamed from TimerDequeueGetMessageService to TimerMessageQuerier
+ *
  * poll msg from timerMessageQueryQueue, then:
  *  1. release the msg should be deleted
  *  2. enqueue timerMessageDeliverQueue
  */
-public class TimerMessageQuery extends AbstractStateThread {
+public class TimerMessageQuerier extends AbstractStateThread {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -48,7 +50,7 @@ public class TimerMessageQuery extends AbstractStateThread {
     private final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     private final PerfCounter.Ticks perfCounterTicks;
 
-    public TimerMessageQuery(
+    public TimerMessageQuerier(
             TimerState timerState,
             MessageStoreConfig storeConfig,
             MessageOperator messageReader,

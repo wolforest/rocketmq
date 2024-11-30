@@ -53,7 +53,7 @@ import org.apache.rocketmq.store.domain.timer.transit.TimerDequeueWarmService;
 import org.apache.rocketmq.store.domain.timer.transit.TimerFlushService;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageAccepter;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageDeliver;
-import org.apache.rocketmq.store.domain.timer.transit.TimerMessageQuery;
+import org.apache.rocketmq.store.domain.timer.transit.TimerMessageQuerier;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageRecover;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageSaver;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageScanner;
@@ -89,15 +89,23 @@ public class TimerMessageStore {
      * wait to schedule task queue
      * the task will schedule by timer wheel
      * or put into timerMessageDeliverQueue
+     *
+     * enqueued by TimerMessageAccepter
+     * dequeued by TimerMessageSaver
      */
     protected BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     /**
      * wait to execute message queue
      * the message in queue will put back to commitLog
+     *
+     * enqueued by TimerMessageSaver
+     * enqueued by TimerMessageQuery
+     * dequeued by TimerMessageDeliver
      */
     protected BlockingQueue<TimerRequest> timerMessageDeliverQueue;
     /**
-     *
+     * enqueued by TimerMessageScanner
+     * dequeued by TimerMessageQuery
      */
     protected BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
 
@@ -112,7 +120,7 @@ public class TimerMessageStore {
     private TimerDequeueWarmService dequeueWarmService;
     private TimerMessageScanner timerMessageScanner;
     private TimerMessageDeliver[] timerMessageDelivers;
-    private TimerMessageQuery[] timerMessageQueries;
+    private TimerMessageQuerier[] timerMessageQueries;
     private TimerFlushService timerFlushService;
     private final int commitLogFileSize;
     private final int timerLogFileSize;
@@ -345,7 +353,7 @@ public class TimerMessageStore {
     }
 
     private void startTimerMessageQueries() {
-        for (TimerMessageQuery query : timerMessageQueries) {
+        for (TimerMessageQuerier query : timerMessageQueries) {
             query.start();
         }
     }
@@ -401,7 +409,7 @@ public class TimerMessageStore {
     }
 
     private void shutdownTimerMessageQueries() {
-        for (TimerMessageQuery query : timerMessageQueries) {
+        for (TimerMessageQuerier query : timerMessageQueries) {
             query.shutdown();
         }
     }
@@ -466,9 +474,9 @@ public class TimerMessageStore {
 
     private void initTimerMessageQuery() {
         int getThreadNum = Math.max(storeConfig.getTimerGetMessageThreadNum(), 1);
-        timerMessageQueries = new TimerMessageQuery[getThreadNum];
+        timerMessageQueries = new TimerMessageQuerier[getThreadNum];
         for (int i = 0; i < timerMessageQueries.length; i++) {
-            timerMessageQueries[i] = new TimerMessageQuery(
+            timerMessageQueries[i] = new TimerMessageQuerier(
                 timerState,
                 storeConfig,
                 messageOperator,

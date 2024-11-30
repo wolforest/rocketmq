@@ -39,8 +39,8 @@ import org.apache.rocketmq.store.server.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
 
 /**
- * Consume the original topic queue, convert message to TimerTask and put it into the in-memory pending queue
  * @renamed from TimerEnqueueGetService to TimerMessageAccepter
+ * Consume the original topic queue, convert message to TimerTask and put it into the in-memory pending queue
  * pull message directly from consume queue with predefined queueId
  * and put message to TimerMessageStore.fetchedTimerMessageQueue
  *
