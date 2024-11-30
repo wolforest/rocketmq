@@ -40,7 +40,7 @@ import org.apache.rocketmq.store.api.broker.pop.AckMsg;
 import org.apache.rocketmq.store.api.broker.pop.PopCheckPoint;
 import org.apache.rocketmq.store.api.broker.pop.PopKeyBuilder;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
-import org.apache.rocketmq.store.domain.timer.TimerState;
+import org.apache.rocketmq.store.domain.timer.model.TimerState;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

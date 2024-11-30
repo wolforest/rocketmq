@@ -39,7 +39,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
-import static org.apache.rocketmq.store.domain.timer.TimerState.TIMER_TOPIC;
+import static org.apache.rocketmq.store.domain.timer.model.TimerState.TIMER_TOPIC;
 
 public class HookUtils {
 

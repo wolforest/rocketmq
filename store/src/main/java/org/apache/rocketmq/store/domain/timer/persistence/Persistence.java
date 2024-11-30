@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.domain.timer;
+package org.apache.rocketmq.store.domain.timer.persistence;
 
 import java.util.LinkedList;
+import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
 
 public interface Persistence {
     class ScannResult {

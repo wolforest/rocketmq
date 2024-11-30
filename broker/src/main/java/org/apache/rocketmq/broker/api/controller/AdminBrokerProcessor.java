@@ -195,7 +195,7 @@ import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.domain.queue.CqExtUnit;
 import org.apache.rocketmq.store.domain.queue.CqUnit;
 import org.apache.rocketmq.store.domain.queue.ReferredIterator;
-import org.apache.rocketmq.store.domain.timer.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.transit.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
 import org.apache.rocketmq.store.infra.memory.LibC;
 

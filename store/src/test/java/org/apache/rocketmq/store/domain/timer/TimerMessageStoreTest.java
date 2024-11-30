@@ -42,6 +42,9 @@ import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.store.StoreTestUtils;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
+import org.apache.rocketmq.store.domain.timer.metrics.TimerMetrics;
+import org.apache.rocketmq.store.domain.timer.model.TimerState;
+import org.apache.rocketmq.store.domain.timer.transit.TimerCheckpoint;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;
@@ -62,7 +65,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.apache.rocketmq.store.domain.timer.TimerState.TIMER_TOPIC;
+import static org.apache.rocketmq.store.domain.timer.model.TimerState.TIMER_TOPIC;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;

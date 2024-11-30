@@ -14,13 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.domain.timer;
+package org.apache.rocketmq.store.domain.timer.model;
 
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.domain.timer.transit.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.transit.AbstractStateThread;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;

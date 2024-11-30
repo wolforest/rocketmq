@@ -24,10 +24,10 @@ import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerLog;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheelPersistence;
-import org.apache.rocketmq.store.domain.timer.Persistence;
-import org.apache.rocketmq.store.domain.timer.TimerMetricManager;
-import org.apache.rocketmq.store.domain.timer.TimerRequest;
-import org.apache.rocketmq.store.domain.timer.TimerState;
+import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
+import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
+import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerState;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
 
 import java.util.ArrayList;

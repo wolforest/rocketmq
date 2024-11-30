@@ -17,8 +17,8 @@
 package org.apache.rocketmq.store.domain.timer.persistence.rocksdb;
 
 
-import org.apache.rocketmq.store.domain.timer.Persistence;
-import org.apache.rocketmq.store.domain.timer.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
+import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
 
 public class RocksDBPersistence implements Persistence {
     @Override

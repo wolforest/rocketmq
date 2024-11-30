@@ -23,10 +23,10 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
-import org.apache.rocketmq.store.domain.timer.Persistence;
-import org.apache.rocketmq.store.domain.timer.TimerRequest;
-import org.apache.rocketmq.store.domain.timer.TimerState;
-import org.apache.rocketmq.store.domain.timer.TimerMetricManager;
+import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
+import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerState;
+import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
 
 import java.sql.Timestamp;

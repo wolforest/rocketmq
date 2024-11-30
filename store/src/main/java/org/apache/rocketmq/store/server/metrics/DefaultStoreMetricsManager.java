@@ -36,7 +36,7 @@ import org.apache.rocketmq.common.app.metrics.NopLongHistogram;
 import org.apache.rocketmq.common.lang.Pair;
 import org.apache.rocketmq.common.app.metrics.NopLongCounter;
 import org.apache.rocketmq.common.app.metrics.NopObservableLongGauge;
-import org.apache.rocketmq.store.domain.timer.TimerMetrics;
+import org.apache.rocketmq.store.domain.timer.metrics.TimerMetrics;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.Slot;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;

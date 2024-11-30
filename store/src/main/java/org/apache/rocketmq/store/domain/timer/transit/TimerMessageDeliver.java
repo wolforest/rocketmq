@@ -28,13 +28,11 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.domain.timer.TimerMetricManager;
-import org.apache.rocketmq.store.domain.timer.TimerState;
+import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
+import org.apache.rocketmq.store.domain.timer.model.TimerState;
 import org.apache.rocketmq.store.server.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.domain.timer.AbstractStateThread;
-import org.apache.rocketmq.store.domain.timer.MessageOperator;
-import org.apache.rocketmq.store.domain.timer.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
 
 import java.util.concurrent.BlockingQueue;

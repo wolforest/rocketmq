@@ -20,6 +20,7 @@ import org.apache.rocketmq.common.domain.message.MessageAccessor;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.store.StoreTestUtils;
+import org.apache.rocketmq.store.domain.timer.metrics.TimerMetrics;
 import org.junit.Assert;
 import org.junit.Test;
 

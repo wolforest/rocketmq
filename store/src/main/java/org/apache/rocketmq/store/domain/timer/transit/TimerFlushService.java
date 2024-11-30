@@ -29,11 +29,11 @@ import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerLog;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
-import org.apache.rocketmq.store.domain.timer.TimerMetrics;
-import org.apache.rocketmq.store.domain.timer.TimerRequest;
-import org.apache.rocketmq.store.domain.timer.TimerState;
+import org.apache.rocketmq.store.domain.timer.metrics.TimerMetrics;
+import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerState;
 
-import static org.apache.rocketmq.store.domain.timer.TimerState.TIMER_TOPIC;
+import static org.apache.rocketmq.store.domain.timer.model.TimerState.TIMER_TOPIC;
 
 /**
  * periodically flush timerWheel thread
