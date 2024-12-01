@@ -93,73 +93,107 @@ public class TimerWheelPersistence implements Persistence {
     @Override
     public ScanResult scan() {
         ScanResult result = new ScanResult();
+
         Slot slot = timerWheel.getSlot(timerState.currReadTimeMs);
         if (-1 == slot.timeMs) {
             timerState.moveReadTime(precisionMs);
             return result;
         }
+
         result.setCode(1);
         try {
-            //clear the flag
-            timerState.dequeueStatusChangeFlag = false;
-
-            long currOffsetPy = slot.lastPos;
-            Set<String> deleteUniqKeys = new ConcurrentSkipListSet<>();
-            LinkedList<SelectMappedBufferResult> sbrs = new LinkedList<>();
-            SelectMappedBufferResult timeSbr = null;
-            //read the timer log one by one
-            while (currOffsetPy != -1) {
-                perfCounterTicks.startTick("dequeue_read_timerlog");
-                if (null == timeSbr || timeSbr.getStartOffset() > currOffsetPy) {
-                    timeSbr = timerLog.getWholeBuffer(currOffsetPy);
-                    if (null != timeSbr) {
-                        sbrs.add(timeSbr);
-                    }
-                }
-                if (null == timeSbr) {
-                    break;
-                }
-                long prevPos = -1;
-                try {
-
-                    int position = (int) (currOffsetPy % timerLogFileSize);
-                    timeSbr.getByteBuffer().position(position);
-                    timeSbr.getByteBuffer().getInt(); //size
-                    prevPos = timeSbr.getByteBuffer().getLong();
-                    int magic = timeSbr.getByteBuffer().getInt();
-                    long enqueueTime = timeSbr.getByteBuffer().getLong();
-                    long delayedTime = timeSbr.getByteBuffer().getInt() + enqueueTime;
-                    long offsetPy = timeSbr.getByteBuffer().getLong();
-                    int sizePy = timeSbr.getByteBuffer().getInt();
-                    TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, enqueueTime, magic);
-                    timerRequest.setDeleteList(deleteUniqKeys);
-                    if (timerState.needDelete(magic) && !timerState.needRoll(magic)) {
-                        result.addDeleteMsgStack(timerRequest);
-                    } else {
-                        result.addNormalMsgStack(timerRequest);
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("Error in dequeue_read_timerlog", e);
-                } finally {
-                    currOffsetPy = prevPos;
-                    perfCounterTicks.endTick("dequeue_read_timerlog");
-                }
-            }
-            if (result.sizeOfDeleteMsgStack() == 0 && result.sizeOfNormalMsgStack() == 0) {
-                LOGGER.warn("dequeue time:{} but read nothing from timerLog", timerState.currReadTimeMs);
-            }
-            for (SelectMappedBufferResult sbr : sbrs) {
-                if (null != sbr) {
-                    sbr.release();
-                }
-            }
+            scanBySlot(result, slot);
         } catch (Throwable t) {
-            LOGGER.error("Unknown error in dequeue process", t);
-            if (storeConfig.isTimerSkipUnknownError()) {
-                timerState.moveReadTime(precisionMs);
+            moveReadTime(t);
+        }
+
+        return result;
+    }
+
+    private void moveReadTime(Throwable t) {
+        LOGGER.error("Unknown error in dequeue process", t);
+        if (storeConfig.isTimerSkipUnknownError()) {
+            timerState.moveReadTime(precisionMs);
+        }
+    }
+
+    private void scanBySlot(ScanResult result, Slot slot) {
+        //clear the flag
+        timerState.dequeueStatusChangeFlag = false;
+
+        long currOffsetPy = slot.lastPos;
+        Set<String> deleteUniqKeys = new ConcurrentSkipListSet<>();
+        LinkedList<SelectMappedBufferResult> sbrs = new LinkedList<>();
+        SelectMappedBufferResult timeSbr = null;
+        //read the timer log one by one
+        while (currOffsetPy != -1) {
+            perfCounterTicks.startTick("dequeue_read_timerlog");
+            timeSbr = initBufferResult(timeSbr, currOffsetPy, sbrs);
+            if (null == timeSbr) {
+                break;
+            }
+
+            currOffsetPy = addScanResult(currOffsetPy, timeSbr, deleteUniqKeys, result);
+        }
+
+        if (result.sizeOfDeleteMsgStack() == 0 && result.sizeOfNormalMsgStack() == 0) {
+            LOGGER.warn("dequeue time:{} but read nothing from timerLog", timerState.currReadTimeMs);
+        }
+
+        releaseBufferResult(sbrs);
+    }
+
+    private long addScanResult(long currOffsetPy, SelectMappedBufferResult timeSbr, Set<String> deleteUniqKeys, ScanResult result) {
+        long prevPos = -1;
+        try {
+
+            int position = (int) (currOffsetPy % timerLogFileSize);
+            timeSbr.getByteBuffer().position(position);
+            timeSbr.getByteBuffer().getInt(); //size
+            prevPos = timeSbr.getByteBuffer().getLong();
+
+            int magic = timeSbr.getByteBuffer().getInt();
+            long enqueueTime = timeSbr.getByteBuffer().getLong();
+            long delayedTime = timeSbr.getByteBuffer().getInt() + enqueueTime;
+            long offsetPy = timeSbr.getByteBuffer().getLong();
+            int sizePy = timeSbr.getByteBuffer().getInt();
+
+            TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, enqueueTime, magic);
+            timerRequest.setDeleteList(deleteUniqKeys);
+
+            if (timerState.needDelete(magic) && !timerState.needRoll(magic)) {
+                result.addDeleteMsgStack(timerRequest);
+            } else {
+                result.addNormalMsgStack(timerRequest);
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Error in dequeue_read_timerlog", e);
+        } finally {
+            currOffsetPy = prevPos;
+            perfCounterTicks.endTick("dequeue_read_timerlog");
+        }
+
+        return currOffsetPy;
+    }
+
+    private SelectMappedBufferResult initBufferResult(SelectMappedBufferResult timeSbr, long currOffsetPy, LinkedList<SelectMappedBufferResult> sbrs) {
+        if (null == timeSbr || timeSbr.getStartOffset() > currOffsetPy) {
+            timeSbr = timerLog.getWholeBuffer(currOffsetPy);
+            if (null != timeSbr) {
+                sbrs.add(timeSbr);
             }
         }
-        return result;
+
+        return timeSbr;
+    }
+
+    private void releaseBufferResult(LinkedList<SelectMappedBufferResult> sbrs) {
+        for (SelectMappedBufferResult sbr : sbrs) {
+            if (null != sbr) {
+                sbr.release();
+            }
+        }
     }
 
     private long getRolledDelayedTime(long tmpWriteTimeMs, long delayedTime) {
