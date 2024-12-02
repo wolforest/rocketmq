@@ -19,21 +19,21 @@ package org.apache.rocketmq.store.domain.timer.transit;
 import io.opentelemetry.api.common.Attributes;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
+import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.config.BrokerRole;
-import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.domain.queue.CqUnit;
 import org.apache.rocketmq.store.domain.queue.ReferredIterator;
 import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
 import org.apache.rocketmq.store.domain.timer.model.TimerState;
+import org.apache.rocketmq.store.server.config.BrokerRole;
+import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.metrics.DefaultStoreMetricsConstant;
 import org.apache.rocketmq.store.server.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
@@ -146,31 +146,42 @@ public class TimerMessageConsumer extends ServiceThread {
             long offsetPy = cqUnit.getPos();
             int sizePy = cqUnit.getSize();
             cqUnit.getTagsCode(); //tags code
+
             MessageExt msgExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
             if (null == msgExt) {
                 perfCounterTicks.getCounter("enqueue_get_miss");
-            } else {
-                timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
-                timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
-                long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
-                // use CQ offset, not offset in Message
-                msgExt.setQueueOffset(offset + i);
-                TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
-
-                if (!loopOffer(timerRequest)) {
-                    return false;
-                }
-
-                Attributes attributes = DefaultStoreMetricsManager.newAttributesBuilder()
-                    .put(DefaultStoreMetricsConstant.LABEL_TOPIC, msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC)).build();
-                DefaultStoreMetricsManager.timerMessageSetLatency.record((delayedTime - msgExt.getBornTimestamp()) / 1000, attributes);
+                return true;
             }
+
+            timerState.lastEnqueueButExpiredTime = System.currentTimeMillis();
+            timerState.lastEnqueueButExpiredStoreTime = msgExt.getStoreTimestamp();
+            long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
+            // use CQ offset, not offset in Message
+            msgExt.setQueueOffset(offset + i);
+            TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
+
+            if (!loopOffer(timerRequest)) {
+                return false;
+            }
+
+            Attributes attributes = DefaultStoreMetricsManager.newAttributesBuilder()
+                .put(DefaultStoreMetricsConstant.LABEL_TOPIC, msgExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC)).build();
+            DefaultStoreMetricsManager.timerMessageSetLatency.record((delayedTime - msgExt.getBornTimestamp()) / 1000, attributes);
         } catch (Exception e) {
             deferThrow(e);
         } finally {
             perfCounterTicks.endTick("enqueue_get");
         }
 
+        return true;
+    }
+
+    private boolean loopOffer(TimerRequest timerRequest) throws InterruptedException {
+        while (!fetchedTimerMessageQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
+            if (!isRunningEnqueue()) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -182,15 +193,6 @@ public class TimerMessageConsumer extends ServiceThread {
             ThreadUtils.sleep(50);
             throw e;
         }
-    }
-
-    private boolean loopOffer(TimerRequest timerRequest) throws InterruptedException {
-        while (!fetchedTimerMessageQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
-            if (!isRunningEnqueue()) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
