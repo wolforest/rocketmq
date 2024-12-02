@@ -51,7 +51,7 @@ public class TimerMessageScanner extends ServiceThread {
 
     private final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
     private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
-    private final TimerMessageDeliver[] timerMessageDelivers;
+    private final TimerMessageProducer[] timerMessageProducers;
     private final TimerMessageQuerier[] timerMessageQueries;
 
     private final Persistence persistence;
@@ -64,7 +64,7 @@ public class TimerMessageScanner extends ServiceThread {
                                TimerLog timerLog,
                                BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
                                BlockingQueue<TimerRequest> timerMessageDeliverQueue,
-                               TimerMessageDeliver[] timerMessageDelivers,
+                               TimerMessageProducer[] timerMessageProducers,
                                TimerMessageQuerier[] timerMessageQueries,
                                TimerMetricManager metricManager,
                                PerfCounter.Ticks perfCounterTicks) {
@@ -73,7 +73,7 @@ public class TimerMessageScanner extends ServiceThread {
 
         this.timerMessageQueryQueue = timerMessageQueryQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
-        this.timerMessageDelivers = timerMessageDelivers;
+        this.timerMessageProducers = timerMessageProducers;
         this.timerMessageQueries = timerMessageQueries;
 
         this.persistence = new TimerWheelPersistence(timerState,timerWheel,timerLog,storeConfig,metricManager,perfCounterTicks);
@@ -164,7 +164,7 @@ public class TimerMessageScanner extends ServiceThread {
             timerMessageQueryQueue.put(timerRequests);
         }
         //do we need to use loop with tryAcquire
-        timerState.checkDeliverQueueLatch(countDownLatch, this.timerMessageDeliverQueue, this.timerMessageDelivers, this.timerMessageQueries, this.timerState.currReadTimeMs);
+        timerState.checkDeliverQueueLatch(countDownLatch, this.timerMessageDeliverQueue, this.timerMessageProducers, this.timerMessageQueries, this.timerState.currReadTimeMs);
     }
 
     private List<List<TimerRequest>> splitIntoLists(List<TimerRequest> origin) {

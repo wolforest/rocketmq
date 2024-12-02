@@ -178,11 +178,13 @@ public class TimerWheelPersistence implements Persistence {
     }
 
     private SelectMappedBufferResult initBufferResult(SelectMappedBufferResult timeSbr, long currOffsetPy, LinkedList<SelectMappedBufferResult> sbrs) {
-        if (null == timeSbr || timeSbr.getStartOffset() > currOffsetPy) {
-            timeSbr = timerLog.getWholeBuffer(currOffsetPy);
-            if (null != timeSbr) {
-                sbrs.add(timeSbr);
-            }
+        if (null != timeSbr && timeSbr.getStartOffset() <= currOffsetPy) {
+            return timeSbr;
+        }
+
+        timeSbr = timerLog.getWholeBuffer(currOffsetPy);
+        if (null != timeSbr) {
+            sbrs.add(timeSbr);
         }
 
         return timeSbr;

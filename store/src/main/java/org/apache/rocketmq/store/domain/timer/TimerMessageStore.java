@@ -51,8 +51,8 @@ import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerLog;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
 import org.apache.rocketmq.store.domain.timer.transit.TimerDequeueWarmService;
 import org.apache.rocketmq.store.domain.timer.transit.TimerFlushService;
-import org.apache.rocketmq.store.domain.timer.transit.TimerMessageAccepter;
-import org.apache.rocketmq.store.domain.timer.transit.TimerMessageDeliver;
+import org.apache.rocketmq.store.domain.timer.transit.TimerMessageConsumer;
+import org.apache.rocketmq.store.domain.timer.transit.TimerMessageProducer;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageQuerier;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageRecover;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageSaver;
@@ -89,7 +89,7 @@ public class TimerMessageStore {
      * wait to schedule task queue
      * the task will schedule by timer wheel
      * or put into timerMessageDeliverQueue
-     *
+     * actions:
      * enqueued by TimerMessageAccepter
      * dequeued by TimerMessageSaver
      */
@@ -97,7 +97,7 @@ public class TimerMessageStore {
     /**
      * wait to execute message queue
      * the message in queue will put back to commitLog
-     *
+     * actions:
      * enqueued by TimerMessageSaver
      * enqueued by TimerMessageQuery
      * dequeued by TimerMessageDeliver
@@ -115,11 +115,11 @@ public class TimerMessageStore {
     private final TimerWheel timerWheel;
     private final TimerLog timerLog;
     private final TimerCheckpoint timerCheckpoint;
-    private TimerMessageAccepter timerMessageFetcher;
+    private TimerMessageConsumer timerMessageFetcher;
     private TimerMessageSaver timerMessageLocator;
     private TimerDequeueWarmService dequeueWarmService;
     private TimerMessageScanner timerMessageScanner;
-    private TimerMessageDeliver[] timerMessageDelivers;
+    private TimerMessageProducer[] timerMessageProducers;
     private TimerMessageQuerier[] timerMessageQueries;
     private TimerFlushService timerFlushService;
     private final int commitLogFileSize;
@@ -359,7 +359,7 @@ public class TimerMessageStore {
     }
 
     private void startTimerMessageDelivers() {
-        for (TimerMessageDeliver deliver : timerMessageDelivers) {
+        for (TimerMessageProducer deliver : timerMessageProducers) {
             deliver.start();
         }
     }
@@ -415,7 +415,7 @@ public class TimerMessageStore {
     }
 
     private void shutdownTimerMessageDelivers() {
-        for (TimerMessageDeliver deliver : timerMessageDelivers) {
+        for (TimerMessageProducer deliver : timerMessageProducers) {
             deliver.shutdown();
         }
     }
@@ -424,7 +424,7 @@ public class TimerMessageStore {
         initTimerMessageQuery();
         initTimerMessageDeliver();
 
-        timerMessageFetcher = new TimerMessageAccepter(timerState, storeConfig, messageOperator,
+        timerMessageFetcher = new TimerMessageConsumer(timerState, storeConfig, messageOperator,
             fetchedTimerMessageQueue, perfCounterTicks);
 
         timerMessageLocator = new TimerMessageSaver(
@@ -435,7 +435,7 @@ public class TimerMessageStore {
                 messageOperator,
                 fetchedTimerMessageQueue,
                 timerMessageDeliverQueue,
-                timerMessageDelivers,
+            timerMessageProducers,
                 timerMessageQueries,
                 timerMetricManager,
                 perfCounterTicks);
@@ -447,7 +447,7 @@ public class TimerMessageStore {
                 timerLog,
                 timerMessageQueryQueue,
                 timerMessageDeliverQueue,
-                timerMessageDelivers,
+            timerMessageProducers,
                 timerMessageQueries,
                 timerMetricManager,
                 perfCounterTicks
@@ -488,9 +488,9 @@ public class TimerMessageStore {
 
     private void initTimerMessageDeliver() {
         int putThreadNum = Math.max(storeConfig.getTimerPutMessageThreadNum(), 1);
-        timerMessageDelivers = new TimerMessageDeliver[putThreadNum];
-        for (int i = 0; i < timerMessageDelivers.length; i++) {
-            timerMessageDelivers[i] = new TimerMessageDeliver(
+        timerMessageProducers = new TimerMessageProducer[putThreadNum];
+        for (int i = 0; i < timerMessageProducers.length; i++) {
+            timerMessageProducers[i] = new TimerMessageProducer(
                 timerState,
                 storeConfig,
                 messageOperator,

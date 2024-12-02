@@ -55,13 +55,11 @@ public class TimerWheel {
         File file = new File(fileName);
         IOUtils.ensureDirOK(file.getParent());
 
-        try {
-            RandomAccessFile randomAccessFile = new RandomAccessFile(fileName, "rw");
-            if (file.exists() && randomAccessFile.length() != 0 &&
-                randomAccessFile.length() != wheelLength) {
-                throw new RuntimeException(String.format("Timer wheel length:%d != expected:%s",
-                    randomAccessFile.length(), wheelLength));
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(fileName, "rw")) {
+            if (file.exists() && randomAccessFile.length() != 0 && randomAccessFile.length() != wheelLength) {
+                throw new RuntimeException(String.format("Timer wheel length:%d != expected:%s", randomAccessFile.length(), wheelLength));
             }
+
             randomAccessFile.setLength(wheelLength);
             fileChannel = randomAccessFile.getChannel();
             mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, wheelLength);
@@ -102,6 +100,7 @@ public class TimerWheel {
         bf.limit(wheelLength);
         mappedByteBuffer.position(0);
         mappedByteBuffer.limit(wheelLength);
+
         for (int i = 0; i < wheelLength; i++) {
             if (bf.get(i) != mappedByteBuffer.get(i)) {
                 mappedByteBuffer.put(i, bf.get(i));
@@ -121,8 +120,13 @@ public class TimerWheel {
     //testable
     public Slot getRawSlot(long timeMs) {
         localBuffer.get().position(getSlotIndex(timeMs) * Slot.SIZE);
-        return new Slot(localBuffer.get().getLong() * precisionMs,
-            localBuffer.get().getLong(), localBuffer.get().getLong(), localBuffer.get().getInt(), localBuffer.get().getInt());
+        return new Slot(
+            localBuffer.get().getLong() * precisionMs,
+            localBuffer.get().getLong(),
+            localBuffer.get().getLong(),
+            localBuffer.get().getInt(),
+            localBuffer.get().getInt()
+        );
     }
 
     public int getSlotIndex(long timeMs) {
@@ -153,15 +157,17 @@ public class TimerWheel {
             if (force) {
                 putSlot(timeMs, firstPos != IGNORE ? firstPos : lastPos, lastPos);
             }
+            return;
+        }
+
+        if (IGNORE != firstPos) {
+            localBuffer.get().putLong(firstPos);
         } else {
-            if (IGNORE != firstPos) {
-                localBuffer.get().putLong(firstPos);
-            } else {
-                localBuffer.get().getLong();
-            }
-            if (IGNORE != lastPos) {
-                localBuffer.get().putLong(lastPos);
-            }
+            localBuffer.get().getLong();
+        }
+
+        if (IGNORE != lastPos) {
+            localBuffer.get().putLong(lastPos);
         }
     }
 
@@ -169,15 +175,18 @@ public class TimerWheel {
     public long checkPhyPos(long timeStartMs, long maxOffset) {
         long minFirst = Long.MAX_VALUE;
         int firstSlotIndex = getSlotIndex(timeStartMs);
+
         for (int i = 0; i < slotsTotal * 2; i++) {
             int slotIndex = (firstSlotIndex + i) % (slotsTotal * 2);
             localBuffer.get().position(slotIndex * Slot.SIZE);
+
             if ((timeStartMs + (long) i * precisionMs) / precisionMs != localBuffer.get().getLong()) {
                 continue;
             }
 
             minFirst = calculateMinFirst(minFirst, maxOffset);
         }
+
         return minFirst;
     }
 
@@ -201,11 +210,14 @@ public class TimerWheel {
         for (int i = 0; i < slotsTotal * 2; i++) {
             int slotIndex = (firstSlotIndex + i) % (slotsTotal * 2);
             localBuffer.get().position(slotIndex * Slot.SIZE);
-            if ((timeStartMs + i * precisionMs) / precisionMs == localBuffer.get().getLong()) {
-                localBuffer.get().getLong(); //first pos
-                localBuffer.get().getLong(); //last pos
-                allNum = allNum + localBuffer.get().getInt();
+
+            if ((timeStartMs + (long) i * precisionMs) / precisionMs != localBuffer.get().getLong()) {
+                continue;
             }
+
+            localBuffer.get().getLong(); //first pos
+            localBuffer.get().getLong(); //last pos
+            allNum = allNum + localBuffer.get().getInt();
         }
         return allNum;
     }

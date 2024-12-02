@@ -37,7 +37,7 @@ public class Block {
             + 8 //offsetPy
             + 4 //sizePy
             + 4 //hash code of real topic
-            + 8; //reserved value, just in case of;
+            + 8;//reserved value, just in case of;
     private final ByteBuffer blockBuffer = ByteBuffer.allocate(SIZE);
     public int size;
     public long prevPos;

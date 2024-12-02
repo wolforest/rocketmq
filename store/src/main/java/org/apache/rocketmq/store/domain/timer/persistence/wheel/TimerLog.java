@@ -113,28 +113,35 @@ public class TimerLog {
         if (null == mappedFile || mappedFile.isFull()) {
             mappedFile = this.mappedFileQueue.getLastMappedFile(0);
         }
+
         if (null == mappedFile) {
             LOGGER.error("Create mapped file1 error for timer log");
             return null;
         }
-        if (len + MIN_BLANK_LEN > mappedFile.getFileSize() - mappedFile.getWrotePosition()) {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(MIN_BLANK_LEN);
-            byteBuffer.putInt(mappedFile.getFileSize() - mappedFile.getWrotePosition());
-            byteBuffer.putLong(0);
-            byteBuffer.putInt(BLANK_MAGIC_CODE);
-            if (mappedFile.appendMessage(byteBuffer.array())) {
-                //need to set the wrote position
-                mappedFile.setWrotePosition(mappedFile.getFileSize());
-            } else {
-                LOGGER.error("Append blank error for timer log");
-                return null;
-            }
-            mappedFile = this.mappedFileQueue.getLastMappedFile(0);
-            if (null == mappedFile) {
-                LOGGER.error("create mapped file2 error for timer log");
-                return null;
-            }
+
+        if (len + MIN_BLANK_LEN <= mappedFile.getFileSize() - mappedFile.getWrotePosition()) {
+            return mappedFile;
         }
+
+        ByteBuffer byteBuffer = ByteBuffer.allocate(MIN_BLANK_LEN);
+        byteBuffer.putInt(mappedFile.getFileSize() - mappedFile.getWrotePosition());
+        byteBuffer.putLong(0);
+        byteBuffer.putInt(BLANK_MAGIC_CODE);
+
+        if (mappedFile.appendMessage(byteBuffer.array())) {
+            //need to set the wrote position
+            mappedFile.setWrotePosition(mappedFile.getFileSize());
+        } else {
+            LOGGER.error("Append blank error for timer log");
+            return null;
+        }
+
+        mappedFile = this.mappedFileQueue.getLastMappedFile(0);
+        if (null == mappedFile) {
+            LOGGER.error("create mapped file2 error for timer log");
+            return null;
+        }
+
         return mappedFile;
     }
 

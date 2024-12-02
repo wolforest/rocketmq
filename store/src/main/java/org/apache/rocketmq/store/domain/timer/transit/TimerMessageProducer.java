@@ -42,12 +42,12 @@ import java.util.function.Function;
 import static org.apache.rocketmq.store.domain.timer.TimerMessageStore.DEQUEUE_PUT;
 
 /**
- * @renamed from TimerDequeuePutMessageService to TimerMessageDeliver
+ * @renamed from TimerDequeuePutMessageService to TimerMessageProducer
  * pull task from timerMessageDeliverQueue
  * convert task to  messages
  * put message back to commitLog
  */
-public class TimerMessageDeliver extends AbstractStateThread {
+public class TimerMessageProducer extends AbstractStateThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
@@ -59,7 +59,7 @@ public class TimerMessageDeliver extends AbstractStateThread {
     private final Function<MessageExtBrokerInner, PutMessageResult> escapeBridgeHook;
     private final MessageOperator messageOperator;
 
-    public TimerMessageDeliver(
+    public TimerMessageProducer(
             TimerState timerState,
             MessageStoreConfig storeConfig,
             MessageOperator messageOperator,

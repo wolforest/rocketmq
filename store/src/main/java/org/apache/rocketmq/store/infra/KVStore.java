@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.domain.kv;
+package org.apache.rocketmq.store.infra;
 
 /**
  * store kv data, support different store engine:

@@ -39,13 +39,13 @@ import org.apache.rocketmq.store.server.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
 
 /**
- * @renamed from TimerEnqueueGetService to TimerMessageAccepter
+ * @renamed from TimerEnqueueGetService to TimerMessageConsumer
  * Consume the original topic queue, convert message to TimerTask and put it into the in-memory pending queue
  * pull message directly from consume queue with predefined queueId
  * and put message to TimerMessageStore.fetchedTimerMessageQueue
  *
  */
-public class TimerMessageAccepter extends ServiceThread {
+public class TimerMessageConsumer extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     public static final String TIMER_TOPIC = TopicValidator.SYSTEM_TOPIC_PREFIX + "wheel_timer";
     public static final String TIMER_OUT_MS = MessageConst.PROPERTY_TIMER_OUT_MS;
@@ -59,7 +59,7 @@ public class TimerMessageAccepter extends ServiceThread {
     private final MessageOperator messageOperator;
     private final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
 
-    public TimerMessageAccepter(
+    public TimerMessageConsumer(
             TimerState timerState,
             MessageStoreConfig storeConfig,
             MessageOperator messageOperator,

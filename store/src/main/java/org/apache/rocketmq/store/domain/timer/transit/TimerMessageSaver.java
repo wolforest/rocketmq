@@ -58,7 +58,7 @@ public class TimerMessageSaver extends ServiceThread {
 
     private final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
     private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
-    private final TimerMessageDeliver[] timerMessageDelivers;
+    private final TimerMessageProducer[] timerMessageProducers;
     private final TimerMessageQuerier[] timerMessageQueries;
     private final PerfCounter.Ticks perfCounterTicks;
 
@@ -70,7 +70,7 @@ public class TimerMessageSaver extends ServiceThread {
                              MessageOperator messageOperator,
                              BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
                              BlockingQueue<TimerRequest> timerMessageDeliverQueue,
-                             TimerMessageDeliver[] timerMessageDelivers,
+                             TimerMessageProducer[] timerMessageProducers,
                              TimerMessageQuerier[] timerMessageQueries,
                              TimerMetricManager metricManager,
                              PerfCounter.Ticks perfCounterTicks) {
@@ -80,7 +80,7 @@ public class TimerMessageSaver extends ServiceThread {
 
         this.fetchedTimerMessageQueue = fetchedTimerMessageQueue;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
-        this.timerMessageDelivers = timerMessageDelivers;
+        this.timerMessageProducers = timerMessageProducers;
         this.timerMessageQueries = timerMessageQueries;
         this.perfCounterTicks = perfCounterTicks;
 
@@ -121,7 +121,7 @@ public class TimerMessageSaver extends ServiceThread {
                 this.putToTimerWheelOrEnqueueDeliverQueue(req);
             }
 
-            timerState.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue, timerMessageDelivers, timerMessageQueries, -1);
+            timerState.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue, timerMessageProducers, timerMessageQueries, -1);
 
             boolean allSuccess = timerRequests.stream().allMatch(TimerRequest::isSuccess);
             if (allSuccess) {

@@ -29,7 +29,7 @@ import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerLog;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
 import org.apache.rocketmq.store.domain.timer.transit.TimerMessageQuerier;
-import org.apache.rocketmq.store.domain.timer.transit.TimerMessageDeliver;
+import org.apache.rocketmq.store.domain.timer.transit.TimerMessageProducer;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -167,8 +167,8 @@ public class TimerState {
         }
     }
 
-    public boolean checkStateForTimerMessageDelivers(TimerMessageDeliver[] timerMessageDelivers, int state) {
-        for (AbstractStateThread service : timerMessageDelivers) {
+    public boolean checkStateForTimerMessageDelivers(TimerMessageProducer[] timerMessageProducers, int state) {
+        for (AbstractStateThread service : timerMessageProducers) {
             if (!service.isState(state)) {
                 return false;
             }
@@ -185,7 +185,7 @@ public class TimerState {
         return true;
     }
 
-    public void checkDeliverQueueLatch(CountDownLatch latch, BlockingQueue<TimerRequest> timerMessageDeliverQueue, TimerMessageDeliver[] timerMessageDelivers, TimerMessageQuerier[] timerMessageQueries, long delayedTime) throws Exception {
+    public void checkDeliverQueueLatch(CountDownLatch latch, BlockingQueue<TimerRequest> timerMessageDeliverQueue, TimerMessageProducer[] timerMessageProducers, TimerMessageQuerier[] timerMessageQueries, long delayedTime) throws Exception {
         if (latch.await(1, TimeUnit.SECONDS)) {
             return;
         }
@@ -193,7 +193,7 @@ public class TimerState {
         while (true) {
             if (!timerMessageDeliverQueue.isEmpty()
                     || !checkStateForTimerMessageQueries(timerMessageQueries, AbstractStateThread.WAITING)
-                    || !checkStateForTimerMessageDelivers(timerMessageDelivers, AbstractStateThread.WAITING)) {
+                    || !checkStateForTimerMessageDelivers(timerMessageProducers, AbstractStateThread.WAITING)) {
                 //let it go
             } else {
                 checkNum++;

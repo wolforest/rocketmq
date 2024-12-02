@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @renamed from TimerDequeueGetMessageService to TimerMessageQuerier
- *
  * poll msg from timerMessageQueryQueue, then:
  *  1. release the msg should be deleted
  *  2. enqueue timerMessageDeliverQueue
@@ -78,7 +77,7 @@ public class TimerMessageQuerier extends AbstractStateThread {
             try {
                 setState(AbstractStateThread.WAITING);
                 List<TimerRequest> timerRequestList = timerMessageQueryQueue.poll(100L * timerState.precisionMs / 1000, TimeUnit.MILLISECONDS);
-                if (null == timerRequestList || timerRequestList.size() == 0) {
+                if (null == timerRequestList || timerRequestList.isEmpty()) {
                     continue;
                 }
 
@@ -152,7 +151,7 @@ public class TimerMessageQuerier extends AbstractStateThread {
         if (null == uniqueKey) {
             LOGGER.warn("No uniqueKey for msg:{}", msgExt);
         }
-        if (null != uniqueKey && timerRequest.getDeleteList() != null && timerRequest.getDeleteList().size() > 0 && timerRequest.getDeleteList().contains(uniqueKey)) {
+        if (null != uniqueKey && timerRequest.getDeleteList() != null && !timerRequest.getDeleteList().isEmpty() && timerRequest.getDeleteList().contains(uniqueKey)) {
             doRes = true;
             timerRequest.idempotentRelease();
             perfCounterTicks.getCounter("dequeue_delete").flow(1);
