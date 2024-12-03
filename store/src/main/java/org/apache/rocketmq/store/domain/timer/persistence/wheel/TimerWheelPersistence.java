@@ -84,10 +84,10 @@ public class TimerWheelPersistence implements Persistence {
         String realTopic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
         Slot slot = timerWheel.getSlot(delayedTime);
 
-        long ret = appendTimerLog(timerRequest.getCommitLogOffset(), timerRequest.getMessageSize(), delayedTime, tmpWriteTimeMs, magic, realTopic, slot.lastPos);
-        putTimerWheelSlot(ret, delayedTime, slot,  messageExt);
+        long timerLogOffset = appendTimerLog(timerRequest.getCommitLogOffset(), timerRequest.getMessageSize(), delayedTime, tmpWriteTimeMs, magic, realTopic, slot.lastPos);
+        putTimerWheelSlot(timerLogOffset, delayedTime, slot,  messageExt);
 
-        return -1 != ret;
+        return -1 != timerLogOffset;
     }
 
     @Override
@@ -218,16 +218,18 @@ public class TimerWheelPersistence implements Persistence {
         return tmpWriteTimeMs + (long) timerState.timerRollWindowSlots * timerState.precisionMs;
     }
 
-    private void putTimerWheelSlot(long timerLogReturn, long delayedTime, Slot slot,  MessageExt messageExt) {
-        if (-1 == timerLogReturn) {
+    private void putTimerWheelSlot(long timerLogOffset, long delayedTime, Slot slot,  MessageExt messageExt) {
+        if (-1 == timerLogOffset) {
             return;
         }
 
         // If it's a delete message, then slot's total num -1
         // TODO: check if the delete msg is in the same slot with "the msg to be deleted".
         boolean isDelete = messageExt.getProperty(TimerState.TIMER_DELETE_UNIQUE_KEY) != null;
-        timerWheel.putSlot(delayedTime, slot.firstPos == -1 ? timerLogReturn : slot.firstPos, timerLogReturn,
-            isDelete ? slot.num - 1 : slot.num + 1, slot.magic);
+        long firstPos = slot.firstPos == -1 ? timerLogOffset : slot.firstPos;
+        int num = isDelete ? slot.num - 1 : slot.num + 1;
+
+        timerWheel.putSlot(delayedTime, firstPos, timerLogOffset, num, slot.magic);
         metricManager.addMetric(messageExt, isDelete ? -1 : 1);
     }
 

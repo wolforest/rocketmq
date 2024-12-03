@@ -155,18 +155,44 @@ public class TimerWheel {
         );
     }
 
+    /**
+     * calculate slot index by delayedTime;
+     * delayedTime is less than 3 days by config
+     * totalSlots * 2 is 14 days
+     * so ... ?
+     *
+     * @param timeMs delayedTime
+     * @return slot index
+     */
     public int getSlotIndex(long timeMs) {
         return (int) (timeMs / precisionMs % (slotsTotal * 2));
     }
 
+    /**
+     * called by self.reviseSlot
+     *
+     * @param timeMs delayedTime
+     * @param firstPos firstPos
+     * @param lastPos lastPos
+     */
     public void putSlot(long timeMs, long firstPos, long lastPos) {
         localBuffer.get().position(getSlotIndex(timeMs) * Slot.SIZE);
         // To be compatible with previous version.
-        // The previous version's precision is fixed at 1000ms and it store timeMs / 1000 in slot.
+        // The previous version's precision is fixed at 1000ms, and it stores timeMs / 1000 in slot.
         localBuffer.get().putLong(timeMs / precisionMs);
         localBuffer.get().putLong(firstPos);
         localBuffer.get().putLong(lastPos);
     }
+
+    /**
+     * called by TimerWheelPersistence.putTimerWheelSlot
+     *
+     * @param timeMs delayedTime
+     * @param firstPos firstPos
+     * @param lastPos lastPos
+     * @param num num
+     * @param magic magic
+     */
     public void putSlot(long timeMs, long firstPos, long lastPos, int num, int magic) {
         localBuffer.get().position(getSlotIndex(timeMs) * Slot.SIZE);
         localBuffer.get().putLong(timeMs / precisionMs);
@@ -176,6 +202,14 @@ public class TimerWheel {
         localBuffer.get().putInt(magic);
     }
 
+    /**
+     * called by TimerMessageRecover.recoverAndRevise
+     * 
+     * @param timeMs delayedTime
+     * @param firstPos firstPos
+     * @param lastPos lastPos
+     * @param force force
+     */
     public void reviseSlot(long timeMs, long firstPos, long lastPos, boolean force) {
         localBuffer.get().position(getSlotIndex(timeMs) * Slot.SIZE);
 
