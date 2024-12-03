@@ -545,7 +545,7 @@ public class CommitLog implements Swappable {
 
     private long getTagsCode(long tagsCode, Map<String, String> propertiesMap, String topic, long storeTimestamp, int sysFlag) {
         String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
-        if (tags != null && tags.length() > 0) {
+        if (tags != null && !tags.isEmpty()) {
             tagsCode = MessageExtBrokerInner.tagsString2tagsCode(MessageExt.parseTopicFilterType(sysFlag), tags);
         }
 

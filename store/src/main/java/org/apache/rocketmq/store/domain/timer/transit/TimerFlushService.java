@@ -92,7 +92,7 @@ public class TimerFlushService extends ServiceThread {
             timerWheel.flush();
             timerState.flushCheckpoint();
 
-            start = checkProgress(start);
+            start = checkFlushInterval(start);
 
             timerMetrics.persist();
             waitForRunning(storeConfig.getTimerFlushIntervalMs());
@@ -103,7 +103,7 @@ public class TimerFlushService extends ServiceThread {
         return start;
     }
 
-    private long checkProgress(long start) {
+    private long checkFlushInterval(long start) {
         if (System.currentTimeMillis() - start <= storeConfig.getTimerProgressLogIntervalMs()) {
             return start;
         }

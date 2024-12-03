@@ -73,15 +73,23 @@ public class MappedFileQueue implements Swappable {
         MappedFile pre = null;
         while (iterator.hasNext()) {
             MappedFile cur = iterator.next();
+            logCheckSelf(pre, cur);
 
-            if (pre != null) {
-                if (cur.getOffsetInFileName() - pre.getOffsetInFileName() != this.mappedFileSize) {
-                    LOG_ERROR.error("[BUG]The mappedFile queue's data is damaged, the adjacent mappedFile's offset don't match. pre file {}, cur file {}",
-                        pre.getFileName(), cur.getFileName());
-                }
-            }
             pre = cur;
         }
+    }
+
+    private void logCheckSelf(MappedFile pre, MappedFile cur) {
+        if (pre == null) {
+            return;
+        }
+
+        if (cur.getOffsetInFileName() - pre.getOffsetInFileName() == this.mappedFileSize) {
+            return;
+        }
+
+        LOG_ERROR.error("[BUG]The mappedFile queue's data is damaged, the adjacent mappedFile's offset don't match. pre file {}, cur file {}",
+            pre.getFileName(), cur.getFileName());
     }
 
     public MappedFile getConsumeQueueMappedFileByTime(final long timestamp, CommitLog commitLog,

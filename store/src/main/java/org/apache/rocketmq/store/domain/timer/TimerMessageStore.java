@@ -216,10 +216,20 @@ public class TimerMessageStore {
         this.scheduler.shutdown();
     }
 
+    /**
+     * just for unitTest
+     * @param deliverTimeMs deliverTime
+     * @return slotNum
+     */
     public long getCongestNum(long deliverTimeMs) {
         return timerWheel.getNum(deliverTimeMs);
     }
 
+    /**
+     * flow control method
+     * @param deliverTimeMs deliverTime
+     * @return status
+     */
     public boolean isReject(long deliverTimeMs) {
         long congestNum = timerWheel.getNum(deliverTimeMs);
         if (congestNum <= storeConfig.getTimerCongestNumEachSlot()) {
@@ -234,6 +244,10 @@ public class TimerMessageStore {
         return false;
     }
 
+    /**
+     * for admin/monitor
+     * @return timer message lagging
+     */
     public long getEnqueueBehindMessages() {
         long tmpQueueOffset = timerState.currQueueOffset;
         ConsumeQueueInterface cq = messageStore.getConsumeQueue(TimerState.TIMER_TOPIC, 0);
@@ -241,6 +255,10 @@ public class TimerMessageStore {
         return maxOffsetInQueue - tmpQueueOffset;
     }
 
+    /**
+     * for admin/monitor
+     * @return timer message lagging
+     */
     public long getEnqueueBehindMillis() {
         long ts = System.currentTimeMillis();
         if (ts - timerState.lastEnqueueButExpiredTime < 2000) {

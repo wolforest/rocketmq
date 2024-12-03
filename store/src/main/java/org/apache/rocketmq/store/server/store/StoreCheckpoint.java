@@ -32,7 +32,6 @@ import java.nio.channels.FileChannel.MapMode;
 
 public class StoreCheckpoint {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private final RandomAccessFile randomAccessFile;
     private final FileChannel fileChannel;
     private final MappedByteBuffer mappedByteBuffer;
     private volatile long physicMsgTimestamp = 0;
@@ -46,8 +45,8 @@ public class StoreCheckpoint {
         IOUtils.ensureDirOK(file.getParent());
         boolean fileExists = file.exists();
 
-        this.randomAccessFile = new RandomAccessFile(file, "rw");
-        this.fileChannel = this.randomAccessFile.getChannel();
+        RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
+        this.fileChannel = randomAccessFile.getChannel();
         this.mappedByteBuffer = fileChannel.map(MapMode.READ_WRITE, 0, DefaultMappedFile.OS_PAGE_SIZE);
 
         if (fileExists) {

@@ -36,7 +36,7 @@ import org.apache.rocketmq.store.server.config.BrokerRole;
  */
 public class AllocateMappedFileService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private static int waitTimeOut = 1000 * 5;
+    private static final int waitTimeOut = 1000 * 5;
 
     private final ConcurrentMap<String, AllocateRequest> requestTable = new ConcurrentHashMap<>();
     private final PriorityBlockingQueue<AllocateRequest> requestQueue = new PriorityBlockingQueue<>();
@@ -50,8 +50,8 @@ public class AllocateMappedFileService extends ServiceThread {
     public void run() {
         log.info(this.getServiceName() + " service started");
 
-        while (!this.isStopped() && this.mmapOperation()) {
-
+        while (!this.isStopped()) {
+            this.mmapOperation();
         }
         log.info(this.getServiceName() + " service end");
     }

@@ -23,7 +23,7 @@ import java.util.List;
 
 public class BatchAckMsg extends AckMsg {
     @JSONField(name = "aol", alternateNames = {"ackOffsetList"})
-    private List<Long> ackOffsetList = new ArrayList(32);
+    private List<Long> ackOffsetList = new ArrayList<>(32);
 
 
     public List<Long> getAckOffsetList() {
