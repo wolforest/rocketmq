@@ -144,16 +144,24 @@ public class TimerState {
         timerCheckpoint.setLastTimerLogFlushPos(timerLog.getMappedFileQueue().getFlushedWhere());
         timerCheckpoint.setLastReadTimeMs(commitReadTimeMs);
 
-        if (shouldRunningDequeue) {
-            timerCheckpoint.setMasterTimerQueueOffset(commitQueueOffset);
-            if (commitReadTimeMs != lastCommitReadTimeMs || commitQueueOffset != lastCommitQueueOffset) {
-                timerCheckpoint.updateDateVersion(messageStore.getStateMachineVersion());
-                lastCommitReadTimeMs = commitReadTimeMs;
-                lastCommitQueueOffset = commitQueueOffset;
-            }
-        }
+        prepareCheckPointForDequeue();
 
         timerCheckpoint.setLastTimerQueueOffset(Math.min(commitQueueOffset, timerCheckpoint.getMasterTimerQueueOffset()));
+    }
+
+    private void prepareCheckPointForDequeue() {
+        if (!shouldRunningDequeue) {
+            return;
+        }
+
+        timerCheckpoint.setMasterTimerQueueOffset(commitQueueOffset);
+        if (commitReadTimeMs == lastCommitReadTimeMs && commitQueueOffset == lastCommitQueueOffset) {
+            return;
+        }
+
+        timerCheckpoint.updateDateVersion(messageStore.getStateMachineVersion());
+        lastCommitReadTimeMs = commitReadTimeMs;
+        lastCommitQueueOffset = commitQueueOffset;
     }
 
     /**
