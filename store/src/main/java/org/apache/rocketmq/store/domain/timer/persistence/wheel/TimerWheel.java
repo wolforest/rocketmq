@@ -33,12 +33,28 @@ public class TimerWheel {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     public static final int BLANK = -1, IGNORE = -2;
 
+    /**
+     * total slots number
+     * slotsTotal = TIMER_WHEEL_TTL_DAY * DAY_SECS
+     * default 7 days;
+     */
     public final int slotsTotal;
+    /**
+     * precision, defined in MessageStoreConfig
+     * default is 1000ms, AKA 1s.
+     */
     public final int precisionMs;
+    /**
+     * wheelLength = totalSlotsNum * 2 * SlotSize
+     * it is 2 times of totalSlotsNum:
+     *  - half for byteBuffer
+     *  - half for localBuffer
+     */
     private final int wheelLength;
 
     private final FileChannel fileChannel;
     private final MappedByteBuffer mappedByteBuffer;
+
     private final ByteBuffer byteBuffer;
     private final ThreadLocal<ByteBuffer> localBuffer = new ThreadLocal<ByteBuffer>() {
         @Override
@@ -94,6 +110,11 @@ public class TimerWheel {
         }
     }
 
+    /**
+     * call by TimerFlushService and self;
+     *  - self called while shutdown
+     *  - called by TimerFlushService every 1s (defined in config file)
+     */
     public void flush() {
         ByteBuffer bf = localBuffer.get();
         bf.position(0);
