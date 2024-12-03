@@ -91,23 +91,33 @@ public class TimerFlushService extends ServiceThread {
             timerLog.getMappedFileQueue().flush(0);
             timerWheel.flush();
             timerState.flushCheckpoint();
-            if (System.currentTimeMillis() - start > storeConfig.getTimerProgressLogIntervalMs()) {
-                start = System.currentTimeMillis();
-                long tmpQueueOffset = timerState.currQueueOffset;
-                ConsumeQueueInterface cq = messageStore.getConsumeQueue(TIMER_TOPIC, 0);
-                long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
-                LOGGER.info("[{}]Timer progress-check commitRead:[{}] currRead:[{}] currWrite:[{}] readBehind:{} currReadOffset:{} offsetBehind:{} behindMaster:{} " +
-                        "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
-                    storeConfig.getBrokerRole(),
-                    format(timerState.commitReadTimeMs), format(timerState.currReadTimeMs), format(timerState.currWriteTimeMs), timerState.getDequeueBehind(),
-                    tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerState.getMasterTimerQueueOffset() - tmpQueueOffset,
-                    fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerState.getAllCongestNum(), format(timerState.lastEnqueueButExpiredStoreTime));
-            }
+
+            start = checkProgress(start);
+
             timerMetrics.persist();
             waitForRunning(storeConfig.getTimerFlushIntervalMs());
         } catch (Throwable e) {
             LOGGER.error("Error occurred in " + getServiceName(), e);
         }
+
+        return start;
+    }
+
+    private long checkProgress(long start) {
+        if (System.currentTimeMillis() - start <= storeConfig.getTimerProgressLogIntervalMs()) {
+            return start;
+        }
+
+        start = System.currentTimeMillis();
+        long tmpQueueOffset = timerState.currQueueOffset;
+        ConsumeQueueInterface cq = messageStore.getConsumeQueue(TIMER_TOPIC, 0);
+        long maxOffsetInQueue = cq == null ? 0 : cq.getMaxOffsetInQueue();
+        LOGGER.info("[{}]Timer progress-check commitRead:[{}] currRead:[{}] currWrite:[{}] readBehind:{} currReadOffset:{} offsetBehind:{} behindMaster:{} " +
+                "enqPutQueue:{} deqGetQueue:{} deqPutQueue:{} allCongestNum:{} enqExpiredStoreTime:{}",
+            storeConfig.getBrokerRole(),
+            format(timerState.commitReadTimeMs), format(timerState.currReadTimeMs), format(timerState.currWriteTimeMs), timerState.getDequeueBehind(),
+            tmpQueueOffset, maxOffsetInQueue - tmpQueueOffset, timerState.getMasterTimerQueueOffset() - tmpQueueOffset,
+            fetchedTimerMessageQueue.size(), timerMessageQueryQueue.size(), timerMessageDeliverQueue.size(), timerState.getAllCongestNum(), format(timerState.lastEnqueueButExpiredStoreTime));
 
         return start;
     }

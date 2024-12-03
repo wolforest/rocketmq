@@ -114,6 +114,9 @@ public class MessageStoreConfig {
     private int timerCongestNumEachSlot = Integer.MAX_VALUE;
 
     private int timerMetricSmallThreshold = 1000000;
+    /**
+     *
+     */
     private int timerProgressLogIntervalMs = 10 * 1000;
 
     // default, defaultRocksDB
