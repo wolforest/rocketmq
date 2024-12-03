@@ -25,6 +25,13 @@ import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 
 import java.nio.ByteBuffer;
 
+/**
+ * TimerLog stores TimerMessage's delayInfo and offsetInfo
+ * TimerLog has 3 operations:
+ *   - append timer message
+ *   - fetch timer message by offset
+ *   - calculate offset for cleaning expired files
+ */
 public class TimerLog {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     public final static int BLANK_MAGIC_CODE = 0xBBCCDDEE ^ 1880681586 + 8;
@@ -47,6 +54,11 @@ public class TimerLog {
 
     /**
      * append by block unit object
+     * the only one public append API
+     *
+     * called by TimerWheelPersistence,
+     *      and pos is always 0;
+     *      and len is always Block.SIZE;
      *
      * @param block block object
      * @param pos   position or offset
@@ -58,7 +70,7 @@ public class TimerLog {
     }
 
     /**
-     * test use only
+     * just for test, no public usage.
      *
      * @param data data
      * @return offset
@@ -69,6 +81,8 @@ public class TimerLog {
 
     private long append(byte[] data, int pos, int len) {
         MappedFile mappedFile = chooseLastMappedFile(len);
+        assert mappedFile != null;
+
         long currPosition = mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition();
         if (!mappedFile.appendMessage(data, pos, len)) {
             LOGGER.error("Append error for timer log");
@@ -77,6 +91,12 @@ public class TimerLog {
         return currPosition;
     }
 
+    /**
+     * fetch TimerMessage by offset
+     *
+     * @param offsetPy offset
+     * @return TimerMessage related SelectMappedBufferResult
+     */
     public SelectMappedBufferResult getTimerMessage(long offsetPy) {
         MappedFile mappedFile = mappedFileQueue.findMappedFileByOffset(offsetPy);
         if (null == mappedFile)
@@ -84,6 +104,12 @@ public class TimerLog {
         return mappedFile.selectMappedBuffer((int) (offsetPy % mappedFile.getFileSize()));
     }
 
+    /**
+     * fetch the whole MappedFile result
+     *
+     * @param offsetPy offset
+     * @return whole timer message in the related MappedFile
+     */
     public SelectMappedBufferResult getWholeBuffer(long offsetPy) {
         MappedFile mappedFile = mappedFileQueue.findMappedFileByOffset(offsetPy);
         if (null == mappedFile)
@@ -100,11 +126,14 @@ public class TimerLog {
         //it seems not need to call shutdown
     }
 
-    // be careful.
-    // if the format of timerLog changed, this offset has to be changed too
-    // so dose the batch writing
+    /**
+     * calculate offset for last unit
+     * be careful.
+     * if the format of timerLog changed, this offset has to be changed too
+     * so dose the batch writing
+     * @return offset
+     */
     public int getOffsetForLastUnit() {
-
         return fileSize - (fileSize - MIN_BLANK_LEN) % UNIT_SIZE - MIN_BLANK_LEN - UNIT_SIZE;
     }
 

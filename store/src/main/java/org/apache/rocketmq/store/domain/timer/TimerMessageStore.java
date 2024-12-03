@@ -115,8 +115,8 @@ public class TimerMessageStore {
     private final TimerWheel timerWheel;
     private final TimerLog timerLog;
     private final TimerCheckpoint timerCheckpoint;
-    private TimerMessageConsumer timerMessageFetcher;
-    private TimerMessageSaver timerMessageLocator;
+    private TimerMessageConsumer timerMessageConsumer;
+    private TimerMessageSaver timerMessageSaver;
     private TimerDequeueWarmService dequeueWarmService;
     private TimerMessageScanner timerMessageScanner;
     private TimerMessageProducer[] timerMessageProducers;
@@ -175,8 +175,8 @@ public class TimerMessageStore {
     public void start() {
         final long shouldStartTime = storeConfig.getDisappearTimeAfterStart() + System.currentTimeMillis();
         timerState.maybeMoveWriteTime();
-        timerMessageFetcher.start();
-        timerMessageLocator.start();
+        timerMessageConsumer.start();
+        timerMessageSaver.start();
         dequeueWarmService.start();
         timerMessageScanner.start(shouldStartTime);
 
@@ -205,8 +205,8 @@ public class TimerMessageStore {
         timerMessageQueryQueue.clear(); //avoid blocking
         timerMessageDeliverQueue.clear(); //avoid blocking
 
-        timerMessageFetcher.shutdown();
-        timerMessageLocator.shutdown();
+        timerMessageConsumer.shutdown();
+        timerMessageSaver.shutdown();
         dequeueWarmService.shutdown();
         timerMessageScanner.shutdown();
         shutdownTimerMessageQueries();
@@ -424,10 +424,10 @@ public class TimerMessageStore {
         initTimerMessageQuery();
         initTimerMessageDeliver();
 
-        timerMessageFetcher = new TimerMessageConsumer(timerState, storeConfig, messageOperator,
+        timerMessageConsumer = new TimerMessageConsumer(timerState, storeConfig, messageOperator,
             fetchedTimerMessageQueue, perfCounterTicks);
 
-        timerMessageLocator = new TimerMessageSaver(
+        timerMessageSaver = new TimerMessageSaver(
                 timerState,
                 storeConfig,
                 timerWheel,

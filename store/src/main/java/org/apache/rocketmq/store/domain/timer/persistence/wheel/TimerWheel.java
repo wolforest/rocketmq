@@ -109,6 +109,11 @@ public class TimerWheel {
         this.mappedByteBuffer.force();
     }
 
+    /**
+     *
+     * @param timeMs delayedTime in ms
+     * @return slot
+     */
     public Slot getSlot(long timeMs) {
         Slot slot = getRawSlot(timeMs);
         if (slot.timeMs != timeMs / precisionMs * precisionMs) {
