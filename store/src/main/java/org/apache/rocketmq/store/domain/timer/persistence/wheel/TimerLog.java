@@ -105,7 +105,7 @@ public class TimerLog {
     }
 
     /**
-     * fetch the whole MappedFile result
+     * fetch the whole TimerRequest result
      *
      * @param offsetPy offset
      * @return whole timer message in the related MappedFile

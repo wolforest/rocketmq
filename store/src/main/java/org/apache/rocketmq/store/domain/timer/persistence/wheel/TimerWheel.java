@@ -47,8 +47,6 @@ public class TimerWheel {
     /**
      * wheelLength = totalSlotsNum * 2 * SlotSize
      * it is 2 times of totalSlotsNum:
-     *  - half for byteBuffer
-     *  - half for localBuffer
      */
     private final int wheelLength;
 
@@ -66,6 +64,7 @@ public class TimerWheel {
     public TimerWheel(String fileName, int slotsTotal, int precisionMs) throws IOException {
         this.slotsTotal = slotsTotal;
         this.precisionMs = precisionMs;
+        // why ?
         this.wheelLength = this.slotsTotal * 2 * Slot.SIZE;
 
         File file = new File(fileName);
@@ -204,7 +203,7 @@ public class TimerWheel {
 
     /**
      * called by TimerMessageRecover.recoverAndRevise
-     * 
+     *
      * @param timeMs delayedTime
      * @param firstPos firstPos
      * @param lastPos lastPos

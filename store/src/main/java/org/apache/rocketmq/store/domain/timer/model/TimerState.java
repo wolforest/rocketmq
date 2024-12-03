@@ -156,6 +156,13 @@ public class TimerState {
         timerCheckpoint.setLastTimerQueueOffset(Math.min(commitQueueOffset, timerCheckpoint.getMasterTimerQueueOffset()));
     }
 
+    /**
+     * move readTime forward by 1s
+     * called by TimerWheelPersistence.scan()
+     * when slot.timeMs == -1; AKA slot is useless.
+     *
+     * @param precisionMs precision
+     */
     public void moveReadTime(int precisionMs) {
         currReadTimeMs = currReadTimeMs + precisionMs;
         commitReadTimeMs = currReadTimeMs;

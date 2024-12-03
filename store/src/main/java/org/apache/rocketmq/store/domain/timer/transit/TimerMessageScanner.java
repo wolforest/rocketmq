@@ -180,13 +180,14 @@ public class TimerMessageScanner extends ServiceThread {
         for (TimerRequest tr : origin) {
             if (fileIndexPy != tr.getCommitLogOffset() / commitLogFileSize) {
                 msgIndex = 0;
-                if (null != currList && currList.size() > 0) {
+                if (null != currList && !currList.isEmpty()) {
                     lists.add(currList);
                 }
                 currList = new LinkedList<>();
                 currList.add(tr);
                 fileIndexPy = (int) (tr.getCommitLogOffset() / commitLogFileSize);
             } else {
+                assert currList != null;
                 currList.add(tr);
                 if (++msgIndex % 2000 == 0) {
                     lists.add(currList);
@@ -194,7 +195,7 @@ public class TimerMessageScanner extends ServiceThread {
                 }
             }
         }
-        if (null != currList && currList.size() > 0) {
+        if (null != currList && !currList.isEmpty()) {
             lists.add(currList);
         }
         return lists;
