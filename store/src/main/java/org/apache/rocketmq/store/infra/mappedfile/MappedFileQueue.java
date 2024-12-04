@@ -63,6 +63,14 @@ public class MappedFileQueue implements Swappable {
         this.allocateMappedFileService = allocateMappedFileService;
     }
 
+    /**
+     *  checking whether the offset in file queue is sequential
+     *      if not log the result, because if not the file queue is damaged.
+     *  checking the status of below, and log the result:
+     *     (cur.getOffsetInFileName() - pre.getOffsetInFileName() == this.mappedFileSize)
+     *  called by commitLog, consumeQueue, and self
+     *
+     */
     public void checkSelf() {
         List<MappedFile> mappedFiles = new ArrayList<>(this.mappedFiles);
         if (mappedFiles.isEmpty()) {
