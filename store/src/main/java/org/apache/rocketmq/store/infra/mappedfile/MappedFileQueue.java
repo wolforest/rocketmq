@@ -45,8 +45,18 @@ public class MappedFileQueue implements Swappable {
 
     protected final String storePath;
 
+    /**
+     * all mappedFiles have same fixed length
+     * different implements have different length:
+     *  - commitLog
+     *  - consumeQueue
+     *  - timerLog
+     */
     protected final int mappedFileSize;
 
+    /**
+     * MappedFile Queue
+     */
     protected final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<>();
 
     protected final AllocateMappedFileService allocateMappedFileService;
@@ -56,8 +66,7 @@ public class MappedFileQueue implements Swappable {
 
     protected volatile long storeTimestamp = 0;
 
-    public MappedFileQueue(final String storePath, int mappedFileSize,
-        AllocateMappedFileService allocateMappedFileService) {
+    public MappedFileQueue(final String storePath, int mappedFileSize, AllocateMappedFileService allocateMappedFileService) {
         this.storePath = storePath;
         this.mappedFileSize = mappedFileSize;
         this.allocateMappedFileService = allocateMappedFileService;
@@ -116,51 +125,6 @@ public class MappedFileQueue implements Swappable {
         }
     }
 
-    public void truncateDirtyFiles(long offset) {
-        List<MappedFile> willRemoveFiles = new ArrayList<>();
-
-        for (MappedFile file : this.mappedFiles) {
-            long fileTailOffset = file.getOffsetInFileName() + this.mappedFileSize;
-            if (fileTailOffset <= offset) {
-                continue;
-            }
-
-            if (offset >= file.getOffsetInFileName()) {
-                file.setWrotePosition((int) (offset % this.mappedFileSize));
-                file.setCommittedPosition((int) (offset % this.mappedFileSize));
-                file.setFlushedPosition((int) (offset % this.mappedFileSize));
-            } else {
-                file.destroy(1000);
-                willRemoveFiles.add(file);
-            }
-        }
-
-        this.deleteExpiredFile(willRemoveFiles);
-    }
-
-    public void deleteExpiredFile(List<MappedFile> files) {
-        if (files.isEmpty()) {
-            return;
-        }
-
-        Iterator<MappedFile> iterator = files.iterator();
-        while (iterator.hasNext()) {
-            MappedFile cur = iterator.next();
-            if (!this.mappedFiles.contains(cur)) {
-                iterator.remove();
-                log.info("This mappedFile {} is not contained by mappedFiles, so skip it.", cur.getFileName());
-            }
-        }
-
-        try {
-            if (!this.mappedFiles.removeAll(files)) {
-                log.error("deleteExpiredFile remove failed.");
-            }
-        } catch (Exception e) {
-            log.error("deleteExpiredFile has exception.", e);
-        }
-    }
-
 
     public boolean load() {
         File dir = new File(this.storePath);
@@ -169,61 +133,6 @@ public class MappedFileQueue implements Swappable {
             return doLoad(Arrays.asList(ls));
         }
         return true;
-    }
-
-    public boolean doLoad(List<File> files) {
-        // ascending order
-        files.sort(Comparator.comparing(File::getName));
-
-        for (int i = 0; i < files.size(); i++) {
-            File file = files.get(i);
-            if (file.isDirectory()) {
-                continue;
-            }
-
-            if (file.length() == 0 && i == files.size() - 1) {
-                boolean ok = file.delete();
-                log.warn("{} size is 0, auto delete. is_ok: {}", file, ok);
-                continue;
-            }
-
-            if (file.length() != this.mappedFileSize) {
-                log.warn(file + "\t" + file.length()
-                        + " length not matched message store config value, please check it manually");
-                return false;
-            }
-
-            try {
-                MappedFile mappedFile = new DefaultMappedFile(file.getPath(), mappedFileSize);
-
-                mappedFile.setWrotePosition(this.mappedFileSize);
-                mappedFile.setFlushedPosition(this.mappedFileSize);
-                mappedFile.setCommittedPosition(this.mappedFileSize);
-                this.mappedFiles.add(mappedFile);
-                log.info("load " + file.getPath() + " OK");
-            } catch (IOException e) {
-                log.error("load file " + file + " error", e);
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public long howMuchFallBehind() {
-        if (this.mappedFiles.isEmpty())
-            return 0;
-
-        long committed = this.getFlushedWhere();
-        if (committed == 0) {
-            return 0;
-        }
-
-        MappedFile mappedFile = this.getLastMappedFile(0, false);
-        if (mappedFile == null) {
-            return 0;
-        }
-
-        return (mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition()) - committed;
     }
 
     public MappedFile getLastMappedFile(final long startOffset, boolean needCreate) {
@@ -257,43 +166,11 @@ public class MappedFileQueue implements Swappable {
         return mappedFileLast.isFull();
     }
 
-    public boolean shouldRoll(final int msgSize) {
-        if (isEmptyOrCurrentFileFull()) {
-            return true;
-        }
-        MappedFile mappedFileLast = getLastMappedFile();
-        return mappedFileLast.getWrotePosition() + msgSize > mappedFileLast.getFileSize();
-    }
-
     public MappedFile tryCreateMappedFile(long createOffset) {
         String nextFilePath = this.storePath + File.separator + IOUtils.offset2FileName(createOffset);
         String nextNextFilePath = this.storePath + File.separator + IOUtils.offset2FileName(createOffset
                 + this.mappedFileSize);
         return doCreateMappedFile(nextFilePath, nextNextFilePath);
-    }
-
-    protected MappedFile doCreateMappedFile(String nextFilePath, String nextNextFilePath) {
-        MappedFile mappedFile = null;
-
-        if (this.allocateMappedFileService != null) {
-            mappedFile = this.allocateMappedFileService.putRequestAndReturnMappedFile(nextFilePath,
-                    nextNextFilePath, this.mappedFileSize);
-        } else {
-            try {
-                mappedFile = new DefaultMappedFile(nextFilePath, this.mappedFileSize);
-            } catch (IOException e) {
-                log.error("create mappedFile exception", e);
-            }
-        }
-
-        if (mappedFile != null) {
-            if (this.mappedFiles.isEmpty()) {
-                mappedFile.setFirstCreateInQueue(true);
-            }
-            this.mappedFiles.add(mappedFile);
-        }
-
-        return mappedFile;
     }
 
     public MappedFile getLastMappedFile(final long startOffset) {
@@ -783,10 +660,6 @@ public class MappedFileQueue implements Swappable {
         }
     }
 
-    public Stream<MappedFile> stream() {
-        return this.mappedFiles.stream();
-    }
-
     /**
      * get MappedFile list by range
      * called by ConsumeQueue
@@ -817,7 +690,118 @@ public class MappedFileQueue implements Swappable {
         return result;
     }
 
+    public void truncateDirtyFiles(long offset) {
+        List<MappedFile> willRemoveFiles = new ArrayList<>();
+
+        for (MappedFile file : this.mappedFiles) {
+            long fileTailOffset = file.getOffsetInFileName() + this.mappedFileSize;
+            if (fileTailOffset <= offset) {
+                continue;
+            }
+
+            if (offset >= file.getOffsetInFileName()) {
+                file.setWrotePosition((int) (offset % this.mappedFileSize));
+                file.setCommittedPosition((int) (offset % this.mappedFileSize));
+                file.setFlushedPosition((int) (offset % this.mappedFileSize));
+            } else {
+                file.destroy(1000);
+                willRemoveFiles.add(file);
+            }
+        }
+
+        this.deleteExpiredFile(willRemoveFiles);
+    }
+
+    public void deleteExpiredFile(List<MappedFile> files) {
+        if (files.isEmpty()) {
+            return;
+        }
+
+        Iterator<MappedFile> iterator = files.iterator();
+        while (iterator.hasNext()) {
+            MappedFile cur = iterator.next();
+            if (!this.mappedFiles.contains(cur)) {
+                iterator.remove();
+                log.info("This mappedFile {} is not contained by mappedFiles, so skip it.", cur.getFileName());
+            }
+        }
+
+        try {
+            if (!this.mappedFiles.removeAll(files)) {
+                log.error("deleteExpiredFile remove failed.");
+            }
+        } catch (Exception e) {
+            log.error("deleteExpiredFile has exception.", e);
+        }
+    }
+
     /***************  private/protected/useless method  **************/
+    protected boolean doLoad(List<File> files) {
+        // ascending order
+        files.sort(Comparator.comparing(File::getName));
+
+        for (int i = 0; i < files.size(); i++) {
+            File file = files.get(i);
+            if (file.isDirectory()) {
+                continue;
+            }
+
+            if (file.length() == 0 && i == files.size() - 1) {
+                boolean ok = file.delete();
+                log.warn("{} size is 0, auto delete. is_ok: {}", file, ok);
+                continue;
+            }
+
+            if (file.length() != this.mappedFileSize) {
+                log.warn(file + "\t" + file.length()
+                    + " length not matched message store config value, please check it manually");
+                return false;
+            }
+
+            try {
+                MappedFile mappedFile = new DefaultMappedFile(file.getPath(), mappedFileSize);
+
+                mappedFile.setWrotePosition(this.mappedFileSize);
+                mappedFile.setFlushedPosition(this.mappedFileSize);
+                mappedFile.setCommittedPosition(this.mappedFileSize);
+                this.mappedFiles.add(mappedFile);
+                log.info("load " + file.getPath() + " OK");
+            } catch (IOException e) {
+                log.error("load file " + file + " error", e);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected MappedFile doCreateMappedFile(String nextFilePath, String nextNextFilePath) {
+        MappedFile mappedFile = null;
+
+        if (this.allocateMappedFileService != null) {
+            mappedFile = this.allocateMappedFileService.putRequestAndReturnMappedFile(nextFilePath,
+                nextNextFilePath, this.mappedFileSize);
+        } else {
+            try {
+                mappedFile = new DefaultMappedFile(nextFilePath, this.mappedFileSize);
+            } catch (IOException e) {
+                log.error("create mappedFile exception", e);
+            }
+        }
+
+        if (mappedFile != null) {
+            if (this.mappedFiles.isEmpty()) {
+                mappedFile.setFirstCreateInQueue(true);
+            }
+            this.mappedFiles.add(mappedFile);
+        }
+
+        return mappedFile;
+    }
+
+    public Stream<MappedFile> stream() {
+        return this.mappedFiles.stream();
+    }
+
     public Stream<MappedFile> reversedStream() {
         return Lists.reverse(this.mappedFiles).stream();
     }
@@ -880,16 +864,16 @@ public class MappedFileQueue implements Swappable {
             DefaultMappedFile mappedFile = (DefaultMappedFile) mfs[i];
             // Figure out the earliest message store time in the consume queue mapped file.
             if (mappedFile.getStartTimestamp() < 0) {
-                this.adjustForStartOffset(mappedFile, commitLog);
+                this.adjustFilesStartOffset(mappedFile, commitLog);
             }
             // Figure out the latest message store time in the consume queue mapped file.
             if (i < mfs.length - 1 && mappedFile.getStopTimestamp() < 0) {
-                this.adjustForEndOffset(mappedFile, commitLog);
+                this.adjustFilesEndOffset(mappedFile, commitLog);
             }
         }
     }
 
-    private void adjustForStartOffset(DefaultMappedFile mappedFile, CommitLog commitLog) {
+    private void adjustFilesStartOffset(DefaultMappedFile mappedFile, CommitLog commitLog) {
         SelectMappedBufferResult selectMappedBufferResult = mappedFile.selectMappedBuffer(0, ConsumeQueue.CQ_STORE_UNIT_SIZE);
         if (null == selectMappedBufferResult) {
             return;
@@ -907,7 +891,7 @@ public class MappedFileQueue implements Swappable {
         }
     }
 
-    private void adjustForEndOffset(DefaultMappedFile mappedFile, CommitLog commitLog) {
+    private void adjustFilesEndOffset(DefaultMappedFile mappedFile, CommitLog commitLog) {
         SelectMappedBufferResult selectMappedBufferResult = mappedFile.selectMappedBuffer(mappedFileSize - ConsumeQueue.CQ_STORE_UNIT_SIZE, ConsumeQueue.CQ_STORE_UNIT_SIZE);
         if (null == selectMappedBufferResult) {
             return;
@@ -954,6 +938,31 @@ public class MappedFileQueue implements Swappable {
         }
 
         return null;
+    }
+
+    public long howMuchFallBehind() {
+        if (this.mappedFiles.isEmpty())
+            return 0;
+
+        long committed = this.getFlushedWhere();
+        if (committed == 0) {
+            return 0;
+        }
+
+        MappedFile mappedFile = this.getLastMappedFile(0, false);
+        if (mappedFile == null) {
+            return 0;
+        }
+
+        return (mappedFile.getOffsetInFileName() + mappedFile.getWrotePosition()) - committed;
+    }
+
+    public boolean shouldRoll(final int msgSize) {
+        if (isEmptyOrCurrentFileFull()) {
+            return true;
+        }
+        MappedFile mappedFileLast = getLastMappedFile();
+        return mappedFileLast.getWrotePosition() + msgSize > mappedFileLast.getFileSize();
     }
 
     /***************  getter/setter method  **************/
