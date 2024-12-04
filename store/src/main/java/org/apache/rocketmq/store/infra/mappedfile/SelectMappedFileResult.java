@@ -20,7 +20,6 @@ package org.apache.rocketmq.store.infra.mappedfile;
 public class SelectMappedFileResult {
 
     protected int size;
-
     protected MappedFile mappedFile;
 
     public SelectMappedFileResult(int size, MappedFile mappedFile) {

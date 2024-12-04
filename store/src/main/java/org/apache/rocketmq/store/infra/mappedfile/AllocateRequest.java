@@ -23,7 +23,7 @@ public class AllocateRequest implements Comparable<AllocateRequest> {
     // Full file path
     private String filePath;
     private int fileSize;
-    private CountDownLatch countDownLatch = new CountDownLatch(1);
+    private final CountDownLatch countDownLatch = new CountDownLatch(1);
     protected volatile MappedFile mappedFile = null;
 
     public AllocateRequest(String filePath, int fileSize) {
@@ -51,10 +51,6 @@ public class AllocateRequest implements Comparable<AllocateRequest> {
         return countDownLatch;
     }
 
-    public void setCountDownLatch(CountDownLatch countDownLatch) {
-        this.countDownLatch = countDownLatch;
-    }
-
     public MappedFile getMappedFile() {
         return mappedFile;
     }
@@ -64,25 +60,20 @@ public class AllocateRequest implements Comparable<AllocateRequest> {
     }
 
     public int compareTo(AllocateRequest other) {
-        if (this.fileSize < other.fileSize)
+        if (this.fileSize < other.fileSize) {
             return 1;
-        else if (this.fileSize > other.fileSize) {
-            return -1;
-        } else {
-            int mIndex = this.filePath.lastIndexOf(File.separator);
-            long mName = Long.parseLong(this.filePath.substring(mIndex + 1));
-            int oIndex = other.filePath.lastIndexOf(File.separator);
-            long oName = Long.parseLong(other.filePath.substring(oIndex + 1));
-            if (mName < oName) {
-                return -1;
-            } else if (mName > oName) {
-                return 1;
-            } else {
-                return 0;
-            }
         }
-        // return this.fileSize < other.fileSize ? 1 : this.fileSize >
-        // other.fileSize ? -1 : 0;
+
+        if (this.fileSize > other.fileSize) {
+            return -1;
+        }
+
+        // return this.fileSize < other.fileSize ? 1 : this.fileSize > other.fileSize ? -1 : 0;
+        int mIndex = this.filePath.lastIndexOf(File.separator);
+        long mName = Long.parseLong(this.filePath.substring(mIndex + 1));
+        int oIndex = other.filePath.lastIndexOf(File.separator);
+        long oName = Long.parseLong(other.filePath.substring(oIndex + 1));
+        return Long.compare(mName, oName);
     }
 
     @Override
@@ -108,8 +99,7 @@ public class AllocateRequest implements Comparable<AllocateRequest> {
                 return false;
         } else if (!filePath.equals(other.filePath))
             return false;
-        if (fileSize != other.fileSize)
-            return false;
-        return true;
+
+        return fileSize == other.fileSize;
     }
 }
