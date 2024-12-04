@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutionException;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
-import org.apache.rocketmq.store.domain.commitlog.GroupCommitRequest;
+import org.apache.rocketmq.store.domain.commitlog.dto.GroupCommitRequest;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.ha.ms.DefaultHAClient;
 import org.apache.rocketmq.store.server.ha.ms.DefaultHAService;

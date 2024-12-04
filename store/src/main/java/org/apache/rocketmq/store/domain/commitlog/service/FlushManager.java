@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.store.domain.commitlog;
+package org.apache.rocketmq.store.domain.commitlog.service;
 
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.common.domain.message.MessageExt;

@@ -43,7 +43,7 @@ import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationReq
 import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationThread;
 import org.apache.rocketmq.store.server.ha.core.WaitNotifyObject;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
-import org.apache.rocketmq.store.domain.commitlog.GroupCommitRequest;
+import org.apache.rocketmq.store.domain.commitlog.dto.GroupCommitRequest;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 

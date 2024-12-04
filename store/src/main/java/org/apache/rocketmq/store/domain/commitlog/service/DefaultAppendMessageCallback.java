@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.infra.mappedfile;
+package org.apache.rocketmq.store.domain.commitlog.service;
 
 import java.nio.ByteBuffer;
 import java.util.function.Supplier;
@@ -32,6 +32,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
+import org.apache.rocketmq.store.infra.mappedfile.AppendMessageCallback;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.dispatcher.MultiDispatch;
 import org.apache.rocketmq.store.domain.message.PutMessageContext;

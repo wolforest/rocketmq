@@ -14,20 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.domain.commitlog;
+package org.apache.rocketmq.store.domain.commitlog.service;
 
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
+import org.apache.rocketmq.store.domain.commitlog.CommitLog;
+import org.apache.rocketmq.store.domain.commitlog.dto.GroupCommitRequest;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
-import org.apache.rocketmq.store.domain.commitlog.service.CommitRealTimeService;
-import org.apache.rocketmq.store.domain.commitlog.service.FlushCommitLogService;
-import org.apache.rocketmq.store.domain.commitlog.service.FlushRealTimeService;
-import org.apache.rocketmq.store.domain.commitlog.service.GroupCommitService;
 import org.apache.rocketmq.store.server.config.FlushDiskType;
 
 import java.util.concurrent.CompletableFuture;

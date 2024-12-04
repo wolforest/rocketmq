@@ -29,7 +29,7 @@ import org.apache.rocketmq.store.server.ha.HAConnection;
 import org.apache.rocketmq.store.server.ha.HAService;
 import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAService;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
-import org.apache.rocketmq.store.domain.commitlog.GroupCommitRequest;
+import org.apache.rocketmq.store.domain.commitlog.dto.GroupCommitRequest;
 import org.apache.rocketmq.store.domain.message.PutMessageSpinLock;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAConnection;
