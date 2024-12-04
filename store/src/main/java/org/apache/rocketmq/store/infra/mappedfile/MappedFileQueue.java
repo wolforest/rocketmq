@@ -87,9 +87,6 @@ public class MappedFileQueue implements Swappable {
         }
     }
 
-
-
-
     /**
      * method for consume queue
      * @param timestamp ts
@@ -98,7 +95,7 @@ public class MappedFileQueue implements Swappable {
      * @return MappedFile
      */
     public MappedFile getConsumeQueueMappedFileByTime(final long timestamp, CommitLog commitLog, BoundaryType boundaryType) {
-        Object[] mfs = copyMappedFiles(0);
+        Object[] mfs = getMappedFileArray();
         if (null == mfs) {
             return null;
         }
@@ -412,7 +409,7 @@ public class MappedFileQueue implements Swappable {
         final long intervalForcibly,
         final boolean cleanImmediately,
         final int deleteFileBatchMax) {
-        Object[] mfs = this.copyMappedFiles(0);
+        Object[] mfs = this.getMappedFileArray();
 
         if (null == mfs)
             return 0;
@@ -462,7 +459,7 @@ public class MappedFileQueue implements Swappable {
     }
 
     public int deleteExpiredFileByOffset(long offset, int unitSize) {
-        Object[] mfs = this.copyMappedFiles(0);
+        Object[] mfs = this.getMappedFileArray();
 
         List<MappedFile> files = new ArrayList<>();
         int deleteCount = 0;
@@ -505,7 +502,7 @@ public class MappedFileQueue implements Swappable {
     }
 
     public int deleteExpiredFileByOffsetForTimerLog(long offset, int checkOffset, int unitSize) {
-        Object[] mfs = this.copyMappedFiles(0);
+        Object[] mfs = this.getMappedFileArray();
 
         List<MappedFile> files = new ArrayList<>();
         int deleteCount = 0;
@@ -679,7 +676,7 @@ public class MappedFileQueue implements Swappable {
     public long getMappedMemorySize() {
         long size = 0;
 
-        Object[] mfs = this.copyMappedFiles(0);
+        Object[] mfs = this.getMappedFileArray();
         if (mfs == null) {
             return 0;
         }
@@ -748,7 +745,7 @@ public class MappedFileQueue implements Swappable {
             reserveNum = 3;
         }
 
-        Object[] mfs = this.copyMappedFiles(0);
+        Object[] mfs = this.getMappedFileArray();
         if (null == mfs) {
             return;
         }
@@ -773,7 +770,7 @@ public class MappedFileQueue implements Swappable {
         }
 
         int reserveNum = 3;
-        Object[] mfs = this.copyMappedFiles(0);
+        Object[] mfs = this.getMappedFileArray();
         if (null == mfs) {
             return;
         }
@@ -799,7 +796,7 @@ public class MappedFileQueue implements Swappable {
      * @return list
      */
     public List<MappedFile> range(final long from, final long to) {
-        Object[] mfs = copyMappedFiles(0);
+        Object[] mfs = getMappedFileArray();
         if (null == mfs) {
             return new ArrayList<>();
         }
@@ -831,7 +828,7 @@ public class MappedFileQueue implements Swappable {
     }
 
     public MappedFile getMappedFileByTime(final long timestamp) {
-        Object[] mfs = this.copyMappedFiles(0);
+        Object[] mfs = this.getMappedFileArray();
 
         if (null == mfs)
             return null;
@@ -846,10 +843,14 @@ public class MappedFileQueue implements Swappable {
         return (MappedFile) mfs[mfs.length - 1];
     }
 
-    protected Object[] copyMappedFiles(final int reservedMappedFiles) {
+    /**
+     * @renamed from copyMappedFiles to getMappedFileArray
+     * @return array | null
+     */
+    protected Object[] getMappedFileArray() {
         Object[] mfs;
 
-        if (this.mappedFiles.size() <= reservedMappedFiles) {
+        if (this.mappedFiles.isEmpty()) {
             return null;
         }
 
