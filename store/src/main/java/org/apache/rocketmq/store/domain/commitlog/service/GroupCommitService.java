@@ -35,7 +35,7 @@ public class GroupCommitService extends FlushCommitLogService {
 
     private final DefaultMessageStore defaultMessageStore;
     private final CommitLog commitLog;
-    
+
     private volatile LinkedList<GroupCommitRequest> requestsWrite = new LinkedList<>();
     private volatile LinkedList<GroupCommitRequest> requestsRead = new LinkedList<>();
     private final PutMessageSpinLock lock = new PutMessageSpinLock();
@@ -44,7 +44,7 @@ public class GroupCommitService extends FlushCommitLogService {
         this.defaultMessageStore = messageStore;
         this.commitLog = commitLog;
     }
-    
+
     public void putRequest(final GroupCommitRequest request) {
         lock.lock();
         try {
@@ -122,10 +122,10 @@ public class GroupCommitService extends FlushCommitLogService {
         for (GroupCommitRequest req : this.requestsRead) {
             // There may be a message in the next file, so a maximum of
             // two times the flush
-            boolean flushOK = commitLog.getMappedFileQueue().getFlushedWhere() >= req.getNextOffset();
+            boolean flushOK = commitLog.getMappedFileQueue().getFlushedPosition() >= req.getNextOffset();
             for (int i = 0; i < 2 && !flushOK; i++) {
                 commitLog.getMappedFileQueue().flush(0);
-                flushOK = commitLog.getMappedFileQueue().getFlushedWhere() >= req.getNextOffset();
+                flushOK = commitLog.getMappedFileQueue().getFlushedPosition() >= req.getNextOffset();
             }
 
             req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);

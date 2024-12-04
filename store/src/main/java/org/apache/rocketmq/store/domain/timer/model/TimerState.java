@@ -141,7 +141,7 @@ public class TimerState {
     }
 
     public void prepareTimerCheckPoint() {
-        timerCheckpoint.setLastTimerLogFlushPos(timerLog.getMappedFileQueue().getFlushedWhere());
+        timerCheckpoint.setLastTimerLogFlushPos(timerLog.getMappedFileQueue().getFlushedPosition());
         timerCheckpoint.setLastReadTimeMs(commitReadTimeMs);
 
         prepareCheckPointForDequeue();

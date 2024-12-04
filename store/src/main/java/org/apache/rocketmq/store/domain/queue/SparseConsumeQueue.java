@@ -105,8 +105,8 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
         }
 
         processOffset += mappedFileOffset;
-        mappedFileQueue.setFlushedWhere(processOffset);
-        mappedFileQueue.setCommittedWhere(processOffset);
+        mappedFileQueue.setFlushedPosition(processOffset);
+        mappedFileQueue.setCommittedPosition(processOffset);
         mappedFileQueue.truncateDirtyFiles(processOffset);
         reviseMaxAndMinOffsetInQueue();
     }

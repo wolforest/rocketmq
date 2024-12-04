@@ -150,22 +150,22 @@ public class MappedFileQueueTest {
         }
 
         assertThat(mappedFileQueue.flush(0)).isFalse();
-        assertThat(mappedFileQueue.getFlushedWhere()).isEqualTo(1024);
+        assertThat(mappedFileQueue.getFlushedPosition()).isEqualTo(1024);
 
         assertThat(mappedFileQueue.flush(0)).isFalse();
-        assertThat(mappedFileQueue.getFlushedWhere()).isEqualTo(1024 * 2);
+        assertThat(mappedFileQueue.getFlushedPosition()).isEqualTo(1024 * 2);
 
         assertThat(mappedFileQueue.flush(0)).isFalse();
-        assertThat(mappedFileQueue.getFlushedWhere()).isEqualTo(1024 * 3);
+        assertThat(mappedFileQueue.getFlushedPosition()).isEqualTo(1024 * 3);
 
         assertThat(mappedFileQueue.flush(0)).isFalse();
-        assertThat(mappedFileQueue.getFlushedWhere()).isEqualTo(1024 * 4);
+        assertThat(mappedFileQueue.getFlushedPosition()).isEqualTo(1024 * 4);
 
         assertThat(mappedFileQueue.flush(0)).isFalse();
-        assertThat(mappedFileQueue.getFlushedWhere()).isEqualTo(1024 * 5);
+        assertThat(mappedFileQueue.getFlushedPosition()).isEqualTo(1024 * 5);
 
         assertThat(mappedFileQueue.flush(0)).isFalse();
-        assertThat(mappedFileQueue.getFlushedWhere()).isEqualTo(1024 * 6);
+        assertThat(mappedFileQueue.getFlushedPosition()).isEqualTo(1024 * 6);
 
         mappedFileQueue.shutdown(1000);
         mappedFileQueue.destroy();

@@ -311,8 +311,8 @@ public class ConsumeQueueExt {
         }
 
         processOffset += mappedFileOffset;
-        this.mappedFileQueue.setFlushedWhere(processOffset);
-        this.mappedFileQueue.setCommittedWhere(processOffset);
+        this.mappedFileQueue.setFlushedPosition(processOffset);
+        this.mappedFileQueue.setCommittedPosition(processOffset);
         this.mappedFileQueue.truncateDirtyFiles(processOffset);
     }
 

@@ -109,7 +109,7 @@ public class MultiPathMappedFileQueue extends MappedFileQueue {
             mf.destroy(1000 * 3);
         }
         this.mappedFiles.clear();
-        this.setFlushedWhere(0);
+        this.setFlushedPosition(0);
 
         Set<String> storePathSet = getPaths();
         storePathSet.addAll(getReadonlyPaths());

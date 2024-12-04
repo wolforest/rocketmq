@@ -35,7 +35,7 @@ public class GroupCheckService extends FlushCommitLogService {
     private final DefaultMessageStore defaultMessageStore;
     private final CommitLog commitLog;
 
-    
+
     private volatile List<GroupCommitRequest> requestsWrite = new ArrayList<>();
     private volatile List<GroupCommitRequest> requestsRead = new ArrayList<>();
 
@@ -43,7 +43,7 @@ public class GroupCheckService extends FlushCommitLogService {
         this.defaultMessageStore = messageStore;
         this.commitLog = commitLog;
     }
-    
+
     public boolean isAsyncRequestsFull() {
         return requestsWrite.size() > defaultMessageStore.getMessageStoreConfig().getMaxAsyncPutMessageRequests() * 2;
     }
@@ -82,7 +82,7 @@ public class GroupCheckService extends FlushCommitLogService {
                 // two times the flush
                 boolean flushOK = false;
                 for (int i = 0; i < 1000; i++) {
-                    flushOK = commitLog.getMappedFileQueue().getFlushedWhere() >= req.getNextOffset();
+                    flushOK = commitLog.getMappedFileQueue().getFlushedPosition() >= req.getNextOffset();
                     if (flushOK) {
                         break;
                     } else {

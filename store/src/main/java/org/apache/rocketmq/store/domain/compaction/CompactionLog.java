@@ -1036,8 +1036,8 @@ public class CompactionLog {
             log.info("{}:{} max physical offset in compaction log is {}",
                 consumeQueue.getTopic(), consumeQueue.getQueueId(), maxCqPhysicOffset);
             if (maxCqPhysicOffset > 0) {
-                this.mappedFileQueue.setFlushedWhere(maxCqPhysicOffset);
-                this.mappedFileQueue.setCommittedWhere(maxCqPhysicOffset);
+                this.mappedFileQueue.setFlushedPosition(maxCqPhysicOffset);
+                this.mappedFileQueue.setCommittedPosition(maxCqPhysicOffset);
                 this.mappedFileQueue.truncateDirtyFiles(maxCqPhysicOffset);
             }
         }

@@ -180,8 +180,8 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         }
 
         processOffset += mappedFileOffset;
-        this.mappedFileQueue.setFlushedWhere(processOffset);
-        this.mappedFileQueue.setCommittedWhere(processOffset);
+        this.mappedFileQueue.setFlushedPosition(processOffset);
+        this.mappedFileQueue.setCommittedPosition(processOffset);
         this.mappedFileQueue.truncateDirtyFiles(processOffset);
 
         if (isExtReadEnable()) {
@@ -867,8 +867,8 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         }
 
         this.minLogicOffset = expectLogicOffset;
-        this.mappedFileQueue.setFlushedWhere(expectLogicOffset);
-        this.mappedFileQueue.setCommittedWhere(expectLogicOffset);
+        this.mappedFileQueue.setFlushedPosition(expectLogicOffset);
+        this.mappedFileQueue.setCommittedPosition(expectLogicOffset);
         this.fillPreBlank(mappedFile, expectLogicOffset);
         log.info("fill pre blank space " + mappedFile.getFileName() + " " + expectLogicOffset + " " + mappedFile.getWrotePosition());
     }

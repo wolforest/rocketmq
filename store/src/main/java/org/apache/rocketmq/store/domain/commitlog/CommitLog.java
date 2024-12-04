@@ -181,11 +181,11 @@ public class CommitLog implements Swappable {
     public long flush() {
         this.mappedFileQueue.commit(0);
         this.mappedFileQueue.flush(0);
-        return this.mappedFileQueue.getFlushedWhere();
+        return this.mappedFileQueue.getFlushedPosition();
     }
 
     public long getFlushedWhere() {
-        return this.mappedFileQueue.getFlushedWhere();
+        return this.mappedFileQueue.getFlushedPosition();
     }
 
     public long getMaxOffset() {
@@ -641,11 +641,11 @@ public class CommitLog implements Swappable {
 
     public void truncateDirtyFiles(long phyOffset) {
         if (phyOffset <= this.getFlushedWhere()) {
-            this.mappedFileQueue.setFlushedWhere(phyOffset);
+            this.mappedFileQueue.setFlushedPosition(phyOffset);
         }
 
-        if (phyOffset <= this.mappedFileQueue.getCommittedWhere()) {
-            this.mappedFileQueue.setCommittedWhere(phyOffset);
+        if (phyOffset <= this.mappedFileQueue.getCommittedPosition()) {
+            this.mappedFileQueue.setCommittedPosition(phyOffset);
         }
 
         this.mappedFileQueue.truncateDirtyFiles(phyOffset);
@@ -724,8 +724,8 @@ public class CommitLog implements Swappable {
     }
 
     public void setMappedFileQueueOffset(final long phyOffset) {
-        this.mappedFileQueue.setFlushedWhere(phyOffset);
-        this.mappedFileQueue.setCommittedWhere(phyOffset);
+        this.mappedFileQueue.setFlushedPosition(phyOffset);
+        this.mappedFileQueue.setCommittedPosition(phyOffset);
     }
 
     public CompletableFuture<PutMessageResult> asyncPutMessage(final MessageExtBrokerInner msg) {

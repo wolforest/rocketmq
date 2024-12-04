@@ -116,8 +116,8 @@ public class CommitLogRecoverService {
     private void recoverWithoutMappedFile() {
         // CommitLog case files are deleted
         log.warn("The CommitLog files are deleted, and delete the consume queue files");
-        this.mappedFileQueue.setFlushedWhere(0);
-        this.mappedFileQueue.setCommittedWhere(0);
+        this.mappedFileQueue.setFlushedPosition(0);
+        this.mappedFileQueue.setCommittedPosition(0);
         this.defaultMessageStore.getConsumeQueueStore().destroy();
         this.defaultMessageStore.getConsumeQueueStore().loadAfterDestroy();
     }
@@ -146,8 +146,8 @@ public class CommitLogRecoverService {
 
         truncateDirtyLogicFiles(processOffset, maxPhyOffsetOfConsumeQueue);
 
-        this.mappedFileQueue.setFlushedWhere(processOffset);
-        this.mappedFileQueue.setCommittedWhere(processOffset);
+        this.mappedFileQueue.setFlushedPosition(processOffset);
+        this.mappedFileQueue.setCommittedPosition(processOffset);
         this.mappedFileQueue.truncateDirtyFiles(processOffset);
     }
 
@@ -270,8 +270,8 @@ public class CommitLogRecoverService {
             this.defaultMessageStore.truncateDirtyLogicFiles(processOffset);
         }
 
-        this.mappedFileQueue.setFlushedWhere(processOffset);
-        this.mappedFileQueue.setCommittedWhere(processOffset);
+        this.mappedFileQueue.setFlushedPosition(processOffset);
+        this.mappedFileQueue.setCommittedPosition(processOffset);
         this.mappedFileQueue.truncateDirtyFiles(processOffset);
     }
 }

@@ -74,7 +74,7 @@ public class TimerMessageRecover {
         }
         long processOffset = recoverAndRevise(lastFlushPos, true);
 
-        timerLog.getMappedFileQueue().setFlushedWhere(processOffset);
+        timerLog.getMappedFileQueue().setFlushedPosition(processOffset);
         //revise queue offset
         long queueOffset = reviseQueueOffset(processOffset);
         if (-1 == queueOffset) {

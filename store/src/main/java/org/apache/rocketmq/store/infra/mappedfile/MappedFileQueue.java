@@ -61,8 +61,14 @@ public class MappedFileQueue implements Swappable {
 
     protected final AllocateMappedFileService allocateMappedFileService;
 
-    protected long flushedWhere = 0;
-    protected long committedWhere = 0;
+    /**
+     * @renamed from flushedWhere to flushedPosition
+     */
+    protected long flushedPosition = 0;
+    /**
+     * @renamed from committedWhere to committedPosition
+     */
+    protected long committedPosition = 0;
 
     protected volatile long storeTimestamp = 0;
 
@@ -263,11 +269,11 @@ public class MappedFileQueue implements Swappable {
     }
 
     public long remainHowManyDataToCommit() {
-        return getMaxWrotePosition() - getCommittedWhere();
+        return getMaxWrotePosition() - getCommittedPosition();
     }
 
     public long remainHowManyDataToFlush() {
-        return getMaxOffset() - this.getFlushedWhere();
+        return getMaxOffset() - this.getFlushedPosition();
     }
 
     public void deleteLastMappedFile() {
@@ -442,7 +448,7 @@ public class MappedFileQueue implements Swappable {
      * @return status
      */
     public boolean flush(final int flushLeastPages) {
-        MappedFile mappedFile = this.findMappedFileByOffset(this.getFlushedWhere(), this.getFlushedWhere() == 0);
+        MappedFile mappedFile = this.findMappedFileByOffset(this.getFlushedPosition(), this.getFlushedPosition() == 0);
         if (mappedFile == null) {
             return true;
         }
@@ -452,8 +458,8 @@ public class MappedFileQueue implements Swappable {
         int offset = mappedFile.flush(flushLeastPages);
         long where = mappedFile.getOffsetInFileName() + offset;
 
-        boolean result = where == this.getFlushedWhere();
-        this.setFlushedWhere(where);
+        boolean result = where == this.getFlushedPosition();
+        this.setFlushedPosition(where);
 
         if (0 == flushLeastPages) {
             this.setStoreTimestamp(tmpTimeStamp);
@@ -463,7 +469,7 @@ public class MappedFileQueue implements Swappable {
     }
 
     public synchronized boolean commit(final int commitLeastPages) {
-        MappedFile mappedFile = this.findMappedFileByOffset(this.getCommittedWhere(), this.getCommittedWhere() == 0);
+        MappedFile mappedFile = this.findMappedFileByOffset(this.getCommittedPosition(), this.getCommittedPosition() == 0);
         if (mappedFile == null) {
             return true;
         }
@@ -471,8 +477,8 @@ public class MappedFileQueue implements Swappable {
         int offset = mappedFile.commit(commitLeastPages);
         long where = mappedFile.getOffsetInFileName() + offset;
 
-        boolean result = where == this.getCommittedWhere();
-        this.setCommittedWhere(where);
+        boolean result = where == this.getCommittedPosition();
+        this.setCommittedPosition(where);
 
         return result;
     }
@@ -603,7 +609,7 @@ public class MappedFileQueue implements Swappable {
             mf.destroy(1000 * 3);
         }
         this.mappedFiles.clear();
-        this.setFlushedWhere(0);
+        this.setFlushedPosition(0);
 
         // delete parent directory
         File file = new File(storePath);
@@ -944,7 +950,7 @@ public class MappedFileQueue implements Swappable {
         if (this.mappedFiles.isEmpty())
             return 0;
 
-        long committed = this.getFlushedWhere();
+        long committed = this.getFlushedPosition();
         if (committed == 0) {
             return 0;
         }
@@ -966,12 +972,12 @@ public class MappedFileQueue implements Swappable {
     }
 
     /***************  getter/setter method  **************/
-    public long getFlushedWhere() {
-        return flushedWhere;
+    public long getFlushedPosition() {
+        return flushedPosition;
     }
 
-    public void setFlushedWhere(long flushedWhere) {
-        this.flushedWhere = flushedWhere;
+    public void setFlushedPosition(long flushedPosition) {
+        this.flushedPosition = flushedPosition;
     }
 
     public long getStoreTimestamp() {
@@ -990,12 +996,12 @@ public class MappedFileQueue implements Swappable {
         return mappedFileSize;
     }
 
-    public long getCommittedWhere() {
-        return committedWhere;
+    public long getCommittedPosition() {
+        return committedPosition;
     }
 
-    public void setCommittedWhere(final long committedWhere) {
-        this.committedWhere = committedWhere;
+    public void setCommittedPosition(final long committedPosition) {
+        this.committedPosition = committedPosition;
     }
 
     public String getStorePath() {
