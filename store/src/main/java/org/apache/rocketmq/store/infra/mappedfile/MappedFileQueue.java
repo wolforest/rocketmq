@@ -28,16 +28,16 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
-import org.apache.rocketmq.common.lang.BoundaryType;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.common.lang.BoundaryType;
+import org.apache.rocketmq.common.utils.IOUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.infra.memory.ReferenceResource;
-import org.apache.rocketmq.store.infra.memory.Swappable;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
+import org.apache.rocketmq.store.infra.memory.ReferenceResource;
+import org.apache.rocketmq.store.infra.memory.Swappable;
 
 public class MappedFileQueue implements Swappable {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -79,21 +79,14 @@ public class MappedFileQueue implements Swappable {
         }
     }
 
-    private void logCheckSelf(MappedFile pre, MappedFile cur) {
-        if (pre == null) {
-            return;
-        }
-
-        if (cur.getOffsetInFileName() - pre.getOffsetInFileName() == this.mappedFileSize) {
-            return;
-        }
-
-        LOG_ERROR.error("[BUG]The mappedFile queue's data is damaged, the adjacent mappedFile's offset don't match. pre file {}, cur file {}",
-            pre.getFileName(), cur.getFileName());
-    }
-
-    public MappedFile getConsumeQueueMappedFileByTime(final long timestamp, CommitLog commitLog,
-        BoundaryType boundaryType) {
+    /**
+     * method for consume queue
+     * @param timestamp ts
+     * @param commitLog commitLog
+     * @param boundaryType boundaryType
+     * @return MappedFile
+     */
+    public MappedFile getConsumeQueueMappedFileByTime(final long timestamp, CommitLog commitLog, BoundaryType boundaryType) {
         Object[] mfs = copyMappedFiles(0);
         if (null == mfs) {
             return null;
@@ -175,32 +168,6 @@ public class MappedFileQueue implements Swappable {
         return null;
     }
 
-    public MappedFile getMappedFileByTime(final long timestamp) {
-        Object[] mfs = this.copyMappedFiles(0);
-
-        if (null == mfs)
-            return null;
-
-        for (Object mf : mfs) {
-            MappedFile mappedFile = (MappedFile) mf;
-            if (mappedFile.getLastModifiedTimestamp() >= timestamp) {
-                return mappedFile;
-            }
-        }
-
-        return (MappedFile) mfs[mfs.length - 1];
-    }
-
-    protected Object[] copyMappedFiles(final int reservedMappedFiles) {
-        Object[] mfs;
-
-        if (this.mappedFiles.size() <= reservedMappedFiles) {
-            return null;
-        }
-
-        mfs = this.mappedFiles.toArray();
-        return mfs;
-    }
 
     public void truncateDirtyFiles(long offset) {
         List<MappedFile> willRemoveFiles = new ArrayList<>();
@@ -340,10 +307,7 @@ public class MappedFileQueue implements Swappable {
         if (mappedFileLast == null) {
             return true;
         }
-        if (mappedFileLast.isFull()) {
-            return true;
-        }
-        return false;
+        return mappedFileLast.isFull();
     }
 
     public boolean shouldRoll(final int msgSize) {
@@ -351,10 +315,7 @@ public class MappedFileQueue implements Swappable {
             return true;
         }
         MappedFile mappedFileLast = getLastMappedFile();
-        if (mappedFileLast.getWrotePosition() + msgSize > mappedFileLast.getFileSize()) {
-            return true;
-        }
-        return false;
+        return mappedFileLast.getWrotePosition() + msgSize > mappedFileLast.getFileSize();
     }
 
     public MappedFile tryCreateMappedFile(long createOffset) {
@@ -531,7 +492,7 @@ public class MappedFileQueue implements Swappable {
                         if (deleteFilesInterval > 0 && (i + 1) < mfsLength) {
                             try {
                                 Thread.sleep(deleteFilesInterval);
-                            } catch (InterruptedException e) {
+                            } catch (InterruptedException ignored) {
                             }
                         }
                     } else {
@@ -875,19 +836,91 @@ public class MappedFileQueue implements Swappable {
         }
     }
 
+    public Stream<MappedFile> stream() {
+        return this.mappedFiles.stream();
+    }
+
+    /**
+     * get MappedFile list by range
+     * called by ConsumeQueue
+     *
+     * @param from startOffset
+     * @param to endOffset
+     * @return list
+     */
+    public List<MappedFile> range(final long from, final long to) {
+        Object[] mfs = copyMappedFiles(0);
+        if (null == mfs) {
+            return new ArrayList<>();
+        }
+
+        List<MappedFile> result = new ArrayList<>();
+        for (Object mf : mfs) {
+            MappedFile mappedFile = (MappedFile) mf;
+            if (mappedFile.getOffsetInFileName() + mappedFile.getFileSize() <= from) {
+                continue;
+            }
+
+            if (to <= mappedFile.getOffsetInFileName()) {
+                break;
+            }
+            result.add(mappedFile);
+        }
+
+        return result;
+    }
+
+    /***************  private/protected/useless method  **************/
+    public Stream<MappedFile> reversedStream() {
+        return Lists.reverse(this.mappedFiles).stream();
+    }
+
     public Object[] snapshot() {
         // return a safe copy
         return this.mappedFiles.toArray();
     }
 
-    public Stream<MappedFile> stream() {
-        return this.mappedFiles.stream();
+    public MappedFile getMappedFileByTime(final long timestamp) {
+        Object[] mfs = this.copyMappedFiles(0);
+
+        if (null == mfs)
+            return null;
+
+        for (Object mf : mfs) {
+            MappedFile mappedFile = (MappedFile) mf;
+            if (mappedFile.getLastModifiedTimestamp() >= timestamp) {
+                return mappedFile;
+            }
+        }
+
+        return (MappedFile) mfs[mfs.length - 1];
     }
 
-    public Stream<MappedFile> reversedStream() {
-        return Lists.reverse(this.mappedFiles).stream();
+    protected Object[] copyMappedFiles(final int reservedMappedFiles) {
+        Object[] mfs;
+
+        if (this.mappedFiles.size() <= reservedMappedFiles) {
+            return null;
+        }
+
+        mfs = this.mappedFiles.toArray();
+        return mfs;
     }
 
+    private void logCheckSelf(MappedFile pre, MappedFile cur) {
+        if (pre == null) {
+            return;
+        }
+
+        if (cur.getOffsetInFileName() - pre.getOffsetInFileName() == this.mappedFileSize) {
+            return;
+        }
+
+        LOG_ERROR.error("[BUG]The mappedFile queue's data is damaged, the adjacent mappedFile's offset don't match. pre file {}, cur file {}",
+            pre.getFileName(), cur.getFileName());
+    }
+
+    /***************  getter/setter method  **************/
     public long getFlushedWhere() {
         return flushedWhere;
     }
@@ -920,33 +953,11 @@ public class MappedFileQueue implements Swappable {
         this.committedWhere = committedWhere;
     }
 
-    public long getTotalFileSize() {
-        return (long) mappedFileSize * mappedFiles.size();
-    }
-
     public String getStorePath() {
         return storePath;
     }
 
-    public List<MappedFile> range(final long from, final long to) {
-        Object[] mfs = copyMappedFiles(0);
-        if (null == mfs) {
-            return new ArrayList<>();
-        }
-
-        List<MappedFile> result = new ArrayList<>();
-        for (Object mf : mfs) {
-            MappedFile mappedFile = (MappedFile) mf;
-            if (mappedFile.getOffsetInFileName() + mappedFile.getFileSize() <= from) {
-                continue;
-            }
-
-            if (to <= mappedFile.getOffsetInFileName()) {
-                break;
-            }
-            result.add(mappedFile);
-        }
-
-        return result;
+    public long getTotalFileSize() {
+        return (long) mappedFileSize * mappedFiles.size();
     }
 }
