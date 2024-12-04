@@ -24,7 +24,6 @@ import java.nio.channels.FileChannel;
 import java.util.Iterator;
 import org.apache.rocketmq.common.domain.message.MessageExtBatch;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
-import org.apache.rocketmq.store.domain.commitlog.AppendMessageCallback;
 import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.domain.compaction.CompactionAppendMsgCallback;
 import org.apache.rocketmq.store.domain.message.PutMessageContext;

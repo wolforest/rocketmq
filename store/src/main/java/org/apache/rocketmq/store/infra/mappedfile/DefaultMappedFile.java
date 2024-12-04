@@ -32,7 +32,6 @@ import org.apache.rocketmq.store.api.dto.AppendMessageStatus;
 import org.apache.rocketmq.store.domain.compaction.CompactionAppendMsgCallback;
 import org.apache.rocketmq.store.domain.message.PutMessageContext;
 import org.apache.rocketmq.store.infra.memory.TransientStorePool;
-import org.apache.rocketmq.store.domain.commitlog.AppendMessageCallback;
 import org.apache.rocketmq.store.server.config.FlushDiskType;
 import org.apache.rocketmq.store.infra.memory.LibC;
 import sun.misc.Unsafe;
@@ -114,7 +113,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
     protected ByteBuffer writeBuffer = null;
     protected TransientStorePool transientStorePool = null;
     protected MappedByteBuffer mappedByteBuffer;
-    
+
     protected volatile long storeTimestamp = 0;
     protected boolean firstCreateInQueue = false;
     private long lastFlushTime = -1L;
