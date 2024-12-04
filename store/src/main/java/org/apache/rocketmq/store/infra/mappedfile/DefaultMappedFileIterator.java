@@ -22,18 +22,15 @@ import java.util.function.Consumer;
 
 class DefaultMappedFileIterator implements Iterator<SelectMappedBufferResult> {
     private final DefaultMappedFile mappedFile;
-    private int start;
     private int current;
-    private ByteBuffer buf;
+    private final ByteBuffer buf;
 
     public DefaultMappedFileIterator(DefaultMappedFile mappedFile, int pos) {
         this.mappedFile = mappedFile;
-
-        this.start = pos;
         this.current = pos;
 
         this.buf = mappedFile.mappedByteBuffer.slice();
-        this.buf.position(start);
+        this.buf.position(pos);
     }
 
     @Override
@@ -44,19 +41,23 @@ class DefaultMappedFileIterator implements Iterator<SelectMappedBufferResult> {
     @Override
     public SelectMappedBufferResult next() {
         int readPosition = mappedFile.getReadPosition();
-        if (current < readPosition && current >= 0) {
-            if (mappedFile.hold()) {
-                ByteBuffer byteBuffer = buf.slice();
-                byteBuffer.position(current);
-                int size = byteBuffer.getInt(current);
-                ByteBuffer bufferResult = byteBuffer.slice();
-                bufferResult.limit(size);
-                current += size;
-                return new SelectMappedBufferResult(mappedFile.getOffsetInFileName() + current, bufferResult, size,
-                    mappedFile);
-            }
+        if (current >= readPosition || current < 0) {
+            return null;
         }
-        return null;
+
+        if (!mappedFile.hold()) {
+            return null;
+        }
+
+        ByteBuffer byteBuffer = buf.slice();
+        byteBuffer.position(current);
+        int size = byteBuffer.getInt(current);
+
+        ByteBuffer bufferResult = byteBuffer.slice();
+        bufferResult.limit(size);
+        current += size;
+        long startOffset = mappedFile.getOffsetInFileName() + current;
+        return new SelectMappedBufferResult(startOffset, bufferResult, size, mappedFile);
     }
 
     @Override

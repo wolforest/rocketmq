@@ -56,6 +56,27 @@ public class AllocateMappedFileService extends ServiceThread {
         log.info(this.getServiceName() + " service end");
     }
 
+    @Override
+    public String getServiceName() {
+        if (messageStore != null && messageStore.getBrokerConfig().isInBrokerContainer()) {
+            return messageStore.getBrokerIdentity().getIdentifier() + AllocateMappedFileService.class.getSimpleName();
+        }
+        return AllocateMappedFileService.class.getSimpleName();
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown(true);
+
+        for (AllocateRequest req : this.requestTable.values()) {
+            if (req.mappedFile == null) {
+                continue;
+            }
+
+            log.info("delete pre allocated mapped file, {}", req.mappedFile.getFileName());
+            req.mappedFile.destroy(1000);
+        }
+    }
 
     public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
         int canSubmitRequests = calculateCanSubmitRequests();
@@ -135,28 +156,6 @@ public class AllocateMappedFileService extends ServiceThread {
         }
 
         return null;
-    }
-
-    @Override
-    public String getServiceName() {
-        if (messageStore != null && messageStore.getBrokerConfig().isInBrokerContainer()) {
-            return messageStore.getBrokerIdentity().getIdentifier() + AllocateMappedFileService.class.getSimpleName();
-        }
-        return AllocateMappedFileService.class.getSimpleName();
-    }
-
-    @Override
-    public void shutdown() {
-        super.shutdown(true);
-
-        for (AllocateRequest req : this.requestTable.values()) {
-            if (req.mappedFile == null) {
-                continue;
-            }
-
-            log.info("delete pre allocated maped file, {}", req.mappedFile.getFileName());
-            req.mappedFile.destroy(1000);
-        }
     }
 
     /**

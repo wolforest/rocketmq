@@ -70,6 +70,9 @@ public class MappedFileQueue implements Swappable {
      */
     protected long committedPosition = 0;
 
+    /**
+     * updated after flushing
+     */
     protected volatile long storeTimestamp = 0;
 
     public MappedFileQueue(final String storePath, int mappedFileSize, AllocateMappedFileService allocateMappedFileService) {
