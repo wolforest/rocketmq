@@ -76,7 +76,7 @@ public interface MappedFile {
     boolean isAvailable();
 
     /**
-     * Appends a message object to the current {@code MappedFile} with a specific call back.
+     * Appends a message object to the current {@code MappedFile} with a specific callback.
      *
      * @param message a message to append
      * @param messageCallback the specific call back to execute the real append action
@@ -86,7 +86,7 @@ public interface MappedFile {
     AppendMessageResult appendMessage(MessageExtBrokerInner message, AppendMessageCallback messageCallback, PutMessageContext putMessageContext);
 
     /**
-     * Appends a batch message object to the current {@code MappedFile} with a specific call back.
+     * Appends a batch message object to the current {@code MappedFile} with a specific callback.
      *
      * @param message a message to append
      * @param messageCallback the specific call back to execute the real append action

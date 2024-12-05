@@ -35,13 +35,14 @@ public class MessageBatch extends Message implements Iterable<Message> {
         return MessageDecoder.encodeMessages(messages);
     }
 
+    @Override
     public Iterator<Message> iterator() {
         return messages.iterator();
     }
 
     public static MessageBatch generateFromList(Collection<? extends Message> messages) {
         assert messages != null;
-        assert messages.size() > 0;
+        assert !messages.isEmpty();
         List<Message> messageList = new ArrayList<>(messages.size());
         Message first = null;
         for (Message message : messages) {
