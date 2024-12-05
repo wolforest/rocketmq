@@ -237,11 +237,26 @@ public class DefaultMappedFile extends AbstractMappedFile {
         return true;
     }
 
+    /**
+     * @renamed from getLastModifiedTimestamp to lastModified
+     * use the same name of standard library.
+     *
+     * @return last modified timestamp
+     */
     @Override
     public long getLastModifiedTimestamp() {
         return this.file.lastModified();
     }
 
+    /**
+     * read data from fileChannel, and put the data to byteBuffer
+     * @renamed from getData to readToBuffer
+     *
+     * @param pos a certain pos offset to get data
+     * @param size the size of data
+     * @param byteBuffer the data
+     * @return true if with data; false if no data;
+     */
     public boolean getData(int pos, int size, ByteBuffer byteBuffer) {
         if (byteBuffer.remaining() < size) {
             return false;
