@@ -27,7 +27,12 @@ import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.domain.commitlog.dto.GroupCommitRequest;
 
 /**
- *
+ * Monitor the timeout status of the commitRequests
+ *  - if the request.isDone, do nothing
+ *  - if the request.isTimeout, call request.wakeupCustomer()
+ * sleeping algorithm:
+ *  long sleepTime = (request.getDeadLine() - now) / 1_000_000;
+ *  sleepTime = Math.min(10, sleepTime);
  */
 public class FlushDiskWatcher extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -48,7 +53,7 @@ public class FlushDiskWatcher extends ServiceThread {
                 log.warn("take flush disk commit request, but interrupted, this may caused by shutdown");
                 continue;
             }
-            
+
             monitorRequest(request);
         }
     }
