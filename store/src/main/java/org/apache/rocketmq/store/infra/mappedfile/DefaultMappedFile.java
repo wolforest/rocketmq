@@ -57,24 +57,36 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DefaultMappedFile extends AbstractMappedFile {
-    public static final int OS_PAGE_SIZE = 1024 * 4;
-    public static final Unsafe UNSAFE = getUnsafe();
-    private static final Method IS_LOADED_METHOD;
-    public static final int UNSAFE_PAGE_SIZE = UNSAFE == null ? OS_PAGE_SIZE : UNSAFE.pageSize();
-
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     /**
+     * just for UNSAFE_PAGE_SIZE
+     */
+    public static final Unsafe UNSAFE = getUnsafe();
+
+    /**
+     * get system's memory page size, if possible.
+     */
+    public static final int OS_PAGE_SIZE = 1024 * 4;
+    public static final int UNSAFE_PAGE_SIZE = UNSAFE == null ? OS_PAGE_SIZE : UNSAFE.pageSize();
+
+    /**
+     * Check mapped file is loaded to memory with given position and size
+     */
+    private static final Method IS_LOADED_METHOD;
+
+
+    /**
      * total memory size of mapped files in the jvm
-     * increase in method init()
-     * decrease in method cleanup()
+     *  - increase in method init()
+     *  - decrease in method cleanup()
      */
     protected static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
 
     /**
      * total numbers of mapped files in the jvm
-     * increase in method init()
-     * decrease in method cleanup()
+     *  - increase in method init()
+     *  - decrease in method cleanup()
      */
     protected static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
 
@@ -185,9 +197,13 @@ public class DefaultMappedFile extends AbstractMappedFile {
         this.fileSize = fileSize;
         this.file = new File(fileName);
         this.offsetInFileName = Long.parseLong(this.file.getName());
-        boolean ok = false;
 
         IOUtils.ensureDirOK(this.file.getParent());
+        this.initFile();
+    }
+
+    private void initFile() throws IOException {
+        boolean ok = false;
 
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(this.file, "rw")) {
             this.fileChannel = randomAccessFile.getChannel();
@@ -911,6 +927,14 @@ public class DefaultMappedFile extends AbstractMappedFile {
         return (int) (size + (long) UNSAFE_PAGE_SIZE - 1L) / UNSAFE_PAGE_SIZE;
     }
 
+    /**
+     * check mappedFile is loaded to memory with given position and size
+     * called by admin operations
+     *
+     * @param position start offset of data
+     * @param size data size
+     * @return inMemoryStatus
+     */
     @Override
     public boolean isLoaded(long position, int size) {
         if (IS_LOADED_METHOD == null) {

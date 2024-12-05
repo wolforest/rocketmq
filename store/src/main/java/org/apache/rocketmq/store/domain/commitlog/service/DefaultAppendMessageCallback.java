@@ -150,7 +150,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         // Record ConsumeQueue information
         long queueOffset = msgInner.getQueueOffset();
 
-        // this msg maybe a inner-batch msg.
+        // this msg maybe an inner-batch msg.
         short messageNum = commitLog.getMessageNum(msgInner);
 
         // Transaction messages that require special handling
