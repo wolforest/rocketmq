@@ -27,12 +27,15 @@ import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.domain.commitlog.dto.GroupCommitRequest;
 
 /**
+ * It should rename to CommitTimeoutMonitor ...
  * Monitor the timeout status of the commitRequests
  *  - if the request.isDone, do nothing
  *  - if the request.isTimeout, call request.wakeupCustomer()
- * sleeping algorithm:
+ * ********************************************************************
+ * To avoid frequently thread switching, sleeping algorithm:
  *  long sleepTime = (request.getDeadLine() - now) / 1_000_000;
  *  sleepTime = Math.min(10, sleepTime);
+ *
  */
 public class FlushDiskWatcher extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
