@@ -114,6 +114,17 @@ public class DefaultFlushManager implements FlushManager {
         }
     }
 
+    /**
+     * This method create a GroupCommitRequest, then:
+     *     - GroupCommitService will update it\'s status to OK
+     *          when append successfully
+     *     - FlushDiskWatcher will monitor the request
+     *          and update it\'s status to timeout
+     *
+     * @param result appendResult
+     * @param messageExt msg
+     * @return GroupCommitRequest.future
+     */
     private CompletableFuture<PutMessageStatus> handleSyncAppendFlush(AppendMessageResult result, MessageExt messageExt) {
         final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
         if (!messageExt.isWaitStoreMsgOK()) {

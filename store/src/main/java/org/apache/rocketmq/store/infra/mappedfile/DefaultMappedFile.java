@@ -189,8 +189,8 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
         IOUtils.ensureDirOK(this.file.getParent());
 
-        try {
-            this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(this.file, "rw")) {
+            this.fileChannel = randomAccessFile.getChannel();
             this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
             TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
             TOTAL_MAPPED_FILES.incrementAndGet();
@@ -708,9 +708,9 @@ public class DefaultMappedFile extends AbstractMappedFile {
             }
             IOUtils.cleanBuffer(this.mappedByteBufferWaitToClean);
             mappedByteBufferWaitToClean = null;
-            log.info("cleanSwapedMap file " + this.fileName + " success.");
+            log.info("cleanSwappedMap file " + this.fileName + " success.");
         } catch (Exception e) {
-            log.error("cleanSwapedMap file " + this.fileName + " Failed. ", e);
+            log.error("cleanSwappedMap file " + this.fileName + " Failed. ", e);
         }
     }
 

@@ -136,7 +136,7 @@ public final class ThreadUtils {
     }
 
     public static void sleep(long millis, String msg) {
-        sleep(millis, false, msg);
+        sleep(millis, true, msg);
     }
 
     public static void sleep(long millis, boolean logException, String msg) {

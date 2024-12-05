@@ -380,6 +380,15 @@ public class CommitLogPutService {
         return null;
     }
 
+    /**
+     * append message to buffer
+     * return null for PUT_OK
+     * return error while occur error.
+     *
+     * @param context context
+     * @param msg msg
+     * @return null | errorResult
+     */
     private CompletableFuture<PutMessageResult> asyncPutMessage(CommitLogPutContext context, final MessageExtBrokerInner msg) {
         commitLog.getTopicQueueLock().lock(context.getTopicQueueKey());
         try {

@@ -17,6 +17,7 @@
 package org.apache.rocketmq.store.domain.commitlog.service;
 
 import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
@@ -62,7 +63,10 @@ public class GroupCommitService extends FlushCommitLogService {
         while (!this.isStopped()) {
             try {
                 this.waitForRunning(10);
+
+                this.swapRequests();
                 this.doCommit();
+
             } catch (Exception e) {
                 log.warn(this.getServiceName() + " service has exception. ", e);
             }
@@ -70,11 +74,7 @@ public class GroupCommitService extends FlushCommitLogService {
 
         // Under normal circumstances shutdown, wait for the arrival of the
         // request, and then flush
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            log.warn("GroupCommitService Exception, ", e);
-        }
+        ThreadUtils.sleep(10, "GroupCommitService Exception, ");
 
         this.swapRequests();
         this.doCommit();
@@ -82,9 +82,13 @@ public class GroupCommitService extends FlushCommitLogService {
         log.info(this.getServiceName() + " service end");
     }
 
+    /**
+     *  moved swapRequest to run()
+     *  this will be helpful for understanding method run()
+     */
     @Override
     protected void onWaitEnd() {
-        this.swapRequests();
+        // this.swapRequests();
     }
 
     @Override

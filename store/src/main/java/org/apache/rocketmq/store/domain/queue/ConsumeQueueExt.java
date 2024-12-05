@@ -224,7 +224,7 @@ public class ConsumeQueueExt {
                 final int wrotePosition = mappedFile.getWrotePosition();
                 final int blankSize = this.mappedFileSize - wrotePosition - END_BLANK_DATA_LENGTH;
 
-                // check whether has enough space.
+                // check whether it has enough space.
                 if (size > blankSize) {
                     fullFillToEnd(mappedFile, wrotePosition);
                     log.info("No enough space(need:{}, has:{}) of file {}, so fill to end",
