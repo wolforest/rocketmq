@@ -48,16 +48,12 @@ public class FlushDiskWatcher extends ServiceThread {
                 log.warn("take flush disk commit request, but interrupted, this may caused by shutdown");
                 continue;
             }
-
+            
             monitorRequest(request);
         }
     }
 
     private void monitorRequest(GroupCommitRequest request) {
-        if (null == request) {
-            return;
-        }
-
         while (!request.future().isDone()) {
             long now = System.nanoTime();
             if (now - request.getDeadLine() >= 0) {
