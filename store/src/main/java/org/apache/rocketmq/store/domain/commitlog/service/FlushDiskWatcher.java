@@ -26,6 +26,9 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.apache.rocketmq.store.domain.commitlog.dto.GroupCommitRequest;
 
+/**
+ *
+ */
 public class FlushDiskWatcher extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final LinkedBlockingQueue<GroupCommitRequest> commitRequests = new LinkedBlockingQueue<>();
@@ -46,26 +49,34 @@ public class FlushDiskWatcher extends ServiceThread {
                 continue;
             }
 
-            while (!request.future().isDone()) {
-                long now = System.nanoTime();
-                if (now - request.getDeadLine() >= 0) {
-                    request.wakeupCustomer(PutMessageStatus.FLUSH_DISK_TIMEOUT);
-                    break;
-                }
-                // To avoid frequent thread switching, replace future.get with sleep here,
-                long sleepTime = (request.getDeadLine() - now) / 1_000_000;
-                sleepTime = Math.min(10, sleepTime);
-                if (sleepTime == 0) {
-                    request.wakeupCustomer(PutMessageStatus.FLUSH_DISK_TIMEOUT);
-                    break;
-                }
+            monitorRequest(request);
+        }
+    }
 
-                try {
-                    Thread.sleep(sleepTime);
-                } catch (InterruptedException e) {
-                    log.warn("An exception occurred while waiting for flushing disk to complete. this may caused by shutdown");
-                    break;
-                }
+    private void monitorRequest(GroupCommitRequest request) {
+        if (null == request) {
+            return;
+        }
+
+        while (!request.future().isDone()) {
+            long now = System.nanoTime();
+            if (now - request.getDeadLine() >= 0) {
+                request.wakeupCustomer(PutMessageStatus.FLUSH_DISK_TIMEOUT);
+                break;
+            }
+            // To avoid frequent thread switching, replace future.get with sleep here,
+            long sleepTime = (request.getDeadLine() - now) / 1_000_000;
+            sleepTime = Math.min(10, sleepTime);
+            if (sleepTime == 0) {
+                request.wakeupCustomer(PutMessageStatus.FLUSH_DISK_TIMEOUT);
+                break;
+            }
+
+            try {
+                Thread.sleep(sleepTime);
+            } catch (InterruptedException e) {
+                log.warn("An exception occurred while waiting for flushing disk to complete. this may caused by shutdown");
+                break;
             }
         }
     }
