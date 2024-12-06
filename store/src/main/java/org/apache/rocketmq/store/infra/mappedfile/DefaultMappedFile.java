@@ -304,12 +304,14 @@ public class DefaultMappedFile extends AbstractMappedFile {
     }
 
 
-
     @Override
     public boolean appendMessage(final byte[] data) {
         return appendMessage(data, 0, data.length);
     }
 
+    /**
+     * No usage
+     */
     @Override
     public boolean appendMessage(ByteBuffer data) {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
@@ -391,6 +393,10 @@ public class DefaultMappedFile extends AbstractMappedFile {
         return this.getFlushedPosition();
     }
 
+    /**
+     * useless by default, because no writeBuffer
+     * @param commitLeastPages the least pages to commit
+     */
     @Override
     public int commit(final int commitLeastPages) {
         if (writeBuffer == null) {
