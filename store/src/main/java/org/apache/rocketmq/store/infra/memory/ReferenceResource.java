@@ -25,14 +25,15 @@ public abstract class ReferenceResource {
     private volatile long firstShutdownTimestamp = 0;
 
     public synchronized boolean hold() {
-        if (this.isAvailable()) {
-            if (this.refCount.getAndIncrement() > 0) {
-                return true;
-            } else {
-                this.refCount.getAndDecrement();
-            }
+        if (!this.isAvailable()) {
+            return false;
         }
 
+        if (this.refCount.getAndIncrement() > 0) {
+            return true;
+        }
+
+        this.refCount.getAndDecrement();
         return false;
     }
 
@@ -45,12 +46,19 @@ public abstract class ReferenceResource {
             this.available = false;
             this.firstShutdownTimestamp = System.currentTimeMillis();
             this.release();
-        } else if (this.getRefCount() > 0) {
-            if ((System.currentTimeMillis() - this.firstShutdownTimestamp) >= intervalForcibly) {
-                this.refCount.set(-1000 - this.getRefCount());
-                this.release();
-            }
+            return;
         }
+
+        if (this.getRefCount() <= 0) {
+            return;
+        }
+
+        if ((System.currentTimeMillis() - this.firstShutdownTimestamp) < intervalForcibly) {
+            return;
+        }
+
+        this.refCount.set(-1000 - this.getRefCount());
+        this.release();
     }
 
     public void release() {
@@ -59,7 +67,6 @@ public abstract class ReferenceResource {
             return;
 
         synchronized (this) {
-
             this.cleanupOver = this.cleanup(value);
         }
     }
