@@ -259,7 +259,7 @@ public class MappedFileQueue implements Swappable {
             return 0;
         }
 
-        return mappedFile.getOffsetInFileName() + mappedFile.getReadPosition();
+        return mappedFile.getOffsetInFileName() + mappedFile.getWroteOrCommitPosition();
     }
 
     public long getMaxWrotePosition() {

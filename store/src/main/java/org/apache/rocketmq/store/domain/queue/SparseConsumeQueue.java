@@ -317,12 +317,12 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
     }
 
     private <T> T getMax(MappedFile mappedFile, Function<ByteBuffer, T> function) {
-        if (mappedFile == null || mappedFile.getReadPosition() < CQ_STORE_UNIT_SIZE) {
+        if (mappedFile == null || mappedFile.getWroteOrCommitPosition() < CQ_STORE_UNIT_SIZE) {
             return null;
         }
 
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-        for (int i = mappedFile.getReadPosition() - CQ_STORE_UNIT_SIZE; i >= 0; i -= CQ_STORE_UNIT_SIZE) {
+        for (int i = mappedFile.getWroteOrCommitPosition() - CQ_STORE_UNIT_SIZE; i >= 0; i -= CQ_STORE_UNIT_SIZE) {
             byteBuffer.position(i);
             long offset = byteBuffer.getLong();
             int size = byteBuffer.getInt();
@@ -341,12 +341,12 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
 
     @Override
     protected BatchOffsetIndex getMaxMsgOffset(MappedFile mappedFile, boolean getBatchSize, boolean getStoreTime) {
-        if (mappedFile == null || mappedFile.getReadPosition() < CQ_STORE_UNIT_SIZE) {
+        if (mappedFile == null || mappedFile.getWroteOrCommitPosition() < CQ_STORE_UNIT_SIZE) {
             return null;
         }
 
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-        for (int i = mappedFile.getReadPosition() - CQ_STORE_UNIT_SIZE; i >= 0; i -= CQ_STORE_UNIT_SIZE) {
+        for (int i = mappedFile.getWroteOrCommitPosition() - CQ_STORE_UNIT_SIZE; i >= 0; i -= CQ_STORE_UNIT_SIZE) {
             byteBuffer.position(i);
             long offset = byteBuffer.getLong();
             int size = byteBuffer.getInt();

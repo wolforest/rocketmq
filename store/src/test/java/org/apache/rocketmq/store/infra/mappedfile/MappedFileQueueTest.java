@@ -312,7 +312,7 @@ public class MappedFileQueueTest {
                     MappedFile mappedFile = null;
                     int retryTime = 0;
                     while (mappedFile == null && retryTime < 10000) {
-                        mappedFile = mappedFileQueue.findMappedFileByOffset(i * fixedMsg.getBytes().length);
+                        mappedFile = mappedFileQueue.findMappedFileByOffset((long) i * fixedMsg.getBytes().length);
                         retryTime++;
                         if (mappedFile == null) {
                             Thread.sleep(1);
@@ -321,13 +321,13 @@ public class MappedFileQueueTest {
                     assertThat(mappedFile != null).isTrue();
                     retryTime = 0;
                     int pos = (i * fixedMsg.getBytes().length) % mappedFileSize;
-                    while ((pos + fixedMsg.getBytes().length) > mappedFile.getReadPosition() && retryTime < 10000) {
+                    while ((pos + fixedMsg.getBytes().length) > mappedFile.getWroteOrCommitPosition() && retryTime < 10000) {
                         retryTime++;
-                        if ((pos + fixedMsg.getBytes().length) > mappedFile.getReadPosition()) {
+                        if ((pos + fixedMsg.getBytes().length) > mappedFile.getWroteOrCommitPosition()) {
                             Thread.sleep(1);
                         }
                     }
-                    assertThat((pos + fixedMsg.getBytes().length) <= mappedFile.getReadPosition()).isTrue();
+                    assertThat((pos + fixedMsg.getBytes().length) <= mappedFile.getWroteOrCommitPosition()).isTrue();
                     SelectMappedBufferResult ret = mappedFile.selectMappedBuffer(pos, fixedMsg.getBytes().length);
                     byte[] readRes = new byte[fixedMsg.getBytes().length];
                     ret.getByteBuffer().get(readRes);

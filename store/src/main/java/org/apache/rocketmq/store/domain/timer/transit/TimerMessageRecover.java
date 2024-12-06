@@ -134,7 +134,7 @@ public class TimerMessageRecover {
         long checkOffset = mappedFiles.get(index).getOffsetInFileName();
         for (; index < mappedFiles.size(); index++) {
             MappedFile mappedFile = mappedFiles.get(index);
-            SelectMappedBufferResult sbr = mappedFile.selectMappedBuffer(0, checkTimerLog ? mappedFiles.get(index).getFileSize() : mappedFile.getReadPosition());
+            SelectMappedBufferResult sbr = mappedFile.selectMappedBuffer(0, checkTimerLog ? mappedFiles.get(index).getFileSize() : mappedFile.getWroteOrCommitPosition());
             ByteBuffer bf = sbr.getByteBuffer();
             int position = 0;
             boolean stopCheck = false;

@@ -35,12 +35,12 @@ class DefaultMappedFileIterator implements Iterator<SelectMappedBufferResult> {
 
     @Override
     public boolean hasNext() {
-        return current < mappedFile.getReadPosition();
+        return current < mappedFile.getWroteOrCommitPosition();
     }
 
     @Override
     public SelectMappedBufferResult next() {
-        int readPosition = mappedFile.getReadPosition();
+        int readPosition = mappedFile.getWroteOrCommitPosition();
         if (current >= readPosition || current < 0) {
             return null;
         }

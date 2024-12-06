@@ -280,7 +280,7 @@ public interface MappedFile {
      *
      * @return the max readable position
      */
-    int getReadPosition();
+    int getWroteOrCommitPosition();
 
     /**
      * Sets the committed position of this mapped file.

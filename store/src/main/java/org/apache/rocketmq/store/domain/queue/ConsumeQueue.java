@@ -557,7 +557,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
 
         SelectMappedBufferResult lastRecord = null;
         try {
-            int maxReadablePosition = lastMappedFile.getReadPosition();
+            int maxReadablePosition = lastMappedFile.getWroteOrCommitPosition();
             lastRecord = lastMappedFile.selectMappedBuffer(maxReadablePosition - ConsumeQueue.CQ_STORE_UNIT_SIZE,
                     ConsumeQueue.CQ_STORE_UNIT_SIZE);
             if (null != lastRecord) {
@@ -590,7 +590,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                 start = 0;
             }
 
-            if (start > mappedFile.getReadPosition()) {
+            if (start > mappedFile.getWroteOrCommitPosition()) {
                 log.error("[Bug][InconsistentState] ConsumeQueue file {} should have been deleted",
                         mappedFile.getFileName());
                 return;

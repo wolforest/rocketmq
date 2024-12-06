@@ -253,7 +253,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
             return false;
         }
 
-        int readPosition = getReadPosition();
+        int readPosition = getWroteOrCommitPosition();
         if ((pos + size) > readPosition) {
             log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size + ", fileFromOffset: " + this.offsetInFileName);
             return false;
@@ -365,12 +365,12 @@ public class DefaultMappedFile extends AbstractMappedFile {
         }
         if (!this.hold()) {
             log.warn("in flush, hold failed, flush offset = " + FLUSHED_POSITION_UPDATER.get(this));
-            FLUSHED_POSITION_UPDATER.set(this, getReadPosition());
+            FLUSHED_POSITION_UPDATER.set(this, getWroteOrCommitPosition());
 
             return this.getFlushedPosition();
         }
 
-        int value = getReadPosition();
+        int value = getWroteOrCommitPosition();
         try {
             this.mappedByteBufferAccessCountSinceLastSwap++;
 
@@ -436,7 +436,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
     @Override
     public SelectMappedBufferResult selectMappedBuffer(int pos, int size) {
-        int readPosition = getReadPosition();
+        int readPosition = getWroteOrCommitPosition();
         if ((pos + size) > readPosition) {
             log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size
                 + ", fileFromOffset: " + this.offsetInFileName);
@@ -459,7 +459,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
     @Override
     public SelectMappedBufferResult selectMappedBuffer(int pos) {
-        int readPosition = getReadPosition();
+        int readPosition = getWroteOrCommitPosition();
         if (pos >= readPosition || pos < 0) {
             return null;
         }
@@ -538,11 +538,16 @@ public class DefaultMappedFile extends AbstractMappedFile {
     }
 
     /**
+     * return WROTE_POSITION_UPDATER.get(this) by default
+     * @renamed from getReadPosition to getWroteOrCommitPosition
+     *
      * @return The max position which have valid data
      */
     @Override
-    public int getReadPosition() {
-        return transientStorePool == null || !transientStorePool.isRealCommit() ? WROTE_POSITION_UPDATER.get(this) : COMMITTED_POSITION_UPDATER.get(this);
+    public int getWroteOrCommitPosition() {
+        return transientStorePool == null || !transientStorePool.isRealCommit()
+            ? WROTE_POSITION_UPDATER.get(this)
+            : COMMITTED_POSITION_UPDATER.get(this);
     }
 
     @Override
@@ -550,6 +555,15 @@ public class DefaultMappedFile extends AbstractMappedFile {
         COMMITTED_POSITION_UPDATER.set(this, pos);
     }
 
+    /**
+     * warm the mappedFile
+     *  - zero fill the buffer
+     *  - lock the memory
+     * called by AllocateMappedFileService
+     *
+     * @param type type
+     * @param pages pages
+     */
     @Override
     public void warmMappedFile(FlushDiskType type, int pages) {
         this.mappedByteBufferAccessCountSinceLastSwap++;
@@ -625,11 +639,13 @@ public class DefaultMappedFile extends AbstractMappedFile {
             if (this.mappedByteBufferWaitToClean == null) {
                 return;
             }
+
             long minGapTime = 120 * 1000L;
             long gapTime = System.currentTimeMillis() - this.swapMapTime;
             if (!force && gapTime < minGapTime) {
                 Thread.sleep(minGapTime - gapTime);
             }
+
             IOUtils.cleanBuffer(this.mappedByteBufferWaitToClean);
             mappedByteBufferWaitToClean = null;
             log.info("cleanSwappedMap file " + this.fileName + " success.");
@@ -808,7 +824,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
     private boolean isAbleToFlush(final int flushLeastPages) {
         int flush = FLUSHED_POSITION_UPDATER.get(this);
-        int write = getReadPosition();
+        int write = getWroteOrCommitPosition();
 
         if (this.isFull()) {
             return true;

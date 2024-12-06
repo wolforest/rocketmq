@@ -273,7 +273,7 @@ public class CommitLog implements Swappable {
             }
 
             int pos = (int) (startOffset % mappedFileSize);
-            int readableSize = mappedFile.getReadPosition() - pos;
+            int readableSize = mappedFile.getWroteOrCommitPosition() - pos;
             int readSize = Math.min(remainSize, readableSize);
 
             SelectMappedBufferResult bufferResult = mappedFile.selectMappedBuffer(pos, readSize);
@@ -295,7 +295,7 @@ public class CommitLog implements Swappable {
             return null;
         }
 
-        int size = (int) (mappedFile.getReadPosition() - offset % mappedFileSize);
+        int size = (int) (mappedFile.getWroteOrCommitPosition() - offset % mappedFileSize);
         if (size > 0) {
             return new SelectMappedFileResult(size, mappedFile);
         }

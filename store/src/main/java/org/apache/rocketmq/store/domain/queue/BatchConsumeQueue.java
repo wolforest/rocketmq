@@ -184,7 +184,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
     }
 
     protected boolean isNewFile(MappedFile mappedFile) {
-        return mappedFile.getReadPosition() < CQ_STORE_UNIT_SIZE;
+        return mappedFile.getWroteOrCommitPosition() < CQ_STORE_UNIT_SIZE;
     }
 
     protected MappedFile searchOffsetFromCache(long msgOffset) {
@@ -610,7 +610,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
     }
 
     protected BatchOffsetIndex getMinMsgOffset(MappedFile mappedFile, boolean getBatchSize, boolean getStoreTime) {
-        if (mappedFile.getReadPosition() < CQ_STORE_UNIT_SIZE) {
+        if (mappedFile.getWroteOrCommitPosition() < CQ_STORE_UNIT_SIZE) {
             return null;
         }
         return getBatchOffsetIndexByPos(mappedFile, 0, getBatchSize, getStoreTime);
@@ -631,10 +631,10 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
     }
 
     protected BatchOffsetIndex getMaxMsgOffset(MappedFile mappedFile, boolean getBatchSize, boolean getStoreTime) {
-        if (mappedFile == null || mappedFile.getReadPosition() < CQ_STORE_UNIT_SIZE) {
+        if (mappedFile == null || mappedFile.getWroteOrCommitPosition() < CQ_STORE_UNIT_SIZE) {
             return null;
         }
-        int pos = mappedFile.getReadPosition() - CQ_STORE_UNIT_SIZE;
+        int pos = mappedFile.getWroteOrCommitPosition() - CQ_STORE_UNIT_SIZE;
         return getBatchOffsetIndexByPos(mappedFile, pos, getBatchSize, getStoreTime);
     }
 
