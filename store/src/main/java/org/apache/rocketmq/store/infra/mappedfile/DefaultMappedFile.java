@@ -164,6 +164,27 @@ public class DefaultMappedFile extends AbstractMappedFile {
         IS_LOADED_METHOD = isLoaded0method;
     }
 
+    public static Unsafe getUnsafe() {
+        try {
+            Field f = Unsafe.class.getDeclaredField("theUnsafe");
+            f.setAccessible(true);
+            return (Unsafe) f.get(null);
+        } catch (Exception ignore) {
+
+        }
+        return null;
+    }
+
+    public static long mappingAddr(long addr) {
+        long offset = addr % UNSAFE_PAGE_SIZE;
+        offset = (offset >= 0) ? offset : (UNSAFE_PAGE_SIZE + offset);
+        return addr - offset;
+    }
+
+    public static int pageCount(long size) {
+        return (int) (size + (long) UNSAFE_PAGE_SIZE - 1L) / UNSAFE_PAGE_SIZE;
+    }
+
     public DefaultMappedFile() {
     }
 
@@ -192,37 +213,6 @@ public class DefaultMappedFile extends AbstractMappedFile {
         this.transientStorePool = transientStorePool;
     }
 
-    private void init(final String fileName, final int fileSize) throws IOException {
-        this.fileName = fileName;
-        this.fileSize = fileSize;
-        this.file = new File(fileName);
-        this.offsetInFileName = Long.parseLong(this.file.getName());
-
-        IOUtils.ensureDirOK(this.file.getParent());
-        this.initFile();
-    }
-
-    private void initFile() throws IOException {
-        boolean ok = false;
-
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(this.file, "rw")) {
-            this.fileChannel = randomAccessFile.getChannel();
-            this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
-            TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
-            TOTAL_MAPPED_FILES.incrementAndGet();
-            ok = true;
-        } catch (FileNotFoundException e) {
-            log.error("Failed to create file " + this.fileName, e);
-            throw e;
-        } catch (IOException e) {
-            log.error("Failed to map file " + this.fileName, e);
-            throw e;
-        } finally {
-            if (!ok && this.fileChannel != null) {
-                this.fileChannel.close();
-            }
-        }
-    }
 
     @Override
     public boolean renameTo(String fileName) {
@@ -251,6 +241,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
     /**
      * read data from fileChannel, and put the data to byteBuffer
      * @renamed from getData to readToBuffer
+     * called by CommitLog.getData()
      *
      * @param pos a certain pos offset to get data
      * @param size the size of data
@@ -284,16 +275,6 @@ public class DefaultMappedFile extends AbstractMappedFile {
         }
     }
 
-    @Override
-    public int getFileSize() {
-        return fileSize;
-    }
-
-    @Override
-    public FileChannel getFileChannel() {
-        return fileChannel;
-    }
-
     public AppendMessageResult appendMessage(final ByteBuffer byteBufferMsg, final CompactionAppendMsgCallback cb) {
         assert byteBufferMsg != null;
         assert cb != null;
@@ -313,54 +294,16 @@ public class DefaultMappedFile extends AbstractMappedFile {
     }
 
     @Override
-    public AppendMessageResult appendMessage(final MessageExtBrokerInner msg, final AppendMessageCallback cb,
-        PutMessageContext putMessageContext) {
+    public AppendMessageResult appendMessage(final MessageExtBrokerInner msg, final AppendMessageCallback cb, PutMessageContext putMessageContext) {
         return appendMessagesInner(msg, cb, putMessageContext);
     }
 
     @Override
-    public AppendMessageResult appendMessages(final MessageExtBatch messageExtBatch, final AppendMessageCallback cb,
-        PutMessageContext putMessageContext) {
+    public AppendMessageResult appendMessages(final MessageExtBatch messageExtBatch, final AppendMessageCallback cb, PutMessageContext putMessageContext) {
         return appendMessagesInner(messageExtBatch, cb, putMessageContext);
     }
 
-    private AppendMessageResult appendMessagesInner(final MessageExt messageExt, final AppendMessageCallback cb,
-        PutMessageContext putMessageContext) {
-        assert messageExt != null;
-        assert cb != null;
 
-        int currentPos = WROTE_POSITION_UPDATER.get(this);
-        if (currentPos >= this.fileSize) {
-            log.error("MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}", currentPos, this.fileSize);
-            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
-        }
-
-        ByteBuffer byteBuffer = appendMessageBuffer().slice();
-        byteBuffer.position(currentPos);
-        AppendMessageResult result;
-        if (messageExt instanceof MessageExtBatch && !((MessageExtBatch) messageExt).isInnerBatch()) {
-            // traditional batch message
-            result = cb.doAppend(this.getOffsetInFileName(), byteBuffer, this.fileSize - currentPos, (MessageExtBatch) messageExt, putMessageContext);
-        } else if (messageExt instanceof MessageExtBrokerInner) {
-            // traditional single message or newly introduced inner-batch message
-            result = cb.doAppend(this.getOffsetInFileName(), byteBuffer, this.fileSize - currentPos, (MessageExtBrokerInner) messageExt, putMessageContext);
-        } else {
-            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
-        }
-        WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
-        this.storeTimestamp = result.getStoreTimestamp();
-        return result;
-    }
-
-    protected ByteBuffer appendMessageBuffer() {
-        this.mappedByteBufferAccessCountSinceLastSwap++;
-        return writeBuffer != null ? writeBuffer : this.mappedByteBuffer;
-    }
-
-    @Override
-    public long getOffsetInFileName() {
-        return this.offsetInFileName;
-    }
 
     @Override
     public boolean appendMessage(final byte[] data) {
@@ -474,56 +417,6 @@ public class DefaultMappedFile extends AbstractMappedFile {
         }
 
         return COMMITTED_POSITION_UPDATER.get(this);
-    }
-
-    protected void commit0() {
-        int writePos = WROTE_POSITION_UPDATER.get(this);
-        int lastCommittedPosition = COMMITTED_POSITION_UPDATER.get(this);
-
-        if (writePos - lastCommittedPosition <= 0) {
-            return;
-        }
-
-        try {
-            ByteBuffer byteBuffer = writeBuffer.slice();
-            byteBuffer.position(lastCommittedPosition);
-            byteBuffer.limit(writePos);
-            this.fileChannel.position(lastCommittedPosition);
-            this.fileChannel.write(byteBuffer);
-            COMMITTED_POSITION_UPDATER.set(this, writePos);
-        } catch (Throwable e) {
-            log.error("Error occurred when commit data to FileChannel.", e);
-        }
-    }
-
-    private boolean isAbleToFlush(final int flushLeastPages) {
-        int flush = FLUSHED_POSITION_UPDATER.get(this);
-        int write = getReadPosition();
-
-        if (this.isFull()) {
-            return true;
-        }
-
-        if (flushLeastPages > 0) {
-            return ((write / OS_PAGE_SIZE) - (flush / OS_PAGE_SIZE)) >= flushLeastPages;
-        }
-
-        return write > flush;
-    }
-
-    protected boolean isAbleToCommit(final int commitLeastPages) {
-        int commit = COMMITTED_POSITION_UPDATER.get(this);
-        int write = WROTE_POSITION_UPDATER.get(this);
-
-        if (this.isFull()) {
-            return true;
-        }
-
-        if (commitLeastPages > 0) {
-            return ((write / OS_PAGE_SIZE) - (commit / OS_PAGE_SIZE)) >= commitLeastPages;
-        }
-
-        return write > commit;
     }
 
     @Override
@@ -751,21 +644,6 @@ public class DefaultMappedFile extends AbstractMappedFile {
     }
 
     @Override
-    public long getMappedByteBufferAccessCountSinceLastSwap() {
-        return this.mappedByteBufferAccessCountSinceLastSwap;
-    }
-
-    @Override
-    public long getLastFlushTime() {
-        return this.lastFlushTime;
-    }
-
-    @Override
-    public String getFileName() {
-        return fileName;
-    }
-
-    @Override
     public MappedByteBuffer getMappedByteBuffer() {
         this.mappedByteBufferAccessCountSinceLastSwap++;
         return mappedByteBuffer;
@@ -777,21 +655,10 @@ public class DefaultMappedFile extends AbstractMappedFile {
         return this.mappedByteBuffer.slice();
     }
 
-    @Override
-    public long getStoreTimestamp() {
-        return storeTimestamp;
-    }
-
-    @Override
-    public boolean isFirstCreateInQueue() {
-        return firstCreateInQueue;
-    }
-
-    @Override
-    public void setFirstCreateInQueue(boolean firstCreateInQueue) {
-        this.firstCreateInQueue = firstCreateInQueue;
-    }
-
+    /**
+     * called by self.warmMappedFile() only
+     * should be private or protected
+     */
     @Override
     public void mlock() {
         final long beginTime = System.currentTimeMillis();
@@ -801,16 +668,10 @@ public class DefaultMappedFile extends AbstractMappedFile {
         madvise(pointer, address, beginTime);
     }
 
-    private void mlock(Pointer pointer, long address, long beginTime) {
-        int ret = LibC.INSTANCE.mlock(pointer, new NativeLong(this.fileSize));
-        log.info("mlock {} {} {} ret = {} time consuming = {}", address, this.fileName, this.fileSize, ret, System.currentTimeMillis() - beginTime);
-    }
-
-    private void madvise(Pointer pointer, long address, long beginTime) {
-        int ret = LibC.INSTANCE.madvise(pointer, new NativeLong(this.fileSize), LibC.MADV_WILLNEED);
-        log.info("madvise {} {} {} ret = {} time consuming = {}", address, this.fileName, this.fileSize, ret, System.currentTimeMillis() - beginTime);
-    }
-
+    /**
+     * called by self.unlockMappedFile() only
+     * should be private or protected
+     */
     @Override
     public void munlock() {
         final long beginTime = System.currentTimeMillis();
@@ -820,11 +681,9 @@ public class DefaultMappedFile extends AbstractMappedFile {
         log.info("munlock {} {} {} ret = {} time consuming = {}", address, this.fileName, this.fileSize, ret, System.currentTimeMillis() - beginTime);
     }
 
-    @Override
-    public File getFile() {
-        return this.file;
-    }
-
+    /**
+     * add suffix ".delete" to the file name
+     */
     @Override
     public void renameToDelete() {
         if (fileName.endsWith(".delete")) {
@@ -848,22 +707,9 @@ public class DefaultMappedFile extends AbstractMappedFile {
         }
     }
 
-    private void renameToDeleteInWindows(String newFileName, Path newFilePath) throws IOException {
-        // https://bugs.openjdk.org/browse/JDK-4724038
-        // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
-        // Windows can't move the file when mmap.
-        long position = this.fileChannel.position();
-        IOUtils.cleanBuffer(this.mappedByteBuffer);
-        this.fileChannel.close();
-        Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
-
-        try (RandomAccessFile file = new RandomAccessFile(newFileName, "rw")) {
-            this.fileChannel = file.getChannel();
-            this.fileChannel.position(position);
-            this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
-        }
-    }
-
+    /**
+     * move file to the parent directory
+     */
     @Override
     public void moveToParent() throws IOException {
         Path currentPath = Paths.get(fileName);
@@ -879,67 +725,8 @@ public class DefaultMappedFile extends AbstractMappedFile {
         this.fileName = parentPath.toString();
     }
 
-    private void moveToParentInWindows(Path parentPath) throws IOException {
-        // https://bugs.openjdk.org/browse/JDK-4724038
-        // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
-        // Windows can't move the file when mmap.
-        long position = this.fileChannel.position();
-        IOUtils.cleanBuffer(this.mappedByteBuffer);
-        this.fileChannel.close();
-        Files.move(Paths.get(fileName), parentPath, StandardCopyOption.ATOMIC_MOVE);
-
-        try (RandomAccessFile file = new RandomAccessFile(parentPath.toFile(), "rw")) {
-            this.fileChannel = file.getChannel();
-            this.fileChannel.position(position);
-            this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
-        }
-    }
-
-    @Override
-    public String toString() {
-        return this.fileName;
-    }
-
-    public long getStartTimestamp() {
-        return startTimestamp;
-    }
-
-    public void setStartTimestamp(long startTimestamp) {
-        this.startTimestamp = startTimestamp;
-    }
-
-    public long getStopTimestamp() {
-        return stopTimestamp;
-    }
-
-    public void setStopTimestamp(long stopTimestamp) {
-        this.stopTimestamp = stopTimestamp;
-    }
-
-
     public Iterator<SelectMappedBufferResult> iterator(int startPos) {
         return new DefaultMappedFileIterator(this, startPos);
-    }
-
-    public static Unsafe getUnsafe() {
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            return (Unsafe) f.get(null);
-        } catch (Exception ignore) {
-
-        }
-        return null;
-    }
-
-    public static long mappingAddr(long addr) {
-        long offset = addr % UNSAFE_PAGE_SIZE;
-        offset = (offset >= 0) ? offset : (UNSAFE_PAGE_SIZE + offset);
-        return addr - offset;
-    }
-
-    public static int pageCount(long size) {
-        return (int) (size + (long) UNSAFE_PAGE_SIZE - 1L) / UNSAFE_PAGE_SIZE;
     }
 
     /**
@@ -963,5 +750,239 @@ public class DefaultMappedFile extends AbstractMappedFile {
         }
         return true;
     }
+
+    /************************** private/protected method start *************************/
+
+    private AppendMessageResult appendMessagesInner(final MessageExt messageExt, final AppendMessageCallback cb,
+        PutMessageContext putMessageContext) {
+        assert messageExt != null;
+        assert cb != null;
+
+        int currentPos = WROTE_POSITION_UPDATER.get(this);
+        if (currentPos >= this.fileSize) {
+            log.error("MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}", currentPos, this.fileSize);
+            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
+        }
+
+        ByteBuffer byteBuffer = appendMessageBuffer().slice();
+        byteBuffer.position(currentPos);
+        AppendMessageResult result;
+        if (messageExt instanceof MessageExtBatch && !((MessageExtBatch) messageExt).isInnerBatch()) {
+            // traditional batch message
+            result = cb.doAppend(this.getOffsetInFileName(), byteBuffer, this.fileSize - currentPos, (MessageExtBatch) messageExt, putMessageContext);
+        } else if (messageExt instanceof MessageExtBrokerInner) {
+            // traditional single message or newly introduced inner-batch message
+            result = cb.doAppend(this.getOffsetInFileName(), byteBuffer, this.fileSize - currentPos, (MessageExtBrokerInner) messageExt, putMessageContext);
+        } else {
+            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
+        }
+        WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
+        this.storeTimestamp = result.getStoreTimestamp();
+        return result;
+    }
+
+    protected ByteBuffer appendMessageBuffer() {
+        this.mappedByteBufferAccessCountSinceLastSwap++;
+        return writeBuffer != null ? writeBuffer : this.mappedByteBuffer;
+    }
+
+    protected void commit0() {
+        int writePos = WROTE_POSITION_UPDATER.get(this);
+        int lastCommittedPosition = COMMITTED_POSITION_UPDATER.get(this);
+
+        if (writePos - lastCommittedPosition <= 0) {
+            return;
+        }
+
+        try {
+            ByteBuffer byteBuffer = writeBuffer.slice();
+            byteBuffer.position(lastCommittedPosition);
+            byteBuffer.limit(writePos);
+            this.fileChannel.position(lastCommittedPosition);
+            this.fileChannel.write(byteBuffer);
+            COMMITTED_POSITION_UPDATER.set(this, writePos);
+        } catch (Throwable e) {
+            log.error("Error occurred when commit data to FileChannel.", e);
+        }
+    }
+
+    private boolean isAbleToFlush(final int flushLeastPages) {
+        int flush = FLUSHED_POSITION_UPDATER.get(this);
+        int write = getReadPosition();
+
+        if (this.isFull()) {
+            return true;
+        }
+
+        if (flushLeastPages > 0) {
+            return ((write / OS_PAGE_SIZE) - (flush / OS_PAGE_SIZE)) >= flushLeastPages;
+        }
+
+        return write > flush;
+    }
+
+    protected boolean isAbleToCommit(final int commitLeastPages) {
+        int commit = COMMITTED_POSITION_UPDATER.get(this);
+        int write = WROTE_POSITION_UPDATER.get(this);
+
+        if (this.isFull()) {
+            return true;
+        }
+
+        if (commitLeastPages > 0) {
+            return ((write / OS_PAGE_SIZE) - (commit / OS_PAGE_SIZE)) >= commitLeastPages;
+        }
+
+        return write > commit;
+    }
+
+    private void mlock(Pointer pointer, long address, long beginTime) {
+        int ret = LibC.INSTANCE.mlock(pointer, new NativeLong(this.fileSize));
+        log.info("mlock {} {} {} ret = {} time consuming = {}", address, this.fileName, this.fileSize, ret, System.currentTimeMillis() - beginTime);
+    }
+
+    private void madvise(Pointer pointer, long address, long beginTime) {
+        int ret = LibC.INSTANCE.madvise(pointer, new NativeLong(this.fileSize), LibC.MADV_WILLNEED);
+        log.info("madvise {} {} {} ret = {} time consuming = {}", address, this.fileName, this.fileSize, ret, System.currentTimeMillis() - beginTime);
+    }
+    private void init(final String fileName, final int fileSize) throws IOException {
+        this.fileName = fileName;
+        this.fileSize = fileSize;
+        this.file = new File(fileName);
+        this.offsetInFileName = Long.parseLong(this.file.getName());
+
+        IOUtils.ensureDirOK(this.file.getParent());
+        this.initFile();
+    }
+
+    private void initFile() throws IOException {
+        boolean ok = false;
+
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(this.file, "rw")) {
+            this.fileChannel = randomAccessFile.getChannel();
+            this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
+            TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
+            TOTAL_MAPPED_FILES.incrementAndGet();
+            ok = true;
+        } catch (FileNotFoundException e) {
+            log.error("Failed to create file " + this.fileName, e);
+            throw e;
+        } catch (IOException e) {
+            log.error("Failed to map file " + this.fileName, e);
+            throw e;
+        } finally {
+            if (!ok && this.fileChannel != null) {
+                this.fileChannel.close();
+            }
+        }
+    }
+
+    private void renameToDeleteInWindows(String newFileName, Path newFilePath) throws IOException {
+        // https://bugs.openjdk.org/browse/JDK-4724038
+        // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
+        // Windows can't move the file when mmap.
+        long position = this.fileChannel.position();
+        IOUtils.cleanBuffer(this.mappedByteBuffer);
+        this.fileChannel.close();
+        Files.move(Paths.get(fileName), newFilePath, StandardCopyOption.ATOMIC_MOVE);
+
+        try (RandomAccessFile file = new RandomAccessFile(newFileName, "rw")) {
+            this.fileChannel = file.getChannel();
+            this.fileChannel.position(position);
+            this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
+        }
+    }
+
+    private void moveToParentInWindows(Path parentPath) throws IOException {
+        // https://bugs.openjdk.org/browse/JDK-4724038
+        // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154
+        // Windows can't move the file when mmap.
+        long position = this.fileChannel.position();
+        IOUtils.cleanBuffer(this.mappedByteBuffer);
+        this.fileChannel.close();
+        Files.move(Paths.get(fileName), parentPath, StandardCopyOption.ATOMIC_MOVE);
+
+        try (RandomAccessFile file = new RandomAccessFile(parentPath.toFile(), "rw")) {
+            this.fileChannel = file.getChannel();
+            this.fileChannel.position(position);
+            this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
+        }
+    }
+
+    /************************** getter/setter method start *************************/
+    @Override
+    public long getOffsetInFileName() {
+        return this.offsetInFileName;
+    }
+
+    @Override
+    public long getStoreTimestamp() {
+        return storeTimestamp;
+    }
+
+    @Override
+    public boolean isFirstCreateInQueue() {
+        return firstCreateInQueue;
+    }
+
+    @Override
+    public void setFirstCreateInQueue(boolean firstCreateInQueue) {
+        this.firstCreateInQueue = firstCreateInQueue;
+    }
+
+    @Override
+    public File getFile() {
+        return this.file;
+    }
+
+    @Override
+    public String toString() {
+        return this.fileName;
+    }
+
+    @Override
+    public int getFileSize() {
+        return fileSize;
+    }
+
+    @Override
+    public FileChannel getFileChannel() {
+        return fileChannel;
+    }
+
+    @Override
+    public long getMappedByteBufferAccessCountSinceLastSwap() {
+        return this.mappedByteBufferAccessCountSinceLastSwap;
+    }
+
+    @Override
+    public long getLastFlushTime() {
+        return this.lastFlushTime;
+    }
+
+    @Override
+    public String getFileName() {
+        return fileName;
+    }
+
+    public long getStartTimestamp() {
+        return startTimestamp;
+    }
+
+    public void setStartTimestamp(long startTimestamp) {
+        this.startTimestamp = startTimestamp;
+    }
+
+    public long getStopTimestamp() {
+        return stopTimestamp;
+    }
+
+    public void setStopTimestamp(long stopTimestamp) {
+        this.stopTimestamp = stopTimestamp;
+    }
+
+
+
+
 
 }

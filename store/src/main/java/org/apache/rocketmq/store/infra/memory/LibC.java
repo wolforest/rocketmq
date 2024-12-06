@@ -46,6 +46,12 @@ public interface LibC extends Library {
     /* synchronous memory sync */
     int MS_SYNC = 0x0004;
 
+    /**
+     *  Prevents the specified memory region
+     *      from being swapped out to disk
+     *      by the operating system’s virtual memory manager
+     *
+     */
     int mlock(Pointer var1, NativeLong var2);
 
     int munlock(Pointer var1, NativeLong var2);
@@ -56,9 +62,23 @@ public interface LibC extends Library {
 
     int mlockall(int flags);
 
+    /**
+     * synchronize memory-mapped files or shared memory regions
+     *      with their underlying storage or file system.
+     *      It ensures data consistency between
+     *      a memory-mapped region and the backing file or device.
+     */
     int msync(Pointer p, NativeLong length, int flags);
 
+    /**
+     * determine whether the pages in a specified memory range
+     *      are currently resident in physical memory (RAM)
+     *      or if they are swapped out.
+     */
     int mincore(Pointer p, NativeLong length, byte[] vec);
 
+    /**
+     * determine the size of a memory page on the system
+     */
     int getpagesize();
 }
