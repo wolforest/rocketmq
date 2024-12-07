@@ -109,7 +109,7 @@ import org.apache.rocketmq.store.server.daemon.CleanConsumeQueueService;
 import org.apache.rocketmq.store.server.daemon.CorrectLogicOffsetService;
 import org.apache.rocketmq.store.server.daemon.DispatchRequestOrderlyQueue;
 import org.apache.rocketmq.store.server.daemon.FlushConsumeQueueService;
-import org.apache.rocketmq.store.server.daemon.ReputMessageService;
+import org.apache.rocketmq.store.domain.dispatcher.ReputMessageService;
 import org.apache.rocketmq.store.server.ha.ms.DefaultHAService;
 import org.apache.rocketmq.store.server.ha.HAService;
 import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAService;

@@ -52,7 +52,7 @@ import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueStoreInterface;
-import org.apache.rocketmq.store.server.daemon.ReputMessageService;
+import org.apache.rocketmq.store.domain.dispatcher.ReputMessageService;
 import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.api.broker.stats.StoreStatsService;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;

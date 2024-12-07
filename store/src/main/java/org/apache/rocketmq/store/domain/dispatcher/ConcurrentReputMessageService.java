@@ -22,12 +22,9 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.server.daemon.DispatchService;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.server.daemon.BatchDispatchRequest;
-import org.apache.rocketmq.store.server.daemon.MainBatchDispatchRequestService;
-import org.apache.rocketmq.store.server.daemon.ReputMessageService;
 
 public class ConcurrentReputMessageService extends ReputMessageService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);

@@ -46,7 +46,7 @@ import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.FlushDiskType;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.server.daemon.ReputMessageService;
+import org.apache.rocketmq.store.domain.dispatcher.ReputMessageService;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
