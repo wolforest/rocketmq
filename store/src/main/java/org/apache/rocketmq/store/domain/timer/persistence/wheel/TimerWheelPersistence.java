@@ -128,7 +128,7 @@ public class TimerWheelPersistence implements Persistence {
         //read the timer log one by one
         while (currOffsetPy != -1) {
             perfCounterTicks.startTick("dequeue_read_timerlog");
-            timeSbr = initBufferResult(timeSbr, currOffsetPy, sbrs);
+            timeSbr = scanTimerLog(timeSbr, currOffsetPy, sbrs);
             if (null == timeSbr) {
                 break;
             }
@@ -177,7 +177,7 @@ public class TimerWheelPersistence implements Persistence {
         return currOffsetPy;
     }
 
-    private SelectMappedBufferResult initBufferResult(SelectMappedBufferResult timeSbr, long currOffsetPy, LinkedList<SelectMappedBufferResult> sbrs) {
+    private SelectMappedBufferResult scanTimerLog(SelectMappedBufferResult timeSbr, long currOffsetPy, LinkedList<SelectMappedBufferResult> sbrs) {
         if (null != timeSbr && timeSbr.getStartOffset() <= currOffsetPy) {
             return timeSbr;
         }
