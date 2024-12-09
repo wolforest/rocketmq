@@ -37,6 +37,12 @@ public class TimerLog {
     public final static int BLANK_MAGIC_CODE = 0xBBCCDDEE ^ 1880681586 + 8;
     private final static int MIN_BLANK_LEN = 4 + 8 + 4;
     public final static int UNIT_SIZE = Block.SIZE;
+
+    /**
+     * size for:
+     *  unitSize + prePos + magic
+     *  + currWriteTime + delayedTime
+     */
     public final static int UNIT_PRE_SIZE_FOR_MSG = 28;
     public final static int UNIT_PRE_SIZE_FOR_METRIC = 40;
     private final MappedFileQueue mappedFileQueue;

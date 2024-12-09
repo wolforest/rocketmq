@@ -29,7 +29,7 @@ public class TimeUtils {
 
     public static boolean isItTimeToDo(final String when) {
         String[] whiles = when.split(";");
-        if (whiles.length <= 0) {
+        if (whiles.length == 0) {
             return false;
         }
 

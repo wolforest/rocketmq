@@ -89,7 +89,7 @@ public class TimerMessageProducer extends AbstractStateThread {
         setState(AbstractStateThread.START);
         LOGGER.info(this.getServiceName() + " service start");
 
-        while (!this.isStopped() || timerMessageDeliverQueue.size() != 0) {
+        while (!this.isStopped() || !timerMessageDeliverQueue.isEmpty()) {
             try {
                 setState(AbstractStateThread.WAITING);
                 TimerRequest timerRequest = timerMessageDeliverQueue.poll(10, TimeUnit.MILLISECONDS);

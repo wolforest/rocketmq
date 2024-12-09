@@ -38,10 +38,29 @@ public class TimerCheckpoint {
     private final RandomAccessFile randomAccessFile;
     private final FileChannel fileChannel;
     private final MappedByteBuffer mappedByteBuffer;
+
+    /**
+     *
+     * - M/S sync parameter
+     */
     private volatile long lastReadTimeMs = 0; //if it is slave, need to read from master
+    /**
+     *
+     */
     private volatile long lastTimerLogFlushPos = 0;
+    /**
+     *
+     */
     private volatile long lastTimerQueueOffset = 0;
+    /**
+     *
+     * - M/S sync parameter
+     */
     private volatile long masterTimerQueueOffset = 0; // read from master
+    /**
+     *
+     * - M/S sync parameter
+     */
     private final DataVersion dataVersion = new DataVersion();
 
     public TimerCheckpoint() {
@@ -50,6 +69,11 @@ public class TimerCheckpoint {
         this.mappedByteBuffer = null;
     }
 
+    /**
+     *
+     * @param scpPath config:/root/config/timercheck
+     * @throws IOException e
+     */
     public TimerCheckpoint(final String scpPath) throws IOException {
         File file = new File(scpPath);
         IOUtils.ensureDirOK(file.getParent());

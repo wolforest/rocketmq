@@ -177,10 +177,8 @@ public class HookUtils {
         return null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELIVER_MS) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_MS) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_SEC);
     }
 
-    private static PutMessageResult transformTimerMessage(Broker broker, MessageExtBrokerInner msg) {
-        //do transform
-        int delayLevel = msg.getDelayTimeLevel();
-        long deliverMs;
+    private static Long formatDelayTime(MessageExtBrokerInner msg) {
+        Long deliverMs;
         try {
             if (msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_SEC) != null) {
                 deliverMs = System.currentTimeMillis() + Long.parseLong(msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_SEC)) * 1000;
@@ -190,32 +188,42 @@ public class HookUtils {
                 deliverMs = Long.parseLong(msg.getProperty(MessageConst.PROPERTY_TIMER_DELIVER_MS));
             }
         } catch (Exception e) {
+            return null;
+        }
+
+        return deliverMs;
+    }
+
+    private static PutMessageResult transformTimerMessage(Broker broker, MessageExtBrokerInner msg) {
+        //do transform
+        int delayLevel = msg.getDelayTimeLevel();
+        Long deliverMs = formatDelayTime(msg);
+        if (deliverMs == null || deliverMs > System.currentTimeMillis()) {
             return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_MSG_ILLEGAL, null);
         }
-        if (deliverMs > System.currentTimeMillis()) {
-            if (delayLevel <= 0 && deliverMs - System.currentTimeMillis() > broker.getMessageStoreConfig().getTimerMaxDelaySec() * 1000L) {
-                return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_MSG_ILLEGAL, null);
-            }
 
-            int timerPrecisionMs = broker.getMessageStoreConfig().getTimerPrecisionMs();
-            if (deliverMs % timerPrecisionMs == 0) {
-                deliverMs -= timerPrecisionMs;
-            } else {
-                deliverMs = deliverMs / timerPrecisionMs * timerPrecisionMs;
-            }
-
-            if (broker.getTimerMessageStore().isReject(deliverMs)) {
-                return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_FLOW_CONTROL, null);
-            }
-            MessageAccessor.putProperty(msg, MessageConst.PROPERTY_TIMER_OUT_MS, deliverMs + "");
-            MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_TOPIC, msg.getTopic());
-            MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_QUEUE_ID, String.valueOf(msg.getQueueId()));
-            msg.setPropertiesString(MessageDecoder.messageProperties2String(msg.getProperties()));
-            msg.setTopic(TIMER_TOPIC);
-            msg.setQueueId(0);
-        } else if (null != msg.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY)) {
+        if (delayLevel <= 0 && deliverMs - System.currentTimeMillis() > broker.getMessageStoreConfig().getTimerMaxDelaySec() * 1000L) {
             return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_MSG_ILLEGAL, null);
         }
+
+        int timerPrecisionMs = broker.getMessageStoreConfig().getTimerPrecisionMs();
+        if (deliverMs % timerPrecisionMs == 0) {
+            deliverMs -= timerPrecisionMs;
+        } else {
+            deliverMs = deliverMs / timerPrecisionMs * timerPrecisionMs;
+        }
+
+        if (broker.getTimerMessageStore().isReject(deliverMs)) {
+            return new PutMessageResult(PutMessageStatus.WHEEL_TIMER_FLOW_CONTROL, null);
+        }
+
+        MessageAccessor.putProperty(msg, MessageConst.PROPERTY_TIMER_OUT_MS, deliverMs + "");
+        MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_TOPIC, msg.getTopic());
+        MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_QUEUE_ID, String.valueOf(msg.getQueueId()));
+        msg.setPropertiesString(MessageDecoder.messageProperties2String(msg.getProperties()));
+        msg.setTopic(TIMER_TOPIC);
+        msg.setQueueId(0);
+
         return null;
     }
 

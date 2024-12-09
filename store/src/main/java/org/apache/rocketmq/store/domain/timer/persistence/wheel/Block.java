@@ -40,6 +40,13 @@ public class Block {
             + 8;//reserved value, just in case of;
     private final ByteBuffer blockBuffer = ByteBuffer.allocate(SIZE);
     public int size;
+
+    /**
+     * the position of task in TimerWheel
+     *  - with same delayedTime
+     *  - the last inserted
+     * The prePos makes a task linkedList
+     */
     public long prevPos;
     public int magic;
     public long currWriteTime;

@@ -60,7 +60,6 @@ public class TimerMessageRecover {
         precisionMs = timerState.precisionMs;
     }
 
-
     @SuppressWarnings("NonAtomicOperationOnVolatileField")
     public void recover() {
         //recover timerLog
@@ -111,8 +110,14 @@ public class TimerMessageRecover {
         timerState.prepareTimerCheckPoint();
     }
 
-    //recover timerLog and revise timerWheel
-    //return process offset
+
+    /**
+     * recover timerLog and revise timerWheel
+     *
+     * @param beginOffset lastFlushPosition - lastMappedFile.fileSize
+     * @param checkTimerLog true | false
+     * @return process offset
+     */
     private long recoverAndRevise(long beginOffset, boolean checkTimerLog) {
         LOGGER.info("Begin to recover timerLog offset:{} check:{}", beginOffset, checkTimerLog);
         MappedFile lastFile = timerLog.getMappedFileQueue().getLastMappedFile();
@@ -131,6 +136,11 @@ public class TimerMessageRecover {
         if (index < 0) {
             index = 0;
         }
+
+        return recoverTimerLogFiles(mappedFiles, checkTimerLog, index);
+    }
+
+    private long recoverTimerLogFiles(List<MappedFile> mappedFiles, boolean checkTimerLog, int index) {
         long checkOffset = mappedFiles.get(index).getOffsetInFileName();
         for (; index < mappedFiles.size(); index++) {
             MappedFile mappedFile = mappedFiles.get(index);
@@ -173,13 +183,13 @@ public class TimerMessageRecover {
         return checkOffset;
     }
 
-
     public long reviseQueueOffset(long processOffset) {
         SelectMappedBufferResult selectRes = timerLog.getTimerMessage(processOffset - (TimerLog.UNIT_SIZE - TimerLog.UNIT_PRE_SIZE_FOR_MSG));
         if (null == selectRes) {
             return -1;
         }
         try {
+            // message offset and message size
             long offsetPy = selectRes.getByteBuffer().getLong();
             int sizePy = selectRes.getByteBuffer().getInt();
             MessageExt messageExt = messageOperator.readMessageByCommitOffset(offsetPy, sizePy);
@@ -195,47 +205,52 @@ public class TimerMessageRecover {
             if (null == cq) {
                 return msgQueueOffset;
             }
-            long cqOffset = msgQueueOffset;
-            long tmpOffset = msgQueueOffset;
-            int maxCount = 20000;
-            while (maxCount-- > 0) {
-                if (tmpOffset < 0) {
-                    LOGGER.warn("reviseQueueOffset check cq offset fail, msg in cq is not found.{}, {}",
-                        offsetPy, sizePy);
-                    break;
-                }
-                ReferredIterator<CqUnit> iterator = null;
-                try {
-                    iterator = cq.iterateFrom(tmpOffset);
-                    CqUnit cqUnit = null;
-                    if (null == iterator || (cqUnit = iterator.next()) == null) {
-                        // offset in msg may be greater than offset of cq.
-                        tmpOffset -= 1;
-                        continue;
-                    }
 
-                    long offsetPyTemp = cqUnit.getPos();
-                    int sizePyTemp = cqUnit.getSize();
-                    if (offsetPyTemp == offsetPy && sizePyTemp == sizePy) {
-                        LOGGER.info("reviseQueueOffset check cq offset ok. {}, {}, {}",
-                            tmpOffset, offsetPyTemp, sizePyTemp);
-                        cqOffset = tmpOffset;
-                        break;
-                    }
-                    tmpOffset -= 1;
-                } catch (Throwable e) {
-                    LOGGER.error("reviseQueueOffset check cq offset error.", e);
-                } finally {
-                    if (iterator != null) {
-                        iterator.release();
-                    }
-                }
-            }
-
-            return cqOffset;
+            return reviseByConsumeQueue(cq, msgQueueOffset, offsetPy, sizePy);
         } finally {
             selectRes.release();
         }
+    }
+
+    private long reviseByConsumeQueue(ConsumeQueueInterface cq, long msgQueueOffset, long offsetPy, int sizePy) {
+        long cqOffset = msgQueueOffset;
+        long tmpOffset = msgQueueOffset;
+        int maxCount = 20000;
+        while (maxCount-- > 0) {
+            if (tmpOffset < 0) {
+                LOGGER.warn("reviseQueueOffset check cq offset fail, msg in cq is not found.{}, {}",
+                    offsetPy, sizePy);
+                break;
+            }
+            ReferredIterator<CqUnit> iterator = null;
+            try {
+                iterator = cq.iterateFrom(tmpOffset);
+                CqUnit cqUnit = null;
+                if (null == iterator || (cqUnit = iterator.next()) == null) {
+                    // offset in msg may be greater than offset of cq.
+                    tmpOffset -= 1;
+                    continue;
+                }
+
+                long offsetPyTemp = cqUnit.getPos();
+                int sizePyTemp = cqUnit.getSize();
+                if (offsetPyTemp == offsetPy && sizePyTemp == sizePy) {
+                    LOGGER.info("reviseQueueOffset check cq offset ok. {}, {}, {}",
+                        tmpOffset, offsetPyTemp, sizePyTemp);
+                    cqOffset = tmpOffset;
+                    break;
+                }
+                tmpOffset -= 1;
+            } catch (Throwable e) {
+                LOGGER.error("reviseQueueOffset check cq offset error.", e);
+            } finally {
+                if (iterator != null) {
+                    iterator.release();
+                }
+            }
+        }
+
+        return cqOffset;
     }
 
     private long formatTimeMs(long timeMs) {
