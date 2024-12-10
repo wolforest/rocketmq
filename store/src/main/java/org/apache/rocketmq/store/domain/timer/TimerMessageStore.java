@@ -226,7 +226,7 @@ public class TimerMessageStore {
     }
 
     /**
-     * flow control method
+     * flow control method, always return false with default setting.
      * @param deliverTimeMs deliverTime
      * @return status
      */
@@ -235,9 +235,11 @@ public class TimerMessageStore {
         if (congestNum <= storeConfig.getTimerCongestNumEachSlot()) {
             return false;
         }
+
         if (congestNum >= storeConfig.getTimerCongestNumEachSlot() * 2L) {
             return true;
         }
+
         if (RANDOM.nextInt(1000) > 1000 * (congestNum - storeConfig.getTimerCongestNumEachSlot()) / (storeConfig.getTimerCongestNumEachSlot() + 0.1)) {
             return true;
         }

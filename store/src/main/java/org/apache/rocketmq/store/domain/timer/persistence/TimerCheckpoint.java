@@ -40,20 +40,20 @@ public class TimerCheckpoint {
     private final MappedByteBuffer mappedByteBuffer;
 
     /**
-     *
+     * the latest time of TimerLog reading
      * - M/S sync parameter
      */
     private volatile long lastReadTimeMs = 0; //if it is slave, need to read from master
     /**
-     *
+     * the latest time of timerLog flushing
      */
     private volatile long lastTimerLogFlushPos = 0;
     /**
-     *
+     * the latest offset of Timer ConsumeQueue
      */
     private volatile long lastTimerQueueOffset = 0;
     /**
-     *
+     * the latest offset of Timer ConsumeQueue of Master
      * - M/S sync parameter
      */
     private volatile long masterTimerQueueOffset = 0; // read from master

@@ -111,7 +111,6 @@ public class TimerMessageRecover {
         timerState.prepareTimerCheckPoint();
     }
 
-
     /**
      * recover timerLog and revise timerWheel
      *
@@ -184,7 +183,7 @@ public class TimerMessageRecover {
         return checkOffset;
     }
 
-    public long reviseQueueOffset(long processOffset) {
+    private long reviseQueueOffset(long processOffset) {
         SelectMappedBufferResult selectRes = timerLog.getTimerMessage(processOffset - (TimerLog.UNIT_SIZE - TimerLog.UNIT_PRE_SIZE_FOR_MSG));
         if (null == selectRes) {
             return -1;

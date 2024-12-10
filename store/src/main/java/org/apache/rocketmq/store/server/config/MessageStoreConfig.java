@@ -111,6 +111,9 @@ public class MessageStoreConfig {
      *
      */
     private boolean timerStopDequeue = false;
+    /**
+     * max task number in each slot
+     */
     private int timerCongestNumEachSlot = Integer.MAX_VALUE;
 
     private int timerMetricSmallThreshold = 1000000;
