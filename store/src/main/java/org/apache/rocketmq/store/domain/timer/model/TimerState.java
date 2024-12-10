@@ -72,7 +72,13 @@ public class TimerState {
      */
     public volatile long currWriteTimeMs;
 
+    /**
+     * preload timer tasks time
+     * updated by:
+     * - TimerMessageStore.warmDequeue
+     */
     public volatile long preReadTimeMs;
+
     public volatile long commitReadTimeMs;
     public volatile long currQueueOffset; //only one queue that is 0
     public volatile long commitQueueOffset;
