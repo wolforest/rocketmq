@@ -79,11 +79,31 @@ public class TimerState {
      */
     public volatile long preReadTimeMs;
 
+    /**
+     * equals currReadTimeMs in all code base,
+     * maybe useful in not opened source.
+     */
     public volatile long commitReadTimeMs;
+
+    /**
+     * consume queue offset already pulled to timer system
+     * updated by:
+     * - TimerMessageConsumer
+     * - TimerMessageRecover
+     */
     public volatile long currQueueOffset; //only one queue that is 0
+
+    /**
+     * consume queue offset already write to timer persistence(not flushed)
+     * updated by :
+     * - TimerMessageSaver
+     * - TimerMessageRecover
+     */
     public volatile long commitQueueOffset;
+
     public volatile long lastCommitReadTimeMs;
     public volatile long lastCommitQueueOffset;
+
     public long lastEnqueueButExpiredTime;
     public long lastEnqueueButExpiredStoreTime;
 
