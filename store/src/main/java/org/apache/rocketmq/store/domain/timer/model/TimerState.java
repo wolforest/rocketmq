@@ -56,7 +56,12 @@ public class TimerState {
     public static final int TIMER_BLANK_SLOTS = 60;
     /**
      * last read timestamp of persistence.scan()
-     * may be updated by TimerMessageScanner
+     * updated by:
+     *  - BrokerMessageService: when init
+     *  - TimerMessageConsumer: when broker role changed
+     *  - TimerMessageRecover: when recover
+     *  - TimerMessagePersistence: when scan result is empty
+     *  - TimerMessageScanner: after scan add 1 * precisionMs
      */
     public volatile long currReadTimeMs;
     /**
