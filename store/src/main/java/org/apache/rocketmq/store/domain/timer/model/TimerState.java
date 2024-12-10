@@ -66,7 +66,9 @@ public class TimerState {
     public volatile long currReadTimeMs;
     /**
      * last write timestamp of timer message
-     * may be updated by TimerMessageDeliver
+     * updated by:
+     * - TimerMessage.start()
+     * - TimerMessageSaver.fetchAndPutTimerRequest()
      */
     public volatile long currWriteTimeMs;
 
@@ -181,6 +183,11 @@ public class TimerState {
         commitReadTimeMs = currReadTimeMs;
     }
 
+    /**
+     * called by:
+     * - TimerMessage.start()
+     * - TimerMessageSaver.fetchAndPutTimerRequest()
+     */
     public void maybeMoveWriteTime() {
         if (currWriteTimeMs < formatTimeMs(System.currentTimeMillis())) {
             currWriteTimeMs = formatTimeMs(System.currentTimeMillis());
