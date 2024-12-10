@@ -101,6 +101,14 @@ public class TimerState {
      */
     public volatile long commitQueueOffset;
 
+    /**
+     * lastCommitReadTimeMs and lastCommitQueueOffset are same
+     * updated by:
+     * - TimerMessageConsumer: broker role change
+     * - TimerFlushService: flush
+     * - TimerMessageRecover: recover
+     * - TimerMessageStore: shutdown
+     */
     public volatile long lastCommitReadTimeMs;
     public volatile long lastCommitQueueOffset;
 
