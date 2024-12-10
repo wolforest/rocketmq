@@ -61,7 +61,7 @@ import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.api.broker.stats.BrokerStatsManager;
-import org.apache.rocketmq.store.domain.timer.transit.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.persistence.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
 
 /**

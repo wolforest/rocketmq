@@ -46,7 +46,7 @@ import org.apache.rocketmq.remoting.protocol.body.ConsumerOffsetSerializeWrapper
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationRequest;
-import org.apache.rocketmq.store.domain.timer.transit.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.persistence.TimerCheckpoint;
 
 /**
  * @renamed from BrokerPreOnlineService to BrokerPreOnlineThread

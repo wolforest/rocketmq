@@ -51,7 +51,7 @@ import org.apache.rocketmq.store.api.plugin.MessageStorePluginContext;
 import org.apache.rocketmq.store.api.plugin.PutMessageHook;
 import org.apache.rocketmq.store.api.plugin.SendMessageBackHook;
 import org.apache.rocketmq.store.domain.commitlog.dledger.DLedgerCommitLog;
-import org.apache.rocketmq.store.domain.timer.transit.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.persistence.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.TimerMessageStore;
 import org.apache.rocketmq.store.domain.timer.metrics.TimerMetrics;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;

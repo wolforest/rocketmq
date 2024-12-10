@@ -44,7 +44,7 @@ import org.apache.rocketmq.store.StoreTestUtils;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
 import org.apache.rocketmq.store.domain.timer.metrics.TimerMetrics;
 import org.apache.rocketmq.store.domain.timer.model.TimerState;
-import org.apache.rocketmq.store.domain.timer.transit.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.persistence.TimerCheckpoint;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.api.dto.GetMessageResult;
 import org.apache.rocketmq.store.api.dto.GetMessageStatus;

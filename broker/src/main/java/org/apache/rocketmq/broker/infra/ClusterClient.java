@@ -143,7 +143,7 @@ import org.apache.rocketmq.remoting.rpc.ClientMetadata;
 import org.apache.rocketmq.remoting.rpc.RpcClient;
 import org.apache.rocketmq.remoting.rpc.RpcClientImpl;
 import org.apache.rocketmq.remoting.rpchook.DynamicalExtFieldRPCHook;
-import org.apache.rocketmq.store.domain.timer.transit.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.persistence.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.metrics.TimerMetrics;
 
 import static org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode.SUCCESS;

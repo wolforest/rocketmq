@@ -32,7 +32,7 @@ import org.apache.rocketmq.remoting.protocol.body.MessageRequestModeSerializeWra
 import org.apache.rocketmq.remoting.protocol.body.SubscriptionGroupWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigAndMappingSerializeWrapper;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
-import org.apache.rocketmq.store.domain.timer.transit.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.persistence.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.metrics.TimerMetrics;
 
 public class SlaveSynchronize {

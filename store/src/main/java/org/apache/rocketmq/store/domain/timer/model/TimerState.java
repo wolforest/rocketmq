@@ -21,7 +21,7 @@ import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.domain.timer.transit.TimerCheckpoint;
+import org.apache.rocketmq.store.domain.timer.persistence.TimerCheckpoint;
 import org.apache.rocketmq.store.domain.timer.transit.AbstractStateThread;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.api.MessageStore;
@@ -140,7 +140,6 @@ public class TimerState {
     private final TimerWheel timerWheel;
     private final TimerLog timerLog;
     private final MessageStore messageStore;
-    private final MessageStoreConfig storeConfig;
     public final int precisionMs;
 
     /**
@@ -157,7 +156,6 @@ public class TimerState {
 
     public TimerState(TimerCheckpoint timerCheckpoint, MessageStoreConfig storeConfig, TimerLog timerLog, int totalSlots, TimerWheel timerWheel, MessageStore messageStore) {
         this.timerCheckpoint = timerCheckpoint;
-        this.storeConfig = storeConfig;
         this.timerLog = timerLog;
         this.timerWheel = timerWheel;
         this.messageStore = messageStore;

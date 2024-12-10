@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.domain.timer.transit;
+package org.apache.rocketmq.store.domain.timer.persistence;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
