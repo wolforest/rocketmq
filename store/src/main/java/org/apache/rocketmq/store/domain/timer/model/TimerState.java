@@ -112,13 +112,27 @@ public class TimerState {
     public volatile long lastCommitReadTimeMs;
     public volatile long lastCommitQueueOffset;
 
+    /**
+     * the latest time when pull messageExt from message queue
+     * updated by TimerMessageConsumer
+     */
     public long lastEnqueueButExpiredTime;
+    /**
+     * the time of the latest messageExt.storeTimeStamp
+     * updated by TimerMessageConsumer
+     */
     public long lastEnqueueButExpiredStoreTime;
 
-    // True if current store is master or current brokerId is equal to the minimum brokerId of the replica group in slaveActingMaster mode.
+    /**
+     * True if current store is master
+     *  or current brokerId is equal to the minimum brokerId
+     *  of the replica group in slaveActingMaster mode.
+     */
     private volatile boolean shouldRunningDequeue;
 
-    //the dequeue is an asynchronous process, use this flag to track if the status has changed
+    /**
+     * the dequeue is an asynchronous process, use this flag to track if the status has changed
+     */
     public boolean dequeueStatusChangeFlag = false;
 
     private volatile int state = INITIAL;
