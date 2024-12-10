@@ -218,21 +218,23 @@ public class TimerMessageConsumer extends ServiceThread {
 
     private void checkBrokerRole() {
         BrokerRole currRole = storeConfig.getBrokerRole();
-        if (lastBrokerRole != currRole) {
-            synchronized (lastBrokerRole) {
-                LOGGER.info("Broker role change from {} to {}", lastBrokerRole, currRole);
-                //if change to master, do something
-                if (BrokerRole.SLAVE != currRole) {
-                    timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerState.timerCheckpoint.getMasterTimerQueueOffset());
-                    timerState.commitQueueOffset = timerState.currQueueOffset;
-                    timerState.prepareTimerCheckPoint();
-                    timerState.timerCheckpoint.flush();
-                    timerState.currReadTimeMs = timerState.timerCheckpoint.getLastReadTimeMs();
-                    timerState.commitReadTimeMs = timerState.currReadTimeMs;
-                }
-                //if change to slave, just let it go
-                lastBrokerRole = currRole;
+        if (lastBrokerRole == currRole) {
+            return;
+        }
+
+        synchronized (lastBrokerRole) {
+            LOGGER.info("Broker role change from {} to {}", lastBrokerRole, currRole);
+            //if change to master, do something
+            if (BrokerRole.SLAVE != currRole) {
+                timerState.currQueueOffset = Math.min(timerState.currQueueOffset, timerState.timerCheckpoint.getMasterTimerQueueOffset());
+                timerState.commitQueueOffset = timerState.currQueueOffset;
+                timerState.prepareTimerCheckPoint();
+                timerState.timerCheckpoint.flush();
+                timerState.currReadTimeMs = timerState.timerCheckpoint.getLastReadTimeMs();
+                timerState.commitReadTimeMs = timerState.currReadTimeMs;
             }
+            //if change to slave, just let it go
+            lastBrokerRole = currRole;
         }
     }
 

@@ -135,7 +135,7 @@ public class TimerMessageScanner extends ServiceThread {
         putToQuery(result.getDeleteMsgStack());
         putToQuery(result.getNormalMsgStack());
 
-        // if master -> slave -> master, then the read time move forward, and messages will be lossed
+        // if master -> slave -> master, then the read time move forward, and messages will be lost
         if (timerState.dequeueStatusChangeFlag) {
             return -1;
         }
