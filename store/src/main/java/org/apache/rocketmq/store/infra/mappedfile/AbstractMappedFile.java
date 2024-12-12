@@ -16,7 +16,5 @@
  */
 package org.apache.rocketmq.store.infra.mappedfile;
 
-import org.apache.rocketmq.store.infra.memory.ReferenceResource;
-
 public abstract class AbstractMappedFile extends ReferenceResource implements MappedFile {
 }

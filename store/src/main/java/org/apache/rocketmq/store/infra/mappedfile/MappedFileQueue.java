@@ -36,7 +36,6 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueue;
-import org.apache.rocketmq.store.infra.memory.ReferenceResource;
 import org.apache.rocketmq.store.infra.memory.Swappable;
 
 public class MappedFileQueue implements Swappable {
