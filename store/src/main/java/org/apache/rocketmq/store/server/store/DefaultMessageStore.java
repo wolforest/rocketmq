@@ -104,11 +104,11 @@ import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.apache.rocketmq.store.server.config.RunningFlags;
 import org.apache.rocketmq.store.server.config.StorePathConfigHelper;
 import org.apache.rocketmq.store.server.daemon.BatchDispatchRequest;
-import org.apache.rocketmq.store.server.daemon.CleanCommitLogService;
-import org.apache.rocketmq.store.server.daemon.CleanConsumeQueueService;
+import org.apache.rocketmq.store.domain.commitlog.thread.CleanCommitLogService;
+import org.apache.rocketmq.store.domain.queue.CleanConsumeQueueService;
 import org.apache.rocketmq.store.server.daemon.CorrectLogicOffsetService;
 import org.apache.rocketmq.store.server.daemon.DispatchRequestOrderlyQueue;
-import org.apache.rocketmq.store.server.daemon.FlushConsumeQueueService;
+import org.apache.rocketmq.store.domain.queue.FlushConsumeQueueService;
 import org.apache.rocketmq.store.domain.dispatcher.ReputMessageService;
 import org.apache.rocketmq.store.server.ha.ms.DefaultHAService;
 import org.apache.rocketmq.store.server.ha.HAService;
@@ -758,11 +758,21 @@ public class DefaultMessageStore implements MessageStore {
         }
     }
 
+    /**
+     * used to extend, such as tiered store
+     *
+     * @return flushed position
+     */
     @Override
     public long flush() {
         return this.commitLog.flush();
     }
 
+    /**
+     * used to extend, such as tiered store
+     * @param phyOffset new offset.
+     * @return offset
+     */
     @Override
     public boolean resetWriteOffset(long phyOffset) {
         return consumeQueueService.resetWriteOffset(phyOffset);
@@ -1367,7 +1377,7 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public long getFlushedWhere() {
-        return this.commitLog.getFlushedWhere();
+        return this.commitLog.getFlushedPosition();
     }
 
     // Fetch and compute the newest confirmOffset.

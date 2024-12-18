@@ -880,8 +880,8 @@ public class DefaultMappedFile extends AbstractMappedFile {
     private void initFile() throws IOException {
         boolean ok = false;
 
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(this.file, "rw")) {
-            this.fileChannel = randomAccessFile.getChannel();
+        try {
+            this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();
             this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
             TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
             TOTAL_MAPPED_FILES.incrementAndGet();

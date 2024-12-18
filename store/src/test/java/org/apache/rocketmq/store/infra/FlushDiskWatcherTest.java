@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.store.infra;
 
-import org.apache.rocketmq.store.domain.commitlog.service.FlushDiskWatcher;
+import org.apache.rocketmq.store.domain.commitlog.thread.FlushDiskWatcher;
 import org.apache.rocketmq.store.domain.commitlog.dto.GroupCommitRequest;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 import org.junit.Assert;

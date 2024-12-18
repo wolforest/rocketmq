@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.server.daemon;
+package org.apache.rocketmq.store.domain.commitlog.thread;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.common.domain.constant.LoggerName;

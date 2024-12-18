@@ -27,10 +27,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.domain.topic.TopicConfig;
-import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.common.domain.consumer.CQType;
 import org.apache.rocketmq.common.domain.message.MessageConst;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExt;
@@ -38,42 +37,43 @@ import org.apache.rocketmq.common.domain.message.MessageExtBatch;
 import org.apache.rocketmq.common.domain.message.MessageExtBrokerInner;
 import org.apache.rocketmq.common.domain.message.MessageVersion;
 import org.apache.rocketmq.common.domain.sysflag.MessageSysFlag;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.common.utils.BinaryUtils;
 import org.apache.rocketmq.common.utils.IOUtils;
-import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.common.utils.QueueTypeUtils;
+import org.apache.rocketmq.common.utils.SystemUtils;
 import org.apache.rocketmq.common.utils.TimeUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.api.MessageStore;
+import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.domain.commitlog.dto.DelayLevel;
+import org.apache.rocketmq.store.domain.commitlog.thread.ColdDataCheckThread;
+import org.apache.rocketmq.store.domain.commitlog.service.CommitLogPutService;
+import org.apache.rocketmq.store.domain.commitlog.service.CommitLogRecoverService;
 import org.apache.rocketmq.store.domain.commitlog.service.DefaultAppendMessageCallback;
 import org.apache.rocketmq.store.domain.commitlog.service.DefaultFlushManager;
-import org.apache.rocketmq.store.domain.commitlog.service.FlushDiskWatcher;
+import org.apache.rocketmq.store.domain.commitlog.thread.FlushDiskWatcher;
 import org.apache.rocketmq.store.domain.commitlog.service.FlushManager;
-import org.apache.rocketmq.store.infra.mappedfile.AppendMessageCallback;
-import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.apache.rocketmq.store.domain.dispatcher.DispatchRequest;
 import org.apache.rocketmq.store.domain.message.MessageExtEncoder;
 import org.apache.rocketmq.store.domain.message.MessageExtEncoder.PutMessageThreadLocal;
-import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.domain.message.PutMessageLock;
 import org.apache.rocketmq.store.domain.message.PutMessageReentrantLock;
-import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.domain.message.PutMessageSpinLock;
-import org.apache.rocketmq.store.infra.memory.Swappable;
 import org.apache.rocketmq.store.domain.queue.TopicQueueLock;
-import org.apache.rocketmq.store.domain.commitlog.service.ColdDataCheckThread;
-import org.apache.rocketmq.store.domain.commitlog.service.CommitLogPutService;
-import org.apache.rocketmq.store.domain.commitlog.service.CommitLogRecoverService;
-import org.apache.rocketmq.store.server.config.BrokerRole;
-import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAService;
+import org.apache.rocketmq.store.infra.mappedfile.AppendMessageCallback;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 import org.apache.rocketmq.store.infra.mappedfile.MappedFileQueue;
 import org.apache.rocketmq.store.infra.mappedfile.MultiPathMappedFileQueue;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedBufferResult;
 import org.apache.rocketmq.store.infra.mappedfile.SelectMappedFileResult;
 import org.apache.rocketmq.store.infra.memory.LibC;
+import org.apache.rocketmq.store.infra.memory.Swappable;
+import org.apache.rocketmq.store.server.config.BrokerRole;
+import org.apache.rocketmq.store.server.ha.autoswitch.AutoSwitchHAService;
+import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 import org.rocksdb.RocksDBException;
 import sun.nio.ch.DirectBuffer;
 
@@ -99,6 +99,10 @@ public class CommitLog implements Swappable {
     private final ColdDataCheckThread coldDataCheckThread;
     private final CommitLogRecoverService commitLogRecoverService;
 
+    /**
+     * appendMessageCallback executed by putMessageThreadLocal
+     * to format message which appending to MappedFile
+     */
     private final AppendMessageCallback appendMessageCallback;
     private ThreadLocal<PutMessageThreadLocal> putMessageThreadLocal;
 
@@ -108,6 +112,9 @@ public class CommitLog implements Swappable {
      */
     protected volatile long confirmOffset = -1L;
     private volatile long beginTimeInLock = 0;
+    /**
+     * size of each commitLog file, defined in MessageStoreConfig.mappedFileSizeCommitLog
+     */
     protected int commitLogSize;
 
     protected final PutMessageLock putMessageLock;
@@ -116,6 +123,10 @@ public class CommitLog implements Swappable {
     private volatile Set<String> fullStorePaths = Collections.emptySet();
     private final FlushDiskWatcher flushDiskWatcher;
     private final DelayLevel delayLevel;
+
+    public static boolean isMultiDispatchMsg(MessageExtBrokerInner msg) {
+        return StringUtils.isNoneBlank(msg.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH)) && !msg.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX);
+    }
 
     public CommitLog(final DefaultMessageStore messageStore) {
         initMappedFileQueue(messageStore);
@@ -135,24 +146,14 @@ public class CommitLog implements Swappable {
         this.delayLevel = new DelayLevel(messageStore.getMessageStoreConfig());
     }
 
-    public static boolean isMultiDispatchMsg(MessageExtBrokerInner msg) {
-        return StringUtils.isNoneBlank(msg.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH)) && !msg.getTopic().startsWith(MQConstants.RETRY_GROUP_TOPIC_PREFIX);
-    }
-
-    public void setFullStorePaths(Set<String> fullStorePaths) {
-        this.fullStorePaths = fullStorePaths;
-    }
-
-    public Set<String> getFullStorePaths() {
-        return fullStorePaths;
-    }
-
+    /**
+     * get total size of all commitLog
+     * for cleaning of the expired commitLog
+     *
+     * @return total size of all commitLog
+     */
     public long getTotalSize() {
         return this.mappedFileQueue.getTotalFileSize();
-    }
-
-    public ThreadLocal<PutMessageThreadLocal> getPutMessageThreadLocal() {
-        return putMessageThreadLocal;
     }
 
     public boolean load() {
@@ -184,16 +185,32 @@ public class CommitLog implements Swappable {
         }
     }
 
+    /**
+     * called by DefaultMessageStore.flush()
+     * used to extend, such as tiered store
+     *
+     * @return flushedPosition
+     */
     public long flush() {
         this.mappedFileQueue.commit(0);
         this.mappedFileQueue.flush(0);
         return this.mappedFileQueue.getFlushedPosition();
     }
 
-    public long getFlushedWhere() {
+    /**
+     * get flushed position
+     * @renamed from getFlushedWhere to getFlushedPosition
+     *
+     * @return flushed position
+     */
+    public long getFlushedPosition() {
         return this.mappedFileQueue.getFlushedPosition();
     }
 
+    /**
+     * get max offset
+     * @return maxOffset
+     */
     public long getMaxOffset() {
         return this.mappedFileQueue.getMaxOffset();
     }
@@ -458,116 +475,6 @@ public class CommitLog implements Swappable {
         return new DispatchRequest(-1, false /* success */);
     }
 
-    private void doNothingForDeadCode(final Object obj) {
-        if (obj == null) {
-            return;
-        }
-
-        log.debug(String.valueOf(obj.hashCode()));
-    }
-
-    private DispatchRequest checkMagicCode(int magicCode) {
-        switch (magicCode) {
-            case MessageDecoder.MESSAGE_MAGIC_CODE:
-            case MessageDecoder.MESSAGE_MAGIC_CODE_V2:
-                break;
-            case BLANK_MAGIC_CODE:
-                return new DispatchRequest(0, true /* success */);
-            default:
-                log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
-                return new DispatchRequest(-1, false /* success */);
-        }
-
-        return null;
-    }
-
-    private ByteBuffer getByteBuffer(java.nio.ByteBuffer byteBuffer, int sysFlag, byte[] bytesContent, int flag) {
-        ByteBuffer byteBuffer1;
-        if ((sysFlag & flag) == 0) {
-            byteBuffer1 = byteBuffer.get(bytesContent, 0, 4 + 4);
-        } else {
-            byteBuffer1 = byteBuffer.get(bytesContent, 0, 16 + 4);
-        }
-
-        return byteBuffer1;
-    }
-
-    private DispatchRequest checkBody(java.nio.ByteBuffer byteBuffer, int bodyLen, int bodyCRC, byte[] bytesContent, boolean readBody, boolean checkCRC) {
-        if (bodyLen <= 0) {
-            return null;
-        }
-
-        if (!readBody) {
-            byteBuffer.position(byteBuffer.position() + bodyLen);
-            return null;
-        }
-
-        byteBuffer.get(bytesContent, 0, bodyLen);
-        if (!checkCRC) {
-            return null;
-        }
-
-        /*
-         * When the forceVerifyPropCRC = false,
-         * use original bodyCrc validation.
-         */
-        if (this.defaultMessageStore.getMessageStoreConfig().isForceVerifyPropCRC()) {
-            return null;
-        }
-
-        int crc = BinaryUtils.crc32(bytesContent, 0, bodyLen);
-        if (crc == bodyCRC) {
-            return null;
-        }
-
-        log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
-        return new DispatchRequest(-1, false/* success */);
-    }
-
-    private DispatchRequest checkDuplicate(boolean checkDupInfo, Map<String, String> propertiesMap) {
-        if (!checkDupInfo) {
-            return null;
-        }
-
-        String dupInfo = propertiesMap.get(MessageConst.DUP_INFO);
-        if (null == dupInfo || dupInfo.split("_").length != 2) {
-            log.warn("DupInfo in properties check failed. dupInfo={}", dupInfo);
-            return new DispatchRequest(-1, false);
-        }
-
-        return null;
-    }
-
-    private long getTagsCode(long tagsCode, Map<String, String> propertiesMap, String topic, long storeTimestamp, int sysFlag) {
-        String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
-        if (tags != null && !tags.isEmpty()) {
-            tagsCode = MessageExtBrokerInner.tagsString2tagsCode(MessageExt.parseTopicFilterType(sysFlag), tags);
-        }
-
-        // Timing message processing
-        String t = propertiesMap.get(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
-        if (!TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(topic) || t == null) {
-            return tagsCode;
-        }
-
-        int level = Integer.parseInt(t);
-        if (level > delayLevel.getMaxDelayLevel()) {
-            level = delayLevel.getMaxDelayLevel();
-        }
-
-        if (level > 0) {
-            tagsCode = delayLevel.computeDeliverTimestamp(level, storeTimestamp);
-        }
-
-        return tagsCode;
-    }
-
-    private void setBatchSizeIfNeeded(Map<String, String> propertiesMap, DispatchRequest dispatchRequest) {
-        if (null != propertiesMap && propertiesMap.containsKey(MessageConst.PROPERTY_INNER_NUM) && propertiesMap.containsKey(MessageConst.PROPERTY_INNER_BASE)) {
-            dispatchRequest.setMsgBaseOffset(Long.parseLong(propertiesMap.get(MessageConst.PROPERTY_INNER_BASE)));
-            dispatchRequest.setBatchSize(Short.parseShort(propertiesMap.get(MessageConst.PROPERTY_INNER_NUM)));
-        }
-    }
 
     // Fetch and compute the newest confirmOffset.
     // Even if it is just inited.
@@ -635,7 +542,7 @@ public class CommitLog implements Swappable {
     }
 
     public void truncateDirtyFiles(long phyOffset) {
-        if (phyOffset <= this.getFlushedWhere()) {
+        if (phyOffset <= this.getFlushedPosition()) {
             this.mappedFileQueue.setFlushedPosition(phyOffset);
         }
 
@@ -664,31 +571,34 @@ public class CommitLog implements Swappable {
                 log.info("find check. beginPhyOffset: {}, maxPhyOffsetInConsumeQueue: {}", phyOffset, maxPhyOffsetInConsumeQueue);
                 return true;
             }
-        } else {
-            int sysFlag = byteBuffer.getInt(MessageDecoder.SYSFLAG_POSITION);
-            int bornHostLength = (sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 8 : 20;
-            int msgStoreTimePos = 4 + 4 + 4 + 4 + 4 + 8 + 8 + 4 + 8 + bornHostLength;
-            long storeTimestamp = byteBuffer.getLong(msgStoreTimePos);
-            if (0 == storeTimestamp) {
-                return false;
+            return false;
+        }
+
+        int sysFlag = byteBuffer.getInt(MessageDecoder.SYSFLAG_POSITION);
+        int bornHostLength = (sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 8 : 20;
+        int msgStoreTimePos = 4 + 4 + 4 + 4 + 4 + 8 + 8 + 4 + 8 + bornHostLength;
+        long storeTimestamp = byteBuffer.getLong(msgStoreTimePos);
+        if (0 == storeTimestamp) {
+            return false;
+        }
+
+        if (this.defaultMessageStore.getMessageStoreConfig().isMessageIndexEnable()
+            && this.defaultMessageStore.getMessageStoreConfig().isMessageIndexSafe()) {
+            if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestampIndex()) {
+                log.info("find check timestamp, {} {}",
+                    storeTimestamp,
+                    TimeUtils.timeMillisToHumanString(storeTimestamp));
+                return true;
             }
 
-            if (this.defaultMessageStore.getMessageStoreConfig().isMessageIndexEnable()
-                && this.defaultMessageStore.getMessageStoreConfig().isMessageIndexSafe()) {
-                if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestampIndex()) {
-                    log.info("find check timestamp, {} {}",
-                        storeTimestamp,
-                        TimeUtils.timeMillisToHumanString(storeTimestamp));
-                    return true;
-                }
-            } else {
-                if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestamp()) {
-                    log.info("find check timestamp, {} {}",
-                        storeTimestamp,
-                        TimeUtils.timeMillisToHumanString(storeTimestamp));
-                    return true;
-                }
-            }
+            return false;
+        }
+
+        if (storeTimestamp <= this.defaultMessageStore.getStoreCheckpoint().getMinTimestamp()) {
+            log.info("find check timestamp, {} {}",
+                storeTimestamp,
+                TimeUtils.timeMillisToHumanString(storeTimestamp));
+            return true;
         }
 
         return false;
@@ -696,26 +606,6 @@ public class CommitLog implements Swappable {
 
     public boolean resetOffset(long offset) {
         return this.mappedFileQueue.resetOffset(offset);
-    }
-
-    public long getBeginTimeInLock() {
-        return beginTimeInLock;
-    }
-
-    public void setBeginTimeInLock(long beginTimeInLock) {
-        this.beginTimeInLock = beginTimeInLock;
-    }
-
-    public AppendMessageCallback getAppendMessageCallback() {
-        return appendMessageCallback;
-    }
-
-    public PutMessageLock getPutMessageLock() {
-        return putMessageLock;
-    }
-
-    public TopicQueueLock getTopicQueueLock() {
-        return topicQueueLock;
     }
 
     public void setMappedFileQueueOffset(final long phyOffset) {
@@ -731,28 +621,6 @@ public class CommitLog implements Swappable {
     public CompletableFuture<PutMessageResult> asyncPutMessages(final MessageExtBatch messageExtBatch) {
         CommitLogPutService commitLogPutService = new CommitLogPutService(this);
         return commitLogPutService.asyncPutMessages(messageExtBatch);
-    }
-
-    private void initMappedFileQueue(final DefaultMessageStore messageStore) {
-        String storePath = messageStore.getMessageStoreConfig().getStorePathCommitLog();
-        if (storePath.contains(IOUtils.MULTI_PATH_SPLITTER)) {
-            this.mappedFileQueue = new MultiPathMappedFileQueue(messageStore.getMessageStoreConfig(),
-                messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
-                messageStore.getAllocateMappedFileService(), this::getFullStorePaths);
-        } else {
-            this.mappedFileQueue = new MappedFileQueue(storePath,
-                messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
-                messageStore.getAllocateMappedFileService());
-        }
-    }
-
-    private void initPutMessageThreadLocal() {
-        putMessageThreadLocal = new ThreadLocal<PutMessageThreadLocal>() {
-            @Override
-            protected PutMessageThreadLocal initialValue() {
-                return new PutMessageThreadLocal(defaultMessageStore.getMessageStoreConfig());
-            }
-        };
     }
 
     /**
@@ -873,28 +741,6 @@ public class CommitLog implements Swappable {
         return messageNum;
     }
 
-    private CQType getCqType(MessageExtBrokerInner msgInner) {
-        Optional<TopicConfig> topicConfig = this.defaultMessageStore.getTopicConfig(msgInner.getTopic());
-        return QueueTypeUtils.getCQType(topicConfig);
-    }
-
-
-    public int getCommitLogSize() {
-        return commitLogSize;
-    }
-
-    public MappedFileQueue getMappedFileQueue() {
-        return mappedFileQueue;
-    }
-
-    public MessageStore getMessageStore() {
-        return defaultMessageStore;
-    }
-
-    public FlushDiskWatcher getFlushDiskWatcher() {
-        return flushDiskWatcher;
-    }
-
     @Override
     public void swapMap(int reserveNum, long forceSwapIntervalMs, long normalSwapIntervalMs) {
         this.getMappedFileQueue().swapMap(reserveNum, forceSwapIntervalMs, normalSwapIntervalMs);
@@ -909,9 +755,6 @@ public class CommitLog implements Swappable {
         this.getMappedFileQueue().cleanSwappedMap(forceCleanSwapIntervalMs);
     }
 
-    public FlushManager getFlushManager() {
-        return flushManager;
-    }
 
     public void scanFileAndSetReadMode(int mode) {
         if (SystemUtils.isWindows()) {
@@ -941,7 +784,203 @@ public class CommitLog implements Swappable {
         return madvise;
     }
 
+    /*************************** private/protected methods *****************************/
+
+    private void initMappedFileQueue(final DefaultMessageStore messageStore) {
+        String storePath = messageStore.getMessageStoreConfig().getStorePathCommitLog();
+        if (storePath.contains(IOUtils.MULTI_PATH_SPLITTER)) {
+            this.mappedFileQueue = new MultiPathMappedFileQueue(messageStore.getMessageStoreConfig(),
+                messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
+                messageStore.getAllocateMappedFileService(), this::getFullStorePaths);
+        } else {
+            this.mappedFileQueue = new MappedFileQueue(storePath,
+                messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
+                messageStore.getAllocateMappedFileService());
+        }
+    }
+
+    private void initPutMessageThreadLocal() {
+        putMessageThreadLocal = new ThreadLocal<PutMessageThreadLocal>() {
+            @Override
+            protected PutMessageThreadLocal initialValue() {
+                return new PutMessageThreadLocal(defaultMessageStore.getMessageStoreConfig());
+            }
+        };
+    }
+
+    private CQType getCqType(MessageExtBrokerInner msgInner) {
+        Optional<TopicConfig> topicConfig = this.defaultMessageStore.getTopicConfig(msgInner.getTopic());
+        return QueueTypeUtils.getCQType(topicConfig);
+    }
+
+    private void doNothingForDeadCode(final Object obj) {
+        if (obj == null) {
+            return;
+        }
+
+        log.debug(String.valueOf(obj.hashCode()));
+    }
+
+    private DispatchRequest checkMagicCode(int magicCode) {
+        switch (magicCode) {
+            case MessageDecoder.MESSAGE_MAGIC_CODE:
+            case MessageDecoder.MESSAGE_MAGIC_CODE_V2:
+                break;
+            case BLANK_MAGIC_CODE:
+                return new DispatchRequest(0, true /* success */);
+            default:
+                log.warn("found a illegal magic code 0x" + Integer.toHexString(magicCode));
+                return new DispatchRequest(-1, false /* success */);
+        }
+
+        return null;
+    }
+
+    private ByteBuffer getByteBuffer(java.nio.ByteBuffer byteBuffer, int sysFlag, byte[] bytesContent, int flag) {
+        ByteBuffer byteBuffer1;
+        if ((sysFlag & flag) == 0) {
+            byteBuffer1 = byteBuffer.get(bytesContent, 0, 4 + 4);
+        } else {
+            byteBuffer1 = byteBuffer.get(bytesContent, 0, 16 + 4);
+        }
+
+        return byteBuffer1;
+    }
+
+    private DispatchRequest checkBody(java.nio.ByteBuffer byteBuffer, int bodyLen, int bodyCRC, byte[] bytesContent, boolean readBody, boolean checkCRC) {
+        if (bodyLen <= 0) {
+            return null;
+        }
+
+        if (!readBody) {
+            byteBuffer.position(byteBuffer.position() + bodyLen);
+            return null;
+        }
+
+        byteBuffer.get(bytesContent, 0, bodyLen);
+        if (!checkCRC) {
+            return null;
+        }
+
+        /*
+         * When the forceVerifyPropCRC = false,
+         * use original bodyCrc validation.
+         */
+        if (this.defaultMessageStore.getMessageStoreConfig().isForceVerifyPropCRC()) {
+            return null;
+        }
+
+        int crc = BinaryUtils.crc32(bytesContent, 0, bodyLen);
+        if (crc == bodyCRC) {
+            return null;
+        }
+
+        log.warn("CRC check failed. bodyCRC={}, currentCRC={}", crc, bodyCRC);
+        return new DispatchRequest(-1, false/* success */);
+    }
+
+    private DispatchRequest checkDuplicate(boolean checkDupInfo, Map<String, String> propertiesMap) {
+        if (!checkDupInfo) {
+            return null;
+        }
+
+        String dupInfo = propertiesMap.get(MessageConst.DUP_INFO);
+        if (null == dupInfo || dupInfo.split("_").length != 2) {
+            log.warn("DupInfo in properties check failed. dupInfo={}", dupInfo);
+            return new DispatchRequest(-1, false);
+        }
+
+        return null;
+    }
+
+    private long getTagsCode(long tagsCode, Map<String, String> propertiesMap, String topic, long storeTimestamp, int sysFlag) {
+        String tags = propertiesMap.get(MessageConst.PROPERTY_TAGS);
+        if (tags != null && !tags.isEmpty()) {
+            tagsCode = MessageExtBrokerInner.tagsString2tagsCode(MessageExt.parseTopicFilterType(sysFlag), tags);
+        }
+
+        // Timing message processing
+        String t = propertiesMap.get(MessageConst.PROPERTY_DELAY_TIME_LEVEL);
+        if (!TopicValidator.RMQ_SYS_SCHEDULE_TOPIC.equals(topic) || t == null) {
+            return tagsCode;
+        }
+
+        int level = Integer.parseInt(t);
+        if (level > delayLevel.getMaxDelayLevel()) {
+            level = delayLevel.getMaxDelayLevel();
+        }
+
+        if (level > 0) {
+            tagsCode = delayLevel.computeDeliverTimestamp(level, storeTimestamp);
+        }
+
+        return tagsCode;
+    }
+
+    private void setBatchSizeIfNeeded(Map<String, String> propertiesMap, DispatchRequest dispatchRequest) {
+        if (null != propertiesMap && propertiesMap.containsKey(MessageConst.PROPERTY_INNER_NUM) && propertiesMap.containsKey(MessageConst.PROPERTY_INNER_BASE)) {
+            dispatchRequest.setMsgBaseOffset(Long.parseLong(propertiesMap.get(MessageConst.PROPERTY_INNER_BASE)));
+            dispatchRequest.setBatchSize(Short.parseShort(propertiesMap.get(MessageConst.PROPERTY_INNER_NUM)));
+        }
+    }
+
+
+    /*************************** getter/setter methods *****************************/
+
+    public ThreadLocal<PutMessageThreadLocal> getPutMessageThreadLocal() {
+        return putMessageThreadLocal;
+    }
+
+    public void setFullStorePaths(Set<String> fullStorePaths) {
+        this.fullStorePaths = fullStorePaths;
+    }
+
+    public Set<String> getFullStorePaths() {
+        return fullStorePaths;
+    }
+
     public ColdDataCheckThread getColdDataCheckService() {
         return coldDataCheckThread;
     }
+
+    public FlushManager getFlushManager() {
+        return flushManager;
+    }
+
+    public int getCommitLogSize() {
+        return commitLogSize;
+    }
+
+    public MappedFileQueue getMappedFileQueue() {
+        return mappedFileQueue;
+    }
+
+    public MessageStore getMessageStore() {
+        return defaultMessageStore;
+    }
+
+    public FlushDiskWatcher getFlushDiskWatcher() {
+        return flushDiskWatcher;
+    }
+
+    public long getBeginTimeInLock() {
+        return beginTimeInLock;
+    }
+
+    public void setBeginTimeInLock(long beginTimeInLock) {
+        this.beginTimeInLock = beginTimeInLock;
+    }
+
+    public AppendMessageCallback getAppendMessageCallback() {
+        return appendMessageCallback;
+    }
+
+    public PutMessageLock getPutMessageLock() {
+        return putMessageLock;
+    }
+
+    public TopicQueueLock getTopicQueueLock() {
+        return topicQueueLock;
+    }
+
 }

@@ -274,36 +274,37 @@ public class MappedFileQueueTest {
         final int mappedFileSize = 102400;
 
         MappedFileQueue mappedFileQueue =
-                new MappedFileQueue(storePath + File.separator + "b/", mappedFileSize, null);
+            new MappedFileQueue(storePath + File.separator + "b/", mappedFileSize, null);
 
         ThreadPoolExecutor executor = new ThreadPoolExecutor(3, 3, 1000 * 60,
-                TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(),
-                new ThreadFactoryImpl("testThreadPool"));
+            TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<>(),
+            new ThreadFactoryImpl("testThreadPool"));
 
         for (int i = 0; i < mappedFileSize; i++) {
             MappedFile mappedFile = mappedFileQueue.getLastMappedFile(0);
             assertThat(mappedFile).isNotNull();
             assertThat(mappedFile.appendMessage(fixedMsg.getBytes())).isTrue();
         }
-        assertThat(mappedFileQueue.getMappedMemorySize()).isEqualTo(fixedMsg.getBytes().length * mappedFileSize);
+        assertThat(mappedFileQueue.getMappedMemorySize()).isEqualTo((long) fixedMsg.getBytes().length * mappedFileSize);
 
         AtomicBoolean readOver = new AtomicBoolean(false);
         AtomicBoolean hasException = new AtomicBoolean(false);
 
         executor.submit(() -> {
-            try {
-                while (!readOver.get()) {
-                    for (MappedFile mappedFile : mappedFileQueue.getMappedFiles()) {
-                        mappedFile.swapMap();
-                        Thread.sleep(10);
-                        mappedFile.cleanSwapedMap(true);
+                try {
+                    while (!readOver.get()) {
+                        for (MappedFile mappedFile : mappedFileQueue.getMappedFiles()) {
+                            mappedFile.swapMap();
+                            Thread.sleep(10);
+                            mappedFile.cleanSwapedMap(true);
+                        }
                     }
+                } catch (Throwable t) {
+                    hasException.set(true);
                 }
-            } catch (Throwable t) {
-                hasException.set(true);
             }
-        });
+        );
         long start = System.currentTimeMillis();
         long maxReadTimeMs = 60 * 1000;
         try {

@@ -17,7 +17,7 @@
 package org.apache.rocketmq.store.domain.queue.rocksdb;
 
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
-import org.apache.rocketmq.store.server.daemon.FlushConsumeQueueService;
+import org.apache.rocketmq.store.domain.queue.FlushConsumeQueueService;
 
 public class RocksDBFlushConsumeQueueService extends FlushConsumeQueueService {
 

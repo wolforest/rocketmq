@@ -20,6 +20,7 @@ import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.commitlog.CommitLog;
+import org.apache.rocketmq.store.domain.commitlog.thread.FlushCommitLogService;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 
 public class CommitRealTimeService extends FlushCommitLogService {
@@ -27,9 +28,9 @@ public class CommitRealTimeService extends FlushCommitLogService {
 
     private final DefaultMessageStore defaultMessageStore;
     private final CommitLog commitLog;
-    
+
     private long lastCommitTimestamp = 0;
-    
+
     public CommitRealTimeService(final DefaultMessageStore messageStore, final CommitLog commitLog) {
         this.defaultMessageStore = messageStore;
         this.commitLog = commitLog;

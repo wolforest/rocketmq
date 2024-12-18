@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.store.domain.commitlog.service;
+package org.apache.rocketmq.store.domain.commitlog.thread;
 
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
 

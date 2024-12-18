@@ -36,7 +36,7 @@ import org.apache.rocketmq.store.server.config.BrokerRole;
  */
 public class AllocateMappedFileService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private static final int waitTimeOut = 1000 * 5;
+    private static final int WAIT_TIMEOUT = 1000 * 5;
 
     private final ConcurrentMap<String, AllocateRequest> requestTable = new ConcurrentHashMap<>();
     private final PriorityBlockingQueue<AllocateRequest> requestQueue = new PriorityBlockingQueue<>();
@@ -142,7 +142,7 @@ public class AllocateMappedFileService extends ServiceThread {
 
         try {
             messageStore.getPerfCounter().startTick("WAIT_MAPFILE_TIME_MS");
-            boolean waitOK = result.getCountDownLatch().await(waitTimeOut, TimeUnit.MILLISECONDS);
+            boolean waitOK = result.getCountDownLatch().await(WAIT_TIMEOUT, TimeUnit.MILLISECONDS);
             messageStore.getPerfCounter().endTick("WAIT_MAPFILE_TIME_MS");
             if (!waitOK) {
                 log.warn("create mmap timeout " + result.getFilePath() + " " + result.getFileSize());

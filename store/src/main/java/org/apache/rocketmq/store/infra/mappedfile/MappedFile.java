@@ -33,6 +33,7 @@ import org.apache.rocketmq.store.server.config.FlushDiskType;
 public interface MappedFile {
     /**
      * Returns the file name of the {@code MappedFile}.
+     * The offset may store in the file name.
      *
      * @return the file name
      */
@@ -126,7 +127,6 @@ public interface MappedFile {
 
     /**
      * Returns the global offset of the current {code MappedFile}, it's a long value of the file name.
-     * TODO: rename to getOffsetFromFileName
      *
      * @return the offset of this file
      */
