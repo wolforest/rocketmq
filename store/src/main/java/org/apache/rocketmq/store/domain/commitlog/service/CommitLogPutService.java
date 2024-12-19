@@ -288,6 +288,12 @@ public class CommitLogPutService {
         return null;
     }
 
+    /**
+     * return true:
+     *  - in default setting
+     *  - is slave
+     * @return boolean
+     */
     private boolean isNeedAssignOffset() {
         MessageStoreConfig config = defaultMessageStore.getMessageStoreConfig();
         return !config.isDuplicationEnable() || config.getBrokerRole() == BrokerRole.SLAVE;
@@ -330,7 +336,7 @@ public class CommitLogPutService {
         return null;
     }
 
-    private void resetMappedFile(CommitLogPutContext context) {
+    private void initMappedFile(CommitLogPutContext context) {
         if (null != context.getMappedFile() && !context.getMappedFile().isFull()) {
             return;
         }
@@ -355,7 +361,7 @@ public class CommitLogPutService {
                 msg.setStoreTimestamp(beginLockTimestamp);
             }
 
-            resetMappedFile(context);
+            initMappedFile(context);
 
             if (null == context.getMappedFile()) {
                 log.error("create mapped file1 error, topic: " + msg.getTopic() + " clientAddr: " + msg.getBornHostString());

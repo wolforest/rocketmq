@@ -488,7 +488,6 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     @Override
     public long getLastOffset() {
         long lastOffset = -1;
-
         int logicFileSize = this.mappedFileSize;
 
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();

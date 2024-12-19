@@ -29,10 +29,16 @@ public class MessageExt extends Message {
 
     private String brokerName;
 
+    /**
+     * set by MQ client
+     */
     private int queueId;
 
     private int storeSize;
 
+    /**
+     * set by consumeQueue while putting process of CommitLog
+     */
     private long queueOffset;
     private int sysFlag;
     private long bornTimestamp;

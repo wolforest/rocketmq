@@ -248,7 +248,7 @@ public class MessageStoreConfig {
 
     /**
      * use cases:
-     * 1. if true: assign assignOffset before append message
+     * 1. if false: assign assignOffset before append message
      * 2. if true: DefaultMessageStore do not need HaService
      * 3. if true: do not changeSpecialServiceStatus and do not registerBrokerAll
      * 4. if true: do not do master slave related operations
@@ -430,6 +430,9 @@ public class MessageStoreConfig {
 
     private boolean coldDataFlowControlEnable = false;
     private boolean coldDataScanEnable = false;
+    /**
+     *
+     */
     private boolean dataReadAheadEnable = true;
     private int timerColdDataCheckIntervalMs = 60 * 1000;
     private int sampleSteps = 32;

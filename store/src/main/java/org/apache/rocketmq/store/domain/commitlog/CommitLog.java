@@ -139,7 +139,10 @@ public class CommitLog implements Swappable {
 
         initPutMessageThreadLocal();
 
-        this.putMessageLock = messageStore.getMessageStoreConfig().isUseReentrantLockWhenPutMessage() ? new PutMessageReentrantLock() : new PutMessageSpinLock();
+        this.putMessageLock = messageStore.getMessageStoreConfig().isUseReentrantLockWhenPutMessage()
+            ? new PutMessageReentrantLock()
+            : new PutMessageSpinLock();
+
         this.flushDiskWatcher = new FlushDiskWatcher();
         this.topicQueueLock = new TopicQueueLock(messageStore.getMessageStoreConfig().getTopicQueueLockNum());
         this.commitLogSize = messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
@@ -659,6 +662,13 @@ public class CommitLog implements Swappable {
         return this.rollNextFile(mappedFile.getOffsetInFileName());
     }
 
+    /**
+     * The difference between getData is:
+     *  getMessage add process: setInCache
+     * @param offset offset
+     * @param size size
+     * @return SelectMappedBufferResult
+     */
     public SelectMappedBufferResult getMessage(final long offset, final int size) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);

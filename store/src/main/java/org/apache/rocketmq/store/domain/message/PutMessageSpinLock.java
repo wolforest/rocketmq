@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class PutMessageSpinLock implements PutMessageLock {
     //true: Can lock, false : in lock.
-    private AtomicBoolean putMessageSpinLock = new AtomicBoolean(true);
+    private final AtomicBoolean putMessageSpinLock = new AtomicBoolean(true);
 
     @Override
     public void lock() {
