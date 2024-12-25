@@ -42,6 +42,12 @@ public class TopicQueueLock {
         }
     }
 
+    /**
+     * lock(topic&queueId) to append commitLog
+     *  - mainly for assign and increase consumeQueue offset
+     *
+     * @param topicQueueKey: topic - queueId
+     */
     public void lock(String topicQueueKey) {
         Lock lock = this.lockList.get((topicQueueKey.hashCode() & 0x7fffffff) % this.size);
         lock.lock();

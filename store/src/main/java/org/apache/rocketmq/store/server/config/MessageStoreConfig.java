@@ -234,6 +234,10 @@ public class MessageStoreConfig {
     @ImportantField
     private FlushDiskType flushDiskType = FlushDiskType.ASYNC_FLUSH;
     // Used by GroupTransferService to sync messages from master to slave
+    /**
+     * used by:
+     *  - PutMessageService.waitForPutResult
+     */
     private int syncFlushTimeout = 1000 * 5;
     // Used by PutMessage to wait messages be flushed to disk and synchronized in current broker member group.
     private int putMessageTimeout = 1000 * 8;
@@ -454,6 +458,11 @@ public class MessageStoreConfig {
     private boolean realTimePersistRocksDBConfig = true;
     private boolean enableRocksDBLog = false;
 
+    /**
+     * topic lock num
+     * used by:
+     *  - commitLog.putMessage
+     */
     private int topicQueueLockNum = 32;
 
     public boolean isEnabledAppendPropCRC() {

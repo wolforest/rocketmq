@@ -98,7 +98,7 @@ public class MappedFileQueue implements Swappable {
         MappedFile pre = null;
         while (iterator.hasNext()) {
             MappedFile cur = iterator.next();
-            logCheckSelf(pre, cur);
+            checkFileOffset(pre, cur);
 
             pre = cur;
         }
@@ -143,6 +143,14 @@ public class MappedFileQueue implements Swappable {
         return true;
     }
 
+    /**
+     * get last mappedFile
+     * should be protected/private, only called by self
+     *
+     * @param startOffset startOffset
+     * @param needCreate createIfNotExists
+     * @return MappedFile
+     */
     public MappedFile getLastMappedFile(final long startOffset, boolean needCreate) {
         long createOffset = -1;
         MappedFile mappedFileLast = getLastMappedFile();
@@ -850,7 +858,7 @@ public class MappedFileQueue implements Swappable {
         return mfs;
     }
 
-    private void logCheckSelf(MappedFile pre, MappedFile cur) {
+    private void checkFileOffset(MappedFile pre, MappedFile cur) {
         if (pre == null) {
             return;
         }

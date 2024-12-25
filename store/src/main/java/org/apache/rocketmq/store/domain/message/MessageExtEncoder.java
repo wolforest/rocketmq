@@ -36,7 +36,7 @@ import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 
 public class MessageExtEncoder {
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-    private ByteBuf byteBuf;
+    private final ByteBuf byteBuf;
     // The maximum length of the message body.
     private int maxMessageBodySize;
     // The maximum length of the full message.

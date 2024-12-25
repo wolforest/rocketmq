@@ -81,6 +81,12 @@ public class PutMessageService {
         return waitForPutResult(asyncPutMessages(messageExtBatch));
     }
 
+    /**
+     * wait(max(syncTimeout, slaveTimeout) + 5s)
+     *
+     * @param putMessageResultFuture future
+     * @return PutMessageResult
+     */
     private PutMessageResult waitForPutResult(CompletableFuture<PutMessageResult> putMessageResultFuture) {
         try {
             int putMessageTimeout = Math.max(messageStore.getMessageStoreConfig().getSyncFlushTimeout(), messageStore.getMessageStoreConfig().getSlaveTimeout()) + 5000;

@@ -23,6 +23,9 @@ import org.apache.rocketmq.store.api.dto.AppendMessageResult;
 import org.apache.rocketmq.store.api.dto.PutMessageResult;
 import org.apache.rocketmq.store.api.dto.PutMessageStatus;
 
+/**
+ * handle disk flush and monitor flush status
+ */
 public interface FlushManager {
 
     void start();
