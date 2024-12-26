@@ -440,6 +440,15 @@ public class DefaultMappedFile extends AbstractMappedFile {
         return this.fileSize == WROTE_POSITION_UPDATER.get(this);
     }
 
+    /**
+     * select a slice of MappedBuffer
+     *  - from pos
+     *  - to pos + size
+     *
+     * @param pos the given position
+     * @param size size
+     * @return bufferResult
+     */
     @Override
     public SelectMappedBufferResult selectMappedBuffer(int pos, int size) {
         int readPosition = getWroteOrCommitPosition();
@@ -463,6 +472,14 @@ public class DefaultMappedFile extends AbstractMappedFile {
         return new SelectMappedBufferResult(this.offsetInFileName + pos, byteBufferNew, size, this);
     }
 
+    /**
+     * select a slice of MappedBuffer
+     *  - from pos
+     *  - to the end of the file (write/commit position)
+     *
+     * @param pos the given position
+     * @return bufferResult
+     */
     @Override
     public SelectMappedBufferResult selectMappedBuffer(int pos) {
         int readPosition = getWroteOrCommitPosition();

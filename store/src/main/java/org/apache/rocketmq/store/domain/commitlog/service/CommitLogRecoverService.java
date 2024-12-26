@@ -87,6 +87,7 @@ public class CommitLogRecoverService {
             else if (dispatchRequest.isSuccess() && size == 0) {
                 // below dispatching action is useless, it's better to delete it
                 this.commitLog.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, true);
+                // switch to next MappedFile, and stop after the last mappedFile
                 index++;
                 if (index >= mappedFiles.size()) {
                     // Current branch can not happen
@@ -112,6 +113,10 @@ public class CommitLogRecoverService {
 
         processOffset += mappedFileOffset;
 
+        // processOffset is the writePosition of the mappedFile
+        // lastValidMsgPhyOffset
+        // maxPhyOffsetOfConsumeQueue is the parameter of this method, passed by DefaultMessageStore
+        // calculated by ConsumeQueue
         storeRecoverOffset(processOffset, lastValidMsgPhyOffset, maxPhyOffsetOfConsumeQueue);
     }
 

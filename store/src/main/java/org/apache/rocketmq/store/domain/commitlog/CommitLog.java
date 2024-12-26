@@ -107,8 +107,8 @@ public class CommitLog implements Swappable {
     private ThreadLocal<PutMessageThreadLocal> putMessageThreadLocal;
 
     /**
-     * only set while DefaultMessageStore.recover()
-     * while recover used by ReputMessageService
+     * only set while DefaultMessageStore.recover() while recover
+     *  used by ReputMessageService
      */
     protected volatile long confirmOffset = -1L;
     private volatile long beginTimeInLock = 0;
@@ -339,6 +339,10 @@ public class CommitLog implements Swappable {
     /**
      * check the message and returns the message size
      *
+     * @param byteBuffer MappedFile.slice
+     * @param checkCRC true in default setting
+     * @param checkDupInfo false in default setting
+     * @param readBody true while recovery
      * @return 0 Come the end of the file // >0 Normal messages // -1 Message checksum failure
      */
     public DispatchRequest checkMessageAndReturnSize(java.nio.ByteBuffer byteBuffer, final boolean checkCRC,
@@ -406,6 +410,7 @@ public class CommitLog implements Swappable {
 
             if (checkCRC) {
                 /*
+                 * forceVerifyPropCRC is false in default setting
                  * When the forceVerifyPropCRC = true,
                  * Crc verification needs to be performed on the entire message data (excluding the length reserved at the tail)
                  */
