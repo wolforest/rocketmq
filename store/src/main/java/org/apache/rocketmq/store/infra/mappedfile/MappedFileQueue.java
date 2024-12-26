@@ -514,7 +514,8 @@ public class MappedFileQueue implements Swappable {
                     firstMappedFile.getOffsetInFileName(),
                     lastMappedFile.getOffsetInFileName() + this.mappedFileSize,
                     this.mappedFileSize,
-                    this.mappedFiles.size());
+                    this.mappedFiles.size()
+                );
             } else {
                 int index = (int) ((offset / this.mappedFileSize) - (firstMappedFile.getOffsetInFileName() / this.mappedFileSize));
                 MappedFile targetFile = null;

@@ -47,7 +47,9 @@ public class CommitLogRecoverService {
      * @throws RocksDBException only in rocksdb mode
      */
     public void recoverNormally(long maxPhyOffsetOfConsumeQueue) throws RocksDBException {
+        // true in default setting
         boolean checkCRCOnRecover = this.defaultMessageStore.getMessageStoreConfig().isCheckCRCOnRecover();
+        // false in default setting
         boolean checkDupInfo = this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable();
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
         if (mappedFiles.isEmpty()) {

@@ -38,6 +38,9 @@ public class StoreCheckpoint {
     private volatile long logicsMsgTimestamp = 0;
     private volatile long indexMsgTimestamp = 0;
     private volatile long masterFlushedOffset = 0;
+    /**
+     * confirmed commitLog offset
+     */
     private volatile long confirmPhyOffset = 0;
 
     public StoreCheckpoint(final String scpPath) throws IOException {
