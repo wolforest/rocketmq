@@ -29,6 +29,13 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import org.rocksdb.RocksDBException;
 
+/**
+ * recover commitLog dispatching process
+ * depend on:
+ *  - commitLog: MappedFileQueue, getMinOffset
+ *  - StoreConfig
+ *  - ConsumeQueue
+ */
 public class CommitLogRecoverService {
     protected static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
