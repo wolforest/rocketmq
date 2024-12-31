@@ -147,12 +147,12 @@ public class CommitLogRecoverService {
 
     private void storeRecoverOffset(long processOffset, long lastValidMsgPhyOffset, long maxPhyOffsetOfConsumeQueue) throws RocksDBException {
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-            if (this.defaultMessageStore.getConfirmOffset() < this.defaultMessageStore.getMinPhyOffset()) {
+            if (this.commitLog.getConfirmOffset() < this.commitLog.getMinOffset()) {
                 log.error("confirmOffset {} is less than minPhyOffset {}, correct confirmOffset to minPhyOffset", this.defaultMessageStore.getConfirmOffset(), this.defaultMessageStore.getMinPhyOffset());
-                this.defaultMessageStore.setConfirmOffset(this.defaultMessageStore.getMinPhyOffset());
-            } else if (this.defaultMessageStore.getConfirmOffset() > processOffset) {
+                this.commitLog.setConfirmOffset(this.commitLog.getMinOffset());
+            } else if (this.commitLog.getConfirmOffset() > processOffset) {
                 log.error("confirmOffset {} is larger than processOffset {}, correct confirmOffset to processOffset", this.defaultMessageStore.getConfirmOffset(), processOffset);
-                this.defaultMessageStore.setConfirmOffset(processOffset);
+                this.commitLog.setConfirmOffset(processOffset);
             }
         } else {
             this.commitLog.setConfirmOffset(lastValidMsgPhyOffset);
@@ -267,12 +267,12 @@ public class CommitLogRecoverService {
 
         processOffset += mappedFileOffset;
         if (this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
-            if (this.defaultMessageStore.getConfirmOffset() < this.defaultMessageStore.getMinPhyOffset()) {
+            if (this.commitLog.getConfirmOffset() < this.commitLog.getMinOffset()) {
                 log.error("confirmOffset {} is less than minPhyOffset {}, correct confirmOffset to minPhyOffset", this.defaultMessageStore.getConfirmOffset(), this.defaultMessageStore.getMinPhyOffset());
-                this.defaultMessageStore.setConfirmOffset(this.defaultMessageStore.getMinPhyOffset());
+                this.commitLog.setConfirmOffset(this.commitLog.getMinOffset());
             } else if (this.defaultMessageStore.getConfirmOffset() > lastConfirmValidMsgPhyOffset) {
                 log.error("confirmOffset {} is larger than lastConfirmValidMsgPhyOffset {}, correct confirmOffset to lastConfirmValidMsgPhyOffset", this.defaultMessageStore.getConfirmOffset(), lastConfirmValidMsgPhyOffset);
-                this.defaultMessageStore.setConfirmOffset(lastConfirmValidMsgPhyOffset);
+                this.commitLog.setConfirmOffset(lastConfirmValidMsgPhyOffset);
             }
         } else {
             this.commitLog.setConfirmOffset(lastValidMsgPhyOffset);

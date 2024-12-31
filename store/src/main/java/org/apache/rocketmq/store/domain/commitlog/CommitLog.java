@@ -523,6 +523,13 @@ public class CommitLog implements Swappable {
         return this.confirmOffset;
     }
 
+    /**
+     * set confirmOffset
+     * called by:
+     *  - CommitLogRecoverService
+     *  -
+     * @param phyOffset the physical offset of the last message
+     */
     public void setConfirmOffset(long phyOffset) {
         this.confirmOffset = phyOffset;
         this.defaultMessageStore.getStoreCheckpoint().setConfirmPhyOffset(confirmOffset);
