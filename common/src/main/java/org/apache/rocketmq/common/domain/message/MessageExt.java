@@ -59,6 +59,9 @@ public class MessageExt extends Message {
      */
     private int reconsumeTimes;
 
+    /**
+     * set by EndTransactionProcessor.processCommitRequest
+     */
     private long preparedTransactionOffset;
 
     public MessageExt() {

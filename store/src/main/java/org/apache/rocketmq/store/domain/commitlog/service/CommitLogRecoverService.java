@@ -223,7 +223,8 @@ public class CommitLogRecoverService {
                     lastValidMsgPhyOffset = processOffset + mappedFileOffset;
                     mappedFileOffset += size;
 
-                    if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable() || this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
+                    if (this.defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()
+                        || this.defaultMessageStore.getBrokerConfig().isEnableControllerMode()) {
                         if (dispatchRequest.getCommitLogOffset() + size <= this.defaultMessageStore.getCommitLog().getConfirmOffset()) {
                             this.commitLog.getMessageStore().onCommitLogDispatch(dispatchRequest, doDispatch, mappedFile, true, false);
                             lastConfirmValidMsgPhyOffset = dispatchRequest.getCommitLogOffset() + size;

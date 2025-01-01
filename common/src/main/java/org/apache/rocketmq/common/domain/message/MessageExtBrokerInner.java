@@ -23,13 +23,32 @@ import org.apache.rocketmq.common.utils.MessageUtils;
 
 public class MessageExtBrokerInner extends MessageExt {
     private static final long serialVersionUID = 7256001576878700634L;
+
+    /**
+     * formatted properties string:
+     * MessageDecoder.messageProperties2String(msgExt.getProperties())
+     */
     private String propertiesString;
+
+    /**
+     * the hash code of tags
+     */
     private long tagsCode;
 
+    /**
+     * ByteBuffer of encoded message,
+     *   used by DefaultAppendMessageCallback
+     * set by:
+     *  - CommitLog.putMessageThreadLocal
+     */
     private ByteBuffer encodedBuff;
 
     private volatile boolean encodeCompleted;
 
+    /**
+     * if topic.length() > Byte.MAX_VALUE,
+     *      the message will be encoded to v2
+     */
     private MessageVersion version = MessageVersion.MESSAGE_VERSION_V1;
 
     public ByteBuffer getEncodedBuff() {

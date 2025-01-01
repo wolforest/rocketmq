@@ -711,8 +711,8 @@ public class MappedFileQueue implements Swappable {
         List<MappedFile> willRemoveFiles = new ArrayList<>();
 
         for (MappedFile file : this.mappedFiles) {
-            long fileTailOffset = file.getOffsetInFileName() + this.mappedFileSize;
-            if (fileTailOffset <= offset) {
+            long fileMaxOffset = file.getOffsetInFileName() + this.mappedFileSize;
+            if (fileMaxOffset <= offset) {
                 continue;
             }
 

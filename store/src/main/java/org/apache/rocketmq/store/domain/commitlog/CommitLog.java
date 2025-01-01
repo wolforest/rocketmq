@@ -235,7 +235,17 @@ public class CommitLog implements Swappable {
     }
 
     /**
-     * Read CommitLog data, use data replication
+     * Read CommitLog data, called by:
+     *  - ReputMessageService
+     *  - CompactionService
+     *  - AutoSwitchHAService
+     *  - TimerMessageStore
+     * return SelectMappedBufferResult
+     *  - MappedByteBuffer.slice()
+     *  - mappedFile
+     *  - ...
+     *
+     * @return SelectMappedBufferResult
      */
     public SelectMappedBufferResult getData(final long offset) {
         return this.getData(offset, offset == 0);
