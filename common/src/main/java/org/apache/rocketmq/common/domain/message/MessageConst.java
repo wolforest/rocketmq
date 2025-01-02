@@ -54,6 +54,7 @@ public class MessageConst {
     public static final String PROPERTY_MAX_RECONSUME_TIMES = "MAX_RECONSUME_TIMES";
     public static final String PROPERTY_CONSUME_START_TIMESTAMP = "CONSUME_START_TIME";
     public static final String PROPERTY_INNER_NUM = "INNER_NUM";
+
     public static final String PROPERTY_INNER_BASE = "INNER_BASE";
     public static final String DUP_INFO = "DUP_INFO";
     public static final String PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS = "CHECK_IMMUNITY_TIME_IN_SECONDS";

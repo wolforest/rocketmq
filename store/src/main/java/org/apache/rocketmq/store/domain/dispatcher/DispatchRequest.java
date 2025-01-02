@@ -31,18 +31,52 @@ import java.util.Map;
  *          -> CompactionService.putRequest()
  */
 public class DispatchRequest {
+    private final boolean success;
+    /**
+     * consumer filter related bitMap
+     *  - set by CommitLogDispatcherCalcBitMap
+     */
+    private byte[] bitMap;
+
+    /**
+     * the buffer size maybe larger than the msg size if the message is wrapped by something
+     * set by DLedgerCommitLog
+     */
+    private int bufferSize = -1;
+    /**
+     * for batch consume queue
+     * if the message is not bach message it equals consumeQueueOffset
+     * else if equals properties[PROPERTY_INNER_BASE]
+     */
+    private long  msgBaseOffset = -1;
+    /**
+     * useless in opensource version
+     */
+    private long nextReputFromOffset = -1;
+    /**
+     * for tiered message store
+     */
+    private String offsetId;
+
+    // message related attributes
     private final String topic;
     private final int queueId;
     private final long commitLogOffset;
     private int msgSize;
+
+    private final int sysFlag;
+    private final long preparedTransactionOffset;
+    private final Map<String, String> propertiesMap;
+    private short batchSize = 1;
+
     /**
      * from message.propertiesMap, possible key are below:
      *    1. MessageConst.PROPERTY_TAGS
      *    2. MessageConst.PROPERTY_DELAY_TIME_LEVEL
      */
-    private final long tagsCode;
     private final long storeTimestamp;
     private final long consumeQueueOffset;
+
     /**
      * message unique key
      * stored in message.properties["UNIQ_KEY"]
@@ -55,22 +89,8 @@ public class DispatchRequest {
      * MessageConst.PROPERTY_KEYS = "KEYS"
      */
     private final String keys;
-    private final boolean success;
 
-    private final int sysFlag;
-    private final long preparedTransactionOffset;
-    private final Map<String, String> propertiesMap;
-    private byte[] bitMap;
-
-    private int bufferSize = -1;//the buffer size maybe larger than the msg size if the message is wrapped by something
-
-    // for batch consume queue
-    private long  msgBaseOffset = -1;
-    private short batchSize = 1;
-
-    private long nextReputFromOffset = -1;
-
-    private String offsetId;
+    private final long tagsCode;
 
     public DispatchRequest(
         final String topic,

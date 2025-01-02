@@ -34,12 +34,29 @@ public class StoreCheckpoint {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final FileChannel fileChannel;
     private final MappedByteBuffer mappedByteBuffer;
+
+    /**
+     * commitLog flushing timestamp
+     */
     private volatile long physicMsgTimestamp = 0;
+    /**
+     * consumeQueue writing timestamp
+     */
     private volatile long logicsMsgTimestamp = 0;
+    /**
+     * index timestamp
+     */
     private volatile long indexMsgTimestamp = 0;
+
+    /**
+     * master flushed offset
+     */
     private volatile long masterFlushedOffset = 0;
+
     /**
      * confirmed commitLog offset
+     * set by CommitLog.recover() method
+     * get by ReputMessageService
      */
     private volatile long confirmPhyOffset = 0;
 
