@@ -93,7 +93,7 @@ public class MQConstants {
     }
 
     public static boolean isSysConsumerGroupForNoColdReadLimit(String consumerGroup) {
-        if (DEFAULT_CONSUMER_GROUP.equals(consumerGroup)
+        return DEFAULT_CONSUMER_GROUP.equals(consumerGroup)
             || TOOLS_CONSUMER_GROUP.equals(consumerGroup)
             || SCHEDULE_CONSUMER_GROUP.equals(consumerGroup)
             || FILTERSRV_CONSUMER_GROUP.equals(consumerGroup)
@@ -104,9 +104,6 @@ public class MQConstants {
             || CID_ONSAPI_OWNER_GROUP.equals(consumerGroup)
             || CID_ONSAPI_PULL_GROUP.equals(consumerGroup)
             || CID_SYS_RMQ_TRANS.equals(consumerGroup)
-            || consumerGroup.startsWith(CID_RMQ_SYS_PREFIX)) {
-            return true;
-        }
-        return false;
+            || consumerGroup.startsWith(CID_RMQ_SYS_PREFIX);
     }
 }

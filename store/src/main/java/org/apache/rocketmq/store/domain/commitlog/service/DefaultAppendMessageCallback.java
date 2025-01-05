@@ -116,7 +116,16 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
     }
 
 
-    public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
+    /**
+     * After message serialization, write MappedByteBuffer
+     *
+     * @param offsetInFileName logical offset of MappedFileQueue stored in mapped file name
+     * @param byteBuffer msg related byteBuffer, sliced from MappedFile.appendMessageBuffer()
+     * @param maxBlank fileSize - currentWritePos
+     * @param putMessageContext context with queue key(topic-queueId), batchSize, positionArray
+     * @return How many bytes to write
+     */
+    public AppendMessageResult doAppend(final long offsetInFileName, final ByteBuffer byteBuffer, final int maxBlank,
         final MessageExtBrokerInner msgInner, PutMessageContext putMessageContext) {
         // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
 
@@ -135,7 +144,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
 
 
         // PHY OFFSET
-        long wroteOffset = fileFromOffset + byteBuffer.position();
+        long wroteOffset = offsetInFileName + byteBuffer.position();
 
         Supplier<String> msgIdSupplier = () -> {
             int sysflag = msgInner.getSysFlag();
@@ -189,7 +198,7 @@ public class DefaultAppendMessageCallback implements AppendMessageCallback {
         preEncodeBuffer.putLong(pos, queueOffset);
         pos += 8;
         // 7 PHYSICALOFFSET
-        preEncodeBuffer.putLong(pos, fileFromOffset + byteBuffer.position());
+        preEncodeBuffer.putLong(pos, offsetInFileName + byteBuffer.position());
         int ipLen = (msgInner.getSysFlag() & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 4 + 4 : 16 + 4;
         // 8 SYSFLAG, 9 BORNTIMESTAMP, 10 BORNHOST, 11 STORETIMESTAMP
         pos += 8 + 4 + 8 + ipLen;

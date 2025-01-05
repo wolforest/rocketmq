@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.common.constant;
+package org.apache.rocketmq.common.domain.constant;
 
 import io.grpc.Context;
 import io.grpc.Metadata;

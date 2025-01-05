@@ -34,6 +34,7 @@ public class DispatchRequest {
     private final boolean success;
     /**
      * consumer filter related bitMap
+     *  - useless in default setting
      *  - set by CommitLogDispatcherCalcBitMap
      */
     private byte[] bitMap;

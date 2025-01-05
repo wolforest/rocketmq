@@ -245,7 +245,7 @@ public class CommitLog implements Swappable {
      *  - mappedFile
      *  - ...
      *
-     * @return SelectMappedBufferResult
+     * @return SelectMappedBufferResult | null
      */
     public SelectMappedBufferResult getData(final long offset) {
         return this.getData(offset, offset == 0);
@@ -262,6 +262,15 @@ public class CommitLog implements Swappable {
         return mappedFile.selectMappedBuffer(pos);
     }
 
+    /**
+     * get commitlog data and write to byteBuffer
+     * called by TimerMessageStore, then convert the byteBuffer to MessageExt
+     *
+     * @param offset offset
+     * @param size size
+     * @param byteBuffer byteBuffer
+     * @return status
+     */
     public boolean getData(final long offset, final int size, final ByteBuffer byteBuffer) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
@@ -273,6 +282,12 @@ public class CommitLog implements Swappable {
         return mappedFile.getData(pos, size, byteBuffer);
     }
 
+    /**
+     * useless in opensource version
+     * @param offset offset
+     * @param size size
+     * @return List<SelectMappedBufferResult>
+     */
     public List<SelectMappedBufferResult> getBulkData(final long offset, final int size) {
         List<SelectMappedBufferResult> bufferResultList = new ArrayList<>();
 

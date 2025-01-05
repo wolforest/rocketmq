@@ -113,6 +113,7 @@ public class BrokerIdentity {
     }
 
     private String defaultBrokerName() {
+
         return StringUtils.isEmpty(localHostName) ? "DEFAULT_BROKER" : localHostName;
     }
 

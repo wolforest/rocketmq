@@ -224,7 +224,13 @@ public class DefaultMessageStore implements MessageStore {
         initProcessService();
     }
 
-
+    /**
+     * Truncate dirty consume queue files.
+     *  - called by CommitLog recover method.
+     *
+     * @param phyOffset physical offset
+     * @throws RocksDBException e
+     */
     @Override
     public void truncateDirtyLogicFiles(long phyOffset) throws RocksDBException {
         this.consumeQueueStore.truncateDirty(phyOffset);

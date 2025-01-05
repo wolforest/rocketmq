@@ -52,6 +52,9 @@ import static java.lang.String.format;
 import static org.apache.rocketmq.store.server.config.StorePathConfigHelper.getStorePathBatchConsumeQueue;
 import static org.apache.rocketmq.store.server.config.StorePathConfigHelper.getStorePathConsumeQueue;
 
+/**
+ * created by DefaultMessageStore
+ */
 public class ConsumeQueueStore extends AbstractConsumeQueueStore {
 
     public ConsumeQueueStore(DefaultMessageStore messageStore) {

@@ -210,8 +210,8 @@ public class CqExtUnit {
     @Override
     public int hashCode() {
         int result = (int) size;
-        result = 31 * result + (int) (tagsCode ^ (tagsCode >>> 32));
-        result = 31 * result + (int) (msgStoreTime ^ (msgStoreTime >>> 32));
+        result = 31 * result + Long.hashCode(tagsCode);
+        result = 31 * result + Long.hashCode(msgStoreTime);
         result = 31 * result + (int) bitMapSize;
         result = 31 * result + (filterBitMap != null ? Arrays.hashCode(filterBitMap) : 0);
         return result;
