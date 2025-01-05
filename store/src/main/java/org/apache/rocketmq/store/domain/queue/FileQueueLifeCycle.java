@@ -24,22 +24,29 @@ import org.apache.rocketmq.store.infra.memory.Swappable;
 public interface FileQueueLifeCycle extends Swappable {
     /**
      * Load from file.
+     *  - call mappedFileQueue.load()
+     *
      * @return true if loaded successfully.
      */
     boolean load();
 
     /**
-     * Recover from file.
+     * Recover from file. depends on
+     * - mappedFileQueue
+     * - consumeQueue
      */
     void recover();
 
     /**
      * Check files.
+     *  - call mappedFileQueue.checkSelf()
      */
     void checkSelf();
 
     /**
      * Flush cache to file.
+     *  - call mappedFileQueue.flush(flushLeastPages)
+     *
      * @param flushLeastPages  the minimum number of pages to be flushed
      * @return true if any data has been flushed.
      */

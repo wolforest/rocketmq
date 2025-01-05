@@ -32,7 +32,8 @@ import org.apache.rocketmq.store.infra.mappedfile.MappedFile;
 
 /**
  * Extend of consume queue, to store something not important,
- * such as message store time, filter bit map and etc.
+ * such as message store time, filter bit map etc.
+ * useless in default setting.
  * <p/>
  * <li>1. This class is used only by {@link ConsumeQueue}</li>
  * <li>2. And is week reliable.</li>

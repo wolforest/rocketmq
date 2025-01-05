@@ -505,6 +505,10 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
         }
     }
 
+    /**
+     * recover offset table
+     * @param minPhyOffset minOffset of CommitLog
+     */
     @Override
     public void recoverOffsetTable(long minPhyOffset) {
         ConcurrentMap<String, Long> cqOffsetTable = new ConcurrentHashMap<>(1024);
@@ -533,6 +537,7 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
         this.setTopicQueueTable(cqOffsetTable);
         this.setBatchTopicQueueTable(bcqOffsetTable);
     }
+
     private void compensateForHA(ConcurrentMap<String, Long> cqOffsetTable) {
         SelectMappedBufferResult lastBuffer = null;
         long startReadOffset = messageStore.getCommitLog().getConfirmOffset() == -1 ? 0 : messageStore.getCommitLog().getConfirmOffset();

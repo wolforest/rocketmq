@@ -53,7 +53,11 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
      * │                                     Store Unit                                    │
      * │                                                                                   │
      * </pre>
-     * ConsumeQueue's store unit. Size: CommitLog Physical Offset(8) + Body Size(4) + Tag HashCode(8) = 20 Bytes
+     * ConsumeQueue's store unit.
+     *  CommitLog Physical Offset(8)
+     *  + Body Size(4)
+     *  + Tag HashCode(8)
+     *  = 20 Bytes
      */
     public static final int CQ_STORE_UNIT_SIZE = 20;
     public static final int MSG_TAG_OFFSET_INDEX = 12;
@@ -61,7 +65,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
 
     private final MessageStore messageStore;
 
+    private final int mappedFileSize;
     private final MappedFileQueue mappedFileQueue;
+
     private final String topic;
     private final int queueId;
 
@@ -70,9 +76,11 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
      * size = ConsumeQueue's store unit (CQ_STORE_UNIT_SIZE)
      * @renamed from byteBufferIndex to writeBuffer
      */
-    private final ByteBuffer byteBufferIndex;
+    private final ByteBuffer writeBuffer;
 
-    private final int mappedFileSize;
+    /**
+     * max consume queue offset
+     */
     private long maxPhysicOffset = -1;
 
     /**
@@ -99,7 +107,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
 
         this.mappedFileQueue = new MappedFileQueue(queueDir, mappedFileSize, null);
 
-        this.byteBufferIndex = ByteBuffer.allocate(CQ_STORE_UNIT_SIZE);
+        this.writeBuffer = ByteBuffer.allocate(CQ_STORE_UNIT_SIZE);
 
         if (messageStore.getMessageStoreConfig().isEnableConsumeQueueExt()) {
             this.consumeQueueExt = new ConsumeQueueExt(
@@ -679,23 +687,23 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
      * consume queue api from commitLog dispatching, the process is below:
      * ReputMessageService -> messageStore.doDispatch() -> CommitLogDispatcherBuildConsumeQueue.dispatch()
      *
-     * @param request the request containing dispatch information.
+     * @param dispatchRequest the request containing dispatch information.
      */
     @Override
-    public void putMessagePositionInfoWrapper(DispatchRequest request) {
+    public void putMessagePositionInfoWrapper(DispatchRequest dispatchRequest) {
         final int maxRetries = 30;
         boolean canWrite = this.messageStore.getRunningFlags().isCQWriteable();
         for (int i = 0; i < maxRetries && canWrite; i++) {
-            long tagsCode = request.getTagsCode();
-            tagsCode = putMessageToExt(tagsCode, request);
+            long tagsCode = dispatchRequest.getTagsCode();
+            tagsCode = putMessageToExt(tagsCode, dispatchRequest);
 
-            boolean result = this.putMessagePositionInfo(request.getCommitLogOffset(), request.getMsgSize(), tagsCode, request.getConsumeQueueOffset());
+            boolean result = this.putMessagePositionInfo(dispatchRequest.getCommitLogOffset(), dispatchRequest.getMsgSize(), tagsCode, dispatchRequest.getConsumeQueueOffset());
             if (result) {
-                handleSuccessResult(request, maxRetries);
+                handleSuccessResult(dispatchRequest, maxRetries);
                 return;
             }
 
-            handleFailureResult(request, i);
+            handleFailureResult(dispatchRequest, i);
         }
 
         // XXX: warn and notify me
@@ -776,20 +784,22 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         ConsumeQueueInterface cq = this.messageStore.findConsumeQueue(queueName, queueId);
         boolean canWrite = this.messageStore.getRunningFlags().isCQWriteable();
         for (int i = 0; i < maxRetries && canWrite; i++) {
-            boolean result = ((ConsumeQueue) cq).putMessagePositionInfo(request.getCommitLogOffset(), request.getMsgSize(),
+            boolean result = ((ConsumeQueue) cq).putMessagePositionInfo(
+                    request.getCommitLogOffset(),
+                    request.getMsgSize(),
                     request.getTagsCode(),
                     queueOffset);
             if (result) {
                 break;
-            } else {
-                log.warn("[BUG]put commit log position info to " + queueName + ":" + queueId + " " + request.getCommitLogOffset()
-                        + " failed, retry " + i + " times");
+            }
 
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    log.warn("", e);
-                }
+            log.warn("[BUG]put commit log position info to " + queueName + ":" + queueId + " " + request.getCommitLogOffset()
+                + " failed, retry " + i + " times");
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.warn("", e);
             }
         }
     }
@@ -837,7 +847,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         }
 
         this.setMaxPhysicOffset(offset + size);
-        return mappedFile.appendMessage(this.byteBufferIndex.array());
+        return mappedFile.appendMessage(this.writeBuffer.array());
     }
 
     /**
@@ -847,11 +857,11 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
      * @param tagsCode tags hashCode
      */
     private void setWriteBuffer(final long offset, final int size, final long tagsCode) {
-        this.byteBufferIndex.flip();
-        this.byteBufferIndex.limit(CQ_STORE_UNIT_SIZE);
-        this.byteBufferIndex.putLong(offset);
-        this.byteBufferIndex.putInt(size);
-        this.byteBufferIndex.putLong(tagsCode);
+        this.writeBuffer.flip();
+        this.writeBuffer.limit(CQ_STORE_UNIT_SIZE);
+        this.writeBuffer.putLong(offset);
+        this.writeBuffer.putInt(size);
+        this.writeBuffer.putLong(tagsCode);
     }
 
     /**
