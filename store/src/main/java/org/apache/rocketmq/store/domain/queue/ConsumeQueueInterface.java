@@ -133,7 +133,7 @@ public interface ConsumeQueueInterface extends FileQueueLifeCycle {
      *
      * @return the max physical offset point to commitlog
      */
-    long getMaxPhysicOffset();
+    long getMaxCommitLogOffset();
 
     /**
      * Usually, the cq files are not exactly consistent with the commitlog, there maybe some redundant data in the first
@@ -141,7 +141,7 @@ public interface ConsumeQueueInterface extends FileQueueLifeCycle {
      *
      * @return the minimal effective pos of the cq file.
      */
-    long getMinLogicOffset();
+    long getMinOffset();
 
     /**
      * Get cq type

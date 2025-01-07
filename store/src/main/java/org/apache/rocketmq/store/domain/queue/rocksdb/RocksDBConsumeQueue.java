@@ -161,13 +161,13 @@ public class RocksDBConsumeQueue implements ConsumeQueueInterface {
     }
 
     @Override
-    public long getMaxPhysicOffset() {
+    public long getMaxCommitLogOffset() {
         Long maxPhyOffset = this.messageStore.getConsumeQueueStore().getMaxPhyOffsetInConsumeQueue(topic, queueId);
         return maxPhyOffset == null ? -1 : maxPhyOffset;
     }
 
     @Override
-    public long getMinLogicOffset() {
+    public long getMinOffset() {
         return 0;
     }
 
@@ -323,7 +323,7 @@ public class RocksDBConsumeQueue implements ConsumeQueueInterface {
 
     @Override
     public long getLastOffset() {
-        return getMaxPhysicOffset();
+        return getMaxCommitLogOffset();
     }
 
     private ReferredIterator<CqUnit> iterateFrom0(final long startIndex, final int count) throws RocksDBException {

@@ -79,14 +79,14 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     private final ByteBuffer writeBuffer;
 
     /**
-     * max consume queue offset
+     * max commitLog offset + messageSize
      */
-    private long maxPhysicOffset = -1;
+    private long maxCommitLogOffset = -1;
 
     /**
      * Minimum offset of the consume file queue that points to valid commit log record.
      */
-    private volatile long minLogicOffset = 0;
+    private volatile long minOffset = 0;
     private ConsumeQueueExt consumeQueueExt = null;
 
     public ConsumeQueue(
@@ -155,7 +155,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
 
                 if (offset >= 0 && size > 0) {
                     mappedFileOffset = i + CQ_STORE_UNIT_SIZE;
-                    this.setMaxPhysicOffset(offset + size);
+                    this.setMaxCommitLogOffset(offset + size);
                     if (isExtAddr(tagsCode)) {
                         maxExtAddr = tagsCode;
                     }
@@ -235,7 +235,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         }
 
         long offset = 0;
-        int low = minLogicOffset > mappedFile.getOffsetInFileName() ? (int) (minLogicOffset - mappedFile.getOffsetInFileName()) : 0;
+        int low = minOffset > mappedFile.getOffsetInFileName() ? (int) (minOffset - mappedFile.getOffsetInFileName()) : 0;
         int high = 0;
         int midOffset = -1, targetOffset = -1, leftOffset = -1, rightOffset = -1;
         long minPhysicOffset = this.messageStore.getMinPhyOffset();
@@ -418,7 +418,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     public void truncateDirtyLogicFiles(long phyOffset, boolean deleteFile) {
         int logicFileSize = this.mappedFileSize;
 
-        this.setMaxPhysicOffset(phyOffset);
+        this.setMaxCommitLogOffset(phyOffset);
         long maxExtAddr = 1;
         boolean shouldDeleteFile = false;
         while (true) {
@@ -447,7 +447,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                         mappedFile.setWrotePosition(pos);
                         mappedFile.setCommittedPosition(pos);
                         mappedFile.setFlushedPosition(pos);
-                        this.setMaxPhysicOffset(offset + size);
+                        this.setMaxCommitLogOffset(offset + size);
                         // This maybe not take effect, when not every consume queue has extend file.
                         if (isExtAddr(tagsCode)) {
                             maxExtAddr = tagsCode;
@@ -465,7 +465,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                         mappedFile.setWrotePosition(pos);
                         mappedFile.setCommittedPosition(pos);
                         mappedFile.setFlushedPosition(pos);
-                        this.setMaxPhysicOffset(offset + size);
+                        this.setMaxCommitLogOffset(offset + size);
                         if (isExtAddr(tagsCode)) {
                             maxExtAddr = tagsCode;
                         }
@@ -549,7 +549,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     @Override
     public void correctMinOffset(long minCommitLogOffset) {
         // Check if the consume queue is the state of deprecation.
-        if (minLogicOffset >= mappedFileQueue.getMaxOffset()) {
+        if (minOffset >= mappedFileQueue.getMaxOffset()) {
             log.info("ConsumeQueue[Topic={}, queue-id={}] contains no valid entries", topic, queueId);
             return;
         }
@@ -573,7 +573,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                 if (commitLogOffset < minCommitLogOffset) {
                     // Keep the largest known consume offset, even if this consume-queue contains no valid entries at
                     // all. Let minLogicOffset point to a future slot.
-                    this.minLogicOffset = lastMappedFile.getOffsetInFileName() + maxReadablePosition;
+                    this.minOffset = lastMappedFile.getOffsetInFileName() + maxReadablePosition;
                     log.info("ConsumeQueue[topic={}, queue-id={}] contains no valid entries. Min-offset is assigned as: {}.",
                             topic, queueId, getMinOffsetInQueue());
                     return;
@@ -591,7 +591,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             // Search from previous min logical offset. Typically, a consume queue file segment contains 300,000 entries
             // searching from previous position saves significant amount of comparisons and IOs
             boolean intact = true; // Assume previous value is still valid
-            long start = this.minLogicOffset - mappedFile.getOffsetInFileName();
+            long start = this.minOffset - mappedFile.getOffsetInFileName();
             if (start < 0) {
                 intact = false;
                 start = 0;
@@ -656,7 +656,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                     long tagsCode = buffer.getLong();
 
                     if (offsetPy >= minCommitLogOffset) {
-                        this.minLogicOffset = mappedFile.getOffsetInFileName() + start + i;
+                        this.minOffset = mappedFile.getOffsetInFileName() + start + i;
                         log.info("Compute logical min offset: {}, topic: {}, queueId: {}",
                                 this.getMinOffsetInQueue(), this.topic, this.queueId);
                         // This maybe not take effect, when not every consume queue has an extended file.
@@ -680,7 +680,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
 
     @Override
     public long getMinOffsetInQueue() {
-        return this.minLogicOffset / CQ_STORE_UNIT_SIZE;
+        return this.minOffset / CQ_STORE_UNIT_SIZE;
     }
 
     /**
@@ -821,19 +821,19 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     /**
      * load message from commitLog and add messages to consume queue
      *
-     * @param offset CommitLog offset
-     * @param size   size of the message in the CommitLog with the offset
+     * @param commitLogOffset CommitLog offset
+     * @param messageSize   size of the message in the CommitLog with the offset
      * @param tagsCode DispatchRequest.tagsCode, from message.propertiesMap
      * @param cqOffset consumeQueue offset
      * @return put status
      */
-    private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode, final long cqOffset) {
-        if (offset + size <= this.getMaxPhysicOffset()) {
-            log.warn("Maybe try to build consume queue repeatedly maxPhysicOffset={} phyOffset={}", maxPhysicOffset, offset);
+    private boolean putMessagePositionInfo(final long commitLogOffset, final int messageSize, final long tagsCode, final long cqOffset) {
+        if (commitLogOffset + messageSize <= this.getMaxCommitLogOffset()) {
+            log.warn("Maybe try to build consume queue repeatedly maxPhysicOffset={} phyOffset={}", maxCommitLogOffset, commitLogOffset);
             return true;
         }
 
-        setWriteBuffer(offset, size, tagsCode);
+        setWriteBuffer(commitLogOffset, messageSize, tagsCode);
 
         final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
@@ -846,7 +846,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             return true;
         }
 
-        this.setMaxPhysicOffset(offset + size);
+        this.setMaxCommitLogOffset(commitLogOffset + messageSize);
         return mappedFile.appendMessage(this.writeBuffer.array());
     }
 
@@ -875,7 +875,8 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             return;
         }
 
-        this.minLogicOffset = expectLogicOffset;
+        // init minOffset, any better ways?
+        this.minOffset = expectLogicOffset;
         this.mappedFileQueue.setFlushedPosition(expectLogicOffset);
         this.mappedFileQueue.setCommittedPosition(expectLogicOffset);
         this.fillPreBlank(mappedFile, expectLogicOffset);
@@ -933,7 +934,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     public SelectMappedBufferResult getIndexBuffer(final long startIndex) {
         int mappedFileSize = this.mappedFileSize;
         long offset = startIndex * CQ_STORE_UNIT_SIZE;
-        if (offset >= this.getMinLogicOffset()) {
+        if (offset >= this.getMinOffset()) {
             MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset);
             if (mappedFile != null) {
                 return mappedFile.selectMappedBuffer((int) (offset % mappedFileSize));
@@ -958,7 +959,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         /**
          * here maybe should not return null
          */
-        ReferredIterator<CqUnit> it = iterateFrom(minLogicOffset / CQ_STORE_UNIT_SIZE);
+        ReferredIterator<CqUnit> it = iterateFrom(minOffset / CQ_STORE_UNIT_SIZE);
         if (it == null) {
             return null;
         }
@@ -1000,12 +1001,16 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     }
 
     @Override
-    public long getMinLogicOffset() {
-        return minLogicOffset;
+    public long getMinOffset() {
+        return minOffset;
     }
 
-    public void setMinLogicOffset(long minLogicOffset) {
-        this.minLogicOffset = minLogicOffset;
+    /**
+     * just for test
+     * @param minOffset minLogicOffset
+     */
+    public void setMinOffset(long minOffset) {
+        this.minOffset = minOffset;
     }
 
     @Override
@@ -1031,18 +1036,18 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     }
 
     @Override
-    public long getMaxPhysicOffset() {
-        return maxPhysicOffset;
+    public long getMaxCommitLogOffset() {
+        return maxCommitLogOffset;
     }
 
-    public void setMaxPhysicOffset(long maxPhysicOffset) {
-        this.maxPhysicOffset = maxPhysicOffset;
+    public void setMaxCommitLogOffset(long maxCommitLogOffset) {
+        this.maxCommitLogOffset = maxCommitLogOffset;
     }
 
     @Override
     public void destroy() {
-        this.setMaxPhysicOffset(-1);
-        this.minLogicOffset = 0;
+        this.setMaxCommitLogOffset(-1);
+        this.minOffset = 0;
         this.mappedFileQueue.destroy();
         if (isExtReadEnable()) {
             this.consumeQueueExt.destroy();

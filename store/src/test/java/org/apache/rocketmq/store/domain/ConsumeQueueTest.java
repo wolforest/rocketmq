@@ -496,21 +496,21 @@ public class ConsumeQueueTest {
             consumeQueue.putMessagePositionInfoWrapper(dispatchRequest);
         }
 
-        consumeQueue.setMinLogicOffset(0L);
+        consumeQueue.setMinOffset(0L);
         consumeQueue.correctMinOffset(0L);
         Assert.assertEquals(0, consumeQueue.getMinOffsetInQueue());
 
-        consumeQueue.setMinLogicOffset(100);
+        consumeQueue.setMinOffset(100);
         consumeQueue.correctMinOffset(2000);
         Assert.assertEquals(20, consumeQueue.getMinOffsetInQueue());
 
-        consumeQueue.setMinLogicOffset((max - 1) * ConsumeQueue.CQ_STORE_UNIT_SIZE);
+        consumeQueue.setMinOffset((max - 1) * ConsumeQueue.CQ_STORE_UNIT_SIZE);
         consumeQueue.correctMinOffset(max * messageSize);
-        Assert.assertEquals(max * ConsumeQueue.CQ_STORE_UNIT_SIZE, consumeQueue.getMinLogicOffset());
+        Assert.assertEquals(max * ConsumeQueue.CQ_STORE_UNIT_SIZE, consumeQueue.getMinOffset());
 
-        consumeQueue.setMinLogicOffset(max * ConsumeQueue.CQ_STORE_UNIT_SIZE);
+        consumeQueue.setMinOffset(max * ConsumeQueue.CQ_STORE_UNIT_SIZE);
         consumeQueue.correctMinOffset(max * messageSize);
-        Assert.assertEquals(max * ConsumeQueue.CQ_STORE_UNIT_SIZE, consumeQueue.getMinLogicOffset());
+        Assert.assertEquals(max * ConsumeQueue.CQ_STORE_UNIT_SIZE, consumeQueue.getMinOffset());
         consumeQueue.destroy();
     }
 }

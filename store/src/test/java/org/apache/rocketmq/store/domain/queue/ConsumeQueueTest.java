@@ -132,7 +132,7 @@ public class ConsumeQueueTest extends QueueTestBase {
             request.setBitMap(new byte[10]);
             messageStore.getConsumeQueueStore().putMessagePositionInfoWrapper(consumeQueue, request);
         }
-        Assert.assertEquals(0, consumeQueue.getMinLogicOffset());
+        Assert.assertEquals(0, consumeQueue.getMinOffset());
         Assert.assertEquals(0, consumeQueue.getMinOffsetInQueue());
         Assert.assertEquals(msgNum, consumeQueue.getMaxOffsetInQueue());
         Assert.assertEquals(msgNum, consumeQueue.getMessageTotalInQueue());

@@ -296,12 +296,12 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
     }
 
     @Override
-    public long getMaxPhysicOffset() {
+    public long getMaxCommitLogOffset() {
         return maxMsgPhyOffsetInCommitLog;
     }
 
     @Override
-    public long getMinLogicOffset() {
+    public long getMinOffset() {
         return minLogicOffset;
     }
 

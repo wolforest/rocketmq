@@ -344,7 +344,7 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
     public Long getMaxPhyOffsetInConsumeQueue(String topic, int queueId) {
         ConsumeQueueInterface logic = findOrCreateConsumeQueue(topic, queueId);
         if (logic != null) {
-            return logic.getMaxPhysicOffset();
+            return logic.getMaxCommitLogOffset();
         }
         return null;
     }
@@ -354,8 +354,8 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
         long maxPhysicOffset = -1L;
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
             for (ConsumeQueueInterface logic : maps.values()) {
-                if (logic.getMaxPhysicOffset() > maxPhysicOffset) {
-                    maxPhysicOffset = logic.getMaxPhysicOffset();
+                if (logic.getMaxCommitLogOffset() > maxPhysicOffset) {
+                    maxPhysicOffset = logic.getMaxCommitLogOffset();
                 }
             }
         }
@@ -612,8 +612,8 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
                     log.warn("maybe ConsumeQueue was created just now. topic={} queueId={} maxPhysicOffset={} minLogicOffset={}.",
                         nextQT.getValue().getTopic(),
                         nextQT.getValue().getQueueId(),
-                        nextQT.getValue().getMaxPhysicOffset(),
-                        nextQT.getValue().getMinLogicOffset());
+                        nextQT.getValue().getMaxCommitLogOffset(),
+                        nextQT.getValue().getMinOffset());
                 } else if (maxCLOffsetInConsumeQueue < minCommitLogOffset) {
                     log.info(
                         "cleanExpiredConsumerQueue: {} {} consumer queue destroyed, minCommitLogOffset: {} maxCLOffsetInConsumeQueue: {}",

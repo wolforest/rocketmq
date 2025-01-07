@@ -111,8 +111,8 @@ public class RocksDBConsumeQueueOffsetTable {
     /**
      * Although we have already put max(min) consumeQueueOffset and physicalOffset in rocksdb, we still hope to get them
      * from heap to avoid accessing rocksdb.
-     * @see ConsumeQueue#getMaxPhysicOffset(), maxPhysicOffset  --> topicQueueMaxCqOffset
-     * @see ConsumeQueue#getMinLogicOffset(),   minLogicOffset  --> topicQueueMinOffset
+     * @see ConsumeQueue#getMaxCommitLogOffset(), maxPhysicOffset  --> topicQueueMaxCqOffset
+     * @see ConsumeQueue#getMinOffset(),   minLogicOffset  --> topicQueueMinOffset
      */
     private final Map<String/* topic-queueId */, PhyAndCQOffset> topicQueueMinOffset;
     private final Map<String/* topic-queueId */, Long> topicQueueMaxCqOffset;

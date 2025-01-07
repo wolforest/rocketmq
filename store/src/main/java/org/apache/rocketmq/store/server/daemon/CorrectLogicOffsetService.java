@@ -54,22 +54,22 @@ public class CorrectLogicOffsetService {
             LOGGER.error("CorrectLogicOffsetService.needCorrect. first file not available, trigger correct." +
                     " topic:{}, queue:{}, maxPhyOffset in queue:{}, minPhyOffset " +
                     "in commit log:{}, minOffset in queue:{}, maxOffset in queue:{}, cqType:{}"
-                , logic.getTopic(), logic.getQueueId(), logic.getMaxPhysicOffset()
+                , logic.getTopic(), logic.getQueueId(), logic.getMaxCommitLogOffset()
                 , minPhyOffset, logic.getMinOffsetInQueue(), logic.getMaxOffsetInQueue(), logic.getCQType());
             return true;
         }
 
         // logic.getMaxPhysicOffset() or minPhyOffset = -1
         // means there is no message in current queue, so no need to correct.
-        if (logic.getMaxPhysicOffset() == -1 || minPhyOffset == -1) {
+        if (logic.getMaxCommitLogOffset() == -1 || minPhyOffset == -1) {
             return false;
         }
 
-        if (logic.getMaxPhysicOffset() < minPhyOffset) {
+        if (logic.getMaxCommitLogOffset() < minPhyOffset) {
             if (logic.getMinOffsetInQueue() < logic.getMaxOffsetInQueue()) {
                 LOGGER.error("CorrectLogicOffsetService.needCorrect. logic max phy offset: {} is less than min phy offset: {}, " +
                         "but min offset: {} is less than max offset: {}. topic:{}, queue:{}, cqType:{}."
-                    , logic.getMaxPhysicOffset(), minPhyOffset, logic.getMinOffsetInQueue()
+                    , logic.getMaxCommitLogOffset(), minPhyOffset, logic.getMinOffsetInQueue()
                     , logic.getMaxOffsetInQueue(), logic.getTopic(), logic.getQueueId(), logic.getCQType());
                 return true;
             } else if (logic.getMinOffsetInQueue() == logic.getMaxOffsetInQueue()) {
@@ -77,7 +77,7 @@ public class CorrectLogicOffsetService {
             } else {
                 LOGGER.error("CorrectLogicOffsetService.needCorrect. It should not happen, logic max phy offset: {} is less than min phy offset: {}," +
                         " but min offset: {} is larger than max offset: {}. topic:{}, queue:{}, cqType:{}"
-                    , logic.getMaxPhysicOffset(), minPhyOffset, logic.getMinOffsetInQueue()
+                    , logic.getMaxCommitLogOffset(), minPhyOffset, logic.getMinOffsetInQueue()
                     , logic.getMaxOffsetInQueue(), logic.getTopic(), logic.getQueueId(), logic.getCQType());
                 return false;
             }
@@ -93,7 +93,7 @@ public class CorrectLogicOffsetService {
                 } else {
                     LOGGER.error("CorrectLogicOffsetService.needCorrect. cqUnit is null, logic max phy offset: {} is greater than min phy offset: {}, " +
                             "but min offset: {} is not equal to max offset: {}. topic:{}, queue:{}, cqType:{}."
-                        , logic.getMaxPhysicOffset(), minPhyOffset, logic.getMinOffsetInQueue()
+                        , logic.getMaxCommitLogOffset(), minPhyOffset, logic.getMinOffsetInQueue()
                         , logic.getMaxOffsetInQueue(), logic.getTopic(), logic.getQueueId(), logic.getCQType());
                     return true;
                 }
@@ -102,7 +102,7 @@ public class CorrectLogicOffsetService {
             if (cqUnit.getPos() < minPhyOffset) {
                 LOGGER.error("CorrectLogicOffsetService.needCorrect. logic max phy offset: {} is greater than min phy offset: {}, " +
                         "but minPhyPos in cq is: {}. min offset in queue: {}, max offset in queue: {}, topic:{}, queue:{}, cqType:{}."
-                    , logic.getMaxPhysicOffset(), minPhyOffset, cqUnit.getPos(), logic.getMinOffsetInQueue()
+                    , logic.getMaxCommitLogOffset(), minPhyOffset, cqUnit.getPos(), logic.getMinOffsetInQueue()
                     , logic.getMaxOffsetInQueue(), logic.getTopic(), logic.getQueueId(), logic.getCQType());
                 return true;
             }

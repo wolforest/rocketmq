@@ -1081,8 +1081,8 @@ public class DefaultMessageStore implements MessageStore {
         long maxPhysicalPosInLogicQueue = commitLog.getMinOffset();
         for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.getConsumeQueueTable().values()) {
             for (ConsumeQueueInterface logic : maps.values()) {
-                if (logic.getMaxPhysicOffset() > maxPhysicalPosInLogicQueue) {
-                    maxPhysicalPosInLogicQueue = logic.getMaxPhysicOffset();
+                if (logic.getMaxCommitLogOffset() > maxPhysicalPosInLogicQueue) {
+                    maxPhysicalPosInLogicQueue = logic.getMaxCommitLogOffset();
                 }
             }
         }
