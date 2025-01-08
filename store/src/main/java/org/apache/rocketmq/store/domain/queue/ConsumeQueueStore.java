@@ -507,10 +507,10 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
 
     /**
      * recover offset table
-     * @param minPhyOffset minOffset of CommitLog
+     * @param minCommitLogOffset minOffset of CommitLog
      */
     @Override
-    public void recoverOffsetTable(long minPhyOffset) {
+    public void recoverOffsetTable(long minCommitLogOffset) {
         ConcurrentMap<String, Long> cqOffsetTable = new ConcurrentHashMap<>(1024);
         ConcurrentMap<String, Long> bcqOffsetTable = new ConcurrentHashMap<>(1024);
 
@@ -525,7 +525,7 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
                     cqOffsetTable.put(key, maxOffsetInQueue);
                 }
 
-                this.correctMinOffset(logic, minPhyOffset);
+                this.correctMinOffset(logic, minCommitLogOffset);
             }
         }
 

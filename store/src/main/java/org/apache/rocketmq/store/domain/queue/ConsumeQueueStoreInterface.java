@@ -199,9 +199,9 @@ public interface ConsumeQueueStoreInterface {
 
     /**
      * recover topicQueue table by minPhyOffset
-     * @param minPhyOffset
+     * @param minCommitLogOffset
      */
-    void recoverOffsetTable(long minPhyOffset);
+    void recoverOffsetTable(long minCommitLogOffset);
 
     /**
      * set topicQueue table

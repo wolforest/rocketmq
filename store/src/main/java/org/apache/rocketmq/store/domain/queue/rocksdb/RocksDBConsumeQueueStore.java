@@ -289,7 +289,7 @@ public class RocksDBConsumeQueueStore extends AbstractConsumeQueueStore {
      * @see RocksDBConsumeQueueOffsetTable#getMinCqOffset(String, int)
      */
     @Override
-    public void recoverOffsetTable(long minPhyOffset) {
+    public void recoverOffsetTable(long minCommitLogOffset) {
 
     }
 

@@ -136,10 +136,18 @@ public class StoreCheckpoint {
         this.confirmPhyOffset = confirmPhyOffset;
     }
 
+    /**
+     * called by CommitLog.isMappedFileMatchedRecover
+     * @return min(physicMsgTimestamp, logicsMsgTimestamp, indexMsgTimestamp) - 1000 * 3
+     */
     public long getMinTimestampIndex() {
         return Math.min(this.getMinTimestamp(), this.indexMsgTimestamp);
     }
 
+    /**
+     * called by CommitLog.isMappedFileMatchedRecover
+     * @return min(physicMsgTimestamp, logicsMsgTimestamp) - 1000 * 3
+     */
     public long getMinTimestamp() {
         long min = Math.min(this.physicMsgTimestamp, this.logicsMsgTimestamp);
 

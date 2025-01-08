@@ -84,9 +84,13 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     private long maxCommitLogOffset = -1;
 
     /**
-     * Minimum offset of the consume file queue that points to valid commit log record.
+     * Minimum offset of the consume file queue
+     *      that points to valid commit log record.
+     * set while warming the MappedFile,
+     *      equals the first queueOffset of the first mappedFile.
      */
     private volatile long minOffset = 0;
+
     private ConsumeQueueExt consumeQueueExt = null;
 
     public ConsumeQueue(
@@ -235,7 +239,10 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         }
 
         long offset = 0;
-        int low = minOffset > mappedFile.getOffsetInFileName() ? (int) (minOffset - mappedFile.getOffsetInFileName()) : 0;
+        int low = minOffset > mappedFile.getOffsetInFileName()
+            ? (int) (minOffset - mappedFile.getOffsetInFileName())
+            : 0;
+
         int high = 0;
         int midOffset = -1, targetOffset = -1, leftOffset = -1, rightOffset = -1;
         long minPhysicOffset = this.messageStore.getMinPhyOffset();
@@ -824,10 +831,10 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
      * @param commitLogOffset CommitLog offset
      * @param messageSize   size of the message in the CommitLog with the offset
      * @param tagsCode DispatchRequest.tagsCode, from message.propertiesMap
-     * @param cqOffset consumeQueue offset
+     * @param queueIndex consumeQueue index
      * @return put status
      */
-    private boolean putMessagePositionInfo(final long commitLogOffset, final int messageSize, final long tagsCode, final long cqOffset) {
+    private boolean putMessagePositionInfo(final long commitLogOffset, final int messageSize, final long tagsCode, final long queueIndex) {
         if (commitLogOffset + messageSize <= this.getMaxCommitLogOffset()) {
             log.warn("Maybe try to build consume queue repeatedly maxPhysicOffset={} phyOffset={}", maxCommitLogOffset, commitLogOffset);
             return true;
@@ -835,14 +842,14 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
 
         setWriteBuffer(commitLogOffset, messageSize, tagsCode);
 
-        final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
-        MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
+        final long queueOffset = queueIndex * CQ_STORE_UNIT_SIZE;
+        MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(queueOffset);
         if (null == mappedFile) {
             return false;
         }
-        warmMappedFile(mappedFile, cqOffset, expectLogicOffset);
+        warmMappedFile(mappedFile, queueIndex, queueOffset);
 
-        if (isOffsetInvalid(mappedFile, cqOffset, expectLogicOffset)) {
+        if (isOffsetInvalid(mappedFile, queueIndex, queueOffset)) {
             return true;
         }
 
@@ -867,20 +874,20 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     /**
      * warm MappedFile if it's new
      * @param mappedFile mappedFile
-     * @param cqOffset consume queue offset
-     * @param expectLogicOffset expectOffset
+     * @param queueIndex consume queue offset
+     * @param queueOffset expectOffset
      */
-    private void warmMappedFile(MappedFile mappedFile, long cqOffset, long expectLogicOffset) {
-        if (!mappedFile.isFirstCreateInQueue() || cqOffset == 0 || mappedFile.getWrotePosition() != 0) {
+    private void warmMappedFile(MappedFile mappedFile, long queueIndex, long queueOffset) {
+        if (!mappedFile.isFirstCreateInQueue() || queueIndex == 0 || mappedFile.getWrotePosition() != 0) {
             return;
         }
 
         // init minOffset, any better ways?
-        this.minOffset = expectLogicOffset;
-        this.mappedFileQueue.setFlushedPosition(expectLogicOffset);
-        this.mappedFileQueue.setCommittedPosition(expectLogicOffset);
-        this.fillPreBlank(mappedFile, expectLogicOffset);
-        log.info("fill pre blank space " + mappedFile.getFileName() + " " + expectLogicOffset + " " + mappedFile.getWrotePosition());
+        this.minOffset = queueOffset;
+        this.mappedFileQueue.setFlushedPosition(queueOffset);
+        this.mappedFileQueue.setCommittedPosition(queueOffset);
+        this.fillPreBlank(mappedFile, queueOffset);
+        log.info("fill pre blank space " + mappedFile.getFileName() + " " + queueOffset + " " + mappedFile.getWrotePosition());
     }
 
     private boolean isOffsetInvalid(MappedFile mappedFile, long cqOffset, long expectLogicOffset) {
