@@ -145,14 +145,13 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             index = 0;
         }
 
-        int mappedFileSizeLogics = this.mappedFileSize;
         MappedFile mappedFile = mappedFiles.get(index);
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
         long processOffset = mappedFile.getOffsetInFileName();
         long mappedFileOffset = 0;
         long maxExtAddr = 1;
         while (true) {
-            for (int i = 0; i < mappedFileSizeLogics; i += CQ_STORE_UNIT_SIZE) {
+            for (int i = 0; i < this.mappedFileSize; i += CQ_STORE_UNIT_SIZE) {
                 long offset = byteBuffer.getLong();
                 int size = byteBuffer.getInt();
                 long tagsCode = byteBuffer.getLong();
@@ -170,7 +169,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                 }
             }
 
-            if (mappedFileOffset == mappedFileSizeLogics) {
+            if (mappedFileOffset == this.mappedFileSize) {
                 index++;
                 if (index >= mappedFiles.size()) {
 

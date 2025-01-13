@@ -707,6 +707,11 @@ public class MappedFileQueue implements Swappable {
         return result;
     }
 
+    /**
+     * truncate dirty files
+     *  - delete dirty files if the file offset is less than offset
+     * @param offset dirty data offset
+     */
     public void truncateDirtyFiles(long offset) {
         List<MappedFile> willRemoveFiles = new ArrayList<>();
 
