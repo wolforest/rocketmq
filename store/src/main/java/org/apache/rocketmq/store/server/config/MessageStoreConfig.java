@@ -319,6 +319,9 @@ public class MessageStoreConfig {
      */
     private boolean enabledAppendPropCRC = false;
     private boolean forceVerifyPropCRC = false;
+    /**
+     * The number of files to be traversed when getting messages
+     */
     private int travelCqFileNumWhenGetMessage = 1;
     // Sleep interval between to corrections
     private int correctLogicMinOffsetSleepInterval = 1;

@@ -171,7 +171,7 @@ public class GetMessageService {
         return null;
     }
 
-    private void handleNoBufferQueue(GetMessageContext context) {
+    private void handleNoMessage(GetMessageContext context) {
         context.getGetResult().setStatus(GetMessageStatus.OFFSET_FOUND_NULL);
 
         long tmpOffset = nextOffsetCorrection(context.getNextBeginOffset(), messageStore.getConsumeQueueStore().rollNextFile(context.getConsumeQueue(), context.getNextBeginOffset()));
@@ -184,10 +184,17 @@ public class GetMessageService {
             + context.getConsumeQueue().getMaxOffsetInQueue() + ", but access logic queue failed. Correct nextBeginOffset to " + context.getNextBeginOffset());
     }
 
-    private void handleBufferQueue(GetMessageContext context, ReferredIterator<CqUnit> bufferConsumeQueue) {
+    private void handleQueueIterator(GetMessageContext context, ReferredIterator<CqUnit> queueIterator) {
         context.setNextPhyFileStartOffset(Long.MIN_VALUE);
-        while (bufferConsumeQueue.hasNext() && context.getNextBeginOffset() < context.getConsumeQueue().getMaxOffsetInQueue()) {
-            CqUnit cqUnit = bufferConsumeQueue.next();
+
+        /*
+         * hasNext() and offset Checking is duplicated
+         * they both do the same thing
+         */
+        while (queueIterator.hasNext()
+            && context.getNextBeginOffset() < context.getConsumeQueue().getMaxOffsetInQueue()) {
+
+            CqUnit cqUnit = queueIterator.next();
             boolean isInMem = estimateInMemByCommitOffset(cqUnit.getPos(), context.getMaxOffsetPy());
 
             if ((cqUnit.getQueueOffset() - context.getOffset()) * context.getConsumeQueue().getUnitSize() > context.getMaxFilterMessageSize()) {
@@ -267,23 +274,34 @@ public class GetMessageService {
         GetMessageContext context = new GetMessageContext(messageStore, consumeQueue, getResult, group, topic, queueId, offset, maxMsgNums, maxTotalMsgSize, messageFilter);
 
         int cqFileNum = 0;
-        while (getResult.getBufferTotalSize() <= 0 && context.getNextBeginOffset() < consumeQueue.getMaxOffsetInQueue() && cqFileNum++ < messageStore.getMessageStoreConfig().getTravelCqFileNumWhenGetMessage()) {
-            ReferredIterator<CqUnit> bufferConsumeQueue = null;
+        /*
+         * bufferTotalSize is the total message size
+         * bufferTotalSize less than 0 means
+         * the while loop will break after getting more than one messages
+         *
+         * travelCqFileNumWhenGetMessage limits the max file nums to travel when get message
+         * default is 1
+         */
+        while (getResult.getBufferTotalSize() <= 0
+            && context.getNextBeginOffset() < consumeQueue.getMaxOffsetInQueue()
+            && cqFileNum++ < messageStore.getMessageStoreConfig().getTravelCqFileNumWhenGetMessage()) {
+
+            ReferredIterator<CqUnit> queueIterator = null;
             try {
-                bufferConsumeQueue = consumeQueue.iterateFrom(context.getNextBeginOffset(), maxMsgNums);
-                if (bufferConsumeQueue == null) {
-                    handleNoBufferQueue(context);
+                queueIterator = consumeQueue.iterateFrom(context.getNextBeginOffset(), maxMsgNums);
+                if (queueIterator == null) {
+                    handleNoMessage(context);
                     break;
                 }
 
-                handleBufferQueue(context, bufferConsumeQueue);
+                handleQueueIterator(context, queueIterator);
 
             } catch (RocksDBException e) {
                 LOGGER.error("getMessage Failed. cid: {}, topic: {}, queueId: {}, offset: {},  {}",
                     group, topic, queueId, offset,  e.getMessage());
             } finally {
-                if (bufferConsumeQueue != null) {
-                    bufferConsumeQueue.release();
+                if (queueIterator != null) {
+                    queueIterator.release();
                 }
             }
         }

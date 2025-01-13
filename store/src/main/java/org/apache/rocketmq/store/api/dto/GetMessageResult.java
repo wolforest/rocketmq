@@ -34,6 +34,9 @@ public class GetMessageResult {
     private long minOffset;
     private long maxOffset;
 
+    /**
+     * total message size
+     */
     private int bufferTotalSize = 0;
 
     private int messageCount = 0;
