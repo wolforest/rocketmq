@@ -107,7 +107,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     @Override
     public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         RemotingCommand response = RemotingCommand.createResponseCommand(PopMessageResponseHeader.class);
-        PopMessageRequestHeader requestHeader = (PopMessageRequestHeader) request.decodeCommandCustomHeader(PopMessageRequestHeader.class, true);
+        PopMessageRequestHeader requestHeader = request.decodeCommandCustomHeader(PopMessageRequestHeader.class, true);
 
         initRequestAndResponse(request, response, requestHeader);
         if (!allowAccess(requestHeader, ctx.channel(), response)) {
@@ -115,7 +115,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
 
         ExpressionMessageFilter messageFilter = null;
-        if (requestHeader.getExp() != null && requestHeader.getExp().length() > 0) {
+        if (requestHeader.getExp() != null && !requestHeader.getExp().isEmpty()) {
             messageFilter = initExpressionMessageFilter(requestHeader, response);
             if (messageFilter == null) {
                 return response;
@@ -247,9 +247,10 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private void compensateSubscribeData(PopMessageRequestHeader requestHeader) {
-        if (requestHeader.getExp() == null || requestHeader.getExp().length() <= 0) {
+        if (requestHeader.getExp() == null || requestHeader.getExp().isEmpty()) {
             return;
         }
+
         try {
             SubscriptionData subscriptionData = FilterAPI.build(requestHeader.getTopic(), "*", ExpressionType.TAG);
             broker.getConsumerManager().compensateSubscribeData(requestHeader.getConsumerGroup(), requestHeader.getTopic(), subscriptionData);
@@ -282,7 +283,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         // only one type of retry topic is able to call popMsgFromQueue.
         boolean needRetry = randomQ % 5 == 0;
         boolean needRetryV1 = false;
-        if (broker.getBrokerConfig().isEnableRetryTopicV2() && broker.getBrokerConfig().isRetrieveMessageFromPopRetryTopicV1()) {
+        if (broker.getBrokerConfig().isEnableRetryTopicV2()
+            && broker.getBrokerConfig().isRetrieveMessageFromPopRetryTopicV1()) {
             needRetryV1 = randomQ % 2 == 0;
         }
 
@@ -310,26 +312,34 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
 
         if (requestHeader.getQueueId() >= 0) {
-            return getMessageFuture.thenCompose(restNum -> popMsgFromQueue(topicConfig.getTopicName(), requestHeader.getAttemptId(), false, getMessageResult, requestHeader, requestHeader.getQueueId(), restNum, reviveQid, ctx.channel(), popTime, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
+            return getMessageFuture.thenCompose(
+                restNum -> popMsgFromQueue(topicConfig.getTopicName(), requestHeader.getAttemptId(), false, getMessageResult, requestHeader, requestHeader.getQueueId(), restNum, reviveQid, ctx.channel(), popTime, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
         }
 
         // read all queue
         for (int i = 0; i < topicConfig.getReadQueueNums(); i++) {
             int queueId = (randomQ + i) % topicConfig.getReadQueueNums();
-            getMessageFuture = getMessageFuture.thenCompose(restNum -> popMsgFromQueue(topicConfig.getTopicName(), requestHeader.getAttemptId(), false, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
+            getMessageFuture = getMessageFuture.thenCompose(
+                restNum -> popMsgFromQueue(topicConfig.getTopicName(), requestHeader.getAttemptId(), false, getMessageResult, requestHeader, queueId, restNum, reviveQid, ctx.channel(), popTime, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo));
         }
 
         return getMessageFuture;
     }
 
     /**
-     * TODO:
+     * some questions:
      *  - when did the retryTopic create?
+     *    created by PopReviveThread(PopReviveService)
+     *    addRetryTopicIfNoExit() <- ... <- run()
+     *    source is PopCheckPoint
      *  - How many read queue nums does retryTopic have?
-     *  - What does retryTopic queue id look like?
+     *    PopConstants. retryQueueNum: 1
      *  - Why use random value to get queue id?
+     *    in case queue num greater than 1
      *  - How and When did message enqueue retryTopic?
+     *    while reviving pop message enqueue retryTopic
      *
+     * @param needRetryV1 true in 50% random chance
      */
     private CompletableFuture<Long> popRetryMessage(boolean needRetryV1, ChannelHandlerContext ctx, PopMessageRequestHeader requestHeader, GetMessageResult getMessageResult, ExpressionMessageFilter messageFilter, StringBuilder startOffsetInfo,
         StringBuilder msgOffsetInfo, StringBuilder finalOrderCountInfo, int reviveQid, long popTime, int randomQ, CompletableFuture<Long> getMessageFuture) {

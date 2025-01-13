@@ -83,7 +83,8 @@ public class PopReviveThread extends ServiceThread {
     /**
      *
      */
-    private final NavigableMap<PopCheckPoint/* oldCK */, Pair<Long/* timestamp */, Boolean/* result */>> inflightReviveRequestMap = Collections.synchronizedNavigableMap(new TreeMap<>());
+    private final NavigableMap<PopCheckPoint/* oldCK */, Pair<Long/* timestamp */, Boolean/* result */>> inflightReviveRequestMap
+        = Collections.synchronizedNavigableMap(new TreeMap<>());
     private long reviveOffset;
 
     public PopReviveThread(Broker broker, String reviveTopic, int queueId) {
