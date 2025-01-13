@@ -27,8 +27,16 @@ import org.apache.rocketmq.common.domain.filter.ExpressionType;
 
 public class SubscriptionData implements Comparable<SubscriptionData> {
     public final static String SUB_ALL = "*";
+    /**
+     * it's always false for rocketMQ over 5.*
+     */
     private boolean classFilterMode = false;
     private String topic;
+    /**
+     * the subscript tag expression
+     * such as "tag1 || tag2 || tag3"
+     * tagString should be a better name
+     */
     private String subString;
     private Set<String> tagsSet = new HashSet<>();
     private Set<Integer> codeSet = new HashSet<>();

@@ -39,8 +39,11 @@ public class ExpressionMessageFilter implements MessageFilter {
     protected final ConsumerFilterManager consumerFilterManager;
     protected final boolean bloomDataValid;
 
-    public ExpressionMessageFilter(SubscriptionData subscriptionData, ConsumerFilterData consumerFilterData,
+    public ExpressionMessageFilter(
+        SubscriptionData subscriptionData,
+        ConsumerFilterData consumerFilterData,
         ConsumerFilterManager consumerFilterManager) {
+
         this.subscriptionData = subscriptionData;
         this.consumerFilterData = consumerFilterData;
         this.consumerFilterManager = consumerFilterManager;
@@ -48,12 +51,9 @@ public class ExpressionMessageFilter implements MessageFilter {
             bloomDataValid = false;
             return;
         }
+
         BloomFilter bloomFilter = this.consumerFilterManager.getBloomFilter();
-        if (bloomFilter != null && bloomFilter.isValid(consumerFilterData.getBloomFilterData())) {
-            bloomDataValid = true;
-        } else {
-            bloomDataValid = false;
-        }
+        bloomDataValid = bloomFilter != null && bloomFilter.isValid(consumerFilterData.getBloomFilterData());
     }
 
     @Override
@@ -80,20 +80,24 @@ public class ExpressionMessageFilter implements MessageFilter {
             return subscriptionData.getCodeSet().contains(tagsCode.intValue());
         } else {
             // no expression or no bloom
-            if (consumerFilterData == null || consumerFilterData.getExpression() == null
-                || consumerFilterData.getCompiledExpression() == null || consumerFilterData.getBloomFilterData() == null) {
+            if (consumerFilterData == null
+                || consumerFilterData.getExpression() == null
+                || consumerFilterData.getCompiledExpression() == null
+                || consumerFilterData.getBloomFilterData() == null) {
                 return true;
             }
 
             // message is before consumer
-            if (cqExtUnit == null || !consumerFilterData.isMsgInLive(cqExtUnit.getMsgStoreTime())) {
+            if (cqExtUnit == null
+                || !consumerFilterData.isMsgInLive(cqExtUnit.getMsgStoreTime())) {
                 log.debug("Pull matched because not in live: {}, {}", consumerFilterData, cqExtUnit);
                 return true;
             }
 
             byte[] filterBitMap = cqExtUnit.getFilterBitMap();
             BloomFilter bloomFilter = this.consumerFilterManager.getBloomFilter();
-            if (filterBitMap == null || !this.bloomDataValid
+            if (filterBitMap == null
+                || !this.bloomDataValid
                 || filterBitMap.length * Byte.SIZE != consumerFilterData.getBloomFilterData().getBitNum()) {
                 return true;
             }

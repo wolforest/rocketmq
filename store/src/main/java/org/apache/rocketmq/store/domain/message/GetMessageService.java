@@ -50,6 +50,16 @@ public class GetMessageService {
         this.messageStore = messageStore;
     }
 
+    /**
+     *
+     * @param group just for code data flow control, should move to broker
+     * @param topic topic
+     * @param queueId queueId
+     * @param offset queue offset
+     * @param maxMsgNums max pull msg nums
+     * @param messageFilter filter
+     * @return GetMessageResult
+     */
     public GetMessageResult getMessage(final String group, final String topic, final int queueId, final long offset,
         final int maxMsgNums, final MessageFilter messageFilter) {
         return getMessage(group, topic, queueId, offset, maxMsgNums, MAX_PULL_MSG_SIZE, messageFilter);
@@ -209,11 +219,11 @@ public class GetMessageService {
                 break;
             }
 
-            handleBufferQueueItem(context, cqUnit);
+            handleQueueUnit(context, cqUnit);
         }
     }
 
-    private void handleBufferQueueItem(GetMessageContext context, CqUnit cqUnit) {
+    private void handleQueueUnit(GetMessageContext context, CqUnit cqUnit) {
         context.setMaxPhyOffsetPulling(cqUnit.getPos());
         //Be careful, here should before the isTheBatchFull
         context.setNextBeginOffset(cqUnit.getQueueOffset() + cqUnit.getBatchNum());
@@ -224,7 +234,8 @@ public class GetMessageService {
             }
         }
 
-        if (context.getMessageFilter() != null && !context.getMessageFilter().isMatchedByConsumeQueue(cqUnit.getValidTagsCodeAsLong(), cqUnit.getCqExtUnit())) {
+        if (context.getMessageFilter() != null
+            && !context.getMessageFilter().isMatchedByConsumeQueue(cqUnit.getValidTagsCodeAsLong(), cqUnit.getCqExtUnit())) {
             if (context.getGetResult().getBufferTotalSize() == 0) {
                 context.getGetResult().setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);
             }
@@ -242,11 +253,14 @@ public class GetMessageService {
             return;
         }
 
-        if (messageStore.getMessageStoreConfig().isColdDataFlowControlEnable() && !MQConstants.isSysConsumerGroupForNoColdReadLimit(context.getGroup()) && !selectResult.isInCache()) {
+        if (messageStore.getMessageStoreConfig().isColdDataFlowControlEnable()
+            && !MQConstants.isSysConsumerGroupForNoColdReadLimit(context.getGroup())
+            && !selectResult.isInCache()) {
             context.getGetResult().setColdDataSum(context.getGetResult().getColdDataSum() + cqUnit.getSize());
         }
 
-        if (context.getMessageFilter() != null && !context.getMessageFilter().isMatchedByCommitLog(selectResult.getByteBuffer().slice(), null)) {
+        if (context.getMessageFilter() != null
+            && !context.getMessageFilter().isMatchedByCommitLog(selectResult.getByteBuffer().slice(), null)) {
             if (context.getGetResult().getBufferTotalSize() == 0) {
                 context.getGetResult().setStatus(GetMessageStatus.NO_MATCHED_MESSAGE);
             }

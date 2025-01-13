@@ -29,13 +29,18 @@ public class FilterAPI {
         subscriptionData.setTopic(topic);
         subscriptionData.setSubString(subString);
 
-        if (StringUtils.isEmpty(subString) || subString.equals(SubscriptionData.SUB_ALL)) {
+        if (StringUtils.isEmpty(subString)
+            || subString.equals(SubscriptionData.SUB_ALL)) {
             subscriptionData.setSubString(SubscriptionData.SUB_ALL);
             return subscriptionData;
         }
+
         String[] tags = subString.split("\\|\\|");
         if (tags.length > 0) {
-            Arrays.stream(tags).map(String::trim).filter(tag -> !tag.isEmpty()).forEach(tag -> {
+            Arrays.stream(tags)
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .forEach(tag -> {
                 subscriptionData.getTagsSet().add(tag);
                 subscriptionData.getCodeSet().add(tag.hashCode());
             });

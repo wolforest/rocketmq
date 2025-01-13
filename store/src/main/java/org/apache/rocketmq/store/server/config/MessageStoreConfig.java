@@ -209,6 +209,9 @@ public class MessageStoreConfig {
     private int maxTransferBytesOnMessageInDisk = 1024 * 64;
     @ImportantField
     private int maxTransferCountOnMessageInDisk = 8;
+    /**
+     * The ratio of accessing message in memory
+     */
     @ImportantField
     private int accessMessageInMemoryMaxRatio = 40;
     @ImportantField
