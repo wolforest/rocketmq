@@ -43,11 +43,15 @@ public class FlushRealTimeService extends FlushCommitLogService {
         log.info(this.getServiceName() + " service started");
 
         while (!this.isStopped()) {
+            // true in default setting
             boolean flushCommitLogTimed = defaultMessageStore.getMessageStoreConfig().isFlushCommitLogTimed();
 
+            // 500 in default setting
             int interval = defaultMessageStore.getMessageStoreConfig().getFlushIntervalCommitLog();
+            // 4 in default setting
             int flushPhysicQueueLeastPages = defaultMessageStore.getMessageStoreConfig().getFlushCommitLogLeastPages();
 
+            // 10 * 1000 in default setting
             int flushPhysicQueueThoroughInterval =
                 defaultMessageStore.getMessageStoreConfig().getFlushCommitLogThoroughInterval();
 
