@@ -69,6 +69,16 @@ import org.apache.rocketmq.proxy.grpc.v2.common.ResponseBuilder;
 import org.apache.rocketmq.proxy.grpc.v2.common.ResponseWriter;
 import org.apache.rocketmq.proxy.processor.MessagingProcessor;
 
+/**
+ * GrpcMessagingApplication
+ * depend on:
+ *  - GrpcMessingActivity: the real business logic
+ *  - RequestPipeline: the pipeline to process request
+ * class responsibilities:
+ *  - implements grpc service: MessagingServiceGrpc.MessagingServiceImplBase
+ *  - initialize ThreadPoolExecutor for different request type
+ *  -
+ */
 public class GrpcMessagingApplication extends MessagingServiceGrpc.MessagingServiceImplBase implements StartAndShutdown {
     private final static Logger log = LoggerFactory.getLogger(LoggerName.PROXY_LOGGER_NAME);
 
@@ -165,6 +175,15 @@ public class GrpcMessagingApplication extends MessagingServiceGrpc.MessagingServ
         return ResponseBuilder.getInstance().buildStatus(t);
     }
 
+    /**
+     *
+     * @param executor customer thread pool executor
+     * @param context proxy context
+     * @param request grpc request : V
+     * @param runnable handler
+     * @param responseObserver grpc stream observer: T
+     * @param statusResponseCreator response formatter: Status -> T
+     */
     protected <V, T> void addExecutor(ExecutorService executor, ProxyContext context, V request, Runnable runnable,
         StreamObserver<T> responseObserver, Function<Status, T> statusResponseCreator) {
         if (request instanceof GeneratedMessageV3) {

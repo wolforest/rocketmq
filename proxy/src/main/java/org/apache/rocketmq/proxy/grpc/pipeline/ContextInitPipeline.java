@@ -21,7 +21,7 @@ import io.grpc.Context;
 import io.grpc.Metadata;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.constant.GrpcConstants;
+import org.apache.rocketmq.common.domain.constant.GrpcConstants;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.processor.channel.ChannelProtocolType;
 

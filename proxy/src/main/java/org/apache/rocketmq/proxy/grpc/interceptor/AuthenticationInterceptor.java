@@ -32,7 +32,7 @@ import org.apache.rocketmq.acl.AccessValidator;
 import org.apache.rocketmq.acl.common.AclException;
 import org.apache.rocketmq.acl.common.AuthenticationHeader;
 import org.apache.rocketmq.acl.plain.PlainAccessResource;
-import org.apache.rocketmq.common.constant.GrpcConstants;
+import org.apache.rocketmq.common.domain.constant.GrpcConstants;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 
 public class AuthenticationInterceptor implements ServerInterceptor {

@@ -57,6 +57,7 @@ public class MessageExtEncoder {
             maxMessageBodySize + 64 * 1024 : Integer.MAX_VALUE;
         byteBuf = alloc.directBuffer(maxMessageSize);
         this.maxMessageSize = maxMessageSize;
+        // 0 in default setting
         this.crc32ReservedLength = messageStoreConfig.isEnabledAppendPropCRC() ? CommitLog.CRC32_RESERVED_LEN : 0;
     }
 
@@ -182,14 +183,18 @@ public class MessageExtEncoder {
             return encodeWithoutProperties(msgInner);
         }
 
-        /**
+        /*
          * Serialize message
          */
         final byte[] propertiesData =
             msgInner.getPropertiesString() == null ? null : msgInner.getPropertiesString().getBytes(MessageDecoder.CHARSET_UTF8);
 
-        boolean needAppendLastPropertySeparator = crc32ReservedLength > 0 && propertiesData != null && propertiesData.length > 0
-            && propertiesData[propertiesData.length - 1] != MessageDecoder.PROPERTY_SEPARATOR;
+        // false in default setting, crc32ReservedLength is 0 in default setting
+        boolean needAppendLastPropertySeparator =
+                    crc32ReservedLength > 0
+                    && propertiesData != null
+                    && propertiesData.length > 0
+                    && propertiesData[propertiesData.length - 1] != MessageDecoder.PROPERTY_SEPARATOR;
 
         final int propertiesLength = (propertiesData == null ? 0 : propertiesData.length) + (needAppendLastPropertySeparator ? 1 : 0) + crc32ReservedLength;
 

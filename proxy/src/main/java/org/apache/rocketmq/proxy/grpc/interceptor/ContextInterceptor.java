@@ -23,7 +23,7 @@ import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
-import org.apache.rocketmq.common.constant.GrpcConstants;
+import org.apache.rocketmq.common.domain.constant.GrpcConstants;
 
 public class ContextInterceptor implements ServerInterceptor {
 
