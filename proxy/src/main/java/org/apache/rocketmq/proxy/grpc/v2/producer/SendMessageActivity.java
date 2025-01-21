@@ -59,6 +59,14 @@ public class SendMessageActivity extends AbstractMessingActivity {
         super(messagingProcessor, grpcClientSettingsManager, grpcChannelManager);
     }
 
+    /**
+     * send message
+     * @param ctx an empty context
+     * @param request request {
+     *            messages: []
+     *        }
+     * @return response future
+     */
     public CompletableFuture<SendMessageResponse> sendMessage(ProxyContext ctx, SendMessageRequest request) {
         CompletableFuture<SendMessageResponse> future = new CompletableFuture<>();
 
@@ -112,6 +120,13 @@ public class SendMessageActivity extends AbstractMessingActivity {
         return messageExt;
     }
 
+    /**
+     * get sysFlag
+     *  - body encoding type: GZIP | IDENTITY | ENCODING_UNSPECIFIED
+     *  - message type: MESSAGE_TYPE_UNSPECIFIED | NORMAL | FIFO | DELAY | TRANSACTION | UNRECOGNIZED
+     * @param protoMessage grpc message
+     * @return sysFlag
+     */
     protected int buildSysFlag(apache.rocketmq.v2.Message protoMessage) {
         // sysFlag (body encoding & message type)
         int sysFlag = 0;

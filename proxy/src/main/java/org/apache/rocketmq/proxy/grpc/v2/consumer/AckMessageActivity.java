@@ -106,7 +106,7 @@ public class AckMessageActivity extends AbstractMessingActivity {
 
     protected CompletableFuture<AckMessageResponse> ackMessageOneByOne(ProxyContext ctx, String group, String topic, AckMessageRequest request) {
         CompletableFuture<AckMessageResponse> resultFuture = new CompletableFuture<>();
-        CompletableFuture<AckMessageResultEntry>[] futures = new CompletableFuture[request.getEntriesCount()];
+        CompletableFuture[] futures = new CompletableFuture[request.getEntriesCount()];
         for (int i = 0; i < request.getEntriesCount(); i++) {
             futures[i] = processAckMessage(ctx, group, topic, request, request.getEntries(i));
         }
