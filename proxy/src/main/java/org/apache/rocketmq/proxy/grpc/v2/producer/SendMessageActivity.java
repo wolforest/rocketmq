@@ -107,6 +107,26 @@ public class SendMessageActivity extends AbstractMessingActivity {
         return messageExtList;
     }
 
+    /**
+     * convert proto message to messageExt, get properties:
+     *  - topic
+     *  - body
+     *  - properties
+     *      * user properties
+     *      * messageId
+     *      * transaction property
+     *      * delay property
+     *      * reconsumeTimes
+     *      * group
+     *      * trace context
+     *      * bornHost
+     *      * bornTime
+     *
+     * @param context proxy context, empty for now
+     * @param protoMessage proto message
+     * @param producerGroup group
+     * @return messageExt
+     */
     protected Message buildMessage(ProxyContext context, apache.rocketmq.v2.Message protoMessage, String producerGroup) {
         String topicName = protoMessage.getTopic().getName();
 
