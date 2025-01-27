@@ -174,65 +174,71 @@ public class TopicConfigManager extends ConfigManager {
                 return topicConfig;
             }
 
-            try {
-                topicConfig = getTopicConfig(topic);
-                if (topicConfig != null) {
-                    return topicConfig;
-                }
+            topicConfig = getTopicConfig(topic);
+            if (topicConfig != null) {
+                return topicConfig;
+            }
 
-                TopicConfig defaultTopicConfig = getTopicConfig(defaultTopic);
-                if (defaultTopicConfig != null) {
-                    if (defaultTopic.equals(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC)) {
-                        if (!this.broker.getBrokerConfig().isAutoCreateTopicEnable()) {
-                            defaultTopicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
-                        }
-                    }
+            topicConfig = getDefaultTopicConfig(topic, defaultTopic, remoteAddress, clientDefaultTopicQueueNums, topicSysFlag);
+            if (topicConfig != null) {
+                log.info("Create new topic by default topic:[{}] config:[{}] producer:[{}]", defaultTopic, topicConfig, remoteAddress);
 
-                    if (PermName.isInherited(defaultTopicConfig.getPerm())) {
-                        topicConfig = new TopicConfig(topic);
+                putTopicConfig(topicConfig);
 
-                        int queueNums = Math.min(clientDefaultTopicQueueNums, defaultTopicConfig.getWriteQueueNums());
+                long stateMachineVersion = broker.getMessageStore() != null
+                    ? broker.getMessageStore().getStateMachineVersion()
+                    : 0;
+                dataVersion.nextVersion(stateMachineVersion);
 
-                        if (queueNums < 0) {
-                            queueNums = 0;
-                        }
-
-                        topicConfig.setReadQueueNums(queueNums);
-                        topicConfig.setWriteQueueNums(queueNums);
-                        int perm = defaultTopicConfig.getPerm();
-                        perm &= ~PermName.PERM_INHERIT;
-                        topicConfig.setPerm(perm);
-                        topicConfig.setTopicSysFlag(topicSysFlag);
-                        topicConfig.setTopicFilterType(defaultTopicConfig.getTopicFilterType());
-                    } else {
-                        log.warn("Create new topic failed, because the default topic[{}] has no perm [{}] producer:[{}]", defaultTopic, defaultTopicConfig.getPerm(), remoteAddress);
-                    }
-                } else {
-                    log.warn("Create new topic failed, because the default topic[{}] not exist. producer:[{}]", defaultTopic, remoteAddress);
-                }
-
-                if (topicConfig != null) {
-                    log.info("Create new topic by default topic:[{}] config:[{}] producer:[{}]", defaultTopic, topicConfig, remoteAddress);
-
-                    putTopicConfig(topicConfig);
-
-                    long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
-                    dataVersion.nextVersion(stateMachineVersion);
-
-                    createNew = true;
-
-                    this.persist();
-                }
-            } finally {
-                this.topicConfigTableLock.unlock();
+                createNew = true;
+                this.persist();
             }
         } catch (InterruptedException e) {
             log.error("createTopicInSendMessageMethod exception", e);
+        } finally {
+            this.topicConfigTableLock.unlock();
         }
 
         if (createNew) {
             registerBrokerData(topicConfig);
         }
+
+        return topicConfig;
+    }
+
+    private TopicConfig getDefaultTopicConfig(String topic, final String defaultTopic, final String remoteAddress, final int clientDefaultTopicQueueNums, int topicSysFlag) {
+        TopicConfig topicConfig = null;
+        TopicConfig defaultTopicConfig = getTopicConfig(defaultTopic);
+        if (defaultTopicConfig == null) {
+            log.warn("Create new topic failed, because the default topic[{}] not exist. producer:[{}]", defaultTopic, remoteAddress);
+            return topicConfig;
+        }
+
+        if (defaultTopic.equals(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC)) {
+            if (!this.broker.getBrokerConfig().isAutoCreateTopicEnable()) {
+                defaultTopicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
+            }
+        }
+
+        if (!PermName.isInherited(defaultTopicConfig.getPerm())) {
+            log.warn("Create new topic failed, because the default topic[{}] has no perm [{}] producer:[{}]", defaultTopic, defaultTopicConfig.getPerm(), remoteAddress);
+            return topicConfig;
+        }
+
+        topicConfig = new TopicConfig(topic);
+
+        int queueNums = Math.min(clientDefaultTopicQueueNums, defaultTopicConfig.getWriteQueueNums());
+        if (queueNums < 0) {
+            queueNums = 0;
+        }
+
+        topicConfig.setReadQueueNums(queueNums);
+        topicConfig.setWriteQueueNums(queueNums);
+        int perm = defaultTopicConfig.getPerm();
+        perm &= ~PermName.PERM_INHERIT;
+        topicConfig.setPerm(perm);
+        topicConfig.setTopicSysFlag(topicSysFlag);
+        topicConfig.setTopicFilterType(defaultTopicConfig.getTopicFilterType());
 
         return topicConfig;
     }

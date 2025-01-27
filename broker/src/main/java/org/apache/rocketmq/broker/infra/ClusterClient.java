@@ -443,6 +443,9 @@ public class ClusterClient {
         throw new MQBrokerException(response.getCode(), response.getRemark());
     }
 
+    /**
+     * only used in test cases
+     */
     public List<RegisterBrokerResult> registerBrokerAll(
         final String clusterName,
         final String brokerAddr,

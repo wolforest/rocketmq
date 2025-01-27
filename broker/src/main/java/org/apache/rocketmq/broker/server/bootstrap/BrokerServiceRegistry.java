@@ -156,17 +156,23 @@ public class BrokerServiceRegistry {
             }
         }
 
-        Map<String, TopicQueueMappingInfo> topicQueueMappingInfoMap = broker.getTopicQueueMappingManager().getTopicQueueMappingTable().entrySet().stream()
+        Map<String, TopicQueueMappingInfo> topicQueueMappingInfoMap = broker.getTopicQueueMappingManager().getTopicQueueMappingTable()
+            .entrySet()
+            .stream()
             .map(entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), TopicQueueMappingDetail.cloneAsMappingInfo(entry.getValue())))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         TopicConfigAndMappingSerializeWrapper topicConfigWrapper = broker.getTopicConfigManager().buildSerializeWrapper(topicConfigTable, topicQueueMappingInfoMap);
-        if (this.brokerConfig.isEnableSplitRegistration() || forceRegister || needRegister(this.brokerConfig.getBrokerClusterName(),
-            broker.getBrokerAddr(),
-            this.brokerConfig.getBrokerName(),
-            this.brokerConfig.getBrokerId(),
-            this.brokerConfig.getRegisterBrokerTimeoutMills(),
-            this.brokerConfig.isInBrokerContainer())) {
+        if (this.brokerConfig.isEnableSplitRegistration()
+            || forceRegister
+            || needRegister(this.brokerConfig.getBrokerClusterName(),
+                    broker.getBrokerAddr(),
+                    this.brokerConfig.getBrokerName(),
+                    this.brokerConfig.getBrokerId(),
+                    this.brokerConfig.getRegisterBrokerTimeoutMills(),
+                    this.brokerConfig.isInBrokerContainer()
+                )
+            ) {
             doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);
         }
     }
