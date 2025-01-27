@@ -59,7 +59,8 @@ public class ClusterTestRequestProcessor extends ClientRequestProcessor {
         TopicRouteData topicRouteData = this.namesrvController.getRouteInfoManager().pickupTopicRouteData(requestHeader.getTopic());
         if (topicRouteData != null) {
             String orderTopicConf =
-                this.namesrvController.getKvConfigManager().getKVConfig(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG,
+                this.namesrvController.getKvConfigManager().getKVConfig(
+                    NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG,
                     requestHeader.getTopic());
             topicRouteData.setOrderTopicConf(orderTopicConf);
         } else {
