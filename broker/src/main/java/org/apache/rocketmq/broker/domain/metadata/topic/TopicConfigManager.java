@@ -171,7 +171,7 @@ public class TopicConfigManager extends ConfigManager {
 
         try {
             if (!this.topicConfigTableLock.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
-                return topicConfig;
+                return null;
             }
 
             topicConfig = getTopicConfig(topic);
@@ -180,19 +180,8 @@ public class TopicConfigManager extends ConfigManager {
             }
 
             topicConfig = getDefaultTopicConfig(topic, defaultTopic, remoteAddress, clientDefaultTopicQueueNums, topicSysFlag);
-            if (topicConfig != null) {
-                log.info("Create new topic by default topic:[{}] config:[{}] producer:[{}]", defaultTopic, topicConfig, remoteAddress);
+            createNew = saveTopicConfig(topicConfig);
 
-                putTopicConfig(topicConfig);
-
-                long stateMachineVersion = broker.getMessageStore() != null
-                    ? broker.getMessageStore().getStateMachineVersion()
-                    : 0;
-                dataVersion.nextVersion(stateMachineVersion);
-
-                createNew = true;
-                this.persist();
-            }
         } catch (InterruptedException e) {
             log.error("createTopicInSendMessageMethod exception", e);
         } finally {
@@ -204,6 +193,27 @@ public class TopicConfigManager extends ConfigManager {
         }
 
         return topicConfig;
+    }
+
+    private boolean saveTopicConfig(TopicConfig topicConfig) {
+        boolean createNew = false;
+        if (topicConfig == null) {
+            return createNew;
+        }
+
+        log.info("Create new topic by  config:[{}]",  topicConfig);
+
+        putTopicConfig(topicConfig);
+
+        long stateMachineVersion = broker.getMessageStore() != null
+            ? broker.getMessageStore().getStateMachineVersion()
+            : 0;
+        dataVersion.nextVersion(stateMachineVersion);
+
+        createNew = true;
+        this.persist();
+
+        return createNew;
     }
 
     private TopicConfig getDefaultTopicConfig(String topic, final String defaultTopic, final String remoteAddress, final int clientDefaultTopicQueueNums, int topicSysFlag) {
