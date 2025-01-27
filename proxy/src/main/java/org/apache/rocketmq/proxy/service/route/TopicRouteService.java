@@ -84,6 +84,8 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
         );
         this.mqClientAPIFactory = mqClientAPIFactory;
 
+
+
         this.topicCache = Caffeine.newBuilder()
             .maximumSize(config.getTopicRouteServiceCacheMaxNum())
             .expireAfterAccess(config.getTopicRouteServiceCacheExpiredSeconds(), TimeUnit.SECONDS)

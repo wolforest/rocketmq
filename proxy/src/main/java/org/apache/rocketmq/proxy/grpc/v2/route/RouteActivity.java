@@ -65,16 +65,21 @@ public class RouteActivity extends AbstractMessingActivity {
      * @param ctx ctx
      * @param request {
      *        topic: xxx,
-     *        endpoints: from client config, it is a endpoint list, it's a bad design
+     *        endpoints: from client config, it is an endpoint list, it's a bad design
      *      }
      * @return route info {
+     *     status: xxx,
      *     message_queues: [
-     *     {
+     *      {
      *        topic: xxx,
-     *        permission: xxx,
-     *        broker: xxxx,
+     *        permission: (enum)xxx,
+     *        broker: {
+     *            name: xxx,
+     *            id: xxx,
+     *            endPoints: xxx,
+     *        },
      *        accept_message_type: xxx
-     *     }, ...
+     *      }, ...
      *     ]
      * }
      */
@@ -91,6 +96,33 @@ public class RouteActivity extends AbstractMessingActivity {
         return future;
     }
 
+    /**
+     *
+     * @param ctx context
+     * @param request request {
+     *      topic: xxx,
+     *      group: xxx,
+     *      endpoints: xxx
+     * }
+     * @return response {
+     *      status: xxx,
+     *      assignments: [
+     *          {
+     *             message_queue: {
+     *                  topic: xxx,
+     *                  permission: (enum)xxx,
+     *                  broker: {
+     *                      name: xxx,
+     *                      id: xxx,
+     *                      endPoints: xxx,
+     *                  },
+     *                  accept_message_type: xxx
+     *             }
+     *          },
+     *          ...
+     *      ]
+     * }
+     */
     public CompletableFuture<QueryAssignmentResponse> queryAssignment(ProxyContext ctx, QueryAssignmentRequest request) {
         CompletableFuture<QueryAssignmentResponse> future = new CompletableFuture<>();
 
@@ -330,7 +362,9 @@ public class RouteActivity extends AbstractMessingActivity {
     private void addReadOnlyQueue(List<MessageQueue> messageQueueList, Resource topic, TopicMessageType topicMessageType, Broker broker, int num) {
         int counter = 0;
         for (int i = 0; i < num; i++) {
-            MessageQueue messageQueue = MessageQueue.newBuilder().setBroker(broker).setTopic(topic)
+            MessageQueue messageQueue = MessageQueue.newBuilder()
+                .setBroker(broker)
+                .setTopic(topic)
                 .setId(counter++)
                 .setPermission(Permission.READ)
                 .addAllAcceptMessageTypes(parseTopicMessageType(topicMessageType))

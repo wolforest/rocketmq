@@ -156,64 +156,75 @@ public class TopicConfigManager extends ConfigManager {
         return getTopicConfig(topic);
     }
 
+    /**
+     * create topic in send message method
+     * @param topic topic
+     * @param defaultTopic default topic
+     * @param remoteAddress remote address
+     * @param clientDefaultTopicQueueNums client default topic queue nums
+     * @param topicSysFlag topic sys flag
+     * @return topic config
+     */
     public TopicConfig createTopicInSendMessageMethod(final String topic, final String defaultTopic, final String remoteAddress, final int clientDefaultTopicQueueNums, final int topicSysFlag) {
         TopicConfig topicConfig = null;
         boolean createNew = false;
 
         try {
-            if (this.topicConfigTableLock.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
-                try {
-                    topicConfig = getTopicConfig(topic);
-                    if (topicConfig != null) {
-                        return topicConfig;
-                    }
+            if (!this.topicConfigTableLock.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+                return topicConfig;
+            }
 
-                    TopicConfig defaultTopicConfig = getTopicConfig(defaultTopic);
-                    if (defaultTopicConfig != null) {
-                        if (defaultTopic.equals(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC)) {
-                            if (!this.broker.getBrokerConfig().isAutoCreateTopicEnable()) {
-                                defaultTopicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
-                            }
-                        }
-
-                        if (PermName.isInherited(defaultTopicConfig.getPerm())) {
-                            topicConfig = new TopicConfig(topic);
-
-                            int queueNums = Math.min(clientDefaultTopicQueueNums, defaultTopicConfig.getWriteQueueNums());
-
-                            if (queueNums < 0) {
-                                queueNums = 0;
-                            }
-
-                            topicConfig.setReadQueueNums(queueNums);
-                            topicConfig.setWriteQueueNums(queueNums);
-                            int perm = defaultTopicConfig.getPerm();
-                            perm &= ~PermName.PERM_INHERIT;
-                            topicConfig.setPerm(perm);
-                            topicConfig.setTopicSysFlag(topicSysFlag);
-                            topicConfig.setTopicFilterType(defaultTopicConfig.getTopicFilterType());
-                        } else {
-                            log.warn("Create new topic failed, because the default topic[{}] has no perm [{}] producer:[{}]", defaultTopic, defaultTopicConfig.getPerm(), remoteAddress);
-                        }
-                    } else {
-                        log.warn("Create new topic failed, because the default topic[{}] not exist. producer:[{}]", defaultTopic, remoteAddress);
-                    }
-
-                    if (topicConfig != null) {
-                        log.info("Create new topic by default topic:[{}] config:[{}] producer:[{}]", defaultTopic, topicConfig, remoteAddress);
-
-                        putTopicConfig(topicConfig);
-
-                        long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
-                        dataVersion.nextVersion(stateMachineVersion);
-
-                        createNew = true;
-
-                        this.persist();
-                    }
-                } finally {
-                    this.topicConfigTableLock.unlock();
+            try {
+                topicConfig = getTopicConfig(topic);
+                if (topicConfig != null) {
+                    return topicConfig;
                 }
+
+                TopicConfig defaultTopicConfig = getTopicConfig(defaultTopic);
+                if (defaultTopicConfig != null) {
+                    if (defaultTopic.equals(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC)) {
+                        if (!this.broker.getBrokerConfig().isAutoCreateTopicEnable()) {
+                            defaultTopicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
+                        }
+                    }
+
+                    if (PermName.isInherited(defaultTopicConfig.getPerm())) {
+                        topicConfig = new TopicConfig(topic);
+
+                        int queueNums = Math.min(clientDefaultTopicQueueNums, defaultTopicConfig.getWriteQueueNums());
+
+                        if (queueNums < 0) {
+                            queueNums = 0;
+                        }
+
+                        topicConfig.setReadQueueNums(queueNums);
+                        topicConfig.setWriteQueueNums(queueNums);
+                        int perm = defaultTopicConfig.getPerm();
+                        perm &= ~PermName.PERM_INHERIT;
+                        topicConfig.setPerm(perm);
+                        topicConfig.setTopicSysFlag(topicSysFlag);
+                        topicConfig.setTopicFilterType(defaultTopicConfig.getTopicFilterType());
+                    } else {
+                        log.warn("Create new topic failed, because the default topic[{}] has no perm [{}] producer:[{}]", defaultTopic, defaultTopicConfig.getPerm(), remoteAddress);
+                    }
+                } else {
+                    log.warn("Create new topic failed, because the default topic[{}] not exist. producer:[{}]", defaultTopic, remoteAddress);
+                }
+
+                if (topicConfig != null) {
+                    log.info("Create new topic by default topic:[{}] config:[{}] producer:[{}]", defaultTopic, topicConfig, remoteAddress);
+
+                    putTopicConfig(topicConfig);
+
+                    long stateMachineVersion = broker.getMessageStore() != null ? broker.getMessageStore().getStateMachineVersion() : 0;
+                    dataVersion.nextVersion(stateMachineVersion);
+
+                    createNew = true;
+
+                    this.persist();
+                }
+            } finally {
+                this.topicConfigTableLock.unlock();
             }
         } catch (InterruptedException e) {
             log.error("createTopicInSendMessageMethod exception", e);
