@@ -180,8 +180,10 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         return response;
     }
 
-    public RemotingCommand getKVConfig(ChannelHandlerContext ctx,
-        RemotingCommand request) throws RemotingCommandException {
+    public RemotingCommand getKVConfig(
+        ChannelHandlerContext ctx,
+        RemotingCommand request
+    ) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(GetKVConfigResponseHeader.class);
         final GetKVConfigResponseHeader responseHeader = (GetKVConfigResponseHeader) response.readCustomHeader();
         final GetKVConfigRequestHeader requestHeader =
@@ -346,7 +348,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         final RemotingCommand response = RemotingCommand.createResponseCommand(QueryDataVersionResponseHeader.class);
         final QueryDataVersionResponseHeader responseHeader = (QueryDataVersionResponseHeader) response.readCustomHeader();
         final QueryDataVersionRequestHeader requestHeader =
-            (QueryDataVersionRequestHeader) request.decodeCommandCustomHeader(QueryDataVersionRequestHeader.class);
+            request.decodeCommandCustomHeader(QueryDataVersionRequestHeader.class);
         DataVersion dataVersion = DataVersion.decode(request.getBody(), DataVersion.class);
         String clusterName = requestHeader.getClusterName();
         String brokerAddr = requestHeader.getBrokerAddr();

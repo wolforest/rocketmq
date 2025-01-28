@@ -41,9 +41,9 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
     private static Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
     protected NamesrvController namesrvController;
-    private long startupTimeMillis;
+    private final long startupTimeMillis;
 
-    private AtomicBoolean needCheckNamesrvReady = new AtomicBoolean(true);
+    private final AtomicBoolean needCheckNamesrvReady = new AtomicBoolean(true);
 
     public ClientRequestProcessor(final NamesrvController namesrvController) {
         this.namesrvController = namesrvController;

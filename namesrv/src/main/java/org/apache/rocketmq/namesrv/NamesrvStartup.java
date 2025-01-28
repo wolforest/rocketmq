@@ -60,8 +60,7 @@ public class NamesrvStartup {
     public static NamesrvController main0(String[] args) {
         try {
             parseCommandlineAndConfigFile(args);
-            NamesrvController controller = createAndStartNamesrvController();
-            return controller;
+            return createAndStartNamesrvController();
         } catch (Throwable e) {
             e.printStackTrace();
             System.exit(-1);
