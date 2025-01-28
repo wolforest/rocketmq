@@ -51,7 +51,7 @@ public class PopConsumer {
     private static void switchPop() throws Exception {
         DefaultMQAdminExt mqAdminExt = new DefaultMQAdminExt();
         mqAdminExt.start();
-        List<BrokerData> brokerDatas = mqAdminExt.examineTopicRouteInfo(TOPIC).getBrokerDatas();
+        List<BrokerData> brokerDatas = mqAdminExt.examineTopicRouteInfo(TOPIC).getBrokerList();
         for (BrokerData brokerData : brokerDatas) {
             Set<String> brokerAddrs = new HashSet<>(brokerData.getBrokerAddrs().values());
             for (String brokerAddr : brokerAddrs) {

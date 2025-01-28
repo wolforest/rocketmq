@@ -101,7 +101,7 @@ public class ClusterTransactionService extends AbstractTransactionService {
     private Set<ClusterData> getClusterDataFromTopic(ProxyContext ctx, String topic) {
         try {
             MessageQueueView messageQueue = this.topicRouteService.getAllMessageQueueView(ctx, topic);
-            List<BrokerData> brokerDataList = messageQueue.getTopicRouteData().getBrokerDatas();
+            List<BrokerData> brokerDataList = messageQueue.getTopicRouteData().getBrokerList();
 
             if (brokerDataList == null) {
                 return Collections.emptySet();
@@ -197,7 +197,7 @@ public class ClusterTransactionService extends AbstractTransactionService {
     protected void sendHeartBeatToCluster(String clusterName, HeartbeatData heartbeatData, Map<String, String> brokerAddrNameMap) {
         try {
             MessageQueueView messageQueue = this.topicRouteService.getAllMessageQueueView(ProxyContext.createForInner(this.getClass()), clusterName);
-            List<BrokerData> brokerDataList = messageQueue.getTopicRouteData().getBrokerDatas();
+            List<BrokerData> brokerDataList = messageQueue.getTopicRouteData().getBrokerList();
             if (brokerDataList == null) {
                 return;
             }

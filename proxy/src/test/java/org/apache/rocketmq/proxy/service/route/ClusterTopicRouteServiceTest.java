@@ -85,7 +85,7 @@ public class ClusterTopicRouteServiceTest extends BaseServiceTest {
 
         // add brokers
         TopicRouteData brokerTopicRouteData = new TopicRouteData();
-        brokerTopicRouteData.setBrokerDatas(Lists.newArrayList(brokerData, broke2Data));
+        brokerTopicRouteData.setBrokerList(Lists.newArrayList(brokerData, broke2Data));
 
         // add queue data
         QueueData queueData = new QueueData();
@@ -93,7 +93,7 @@ public class ClusterTopicRouteServiceTest extends BaseServiceTest {
 
         QueueData queue2Data = new QueueData();
         queue2Data.setBrokerName(BROKER2_NAME);
-        brokerTopicRouteData.setQueueDatas(Lists.newArrayList(queueData, queue2Data));
+        brokerTopicRouteData.setQueueList(Lists.newArrayList(queueData, queue2Data));
         when(this.mqClientAPIExt.getTopicRouteInfoFromNameServer(eq(BROKER_NAME), anyLong())).thenReturn(brokerTopicRouteData);
         when(this.mqClientAPIExt.getTopicRouteInfoFromNameServer(eq(BROKER2_NAME), anyLong())).thenReturn(brokerTopicRouteData);
     }
@@ -122,8 +122,8 @@ public class ClusterTopicRouteServiceTest extends BaseServiceTest {
         List<Address> addressList = Lists.newArrayList(new Address(Address.AddressScheme.IPv4, HostAndPort.fromParts("127.0.0.1", 8888)));
         ProxyTopicRouteData proxyTopicRouteData = this.topicRouteService.getTopicRouteForProxy(ctx, addressList, TOPIC);
 
-        assertEquals(1, proxyTopicRouteData.getBrokerDatas().size());
-        assertEquals(addressList, proxyTopicRouteData.getBrokerDatas().get(0).getBrokerAddrs().get(MQConstants.MASTER_ID));
+        assertEquals(1, proxyTopicRouteData.getBrokerList().size());
+        assertEquals(addressList, proxyTopicRouteData.getBrokerList().get(0).getBrokerAddrs().get(MQConstants.MASTER_ID));
     }
 
     @Test

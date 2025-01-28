@@ -253,7 +253,7 @@ public class BenchLmqStore {
         TopicRouteData topicRouteData = defaultMQPullConsumers[0].getDefaultMQPullConsumerImpl().
             getRebalanceImpl().getmQClientFactory().getMQClientAPIImpl().
             getTopicRouteInfoFromNameServer(lmqTopic, 3000);
-        HashMap<Long, String> brokerMap = topicRouteData.getBrokerDatas().get(0).getBrokerAddrs();
+        HashMap<Long, String> brokerMap = topicRouteData.getBrokerList().get(0).getBrokerAddrs();
         if (brokerMap == null || brokerMap.isEmpty()) {
             return;
         }

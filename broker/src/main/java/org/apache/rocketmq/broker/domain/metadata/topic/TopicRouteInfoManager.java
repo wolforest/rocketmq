@@ -137,7 +137,7 @@ public class TopicRouteInfoManager {
             log.info("the topic[{}] route info changed, old[{}] ,new[{}]", topic, old, topicRouteData);
         }
 
-        for (BrokerData bd : topicRouteData.getBrokerDatas()) {
+        for (BrokerData bd : topicRouteData.getBrokerList()) {
             this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
         }
 

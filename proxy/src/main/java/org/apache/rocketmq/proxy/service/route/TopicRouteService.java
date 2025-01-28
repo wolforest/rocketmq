@@ -232,8 +232,8 @@ public abstract class TopicRouteService extends AbstractStartAndShutdown {
     }
 
     protected static boolean isTopicRouteValid(TopicRouteData routeData) {
-        return routeData != null && routeData.getQueueDatas() != null && !routeData.getQueueDatas().isEmpty()
-            && routeData.getBrokerDatas() != null && !routeData.getBrokerDatas().isEmpty();
+        return routeData != null && routeData.getQueueList() != null && !routeData.getQueueList().isEmpty()
+            && routeData.getBrokerList() != null && !routeData.getBrokerList().isEmpty();
     }
 
     protected MessageQueueView buildMessageQueueView(String topic, TopicRouteData topicRouteData) {

@@ -63,7 +63,7 @@ public class ZoneRouteRPCHook implements RPCHook {
     private TopicRouteData filterByZoneName(TopicRouteData topicRouteData, String zoneName) {
         List<BrokerData> brokerDataReserved = new ArrayList<>();
         Map<String, BrokerData> brokerDataRemoved = new HashMap<>();
-        for (BrokerData brokerData : topicRouteData.getBrokerDatas()) {
+        for (BrokerData brokerData : topicRouteData.getBrokerList()) {
             //master down, consume from slave. break nearby route rule.
             if (brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID) == null
                 || StringUtils.equalsIgnoreCase(brokerData.getZoneName(), zoneName)) {
@@ -72,15 +72,15 @@ public class ZoneRouteRPCHook implements RPCHook {
                 brokerDataRemoved.put(brokerData.getBrokerName(), brokerData);
             }
         }
-        topicRouteData.setBrokerDatas(brokerDataReserved);
+        topicRouteData.setBrokerList(brokerDataReserved);
 
         List<QueueData> queueDataReserved = new ArrayList<>();
-        for (QueueData queueData : topicRouteData.getQueueDatas()) {
+        for (QueueData queueData : topicRouteData.getQueueList()) {
             if (!brokerDataRemoved.containsKey(queueData.getBrokerName())) {
                 queueDataReserved.add(queueData);
             }
         }
-        topicRouteData.setQueueDatas(queueDataReserved);
+        topicRouteData.setQueueList(queueDataReserved);
         // remove filter server table by broker address
         if (topicRouteData.getFilterServerTable() != null && !topicRouteData.getFilterServerTable().isEmpty()) {
             for (Entry<String, BrokerData> entry : brokerDataRemoved.entrySet()) {

@@ -84,14 +84,14 @@ public class TopicRouteSubCommand implements SubCommand {
         }
 
         int totalReadQueue = 0, totalWriteQueue = 0;
-        List<QueueData> queueDataList = topicRouteData.getQueueDatas();
+        List<QueueData> queueDataList = topicRouteData.getQueueList();
         Map<String /*brokerName*/, QueueData> map = new HashMap<>();
         for (QueueData queueData : queueDataList) {
             map.put(queueData.getBrokerName(), queueData);
         }
         queueDataList.sort(Comparator.comparing(QueueData::getBrokerName));
 
-        List<BrokerData> brokerDataList = topicRouteData.getBrokerDatas();
+        List<BrokerData> brokerDataList = topicRouteData.getBrokerList();
         brokerDataList.sort(Comparator.comparing(BrokerData::getBrokerName));
 
         System.out.printf(FORMAT, "#ClusterName", "#BrokerName", "#BrokerAddrs", "#ReadQueue", "#WriteQueue", "#Perm");

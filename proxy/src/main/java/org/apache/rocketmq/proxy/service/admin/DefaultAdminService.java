@@ -77,13 +77,13 @@ public class DefaultAdminService implements AdminService {
             return false;
         }
 
-        if (sampleTopicRouteData == null || sampleTopicRouteData.getBrokerDatas().isEmpty()) {
+        if (sampleTopicRouteData == null || sampleTopicRouteData.getBrokerList().isEmpty()) {
             return false;
         }
 
         try {
-            return this.createTopicOnBroker(createTopic, wQueueNum, rQueueNum, curTopicRouteData.getBrokerDatas(),
-                sampleTopicRouteData.getBrokerDatas(), examineTopic, retryCheckCount);
+            return this.createTopicOnBroker(createTopic, wQueueNum, rQueueNum, curTopicRouteData.getBrokerList(),
+                sampleTopicRouteData.getBrokerList(), examineTopic, retryCheckCount);
         } catch (Exception e) {
             log.error("create topic {} failed.", createTopic, e);
         }

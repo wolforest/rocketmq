@@ -71,7 +71,7 @@ public class MQClientInstanceTest {
         brokerAddrs.put(0L, "127.0.0.1:10911");
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDataList.add(brokerData);
-        topicRouteData.setBrokerDatas(brokerDataList);
+        topicRouteData.setBrokerList(brokerDataList);
 
         List<QueueData> queueDataList = new ArrayList<>();
         QueueData queueData = new QueueData();
@@ -81,7 +81,7 @@ public class MQClientInstanceTest {
         queueData.setWriteQueueNums(4);
         queueData.setTopicSysFlag(0);
         queueDataList.add(queueData);
-        topicRouteData.setQueueDatas(queueDataList);
+        topicRouteData.setQueueList(queueDataList);
 
         TopicPublishInfo topicPublishInfo = MQClientInstance.topicRouteData2TopicPublishInfo(topic, topicRouteData);
 

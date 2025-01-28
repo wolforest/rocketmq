@@ -150,10 +150,10 @@ public class RouteActivity extends AbstractMessingActivity {
         ProxyTopicRouteData proxyTopicRouteData = this.messagingProcessor.getTopicRouteDataForProxy(ctx, addressList, topicName);
 
         List<MessageQueue> messageQueueList = new ArrayList<>();
-        Map<String, Map<Long, Broker>> brokerMap = buildBrokerMap(proxyTopicRouteData.getBrokerDatas());
+        Map<String, Map<Long, Broker>> brokerMap = buildBrokerMap(proxyTopicRouteData.getBrokerList());
         TopicMessageType topicMessageType = messagingProcessor.getMetadataService().getTopicMessageType(ctx, topicName);
 
-        for (QueueData queueData : proxyTopicRouteData.getQueueDatas()) {
+        for (QueueData queueData : proxyTopicRouteData.getQueueList()) {
             parseQueueData(queueData, topicMessageType, request, brokerMap, messageQueueList);
         }
 
@@ -192,8 +192,8 @@ public class RouteActivity extends AbstractMessingActivity {
 
     private List<Assignment> getAssignmentList(boolean fifo, ProxyTopicRouteData proxyTopicRouteData, QueryAssignmentRequest request) {
         List<Assignment> assignments = new ArrayList<>();
-        Map<String, Map<Long, Broker>> brokerMap = buildBrokerMap(proxyTopicRouteData.getBrokerDatas());
-        for (QueueData queueData : proxyTopicRouteData.getQueueDatas()) {
+        Map<String, Map<Long, Broker>> brokerMap = buildBrokerMap(proxyTopicRouteData.getBrokerList());
+        for (QueueData queueData : proxyTopicRouteData.getQueueList()) {
             if (!PermName.isReadable(queueData.getPerm()) || queueData.getReadQueueNums() <= 0) {
                 continue;
             }

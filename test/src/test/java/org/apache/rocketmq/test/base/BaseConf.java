@@ -127,7 +127,7 @@ public class BaseConf {
             await().atMost(30, TimeUnit.SECONDS).until(() -> {
                 List<BrokerData> brokerDatas;
                 try {
-                    brokerDatas = mqAdminExt.examineTopicRouteInfo(clusterName).getBrokerDatas();
+                    brokerDatas = mqAdminExt.examineTopicRouteInfo(clusterName).getBrokerList();
                 } catch (Exception e) {
                     return false;
                 }

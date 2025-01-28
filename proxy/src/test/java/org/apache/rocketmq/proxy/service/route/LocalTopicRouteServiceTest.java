@@ -95,11 +95,11 @@ public class LocalTopicRouteServiceTest extends BaseServiceTest {
         ProxyContext ctx = ProxyContext.create();
         ProxyTopicRouteData proxyTopicRouteData = this.topicRouteService.getTopicRouteForProxy(ctx, new ArrayList<>(), TOPIC);
 
-        assertEquals(1, proxyTopicRouteData.getBrokerDatas().size());
+        assertEquals(1, proxyTopicRouteData.getBrokerList().size());
         assertEquals(
             Lists.newArrayList(new Address(Address.AddressScheme.IPv4, HostAndPort.fromParts(
                 HostAndPort.fromString(BROKER_ADDR).getHost(),
                 ConfigurationManager.getProxyConfig().getGrpcServerPort()))),
-            proxyTopicRouteData.getBrokerDatas().get(0).getBrokerAddrs().get(MQConstants.MASTER_ID));
+            proxyTopicRouteData.getBrokerList().get(0).getBrokerAddrs().get(MQConstants.MASTER_ID));
     }
 }

@@ -701,7 +701,7 @@ public class RouteInfoManager {
         boolean foundQueueData = false;
         boolean foundBrokerData = false;
         List<BrokerData> brokerDataList = new LinkedList<>();
-        topicRouteData.setBrokerDatas(brokerDataList);
+        topicRouteData.setBrokerList(brokerDataList);
 
         HashMap<String, List<String>> filterServerMap = new HashMap<>();
         topicRouteData.setFilterServerTable(filterServerMap);
@@ -710,7 +710,7 @@ public class RouteInfoManager {
             this.lock.readLock().lockInterruptibly();
             Map<String, QueueData> queueDataMap = this.topicQueueTable.get(topic);
             if (queueDataMap != null) {
-                topicRouteData.setQueueDatas(new ArrayList<>(queueDataMap.values()));
+                topicRouteData.setQueueList(new ArrayList<>(queueDataMap.values()));
                 foundQueueData = true;
 
                 Set<String> brokerNameSet = new HashSet<>(queueDataMap.keySet());
@@ -757,13 +757,13 @@ public class RouteInfoManager {
             return topicRouteData;
         }
 
-        if (topicRouteData.getBrokerDatas().size() == 0 || topicRouteData.getQueueDatas().size() == 0) {
+        if (topicRouteData.getBrokerList().size() == 0 || topicRouteData.getQueueList().size() == 0) {
             return topicRouteData;
         }
 
         boolean needActingMaster = false;
 
-        for (final BrokerData brokerData : topicRouteData.getBrokerDatas()) {
+        for (final BrokerData brokerData : topicRouteData.getBrokerList()) {
             if (brokerData.getBrokerAddrs().size() != 0
                 && !brokerData.getBrokerAddrs().containsKey(MQConstants.MASTER_ID)) {
                 needActingMaster = true;
@@ -775,14 +775,14 @@ public class RouteInfoManager {
             return topicRouteData;
         }
 
-        for (final BrokerData brokerData : topicRouteData.getBrokerDatas()) {
+        for (final BrokerData brokerData : topicRouteData.getBrokerList()) {
             final HashMap<Long, String> brokerAddrs = brokerData.getBrokerAddrs();
             if (brokerAddrs.size() == 0 || brokerAddrs.containsKey(MQConstants.MASTER_ID) || !brokerData.isEnableActingMaster()) {
                 continue;
             }
 
             // No master
-            for (final QueueData queueData : topicRouteData.getQueueDatas()) {
+            for (final QueueData queueData : topicRouteData.getQueueList()) {
                 if (queueData.getBrokerName().equals(brokerData.getBrokerName())) {
                     if (!PermName.isWriteable(queueData.getPerm())) {
                         final Long minBrokerId = Collections.min(brokerAddrs.keySet());

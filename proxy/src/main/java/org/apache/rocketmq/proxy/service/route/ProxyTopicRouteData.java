@@ -29,14 +29,18 @@ import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
 public class ProxyTopicRouteData {
+    private List<QueueData> queueList;
+    private List<ProxyBrokerData> brokerList;
+
+
     public ProxyTopicRouteData() {
     }
 
     public ProxyTopicRouteData(TopicRouteData topicRouteData) {
-        this.queueDatas = topicRouteData.getQueueDatas();
-        this.brokerDatas = new ArrayList<>();
+        this.queueList = topicRouteData.getQueueList();
+        this.brokerList = new ArrayList<>();
 
-        for (BrokerData brokerData : topicRouteData.getBrokerDatas()) {
+        for (BrokerData brokerData : topicRouteData.getBrokerList()) {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
             proxyBrokerData.setCluster(brokerData.getCluster());
             proxyBrokerData.setBrokerName(brokerData.getBrokerName());
@@ -46,15 +50,15 @@ public class ProxyTopicRouteData {
 
                 proxyBrokerData.getBrokerAddrs().put(brokerId, Lists.newArrayList(new Address(Address.AddressScheme.IPv4, hostAndPort)));
             }
-            this.brokerDatas.add(proxyBrokerData);
+            this.brokerList.add(proxyBrokerData);
         }
     }
 
     public ProxyTopicRouteData(TopicRouteData topicRouteData, int port) {
-        this.queueDatas = topicRouteData.getQueueDatas();
-        this.brokerDatas = new ArrayList<>();
+        this.queueList = topicRouteData.getQueueList();
+        this.brokerList = new ArrayList<>();
 
-        for (BrokerData brokerData : topicRouteData.getBrokerDatas()) {
+        for (BrokerData brokerData : topicRouteData.getBrokerList()) {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
             proxyBrokerData.setCluster(brokerData.getCluster());
             proxyBrokerData.setBrokerName(brokerData.getBrokerName());
@@ -65,22 +69,22 @@ public class ProxyTopicRouteData {
 
                 proxyBrokerData.getBrokerAddrs().put(brokerId, Lists.newArrayList(new Address(Address.AddressScheme.IPv4, hostAndPort)));
             }
-            this.brokerDatas.add(proxyBrokerData);
+            this.brokerList.add(proxyBrokerData);
         }
     }
 
     public ProxyTopicRouteData(TopicRouteData topicRouteData, List<Address> requestHostAndPortList) {
-        this.queueDatas = topicRouteData.getQueueDatas();
-        this.brokerDatas = new ArrayList<>();
+        this.queueList = topicRouteData.getQueueList();
+        this.brokerList = new ArrayList<>();
 
-        for (BrokerData brokerData : topicRouteData.getBrokerDatas()) {
+        for (BrokerData brokerData : topicRouteData.getBrokerList()) {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
             proxyBrokerData.setCluster(brokerData.getCluster());
             proxyBrokerData.setBrokerName(brokerData.getBrokerName());
             for (Long brokerId : brokerData.getBrokerAddrs().keySet()) {
                 proxyBrokerData.getBrokerAddrs().put(brokerId, requestHostAndPortList);
             }
-            this.brokerDatas.add(proxyBrokerData);
+            this.brokerList.add(proxyBrokerData);
         }
     }
 
@@ -131,26 +135,26 @@ public class ProxyTopicRouteData {
     private List<QueueData> queueDatas = new ArrayList<>();
     private List<ProxyBrokerData> brokerDatas = new ArrayList<>();
 
-    public List<QueueData> getQueueDatas() {
-        return queueDatas;
+    public List<QueueData> getQueueList() {
+        return queueList;
     }
 
-    public void setQueueDatas(List<QueueData> queueDatas) {
-        this.queueDatas = queueDatas;
+    public void setQueueList(List<QueueData> queueList) {
+        this.queueList = queueList;
     }
 
-    public List<ProxyBrokerData> getBrokerDatas() {
-        return brokerDatas;
+    public List<ProxyBrokerData> getBrokerList() {
+        return brokerList;
     }
 
-    public void setBrokerDatas(List<ProxyBrokerData> brokerDatas) {
-        this.brokerDatas = brokerDatas;
+    public void setBrokerList(List<ProxyBrokerData> brokerList) {
+        this.brokerList = brokerList;
     }
 
     public TopicRouteData buildTopicRouteData() {
         TopicRouteData topicRouteData = new TopicRouteData();
-        topicRouteData.setQueueDatas(queueDatas);
-        topicRouteData.setBrokerDatas(brokerDatas.stream()
+        topicRouteData.setQueueList(queueList);
+        topicRouteData.setBrokerList(brokerList.stream()
             .map(ProxyBrokerData::buildBrokerData)
             .collect(Collectors.toList()));
         return topicRouteData;

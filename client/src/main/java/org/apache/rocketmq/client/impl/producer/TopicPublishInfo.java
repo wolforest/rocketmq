@@ -130,8 +130,8 @@ public class TopicPublishInfo {
     }
 
     public int getWriteQueueNumsByBroker(final String brokerName) {
-        for (int i = 0; i < topicRouteData.getQueueDatas().size(); i++) {
-            final QueueData queueData = this.topicRouteData.getQueueDatas().get(i);
+        for (int i = 0; i < topicRouteData.getQueueList().size(); i++) {
+            final QueueData queueData = this.topicRouteData.getQueueList().get(i);
             if (queueData.getBrokerName().equals(brokerName)) {
                 return queueData.getWriteQueueNums();
             }

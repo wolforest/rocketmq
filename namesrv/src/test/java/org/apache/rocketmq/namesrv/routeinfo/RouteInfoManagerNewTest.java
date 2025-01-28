@@ -109,11 +109,11 @@ public class RouteInfoManagerNewTest {
         registerBrokerWithNormalTopic(BrokerBasicInfo.defaultBroker().cluster("AnotherCluster").name("AnotherBroker"),
             testTopic);
 
-        assertThat(routeInfoManager.pickupTopicRouteData(testTopic).getBrokerDatas().size()).isEqualTo(2);
+        assertThat(routeInfoManager.pickupTopicRouteData(testTopic).getBrokerList().size()).isEqualTo(2);
         routeInfoManager.deleteTopic(testTopic, DEFAULT_CLUSTER);
 
-        assertThat(routeInfoManager.pickupTopicRouteData(testTopic).getBrokerDatas().size()).isEqualTo(1);
-        assertThat(routeInfoManager.pickupTopicRouteData(testTopic).getBrokerDatas().get(0).getBrokerName()).isEqualTo("AnotherBroker");
+        assertThat(routeInfoManager.pickupTopicRouteData(testTopic).getBrokerList().size()).isEqualTo(1);
+        assertThat(routeInfoManager.pickupTopicRouteData(testTopic).getBrokerList().get(0).getBrokerName()).isEqualTo("AnotherBroker");
     }
 
     @Test
@@ -173,12 +173,12 @@ public class RouteInfoManagerNewTest {
     public void registerSlaveBroker() {
         registerBrokerWithNormalTopic(BrokerBasicInfo.defaultBroker(), "TestTopic");
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs()).containsKeys(0L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs()).containsKeys(0L);
 
         registerBrokerWithNormalTopic(BrokerBasicInfo.slaveBroker(), "TestTopic");
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs()).containsKeys(0L, 1L);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs()).containsKeys(0L, 1L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs())
             .containsValues(BrokerBasicInfo.defaultBroker().brokerAddr, BrokerBasicInfo.slaveBroker().brokerAddr);
     }
 
@@ -189,8 +189,8 @@ public class RouteInfoManagerNewTest {
 
         registerBrokerWithNormalTopic(BrokerBasicInfo.defaultBroker(), "TestTopic", "TestTopic1");
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic1").getBrokerDatas().get(0).getBrokerAddrs()).containsKeys(0L, 1L);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic1").getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic1").getBrokerList().get(0).getBrokerAddrs()).containsKeys(0L, 1L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic1").getBrokerList().get(0).getBrokerAddrs())
             .containsValues(BrokerBasicInfo.defaultBroker().brokerAddr, BrokerBasicInfo.slaveBroker().brokerAddr);
     }
 
@@ -204,24 +204,24 @@ public class RouteInfoManagerNewTest {
         // Master Down
         routeInfoManager.unregisterBroker(masterBroker.clusterName, masterBroker.brokerAddr, masterBroker.brokerName, 0);
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs()).containsOnlyKeys(1L);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs()).containsOnlyKeys(1L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs())
             .containsValues(slaveBroker.brokerAddr);
 
         // Switch slave to master
         slaveBroker.id(0).dataVersion.nextVersion();
         registerBrokerWithNormalTopic(slaveBroker, "TestTopic");
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs()).containsOnlyKeys(0L);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs()).containsOnlyKeys(0L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs())
             .containsValues(slaveBroker.brokerAddr);
 
         // Old master switch to slave
         masterBroker.id(1).dataVersion.nextVersion();
         registerBrokerWithNormalTopic(masterBroker, "TestTopic");
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs()).containsKeys(0L, 1L);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs()).containsKeys(0L, 1L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs())
             .containsValues(BrokerBasicInfo.defaultBroker().brokerAddr, BrokerBasicInfo.slaveBroker().brokerAddr);
     }
 
@@ -233,8 +233,8 @@ public class RouteInfoManagerNewTest {
 
         routeInfoManager.unregisterBroker(slaveBroker.clusterName, slaveBroker.brokerAddr, slaveBroker.brokerName, 1);
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().size()).isEqualTo(1);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0)
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().size()).isEqualTo(1);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0)
             .getBrokerAddrs().get(0L)).isEqualTo(BrokerBasicInfo.defaultBroker().brokerAddr);
 
         registerBrokerWithNormalTopic(BrokerBasicInfo.defaultBroker(), "TestTopic");
@@ -243,8 +243,8 @@ public class RouteInfoManagerNewTest {
         routeInfoManager.submitUnRegisterBrokerRequest(slaveBroker.unRegisterRequest());
         await().atMost(Duration.ofSeconds(5)).until(() -> routeInfoManager.blockedUnRegisterRequests() == 0);
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().size()).isEqualTo(1);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0)
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().size()).isEqualTo(1);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0)
             .getBrokerAddrs().get(0L)).isEqualTo(BrokerBasicInfo.defaultBroker().brokerAddr);
     }
 
@@ -258,11 +258,11 @@ public class RouteInfoManagerNewTest {
 
         routeInfoManager.unregisterBroker(masterBroker.clusterName, masterBroker.brokerAddr, masterBroker.brokerName, 0);
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().size()).isEqualTo(1);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0)
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().size()).isEqualTo(1);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0)
             .getBrokerAddrs().get(0L)).isEqualTo(slaveBroker.brokerAddr);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueDatas().size()).isEqualTo(1);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueDatas().get(0).getPerm()).isEqualTo(PermName.PERM_READ);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueList().size()).isEqualTo(1);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueList().get(0).getPerm()).isEqualTo(PermName.PERM_READ);
     }
 
     @Test
@@ -276,11 +276,11 @@ public class RouteInfoManagerNewTest {
 
         routeInfoManager.unregisterBroker(masterBroker.clusterName, masterBroker.brokerAddr, masterBroker.brokerName, 0);
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().size()).isEqualTo(1);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0)
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().size()).isEqualTo(1);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0)
             .getBrokerAddrs().get(0L)).isNull();
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueDatas().size()).isEqualTo(1);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueDatas().get(0).getPerm()).isEqualTo(PermName.PERM_READ | PermName.PERM_WRITE);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueList().size()).isEqualTo(1);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueList().get(0).getPerm()).isEqualTo(PermName.PERM_READ | PermName.PERM_WRITE);
     }
 
     @Test
@@ -354,11 +354,11 @@ public class RouteInfoManagerNewTest {
     @Test
     public void wipeWritePermOfBrokerByLock() {
         registerBrokerWithNormalTopic(BrokerBasicInfo.defaultBroker(), "TestTopic");
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueDatas().get(0).getPerm()).isEqualTo(6);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueList().get(0).getPerm()).isEqualTo(6);
 
         routeInfoManager.wipeWritePermOfBrokerByLock(DEFAULT_BROKER);
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueDatas().get(0).getPerm()).isEqualTo(4);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getQueueList().get(0).getPerm()).isEqualTo(4);
     }
 
     @Test
@@ -367,27 +367,27 @@ public class RouteInfoManagerNewTest {
         registerBrokerWithNormalTopic(BrokerBasicInfo.defaultBroker(), testTopic);
 
         TopicRouteData data = routeInfoManager.pickupTopicRouteData(testTopic);
-        assertThat(data.getBrokerDatas().size()).isEqualTo(1);
-        assertThat(data.getBrokerDatas().get(0).getBrokerName()).isEqualTo(DEFAULT_BROKER);
-        assertThat(data.getBrokerDatas().get(0).getBrokerAddrs().get(0L)).isEqualTo(DEFAULT_ADDR);
-        assertThat(data.getQueueDatas().size()).isEqualTo(1);
-        assertThat(data.getQueueDatas().get(0).getBrokerName()).isEqualTo(DEFAULT_BROKER);
-        assertThat(data.getQueueDatas().get(0).getReadQueueNums()).isEqualTo(8);
-        assertThat(data.getQueueDatas().get(0).getWriteQueueNums()).isEqualTo(8);
-        assertThat(data.getQueueDatas().get(0).getPerm()).isEqualTo(6);
+        assertThat(data.getBrokerList().size()).isEqualTo(1);
+        assertThat(data.getBrokerList().get(0).getBrokerName()).isEqualTo(DEFAULT_BROKER);
+        assertThat(data.getBrokerList().get(0).getBrokerAddrs().get(0L)).isEqualTo(DEFAULT_ADDR);
+        assertThat(data.getQueueList().size()).isEqualTo(1);
+        assertThat(data.getQueueList().get(0).getBrokerName()).isEqualTo(DEFAULT_BROKER);
+        assertThat(data.getQueueList().get(0).getReadQueueNums()).isEqualTo(8);
+        assertThat(data.getQueueList().get(0).getWriteQueueNums()).isEqualTo(8);
+        assertThat(data.getQueueList().get(0).getPerm()).isEqualTo(6);
 
         registerBrokerWithNormalTopic(BrokerBasicInfo.defaultBroker().name("AnotherBroker"), testTopic);
         data = routeInfoManager.pickupTopicRouteData(testTopic);
 
-        assertThat(data.getBrokerDatas().size()).isEqualTo(2);
-        assertThat(data.getQueueDatas().size()).isEqualTo(2);
+        assertThat(data.getBrokerList().size()).isEqualTo(2);
+        assertThat(data.getQueueList().size()).isEqualTo(2);
 
         List<String> brokerList =
-            Arrays.asList(data.getBrokerDatas().get(0).getBrokerName(), data.getBrokerDatas().get(1).getBrokerName());
+            Arrays.asList(data.getBrokerList().get(0).getBrokerName(), data.getBrokerList().get(1).getBrokerName());
         assertThat(brokerList).contains(DEFAULT_BROKER, "AnotherBroker");
 
         brokerList =
-            Arrays.asList(data.getQueueDatas().get(0).getBrokerName(), data.getQueueDatas().get(1).getBrokerName());
+            Arrays.asList(data.getQueueList().get(0).getBrokerName(), data.getQueueList().get(1).getBrokerName());
         assertThat(brokerList).contains(DEFAULT_BROKER, "AnotherBroker");
     }
 
@@ -399,20 +399,20 @@ public class RouteInfoManagerNewTest {
 
         TopicRouteData routeData = routeInfoManager.pickupTopicRouteData(testTopic);
 
-        assertThat(routeData.getBrokerDatas().get(0).getBrokerAddrs()).hasSize(2);
-        assertThat(PermName.isWriteable(routeData.getQueueDatas().get(0).getPerm())).isTrue();
+        assertThat(routeData.getBrokerList().get(0).getBrokerAddrs()).hasSize(2);
+        assertThat(PermName.isWriteable(routeData.getQueueList().get(0).getPerm())).isTrue();
 
         routeInfoManager.unRegisterBroker(Sets.newHashSet(BrokerBasicInfo.defaultBroker().unRegisterRequest()));
         routeData = routeInfoManager.pickupTopicRouteData(testTopic);
 
-        assertThat(routeData.getBrokerDatas().get(0).getBrokerAddrs()).hasSize(1);
-        assertThat(PermName.isWriteable(routeData.getQueueDatas().get(0).getPerm())).isFalse();
+        assertThat(routeData.getBrokerList().get(0).getBrokerAddrs()).hasSize(1);
+        assertThat(PermName.isWriteable(routeData.getQueueList().get(0).getPerm())).isFalse();
 
         registerBrokerWithNormalTopic(BrokerBasicInfo.defaultBroker(), testTopic);
         routeData = routeInfoManager.pickupTopicRouteData(testTopic);
 
-        assertThat(routeData.getBrokerDatas().get(0).getBrokerAddrs()).hasSize(2);
-        assertThat(PermName.isWriteable(routeData.getQueueDatas().get(0).getPerm())).isTrue();
+        assertThat(routeData.getBrokerList().get(0).getBrokerAddrs()).hasSize(2);
+        assertThat(PermName.isWriteable(routeData.getQueueList().get(0).getPerm())).isTrue();
     }
 
     @Test
@@ -431,11 +431,11 @@ public class RouteInfoManagerNewTest {
         TopicRouteData orderRoute = routeInfoManager.pickupTopicRouteData(orderTopic);
 
         // Acting master check
-        assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(orderRoute.getBrokerList().get(0).getBrokerAddrs())
             .containsOnlyKeys(MQConstants.MASTER_ID);
-        assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(orderRoute.getBrokerList().get(0).getBrokerAddrs())
             .containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
-        assertThat(PermName.isWriteable(orderRoute.getQueueDatas().get(0).getPerm())).isFalse();
+        assertThat(PermName.isWriteable(orderRoute.getQueueList().get(0).getPerm())).isFalse();
 
         routeInfoManager.unRegisterBroker(Sets.newHashSet(BrokerBasicInfo.slaveBroker().unRegisterRequest()));
 
@@ -448,11 +448,11 @@ public class RouteInfoManagerNewTest {
         orderRoute = routeInfoManager.pickupTopicRouteData(orderTopic);
 
         // Acting master check
-        assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(orderRoute.getBrokerList().get(0).getBrokerAddrs())
             .containsOnlyKeys(MQConstants.MASTER_ID);
-        assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(orderRoute.getBrokerList().get(0).getBrokerAddrs())
             .containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
-        assertThat(PermName.isWriteable(orderRoute.getQueueDatas().get(0).getPerm())).isFalse();
+        assertThat(PermName.isWriteable(orderRoute.getQueueList().get(0).getPerm())).isFalse();
 
         routeInfoManager.unRegisterBroker(Sets.newHashSet(BrokerBasicInfo.slaveBroker().unRegisterRequest()));
 
@@ -468,16 +468,16 @@ public class RouteInfoManagerNewTest {
 
         orderRoute = routeInfoManager.pickupTopicRouteData(orderTopic);
 
-        assertThat(orderRoute.getBrokerDatas()).hasSize(2);
-        assertThat(orderRoute.getQueueDatas()).hasSize(2);
+        assertThat(orderRoute.getBrokerList()).hasSize(2);
+        assertThat(orderRoute.getQueueList()).hasSize(2);
 
         routeInfoManager.unRegisterBroker(Sets.newHashSet(BrokerBasicInfo.defaultBroker().unRegisterRequest()));
         orderRoute = routeInfoManager.pickupTopicRouteData(orderTopic);
 
-        assertThat(orderRoute.getBrokerDatas()).hasSize(2);
-        assertThat(orderRoute.getQueueDatas()).hasSize(2);
+        assertThat(orderRoute.getBrokerList()).hasSize(2);
+        assertThat(orderRoute.getQueueList()).hasSize(2);
 
-        for (final BrokerData brokerData : orderRoute.getBrokerDatas()) {
+        for (final BrokerData brokerData : orderRoute.getBrokerList()) {
             if (brokerData.getBrokerAddrs().size() == 1) {
                 assertThat(brokerData.getBrokerAddrs()).containsOnlyKeys(MQConstants.MASTER_ID);
                 assertThat(brokerData.getBrokerAddrs()).containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
@@ -500,11 +500,11 @@ public class RouteInfoManagerNewTest {
         TopicRouteData orderRoute = routeInfoManager.pickupTopicRouteData(orderTopic);
 
         // Acting master check
-        assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(orderRoute.getBrokerList().get(0).getBrokerAddrs())
             .containsOnlyKeys(MQConstants.MASTER_ID);
-        assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(orderRoute.getBrokerList().get(0).getBrokerAddrs())
             .containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
-        assertThat(PermName.isWriteable(orderRoute.getQueueDatas().get(0).getPerm())).isFalse();
+        assertThat(PermName.isWriteable(orderRoute.getQueueList().get(0).getPerm())).isFalse();
 
         routeInfoManager.unRegisterBroker(Sets.newHashSet(BrokerBasicInfo.slaveBroker().unRegisterRequest()));
 
@@ -515,11 +515,11 @@ public class RouteInfoManagerNewTest {
         routeInfoManager.unRegisterBroker(Sets.newHashSet(BrokerBasicInfo.defaultBroker().unRegisterRequest()));
 
         // Acting master check
-        assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(orderRoute.getBrokerList().get(0).getBrokerAddrs())
             .containsOnlyKeys(MQConstants.MASTER_ID);
-        assertThat(orderRoute.getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(orderRoute.getBrokerList().get(0).getBrokerAddrs())
             .containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
-        assertThat(PermName.isWriteable(orderRoute.getQueueDatas().get(0).getPerm())).isFalse();
+        assertThat(PermName.isWriteable(orderRoute.getQueueList().get(0).getPerm())).isFalse();
     }
 
     @Test
@@ -529,7 +529,7 @@ public class RouteInfoManagerNewTest {
         // Case 1: Only slave broker
         registerBrokerWithNormalTopic(BrokerBasicInfo.slaveBroker(), testTopic);
         assertThat(routeInfoManager.pickupTopicRouteData(testTopic)).isNotNull();
-        int topicPerm = routeInfoManager.pickupTopicRouteData(testTopic).getQueueDatas().get(0).getPerm();
+        int topicPerm = routeInfoManager.pickupTopicRouteData(testTopic).getQueueList().get(0).getPerm();
         assertThat(PermName.isWriteable(topicPerm)).isFalse();
         routeInfoManager.unRegisterBroker(Sets.newHashSet(BrokerBasicInfo.slaveBroker().unRegisterRequest()));
 
@@ -538,17 +538,17 @@ public class RouteInfoManagerNewTest {
         registerBrokerWithNormalTopic(BrokerBasicInfo.slaveBroker(), testTopic);
 
         assertThat(routeInfoManager.pickupTopicRouteData(testTopic)).isNotNull();
-        topicPerm = routeInfoManager.pickupTopicRouteData(testTopic).getQueueDatas().get(0).getPerm();
+        topicPerm = routeInfoManager.pickupTopicRouteData(testTopic).getQueueList().get(0).getPerm();
         assertThat(PermName.isWriteable(topicPerm)).isTrue();
 
         routeInfoManager.unRegisterBroker(Sets.newHashSet(BrokerBasicInfo.defaultBroker().unRegisterRequest()));
         assertThat(routeInfoManager.pickupTopicRouteData(testTopic)).isNotNull();
-        topicPerm = routeInfoManager.pickupTopicRouteData(testTopic).getQueueDatas().get(0).getPerm();
+        topicPerm = routeInfoManager.pickupTopicRouteData(testTopic).getQueueList().get(0).getPerm();
         assertThat(PermName.isWriteable(topicPerm)).isFalse();
 
         registerBrokerWithNormalTopic(BrokerBasicInfo.defaultBroker(), testTopic);
         assertThat(routeInfoManager.pickupTopicRouteData(testTopic)).isNotNull();
-        topicPerm = routeInfoManager.pickupTopicRouteData(testTopic).getQueueDatas().get(0).getPerm();
+        topicPerm = routeInfoManager.pickupTopicRouteData(testTopic).getQueueList().get(0).getPerm();
         assertThat(PermName.isWriteable(topicPerm)).isTrue();
     }
 
@@ -572,15 +572,15 @@ public class RouteInfoManagerNewTest {
         registerBroker(masterBroker, masterChannel, null, "TestTopic");
         registerBroker(slaveBroker, slaveChannel, null, "TestTopic");
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs()).containsKeys(0L, 1L);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs()).containsKeys(0L, 1L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs())
             .containsValues(masterBroker.brokerAddr, slaveBroker.brokerAddr);
 
         routeInfoManager.onChannelDestroy(masterChannel);
         await().atMost(Duration.ofSeconds(5)).until(() -> routeInfoManager.blockedUnRegisterRequests() == 0);
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs()).containsOnlyKeys(1L);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs()).containsOnlyKeys(1L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs())
             .containsValues(slaveBroker.brokerAddr);
 
         routeInfoManager.onChannelDestroy(slaveChannel);
@@ -604,24 +604,24 @@ public class RouteInfoManagerNewTest {
         routeInfoManager.onChannelDestroy(masterChannel);
         await().atMost(Duration.ofSeconds(5)).until(() -> routeInfoManager.blockedUnRegisterRequests() == 0);
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs()).containsOnlyKeys(1L);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs()).containsOnlyKeys(1L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs())
             .containsValues(slaveBroker.brokerAddr);
 
         // Switch slave to master
         slaveBroker.id(0).dataVersion.nextVersion();
         registerBrokerWithNormalTopic(slaveBroker, "TestTopic");
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs()).containsOnlyKeys(0L);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs()).containsOnlyKeys(0L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs())
             .containsValues(slaveBroker.brokerAddr);
 
         // Old master switch to slave
         masterBroker.id(1).dataVersion.nextVersion();
         registerBrokerWithNormalTopic(masterBroker, "TestTopic");
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs()).containsKeys(0L, 1L);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerAddrs())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs()).containsKeys(0L, 1L);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerAddrs())
             .containsValues(BrokerBasicInfo.defaultBroker().brokerAddr, BrokerBasicInfo.slaveBroker().brokerAddr);
     }
 
@@ -658,19 +658,19 @@ public class RouteInfoManagerNewTest {
         registerBrokerWithNormalTopic(master1, "TestTopic", "TestTopic1");
         registerBrokerWithNormalTopic(master2, "TestTopic", "TestTopic1");
 
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas()).hasSize(2);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic1").getBrokerDatas()).hasSize(2);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList()).hasSize(2);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic1").getBrokerList()).hasSize(2);
 
 
         registerBrokerWithNormalTopic(master1,  "TestTopic1");
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas()).hasSize(1);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerDatas().get(0).getBrokerName())
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList()).hasSize(1);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic").getBrokerList().get(0).getBrokerName())
             .isEqualTo(master2.brokerName);
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic1").getBrokerDatas()).hasSize(2);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic1").getBrokerList()).hasSize(2);
 
         registerBrokerWithNormalTopic(master2,  "TestTopic1");
         assertThat(routeInfoManager.pickupTopicRouteData("TestTopic")).isNull();
-        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic1").getBrokerDatas()).hasSize(2);
+        assertThat(routeInfoManager.pickupTopicRouteData("TestTopic1").getBrokerList()).hasSize(2);
     }
 
     @Test

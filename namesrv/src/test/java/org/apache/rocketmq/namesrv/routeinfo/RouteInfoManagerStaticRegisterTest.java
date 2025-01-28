@@ -97,16 +97,16 @@ public class RouteInfoManagerStaticRegisterTest extends RouteInfoManagerTestBase
         TopicConfig topicConfig = cluster.topicConfig.get(topic);
 
         // check broker data
-        Collections.sort(topicRouteData.getBrokerDatas());
+        Collections.sort(topicRouteData.getBrokerList());
         List<BrokerData> ans = new ArrayList<>(cluster.brokerDataMap.values());
         Collections.sort(ans);
 
-        assertEquals(topicRouteData.getBrokerDatas(), ans);
+        assertEquals(topicRouteData.getBrokerList(), ans);
 
         // check queue data
         HashSet<String> allBrokerNameInQueueData = new HashSet<>();
 
-        for (QueueData queueData : topicRouteData.getQueueDatas()) {
+        for (QueueData queueData : topicRouteData.getQueueList()) {
             allBrokerNameInQueueData.add(queueData.getBrokerName());
 
             assertEquals(queueData.getWriteQueueNums(), topicConfig.getWriteQueueNums());

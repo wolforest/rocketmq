@@ -87,7 +87,7 @@ public class LocalTopicRouteService extends TopicRouteService {
 
     protected TopicRouteData toTopicRouteData(TopicConfig topicConfig) {
         TopicRouteData topicRouteData = new TopicRouteData();
-        topicRouteData.setBrokerDatas(brokerDataList);
+        topicRouteData.setBrokerList(brokerDataList);
 
         QueueData queueData = new QueueData();
         queueData.setPerm(topicConfig.getPerm());
@@ -95,7 +95,7 @@ public class LocalTopicRouteService extends TopicRouteService {
         queueData.setWriteQueueNums(topicConfig.getWriteQueueNums());
         queueData.setTopicSysFlag(topicConfig.getTopicSysFlag());
         queueData.setBrokerName(this.broker.getBrokerConfig().getBrokerName());
-        topicRouteData.setQueueDatas(Lists.newArrayList(queueData));
+        topicRouteData.setQueueList(Lists.newArrayList(queueData));
 
         return topicRouteData;
     }

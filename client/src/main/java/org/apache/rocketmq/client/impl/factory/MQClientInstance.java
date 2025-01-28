@@ -245,12 +245,12 @@ public class MQClientInstance {
             info.getMessageQueueList().addAll(mqEndPoints.keySet());
             info.getMessageQueueList().sort((mq1, mq2) -> NumberUtils.compareInteger(mq1.getQueueId(), mq2.getQueueId()));
         } else {
-            List<QueueData> qds = route.getQueueDatas();
+            List<QueueData> qds = route.getQueueList();
             Collections.sort(qds);
             for (QueueData qd : qds) {
                 if (PermName.isWriteable(qd.getPerm())) {
                     BrokerData brokerData = null;
-                    for (BrokerData bd : route.getBrokerDatas()) {
+                    for (BrokerData bd : route.getBrokerList()) {
                         if (bd.getBrokerName().equals(qd.getBrokerName())) {
                             brokerData = bd;
                             break;
@@ -285,7 +285,7 @@ public class MQClientInstance {
             ConcurrentMap<MessageQueue, String> mqEndPoints = topicRouteData2EndpointsForStaticTopic(topic, route);
             return mqEndPoints.keySet();
         }
-        List<QueueData> qds = route.getQueueDatas();
+        List<QueueData> qds = route.getQueueList();
         for (QueueData qd : qds) {
             if (PermName.isReadable(qd.getPerm())) {
                 for (int i = 0; i < qd.getReadQueueNums(); i++) {
@@ -577,7 +577,7 @@ public class MQClientInstance {
     private boolean isBrokerAddrExistInTopicRouteTable(final String addr) {
         for (Entry<String, TopicRouteData> entry : this.topicRouteTable.entrySet()) {
             TopicRouteData topicRouteData = entry.getValue();
-            List<BrokerData> bds = topicRouteData.getBrokerDatas();
+            List<BrokerData> bds = topicRouteData.getBrokerList();
             for (BrokerData bd : bds) {
                 if (bd.getBrokerAddrs() != null) {
                     boolean exist = bd.getBrokerAddrs().containsValue(addr);
@@ -772,7 +772,7 @@ public class MQClientInstance {
                     if (isDefault && defaultMQProducer != null) {
                         topicRouteData = this.mQClientAPIImpl.getDefaultTopicRouteInfoFromNameServer(clientConfig.getMqClientApiTimeout());
                         if (topicRouteData != null) {
-                            for (QueueData data : topicRouteData.getQueueDatas()) {
+                            for (QueueData data : topicRouteData.getQueueList()) {
                                 int queueNums = Math.min(defaultMQProducer.getDefaultTopicQueueNums(), data.getReadQueueNums());
                                 data.setReadQueueNums(queueNums);
                                 data.setWriteQueueNums(queueNums);
@@ -792,7 +792,7 @@ public class MQClientInstance {
 
                         if (changed) {
 
-                            for (BrokerData bd : topicRouteData.getBrokerDatas()) {
+                            for (BrokerData bd : topicRouteData.getBrokerList()) {
                                 this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
                             }
 
@@ -894,7 +894,7 @@ public class MQClientInstance {
 
     private boolean isBrokerInNameServer(final String brokerAddr) {
         for (Entry<String, TopicRouteData> itNext : this.topicRouteTable.entrySet()) {
-            List<BrokerData> brokerDatas = itNext.getValue().getBrokerDatas();
+            List<BrokerData> brokerDatas = itNext.getValue().getBrokerList();
             for (BrokerData bd : brokerDatas) {
                 boolean contain = bd.getBrokerAddrs().containsValue(brokerAddr);
                 if (contain)
@@ -1221,7 +1221,7 @@ public class MQClientInstance {
     public String findBrokerAddrByTopic(final String topic) {
         TopicRouteData topicRouteData = this.topicRouteTable.get(topic);
         if (topicRouteData != null) {
-            List<BrokerData> brokers = topicRouteData.getBrokerDatas();
+            List<BrokerData> brokers = topicRouteData.getBrokerList();
             if (!brokers.isEmpty()) {
                 int index = random.nextInt(brokers.size());
                 BrokerData bd = brokers.get(index % brokers.size());

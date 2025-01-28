@@ -86,7 +86,7 @@ public class MQAdminImpl {
             Validators.checkTopic(newTopic);
             Validators.isSystemTopic(newTopic);
             TopicRouteData topicRouteData = this.mQClientFactory.getMQClientAPIImpl().getTopicRouteInfoFromNameServer(key, timeoutMillis);
-            List<BrokerData> brokerDataList = topicRouteData.getBrokerDatas();
+            List<BrokerData> brokerDataList = topicRouteData.getBrokerList();
             if (brokerDataList != null && !brokerDataList.isEmpty()) {
                 Collections.sort(brokerDataList);
 
@@ -329,7 +329,7 @@ public class MQAdminImpl {
 
         if (topicRouteData != null) {
             List<String> brokerAddrs = new LinkedList<>();
-            for (BrokerData brokerData : topicRouteData.getBrokerDatas()) {
+            for (BrokerData brokerData : topicRouteData.getBrokerList()) {
                 if (clusterName != null && !clusterName.isEmpty()
                     && !clusterName.equals(brokerData.getCluster())) {
                     continue;

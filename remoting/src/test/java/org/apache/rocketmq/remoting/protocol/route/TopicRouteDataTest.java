@@ -55,9 +55,9 @@ public class TopicRouteDataTest {
         List<BrokerData> brokerDataList = new ArrayList<>();
         brokerDataList.add(brokerData);
 
-        topicRouteData.setBrokerDatas(brokerDataList);
+        topicRouteData.setBrokerList(brokerDataList);
         topicRouteData.setFilterServerTable(new HashMap<>());
-        topicRouteData.setQueueDatas(queueDataList);
+        topicRouteData.setQueueList(queueDataList);
 
         assertThat(new TopicRouteData(topicRouteData)).isEqualTo(topicRouteData);
 
@@ -90,17 +90,17 @@ public class TopicRouteDataTest {
         List<BrokerData> brokerDataList = new ArrayList<>();
         brokerDataList.add(brokerData);
 
-        topicRouteData.setBrokerDatas(brokerDataList);
+        topicRouteData.setBrokerList(brokerDataList);
         topicRouteData.setFilterServerTable(new HashMap<>());
-        topicRouteData.setQueueDatas(queueDataList);
+        topicRouteData.setQueueList(queueDataList);
 
         String topicRouteDataJsonStr = RemotingSerializable.toJson(topicRouteData, true);
         TopicRouteData topicRouteDataFromJson = RemotingSerializable.fromJson(topicRouteDataJsonStr, TopicRouteData.class);
 
         assertThat(topicRouteDataJsonStr).isNotEqualTo(topicRouteDataFromJson);
-        assertThat(topicRouteDataFromJson.getBrokerDatas()).isEqualTo(topicRouteData.getBrokerDatas());
+        assertThat(topicRouteDataFromJson.getBrokerList()).isEqualTo(topicRouteData.getBrokerList());
         assertThat(topicRouteDataFromJson.getFilterServerTable()).isEqualTo(topicRouteData.getFilterServerTable());
-        assertThat(topicRouteDataFromJson.getQueueDatas()).isEqualTo(topicRouteData.getQueueDatas());
+        assertThat(topicRouteDataFromJson.getQueueList()).isEqualTo(topicRouteData.getQueueList());
 
     }
 }

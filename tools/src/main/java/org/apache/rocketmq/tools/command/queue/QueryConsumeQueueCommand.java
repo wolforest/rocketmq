@@ -108,12 +108,12 @@ public class QueryConsumeQueueCommand implements SubCommand {
             if (StringUtils.isEmpty(broker)) {
                 TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo(topic);
 
-                if (topicRouteData == null || topicRouteData.getBrokerDatas() == null
-                    || topicRouteData.getBrokerDatas().isEmpty()) {
+                if (topicRouteData == null || topicRouteData.getBrokerList() == null
+                    || topicRouteData.getBrokerList().isEmpty()) {
                     throw new Exception("No topic route data!");
                 }
 
-                broker = topicRouteData.getBrokerDatas().get(0).getBrokerAddrs().get(0L);
+                broker = topicRouteData.getBrokerList().get(0).getBrokerAddrs().get(0L);
             }
 
             QueryConsumeQueueResponseBody queryConsumeQueueResponseBody = defaultMQAdminExt.queryConsumeQueue(

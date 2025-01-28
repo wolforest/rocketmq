@@ -38,8 +38,8 @@ public class CreateAndUpdateTopicIT extends BaseConf {
         assertThat(createResult).isTrue();
 
         TopicRouteData route = MQAdminTestUtils.examineTopicRouteInfo(NAMESRV_ADDR, topic);
-        assertThat(route.getBrokerDatas()).hasSize(3);
-        assertThat(route.getQueueDatas()).hasSize(3);
+        assertThat(route.getBrokerList()).hasSize(3);
+        assertThat(route.getQueueList()).hasSize(3);
 
         broker1.getBrokerConfig().setEnableSingleTopicRegister(false);
         broker2.getBrokerConfig().setEnableSingleTopicRegister(false);
@@ -66,7 +66,7 @@ public class CreateAndUpdateTopicIT extends BaseConf {
 
 
         TopicRouteData route = MQAdminTestUtils.examineTopicRouteInfo(NAMESRV_ADDR, testTopic2);
-        assertThat(route.getBrokerDatas()).hasSize(3);
+        assertThat(route.getBrokerList()).hasSize(3);
 
         MQAdminTestUtils.deleteTopicFromBrokerOnly(NAMESRV_ADDR, BROKER1_NAME, testTopic2);
 
@@ -75,9 +75,9 @@ public class CreateAndUpdateTopicIT extends BaseConf {
 
         // The route info of testTopic2 will be removed from broker1 after the registration
         route = MQAdminTestUtils.examineTopicRouteInfo(NAMESRV_ADDR, testTopic2);
-        assertThat(route.getBrokerDatas()).hasSize(2);
-        assertThat(route.getQueueDatas().get(0).getBrokerName()).isEqualTo(BROKER2_NAME);
-        assertThat(route.getQueueDatas().get(1).getBrokerName()).isEqualTo(BROKER3_NAME);
+        assertThat(route.getBrokerList()).hasSize(2);
+        assertThat(route.getQueueList().get(0).getBrokerName()).isEqualTo(BROKER2_NAME);
+        assertThat(route.getQueueList().get(1).getBrokerName()).isEqualTo(BROKER3_NAME);
 
         broker1.getBrokerConfig().setEnableSingleTopicRegister(false);
         broker2.getBrokerConfig().setEnableSingleTopicRegister(false);
@@ -99,13 +99,13 @@ public class CreateAndUpdateTopicIT extends BaseConf {
         assertThat(createResult).isTrue();
 
         TopicRouteData route = MQAdminTestUtils.examineTopicRouteInfo(NAMESRV_ADDR, testTopic);
-        assertThat(route.getBrokerDatas()).hasSize(3);
-        assertThat(route.getQueueDatas()).hasSize(3);
+        assertThat(route.getBrokerList()).hasSize(3);
+        assertThat(route.getQueueList()).hasSize(3);
 
         MQAdminTestUtils.createStaticTopicWithCommand(testStaticTopic, 10, null, CLUSTER_NAME, NAMESRV_ADDR);
 
-        assertThat(route.getBrokerDatas()).hasSize(3);
-        assertThat(route.getQueueDatas()).hasSize(3);
+        assertThat(route.getBrokerList()).hasSize(3);
+        assertThat(route.getQueueList()).hasSize(3);
 
         broker1.getBrokerConfig().setEnableSingleTopicRegister(false);
         broker2.getBrokerConfig().setEnableSingleTopicRegister(false);
@@ -134,8 +134,8 @@ public class CreateAndUpdateTopicIT extends BaseConf {
 
         for (int i = 0; i < 10; i++) {
             TopicRouteData route = MQAdminTestUtils.examineTopicRouteInfo(NAMESRV_ADDR, testTopic + i);
-            assertThat(route.getBrokerDatas()).hasSize(3);
-            assertThat(route.getQueueDatas()).hasSize(3);
+            assertThat(route.getBrokerList()).hasSize(3);
+            assertThat(route.getQueueList()).hasSize(3);
         }
 
         broker1.getBrokerConfig().setEnableSplitRegistration(false);

@@ -94,7 +94,7 @@ public class ClusterTestRequestProcessorTest {
         brokerData.setBrokerName("default-broker");
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDatas.add(brokerData);
-        topicRouteData.setBrokerDatas(brokerDatas);
+        topicRouteData.setBrokerList(brokerDatas);
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
     }
 

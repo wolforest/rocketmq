@@ -144,8 +144,8 @@ public class DefaultMQAdminExtTest {
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDatas.add(brokerData);
         brokerDatas.add(new BrokerData(CLUSTER, BROKER2_NAME, (HashMap<Long, String>) Maps.newHashMap(MQConstants.MASTER_ID, BROKER2_ADDR)));
-        topicRouteData.setBrokerDatas(brokerDatas);
-        topicRouteData.setQueueDatas(new ArrayList<>());
+        topicRouteData.setBrokerList(brokerDatas);
+        topicRouteData.setQueueList(new ArrayList<>());
         topicRouteData.setFilterServerTable(new HashMap<>());
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
 
@@ -380,8 +380,8 @@ public class DefaultMQAdminExtTest {
     @Test
     public void testExamineTopicRouteInfo() throws RemotingException, MQClientException, InterruptedException {
         TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo("UnitTest");
-        assertThat(topicRouteData.getBrokerDatas().get(0).getBrokerName()).isEqualTo("default-broker");
-        assertThat(topicRouteData.getBrokerDatas().get(0).getCluster()).isEqualTo("default-cluster");
+        assertThat(topicRouteData.getBrokerList().get(0).getBrokerName()).isEqualTo("default-broker");
+        assertThat(topicRouteData.getBrokerList().get(0).getCluster()).isEqualTo("default-cluster");
     }
 
     @Test

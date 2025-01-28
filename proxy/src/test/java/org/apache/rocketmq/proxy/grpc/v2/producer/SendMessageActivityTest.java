@@ -276,13 +276,13 @@ public class SendMessageActivityTest extends BaseActivityTest {
         queueData.setBrokerName(BROKER_NAME);
         queueData.setWriteQueueNums(8);
         queueData.setPerm(PermName.PERM_WRITE);
-        topicRouteData.setQueueDatas(Lists.newArrayList(queueData));
+        topicRouteData.setQueueList(Lists.newArrayList(queueData));
         brokerData.setCluster(CLUSTER_NAME);
         brokerData.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
         brokerData.setBrokerAddrs(brokerAddrs);
-        topicRouteData.setBrokerDatas(Lists.newArrayList(brokerData));
+        topicRouteData.setBrokerList(Lists.newArrayList(brokerData));
 
         MessageQueueView messageQueueView = new MessageQueueView(TOPIC, topicRouteData, null);
         SendMessageQueueSelector selector1 = new SendMessageQueueSelector(
@@ -333,13 +333,13 @@ public class SendMessageActivityTest extends BaseActivityTest {
         queueData.setBrokerName(BROKER_NAME);
         queueData.setWriteQueueNums(2);
         queueData.setPerm(PermName.PERM_WRITE);
-        topicRouteData.setQueueDatas(Lists.newArrayList(queueData));
+        topicRouteData.setQueueList(Lists.newArrayList(queueData));
         brokerData.setCluster(CLUSTER_NAME);
         brokerData.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
         brokerData.setBrokerAddrs(brokerAddrs);
-        topicRouteData.setBrokerDatas(Lists.newArrayList(brokerData));
+        topicRouteData.setBrokerList(Lists.newArrayList(brokerData));
 
 
         SendMessageQueueSelector selector = new SendMessageQueueSelector(
@@ -368,12 +368,12 @@ public class SendMessageActivityTest extends BaseActivityTest {
 
         QueueData queueData = createQueueData(BROKER_NAME, queueNums);
         QueueData queueData2 = createQueueData(BROKER_NAME2, queueNums);
-        topicRouteData.setQueueDatas(Lists.newArrayList(queueData,queueData2));
+        topicRouteData.setQueueList(Lists.newArrayList(queueData,queueData2));
 
 
         BrokerData brokerData = createBrokerData(CLUSTER_NAME, BROKER_NAME, BROKER_ADDR);
         BrokerData brokerData2 = createBrokerData(CLUSTER_NAME, BROKER_NAME2, BROKER_ADDR2);
-        topicRouteData.setBrokerDatas(Lists.newArrayList(brokerData, brokerData2));
+        topicRouteData.setBrokerList(Lists.newArrayList(brokerData, brokerData2));
 
         SendMessageQueueSelector selector = new SendMessageQueueSelector(
                 SendMessageRequest.newBuilder()

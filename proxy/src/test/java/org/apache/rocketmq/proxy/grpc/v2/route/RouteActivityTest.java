@@ -216,13 +216,13 @@ public class RouteActivityTest extends BaseActivityTest {
 
     private static ProxyTopicRouteData createProxyTopicRouteData(int r, int w, int p) {
         ProxyTopicRouteData proxyTopicRouteData = new ProxyTopicRouteData();
-        proxyTopicRouteData.getQueueDatas().add(createQueueData(r, w, p));
+        proxyTopicRouteData.getQueueList().add(createQueueData(r, w, p));
         ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
         proxyBrokerData.setCluster(CLUSTER);
         proxyBrokerData.setBrokerName(BROKER_NAME);
         proxyBrokerData.getBrokerAddrs().put(0L, addressArrayList);
         proxyBrokerData.getBrokerAddrs().put(1L, addressArrayList);
-        proxyTopicRouteData.getBrokerDatas().add(proxyBrokerData);
+        proxyTopicRouteData.getBrokerList().add(proxyBrokerData);
         return proxyTopicRouteData;
     }
 

@@ -287,7 +287,7 @@ public class DefaultMQConsumerWithTraceTest {
         brokerAddrs.put(0L, "127.0.0.1:10911");
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDataList.add(brokerData);
-        topicRouteData.setBrokerDatas(brokerDataList);
+        topicRouteData.setBrokerList(brokerDataList);
 
         List<QueueData> queueDataList = new ArrayList<>();
         QueueData queueData = new QueueData();
@@ -297,7 +297,7 @@ public class DefaultMQConsumerWithTraceTest {
         queueData.setWriteQueueNums(4);
         queueData.setTopicSysFlag(0);
         queueDataList.add(queueData);
-        topicRouteData.setQueueDatas(queueDataList);
+        topicRouteData.setQueueList(queueDataList);
         return topicRouteData;
     }
 
@@ -323,7 +323,7 @@ public class DefaultMQConsumerWithTraceTest {
         brokerAddrs.put(0L, "127.0.0.1:10912");
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDataList.add(brokerData);
-        topicRouteData.setBrokerDatas(brokerDataList);
+        topicRouteData.setBrokerList(brokerDataList);
 
         List<QueueData> queueDataList = new ArrayList<>();
         QueueData queueData = new QueueData();
@@ -333,7 +333,7 @@ public class DefaultMQConsumerWithTraceTest {
         queueData.setWriteQueueNums(1);
         queueData.setTopicSysFlag(1);
         queueDataList.add(queueData);
-        topicRouteData.setQueueDatas(queueDataList);
+        topicRouteData.setQueueList(queueDataList);
         return topicRouteData;
     }
 }

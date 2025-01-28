@@ -136,7 +136,7 @@ public class QueryMsgByUniqueKeySubCommandTest {
         brokerAddrs.put(MQConstants.MASTER_ID, "127.0.0.1:9876");
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDataList.add(brokerData);
-        topicRouteData.setBrokerDatas(brokerDataList);
+        topicRouteData.setBrokerList(brokerDataList);
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
 
         GroupList groupList = new GroupList();

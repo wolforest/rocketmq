@@ -88,7 +88,7 @@ public class UpdateTopicPermSubCommand implements SubCommand {
             }
             TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo(topic);
             assert topicRouteData != null;
-            List<QueueData> queueDatas = topicRouteData.getQueueDatas();
+            List<QueueData> queueDatas = topicRouteData.getQueueList();
             assert queueDatas != null && queueDatas.size() > 0;
             QueueData queueData = queueDatas.get(0);
             topicConfig.setTopicName(topic);
@@ -106,7 +106,7 @@ public class UpdateTopicPermSubCommand implements SubCommand {
             topicConfig.setPerm(perm);
             if (commandLine.hasOption('b')) {
                 String brokerAddr = commandLine.getOptionValue('b').trim();
-                List<BrokerData> brokerDatas = topicRouteData.getBrokerDatas();
+                List<BrokerData> brokerDatas = topicRouteData.getBrokerList();
                 String brokerName = null;
                 for (BrokerData data : brokerDatas) {
                     HashMap<Long, String> brokerAddrs = data.getBrokerAddrs();
@@ -125,7 +125,7 @@ public class UpdateTopicPermSubCommand implements SubCommand {
                 }
 
                 if (brokerName != null) {
-                    List<QueueData> queueDataList = topicRouteData.getQueueDatas();
+                    List<QueueData> queueDataList = topicRouteData.getQueueList();
                     assert queueDataList != null && queueDataList.size() > 0;
                     int oldPerm = 0;
                     for (QueueData data : queueDataList) {
