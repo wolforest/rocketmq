@@ -382,7 +382,7 @@ public class TopicQueueMappingUtils {
         return getLeaderItem(items).getBname();
     }
     public static LogicQueueMappingItem getLeaderItem(List<LogicQueueMappingItem> items) {
-        assert items.size() > 0;
+        assert !items.isEmpty();
         return items.get(items.size() - 1);
     }
 

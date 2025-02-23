@@ -24,21 +24,17 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public class TopicQueueMappingDetail extends TopicQueueMappingInfo {
-
     // the mapping info in current broker, do not register to nameserver
     // make sure this value is not null
     private ConcurrentMap<Integer/*global id*/, List<LogicQueueMappingItem>> hostedQueues = new ConcurrentHashMap<>();
 
     //make sure there is a default constructor
     public TopicQueueMappingDetail() {
-
     }
 
     public TopicQueueMappingDetail(String topic, int totalQueues, String bname, long epoch) {
         super(topic, totalQueues, bname, epoch);
     }
-
-
 
     public static boolean putMappingInfo(TopicQueueMappingDetail mappingDetail, Integer globalId, List<LogicQueueMappingItem> mappingInfo) {
         if (mappingInfo.isEmpty()) {
@@ -64,28 +60,27 @@ public class TopicQueueMappingDetail extends TopicQueueMappingInfo {
         for (Map.Entry<Integer, List<LogicQueueMappingItem>> entry: mappingDetail.hostedQueues.entrySet()) {
             Integer globalId =  entry.getKey();
             List<LogicQueueMappingItem> items = entry.getValue();
-            if (level == LEVEL_0
-                    && items.size() >= 1) {
-                LogicQueueMappingItem curr = items.get(items.size() - 1);
-                if (mappingDetail.bname.equals(curr.getBname())) {
-                    tmpIdMap.put(globalId, curr.getQueueId());
-                }
+            if (items.isEmpty()) {
+                continue;
+            }
+
+            LogicQueueMappingItem curr = items.get(items.size() - 1);
+            if (mappingDetail.bname.equals(curr.getBname())) {
+                tmpIdMap.put(globalId, curr.getQueueId());
             }
         }
+
         return tmpIdMap;
     }
 
-
     public static long computeMaxOffsetFromMapping(TopicQueueMappingDetail mappingDetail, Integer globalId) {
         List<LogicQueueMappingItem> mappingItems = getMappingInfo(mappingDetail, globalId);
-        if (mappingItems == null
-                || mappingItems.isEmpty()) {
+        if (mappingItems == null || mappingItems.isEmpty()) {
             return -1;
         }
         LogicQueueMappingItem item =  mappingItems.get(mappingItems.size() - 1);
         return item.computeMaxStaticQueueOffset();
     }
-
 
     public static TopicQueueMappingInfo cloneAsMappingInfo(TopicQueueMappingDetail mappingDetail) {
         TopicQueueMappingInfo topicQueueMappingInfo = new TopicQueueMappingInfo(mappingDetail.topic, mappingDetail.totalQueues, mappingDetail.bname, mappingDetail.epoch);

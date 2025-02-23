@@ -42,6 +42,9 @@ import org.apache.rocketmq.remoting.rpc.TopicRequestHeader;
 
 import static org.apache.rocketmq.remoting.protocol.RemotingCommand.buildErrorResponse;
 
+/**
+ * static topic queue mapping manager
+ */
 public class TopicQueueMappingManager extends ConfigManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final long LOCK_TIMEOUT_MILLIS = 3000;
