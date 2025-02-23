@@ -19,7 +19,7 @@ package org.apache.rocketmq.auth.authentication.model;
 import org.apache.rocketmq.auth.authentication.enums.SubjectType;
 import org.apache.rocketmq.auth.authentication.enums.UserStatus;
 import org.apache.rocketmq.auth.authentication.enums.UserType;
-import org.apache.rocketmq.common.constant.CommonConstants;
+import org.apache.rocketmq.common.domain.constant.CommonConstants;
 
 public class User implements Subject {
 

@@ -35,18 +35,18 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.rocketmq.acl.common.AclUtils;
+import org.apache.rocketmq.common.domain.constant.CommonConstants;
 import org.apache.rocketmq.common.domain.constant.HAProxyConstants;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.utils.ArrayUtils;
 import org.apache.rocketmq.common.utils.ReflectUtils;
 import org.apache.rocketmq.common.utils.StringUtils;
-import org.apache.rocketmq.common.constant.CommonConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.netty.AttributeKeys;
-import org.apache.commons.lang3.reflect.FieldUtils;
 
 public class HAProxyMessageForwarder extends ChannelInboundHandlerAdapter {
 

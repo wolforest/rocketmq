@@ -50,10 +50,10 @@ import org.apache.rocketmq.auth.authorization.context.DefaultAuthorizationContex
 import org.apache.rocketmq.auth.authorization.exception.AuthorizationException;
 import org.apache.rocketmq.auth.authorization.model.Resource;
 import org.apache.rocketmq.auth.config.AuthConfig;
-import org.apache.rocketmq.common.constant.CommonConstants;
-import org.apache.rocketmq.common.constant.GrpcConstants;
 import org.apache.rocketmq.common.domain.action.Action;
 import org.apache.rocketmq.common.domain.action.RocketMQAction;
+import org.apache.rocketmq.common.domain.constant.CommonConstants;
+import org.apache.rocketmq.common.domain.constant.GrpcConstants;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.domain.resource.ResourcePattern;
 import org.apache.rocketmq.common.domain.resource.ResourceType;

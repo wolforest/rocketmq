@@ -82,6 +82,7 @@ public class BrokerConfig extends BrokerIdentity {
 
     /**
      * should be false in production env
+     * useless in version 5.x
      */
     @ImportantField
     private boolean autoCreateTopicEnable = true;
@@ -486,7 +487,7 @@ public class BrokerConfig extends BrokerIdentity {
     private boolean usePIDColdCtrStrategy = true;
     private long cgColdReadThreshold = 3 * 1024 * 1024;
     private long globalColdReadThreshold = 100 * 1024 * 1024;
-    
+
     /**
      * The interval to fetch namesrv addr, default value is 10 second
      */
@@ -566,7 +567,7 @@ public class BrokerConfig extends BrokerIdentity {
     public void setBrokerIP2(String brokerIP2) {
         this.brokerIP2 = brokerIP2;
     }
-    
+
     public long getMaxPopPollingSize() {
         return maxPopPollingSize;
     }

@@ -92,10 +92,9 @@ public class TopicValidator {
     public static boolean isTopicOrGroupIllegal(String str) {
         int strLen = str.length();
         int len = VALID_CHAR_BIT_MAP.length;
-        boolean[] bitMap = VALID_CHAR_BIT_MAP;
         for (int i = 0; i < strLen; i++) {
             char ch = str.charAt(i);
-            if (ch >= len || !bitMap[ch]) {
+            if (ch >= len || !VALID_CHAR_BIT_MAP[ch]) {
                 return true;
             }
         }

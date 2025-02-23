@@ -25,7 +25,7 @@ import org.apache.rocketmq.auth.authentication.context.AuthenticationContext;
 import org.apache.rocketmq.auth.authentication.context.DefaultAuthenticationContext;
 import org.apache.rocketmq.auth.authentication.exception.AuthenticationException;
 import org.apache.rocketmq.auth.config.AuthConfig;
-import org.apache.rocketmq.common.constant.CommonConstants;
+import org.apache.rocketmq.common.domain.constant.CommonConstants;
 import org.apache.rocketmq.common.lang.Pair;
 
 public class StatefulAuthenticationStrategy extends AbstractAuthenticationStrategy {

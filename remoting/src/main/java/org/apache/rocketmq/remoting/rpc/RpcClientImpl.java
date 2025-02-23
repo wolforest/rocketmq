@@ -68,7 +68,7 @@ public class RpcClientImpl implements RpcClient {
 
     @Override
     public Future<RpcResponse>  invoke(RpcRequest request, long timeoutMs) throws RpcException {
-        if (clientHookList.size() > 0) {
+        if (!clientHookList.isEmpty()) {
             for (RpcClientHook rpcClientHook: clientHookList) {
                 RpcResponse response = rpcClientHook.beforeRequest(request);
                 if (response != null) {

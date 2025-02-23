@@ -22,9 +22,9 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.domain.resource.ResourceType;
+import org.apache.rocketmq.common.domain.constant.CommonConstants;
 import org.apache.rocketmq.common.domain.resource.ResourcePattern;
-import org.apache.rocketmq.common.constant.CommonConstants;
+import org.apache.rocketmq.common.domain.resource.ResourceType;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
 
 public class Resource {

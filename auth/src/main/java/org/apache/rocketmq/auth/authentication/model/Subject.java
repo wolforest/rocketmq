@@ -19,7 +19,7 @@ package org.apache.rocketmq.auth.authentication.model;
 import com.alibaba.fastjson2.annotation.JSONField;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.auth.authentication.enums.SubjectType;
-import org.apache.rocketmq.common.constant.CommonConstants;
+import org.apache.rocketmq.common.domain.constant.CommonConstants;
 
 public interface Subject {
 
