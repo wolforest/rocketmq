@@ -105,7 +105,7 @@ public class InnerBrokerController extends Broker {
         }
 
         if (brokerConfig.isSkipPreOnline()) {
-            registerBroker();
+            registerBroker(brokerConfig.isForceRegister());
         }
     }
 
