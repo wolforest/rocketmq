@@ -158,21 +158,27 @@ public class Broker {
 
     public void start() throws Exception {
         this.shouldStartTime = System.currentTimeMillis() + messageStoreConfig.getDisappearTimeAfterStart();
-        if (messageStoreConfig.getTotalReplicas() > 1 && this.brokerConfig.isEnableSlaveActingMaster()) {
+        if (messageStoreConfig.getTotalReplicas() > 1
+            && this.brokerConfig.isEnableSlaveActingMaster() // default is false
+        ) {
             isIsolated = true;
         }
 
         this.brokerServiceRegistry.start();
         startBasicService();
 
-        if (!isIsolated && !this.messageStoreConfig.isEnableDLegerCommitLog() && !this.messageStoreConfig.isDuplicationEnable()) {
-            this.brokerMessageService.changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MQConstants.MASTER_ID);
-            this.brokerServiceRegistry.registerBrokerAll(true, false, true);
+        if (!isIsolated // default is false
+            && !this.messageStoreConfig.isEnableDLegerCommitLog() // default is false
+            && !this.messageStoreConfig.isDuplicationEnable() // default is false
+        ) {
+            registerBroker(true);
         }
 
         this.brokerScheduleService.start();
+
+        // default is false
         if (brokerConfig.isSkipPreOnline()) {
-            registerBroker();
+            registerBroker(brokerConfig.isForceRegister());
         }
 
         this.brokerScheduleService.refreshMetadata();
@@ -197,11 +203,11 @@ public class Broker {
     }
 
     //**************************************** private or protected methods start ****************************************************
-    protected void registerBroker() {
+    protected void registerBroker(boolean forceRegister) {
         Broker.LOG.info("{} start service", this.brokerConfig.getCanonicalName());
 
         this.brokerMessageService.changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MQConstants.MASTER_ID);
-        this.brokerServiceRegistry.registerBrokerAll(true, false, brokerConfig.isForceRegister());
+        this.brokerServiceRegistry.registerBrokerAll(true, false, forceRegister);
 
         isIsolated = false;
     }
