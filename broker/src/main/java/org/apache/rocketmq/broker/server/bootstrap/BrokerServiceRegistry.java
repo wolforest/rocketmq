@@ -134,6 +134,12 @@ public class BrokerServiceRegistry {
         doRegisterBrokerAll(true, false, topicConfigSerializeWrapper);
     }
 
+    /**
+     * register broker
+     * @param checkOrderConfig true
+     * @param oneway false
+     * @param forceRegister true or by config
+     */
     public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway, boolean forceRegister) {
         ConcurrentMap<String, TopicConfig> topicConfigMap = broker.getTopicConfigManager().getTopicConfigTable();
         ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>();
@@ -148,7 +154,7 @@ public class BrokerServiceRegistry {
                 topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
             }
 
-            if (this.brokerConfig.isEnableSplitRegistration()
+            if (this.brokerConfig.isEnableSplitRegistration() // default is false
                 && topicConfigTable.size() >= this.brokerConfig.getSplitRegistrationSize()) {
                 TopicConfigAndMappingSerializeWrapper topicConfigWrapper = broker.getTopicConfigManager().buildSerializeWrapper(topicConfigTable);
                 doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);

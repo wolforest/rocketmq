@@ -165,13 +165,17 @@ public class TopicQueueMappingManager extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            TopicQueueMappingSerializeWrapper wrapper = TopicQueueMappingSerializeWrapper.fromJson(jsonString, TopicQueueMappingSerializeWrapper.class);
-            if (wrapper != null) {
-                this.topicQueueMappingTable.putAll(wrapper.getTopicQueueMappingInfoMap());
-                this.dataVersion.assignNewOne(wrapper.getDataVersion());
-            }
+        if (jsonString == null) {
+            return;
         }
+
+        TopicQueueMappingSerializeWrapper wrapper = TopicQueueMappingSerializeWrapper.fromJson(jsonString, TopicQueueMappingSerializeWrapper.class);
+        if (wrapper == null) {
+            return;
+        }
+
+        this.topicQueueMappingTable.putAll(wrapper.getTopicQueueMappingInfoMap());
+        this.dataVersion.assignNewOne(wrapper.getDataVersion());
     }
 
     public ConcurrentMap<String, TopicQueueMappingDetail> getTopicQueueMappingTable() {
