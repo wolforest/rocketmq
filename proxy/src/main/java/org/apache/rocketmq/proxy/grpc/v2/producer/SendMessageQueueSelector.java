@@ -33,6 +33,15 @@ public class SendMessageQueueSelector implements QueueSelector {
         this.request = request;
     }
 
+    /**
+     * select by shardingKey or pipeline
+     * @param ctx context
+     * @param messageQueueView message queue view
+     * @return selected message queue: {
+     *          messageQueue: selected message queue
+     *          brokerAddr: selected broker address,
+     *      }
+     */
     @Override
     public AddressableMessageQueue select(ProxyContext ctx, MessageQueueView messageQueueView) {
         try {

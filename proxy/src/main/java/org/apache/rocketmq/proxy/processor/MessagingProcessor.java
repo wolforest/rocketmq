@@ -62,6 +62,15 @@ public interface MessagingProcessor extends StartAndShutdown {
         String topicName
     ) throws Exception;
 
+    /**
+     * send message
+     * @param ctx proxy context
+     * @param queueSelector queue selector, with raw request
+     * @param producerGroup producer group(topicName)
+     * @param sysFlag sysFlag(COMPRESSED_FLAG & TRANSACTION_PREPARED_TYPE)
+     * @param msg msg list
+     * @return the future of SendResult list
+     */
     default CompletableFuture<List<SendResult>> sendMessage(
         ProxyContext ctx,
         QueueSelector queueSelector,
