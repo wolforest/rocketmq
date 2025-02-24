@@ -79,6 +79,10 @@ public class BrokerServiceRegistry {
         }
     }
 
+    /**
+     * useless in default setting
+     * @param topicConfig topic config
+     */
     public synchronized void registerSingleTopicAll(final TopicConfig topicConfig) {
         TopicConfig tmpTopic = topicConfig;
         if (!PermName.isWriteable(this.brokerConfig.getBrokerPermission())
@@ -90,6 +94,11 @@ public class BrokerServiceRegistry {
         this.clusterClient.registerSingleTopicAll(this.brokerConfig.getBrokerName(), tmpTopic, 3000);
     }
 
+    /**
+     * register single topic config
+     * @param topicConfig topic config
+     * @param dataVersion data version
+     */
     public synchronized void registerIncrementBrokerData(TopicConfig topicConfig, DataVersion dataVersion) {
         this.registerIncrementBrokerData(Collections.singletonList(topicConfig), dataVersion);
     }
@@ -107,11 +116,13 @@ public class BrokerServiceRegistry {
                 TopicConfig registerTopicConfig;
                 if (!PermName.isWriteable(this.brokerConfig.getBrokerPermission())
                     || !PermName.isReadable(this.brokerConfig.getBrokerPermission())) {
-                    registerTopicConfig =
-                        new TopicConfig(topicConfig.getTopicName(),
-                            topicConfig.getReadQueueNums(),
-                            topicConfig.getWriteQueueNums(),
-                            topicConfig.getPerm() & this.brokerConfig.getBrokerPermission(), topicConfig.getTopicSysFlag());
+                    registerTopicConfig = new TopicConfig(
+                        topicConfig.getTopicName(),
+                        topicConfig.getReadQueueNums(),
+                        topicConfig.getWriteQueueNums(),
+                        topicConfig.getPerm() & this.brokerConfig.getBrokerPermission(),
+                        topicConfig.getTopicSysFlag()
+                    );
                 } else {
                     registerTopicConfig = new TopicConfig(topicConfig);
                 }
@@ -122,11 +133,24 @@ public class BrokerServiceRegistry {
 
         Map<String, TopicQueueMappingInfo> topicQueueMappingInfoMap = topicConfigList.stream()
             .map(TopicConfig::getTopicName)
-            .map(topicName -> Optional.ofNullable(broker.getBrokerMetadataManager().getTopicQueueMappingManager().getTopicQueueMapping(topicName))
-                .map(info -> new AbstractMap.SimpleImmutableEntry<>(topicName, TopicQueueMappingDetail.cloneAsMappingInfo(info)))
+            .map(topicName ->
+                Optional.ofNullable(
+                    broker.getBrokerMetadataManager()
+                        .getTopicQueueMappingManager()
+                        .getTopicQueueMapping(topicName)
+                    )
+                .map(info ->
+                    new AbstractMap.SimpleImmutableEntry<>(
+                        topicName,
+                        TopicQueueMappingDetail.cloneAsMappingInfo(info)
+                    )
+                )
                 .orElse(null))
             .filter(Objects::nonNull)
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            .collect(
+                Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)
+            );
+
         if (!topicQueueMappingInfoMap.isEmpty()) {
             topicConfigSerializeWrapper.setTopicQueueMappingInfoMap(topicQueueMappingInfoMap);
         }
@@ -165,7 +189,12 @@ public class BrokerServiceRegistry {
         Map<String, TopicQueueMappingInfo> topicQueueMappingInfoMap = broker.getTopicQueueMappingManager().getTopicQueueMappingTable()
             .entrySet()
             .stream()
-            .map(entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), TopicQueueMappingDetail.cloneAsMappingInfo(entry.getValue())))
+            .map(entry ->
+                new AbstractMap.SimpleImmutableEntry<>(
+                    entry.getKey(),
+                    TopicQueueMappingDetail.cloneAsMappingInfo(entry.getValue())
+                )
+            )
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         TopicConfigAndMappingSerializeWrapper topicConfigWrapper = broker.getTopicConfigManager().buildSerializeWrapper(topicConfigTable, topicQueueMappingInfoMap);

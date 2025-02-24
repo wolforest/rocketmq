@@ -636,7 +636,7 @@ public class TopicConfigManager extends ConfigManager {
     }
 
     private void registerBrokerData(TopicConfig topicConfig) {
-        if (broker.getBrokerConfig().isEnableSingleTopicRegister()) {
+        if (broker.getBrokerConfig().isEnableSingleTopicRegister()) { // default is false
             this.broker.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
         } else {
             this.broker.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, dataVersion);
