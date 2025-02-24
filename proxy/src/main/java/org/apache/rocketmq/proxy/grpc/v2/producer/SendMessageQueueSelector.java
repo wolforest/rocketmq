@@ -35,8 +35,8 @@ public class SendMessageQueueSelector implements QueueSelector {
 
     /**
      * select by shardingKey or pipeline
-     * @param ctx context
-     * @param messageQueueView message queue view
+     * @param ctx context (useless here)
+     * @param messageQueueView message queue view(build from TopicConfig)
      * @return selected message queue: {
      *          messageQueue: selected message queue
      *          brokerAddr: selected broker address,

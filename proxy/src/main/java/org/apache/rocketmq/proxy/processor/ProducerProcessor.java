@@ -68,8 +68,14 @@ public class ProducerProcessor extends AbstractProcessor {
         this.topicMessageTypeValidator = new DefaultTopicMessageTypeValidator();
     }
 
-    public CompletableFuture<List<SendResult>> sendMessage(ProxyContext ctx, QueueSelector queueSelector,
-        String producerGroup, int sysFlag, List<Message> messageList, long timeoutMillis) {
+    public CompletableFuture<List<SendResult>> sendMessage(
+        ProxyContext ctx,
+        QueueSelector queueSelector,
+        String producerGroup,
+        int sysFlag,
+        List<Message> messageList,
+        long timeoutMillis
+    ) {
         CompletableFuture<List<SendResult>> future = new CompletableFuture<>();
         AddressableMessageQueue messageQueue = null;
         try {

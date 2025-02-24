@@ -117,14 +117,14 @@ public class SendMessageActivity extends AbstractMessingActivity {
      *      * transaction property
      *      * delay property
      *      * reconsumeTimes
-     *      * group
+     *      * group (topic & shardingKey)
      *      * trace context
      *      * bornHost
      *      * bornTime
      *
      * @param context proxy context, empty for now
      * @param protoMessage proto message
-     * @param producerGroup group
+     * @param producerGroup group (topicName)
      * @return messageExt
      */
     protected Message buildMessage(ProxyContext context, apache.rocketmq.v2.Message protoMessage, String producerGroup) {
@@ -331,7 +331,7 @@ public class SendMessageActivity extends AbstractMessingActivity {
             validateMessageKey(key);
             count += key.getBytes(StandardCharsets.UTF_8).length;
         }
-        if (keysList.size() > 0) {
+        if (!keysList.isEmpty()) {
             messageWithHeader.setKeys(keysList);
         }
 
