@@ -84,6 +84,7 @@ public class EscapeBridge {
     }
 
     /**
+     * get message from local messageStore or remote messageStore
      * called by PopReviveService
      *
      * @param topic topic
@@ -94,6 +95,7 @@ public class EscapeBridge {
      * @return messageFuture
      */
     public CompletableFuture<Pair<GetMessageStatus, MessageExt>> getMessageAsync(String topic, long offset, int queueId, String brokerName, boolean deCompressBody) {
+        // get local messageStore
         MessageStore messageStore = broker.getBrokerMessageService().getMessageStoreByBrokerName(brokerName);
         if (messageStore == null) {
             return getMessageFromRemoteAsync(topic, offset, queueId, brokerName)
@@ -123,12 +125,18 @@ public class EscapeBridge {
     }
 
     /**
-     * depends on config(!canNotEscape())
+     * store message
+     *  - store message to local messageStore if current broker is master
+     *  - if canNotEscape, return PutResult(SERVICE_NOT_AVAILABLE)
+     *  - put message to remote messageStore
+     *      - args: messageExt
      *
+     * depends on config(!canNotEscape())
      * called by
      *  - TransactionalMessageBridge
      *  - TimerMessageStore
      *  - PutResultProcess
+     *
      * @param messageExt message
      * @return putResult
      */
@@ -356,10 +364,12 @@ public class EscapeBridge {
     }
 
     private boolean canNotEscape() {
+        // default value of enableSlaveActingMaster is false
         if (!this.broker.getBrokerConfig().isEnableSlaveActingMaster()) {
             return true;
         }
 
+        // default value of enableRemoteEscape is false
         return !this.broker.getBrokerConfig().isEnableRemoteEscape();
     }
 

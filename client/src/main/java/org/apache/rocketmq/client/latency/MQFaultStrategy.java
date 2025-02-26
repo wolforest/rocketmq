@@ -23,7 +23,7 @@ import org.apache.rocketmq.client.impl.producer.TopicPublishInfo.QueueFilter;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 
 public class MQFaultStrategy {
-    private LatencyFaultTolerance<String> latencyFaultTolerance;
+    private final LatencyFaultTolerance<String> latencyFaultTolerance;
     private volatile boolean sendLatencyFaultEnable;
     private volatile boolean startDetectorEnable;
     private long[] latencyMax = {50L, 100L, 550L, 1800L, 3000L, 5000L, 15000L};
@@ -44,19 +44,15 @@ public class MQFaultStrategy {
         }
     }
 
-    private ThreadLocal<BrokerFilter> threadBrokerFilter = new ThreadLocal<BrokerFilter>() {
-        @Override protected BrokerFilter initialValue() {
-            return new BrokerFilter();
-        }
-    };
+    private final ThreadLocal<BrokerFilter> threadBrokerFilter = ThreadLocal.withInitial(BrokerFilter::new);
 
-    private QueueFilter reachableFilter = new QueueFilter() {
+    private final QueueFilter reachableFilter = new QueueFilter() {
         @Override public boolean filter(MessageQueue mq) {
             return latencyFaultTolerance.isReachable(mq.getBrokerName());
         }
     };
 
-    private QueueFilter availableFilter = new QueueFilter() {
+    private final QueueFilter availableFilter = new QueueFilter() {
         @Override public boolean filter(MessageQueue mq) {
             return latencyFaultTolerance.isAvailable(mq.getBrokerName());
         }

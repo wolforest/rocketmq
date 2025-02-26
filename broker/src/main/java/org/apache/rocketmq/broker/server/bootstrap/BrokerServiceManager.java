@@ -209,7 +209,7 @@ public class BrokerServiceManager {
         this.broadcastOffsetManager = new BroadcastOffsetManager(broker);
 
         this.brokerFastFailure = new BrokerFastFailure(broker);
-        this.topicRouteInfoManager = new TopicRouteInfoManager(broker);
+        this.topicRouteInfoManager = new TopicRouteInfoManager(broker.getBrokerConfig(), broker.getClusterClient());
 
         this.coldDataPullRequestHoldThread = new ColdDataPullRequestHoldThread(broker);
         this.coldDataCgCtrThread = new ColdDataCgCtrThread(broker);

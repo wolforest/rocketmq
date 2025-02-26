@@ -93,10 +93,11 @@ public class ClientActivity extends AbstractMessingActivity {
 
     /**
      * Handles heartbeats from clients
+     *  - register producer/consumer
      *
-     * @param ctx
-     * @param request
-     * @return
+     * @param ctx proxy context
+     * @param request request
+     * @return future
      */
     public CompletableFuture<HeartbeatResponse> heartbeat(ProxyContext ctx, HeartbeatRequest request) {
         CompletableFuture<HeartbeatResponse> future = new CompletableFuture<>();
@@ -141,6 +142,14 @@ public class ClientActivity extends AbstractMessingActivity {
         return future;
     }
 
+    /**
+     * notify client termination
+     *  - unregister producer/consumer
+     *
+     * @param ctx context
+     * @param request request
+     * @return future
+     */
     public CompletableFuture<NotifyClientTerminationResponse> notifyClientTermination(ProxyContext ctx,
                                                                                       NotifyClientTerminationRequest request) {
         CompletableFuture<NotifyClientTerminationResponse> future = new CompletableFuture<>();
@@ -189,8 +198,8 @@ public class ClientActivity extends AbstractMessingActivity {
     /**
      * Handles telemetry from clients: SETTINGS,THREAD_STACK_TRACE,VERIFY_MESSAGE_RESULT
      *
-     * @param responseObserver
-     * @return
+     * @param responseObserver response observer
+     * @return ContextStreamObserver
      */
     public ContextStreamObserver<TelemetryCommand> telemetry(StreamObserver<TelemetryCommand> responseObserver) {
         return new ContextStreamObserver<TelemetryCommand>() {

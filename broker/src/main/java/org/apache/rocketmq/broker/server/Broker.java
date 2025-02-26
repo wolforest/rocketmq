@@ -431,6 +431,7 @@ public class Broker {
         return this.brokerConfig.getBrokerId();
     }
 
+
     public Broker peekMasterBroker() {
         return brokerConfig.getBrokerId() == MQConstants.MASTER_ID ? this : null;
     }

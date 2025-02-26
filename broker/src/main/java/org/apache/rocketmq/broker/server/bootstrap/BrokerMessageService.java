@@ -171,6 +171,13 @@ public class BrokerMessageService {
 
     }
 
+    /**
+     * get local message store
+     *
+     *
+     * @param brokerName broker name
+     * @return message store
+     */
     public MessageStore getMessageStoreByBrokerName(String brokerName) {
         if (this.brokerConfig.getBrokerName().equals(brokerName)) {
             return this.getMessageStore();

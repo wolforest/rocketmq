@@ -61,6 +61,14 @@ public class SendMessageActivity extends AbstractMessingActivity {
 
     /**
      * send message
+     *  - format massage
+     *  - invoke -> DefaultMessageProcessor -> ProducerProcessor
+     *      - select message queue
+     *      - invoke LocalMessageService
+     *          - invoke -> SendMessageProcessor
+     *      - fill transaction data
+     *      - update fault item
+     *
      * @param ctx an empty context
      * @param request request {
      *            messages: []

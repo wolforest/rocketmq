@@ -87,7 +87,8 @@ public class ProducerProcessor extends AbstractProcessor {
             SendMessageRequestHeader requestHeader = buildSendMessageRequestHeader(messageList, producerGroup, sysFlag, messageQueue.getQueueId());
 
             long beginTimestampFirst = System.currentTimeMillis();
-            future = this.serviceManager.getMessageService().sendMessage(ctx, messageQueue, messageList, requestHeader, timeoutMillis)
+            future = this.serviceManager.getMessageService()
+                .sendMessage(ctx, messageQueue, messageList, requestHeader, timeoutMillis)
                 .thenApplyAsync(sendCallback(ctx, producerGroup, messageList, requestHeader, messageQueue), this.executor)
                 .whenComplete(completeCallback(beginTimestampFirst, messageQueue));
 

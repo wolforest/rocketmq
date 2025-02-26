@@ -27,14 +27,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import org.apache.rocketmq.broker.server.Broker;
+import org.apache.rocketmq.broker.infra.ClusterClient;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
-import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
+import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
+import org.apache.rocketmq.common.domain.message.MessageQueue;
+import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -44,6 +45,14 @@ import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
+/**
+ * topic route info manager
+ *  - load route info from name server
+ *  - route info apis for app
+ * depends on:
+ *  1. brokerConfig
+ *  2. clusterClient
+ */
 public class TopicRouteInfoManager {
 
     private static final long GET_TOPIC_ROUTE_TIMEOUT = 3000L;
@@ -59,10 +68,14 @@ public class TopicRouteInfoManager {
     private final ConcurrentHashMap<String, Set<MessageQueue>> topicSubscribeInfoTable = new ConcurrentHashMap<>();
 
     private ScheduledExecutorService scheduledExecutorService;
-    private Broker broker;
 
-    public TopicRouteInfoManager(Broker broker) {
-        this.broker = broker;
+    private final BrokerConfig brokerConfig;
+    private final ClusterClient clusterClient;
+
+
+    public TopicRouteInfoManager(BrokerConfig brokerConfig, ClusterClient clusterClient) {
+        this.brokerConfig = brokerConfig;
+        this.clusterClient = clusterClient;
     }
 
     public void start() {
@@ -74,7 +87,115 @@ public class TopicRouteInfoManager {
             } catch (Exception e) {
                 log.error("ScheduledTask: failed to pull TopicRouteData from NameServer", e);
             }
-        }, 1000, this.broker.getBrokerConfig().getLoadBalancePollNameServerInterval(), TimeUnit.MILLISECONDS);
+        }, 1000, brokerConfig.getLoadBalancePollNameServerInterval(), TimeUnit.MILLISECONDS);
+    }
+
+    public void shutdown() {
+        if (null != this.scheduledExecutorService) {
+            this.scheduledExecutorService.shutdown();
+        }
+    }
+
+    public TopicPublishInfo tryToFindTopicPublishInfo(final String topic) {
+        TopicPublishInfo topicPublishInfo = this.topicPublishInfoTable.get(topic);
+        if (null == topicPublishInfo || !topicPublishInfo.ok()) {
+            this.updateTopicRouteInfoFromNameServer(topic, true, false);
+            topicPublishInfo = this.topicPublishInfoTable.get(topic);
+        }
+        return topicPublishInfo;
+    }
+
+    public String findBrokerAddressInPublish(String brokerName) {
+        if (brokerName == null) {
+            return null;
+        }
+
+        Map<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
+        if (map != null && !map.isEmpty()) {
+            return map.get(MQConstants.MASTER_ID);
+        }
+
+        return null;
+    }
+
+    public String findBrokerAddressInSubscribe(
+        final String brokerName,
+        final long brokerId,
+        final boolean onlyThisBroker
+    ) {
+        if (brokerName == null) {
+            return null;
+        }
+        String brokerAddr;
+        boolean found;
+
+        Map<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
+        if (map == null || map.isEmpty()) {
+            return null;
+        }
+
+        brokerAddr = map.get(brokerId);
+        boolean slave = brokerId != MQConstants.MASTER_ID;
+        found = brokerAddr != null;
+
+        if (!found && slave) {
+            brokerAddr = map.get(brokerId + 1);
+            found = brokerAddr != null;
+        }
+
+        if (!found && !onlyThisBroker) {
+            Map.Entry<Long, String> entry = map.entrySet().iterator().next();
+            brokerAddr = entry.getValue();
+        }
+
+        return brokerAddr;
+    }
+
+    public Set<MessageQueue> getTopicSubscribeInfo(String topic) {
+        Set<MessageQueue> queues = topicSubscribeInfoTable.get(topic);
+        if (null == queues || queues.isEmpty()) {
+            this.updateTopicRouteInfoFromNameServer(topic, false, true);
+            queues = this.topicSubscribeInfoTable.get(topic);
+        }
+        return queues;
+    }
+
+    public void updateTopicRouteInfoFromNameServer(String topic, boolean isNeedUpdatePublishInfo, boolean isNeedUpdateSubscribeInfo) {
+        try {
+            if (!this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
+                return;
+            }
+
+            try {
+                TopicRouteData topicRouteData = clusterClient.getTopicRouteInfoFromNameServer(topic, GET_TOPIC_ROUTE_TIMEOUT);
+                if (null == topicRouteData) {
+                    log.warn("TopicRouteInfoManager: updateTopicRouteInfoFromNameServer, getTopicRouteInfoFromNameServer return null, Topic: {}.", topic);
+                    return;
+                }
+
+                if (isNeedUpdateSubscribeInfo) {
+                    this.updateSubscribeInfoTable(topicRouteData, topic);
+                }
+
+                if (isNeedUpdatePublishInfo) {
+                    this.updateTopicRouteTable(topic, topicRouteData);
+                }
+
+            } catch (RemotingException e) {
+                log.error("updateTopicRouteInfoFromNameServer Exception", e);
+            } catch (MQBrokerException e) {
+                log.error("updateTopicRouteInfoFromNameServer Exception", e);
+                if (!NamespaceUtil.isRetryTopic(topic)
+                    && ResponseCode.TOPIC_NOT_EXIST == e.getResponseCode()) {
+                    // clean no used topic
+                    cleanNoneRouteTopic(topic);
+                }
+            } finally {
+                this.lockNamesrv.unlock();
+            }
+        } catch (InterruptedException e) {
+            log.warn("updateTopicRouteInfoFromNameServer Exception", e);
+        }
     }
 
     private void updateTopicRouteInfoFromNameServer() {
@@ -86,43 +207,6 @@ public class TopicRouteInfoManager {
             boolean isNeedUpdatePublishInfo = topicSetForEscapeBridge.contains(topic);
             boolean isNeedUpdateSubscribeInfo = topicSetForPopAssignment.contains(topic);
             updateTopicRouteInfoFromNameServer(topic, isNeedUpdatePublishInfo, isNeedUpdateSubscribeInfo);
-        }
-    }
-
-    public void updateTopicRouteInfoFromNameServer(String topic, boolean isNeedUpdatePublishInfo,
-        boolean isNeedUpdateSubscribeInfo) {
-        try {
-            if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
-                try {
-                    final TopicRouteData topicRouteData = this.broker.getClusterClient()
-                        .getTopicRouteInfoFromNameServer(topic, GET_TOPIC_ROUTE_TIMEOUT);
-                    if (null == topicRouteData) {
-                        log.warn("TopicRouteInfoManager: updateTopicRouteInfoFromNameServer, getTopicRouteInfoFromNameServer return null, Topic: {}.", topic);
-                        return;
-                    }
-
-                    if (isNeedUpdateSubscribeInfo) {
-                        this.updateSubscribeInfoTable(topicRouteData, topic);
-                    }
-
-                    if (isNeedUpdatePublishInfo) {
-                        this.updateTopicRouteTable(topic, topicRouteData);
-                    }
-                } catch (RemotingException e) {
-                    log.error("updateTopicRouteInfoFromNameServer Exception", e);
-                } catch (MQBrokerException e) {
-                    log.error("updateTopicRouteInfoFromNameServer Exception", e);
-                    if (!NamespaceUtil.isRetryTopic(topic)
-                        && ResponseCode.TOPIC_NOT_EXIST == e.getResponseCode()) {
-                        // clean no used topic
-                        cleanNoneRouteTopic(topic);
-                    }
-                } finally {
-                    this.lockNamesrv.unlock();
-                }
-            }
-        } catch (InterruptedException e) {
-            log.warn("updateTopicRouteInfoFromNameServer Exception", e);
         }
     }
 
@@ -179,80 +263,15 @@ public class TopicRouteInfoManager {
     }
 
     private void updateTopicPublishInfo(final String topic, final TopicPublishInfo info) {
-        if (info != null && topic != null) {
-            TopicPublishInfo prev = this.topicPublishInfoTable.put(topic, info);
-            if (prev != null) {
-                log.info("updateTopicPublishInfo prev is not null, " + prev);
-            }
+        if (info == null || topic == null) {
+            return;
+        }
+
+        TopicPublishInfo prev = this.topicPublishInfoTable.put(topic, info);
+        if (prev != null) {
+            log.info("updateTopicPublishInfo prev is not null, " + prev);
         }
     }
 
-    public void shutdown() {
-        if (null != this.scheduledExecutorService) {
-            this.scheduledExecutorService.shutdown();
-        }
-    }
 
-    public TopicPublishInfo tryToFindTopicPublishInfo(final String topic) {
-        TopicPublishInfo topicPublishInfo = this.topicPublishInfoTable.get(topic);
-        if (null == topicPublishInfo || !topicPublishInfo.ok()) {
-            this.updateTopicRouteInfoFromNameServer(topic, true, false);
-            topicPublishInfo = this.topicPublishInfoTable.get(topic);
-        }
-        return topicPublishInfo;
-    }
-
-    public String findBrokerAddressInPublish(String brokerName) {
-        if (brokerName == null) {
-            return null;
-        }
-        Map<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
-        if (map != null && !map.isEmpty()) {
-            return map.get(MQConstants.MASTER_ID);
-        }
-
-        return null;
-    }
-
-    public String findBrokerAddressInSubscribe(
-        final String brokerName,
-        final long brokerId,
-        final boolean onlyThisBroker
-    ) {
-        if (brokerName == null) {
-            return null;
-        }
-        String brokerAddr = null;
-        boolean found = false;
-
-        Map<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
-        if (map != null && !map.isEmpty()) {
-            brokerAddr = map.get(brokerId);
-            boolean slave = brokerId != MQConstants.MASTER_ID;
-            found = brokerAddr != null;
-
-            if (!found && slave) {
-                brokerAddr = map.get(brokerId + 1);
-                found = brokerAddr != null;
-            }
-
-            if (!found && !onlyThisBroker) {
-                Map.Entry<Long, String> entry = map.entrySet().iterator().next();
-                brokerAddr = entry.getValue();
-                found = true;
-            }
-        }
-
-        return brokerAddr;
-
-    }
-
-    public Set<MessageQueue> getTopicSubscribeInfo(String topic) {
-        Set<MessageQueue> queues = topicSubscribeInfoTable.get(topic);
-        if (null == queues || queues.isEmpty()) {
-            this.updateTopicRouteInfoFromNameServer(topic, false, true);
-            queues = this.topicSubscribeInfoTable.get(topic);
-        }
-        return queues;
-    }
 }
