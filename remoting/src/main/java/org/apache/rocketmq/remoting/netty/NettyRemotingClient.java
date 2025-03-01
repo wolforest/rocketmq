@@ -707,13 +707,16 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 
         try {
             cw = this.channelTables.get(addr);
-            if (cw != null) {
-                if (cw.isOK() || !cw.getChannelFuture().isDone()) {
-                    return cw.getChannelFuture();
-                } else {
-                    this.channelTables.remove(addr);
-                }
+            if (cw == null) {
+                return createChannel(addr).getChannelFuture();
             }
+
+            if (cw.isOK() || !cw.getChannelFuture().isDone()) {
+                return cw.getChannelFuture();
+            } else {
+                this.channelTables.remove(addr);
+            }
+
             return createChannel(addr).getChannelFuture();
         } catch (Exception e) {
             LOGGER.error("createChannel: create channel exception", e);
