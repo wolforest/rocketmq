@@ -119,6 +119,8 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 
     /**
      * Invoke the callback methods in this executor when process response.
+     * useless in broker, use publicExecutor instead
+     * used in client 4.x
      */
     private ExecutorService callbackExecutor;
     private final ChannelEventListener channelEventListener;
@@ -453,85 +455,99 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         }
 
         try {
-            if (this.lockChannelTables.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
-                try {
-                    boolean removeItemFromTable = true;
-                    ChannelWrapper prevCW = null;
-                    String addrRemote = null;
-                    for (Map.Entry<String, ChannelWrapper> entry : channelTables.entrySet()) {
-                        String key = entry.getKey();
-                        ChannelWrapper prev = entry.getValue();
-                        if (prev.getChannel() != null) {
-                            if (prev.getChannel() == channel) {
-                                prevCW = prev;
-                                addrRemote = key;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (null == prevCW) {
-                        LOGGER.info("eventCloseChannel: the channel[{}] has been removed from the channel table before", addrRemote);
-                        removeItemFromTable = false;
-                    }
-
-                    if (removeItemFromTable) {
-                        ChannelWrapper channelWrapper = this.channelWrapperTables.remove(channel);
-                        if (channelWrapper != null && channelWrapper.tryClose(channel)) {
-                            this.channelTables.remove(addrRemote);
-                        }
-                        LOGGER.info("closeChannel: the channel[{}] was removed from channel table", addrRemote);
-                        RemotingHelper.closeChannel(channel);
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("closeChannel: close the channel exception", e);
-                } finally {
-                    this.lockChannelTables.unlock();
-                }
-            } else {
+            if (!this.lockChannelTables.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 LOGGER.warn("closeChannel: try to lock channel table, but timeout, {}ms", LOCK_TIMEOUT_MILLIS);
+                return;
+            }
+
+            try {
+                boolean removeItemFromTable = true;
+                ChannelWrapper prevCW = null;
+                String addrRemote = null;
+                for (Map.Entry<String, ChannelWrapper> entry : channelTables.entrySet()) {
+                    ChannelWrapper prev = entry.getValue();
+                    if (prev.getChannel() == null || prev.getChannel() != channel) {
+                        continue;
+                    }
+
+                    String key = entry.getKey();
+                    prevCW = prev;
+                    addrRemote = key;
+                    break;
+                }
+
+                if (null == prevCW) {
+                    LOGGER.info("eventCloseChannel: the channel[{}] has been removed from the channel table before", addrRemote);
+                    removeItemFromTable = false;
+                }
+
+                if (removeItemFromTable) {
+                    ChannelWrapper channelWrapper = this.channelWrapperTables.remove(channel);
+                    if (channelWrapper != null && channelWrapper.tryClose(channel)) {
+                        this.channelTables.remove(addrRemote);
+                    }
+                    LOGGER.info("closeChannel: the channel[{}] was removed from channel table", addrRemote);
+                    RemotingHelper.closeChannel(channel);
+                }
+            } catch (Exception e) {
+                LOGGER.error("closeChannel: close the channel exception", e);
+            } finally {
+                this.lockChannelTables.unlock();
             }
         } catch (InterruptedException e) {
             LOGGER.error("closeChannel exception", e);
         }
     }
 
+    /**
+     * update by broker scheduler (120s/次)
+     * @param addrs addrs
+     */
     @Override
     public void updateNameServerAddressList(List<String> addrs) {
-        List<String> old = this.namesrvAddrList.get();
-        boolean update = false;
+        if (addrs.isEmpty()) {
+            return;
+        }
 
-        if (!addrs.isEmpty()) {
-            if (null == old) {
-                update = true;
-            } else if (addrs.size() != old.size()) {
-                update = true;
-            } else {
-                for (String addr : addrs) {
-                    if (!old.contains(addr)) {
-                        update = true;
-                        break;
-                    }
+        boolean update = false;
+        List<String> old = this.namesrvAddrList.get();
+
+        if (null == old) {
+            update = true;
+        } else if (addrs.size() != old.size()) {
+            update = true;
+        } else {
+            for (String addr : addrs) {
+                if (!old.contains(addr)) {
+                    update = true;
+                    break;
                 }
             }
+        }
 
-            if (update) {
-                Collections.shuffle(addrs);
-                LOGGER.info("name server address updated. NEW : {} , OLD: {}", addrs, old);
-                this.namesrvAddrList.set(addrs);
+        if (!update) {
+            return;
+        }
 
-                // should close the channel if choosed addr is not exist.
-                if (this.namesrvAddrChoosed.get() != null && !addrs.contains(this.namesrvAddrChoosed.get())) {
-                    String namesrvAddr = this.namesrvAddrChoosed.get();
-                    for (String addr : this.channelTables.keySet()) {
-                        if (addr.contains(namesrvAddr)) {
-                            ChannelWrapper channelWrapper = this.channelTables.get(addr);
-                            if (channelWrapper != null) {
-                                channelWrapper.close();
-                            }
-                        }
-                    }
-                }
+        Collections.shuffle(addrs);
+        LOGGER.info("name server address updated. NEW : {} , OLD: {}", addrs, old);
+        this.namesrvAddrList.set(addrs);
+
+        if (this.namesrvAddrChoosed.get() == null
+            || addrs.contains(this.namesrvAddrChoosed.get())) {
+            return;
+        }
+
+        // should close the channel if chooses addr is not exist.
+        String namesrvAddr = this.namesrvAddrChoosed.get();
+        for (String addr : this.channelTables.keySet()) {
+            if (!addr.contains(namesrvAddr)) {
+                continue;
+            }
+
+            ChannelWrapper channelWrapper = this.channelTables.get(addr);
+            if (channelWrapper != null) {
+                channelWrapper.close();
             }
         }
     }
@@ -684,24 +700,25 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
             return cw.getChannelFuture();
         }
 
-        if (this.lockChannelTables.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
-            try {
-                cw = this.channelTables.get(addr);
-                if (cw != null) {
-                    if (cw.isOK() || !cw.getChannelFuture().isDone()) {
-                        return cw.getChannelFuture();
-                    } else {
-                        this.channelTables.remove(addr);
-                    }
-                }
-                return createChannel(addr).getChannelFuture();
-            } catch (Exception e) {
-                LOGGER.error("createChannel: create channel exception", e);
-            } finally {
-                this.lockChannelTables.unlock();
-            }
-        } else {
+        if (!this.lockChannelTables.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
             LOGGER.warn("createChannel: try to lock channel table, but timeout, {}ms", LOCK_TIMEOUT_MILLIS);
+            return null;
+        }
+
+        try {
+            cw = this.channelTables.get(addr);
+            if (cw != null) {
+                if (cw.isOK() || !cw.getChannelFuture().isDone()) {
+                    return cw.getChannelFuture();
+                } else {
+                    this.channelTables.remove(addr);
+                }
+            }
+            return createChannel(addr).getChannelFuture();
+        } catch (Exception e) {
+            LOGGER.error("createChannel: create channel exception", e);
+        } finally {
+            this.lockChannelTables.unlock();
         }
 
         return null;
@@ -876,6 +893,12 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         });
     }
 
+    /**
+     * used by client 4.x
+     * @param requestCode request code
+     * @param processor processor
+     * @param executor executor
+     */
     @Override
     public void registerProcessor(int requestCode, NettyRequestProcessor processor, ExecutorService executor) {
         ExecutorService executorThis = executor;
@@ -933,6 +956,10 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         return callbackExecutor != null ? callbackExecutor : publicExecutor;
     }
 
+    /**
+     * used by client 4.x
+     * @param callbackExecutor executor
+     */
     @Override
     public void setCallbackExecutor(final ExecutorService callbackExecutor) {
         this.callbackExecutor = callbackExecutor;

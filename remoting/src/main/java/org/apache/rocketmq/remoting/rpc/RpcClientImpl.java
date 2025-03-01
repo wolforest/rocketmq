@@ -169,8 +169,7 @@ public class RpcClientImpl implements RpcClient {
                         case ResponseCode.PULL_NOT_FOUND:
                         case ResponseCode.PULL_RETRY_IMMEDIATELY:
                         case ResponseCode.PULL_OFFSET_MOVED:
-                            PullMessageResponseHeader responseHeader =
-                                (PullMessageResponseHeader) response.decodeCommandCustomHeader(PullMessageResponseHeader.class);
+                            PullMessageResponseHeader responseHeader = response.decodeCommandCustomHeader(PullMessageResponseHeader.class);
                             rpcResponsePromise.setSuccess(new RpcResponse(response.getCode(), responseHeader, response.getBody()));
                         default:
                             RpcResponse rpcResponse = new RpcResponse(new RpcException(response.getCode(), "unexpected remote response code"));

@@ -249,6 +249,10 @@ public class ClusterClient {
         return this.remotingClient.isAddressReachable(address);
     }
 
+    /**
+     * update by broker scheduler (120s/次)
+     * @param addrs addrs
+     */
     public void updateNameServerAddressList(final String addrs) {
         String[] addrArray = addrs.split(";");
         List<String> lst = new ArrayList<>(Arrays.asList(addrArray));

@@ -52,12 +52,12 @@ import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 public class TopicQueueMappingCleanService extends ServiceThread {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
-    private TopicQueueMappingManager topicQueueMappingManager;
-    private ClusterClient clusterClient;
-    private RpcClient rpcClient;
-    private MessageStoreConfig messageStoreConfig;
-    private BrokerConfig brokerConfig;
-    private Broker broker;
+    private final TopicQueueMappingManager topicQueueMappingManager;
+    private final ClusterClient clusterClient;
+    private final RpcClient rpcClient;
+    private final MessageStoreConfig messageStoreConfig;
+    private final BrokerConfig brokerConfig;
+    private final Broker broker;
 
     public TopicQueueMappingCleanService(Broker broker) {
         this.broker = broker;

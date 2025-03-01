@@ -37,7 +37,7 @@ public enum LanguageCode {
     OMS((byte) 11),
     RUST((byte) 12);
 
-    private byte code;
+    private final byte code;
 
     LanguageCode(byte code) {
         this.code = code;
@@ -55,7 +55,7 @@ public enum LanguageCode {
     public byte getCode() {
         return code;
     }
-    
+
     private static final Map<String, LanguageCode> MAP = Arrays.stream(LanguageCode.values()).collect(Collectors.toMap(LanguageCode::name, Function.identity()));
 
     public static LanguageCode getCode(String language) {
