@@ -179,25 +179,29 @@ public abstract class NettyRemotingAbstract {
      * @param msg incoming remoting command.
      */
     public void processMessageReceived(ChannelHandlerContext ctx, RemotingCommand msg) {
-        if (msg != null) {
-            switch (msg.getType()) {
-                case REQUEST_COMMAND:
-                    processRequestCommand(ctx, msg);
-                    break;
-                case RESPONSE_COMMAND:
-                    processResponseCommand(ctx, msg);
-                    break;
-                default:
-                    break;
-            }
+        if (msg == null) {
+            return;
+        }
+
+        switch (msg.getType()) {
+            case REQUEST_COMMAND:
+                processRequestCommand(ctx, msg);
+                break;
+            case RESPONSE_COMMAND:
+                processResponseCommand(ctx, msg);
+                break;
+            default:
+                break;
         }
     }
 
     protected void doBeforeRpcHooks(String addr, RemotingCommand request) {
-        if (rpcHooks.size() > 0) {
-            for (RPCHook rpcHook : rpcHooks) {
-                rpcHook.doBeforeRequest(addr, request);
-            }
+        if (rpcHooks.isEmpty()) {
+            return;
+        }
+
+        for (RPCHook rpcHook : rpcHooks) {
+            rpcHook.doBeforeRequest(addr, request);
         }
     }
 
