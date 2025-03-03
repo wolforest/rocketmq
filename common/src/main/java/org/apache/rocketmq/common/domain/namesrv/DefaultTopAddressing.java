@@ -33,14 +33,13 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 public class DefaultTopAddressing implements TopAddressing {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
 
     private String nsAddr;
-    private String wsAddr;
-    private String unitName;
+    private final String wsAddr;
+    private final String unitName;
     private Map<String, String> para;
-    private List<TopAddressing> topAddressingList;
+    private final List<TopAddressing> topAddressingList;
 
     public DefaultTopAddressing(final String wsAddr) {
         this(wsAddr, null);
@@ -59,58 +58,38 @@ public class DefaultTopAddressing implements TopAddressing {
         this.topAddressingList = loadCustomTopAddressing();
     }
 
-    private static String clearNewLine(final String str) {
-        String newString = str.trim();
-        int index = newString.indexOf("\r");
-        if (index != -1) {
-            return newString.substring(0, index);
-        }
-
-        index = newString.indexOf("\n");
-        if (index != -1) {
-            return newString.substring(0, index);
-        }
-
-        return newString;
-    }
-
-    private List<TopAddressing> loadCustomTopAddressing() {
-        ServiceLoader<TopAddressing> serviceLoader = ServiceLoader.load(TopAddressing.class);
-        Iterator<TopAddressing> iterator = serviceLoader.iterator();
-        List<TopAddressing> topAddressingList = new ArrayList<>();
-        if (iterator.hasNext()) {
-            topAddressingList.add(iterator.next());
-        }
-        return topAddressingList;
-    }
-
     @Override
     public final String fetchNSAddr() {
-        if (!topAddressingList.isEmpty()) {
-            for (TopAddressing topAddressing : topAddressingList) {
-                String nsAddress = topAddressing.fetchNSAddr();
-                if (!Strings.isNullOrEmpty(nsAddress)) {
-                    return nsAddress;
-                }
+        if (topAddressingList.isEmpty()) {
+            return fetchNSAddr(true, 3000);
+        }
+
+        for (TopAddressing topAddressing : topAddressingList) {
+            String nsAddress = topAddressing.fetchNSAddr();
+            if (!Strings.isNullOrEmpty(nsAddress)) {
+                return nsAddress;
             }
         }
+
         // Return result of default implementation
         return fetchNSAddr(true, 3000);
     }
 
     @Override
     public void registerChangeCallBack(NameServerUpdateCallback changeCallBack) {
-        if (!topAddressingList.isEmpty()) {
-            for (TopAddressing topAddressing : topAddressingList) {
-                topAddressing.registerChangeCallBack(changeCallBack);
-            }
+        if (topAddressingList.isEmpty()) {
+            return;
+        }
+
+        for (TopAddressing topAddressing : topAddressingList) {
+            topAddressing.registerChangeCallBack(changeCallBack);
         }
     }
 
     public final String fetchNSAddr(boolean verbose, long timeoutMills) {
         StringBuilder url = new StringBuilder(this.wsAddr);
         try {
-            if (null != para && para.size() > 0) {
+            if (null != para && !para.isEmpty()) {
                 if (!StringUtils.isBlank(this.unitName)) {
                     url.append("-").append(this.unitName).append("?nofix=1&");
                 }
@@ -121,8 +100,7 @@ public class DefaultTopAddressing implements TopAddressing {
                     url.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
                 }
                 url = new StringBuilder(url.substring(0, url.length() - 1));
-            }
-            else {
+            } else {
                 if (!StringUtils.isBlank(this.unitName)) {
                     url.append("-").append(this.unitName).append("?nofix=1");
                 }
@@ -153,6 +131,31 @@ public class DefaultTopAddressing implements TopAddressing {
             LOGGER.warn(errorMsg);
         }
         return null;
+    }
+
+    private static String clearNewLine(final String str) {
+        String newString = str.trim();
+        int index = newString.indexOf("\r");
+        if (index != -1) {
+            return newString.substring(0, index);
+        }
+
+        index = newString.indexOf("\n");
+        if (index != -1) {
+            return newString.substring(0, index);
+        }
+
+        return newString;
+    }
+
+    private List<TopAddressing> loadCustomTopAddressing() {
+        ServiceLoader<TopAddressing> serviceLoader = ServiceLoader.load(TopAddressing.class);
+        Iterator<TopAddressing> iterator = serviceLoader.iterator();
+        List<TopAddressing> topAddressingList = new ArrayList<>();
+        if (iterator.hasNext()) {
+            topAddressingList.add(iterator.next());
+        }
+        return topAddressingList;
     }
 
     public String getNsAddr() {
