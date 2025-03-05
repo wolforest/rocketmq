@@ -27,6 +27,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.LongAdder;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
+/**
+ * channel read & write counter
+ */
 @ChannelHandler.Sharable
 public class RemotingCodeDistributionHandler extends ChannelDuplexHandler {
 
@@ -36,16 +39,6 @@ public class RemotingCodeDistributionHandler extends ChannelDuplexHandler {
     public RemotingCodeDistributionHandler() {
         inboundDistribution = new ConcurrentHashMap<>();
         outboundDistribution = new ConcurrentHashMap<>();
-    }
-
-    private void countInbound(int requestCode) {
-        LongAdder item = inboundDistribution.computeIfAbsent(requestCode, k -> new LongAdder());
-        item.increment();
-    }
-
-    private void countOutbound(int responseCode) {
-        LongAdder item = outboundDistribution.computeIfAbsent(responseCode, k -> new LongAdder());
-        item.increment();
     }
 
     @Override
@@ -64,6 +57,16 @@ public class RemotingCodeDistributionHandler extends ChannelDuplexHandler {
             countOutbound(cmd.getCode());
         }
         ctx.write(msg, promise);
+    }
+
+    private void countInbound(int requestCode) {
+        LongAdder item = inboundDistribution.computeIfAbsent(requestCode, k -> new LongAdder());
+        item.increment();
+    }
+
+    private void countOutbound(int responseCode) {
+        LongAdder item = outboundDistribution.computeIfAbsent(responseCode, k -> new LongAdder());
+        item.increment();
     }
 
     private Map<Integer, Long> getDistributionSnapshot(Map<Integer, LongAdder> countMap) {

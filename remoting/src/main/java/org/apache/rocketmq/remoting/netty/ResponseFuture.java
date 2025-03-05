@@ -60,23 +60,30 @@ public class ResponseFuture {
     }
 
     public void executeInvokeCallback() {
-        if (invokeCallback != null) {
-            if (this.executeCallbackOnlyOnce.compareAndSet(false, true)) {
-                RemotingCommand response = getResponseCommand();
-                if (response != null) {
-                    invokeCallback.operationSucceed(response);
-                } else {
-                    if (!isSendRequestOK()) {
-                        invokeCallback.operationFail(new RemotingSendRequestException(channel.remoteAddress().toString(), getCause()));
-                    } else if (isTimeout()) {
-                        invokeCallback.operationFail(new RemotingTimeoutException(channel.remoteAddress().toString(), getTimeoutMillis(), getCause()));
-                    } else {
-                        invokeCallback.operationFail(new RemotingException(getRequestCommand().toString(), getCause()));
-                    }
-                }
-                invokeCallback.operationComplete(this);
-            }
+        if (invokeCallback == null) {
+            return;
         }
+
+        if (!this.executeCallbackOnlyOnce.compareAndSet(false, true)) {
+            return;
+        }
+
+        RemotingCommand response = getResponseCommand();
+        if (response != null) {
+            invokeCallback.operationSucceed(response);
+            invokeCallback.operationComplete(this);
+            return;
+        }
+
+        if (!isSendRequestOK()) {
+            invokeCallback.operationFail(new RemotingSendRequestException(channel.remoteAddress().toString(), getCause()));
+        } else if (isTimeout()) {
+            invokeCallback.operationFail(new RemotingTimeoutException(channel.remoteAddress().toString(), getTimeoutMillis(), getCause()));
+        } else {
+            invokeCallback.operationFail(new RemotingException(getRequestCommand().toString(), getCause()));
+        }
+
+        invokeCallback.operationComplete(this);
     }
 
     public void interrupt() {

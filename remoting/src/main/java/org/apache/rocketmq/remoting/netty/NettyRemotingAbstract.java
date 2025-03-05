@@ -206,10 +206,12 @@ public abstract class NettyRemotingAbstract {
     }
 
     public void doAfterRpcHooks(String addr, RemotingCommand request, RemotingCommand response) {
-        if (rpcHooks.size() > 0) {
-            for (RPCHook rpcHook : rpcHooks) {
-                rpcHook.doAfterResponse(addr, request, response);
-            }
+        if (rpcHooks.isEmpty()) {
+            return;
+        }
+
+        for (RPCHook rpcHook : rpcHooks) {
+            rpcHook.doAfterResponse(addr, request, response);
         }
     }
 
@@ -483,12 +485,14 @@ public abstract class NettyRemotingAbstract {
             Entry<Integer, ResponseFuture> next = it.next();
             ResponseFuture rep = next.getValue();
 
-            if ((rep.getBeginTimestamp() + rep.getTimeoutMillis() + 1000) <= System.currentTimeMillis()) {
-                rep.release();
-                it.remove();
-                rfList.add(rep);
-                log.warn("remove timeout request, " + rep);
+            if ((rep.getBeginTimestamp() + rep.getTimeoutMillis() + 1000) > System.currentTimeMillis()) {
+                continue;
             }
+
+            rep.release();
+            it.remove();
+            rfList.add(rep);
+            log.warn("remove timeout request, " + rep);
         }
 
         for (ResponseFuture rf : rfList) {

@@ -279,7 +279,7 @@ public class ClusterClient {
         return getBrokerMemberGroup(clusterName, brokerName);
     }
 
-    public BrokerMemberGroup getBrokerMemberGroup(String clusterName, String brokerName)
+    private BrokerMemberGroup getBrokerMemberGroup(String clusterName, String brokerName)
         throws InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
         BrokerMemberGroup brokerMemberGroup = new BrokerMemberGroup(clusterName, brokerName);
 
@@ -304,7 +304,7 @@ public class ClusterClient {
         return responseBody.getBrokerMemberGroup();
     }
 
-    public BrokerMemberGroup getBrokerMemberGroupCompatible(String clusterName, String brokerName)
+    private BrokerMemberGroup getBrokerMemberGroupCompatible(String clusterName, String brokerName)
         throws InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
         BrokerMemberGroup brokerMemberGroup = new BrokerMemberGroup(clusterName, brokerName);
 
@@ -556,7 +556,7 @@ public class ClusterClient {
         return registerResult;
     }
 
-    public RegisterBrokerRequestHeader createRegisterBrokerRequestHeader(String clusterName, String brokerAddr,
+    private RegisterBrokerRequestHeader createRegisterBrokerRequestHeader(String clusterName, String brokerAddr,
         String brokerName, long brokerId, String haServerAddr, boolean enableActingMaster, Long heartbeatTimeoutMillis) {
 
         RegisterBrokerRequestHeader requestHeader = new RegisterBrokerRequestHeader();
@@ -627,7 +627,7 @@ public class ClusterClient {
         }
     }
 
-    public void unregisterBroker(
+    private void unregisterBroker(
         final String namesrvAddr,
         final String clusterName,
         final String brokerAddr,
@@ -1114,7 +1114,7 @@ public class ClusterClient {
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, true);
     }
 
-    public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis,
+    private TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis,
         boolean allowTopicNotExist) throws MQBrokerException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
         GetRouteInfoRequestHeader requestHeader = new GetRouteInfoRequestHeader();
         requestHeader.setTopic(topic);
@@ -1275,7 +1275,7 @@ public class ClusterClient {
             throw new MQBrokerException(response.getCode(), response.getRemark());
         }
 
-        RegisterBrokerToControllerResponseHeader responseHeader = (RegisterBrokerToControllerResponseHeader) response.decodeCommandCustomHeader(RegisterBrokerToControllerResponseHeader.class);
+        RegisterBrokerToControllerResponseHeader responseHeader = response.decodeCommandCustomHeader(RegisterBrokerToControllerResponseHeader.class);
         Set<Long> syncStateSet = RemotingSerializable.decode(response.getBody(), SyncStateSet.class).getSyncStateSet();
         return new Pair<>(responseHeader, syncStateSet);
     }

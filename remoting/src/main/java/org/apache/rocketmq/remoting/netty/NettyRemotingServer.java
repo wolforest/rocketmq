@@ -87,12 +87,18 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private final EventLoopGroup eventLoopGroupSelector;
     // boss group : 1
     private final EventLoopGroup eventLoopGroupBoss;
-    // childHandler.SocketChannel.pipeline()
-    // NettyServerConfig.serverWorkerThreads: 8
+
+    /**
+     * defaultEventExecutorGroup:
+     * config: NettyServerConfig.serverWorkerThreads[8]
+     * usage: heartbeat, idle check, tls handler, FileRegionEncoder
+     */
     private final DefaultEventExecutorGroup defaultEventExecutorGroup;
 
     /**
-     *
+     * publicExecutor:
+     * - default executor for processor if no executor is specified.
+     * - executor for invoke callback
      */
     private final ExecutorService publicExecutor;
     private final ScheduledExecutorService scheduledExecutorService;
@@ -134,44 +140,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         loadSslContext();
     }
 
-    private DefaultEventExecutorGroup buildEventExecutorGroup() {
-        return new DefaultEventExecutorGroup(
-            nettyServerConfig.getServerWorkerThreads(),
-            new ThreadFactoryImpl("NettyServerCodecThread_")
-        );
-    }
-
-    private EventLoopGroup buildEventLoopGroupSelector() {
-        if (useEpoll()) {
-            return new EpollEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactoryImpl("NettyServerEPOLLSelector_"));
-        } else {
-            return new NioEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactoryImpl("NettyServerNIOSelector_"));
-        }
-    }
-
-    private EventLoopGroup buildBossEventLoopGroup() {
-        if (useEpoll()) {
-            return new EpollEventLoopGroup(1, new ThreadFactoryImpl("NettyEPOLLBoss_"));
-        } else {
-            return new NioEventLoopGroup(1, new ThreadFactoryImpl("NettyNIOBoss_"));
-        }
-    }
-
-    private ExecutorService buildPublicExecutor(NettyServerConfig nettyServerConfig) {
-        int publicThreadNums = nettyServerConfig.getServerCallbackExecutorThreads();
-        if (publicThreadNums <= 0) {
-            publicThreadNums = 4;
-        }
-
-        return Executors.newFixedThreadPool(publicThreadNums, new ThreadFactoryImpl("NettyServerPublicExecutor_"));
-    }
-
-    private ScheduledExecutorService buildScheduleExecutor() {
-        return ThreadUtils.newScheduledThreadPool(1,
-            new ThreadFactoryImpl("NettyServerScheduler_", true),
-            new ThreadPoolExecutor.DiscardOldestPolicy());
-    }
-
     public void loadSslContext() {
         TlsMode tlsMode = TlsSystemConfig.tlsMode;
         log.info("Server is running in TLS {} mode", tlsMode.getName());
@@ -186,15 +154,6 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         } catch (CertificateException | IOException e) {
             log.error("Failed to create SSLContext for server", e);
         }
-    }
-
-    /**
-     * nettyServerConfig.useEpollNativeSelector: default false
-     */
-    private boolean useEpoll() {
-        return SystemUtils.isLinuxPlatform()
-            && nettyServerConfig.isUseEpollNativeSelector()
-            && Epoll.isAvailable();
     }
 
     @Override
@@ -271,6 +230,8 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
     /**
      * config channel in ChannelInitializer
+     * - add handshake handler
+     * - add idle state handler
      *
      * @param ch the SocketChannel needed to init
      */
@@ -454,6 +415,53 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         AttributeKey<String> key = AttributeKeys.valueOf(
             HAProxyConstants.PROXY_PROTOCOL_TLV_PREFIX + String.format("%02x", tlv.typeByteValue()));
         channel.attr(key).set(new String(valueBytes, CharsetUtil.UTF_8));
+    }
+
+    private DefaultEventExecutorGroup buildEventExecutorGroup() {
+        return new DefaultEventExecutorGroup(
+            nettyServerConfig.getServerWorkerThreads(),
+            new ThreadFactoryImpl("NettyServerCodecThread_")
+        );
+    }
+
+    private EventLoopGroup buildEventLoopGroupSelector() {
+        if (useEpoll()) {
+            return new EpollEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactoryImpl("NettyServerEPOLLSelector_"));
+        } else {
+            return new NioEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactoryImpl("NettyServerNIOSelector_"));
+        }
+    }
+
+    private EventLoopGroup buildBossEventLoopGroup() {
+        if (useEpoll()) {
+            return new EpollEventLoopGroup(1, new ThreadFactoryImpl("NettyEPOLLBoss_"));
+        } else {
+            return new NioEventLoopGroup(1, new ThreadFactoryImpl("NettyNIOBoss_"));
+        }
+    }
+
+    private ExecutorService buildPublicExecutor(NettyServerConfig nettyServerConfig) {
+        int publicThreadNums = nettyServerConfig.getServerCallbackExecutorThreads();
+        if (publicThreadNums <= 0) {
+            publicThreadNums = 4;
+        }
+
+        return Executors.newFixedThreadPool(publicThreadNums, new ThreadFactoryImpl("NettyServerPublicExecutor_"));
+    }
+
+    private ScheduledExecutorService buildScheduleExecutor() {
+        return ThreadUtils.newScheduledThreadPool(1,
+            new ThreadFactoryImpl("NettyServerScheduler_", true),
+            new ThreadPoolExecutor.DiscardOldestPolicy());
+    }
+
+    /**
+     * nettyServerConfig.useEpollNativeSelector: default false
+     */
+    private boolean useEpoll() {
+        return SystemUtils.isLinuxPlatform()
+            && nettyServerConfig.isUseEpollNativeSelector()
+            && Epoll.isAvailable();
     }
 
     public DefaultEventExecutorGroup getDefaultEventExecutorGroup() {
