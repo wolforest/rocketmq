@@ -66,7 +66,7 @@ import org.apache.rocketmq.remoting.common.TlsMode;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.exception.RemotingTooMuchRequestException;
-import org.apache.rocketmq.remoting.netty.handler.HandshakeHandler;
+import org.apache.rocketmq.remoting.netty.handler.HandshakeDecoder;
 import org.apache.rocketmq.remoting.netty.handler.ServerConnectionManager;
 import org.apache.rocketmq.remoting.netty.handler.NettyDecoder;
 import org.apache.rocketmq.remoting.netty.handler.NettyEncoder;
@@ -237,7 +237,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
      */
     protected void configChannel(SocketChannel ch) {
         ch.pipeline()
-            .addLast(defaultEventExecutorGroup, HandshakeHandler.HANDSHAKE_HANDLER_NAME, new HandshakeHandler(this))
+            .addLast(defaultEventExecutorGroup, HandshakeDecoder.HANDSHAKE_HANDLER_NAME, new HandshakeDecoder(this))
             .addLast(defaultEventExecutorGroup,
                 encoder,
                 new NettyDecoder(),

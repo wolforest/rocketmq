@@ -30,7 +30,10 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettyRemotingServer;
 
-public class HandshakeHandler extends ByteToMessageDecoder {
+/**
+ * @renamed from HandshakeHandler to HandshakeDecoder
+ */
+public class HandshakeDecoder extends ByteToMessageDecoder {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.ROCKETMQ_REMOTING_NAME);
 
     public static final String HANDSHAKE_HANDLER_NAME = "handshakeHandler";
@@ -38,7 +41,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     public static final String HA_PROXY_HANDLER = "HAProxyHandler";
     private final NettyRemotingServer server;
 
-    public HandshakeHandler(NettyRemotingServer server) {
+    public HandshakeDecoder(NettyRemotingServer server) {
         this.server = server;
     }
 
