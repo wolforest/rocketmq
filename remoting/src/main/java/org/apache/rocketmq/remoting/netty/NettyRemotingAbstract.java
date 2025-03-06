@@ -414,32 +414,20 @@ public abstract class NettyRemotingAbstract {
         boolean runInThisThread = executor == null || executor.isShutdown();
 
         if (!runInThisThread) {
-            runInThisThread = executeInvokeCallback(responseFuture, executor);
+            runInThisThread = submitInvokeCallback(responseFuture, executor);
         }
 
         if (runInThisThread) {
-            try {
-                responseFuture.executeInvokeCallback();
-            } catch (Throwable e) {
-                log.warn("executeInvokeCallback Exception", e);
-            } finally {
-                responseFuture.release();
-            }
+            callInvokeCallback(responseFuture);
         }
     }
 
-    private boolean executeInvokeCallback(final ResponseFuture responseFuture, ExecutorService executor) {
+    private boolean submitInvokeCallback(final ResponseFuture responseFuture, ExecutorService executor) {
         boolean runInThisThread = false;
 
         try {
             executor.submit(() -> {
-                try {
-                    responseFuture.executeInvokeCallback();
-                } catch (Throwable e) {
-                    log.warn("execute callback in executor exception, and callback throw", e);
-                } finally {
-                    responseFuture.release();
-                }
+                callInvokeCallback(responseFuture);
             });
         } catch (Exception e) {
             runInThisThread = true;
@@ -448,6 +436,17 @@ public abstract class NettyRemotingAbstract {
 
         return runInThisThread;
     }
+
+    private void callInvokeCallback(final ResponseFuture responseFuture) {
+        try {
+            responseFuture.executeInvokeCallback();
+        } catch (Throwable e) {
+            log.warn("executeInvokeCallback Exception", e);
+        } finally {
+            responseFuture.release();
+        }
+    }
+
     /**
      * Custom RPC hooks.
      *
