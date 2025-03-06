@@ -500,6 +500,10 @@ public abstract class NettyRemotingAbstract {
             log.warn("remove timeout request, " + rep);
         }
 
+        executeInvokeCallback(rfList);
+    }
+
+    private void executeInvokeCallback(List<ResponseFuture> rfList) {
         for (ResponseFuture rf : rfList) {
             try {
                 executeInvokeCallback(rf);
