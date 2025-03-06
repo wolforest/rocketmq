@@ -390,19 +390,19 @@ public abstract class NettyRemotingAbstract {
     public void processResponseCommand(ChannelHandlerContext ctx, RemotingCommand cmd) {
         final int opaque = cmd.getOpaque();
         final ResponseFuture responseFuture = responseTable.get(opaque);
-        if (responseFuture != null) {
-            responseFuture.setResponseCommand(cmd);
-
-            responseTable.remove(opaque);
-
-            if (responseFuture.getInvokeCallback() != null) {
-                executeInvokeCallback(responseFuture);
-            } else {
-                responseFuture.putResponse(cmd);
-                responseFuture.release();
-            }
-        } else {
+        if (responseFuture == null) {
             log.warn("receive response, cmd={}, but not matched any request, address={}", cmd, RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
+            return;
+        }
+
+        responseFuture.setResponseCommand(cmd);
+        responseTable.remove(opaque);
+
+        if (responseFuture.getInvokeCallback() != null) {
+            executeInvokeCallback(responseFuture);
+        } else {
+            responseFuture.putResponse(cmd);
+            responseFuture.release();
         }
     }
 
@@ -410,25 +410,11 @@ public abstract class NettyRemotingAbstract {
      * Execute callback in callback executor. If callback executor is null, run directly in current thread
      */
     private void executeInvokeCallback(final ResponseFuture responseFuture) {
-        boolean runInThisThread = false;
         ExecutorService executor = this.getCallbackExecutor();
-        if (executor != null && !executor.isShutdown()) {
-            try {
-                executor.submit(() -> {
-                    try {
-                        responseFuture.executeInvokeCallback();
-                    } catch (Throwable e) {
-                        log.warn("execute callback in executor exception, and callback throw", e);
-                    } finally {
-                        responseFuture.release();
-                    }
-                });
-            } catch (Exception e) {
-                runInThisThread = true;
-                log.warn("execute callback in executor exception, maybe executor busy", e);
-            }
-        } else {
-            runInThisThread = true;
+        boolean runInThisThread = executor == null || executor.isShutdown();
+
+        if (!runInThisThread) {
+            runInThisThread = executeInvokeCallback(responseFuture, executor);
         }
 
         if (runInThisThread) {
@@ -442,6 +428,26 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
+    private boolean executeInvokeCallback(final ResponseFuture responseFuture, ExecutorService executor) {
+        boolean runInThisThread = false;
+
+        try {
+            executor.submit(() -> {
+                try {
+                    responseFuture.executeInvokeCallback();
+                } catch (Throwable e) {
+                    log.warn("execute callback in executor exception, and callback throw", e);
+                } finally {
+                    responseFuture.release();
+                }
+            });
+        } catch (Exception e) {
+            runInThisThread = true;
+            log.warn("execute callback in executor exception, maybe executor busy", e);
+        }
+
+        return runInThisThread;
+    }
     /**
      * Custom RPC hooks.
      *
