@@ -721,38 +721,43 @@ public abstract class NettyRemotingAbstract {
             final ChannelEventListener listener = NettyRemotingAbstract.this.getChannelEventListener();
 
             while (!this.isStopped()) {
-                try {
-                    NettyEvent event = this.eventQueue.poll(3000, TimeUnit.MILLISECONDS);
-                    if (event != null && listener != null) {
-                        switch (event.getType()) {
-                            case IDLE:
-                                listener.onChannelIdle(event.getRemoteAddr(), event.getChannel());
-                                break;
-                            case CLOSE:
-                                listener.onChannelClose(event.getRemoteAddr(), event.getChannel());
-                                break;
-                            case CONNECT:
-                                listener.onChannelConnect(event.getRemoteAddr(), event.getChannel());
-                                break;
-                            case EXCEPTION:
-                                listener.onChannelException(event.getRemoteAddr(), event.getChannel());
-                                break;
-                            case ACTIVE:
-                                listener.onChannelActive(event.getRemoteAddr(), event.getChannel());
-                                break;
-                            default:
-                                break;
-
-                        }
-                    }
-                } catch (Exception e) {
-                    log.warn(this.getServiceName() + " service has exception. ", e);
-                }
+                processEvent(listener);
             }
 
             log.info(this.getServiceName() + " service end");
         }
 
+        private void processEvent(ChannelEventListener listener) {
+            try {
+                NettyEvent event = this.eventQueue.poll(3000, TimeUnit.MILLISECONDS);
+                if (event == null || listener == null) {
+                    return;
+                }
+
+                switch (event.getType()) {
+                    case IDLE:
+                        listener.onChannelIdle(event.getRemoteAddr(), event.getChannel());
+                        break;
+                    case CLOSE:
+                        listener.onChannelClose(event.getRemoteAddr(), event.getChannel());
+                        break;
+                    case CONNECT:
+                        listener.onChannelConnect(event.getRemoteAddr(), event.getChannel());
+                        break;
+                    case EXCEPTION:
+                        listener.onChannelException(event.getRemoteAddr(), event.getChannel());
+                        break;
+                    case ACTIVE:
+                        listener.onChannelActive(event.getRemoteAddr(), event.getChannel());
+                        break;
+                    default:
+                        break;
+
+                }
+            } catch (Exception e) {
+                log.warn(this.getServiceName() + " service has exception. ", e);
+            }
+        }
 
         @Override
         public String getServiceName() {
