@@ -541,65 +541,67 @@ public abstract class NettyRemotingAbstract {
             future.completeExceptionally(t);
             return future;
         }
-        if (acquired) {
-            final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreAsync);
-            long costTime = System.currentTimeMillis() - beginStartTime;
-            if (timeoutMillis < costTime) {
-                once.release();
-                future.completeExceptionally(new RemotingTimeoutException("invokeAsyncImpl call timeout"));
-                return future;
-            }
 
-            AtomicReference<ResponseFuture> responseFutureReference = new AtomicReference<>();
-            final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, request, timeoutMillis - costTime,
-                new InvokeCallback() {
-                    @Override
-                    public void operationComplete(ResponseFuture responseFuture) {
-
-                    }
-
-                    @Override
-                    public void operationSucceed(RemotingCommand response) {
-                        future.complete(responseFutureReference.get());
-                    }
-
-                    @Override
-                    public void operationFail(Throwable throwable) {
-                        future.completeExceptionally(throwable);
-                    }
-                }, once);
-            responseFutureReference.set(responseFuture);
-            this.responseTable.put(opaque, responseFuture);
-            try {
-                channel.writeAndFlush(request).addListener((ChannelFutureListener) f -> {
-                    if (f.isSuccess()) {
-                        responseFuture.setSendRequestOK(true);
-                        return;
-                    }
-                    requestFail(opaque);
-                    log.warn("send a request command to channel <{}> failed.", RemotingHelper.parseChannelRemoteAddr(channel));
-                });
-                return future;
-            } catch (Exception e) {
-                responseTable.remove(opaque);
-                responseFuture.release();
-                log.warn("send a request command to channel <" + RemotingHelper.parseChannelRemoteAddr(channel) + "> Exception", e);
-                future.completeExceptionally(new RemotingSendRequestException(RemotingHelper.parseChannelRemoteAddr(channel), e));
-                return future;
-            }
-        } else {
+        if (!acquired) {
             if (timeoutMillis <= 0) {
                 future.completeExceptionally(new RemotingTooMuchRequestException("invokeAsyncImpl invoke too fast"));
-            } else {
-                String info =
-                    String.format("invokeAsyncImpl tryAcquire semaphore timeout, %dms, waiting thread nums: %d semaphoreAsyncValue: %d",
-                        timeoutMillis,
-                        this.semaphoreAsync.getQueueLength(),
-                        this.semaphoreAsync.availablePermits()
-                    );
-                log.warn(info);
-                future.completeExceptionally(new RemotingTimeoutException(info));
+                return future;
             }
+
+            String info =
+                String.format("invokeAsyncImpl tryAcquire semaphore timeout, %dms, waiting thread nums: %d semaphoreAsyncValue: %d",
+                    timeoutMillis,
+                    this.semaphoreAsync.getQueueLength(),
+                    this.semaphoreAsync.availablePermits()
+                );
+            log.warn(info);
+            future.completeExceptionally(new RemotingTimeoutException(info));
+            return future;
+        }
+
+        final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreAsync);
+        long costTime = System.currentTimeMillis() - beginStartTime;
+        if (timeoutMillis < costTime) {
+            once.release();
+            future.completeExceptionally(new RemotingTimeoutException("invokeAsyncImpl call timeout"));
+            return future;
+        }
+
+        AtomicReference<ResponseFuture> responseFutureReference = new AtomicReference<>();
+        final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, request, timeoutMillis - costTime,
+            new InvokeCallback() {
+                @Override
+                public void operationComplete(ResponseFuture responseFuture) {
+
+                }
+
+                @Override
+                public void operationSucceed(RemotingCommand response) {
+                    future.complete(responseFutureReference.get());
+                }
+
+                @Override
+                public void operationFail(Throwable throwable) {
+                    future.completeExceptionally(throwable);
+                }
+            }, once);
+        responseFutureReference.set(responseFuture);
+        this.responseTable.put(opaque, responseFuture);
+        try {
+            channel.writeAndFlush(request).addListener((ChannelFutureListener) f -> {
+                if (f.isSuccess()) {
+                    responseFuture.setSendRequestOK(true);
+                    return;
+                }
+                requestFail(opaque);
+                log.warn("send a request command to channel <{}> failed.", RemotingHelper.parseChannelRemoteAddr(channel));
+            });
+            return future;
+        } catch (Exception e) {
+            responseTable.remove(opaque);
+            responseFuture.release();
+            log.warn("send a request command to channel <" + RemotingHelper.parseChannelRemoteAddr(channel) + "> Exception", e);
+            future.completeExceptionally(new RemotingSendRequestException(RemotingHelper.parseChannelRemoteAddr(channel), e));
             return future;
         }
     }
