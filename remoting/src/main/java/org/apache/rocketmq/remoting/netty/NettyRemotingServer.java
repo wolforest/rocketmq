@@ -123,6 +123,16 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         this(nettyServerConfig, null);
     }
 
+    /**
+     * Constructor
+     * ChannelEventListener, used to handle idle and channel close event
+     *  - ClientHousekeepingService
+     *  - ...
+     *
+     * @param nettyServerConfig netty server config
+     * @param channelEventListener channel event listener
+     *
+     */
     public NettyRemotingServer(final NettyServerConfig nettyServerConfig,
         final ChannelEventListener channelEventListener) {
         super(nettyServerConfig.getServerOnewaySemaphoreValue(), nettyServerConfig.getServerAsyncSemaphoreValue());
