@@ -647,11 +647,13 @@ public abstract class NettyRemotingAbstract {
      */
     protected void failFast(final Channel channel) {
         for (Entry<Integer, ResponseFuture> entry : responseTable.entrySet()) {
-            if (entry.getValue().getChannel() == channel) {
-                Integer opaque = entry.getKey();
-                if (opaque != null) {
-                    requestFail(opaque);
-                }
+            if (entry.getValue().getChannel() != channel) {
+                continue;
+            }
+
+            Integer opaque = entry.getKey();
+            if (opaque != null) {
+                requestFail(opaque);
             }
         }
     }
