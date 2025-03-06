@@ -658,37 +658,42 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
+    private void acquireFail(long timeoutMillis) throws RemotingTooMuchRequestException, RemotingTimeoutException {
+        if (timeoutMillis <= 0) {
+            throw new RemotingTooMuchRequestException("invokeOnewayImpl invoke too fast");
+        }
+
+        String info = String.format(
+            "invokeOnewayImpl tryAcquire semaphore timeout, %dms, waiting thread nums: %d semaphoreOnewayValue: %d",
+            timeoutMillis,
+            this.semaphoreOneway.getQueueLength(),
+            this.semaphoreOneway.availablePermits()
+        );
+        log.warn(info);
+        throw new RemotingTimeoutException(info);
+    }
+
     public void invokeOnewayImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis)
         throws InterruptedException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
         request.markOnewayRPC();
         boolean acquired = this.semaphoreOneway.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
-        if (acquired) {
-            final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreOneway);
-            try {
-                channel.writeAndFlush(request).addListener((ChannelFutureListener) f -> {
-                    once.release();
-                    if (!f.isSuccess()) {
-                        log.warn("send a request command to channel <" + channel.remoteAddress() + "> failed.");
-                    }
-                });
-            } catch (Exception e) {
+        if (!acquired) {
+            acquireFail(timeoutMillis);
+            return;
+        }
+
+        final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreOneway);
+        try {
+            channel.writeAndFlush(request).addListener((ChannelFutureListener) f -> {
                 once.release();
-                log.warn("write send a request command to channel <" + channel.remoteAddress() + "> failed.");
-                throw new RemotingSendRequestException(RemotingHelper.parseChannelRemoteAddr(channel), e);
-            }
-        } else {
-            if (timeoutMillis <= 0) {
-                throw new RemotingTooMuchRequestException("invokeOnewayImpl invoke too fast");
-            } else {
-                String info = String.format(
-                    "invokeOnewayImpl tryAcquire semaphore timeout, %dms, waiting thread nums: %d semaphoreOnewayValue: %d",
-                    timeoutMillis,
-                    this.semaphoreOneway.getQueueLength(),
-                    this.semaphoreOneway.availablePermits()
-                );
-                log.warn(info);
-                throw new RemotingTimeoutException(info);
-            }
+                if (!f.isSuccess()) {
+                    log.warn("send a request command to channel <" + channel.remoteAddress() + "> failed.");
+                }
+            });
+        } catch (Exception e) {
+            once.release();
+            log.warn("write send a request command to channel <" + channel.remoteAddress() + "> failed.");
+            throw new RemotingSendRequestException(RemotingHelper.parseChannelRemoteAddr(channel), e);
         }
     }
 
