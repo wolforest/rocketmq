@@ -513,7 +513,8 @@ public abstract class NettyRemotingAbstract {
         final long timeoutMillis)
         throws InterruptedException, RemotingSendRequestException, RemotingTimeoutException {
         try {
-            return invokeImpl(channel, request, timeoutMillis).thenApply(ResponseFuture::getResponseCommand)
+            return invokeImpl(channel, request, timeoutMillis)
+                .thenApply(ResponseFuture::getResponseCommand)
                 .get(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (ExecutionException e) {
             throw new RemotingSendRequestException(channel.remoteAddress().toString(), e.getCause());
@@ -624,16 +625,18 @@ public abstract class NettyRemotingAbstract {
 
     private void requestFail(final int opaque) {
         ResponseFuture responseFuture = responseTable.remove(opaque);
-        if (responseFuture != null) {
-            responseFuture.setSendRequestOK(false);
-            responseFuture.putResponse(null);
-            try {
-                executeInvokeCallback(responseFuture);
-            } catch (Throwable e) {
-                log.warn("execute callback in requestFail, and callback throw", e);
-            } finally {
-                responseFuture.release();
-            }
+        if (responseFuture == null) {
+            return;
+        }
+
+        responseFuture.setSendRequestOK(false);
+        responseFuture.putResponse(null);
+        try {
+            executeInvokeCallback(responseFuture);
+        } catch (Throwable e) {
+            log.warn("execute callback in requestFail, and callback throw", e);
+        } finally {
+            responseFuture.release();
         }
     }
 
