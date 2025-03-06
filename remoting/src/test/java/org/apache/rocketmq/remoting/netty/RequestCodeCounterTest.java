@@ -23,19 +23,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
-import org.apache.rocketmq.remoting.netty.handler.RemotingCodeDistributionHandler;
+import org.apache.rocketmq.remoting.netty.handler.RequestCodeCounter;
 import org.junit.Assert;
 import org.junit.Test;
 
 import static org.awaitility.Awaitility.await;
 
-public class RemotingCodeDistributionHandlerTest {
+public class RequestCodeCounterTest {
 
-    private final RemotingCodeDistributionHandler distributionHandler = new RemotingCodeDistributionHandler();
+    private final RequestCodeCounter distributionHandler = new RequestCodeCounter();
 
     @Test
     public void remotingCodeCountTest() throws Exception {
-        Class<RemotingCodeDistributionHandler> clazz = RemotingCodeDistributionHandler.class;
+        Class<RequestCodeCounter> clazz = RequestCodeCounter.class;
         Method methodIn = clazz.getDeclaredMethod("countInbound", int.class);
         Method methodOut = clazz.getDeclaredMethod("countOutbound", int.class);
         methodIn.setAccessible(true);

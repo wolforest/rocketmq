@@ -29,14 +29,15 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
 /**
  * channel read & write counter
+ * @renamed from RemotingCodeDistributionHandler to RequestCodeCounter
  */
 @ChannelHandler.Sharable
-public class RemotingCodeDistributionHandler extends ChannelDuplexHandler {
+public class RequestCodeCounter extends ChannelDuplexHandler {
 
     private final ConcurrentMap<Integer, LongAdder> inboundDistribution;
     private final ConcurrentMap<Integer, LongAdder> outboundDistribution;
 
-    public RemotingCodeDistributionHandler() {
+    public RequestCodeCounter() {
         inboundDistribution = new ConcurrentHashMap<>();
         outboundDistribution = new ConcurrentHashMap<>();
     }

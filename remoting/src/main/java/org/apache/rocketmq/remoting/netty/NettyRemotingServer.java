@@ -71,7 +71,7 @@ import org.apache.rocketmq.remoting.netty.handler.ServerConnectionManager;
 import org.apache.rocketmq.remoting.netty.handler.NettyDecoder;
 import org.apache.rocketmq.remoting.netty.handler.NettyEncoder;
 import org.apache.rocketmq.remoting.netty.handler.NettyServerHandler;
-import org.apache.rocketmq.remoting.netty.handler.RemotingCodeDistributionHandler;
+import org.apache.rocketmq.remoting.netty.handler.RequestCodeCounter;
 import org.apache.rocketmq.remoting.netty.handler.TlsModeHandler;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
@@ -117,7 +117,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private NettyEncoder encoder;
     private ServerConnectionManager connectionManageHandler;
     private NettyServerHandler serverHandler;
-    private RemotingCodeDistributionHandler distributionHandler;
+    private RequestCodeCounter distributionHandler;
 
     public NettyRemotingServer(final NettyServerConfig nettyServerConfig) {
         this(nettyServerConfig, null);
@@ -386,7 +386,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         encoder = new NettyEncoder();
         connectionManageHandler = new ServerConnectionManager(this);
         serverHandler = new NettyServerHandler(this);
-        distributionHandler = new RemotingCodeDistributionHandler();
+        distributionHandler = new RequestCodeCounter();
     }
 
     private void printRemotingCodeDistribution() {
@@ -480,7 +480,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         return serverHandler;
     }
 
-    public RemotingCodeDistributionHandler getDistributionHandler() {
+    public RequestCodeCounter getDistributionHandler() {
         return distributionHandler;
     }
 

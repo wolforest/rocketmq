@@ -42,7 +42,6 @@ public class ServerConnectionManager extends ChannelDuplexHandler {
         this.server = server;
     }
 
-
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
@@ -81,17 +80,25 @@ public class ServerConnectionManager extends ChannelDuplexHandler {
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-        if (evt instanceof IdleStateEvent) {
-            IdleStateEvent event = (IdleStateEvent) evt;
-            if (event.state().equals(IdleState.ALL_IDLE)) {
-                final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
-                log.warn("NETTY SERVER PIPELINE: IDLE exception [{}]", remoteAddress);
-                RemotingHelper.closeChannel(ctx.channel());
-                if (server.getChannelEventListener() != null) {
-                    server
-                        .putNettyEvent(new NettyEvent(NettyEventType.IDLE, remoteAddress, ctx.channel()));
-                }
-            }
+        if (!(evt instanceof IdleStateEvent)) {
+            ctx.fireUserEventTriggered(evt);
+            return;
+        }
+
+        IdleStateEvent event = (IdleStateEvent) evt;
+        if (!event.state().equals(IdleState.ALL_IDLE)) {
+            ctx.fireUserEventTriggered(evt);
+            return;
+        }
+
+        final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
+        log.warn("NETTY SERVER PIPELINE: IDLE exception [{}]", remoteAddress);
+        RemotingHelper.closeChannel(ctx.channel());
+
+        if (server.getChannelEventListener() != null) {
+            server.putNettyEvent(
+                new NettyEvent(NettyEventType.IDLE, remoteAddress, ctx.channel())
+            );
         }
 
         ctx.fireUserEventTriggered(evt);
