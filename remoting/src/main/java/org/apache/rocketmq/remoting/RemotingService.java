@@ -24,12 +24,29 @@ public interface RemotingService {
 
     void shutdown();
 
+    /**
+     * register client request hook
+     * should move to RemotingClient
+     * use cases:
+     * - acl in client
+     *
+     * @param rpcHook rpcHook
+     */
     void registerRPCHook(RPCHook rpcHook);
 
-    void setRequestPipeline(RequestPipeline pipeline);
 
     /**
      * Remove all rpc hooks.
      */
     void clearRPCHook();
+
+    /**
+     * set request pipeline for server
+     * should move to RemotingServer
+     * use cases:
+     *  - acl in server
+     *
+     * @param pipeline pipeline
+     */
+    void setRequestPipeline(RequestPipeline pipeline);
 }
