@@ -115,6 +115,9 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     private final Lock namesrvChannelLock = new ReentrantLock();
 
     private final ExecutorService publicExecutor;
+    /**
+     * scan name server
+     */
     private final ExecutorService scanExecutor;
 
     /**
@@ -123,7 +126,15 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
      * used in client 4.x
      */
     private ExecutorService callbackExecutor;
+
+    /**
+     * mainly for acl
+     */
     private final ChannelEventListener channelEventListener;
+
+    /**
+     * business executor group
+     */
     private EventExecutorGroup defaultEventExecutorGroup;
 
     public NettyRemotingClient(final NettyClientConfig nettyClientConfig) {

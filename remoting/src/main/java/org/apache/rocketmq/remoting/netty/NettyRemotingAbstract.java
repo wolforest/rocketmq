@@ -156,6 +156,7 @@ public abstract class NettyRemotingAbstract {
 
     /**
      * Put a netty event to the executor.
+     * called by connection manager
      *
      * @param event Netty event instance.
      */
