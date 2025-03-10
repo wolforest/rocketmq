@@ -45,6 +45,14 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * netty related utils
+ * - channel connect/close
+ * - write request/response
+ * - attribute getter/setter
+ * - address getter/setter
+ * - ...
+ */
 public class RemotingHelper {
     public static final String DEFAULT_CHARSET = "UTF-8";
     public static final String DEFAULT_CIDR_ALL = "0.0.0.0/0";
