@@ -181,11 +181,9 @@ public class ProducerManager {
     public synchronized void registerProducer(final String group, final ClientChannelInfo clientChannelInfo) {
         ClientChannelInfo clientChannelInfoFound;
 
-        ConcurrentHashMap<Channel, ClientChannelInfo> channelTable = this.groupChannelTable.get(group);
-        if (null == channelTable) {
-            channelTable = new ConcurrentHashMap<>();
-            this.groupChannelTable.put(group, channelTable);
-        }
+        ConcurrentHashMap<Channel, ClientChannelInfo> channelTable = this.groupChannelTable.computeIfAbsent(
+            group, k -> new ConcurrentHashMap<>()
+        );
 
         clientChannelInfoFound = channelTable.get(clientChannelInfo.getChannel());
         if (null == clientChannelInfoFound) {
