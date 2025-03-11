@@ -814,27 +814,30 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 return future;
             }
             channelFuture.addListener(f -> {
-                if (f.isSuccess()) {
-                    Channel channel = channelFuture.channel();
-                    if (channel != null && channel.isActive()) {
-                        invokeImpl(channel, request, timeoutMillis).whenComplete((v, t) -> {
-                            if (t == null) {
-                                updateChannelLastResponseTime(addr);
-                            }
-                        }).thenApply(ResponseFuture::getResponseCommand).whenComplete((v, t) -> {
-                            if (t != null) {
-                                future.completeExceptionally(t);
-                            } else {
-                                future.complete(v);
-                            }
-                        });
-                    } else {
-                        this.closeChannel(addr, channel);
-                        future.completeExceptionally(new RemotingConnectException(addr));
-                    }
-                } else {
+                if (!f.isSuccess()) {
                     future.completeExceptionally(new RemotingConnectException(addr));
+                    return;
                 }
+
+                Channel channel = channelFuture.channel();
+                if (channel == null || !channel.isActive()) {
+                    this.closeChannel(addr, channel);
+                    future.completeExceptionally(new RemotingConnectException(addr));
+                    return;
+                }
+
+                invokeImpl(channel, request, timeoutMillis).whenComplete((v, t) -> {
+                    if (t == null) {
+                        updateChannelLastResponseTime(addr);
+                    }
+                }).thenApply(ResponseFuture::getResponseCommand).whenComplete((v, t) -> {
+                    if (t != null) {
+                        future.completeExceptionally(t);
+                    } else {
+                        future.complete(v);
+                    }
+                });
+
             });
         } catch (Throwable t) {
             future.completeExceptionally(t);
