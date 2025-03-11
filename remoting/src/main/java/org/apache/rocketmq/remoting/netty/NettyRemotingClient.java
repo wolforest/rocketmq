@@ -761,20 +761,21 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
             return;
         }
         channelFuture.addListener(future -> {
-            if (future.isSuccess()) {
-                Channel channel = channelFuture.channel();
-                String channelRemoteAddr = RemotingHelper.parseChannelRemoteAddr(channel);
-                if (channel != null && channel.isActive()) {
-                    long costTime = System.currentTimeMillis() - beginStartTime;
-                    if (timeoutMillis < costTime) {
-                        invokeCallback.operationFail(new RemotingTooMuchRequestException("invokeAsync call the addr[" + channelRemoteAddr + "] timeout"));
-                    }
-                    this.invokeAsyncImpl(channel, request, timeoutMillis - costTime, new InvokeCallbackWrapper(invokeCallback, addr));
-                } else {
-                    this.closeChannel(addr, channel);
-                    invokeCallback.operationFail(new RemotingConnectException(addr));
+            if (!future.isSuccess()) {
+                invokeCallback.operationFail(new RemotingConnectException(addr));
+                return;
+            }
+
+            Channel channel = channelFuture.channel();
+            String channelRemoteAddr = RemotingHelper.parseChannelRemoteAddr(channel);
+            if (channel != null && channel.isActive()) {
+                long costTime = System.currentTimeMillis() - beginStartTime;
+                if (timeoutMillis < costTime) {
+                    invokeCallback.operationFail(new RemotingTooMuchRequestException("invokeAsync call the addr[" + channelRemoteAddr + "] timeout"));
                 }
+                this.invokeAsyncImpl(channel, request, timeoutMillis - costTime, new InvokeCallbackWrapper(invokeCallback, addr));
             } else {
+                this.closeChannel(addr, channel);
                 invokeCallback.operationFail(new RemotingConnectException(addr));
             }
         });
