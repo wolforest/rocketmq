@@ -888,34 +888,34 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 if (retryChannel != null && channel != retryChannel) {
                     return super.invokeImpl(retryChannel, retryRequest, timeoutMillis - duration);
                 }
-            } else {
-                CompletableFuture<ResponseFuture> future = new CompletableFuture<>();
-                ChannelFuture channelFuture = channelWrapper.getChannelFuture();
-                channelFuture.addListener(f -> {
-                    long duration = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-                    stopwatch.stop();
-                    if (!f.isSuccess()) {
-                        future.completeExceptionally(new RemotingConnectException(channelWrapper.channelAddress));
-                        return;
-                    }
 
-                    Channel retryChannel0 = channelFuture.channel();
-                    if (retryChannel0 == null || channel == retryChannel0) {
-                        return;
-                    }
-
-                    super.invokeImpl(retryChannel0, retryRequest, timeoutMillis - duration).whenComplete((v, t) -> {
-                        if (t != null) {
-                            future.completeExceptionally(t);
-                        } else {
-                            future.complete(v);
-                        }
-                    });
-                });
-                return future;
+                return CompletableFuture.completedFuture(responseFuture);
             }
 
-            return CompletableFuture.completedFuture(responseFuture);
+            CompletableFuture<ResponseFuture> future = new CompletableFuture<>();
+            ChannelFuture channelFuture = channelWrapper.getChannelFuture();
+            channelFuture.addListener(f -> {
+                long duration = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+                stopwatch.stop();
+                if (!f.isSuccess()) {
+                    future.completeExceptionally(new RemotingConnectException(channelWrapper.channelAddress));
+                    return;
+                }
+
+                Channel retryChannel0 = channelFuture.channel();
+                if (retryChannel0 == null || channel == retryChannel0) {
+                    return;
+                }
+
+                super.invokeImpl(retryChannel0, retryRequest, timeoutMillis - duration).whenComplete((v, t) -> {
+                    if (t != null) {
+                        future.completeExceptionally(t);
+                    } else {
+                        future.complete(v);
+                    }
+                });
+            });
+            return future;
         }).whenComplete((v, t) -> {
             if (t == null) {
                 doAfterRpcHooks(channelRemoteAddr, request, v.getResponseCommand());
