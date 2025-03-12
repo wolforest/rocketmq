@@ -32,6 +32,9 @@ import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
+/**
+ * ZoneRouteRPCHook, used to filter route info by zone name
+ */
 public class ZoneRouteRPCHook implements RPCHook {
 
     @Override
