@@ -38,7 +38,7 @@ import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
 public class ClientRequestProcessor implements NettyRequestProcessor {
 
-    private static Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
     protected NamesrvController namesrvController;
     private final long startupTimeMillis;
@@ -65,7 +65,7 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
         boolean namesrvReady = needCheckNamesrvReady.get() && System.currentTimeMillis() - startupTimeMillis >= TimeUnit.SECONDS.toMillis(namesrvController.getNamesrvConfig().getWaitSecondsForService());
 
         if (namesrvController.getNamesrvConfig().isNeedWaitForService() && !namesrvReady) {
-            log.warn("name server not ready. request code {} ", request.getCode());
+            LOGGER.warn("name server not ready. request code {} ", request.getCode());
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark("name server not ready");
             return response;

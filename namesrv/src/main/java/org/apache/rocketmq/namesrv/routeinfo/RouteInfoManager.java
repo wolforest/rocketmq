@@ -689,7 +689,7 @@ public class RouteInfoManager {
             return true;
         }
 
-        if (brokerData.getBrokerAddrs().size() == 0) {
+        if (brokerData.getBrokerAddrs().isEmpty()) {
             return true;
         }
 
@@ -757,14 +757,14 @@ public class RouteInfoManager {
             return topicRouteData;
         }
 
-        if (topicRouteData.getBrokerList().size() == 0 || topicRouteData.getQueueList().size() == 0) {
+        if (topicRouteData.getBrokerList().isEmpty() || topicRouteData.getQueueList().isEmpty()) {
             return topicRouteData;
         }
 
         boolean needActingMaster = false;
 
         for (final BrokerData brokerData : topicRouteData.getBrokerList()) {
-            if (brokerData.getBrokerAddrs().size() != 0
+            if (!brokerData.getBrokerAddrs().isEmpty()
                 && !brokerData.getBrokerAddrs().containsKey(MQConstants.MASTER_ID)) {
                 needActingMaster = true;
                 break;
@@ -777,7 +777,7 @@ public class RouteInfoManager {
 
         for (final BrokerData brokerData : topicRouteData.getBrokerList()) {
             final HashMap<Long, String> brokerAddrs = brokerData.getBrokerAddrs();
-            if (brokerAddrs.size() == 0 || brokerAddrs.containsKey(MQConstants.MASTER_ID) || !brokerData.isEnableActingMaster()) {
+            if (brokerAddrs.isEmpty() || brokerAddrs.containsKey(MQConstants.MASTER_ID) || !brokerData.isEnableActingMaster()) {
                 continue;
             }
 
@@ -1051,7 +1051,7 @@ public class RouteInfoManager {
             for (Entry<String, Map<String, QueueData>> topicEntry : this.topicQueueTable.entrySet()) {
                 String topic = topicEntry.getKey();
                 Map<String, QueueData> queueDatas = topicEntry.getValue();
-                if (queueDatas != null && queueDatas.size() > 0
+                if (queueDatas != null && !queueDatas.isEmpty()
                     && TopicSysFlag.hasUnitFlag(queueDatas.values().iterator().next().getTopicSysFlag())) {
                     topicList.getTopicList().add(topic);
                 }
@@ -1072,7 +1072,7 @@ public class RouteInfoManager {
             for (Entry<String, Map<String, QueueData>> topicEntry : this.topicQueueTable.entrySet()) {
                 String topic = topicEntry.getKey();
                 Map<String, QueueData> queueDatas = topicEntry.getValue();
-                if (queueDatas != null && queueDatas.size() > 0
+                if (queueDatas != null && !queueDatas.isEmpty()
                     && TopicSysFlag.hasUnitSubFlag(queueDatas.values().iterator().next().getTopicSysFlag())) {
                     topicList.getTopicList().add(topic);
                 }
@@ -1093,7 +1093,7 @@ public class RouteInfoManager {
             for (Entry<String, Map<String, QueueData>> topicEntry : this.topicQueueTable.entrySet()) {
                 String topic = topicEntry.getKey();
                 Map<String, QueueData> queueDatas = topicEntry.getValue();
-                if (queueDatas != null && queueDatas.size() > 0
+                if (queueDatas != null && !queueDatas.isEmpty()
                     && !TopicSysFlag.hasUnitFlag(queueDatas.values().iterator().next().getTopicSysFlag())
                     && TopicSysFlag.hasUnitSubFlag(queueDatas.values().iterator().next().getTopicSysFlag())) {
                     topicList.getTopicList().add(topic);
@@ -1113,8 +1113,8 @@ public class RouteInfoManager {
  * broker address information
  */
 class BrokerAddrInfo {
-    private String clusterName;
-    private String brokerAddr;
+    private final String clusterName;
+    private final String brokerAddr;
 
     private int hash;
 
