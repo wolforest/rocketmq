@@ -35,17 +35,17 @@ public class Configuration {
 
     private final Logger log;
 
-    private List<Object> configObjectList = new ArrayList<>(4);
+    private final List<Object> configObjectList = new ArrayList<>(4);
     private String storePath;
     private boolean storePathFromConfig = false;
     private Object storePathObject;
     private Field storePathField;
-    private DataVersion dataVersion = new DataVersion();
-    private ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private final DataVersion dataVersion = new DataVersion();
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     /**
      * All properties include configs in object and extend properties.
      */
-    private Properties allConfigs = new Properties();
+    private final Properties allConfigs = new Properties();
 
     public Configuration(Logger log) {
         this.log = log;
