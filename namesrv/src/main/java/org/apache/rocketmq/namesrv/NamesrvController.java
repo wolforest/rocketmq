@@ -23,10 +23,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.common.lang.future.FutureTaskExt;
 import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
+import org.apache.rocketmq.common.lang.future.FutureTaskExt;
+import org.apache.rocketmq.common.lang.thread.FileWatchService;
+import org.apache.rocketmq.common.lang.thread.ThreadFactoryImpl;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -49,7 +50,6 @@ import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.netty.RequestTask;
 import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
-import org.apache.rocketmq.common.lang.thread.FileWatchService;
 
 public class NamesrvController {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
@@ -107,6 +107,39 @@ public class NamesrvController {
         initiateSslContext();
         initiateRpcHooks();
         return true;
+    }
+
+    public void start() throws Exception {
+        this.remotingServer.start();
+
+        // In test scenarios where it is up to OS to pick up an available port, set the listening port back to config
+        if (0 == nettyServerConfig.getListenPort()) {
+            nettyServerConfig.setListenPort(this.remotingServer.localListenPort());
+        }
+
+        this.remotingClient.updateNameServerAddressList(Collections.singletonList(NetworkUtils.getLocalAddress()
+            + ":" + nettyServerConfig.getListenPort()));
+        this.remotingClient.start();
+
+        if (this.fileWatchService != null) {
+            this.fileWatchService.start();
+        }
+
+        this.routeInfoManager.start();
+    }
+
+    public void shutdown() {
+        this.remotingClient.shutdown();
+        this.remotingServer.shutdown();
+        this.defaultExecutor.shutdown();
+        this.clientRequestExecutor.shutdown();
+        this.scheduledExecutorService.shutdown();
+        this.scanExecutorService.shutdown();
+        this.routeInfoManager.shutdown();
+
+        if (this.fileWatchService != null) {
+            this.fileWatchService.shutdown();
+        }
     }
 
     private void loadConfig() {
@@ -218,38 +251,6 @@ public class NamesrvController {
         this.remotingServer.registerRPCHook(new ZoneRouteRPCHook());
     }
 
-    public void start() throws Exception {
-        this.remotingServer.start();
-
-        // In test scenarios where it is up to OS to pick up an available port, set the listening port back to config
-        if (0 == nettyServerConfig.getListenPort()) {
-            nettyServerConfig.setListenPort(this.remotingServer.localListenPort());
-        }
-
-        this.remotingClient.updateNameServerAddressList(Collections.singletonList(NetworkUtils.getLocalAddress()
-            + ":" + nettyServerConfig.getListenPort()));
-        this.remotingClient.start();
-
-        if (this.fileWatchService != null) {
-            this.fileWatchService.start();
-        }
-
-        this.routeInfoManager.start();
-    }
-
-    public void shutdown() {
-        this.remotingClient.shutdown();
-        this.remotingServer.shutdown();
-        this.defaultExecutor.shutdown();
-        this.clientRequestExecutor.shutdown();
-        this.scheduledExecutorService.shutdown();
-        this.scanExecutorService.shutdown();
-        this.routeInfoManager.shutdown();
-
-        if (this.fileWatchService != null) {
-            this.fileWatchService.shutdown();
-        }
-    }
 
     public NamesrvConfig getNamesrvConfig() {
         return namesrvConfig;

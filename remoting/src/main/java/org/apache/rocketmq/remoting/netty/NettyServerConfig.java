@@ -24,12 +24,26 @@ public class NettyServerConfig implements Cloneable {
      */
     private String bindAddress = "0.0.0.0";
     private int listenPort = 0;
-    private int serverWorkerThreads = 8;
-    private int serverCallbackExecutorThreads = 0;
+
     /**
-     *
+     * netty boss thread number : 1
+     */
+    private int serverBossThreads = 1;
+    /**
+     * netty worker thread number : 3
      */
     private int serverSelectorThreads = 3;
+    /**
+     * netty business thread number : 8
+     */
+    private int serverWorkerThreads = 8;
+    /**
+     * netty callback thread number : 0
+     * - callback executor
+     * - public executor
+     */
+    private int serverCallbackExecutorThreads = 0;
+
     private int serverOnewaySemaphoreValue = 256;
     private int serverAsyncSemaphoreValue = 64;
     private int serverChannelMaxIdleTimeSeconds = 120;
