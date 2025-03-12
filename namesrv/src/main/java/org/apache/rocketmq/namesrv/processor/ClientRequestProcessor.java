@@ -37,7 +37,6 @@ import org.apache.rocketmq.remoting.protocol.header.namesrv.GetRouteInfoRequestH
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
 public class ClientRequestProcessor implements NettyRequestProcessor {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
     protected NamesrvController namesrvController;
@@ -56,11 +55,9 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
         return this.getRouteInfoByTopic(ctx, request);
     }
 
-    public RemotingCommand getRouteInfoByTopic(ChannelHandlerContext ctx,
-        RemotingCommand request) throws RemotingCommandException {
-        final RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        final GetRouteInfoRequestHeader requestHeader =
-            (GetRouteInfoRequestHeader) request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
+    public RemotingCommand getRouteInfoByTopic(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
+        RemotingCommand response = RemotingCommand.createResponseCommand(null);
+        GetRouteInfoRequestHeader requestHeader = request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
 
         boolean namesrvReady = needCheckNamesrvReady.get() && System.currentTimeMillis() - startupTimeMillis >= TimeUnit.SECONDS.toMillis(namesrvController.getNamesrvConfig().getWaitSecondsForService());
 

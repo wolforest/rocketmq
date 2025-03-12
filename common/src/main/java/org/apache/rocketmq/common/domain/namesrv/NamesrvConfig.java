@@ -35,10 +35,12 @@ public class NamesrvConfig {
 
     /**
      * Indicates the nums of thread to handle client requests, like GET_ROUTEINTO_BY_TOPIC.
+     * processor thread pool for getting routeInfo
      */
     private int clientRequestThreadPoolNums = 8;
     /**
      * Indicates the nums of thread to handle broker or operation requests, like REGISTER_BROKER.
+     * processor thread pool for other operations, like REGISTER_BROKER.
      */
     private int defaultThreadPoolNums = 16;
     /**
