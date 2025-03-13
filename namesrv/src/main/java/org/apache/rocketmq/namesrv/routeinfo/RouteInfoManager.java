@@ -69,6 +69,10 @@ public class RouteInfoManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     private static final long DEFAULT_BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    /**
+     * topicQueueTable
+     * topic -> brokerName -> QueueData
+     */
     private final Map<String/* topic */, Map<String, QueueData>> topicQueueTable;
     private final Map<String/* brokerName */, BrokerData> brokerAddrTable;
     private final Map<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
@@ -124,29 +128,24 @@ public class RouteInfoManager {
 
         try {
             this.lock.writeLock().lockInterruptibly();
+
+            Map<String, QueueData> queueDataMap;
             if (this.topicQueueTable.containsKey(topic)) {
-                Map<String, QueueData> queueDataMap  = this.topicQueueTable.get(topic);
-                for (QueueData queueData : queueDatas) {
-                    if (!this.brokerAddrTable.containsKey(queueData.getBrokerName())) {
-                        log.warn("Register topic contains illegal broker, {}, {}", topic, queueData);
-                        return;
-                    }
-                    queueDataMap.put(queueData.getBrokerName(), queueData);
-                }
+                queueDataMap  = this.topicQueueTable.get(topic);
                 log.info("Topic route already exist.{}, {}", topic, this.topicQueueTable.get(topic));
             } else {
                 // check and construct queue data map
-                Map<String, QueueData> queueDataMap = new HashMap<>();
-                for (QueueData queueData : queueDatas) {
-                    if (!this.brokerAddrTable.containsKey(queueData.getBrokerName())) {
-                        log.warn("Register topic contains illegal broker, {}, {}", topic, queueData);
-                        return;
-                    }
-                    queueDataMap.put(queueData.getBrokerName(), queueData);
-                }
-
+                queueDataMap = new HashMap<>();
                 this.topicQueueTable.put(topic, queueDataMap);
                 log.info("Register topic route:{}, {}", topic, queueDatas);
+            }
+
+            for (QueueData queueData : queueDatas) {
+                if (!this.brokerAddrTable.containsKey(queueData.getBrokerName())) {
+                    log.warn("Register topic contains illegal broker, {}, {}", topic, queueData);
+                    return;
+                }
+                queueDataMap.put(queueData.getBrokerName(), queueData);
             }
         } catch (Exception e) {
             log.error("registerTopic Exception", e);
@@ -926,8 +925,7 @@ public class RouteInfoManager {
 
         List<String> brokerAddrsNotify = chooseBrokerAddrsToNotify(brokerAddrMap, offlineBrokerAddr);
         log.info("min broker id changed to {}, notify {}, offline broker addr {}", minBrokerId, brokerAddrsNotify, offlineBrokerAddr);
-        RemotingCommand request =
-            RemotingCommand.createRequestCommand(RequestCode.NOTIFY_MIN_BROKER_ID_CHANGE, requestHeader);
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.NOTIFY_MIN_BROKER_ID_CHANGE, requestHeader);
         for (String brokerAddr : brokerAddrsNotify) {
             this.namesrvController.getRemotingClient().invokeOneway(brokerAddr, request, 300);
         }
