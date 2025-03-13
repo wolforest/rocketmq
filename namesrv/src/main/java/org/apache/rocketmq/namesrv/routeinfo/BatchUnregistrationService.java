@@ -35,7 +35,7 @@ import org.apache.rocketmq.remoting.protocol.header.namesrv.UnRegisterBrokerRequ
 public class BatchUnregistrationService extends ServiceThread {
     private final RouteInfoManager routeInfoManager;
     private BlockingQueue<UnRegisterBrokerRequestHeader> unregistrationQueue;
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+    private static Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
     public BatchUnregistrationService(RouteInfoManager routeInfoManager, NamesrvConfig namesrvConfig) {
         this.routeInfoManager = routeInfoManager;
