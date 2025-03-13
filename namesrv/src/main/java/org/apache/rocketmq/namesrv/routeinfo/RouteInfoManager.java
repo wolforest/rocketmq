@@ -33,14 +33,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.domain.constant.PermName;
 import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.domain.sysflag.TopicSysFlag;
+import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
-import org.apache.rocketmq.common.utils.MapUtils;
-import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.namesrv.NamesrvController;
@@ -73,12 +72,12 @@ public class RouteInfoManager {
      * topicQueueTable
      * topic -> brokerName -> QueueData
      */
-    private final Map<String/* topic */, Map<String, QueueData>> topicQueueTable;
-    private final Map<String/* brokerName */, BrokerData> brokerAddrTable;
-    private final Map<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
-    private final Map<BrokerAddrInfo/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
-    private final Map<BrokerAddrInfo/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
-    private final Map<String/* topic */, Map<String/*brokerName*/, TopicQueueMappingInfo>> topicQueueMappingInfoTable;
+    private final ConcurrentMap<String/* topic */, Map<String, QueueData>> topicQueueTable;
+    private final ConcurrentMap<String/* brokerName */, BrokerData> brokerAddrTable;
+    private final ConcurrentMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
+    private final ConcurrentMap<BrokerAddrInfo/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
+    private final ConcurrentMap<BrokerAddrInfo/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
+    private final ConcurrentMap<String/* topic */, Map<String/*brokerName*/, TopicQueueMappingInfo>> topicQueueMappingInfoTable;
 
     private final BatchUnregistrationService unRegisterService;
 
@@ -239,7 +238,7 @@ public class RouteInfoManager {
             this.lock.writeLock().lockInterruptibly();
 
             //init or update the cluster info
-            Set<String> brokerNames = MapUtils.computeIfAbsent((ConcurrentHashMap<String, Set<String>>) this.clusterAddrTable, clusterName, k -> new HashSet<>());
+            Set<String> brokerNames = clusterAddrTable.computeIfAbsent(clusterName, k -> new HashSet<>());
             brokerNames.add(brokerName);
 
             boolean registerFirst = false;
@@ -269,7 +268,11 @@ public class RouteInfoManager {
 
             //Switch slave to master: first remove <1, IP:PORT> in namesrv, then add <0, IP:PORT>
             //The same IP:PORT must only have one record in brokerAddrTable
-            brokerAddrsMap.entrySet().removeIf(item -> null != brokerAddr && brokerAddr.equals(item.getValue()) && brokerId != item.getKey());
+            brokerAddrsMap.entrySet().removeIf(
+                item -> null != brokerAddr
+                    && brokerAddr.equals(item.getValue())
+                    && brokerId != item.getKey()
+            );
 
             //If Local brokerId stateVersion bigger than the registering one,
             String oldBrokerAddr = brokerAddrsMap.get(brokerId);
@@ -419,23 +422,21 @@ public class RouteInfoManager {
     public BrokerMemberGroup getBrokerMemberGroup(String clusterName, String brokerName) {
         BrokerMemberGroup groupMember = new BrokerMemberGroup(clusterName, brokerName);
         try {
-            try {
-                this.lock.readLock().lockInterruptibly();
-                final BrokerData brokerData = this.brokerAddrTable.get(brokerName);
-                if (brokerData != null) {
-                    groupMember.getBrokerAddrs().putAll(brokerData.getBrokerAddrs());
-                }
-            } finally {
-                this.lock.readLock().unlock();
+            this.lock.readLock().lockInterruptibly();
+            final BrokerData brokerData = this.brokerAddrTable.get(brokerName);
+            if (brokerData != null) {
+                groupMember.getBrokerAddrs().putAll(brokerData.getBrokerAddrs());
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             log.error("Get broker member group exception", e);
+        } finally {
+            this.lock.readLock().unlock();
         }
+
         return groupMember;
     }
 
-    public boolean isBrokerTopicConfigChanged(final String clusterName, final String brokerAddr,
-        final DataVersion dataVersion) {
+    public boolean isBrokerTopicConfigChanged(final String clusterName, final String brokerAddr, final DataVersion dataVersion) {
         DataVersion prev = queryBrokerTopicConfig(clusterName, brokerAddr);
         return null == prev || !prev.equals(dataVersion);
     }
@@ -486,28 +487,27 @@ public class RouteInfoManager {
             queueDataMap.put(brokerName, queueData);
             this.topicQueueTable.put(topicConfig.getTopicName(), queueDataMap);
             log.info("new topic registered, {} {}", topicConfig.getTopicName(), queueData);
-        } else {
-            final QueueData existedQD = queueDataMap.get(brokerName);
-            if (existedQD == null) {
-                queueDataMap.put(brokerName, queueData);
-            } else if (!existedQD.equals(queueData)) {
-                log.info("topic changed, {} OLD: {} NEW: {}", topicConfig.getTopicName(), existedQD,
-                    queueData);
-                queueDataMap.put(brokerName, queueData);
-            }
+            return;
+        }
+
+        final QueueData existedQD = queueDataMap.get(brokerName);
+        if (existedQD == null) {
+            queueDataMap.put(brokerName, queueData);
+        } else if (!existedQD.equals(queueData)) {
+            log.info("topic changed, {} OLD: {} NEW: {}", topicConfig.getTopicName(), existedQD,
+                queueData);
+            queueDataMap.put(brokerName, queueData);
         }
     }
 
     public int wipeWritePermOfBrokerByLock(final String brokerName) {
         try {
-            try {
-                this.lock.writeLock().lockInterruptibly();
-                return operateWritePermOfBroker(brokerName, RequestCode.WIPE_WRITE_PERM_OF_BROKER);
-            } finally {
-                this.lock.writeLock().unlock();
-            }
+            this.lock.writeLock().lockInterruptibly();
+            return operateWritePermOfBroker(brokerName, RequestCode.WIPE_WRITE_PERM_OF_BROKER);
         } catch (Exception e) {
             log.error("wipeWritePermOfBrokerByLock Exception", e);
+        } finally {
+            this.lock.writeLock().unlock();
         }
 
         return 0;
@@ -814,7 +814,7 @@ public class RouteInfoManager {
         }
     }
 
-    public void onChannelDestroy(BrokerAddrInfo brokerAddrInfo) {
+    private void onChannelDestroy(BrokerAddrInfo brokerAddrInfo) {
         UnRegisterBrokerRequestHeader unRegisterRequest = new UnRegisterBrokerRequestHeader();
         boolean needUnRegister = false;
         if (brokerAddrInfo != null) {

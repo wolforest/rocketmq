@@ -262,6 +262,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         responseHeader.setHaServerAddr(result.getHaServerAddr());
         responseHeader.setMasterAddr(result.getMasterAddr());
 
+        // true in default setting
         if (this.namesrvController.getNamesrvConfig().isReturnOrderTopicConfigToBroker()) {
             byte[] jsonValue = this.namesrvController.getKvConfigManager().getKVListByNamespace(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG);
             response.setBody(jsonValue);
