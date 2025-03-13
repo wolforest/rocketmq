@@ -1011,15 +1011,17 @@ public class RouteInfoManager {
                 topicList.getTopicList().addAll(entry.getValue());
             }
 
-            if (!brokerAddrTable.isEmpty()) {
-                for (String s : brokerAddrTable.keySet()) {
-                    BrokerData bd = brokerAddrTable.get(s);
-                    HashMap<Long, String> brokerAddrs = bd.getBrokerAddrs();
-                    if (brokerAddrs != null && !brokerAddrs.isEmpty()) {
-                        Iterator<Long> it2 = brokerAddrs.keySet().iterator();
-                        topicList.setBrokerAddr(brokerAddrs.get(it2.next()));
-                        break;
-                    }
+            if (brokerAddrTable.isEmpty()) {
+                return topicList;
+            }
+
+            for (String s : brokerAddrTable.keySet()) {
+                BrokerData bd = brokerAddrTable.get(s);
+                HashMap<Long, String> brokerAddrs = bd.getBrokerAddrs();
+                if (brokerAddrs != null && !brokerAddrs.isEmpty()) {
+                    Iterator<Long> it2 = brokerAddrs.keySet().iterator();
+                    topicList.setBrokerAddr(brokerAddrs.get(it2.next()));
+                    break;
                 }
             }
         } catch (Exception e) {
