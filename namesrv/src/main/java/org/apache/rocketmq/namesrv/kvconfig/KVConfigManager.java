@@ -136,11 +136,13 @@ public class KVConfigManager {
             this.lock.readLock().lockInterruptibly();
             try {
                 HashMap<String, String> kvTable = this.configTable.get(namespace);
-                if (null != kvTable) {
-                    KVTable table = new KVTable();
-                    table.setTable(kvTable);
-                    return table.encode();
+                if (null == kvTable) {
+                    return null;
                 }
+
+                KVTable table = new KVTable();
+                table.setTable(kvTable);
+                return table.encode();
             } finally {
                 this.lock.readLock().unlock();
             }
