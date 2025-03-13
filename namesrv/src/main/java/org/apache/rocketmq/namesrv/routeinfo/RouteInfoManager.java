@@ -824,17 +824,17 @@ public class RouteInfoManager {
     private void onChannelDestroy(BrokerAddrInfo brokerAddrInfo) {
         UnRegisterBrokerRequestHeader unRegisterRequest = new UnRegisterBrokerRequestHeader();
         boolean needUnRegister = false;
-        if (brokerAddrInfo != null) {
-            try {
-                try {
-                    this.lock.readLock().lockInterruptibly();
-                    needUnRegister = setupUnRegisterRequest(unRegisterRequest, brokerAddrInfo);
-                } finally {
-                    this.lock.readLock().unlock();
-                }
-            } catch (Exception e) {
-                log.error("onChannelDestroy Exception", e);
-            }
+        if (brokerAddrInfo == null) {
+            return;
+        }
+
+        try {
+            this.lock.readLock().lockInterruptibly();
+            needUnRegister = setupUnRegisterRequest(unRegisterRequest, brokerAddrInfo);
+        } catch (Exception e) {
+            log.error("onChannelDestroy Exception", e);
+        } finally {
+            this.lock.readLock().unlock();
         }
 
         if (needUnRegister) {
