@@ -808,11 +808,13 @@ public class RouteInfoManager {
             for (Entry<BrokerAddrInfo, BrokerLiveInfo> next : this.brokerLiveTable.entrySet()) {
                 long last = next.getValue().getLastUpdateTimestamp();
                 long timeoutMillis = next.getValue().getHeartbeatTimeoutMillis();
-                if ((last + timeoutMillis) < System.currentTimeMillis()) {
-                    RemotingHelper.closeChannel(next.getValue().getChannel());
-                    log.warn("The broker channel expired, {} {}ms", next.getKey(), timeoutMillis);
-                    this.onChannelDestroy(next.getKey());
+                if ((last + timeoutMillis) >= System.currentTimeMillis()) {
+                    continue;
                 }
+
+                RemotingHelper.closeChannel(next.getValue().getChannel());
+                log.warn("The broker channel expired, {} {}ms", next.getKey(), timeoutMillis);
+                this.onChannelDestroy(next.getKey());
             }
         } catch (Exception e) {
             log.error("scanNotActiveBroker exception", e);
