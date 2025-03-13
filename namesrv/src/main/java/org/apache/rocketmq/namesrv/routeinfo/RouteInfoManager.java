@@ -822,11 +822,12 @@ public class RouteInfoManager {
     }
 
     private void onChannelDestroy(BrokerAddrInfo brokerAddrInfo) {
-        UnRegisterBrokerRequestHeader unRegisterRequest = new UnRegisterBrokerRequestHeader();
-        boolean needUnRegister = false;
         if (brokerAddrInfo == null) {
             return;
         }
+
+        UnRegisterBrokerRequestHeader unRegisterRequest = new UnRegisterBrokerRequestHeader();
+        boolean needUnRegister = false;
 
         try {
             this.lock.readLock().lockInterruptibly();
@@ -845,29 +846,32 @@ public class RouteInfoManager {
     }
 
     public void onChannelDestroy(Channel channel) {
+        if (channel == null) {
+            return;
+        }
+
         UnRegisterBrokerRequestHeader unRegisterRequest = new UnRegisterBrokerRequestHeader();
         BrokerAddrInfo brokerAddrFound = null;
         boolean needUnRegister = false;
-        if (channel != null) {
-            try {
-                try {
-                    this.lock.readLock().lockInterruptibly();
-                    for (Entry<BrokerAddrInfo, BrokerLiveInfo> entry : this.brokerLiveTable.entrySet()) {
-                        if (entry.getValue().getChannel() == channel) {
-                            brokerAddrFound = entry.getKey();
-                            break;
-                        }
-                    }
 
-                    if (brokerAddrFound != null) {
-                        needUnRegister = setupUnRegisterRequest(unRegisterRequest, brokerAddrFound);
-                    }
-                } finally {
-                    this.lock.readLock().unlock();
+        try {
+            this.lock.readLock().lockInterruptibly();
+            for (Entry<BrokerAddrInfo, BrokerLiveInfo> entry : this.brokerLiveTable.entrySet()) {
+                if (entry.getValue().getChannel() != channel) {
+                    continue;
                 }
-            } catch (Exception e) {
-                log.error("onChannelDestroy Exception", e);
+
+                brokerAddrFound = entry.getKey();
+                break;
             }
+
+            if (brokerAddrFound != null) {
+                needUnRegister = setupUnRegisterRequest(unRegisterRequest, brokerAddrFound);
+            }
+        } catch (Exception e) {
+            log.error("onChannelDestroy Exception", e);
+        } finally {
+            this.lock.readLock().unlock();
         }
 
         if (needUnRegister) {
@@ -891,11 +895,13 @@ public class RouteInfoManager {
             for (Entry<Long, String> entry : brokerData.getBrokerAddrs().entrySet()) {
                 Long brokerId = entry.getKey();
                 String brokerAddr = entry.getValue();
-                if (brokerAddr.equals(brokerAddrInfo.getBrokerAddr())) {
-                    unRegisterRequest.setBrokerName(brokerData.getBrokerName());
-                    unRegisterRequest.setBrokerId(brokerId);
-                    return true;
+                if (!brokerAddr.equals(brokerAddrInfo.getBrokerAddr())) {
+                    continue;
                 }
+
+                unRegisterRequest.setBrokerName(brokerData.getBrokerName());
+                unRegisterRequest.setBrokerId(brokerId);
+                return true;
             }
         }
 
