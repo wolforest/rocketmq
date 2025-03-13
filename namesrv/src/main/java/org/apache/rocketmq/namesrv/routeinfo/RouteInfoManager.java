@@ -667,14 +667,17 @@ public class RouteInfoManager {
 
             for (final String brokerName : reducedBroker) {
                 final QueueData queueData = queueDataMap.get(brokerName);
+                if (queueData == null) {
+                    continue;
+                }
 
-                if (queueData != null) {
-                    if (this.brokerAddrTable.get(brokerName).isEnableActingMaster()) {
-                        // Master has been unregistered, wipe the write perm
-                        if (isNoMasterExists(brokerName)) {
-                            queueData.setPerm(queueData.getPerm() & (~PermName.PERM_WRITE));
-                        }
-                    }
+                if (!this.brokerAddrTable.get(brokerName).isEnableActingMaster()) {
+                    continue;
+                }
+
+                // Master has been unregistered, wipe the write perm
+                if (isNoMasterExists(brokerName)) {
+                    queueData.setPerm(queueData.getPerm() & (~PermName.PERM_WRITE));
                 }
             }
         }
