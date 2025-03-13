@@ -515,14 +515,12 @@ public class RouteInfoManager {
 
     public int addWritePermOfBrokerByLock(final String brokerName) {
         try {
-            try {
-                this.lock.writeLock().lockInterruptibly();
-                return operateWritePermOfBroker(brokerName, RequestCode.ADD_WRITE_PERM_OF_BROKER);
-            } finally {
-                this.lock.writeLock().unlock();
-            }
+            this.lock.writeLock().lockInterruptibly();
+            return operateWritePermOfBroker(brokerName, RequestCode.ADD_WRITE_PERM_OF_BROKER);
         } catch (Exception e) {
             log.error("addWritePermOfBrokerByLock Exception", e);
+        } finally {
+            this.lock.writeLock().unlock();
         }
         return 0;
     }
