@@ -783,14 +783,18 @@ public class RouteInfoManager {
 
             // No master
             for (final QueueData queueData : topicRouteData.getQueueList()) {
-                if (queueData.getBrokerName().equals(brokerData.getBrokerName())) {
-                    if (!PermName.isWriteable(queueData.getPerm())) {
-                        final Long minBrokerId = Collections.min(brokerAddrs.keySet());
-                        final String actingMasterAddr = brokerAddrs.remove(minBrokerId);
-                        brokerAddrs.put(MQConstants.MASTER_ID, actingMasterAddr);
-                    }
-                    break;
+                if (!queueData.getBrokerName().equals(brokerData.getBrokerName())) {
+                    continue;
                 }
+
+                if (PermName.isWriteable(queueData.getPerm())) {
+                    continue;
+                }
+
+                final Long minBrokerId = Collections.min(brokerAddrs.keySet());
+                final String actingMasterAddr = brokerAddrs.remove(minBrokerId);
+                brokerAddrs.put(MQConstants.MASTER_ID, actingMasterAddr);
+                break;
             }
 
         }
