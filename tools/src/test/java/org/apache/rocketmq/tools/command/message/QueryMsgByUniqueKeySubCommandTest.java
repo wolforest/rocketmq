@@ -51,7 +51,7 @@ import org.apache.rocketmq.remoting.protocol.body.ConsumeMessageDirectlyResult;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.remoting.protocol.body.GroupList;
 import org.apache.rocketmq.remoting.protocol.heartbeat.ConsumeType;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.common.utils.ServerUtil;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
@@ -130,13 +130,13 @@ public class QueryMsgByUniqueKeySubCommandTest {
         when(defaultMQAdminExtImpl.queryMessageByUniqKey(anyString(), anyString(), anyInt(), anyLong(), anyLong())).thenReturn(queryResult);
 
         TopicRouteData topicRouteData = new TopicRouteData();
-        List<BrokerData> brokerDataList = new ArrayList<>();
-        BrokerData brokerData = new BrokerData();
+        List<GroupInfo> groupInfoList = new ArrayList<>();
+        GroupInfo groupInfo = new GroupInfo();
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, "127.0.0.1:9876");
-        brokerData.setBrokerAddrs(brokerAddrs);
-        brokerDataList.add(brokerData);
-        topicRouteData.setBrokerList(brokerDataList);
+        groupInfo.setBrokerAddrs(brokerAddrs);
+        groupInfoList.add(groupInfo);
+        topicRouteData.setBrokerList(groupInfoList);
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
 
         GroupList groupList = new GroupList();
@@ -161,8 +161,8 @@ public class QueryMsgByUniqueKeySubCommandTest {
         when(mQClientAPIImpl.getConsumeStats(anyString(), anyString(), (String) isNull(), anyLong())).thenReturn(consumeStats);
 
         ClusterInfo clusterInfo = new ClusterInfo();
-        HashMap<String, BrokerData> brokerAddrTable = new HashMap<>();
-        brokerAddrTable.put("key", brokerData);
+        HashMap<String, GroupInfo> brokerAddrTable = new HashMap<>();
+        brokerAddrTable.put("key", groupInfo);
         clusterInfo.setBrokerAddrTable(brokerAddrTable);
         HashMap<String, Set<String>> clusterAddrTable = new HashMap<>();
         Set<String> addrSet = new HashSet<>();

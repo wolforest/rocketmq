@@ -42,7 +42,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.NamespaceUtil;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
 /**
@@ -221,7 +221,7 @@ public class TopicRouteInfoManager {
             log.info("the topic[{}] route info changed, old[{}] ,new[{}]", topic, old, topicRouteData);
         }
 
-        for (BrokerData bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerList()) {
             this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
         }
 

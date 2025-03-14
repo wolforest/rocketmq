@@ -31,7 +31,7 @@ import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 
 public class CommandUtil {
@@ -56,13 +56,13 @@ public class CommandUtil {
         }
 
         for (String brokerName : brokerNameSet) {
-            BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
+            GroupInfo groupInfo = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
 
-            if (brokerData == null || brokerData.getBrokerAddrs() == null) {
+            if (groupInfo == null || groupInfo.getBrokerAddrs() == null) {
                 continue;
             }
 
-            String masterAddr = brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
+            String masterAddr = groupInfo.getBrokerAddrs().get(MQConstants.MASTER_ID);
 
             if (masterAddr == null) {
                 masterAndSlaveMap.putIfAbsent(NO_MASTER_PLACEHOLDER, new ArrayList<>());
@@ -70,7 +70,7 @@ public class CommandUtil {
                 masterAndSlaveMap.put(masterAddr, new ArrayList<>());
             }
 
-            for (Entry<Long, String> brokerAddrEntry : brokerData.getBrokerAddrs().entrySet()) {
+            for (Entry<Long, String> brokerAddrEntry : groupInfo.getBrokerAddrs().entrySet()) {
                 if (brokerAddrEntry.getValue() == null || brokerAddrEntry.getKey() == MQConstants.MASTER_ID) {
                     continue;
                 }
@@ -97,10 +97,10 @@ public class CommandUtil {
 
         if (brokerNameSet != null) {
             for (String brokerName : brokerNameSet) {
-                BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
-                if (brokerData != null) {
+                GroupInfo groupInfo = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
+                if (groupInfo != null) {
 
-                    String addr = brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
+                    String addr = groupInfo.getBrokerAddrs().get(MQConstants.MASTER_ID);
                     if (addr != null) {
                         masterSet.add(addr);
                     }
@@ -121,9 +121,9 @@ public class CommandUtil {
         Set<String> brokerNameSet = clusterInfoSerializeWrapper.getClusterAddrTable().get(clusterName);
         if (brokerNameSet != null) {
             for (String brokerName : brokerNameSet) {
-                BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
-                if (brokerData != null) {
-                    final Collection<String> addrs = brokerData.getBrokerAddrs().values();
+                GroupInfo groupInfo = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
+                if (groupInfo != null) {
+                    final Collection<String> addrs = groupInfo.getBrokerAddrs().values();
                     brokerAddressSet.addAll(addrs);
                 }
             }
@@ -137,14 +137,14 @@ public class CommandUtil {
     public static String fetchMasterAddrByBrokerName(final MQAdminExt adminExt,
         final String brokerName) throws Exception {
         ClusterInfo clusterInfoSerializeWrapper = adminExt.examineBrokerClusterInfo();
-        BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
-        if (null != brokerData) {
-            String addr = brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
+        GroupInfo groupInfo = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
+        if (null != groupInfo) {
+            String addr = groupInfo.getBrokerAddrs().get(MQConstants.MASTER_ID);
             if (addr != null) {
                 return addr;
             }
         }
-        throw new Exception(String.format("No broker address for broker name %s.%n", brokerData));
+        throw new Exception(String.format("No broker address for broker name %s.%n", groupInfo));
     }
 
     public static Set<String> fetchMasterAndSlaveAddrByBrokerName(final MQAdminExt adminExt, final String brokerName)
@@ -152,9 +152,9 @@ public class CommandUtil {
         RemotingSendRequestException, MQBrokerException {
         Set<String> brokerAddressSet = new HashSet<>();
         ClusterInfo clusterInfoSerializeWrapper = adminExt.examineBrokerClusterInfo();
-        final BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
-        if (brokerData != null) {
-            brokerAddressSet.addAll(brokerData.getBrokerAddrs().values());
+        final GroupInfo groupInfo = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
+        if (groupInfo != null) {
+            brokerAddressSet.addAll(groupInfo.getBrokerAddrs().values());
         }
         return brokerAddressSet;
     }
@@ -171,10 +171,10 @@ public class CommandUtil {
 
     public static String fetchBrokerNameByAddr(final MQAdminExt adminExt, final String addr) throws Exception {
         ClusterInfo clusterInfoSerializeWrapper = adminExt.examineBrokerClusterInfo();
-        Map<String/* brokerName */, BrokerData> brokerAddrTable = clusterInfoSerializeWrapper.getBrokerAddrTable();
-        Iterator<Map.Entry<String, BrokerData>> it = brokerAddrTable.entrySet().iterator();
+        Map<String/* brokerName */, GroupInfo> brokerAddrTable = clusterInfoSerializeWrapper.getBrokerAddrTable();
+        Iterator<Map.Entry<String, GroupInfo>> it = brokerAddrTable.entrySet().iterator();
         while (it.hasNext()) {
-            Map.Entry<String, BrokerData> entry = it.next();
+            Map.Entry<String, GroupInfo> entry = it.next();
             HashMap<Long, String> brokerAddrs = entry.getValue().getBrokerAddrs();
             if (brokerAddrs.containsValue(addr)) {
                 return entry.getKey();

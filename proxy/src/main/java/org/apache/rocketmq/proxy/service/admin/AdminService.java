@@ -18,7 +18,7 @@
 package org.apache.rocketmq.proxy.service.admin;
 
 import java.util.List;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 
 public interface AdminService {
 
@@ -27,6 +27,6 @@ public interface AdminService {
     boolean createTopicOnTopicBrokerIfNotExist(String createTopic, String sampleTopic, int wQueueNum,
         int rQueueNum, boolean examineTopic, int retryCheckCount);
 
-    boolean createTopicOnBroker(String topic, int wQueueNum, int rQueueNum, List<BrokerData> curBrokerDataList,
-        List<BrokerData> sampleBrokerDataList, boolean examineTopic, int retryCheckCount) throws Exception;
+    boolean createTopicOnBroker(String topic, int wQueueNum, int rQueueNum, List<GroupInfo> curGroupInfoList,
+        List<GroupInfo> sampleGroupInfoList, boolean examineTopic, int retryCheckCount) throws Exception;
 }

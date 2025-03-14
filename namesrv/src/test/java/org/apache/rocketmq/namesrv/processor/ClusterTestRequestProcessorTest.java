@@ -39,7 +39,7 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.GetRouteInfoRequestHeader;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExtImpl;
@@ -86,15 +86,15 @@ public class ClusterTestRequestProcessorTest {
         field.set(clusterTestProcessor, defaultMQAdminExt);
 
         TopicRouteData topicRouteData = new TopicRouteData();
-        List<BrokerData> brokerDatas = new ArrayList<>();
+        List<GroupInfo> groupInfos = new ArrayList<>();
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(1234L, "127.0.0.1:10911");
-        BrokerData brokerData = new BrokerData();
-        brokerData.setCluster("default-cluster");
-        brokerData.setBrokerName("default-broker");
-        brokerData.setBrokerAddrs(brokerAddrs);
-        brokerDatas.add(brokerData);
-        topicRouteData.setBrokerList(brokerDatas);
+        GroupInfo groupInfo = new GroupInfo();
+        groupInfo.setCluster("default-cluster");
+        groupInfo.setBrokerName("default-broker");
+        groupInfo.setBrokerAddrs(brokerAddrs);
+        groupInfos.add(groupInfo);
+        topicRouteData.setBrokerList(groupInfos);
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
     }
 

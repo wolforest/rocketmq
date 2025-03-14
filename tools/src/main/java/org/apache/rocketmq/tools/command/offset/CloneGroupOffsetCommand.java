@@ -24,7 +24,7 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.admin.ConsumeStats;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
@@ -81,9 +81,9 @@ public class CloneGroupOffsetCommand implements SubCommand {
                 TopicRouteData topicRoute = defaultMQAdminExt.examineTopicRouteInfo(topic);
                 for (MessageQueue mq : mqs) {
                     String addr = null;
-                    for (BrokerData brokerData : topicRoute.getBrokerList()) {
-                        if (brokerData.getBrokerName().equals(mq.getBrokerName())) {
-                            addr = brokerData.selectBrokerAddr();
+                    for (GroupInfo groupInfo : topicRoute.getBrokerList()) {
+                        if (groupInfo.getBrokerName().equals(mq.getBrokerName())) {
+                            addr = groupInfo.selectBrokerAddr();
                             break;
                         }
                     }

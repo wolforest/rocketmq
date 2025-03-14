@@ -52,7 +52,7 @@ import org.apache.rocketmq.proxy.grpc.v2.common.GrpcProxyException;
 import org.apache.rocketmq.proxy.service.route.AddressableMessageQueue;
 import org.apache.rocketmq.proxy.service.route.MessageQueueView;
 import org.apache.rocketmq.proxy.service.route.TopicRouteService;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.assertj.core.util.Lists;
@@ -272,17 +272,17 @@ public class SendMessageActivityTest extends BaseActivityTest {
     public void testSendOrderMessageQueueSelector() throws Exception {
         TopicRouteData topicRouteData = new TopicRouteData();
         QueueData queueData = new QueueData();
-        BrokerData brokerData = new BrokerData();
+        GroupInfo groupInfo = new GroupInfo();
         queueData.setBrokerName(BROKER_NAME);
         queueData.setWriteQueueNums(8);
         queueData.setPerm(PermName.PERM_WRITE);
         topicRouteData.setQueueList(Lists.newArrayList(queueData));
-        brokerData.setCluster(CLUSTER_NAME);
-        brokerData.setBrokerName(BROKER_NAME);
+        groupInfo.setCluster(CLUSTER_NAME);
+        groupInfo.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
-        brokerData.setBrokerAddrs(brokerAddrs);
-        topicRouteData.setBrokerList(Lists.newArrayList(brokerData));
+        groupInfo.setBrokerAddrs(brokerAddrs);
+        topicRouteData.setBrokerList(Lists.newArrayList(groupInfo));
 
         MessageQueueView messageQueueView = new MessageQueueView(TOPIC, topicRouteData, null);
         SendMessageQueueSelector selector1 = new SendMessageQueueSelector(
@@ -329,17 +329,17 @@ public class SendMessageActivityTest extends BaseActivityTest {
     public void testSendNormalMessageQueueSelector() {
         TopicRouteData topicRouteData = new TopicRouteData();
         QueueData queueData = new QueueData();
-        BrokerData brokerData = new BrokerData();
+        GroupInfo groupInfo = new GroupInfo();
         queueData.setBrokerName(BROKER_NAME);
         queueData.setWriteQueueNums(2);
         queueData.setPerm(PermName.PERM_WRITE);
         topicRouteData.setQueueList(Lists.newArrayList(queueData));
-        brokerData.setCluster(CLUSTER_NAME);
-        brokerData.setBrokerName(BROKER_NAME);
+        groupInfo.setCluster(CLUSTER_NAME);
+        groupInfo.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
-        brokerData.setBrokerAddrs(brokerAddrs);
-        topicRouteData.setBrokerList(Lists.newArrayList(brokerData));
+        groupInfo.setBrokerAddrs(brokerAddrs);
+        topicRouteData.setBrokerList(Lists.newArrayList(groupInfo));
 
 
         SendMessageQueueSelector selector = new SendMessageQueueSelector(
@@ -371,9 +371,9 @@ public class SendMessageActivityTest extends BaseActivityTest {
         topicRouteData.setQueueList(Lists.newArrayList(queueData,queueData2));
 
 
-        BrokerData brokerData = createBrokerData(CLUSTER_NAME, BROKER_NAME, BROKER_ADDR);
-        BrokerData brokerData2 = createBrokerData(CLUSTER_NAME, BROKER_NAME2, BROKER_ADDR2);
-        topicRouteData.setBrokerList(Lists.newArrayList(brokerData, brokerData2));
+        GroupInfo groupInfo = createBrokerData(CLUSTER_NAME, BROKER_NAME, BROKER_ADDR);
+        GroupInfo groupInfo2 = createBrokerData(CLUSTER_NAME, BROKER_NAME2, BROKER_ADDR2);
+        topicRouteData.setBrokerList(Lists.newArrayList(groupInfo, groupInfo2));
 
         SendMessageQueueSelector selector = new SendMessageQueueSelector(
                 SendMessageRequest.newBuilder()
@@ -916,14 +916,14 @@ public class SendMessageActivityTest extends BaseActivityTest {
         return queueData;
     }
 
-    private static BrokerData createBrokerData(String clusterName, String brokerName, String brokerAddrs) {
-        BrokerData brokerData = new BrokerData();
-        brokerData.setCluster(clusterName);
-        brokerData.setBrokerName(brokerName);
+    private static GroupInfo createBrokerData(String clusterName, String brokerName, String brokerAddrs) {
+        GroupInfo groupInfo = new GroupInfo();
+        groupInfo.setCluster(clusterName);
+        groupInfo.setBrokerName(brokerName);
         HashMap<Long, String> brokerAddrsMap = new HashMap<>();
         brokerAddrsMap.put(MQConstants.MASTER_ID, brokerAddrs);
-        brokerData.setBrokerAddrs(brokerAddrsMap);
+        groupInfo.setBrokerAddrs(brokerAddrsMap);
 
-        return brokerData;
+        return groupInfo;
     }
 }

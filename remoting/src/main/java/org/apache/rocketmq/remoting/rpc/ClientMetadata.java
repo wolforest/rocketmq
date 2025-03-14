@@ -28,7 +28,7 @@ import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingInfo;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingUtils;
@@ -53,7 +53,7 @@ public class ClientMetadata {
             return ;
         }
         {
-            for (BrokerData bd : topicRouteData.getBrokerList()) {
+            for (GroupInfo bd : topicRouteData.getBrokerList()) {
                 this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
             }
         }
@@ -79,7 +79,7 @@ public class ClientMetadata {
             || clusterInfo.getBrokerAddrTable() == null) {
             return;
         }
-        for (Map.Entry<String, BrokerData> entry : clusterInfo.getBrokerAddrTable().entrySet()) {
+        for (Map.Entry<String, GroupInfo> entry : clusterInfo.getBrokerAddrTable().entrySet()) {
             brokerAddrTable.put(entry.getKey(), entry.getValue().getBrokerAddrs());
         }
     }

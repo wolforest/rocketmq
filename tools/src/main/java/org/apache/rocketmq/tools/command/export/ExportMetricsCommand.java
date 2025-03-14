@@ -40,7 +40,7 @@ import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.remoting.protocol.body.KVTable;
 import org.apache.rocketmq.remoting.protocol.body.SubscriptionGroupWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
@@ -94,9 +94,9 @@ public class ExportMetricsCommand implements SubCommand {
             ClusterInfo clusterInfoSerializeWrapper = defaultMQAdminExt.examineBrokerClusterInfo();
             Set<String> brokerNameSet = clusterInfoSerializeWrapper.getClusterAddrTable().get(clusterName);
             for (String brokerName : brokerNameSet) {
-                BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
-                if (brokerData != null) {
-                    String addr = brokerData.getBrokerAddrs().get(0L);
+                GroupInfo groupInfo = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
+                if (groupInfo != null) {
+                    String addr = groupInfo.getBrokerAddrs().get(0L);
 
                     KVTable kvTable = defaultMQAdminExt.fetchBrokerRuntimeStats(addr);
 

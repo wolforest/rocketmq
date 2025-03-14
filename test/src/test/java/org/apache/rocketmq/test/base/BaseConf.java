@@ -39,7 +39,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.namesrv.NamesrvController;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.test.client.rmq.RMQAsyncSendProducer;
 import org.apache.rocketmq.test.client.rmq.RMQNormalConsumer;
 import org.apache.rocketmq.test.client.rmq.RMQNormalProducer;
@@ -125,13 +125,13 @@ public class BaseConf {
         try {
             mqAdminExt.start();
             await().atMost(30, TimeUnit.SECONDS).until(() -> {
-                List<BrokerData> brokerDatas;
+                List<GroupInfo> groupInfos;
                 try {
-                    brokerDatas = mqAdminExt.examineTopicRouteInfo(clusterName).getBrokerList();
+                    groupInfos = mqAdminExt.examineTopicRouteInfo(clusterName).getBrokerList();
                 } catch (Exception e) {
                     return false;
                 }
-                return brokerDatas.size() == expectedBrokerNum;
+                return groupInfos.size() == expectedBrokerNum;
             });
             for (Broker broker : brokerList) {
                 broker.getClusterClient().refreshMetadata();

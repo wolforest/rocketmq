@@ -43,7 +43,7 @@ import org.apache.rocketmq.proxy.service.route.TopicRouteHelper;
 import org.apache.rocketmq.proxy.service.route.TopicRouteService;
 import org.apache.rocketmq.remoting.protocol.body.AclInfo;
 import org.apache.rocketmq.remoting.protocol.body.UserInfo;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicConfigAndQueueMapping;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 
@@ -180,7 +180,7 @@ public class ClusterMetadataService extends AbstractStartAndShutdown implements 
         protected SubscriptionGroupConfig getDirectly(String consumerGroup) throws Exception {
             ProxyConfig config = ConfigurationManager.getProxyConfig();
             String clusterName = config.getRocketMQClusterName();
-            Optional<BrokerData> brokerDataOptional = findOneBroker(clusterName);
+            Optional<GroupInfo> brokerDataOptional = findOneBroker(clusterName);
             if (brokerDataOptional.isPresent()) {
                 String brokerAddress = brokerDataOptional.get().selectBrokerAddr();
                 return mqClientAPIFactory.getClient().getSubscriptionGroupConfig(brokerAddress, consumerGroup, DEFAULT_TIMEOUT);
@@ -202,7 +202,7 @@ public class ClusterMetadataService extends AbstractStartAndShutdown implements 
 
         @Override
         protected TopicConfigAndQueueMapping getDirectly(String topic) throws Exception {
-            Optional<BrokerData> brokerDataOptional = findOneBroker(topic);
+            Optional<GroupInfo> brokerDataOptional = findOneBroker(topic);
             if (brokerDataOptional.isPresent()) {
                 String brokerAddress = brokerDataOptional.get().selectBrokerAddr();
                 return mqClientAPIFactory.getClient().getTopicConfig(brokerAddress, topic, DEFAULT_TIMEOUT);
@@ -226,7 +226,7 @@ public class ClusterMetadataService extends AbstractStartAndShutdown implements 
         protected User getDirectly(String username) throws Exception {
             ProxyConfig config = ConfigurationManager.getProxyConfig();
             String clusterName = config.getRocketMQClusterName();
-            Optional<BrokerData> brokerDataOptional = findOneBroker(clusterName);
+            Optional<GroupInfo> brokerDataOptional = findOneBroker(clusterName);
             if (brokerDataOptional.isPresent()) {
                 String brokerAddress = brokerDataOptional.get().selectBrokerAddr();
                 UserInfo userInfo = mqClientAPIFactory.getClient().getUser(brokerAddress, username, DEFAULT_TIMEOUT);
@@ -254,7 +254,7 @@ public class ClusterMetadataService extends AbstractStartAndShutdown implements 
         protected Acl getDirectly(String subject) throws Exception {
             ProxyConfig config = ConfigurationManager.getProxyConfig();
             String clusterName = config.getRocketMQClusterName();
-            Optional<BrokerData> brokerDataOptional = findOneBroker(clusterName);
+            Optional<GroupInfo> brokerDataOptional = findOneBroker(clusterName);
             if (brokerDataOptional.isPresent()) {
                 String brokerAddress = brokerDataOptional.get().selectBrokerAddr();
                 AclInfo aclInfo = mqClientAPIFactory.getClient().getAcl(brokerAddress, subject, DEFAULT_TIMEOUT);
@@ -272,7 +272,7 @@ public class ClusterMetadataService extends AbstractStartAndShutdown implements 
         }
     }
 
-    protected Optional<BrokerData> findOneBroker(String topic) throws Exception {
+    protected Optional<GroupInfo> findOneBroker(String topic) throws Exception {
         try {
             return topicRouteService.getAllMessageQueueView(ProxyContext.createForInner(this.getClass()), topic).getTopicRouteData().getBrokerList().stream().findAny();
         } catch (Exception e) {

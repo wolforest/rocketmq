@@ -26,7 +26,7 @@ import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.body.TopicList;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.junit.After;
@@ -61,7 +61,7 @@ public class RouteInfoManagerStaticRegisterTest extends RouteInfoManagerTestBase
     public void terminate() {
         routeInfoManager.printAllPeriodically();
 
-        for (BrokerData bd : cluster.brokerDataMap.values()) {
+        for (GroupInfo bd : cluster.brokerDataMap.values()) {
             unregisterBrokerAll(routeInfoManager, bd);
         }
     }
@@ -98,7 +98,7 @@ public class RouteInfoManagerStaticRegisterTest extends RouteInfoManagerTestBase
 
         // check broker data
         Collections.sort(topicRouteData.getBrokerList());
-        List<BrokerData> ans = new ArrayList<>(cluster.brokerDataMap.values());
+        List<GroupInfo> ans = new ArrayList<>(cluster.brokerDataMap.values());
         Collections.sort(ans);
 
         assertEquals(topicRouteData.getBrokerList(), ans);

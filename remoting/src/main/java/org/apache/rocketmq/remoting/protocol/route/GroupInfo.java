@@ -27,8 +27,10 @@ import org.apache.rocketmq.common.domain.constant.MQConstants;
 /**
  * The class describes that a typical broker cluster's (in replication) details: the cluster (in sharding) name
  * that it belongs to, and all the single instance information for this cluster.
+ *
+ * @renamed from BrokerData to GroupInfo
  */
-public class BrokerData implements Comparable<BrokerData> {
+public class GroupInfo implements Comparable<GroupInfo> {
     private String cluster;
     private String brokerName;
 
@@ -45,27 +47,27 @@ public class BrokerData implements Comparable<BrokerData> {
      */
     private boolean enableActingMaster = false;
 
-    public BrokerData() {
+    public GroupInfo() {
 
     }
 
-    public BrokerData(BrokerData brokerData) {
-        this.cluster = brokerData.cluster;
-        this.brokerName = brokerData.brokerName;
-        if (brokerData.brokerAddrs != null) {
-            this.brokerAddrs = new HashMap<>(brokerData.brokerAddrs);
+    public GroupInfo(GroupInfo groupInfo) {
+        this.cluster = groupInfo.cluster;
+        this.brokerName = groupInfo.brokerName;
+        if (groupInfo.brokerAddrs != null) {
+            this.brokerAddrs = new HashMap<>(groupInfo.brokerAddrs);
         }
-        this.zoneName = brokerData.zoneName;
-        this.enableActingMaster = brokerData.enableActingMaster;
+        this.zoneName = groupInfo.zoneName;
+        this.enableActingMaster = groupInfo.enableActingMaster;
     }
 
-    public BrokerData(String cluster, String brokerName, HashMap<Long, String> brokerAddrs) {
+    public GroupInfo(String cluster, String brokerName, HashMap<Long, String> brokerAddrs) {
         this.cluster = cluster;
         this.brokerName = brokerName;
         this.brokerAddrs = brokerAddrs;
     }
 
-    public BrokerData(String cluster, String brokerName, HashMap<Long, String> brokerAddrs,
+    public GroupInfo(String cluster, String brokerName, HashMap<Long, String> brokerAddrs,
         boolean enableActingMaster) {
         this.cluster = cluster;
         this.brokerName = brokerName;
@@ -73,7 +75,7 @@ public class BrokerData implements Comparable<BrokerData> {
         this.enableActingMaster = enableActingMaster;
     }
 
-    public BrokerData(String cluster, String brokerName, HashMap<Long, String> brokerAddrs, boolean enableActingMaster,
+    public GroupInfo(String cluster, String brokerName, HashMap<Long, String> brokerAddrs, boolean enableActingMaster,
         String zoneName) {
         this.cluster = cluster;
         this.brokerName = brokerName;
@@ -151,7 +153,7 @@ public class BrokerData implements Comparable<BrokerData> {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        BrokerData other = (BrokerData) obj;
+        GroupInfo other = (GroupInfo) obj;
         if (brokerAddrs == null) {
             if (other.brokerAddrs != null) {
                 return false;
@@ -168,7 +170,7 @@ public class BrokerData implements Comparable<BrokerData> {
     }
 
     @Override
-    public int compareTo(BrokerData o) {
+    public int compareTo(GroupInfo o) {
         return this.brokerName.compareTo(o.getBrokerName());
     }
 

@@ -23,7 +23,7 @@ import java.util.Set;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIExt;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIFactory;
@@ -90,13 +90,13 @@ public class DefaultAdminServiceTest {
     private TopicRouteData createTopicRouteData(int brokerNum) {
         TopicRouteData topicRouteData = new TopicRouteData();
         for (int i = 0; i < brokerNum; i++) {
-            BrokerData brokerData = new BrokerData();
+            GroupInfo groupInfo = new GroupInfo();
             HashMap<Long, String> addrMap = new HashMap<>();
             addrMap.put(0L, "127.0.0." + (i + 1) + ":10911");
-            brokerData.setBrokerAddrs(addrMap);
-            brokerData.setBrokerName("broker-" + i);
-            brokerData.setCluster("cluster");
-            topicRouteData.getBrokerList().add(brokerData);
+            groupInfo.setBrokerAddrs(addrMap);
+            groupInfo.setBrokerName("broker-" + i);
+            groupInfo.setCluster("cluster");
+            topicRouteData.getBrokerList().add(groupInfo);
         }
         return topicRouteData;
     }

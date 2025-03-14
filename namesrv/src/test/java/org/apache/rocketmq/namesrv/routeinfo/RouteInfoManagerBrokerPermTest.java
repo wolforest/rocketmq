@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.rocketmq.common.domain.constant.PermName;
 import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.junit.After;
 import org.junit.Before;
@@ -53,7 +53,7 @@ public class RouteInfoManagerBrokerPermTest extends RouteInfoManagerTestBase {
     public void terminate() {
         routeInfoManager.printAllPeriodically();
 
-        for (BrokerData bd : cluster.brokerDataMap.values()) {
+        for (GroupInfo bd : cluster.brokerDataMap.values()) {
             unregisterBrokerAll(routeInfoManager, bd);
         }
     }

@@ -43,7 +43,7 @@ import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.grpc.v2.BaseActivityTest;
 import org.apache.rocketmq.proxy.service.route.AddressableMessageQueue;
 import org.apache.rocketmq.proxy.service.route.MessageQueueView;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.junit.Before;
@@ -285,17 +285,17 @@ public class ReceiveMessageActivityTest extends BaseActivityTest {
         }
         topicRouteData.setQueueList(queueDatas);
 
-        List<BrokerData> brokerDatas = new ArrayList<>();
+        List<GroupInfo> groupInfos = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
-            BrokerData brokerData = new BrokerData();
-            brokerData.setCluster(CLUSTER_NAME);
-            brokerData.setBrokerName(BROKER_NAME + i);
+            GroupInfo groupInfo = new GroupInfo();
+            groupInfo.setCluster(CLUSTER_NAME);
+            groupInfo.setBrokerName(BROKER_NAME + i);
             HashMap<Long, String> brokerAddrs = new HashMap<>();
             brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
-            brokerData.setBrokerAddrs(brokerAddrs);
-            brokerDatas.add(brokerData);
+            groupInfo.setBrokerAddrs(brokerAddrs);
+            groupInfos.add(groupInfo);
         }
-        topicRouteData.setBrokerList(brokerDatas);
+        topicRouteData.setBrokerList(groupInfos);
 
         MessageQueueView messageQueueView = new MessageQueueView(TOPIC, topicRouteData, null);
         ReceiveMessageActivity.ReceiveMessageQueueSelector selector = new ReceiveMessageActivity.ReceiveMessageQueueSelector("");

@@ -136,7 +136,7 @@ import org.apache.rocketmq.remoting.protocol.header.namesrv.RegisterTopicRequest
 import org.apache.rocketmq.remoting.protocol.header.namesrv.UnRegisterBrokerRequestHeader;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.remoting.protocol.namesrv.RegisterBrokerResult;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.rpc.ClientMetadata;
@@ -327,11 +327,11 @@ public class ClusterClient {
         }
 
         TopicRouteData topicRouteData = TopicRouteData.decode(body, TopicRouteData.class);
-        for (BrokerData brokerData : topicRouteData.getBrokerList()) {
-            if (brokerData != null
-                && brokerData.getBrokerName().equals(brokerName)
-                && brokerData.getCluster().equals(clusterName)) {
-                brokerMemberGroup.getBrokerAddrs().putAll(brokerData.getBrokerAddrs());
+        for (GroupInfo groupInfo : topicRouteData.getBrokerList()) {
+            if (groupInfo != null
+                && groupInfo.getBrokerName().equals(brokerName)
+                && groupInfo.getCluster().equals(clusterName)) {
+                brokerMemberGroup.getBrokerAddrs().putAll(groupInfo.getBrokerAddrs());
                 break;
             }
         }

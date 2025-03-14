@@ -27,7 +27,7 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.domain.message.MessageDecoder;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.common.utils.ServerUtil;
@@ -71,12 +71,12 @@ public class QueryMsgTraceByIdSubCommandTest {
 
     private ServerResponseMocker startNameServer() {
         TopicRouteData topicRouteData = new TopicRouteData();
-        List<BrokerData> dataList = new ArrayList<>();
+        List<GroupInfo> dataList = new ArrayList<>();
         HashMap<Long, String> brokerAddress = new HashMap<>();
         brokerAddress.put(1L, "127.0.0.1:" + brokerMocker.listenPort());
-        BrokerData brokerData = new BrokerData("mockCluster", "mockBrokerName", brokerAddress);
-        brokerData.setBrokerName("mockBrokerName");
-        dataList.add(brokerData);
+        GroupInfo groupInfo = new GroupInfo("mockCluster", "mockBrokerName", brokerAddress);
+        groupInfo.setBrokerName("mockBrokerName");
+        dataList.add(groupInfo);
         topicRouteData.setBrokerList(dataList);
 
         List<QueueData> queueDatas = new ArrayList<>();

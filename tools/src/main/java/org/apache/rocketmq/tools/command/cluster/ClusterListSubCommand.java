@@ -27,7 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.body.KVTable;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
@@ -134,9 +134,9 @@ public class ClusterListSubCommand implements SubCommand {
             }
 
             for (String brokerName : brokerNameTreeSet) {
-                BrokerData brokerData = clusterInfo.getBrokerAddrTable().get(brokerName);
-                if (brokerData != null) {
-                    Iterator<Map.Entry<Long, String>> itAddr = brokerData.getBrokerAddrs().entrySet().iterator();
+                GroupInfo groupInfo = clusterInfo.getBrokerAddrTable().get(brokerName);
+                if (groupInfo != null) {
+                    Iterator<Map.Entry<Long, String>> itAddr = groupInfo.getBrokerAddrs().entrySet().iterator();
                     while (itAddr.hasNext()) {
                         Map.Entry<Long, String> next1 = itAddr.next();
                         long inTotalYest = 0;
@@ -202,9 +202,9 @@ public class ClusterListSubCommand implements SubCommand {
             }
 
             for (String brokerName : brokerNameTreeSet) {
-                BrokerData brokerData = clusterInfo.getBrokerAddrTable().get(brokerName);
-                if (brokerData != null) {
-                    Iterator<Map.Entry<Long, String>> itAddr = brokerData.getBrokerAddrs().entrySet().iterator();
+                GroupInfo groupInfo = clusterInfo.getBrokerAddrTable().get(brokerName);
+                if (groupInfo != null) {
+                    Iterator<Map.Entry<Long, String>> itAddr = groupInfo.getBrokerAddrs().entrySet().iterator();
                     while (itAddr.hasNext()) {
                         Map.Entry<Long, String> next1 = itAddr.next();
                         double in = 0;

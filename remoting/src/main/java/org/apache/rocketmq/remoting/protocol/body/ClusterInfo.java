@@ -24,17 +24,17 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.rocketmq.common.app.BrokerIdentity;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 
 public class ClusterInfo extends RemotingSerializable {
-    private Map<String/* brokerName */, BrokerData> brokerAddrTable;
+    private Map<String/* brokerName */, GroupInfo> brokerAddrTable;
     private Map<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
 
-    public Map<String, BrokerData> getBrokerAddrTable() {
+    public Map<String, GroupInfo> getBrokerAddrTable() {
         return brokerAddrTable;
     }
 
-    public void setBrokerAddrTable(Map<String, BrokerData> brokerAddrTable) {
+    public void setBrokerAddrTable(Map<String, GroupInfo> brokerAddrTable) {
         this.brokerAddrTable = brokerAddrTable;
     }
 
@@ -62,11 +62,11 @@ public class ClusterInfo extends RemotingSerializable {
 
         Set<String> brokerNames = clusterAddrTable.get(cluster);
         for (String brokerName : brokerNames) {
-            BrokerData brokerData = brokerAddrTable.get(brokerName);
-            if (null == brokerData) {
+            GroupInfo groupInfo = brokerAddrTable.get(brokerName);
+            if (null == groupInfo) {
                 continue;
             }
-            addrs.addAll(brokerData.getBrokerAddrs().values());
+            addrs.addAll(groupInfo.getBrokerAddrs().values());
         }
 
         return addrs;

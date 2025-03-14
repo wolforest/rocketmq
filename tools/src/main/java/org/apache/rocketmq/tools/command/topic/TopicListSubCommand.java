@@ -27,7 +27,7 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.body.GroupList;
 import org.apache.rocketmq.remoting.protocol.body.TopicList;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
@@ -122,9 +122,9 @@ public class TopicListSubCommand implements SubCommand {
         InterruptedException {
         TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo(topic);
 
-        BrokerData brokerData = topicRouteData.getBrokerList().get(0);
+        GroupInfo groupInfo = topicRouteData.getBrokerList().get(0);
 
-        String brokerName = brokerData.getBrokerName();
+        String brokerName = groupInfo.getBrokerName();
 
         Iterator<Entry<String, Set<String>>> it = clusterInfo.getClusterAddrTable().entrySet().iterator();
         while (it.hasNext()) {

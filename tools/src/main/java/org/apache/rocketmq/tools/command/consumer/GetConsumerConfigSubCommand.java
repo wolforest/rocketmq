@@ -28,7 +28,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
@@ -70,7 +70,7 @@ public class GetConsumerConfigSubCommand implements SubCommand {
             List<ConsumerConfigInfo> consumerConfigInfoList = new ArrayList<>();
             ClusterInfo clusterInfo = adminExt.examineBrokerClusterInfo();
             Map<String, Set<String>> clusterAddrTable = clusterInfo.getClusterAddrTable();
-            for (Entry<String, BrokerData> brokerEntry : clusterInfo.getBrokerAddrTable().entrySet()) {
+            for (Entry<String, GroupInfo> brokerEntry : clusterInfo.getBrokerAddrTable().entrySet()) {
                 String clusterName = this.getClusterName(brokerEntry.getKey(), clusterAddrTable);
                 String brokerAddress = brokerEntry.getValue().selectBrokerAddr();
                 SubscriptionGroupConfig subscriptionGroupConfig = adminExt.examineSubscriptionGroupConfig(brokerAddress, groupName);

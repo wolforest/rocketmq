@@ -26,7 +26,7 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.common.domain.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.common.domain.message.MessageRequestMode;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 
 public class PopConsumer {
@@ -51,9 +51,9 @@ public class PopConsumer {
     private static void switchPop() throws Exception {
         DefaultMQAdminExt mqAdminExt = new DefaultMQAdminExt();
         mqAdminExt.start();
-        List<BrokerData> brokerDatas = mqAdminExt.examineTopicRouteInfo(TOPIC).getBrokerList();
-        for (BrokerData brokerData : brokerDatas) {
-            Set<String> brokerAddrs = new HashSet<>(brokerData.getBrokerAddrs().values());
+        List<GroupInfo> groupInfos = mqAdminExt.examineTopicRouteInfo(TOPIC).getBrokerList();
+        for (GroupInfo groupInfo : groupInfos) {
+            Set<String> brokerAddrs = new HashSet<>(groupInfo.getBrokerAddrs().values());
             for (String brokerAddr : brokerAddrs) {
                 mqAdminExt.setMessageRequestMode(brokerAddr, TOPIC, CONSUMER_GROUP, MessageRequestMode.POP, 8, 3_000);
             }

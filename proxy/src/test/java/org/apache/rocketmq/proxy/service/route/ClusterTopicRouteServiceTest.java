@@ -34,7 +34,7 @@ import org.apache.rocketmq.proxy.common.Address;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.service.BaseServiceTest;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.assertj.core.util.Lists;
@@ -68,15 +68,15 @@ public class ClusterTopicRouteServiceTest extends BaseServiceTest {
         when(this.mqClientAPIExt.getTopicRouteInfoFromNameServer(eq(ERR_TOPIC), anyLong())).thenThrow(new MQClientException(ResponseCode.TOPIC_NOT_EXIST, ""));
 
         // build broker
-        BrokerData brokerData = new BrokerData();
-        brokerData.setCluster(CLUSTER_NAME);
-        brokerData.setBrokerName(BROKER_NAME);
+        GroupInfo groupInfo = new GroupInfo();
+        groupInfo.setCluster(CLUSTER_NAME);
+        groupInfo.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
-        brokerData.setBrokerAddrs(brokerAddrs);
+        groupInfo.setBrokerAddrs(brokerAddrs);
 
         // build broker2
-        BrokerData broke2Data = new BrokerData();
+        GroupInfo broke2Data = new GroupInfo();
         broke2Data.setCluster(CLUSTER_NAME);
         broke2Data.setBrokerName(BROKER2_NAME);
         HashMap<Long, String> broker2Addrs = new HashMap<>();
@@ -85,7 +85,7 @@ public class ClusterTopicRouteServiceTest extends BaseServiceTest {
 
         // add brokers
         TopicRouteData brokerTopicRouteData = new TopicRouteData();
-        brokerTopicRouteData.setBrokerList(Lists.newArrayList(brokerData, broke2Data));
+        brokerTopicRouteData.setBrokerList(Lists.newArrayList(groupInfo, broke2Data));
 
         // add queue data
         QueueData queueData = new QueueData();

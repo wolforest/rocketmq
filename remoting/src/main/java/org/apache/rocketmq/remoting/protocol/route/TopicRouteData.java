@@ -57,7 +57,7 @@ public class TopicRouteData extends RemotingSerializable {
      *  - random
      *  - enableActingMaster
      */
-    private List<BrokerData> brokerList;
+    private List<GroupInfo> brokerList;
 
     /**
      * Filter server table
@@ -137,8 +137,8 @@ public class TopicRouteData extends RemotingSerializable {
             topicRouteData.getQueueList().add(new QueueData(queueData));
         }
 
-        for (final BrokerData brokerData : this.brokerList) {
-            topicRouteData.getBrokerList().add(new BrokerData(brokerData));
+        for (final GroupInfo groupInfo : this.brokerList) {
+            topicRouteData.getBrokerList().add(new GroupInfo(groupInfo));
         }
 
         for (final Map.Entry<String, List<String>> listEntry : this.filterServerTable.entrySet()) {
@@ -181,11 +181,11 @@ public class TopicRouteData extends RemotingSerializable {
         this.queueList = queueList;
     }
 
-    public List<BrokerData> getBrokerList() {
+    public List<GroupInfo> getBrokerList() {
         return brokerList;
     }
 
-    public void setBrokerList(List<BrokerData> brokerList) {
+    public void setBrokerList(List<GroupInfo> brokerList) {
         this.brokerList = brokerList;
     }
 

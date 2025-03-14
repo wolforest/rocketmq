@@ -39,7 +39,7 @@ import org.apache.rocketmq.remoting.protocol.header.namesrv.GetKVConfigResponseH
 import org.apache.rocketmq.remoting.protocol.header.namesrv.PutKVConfigRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.RegisterBrokerRequestHeader;
 import org.apache.rocketmq.remoting.protocol.namesrv.RegisterBrokerResult;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.assertj.core.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
@@ -246,7 +246,7 @@ public class RequestProcessorTest {
         Field brokerAddrTable = RouteInfoManager.class.getDeclaredField("brokerAddrTable");
         brokerAddrTable.setAccessible(true);
 
-        BrokerData broker = new BrokerData();
+        GroupInfo broker = new GroupInfo();
         broker.setBrokerName("broker");
         broker.setBrokerAddrs((HashMap) Maps.newHashMap(new Long(2333), "10.10.1.1"));
 
@@ -374,7 +374,7 @@ public class RequestProcessorTest {
         Field brokerAddrTable = RouteInfoManager.class.getDeclaredField("brokerAddrTable");
         brokerAddrTable.setAccessible(true);
 
-        BrokerData broker = new BrokerData();
+        GroupInfo broker = new GroupInfo();
         broker.setBrokerName("broker");
         broker.setBrokerAddrs((HashMap) Maps.newHashMap(new Long(2333), "10.10.1.1"));
 

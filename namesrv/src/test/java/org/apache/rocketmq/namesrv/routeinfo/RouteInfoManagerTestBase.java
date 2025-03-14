@@ -29,15 +29,15 @@ import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.namesrv.RegisterBrokerResult;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 
 public class RouteInfoManagerTestBase {
 
     protected static class Cluster {
         ConcurrentMap<String, TopicConfig> topicConfig;
-        Map<String, BrokerData> brokerDataMap;
+        Map<String, GroupInfo> brokerDataMap;
 
-        public Cluster(ConcurrentMap<String, TopicConfig> topicConfig, Map<String, BrokerData> brokerData) {
+        public Cluster(ConcurrentMap<String, TopicConfig> topicConfig, Map<String, GroupInfo> brokerData) {
             this.topicConfig = topicConfig;
             this.brokerDataMap = brokerData;
         }
@@ -58,7 +58,7 @@ public class RouteInfoManagerTestBase {
                                       String topicPrefix,
                                       int topicNumber) {
 
-        Map<String, BrokerData> brokerDataMap = new HashMap<>();
+        Map<String, GroupInfo> brokerDataMap = new HashMap<>();
 
         // no filterServer address
         List<String> filterServerAddr = new ArrayList<>();
@@ -68,15 +68,15 @@ public class RouteInfoManagerTestBase {
         for (int i = 0; i < brokerNameNumber; i++) {
             String brokerName = getBrokerName(brokerNamePrefix, i);
 
-            BrokerData brokerData = genBrokerData(cluster, brokerName, brokerPerName, true);
+            GroupInfo groupInfo = genBrokerData(cluster, brokerName, brokerPerName, true);
 
             // avoid object reference copy
             ConcurrentMap<String, TopicConfig> topicConfigForBroker = genTopicConfig(topicPrefix, topicNumber);
 
-            registerBrokerWithTopicConfig(routeInfoManager, brokerData, topicConfigForBroker, filterServerAddr);
+            registerBrokerWithTopicConfig(routeInfoManager, groupInfo, topicConfigForBroker, filterServerAddr);
 
             // avoid object reference copy
-            brokerDataMap.put(brokerData.getBrokerName(), genBrokerData(cluster, brokerName, brokerPerName, true));
+            brokerDataMap.put(groupInfo.getBrokerName(), genBrokerData(cluster, brokerName, brokerPerName, true));
         }
 
         return new Cluster(topicConfig, brokerDataMap);
@@ -86,7 +86,7 @@ public class RouteInfoManagerTestBase {
         return cluster + "-" + brokerName + ":" + brokerNumber;
     }
 
-    protected BrokerData genBrokerData(String clusterName, String brokerName, long totalBrokerNumber, boolean hasMaster) {
+    protected GroupInfo genBrokerData(String clusterName, String brokerName, long totalBrokerNumber, boolean hasMaster) {
         HashMap<Long, String> brokerAddrMap = new HashMap<>();
 
         long startId = 0;
@@ -99,17 +99,17 @@ public class RouteInfoManagerTestBase {
             brokerAddrMap.put(i, getBrokerAddr(clusterName, brokerName, i));
         }
 
-        return new BrokerData(clusterName, brokerName, brokerAddrMap);
+        return new GroupInfo(clusterName, brokerName, brokerAddrMap);
     }
 
-    protected void registerBrokerWithTopicConfig(RouteInfoManager routeInfoManager, BrokerData brokerData,
+    protected void registerBrokerWithTopicConfig(RouteInfoManager routeInfoManager, GroupInfo groupInfo,
                                                  ConcurrentMap<String, TopicConfig> topicConfigTable,
                                                  List<String> filterServerAddr) {
 
-        brokerData.getBrokerAddrs().forEach((brokerId, brokerAddr) -> {
-            registerBrokerWithTopicConfig(routeInfoManager, brokerData.getCluster(),
+        groupInfo.getBrokerAddrs().forEach((brokerId, brokerAddr) -> {
+            registerBrokerWithTopicConfig(routeInfoManager, groupInfo.getCluster(),
                     brokerAddr,
-                    brokerData.getBrokerName(),
+                    groupInfo.getBrokerName(),
                     brokerId,
                     brokerAddr, // set ha server address the same as brokerAddr
                     new ConcurrentHashMap<>(topicConfigTable),
@@ -117,17 +117,17 @@ public class RouteInfoManagerTestBase {
         });
     }
 
-    protected void unregisterBrokerAll(RouteInfoManager routeInfoManager, BrokerData brokerData) {
-        for (Map.Entry<Long, String> entry : brokerData.getBrokerAddrs().entrySet()) {
-            routeInfoManager.unregisterBroker(brokerData.getCluster(), entry.getValue(), brokerData.getBrokerName(), entry.getKey());
+    protected void unregisterBrokerAll(RouteInfoManager routeInfoManager, GroupInfo groupInfo) {
+        for (Map.Entry<Long, String> entry : groupInfo.getBrokerAddrs().entrySet()) {
+            routeInfoManager.unregisterBroker(groupInfo.getCluster(), entry.getValue(), groupInfo.getBrokerName(), entry.getKey());
         }
     }
 
-    protected void unregisterBroker(RouteInfoManager routeInfoManager, BrokerData brokerData, long brokerId) {
-        HashMap<Long, String> brokerAddrs = brokerData.getBrokerAddrs();
+    protected void unregisterBroker(RouteInfoManager routeInfoManager, GroupInfo groupInfo, long brokerId) {
+        HashMap<Long, String> brokerAddrs = groupInfo.getBrokerAddrs();
         if (brokerAddrs.containsKey(brokerId)) {
             String address = brokerAddrs.remove(brokerId);
-            routeInfoManager.unregisterBroker(brokerData.getCluster(), address, brokerData.getBrokerName(), brokerId);
+            routeInfoManager.unregisterBroker(groupInfo.getCluster(), address, groupInfo.getBrokerName(), brokerId);
         }
     }
 
@@ -182,7 +182,7 @@ public class RouteInfoManagerTestBase {
         return brokerNamePrefix + "-" + brokerNameNumber;
     }
 
-    protected BrokerData findBrokerDataByBrokerName(List<BrokerData> data, String brokerName) {
+    protected GroupInfo findBrokerDataByBrokerName(List<GroupInfo> data, String brokerName) {
         return data.stream().filter(bd -> bd.getBrokerName().equals(brokerName)).findFirst().orElse(null);
     }
 

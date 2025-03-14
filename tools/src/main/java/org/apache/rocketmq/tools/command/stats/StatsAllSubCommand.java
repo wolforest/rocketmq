@@ -31,7 +31,7 @@ import org.apache.rocketmq.remoting.protocol.admin.ConsumeStats;
 import org.apache.rocketmq.remoting.protocol.body.BrokerStatsData;
 import org.apache.rocketmq.remoting.protocol.body.GroupList;
 import org.apache.rocketmq.remoting.protocol.body.TopicList;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
@@ -48,7 +48,7 @@ public class StatsAllSubCommand implements SubCommand {
 
         long inMsgCntToday = 0;
 
-        for (BrokerData bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerList()) {
             String masterAddr = bd.getBrokerAddrs().get(MQConstants.MASTER_ID);
             if (masterAddr != null) {
                 try {
@@ -66,7 +66,7 @@ public class StatsAllSubCommand implements SubCommand {
                 double outTPS = 0;
                 long outMsgCntToday = 0;
 
-                for (BrokerData bd : topicRouteData.getBrokerList()) {
+                for (GroupInfo bd : topicRouteData.getBrokerList()) {
                     String masterAddr = bd.getBrokerAddrs().get(MQConstants.MASTER_ID);
                     if (masterAddr != null) {
                         try {

@@ -32,7 +32,7 @@ import org.apache.rocketmq.proxy.service.BaseServiceTest;
 import org.apache.rocketmq.proxy.service.route.MessageQueueView;
 import org.apache.rocketmq.remoting.protocol.heartbeat.HeartbeatData;
 import org.apache.rocketmq.remoting.protocol.heartbeat.ProducerData;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.assertj.core.util.Lists;
@@ -94,7 +94,7 @@ public class ClusterTransactionServiceTest extends BaseServiceTest {
         assertEquals(1, this.clusterTransactionService.getGroupClusterData().size());
         assertEquals(CLUSTER_NAME, this.clusterTransactionService.getGroupClusterData().get(GROUP).stream().findAny().get().getCluster());
 
-        this.brokerData.setCluster(CLUSTER_NAME + 1);
+        this.groupInfo.setCluster(CLUSTER_NAME + 1);
         this.clusterTransactionService.replaceTransactionSubscription(ctx, GROUP, Lists.newArrayList(TOPIC + 1));
         assertEquals(1, this.clusterTransactionService.getGroupClusterData().size());
         assertEquals(CLUSTER_NAME + 1, this.clusterTransactionService.getGroupClusterData().get(GROUP).stream().findAny().get().getCluster());
@@ -117,44 +117,44 @@ public class ClusterTransactionServiceTest extends BaseServiceTest {
         String clusterName2 = "broker-2";
         String brokerAddr2 = "127.0.0.2:10911";
 
-        BrokerData brokerData = new BrokerData();
+        GroupInfo groupInfo = new GroupInfo();
         QueueData queueData = new QueueData();
         queueData.setBrokerName(brokerName2);
-        brokerData.setCluster(clusterName2);
-        brokerData.setBrokerName(brokerName2);
+        groupInfo.setCluster(clusterName2);
+        groupInfo.setBrokerName(brokerName2);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, brokerName2);
-        brokerData.setBrokerAddrs(brokerAddrs);
+        groupInfo.setBrokerAddrs(brokerAddrs);
         topicRouteData.getQueueList().add(queueData);
-        topicRouteData.getBrokerList().add(brokerData);
+        topicRouteData.getBrokerList().add(groupInfo);
         when(this.topicRouteService.getAllMessageQueueView(any(), eq(TOPIC))).thenReturn(new MessageQueueView(TOPIC, topicRouteData, null));
 
         TopicRouteData clusterTopicRouteData = new TopicRouteData();
         QueueData clusterQueueData = new QueueData();
-        BrokerData clusterBrokerData = new BrokerData();
+        GroupInfo clusterGroupInfo = new GroupInfo();
 
         clusterQueueData.setBrokerName(BROKER_NAME);
         clusterTopicRouteData.setQueueList(Lists.newArrayList(clusterQueueData));
-        clusterBrokerData.setCluster(CLUSTER_NAME);
-        clusterBrokerData.setBrokerName(BROKER_NAME);
+        clusterGroupInfo.setCluster(CLUSTER_NAME);
+        clusterGroupInfo.setBrokerName(BROKER_NAME);
         brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
-        clusterBrokerData.setBrokerAddrs(brokerAddrs);
-        clusterTopicRouteData.setBrokerList(Lists.newArrayList(clusterBrokerData));
+        clusterGroupInfo.setBrokerAddrs(brokerAddrs);
+        clusterTopicRouteData.setBrokerList(Lists.newArrayList(clusterGroupInfo));
         when(this.topicRouteService.getAllMessageQueueView(any(), eq(CLUSTER_NAME))).thenReturn(new MessageQueueView(CLUSTER_NAME, clusterTopicRouteData, null));
 
         TopicRouteData clusterTopicRouteData2 = new TopicRouteData();
         QueueData clusterQueueData2 = new QueueData();
-        BrokerData clusterBrokerData2 = new BrokerData();
+        GroupInfo clusterGroupInfo2 = new GroupInfo();
 
         clusterQueueData2.setBrokerName(brokerName2);
         clusterTopicRouteData2.setQueueList(Lists.newArrayList(clusterQueueData2));
-        clusterBrokerData2.setCluster(clusterName2);
-        clusterBrokerData2.setBrokerName(brokerName2);
+        clusterGroupInfo2.setCluster(clusterName2);
+        clusterGroupInfo2.setBrokerName(brokerName2);
         brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, brokerAddr2);
-        clusterBrokerData2.setBrokerAddrs(brokerAddrs);
-        clusterTopicRouteData2.setBrokerList(Lists.newArrayList(clusterBrokerData2));
+        clusterGroupInfo2.setBrokerAddrs(brokerAddrs);
+        clusterTopicRouteData2.setBrokerList(Lists.newArrayList(clusterGroupInfo2));
         when(this.topicRouteService.getAllMessageQueueView(any(), eq(clusterName2))).thenReturn(new MessageQueueView(clusterName2, clusterTopicRouteData2, null));
 
         ConfigurationManager.getProxyConfig().setTransactionHeartbeatBatchNum(2);

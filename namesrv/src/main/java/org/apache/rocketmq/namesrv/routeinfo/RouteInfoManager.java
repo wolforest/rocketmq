@@ -59,7 +59,7 @@ import org.apache.rocketmq.remoting.protocol.body.TopicList;
 import org.apache.rocketmq.remoting.protocol.header.NotifyMinBrokerIdChangeRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.UnRegisterBrokerRequestHeader;
 import org.apache.rocketmq.remoting.protocol.namesrv.RegisterBrokerResult;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingInfo;
@@ -73,7 +73,7 @@ public class RouteInfoManager {
      * topic -> brokerName -> QueueData
      */
     private final ConcurrentMap<String/* topic */, Map<String, QueueData>> topicQueueTable;
-    private final ConcurrentMap<String/* brokerName */, BrokerData> brokerAddrTable;
+    private final ConcurrentMap<String/* brokerName */, GroupInfo> brokerAddrTable;
     private final ConcurrentMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
     private final ConcurrentMap<BrokerAddrInfo/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
     private final ConcurrentMap<BrokerAddrInfo/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
@@ -243,18 +243,18 @@ public class RouteInfoManager {
 
             boolean registerFirst = false;
 
-            BrokerData brokerData = this.brokerAddrTable.get(brokerName);
-            if (null == brokerData) {
+            GroupInfo groupInfo = this.brokerAddrTable.get(brokerName);
+            if (null == groupInfo) {
                 registerFirst = true;
-                brokerData = new BrokerData(clusterName, brokerName, new HashMap<>());
-                this.brokerAddrTable.put(brokerName, brokerData);
+                groupInfo = new GroupInfo(clusterName, brokerName, new HashMap<>());
+                this.brokerAddrTable.put(brokerName, groupInfo);
             }
 
             boolean isOldVersionBroker = enableActingMaster == null;
-            brokerData.setEnableActingMaster(!isOldVersionBroker && enableActingMaster);
-            brokerData.setZoneName(zoneName);
+            groupInfo.setEnableActingMaster(!isOldVersionBroker && enableActingMaster);
+            groupInfo.setZoneName(zoneName);
 
-            Map<Long, String> brokerAddrsMap = brokerData.getBrokerAddrs();
+            Map<Long, String> brokerAddrsMap = groupInfo.getBrokerAddrs();
 
             boolean isMinBrokerIdChanged = false;
             long prevMinBrokerId = 0;
@@ -341,7 +341,7 @@ public class RouteInfoManager {
                             entry.getValue().getTopicName())) {
                             final TopicConfig topicConfig = entry.getValue();
                             // In Slave Acting Master mode, Namesrv will regard the surviving Slave with the smallest brokerId as the "agent" Master, and modify the brokerPermission to read-only.
-                            if (isPrimeSlave && brokerData.isEnableActingMaster()) {
+                            if (isPrimeSlave && groupInfo.isEnableActingMaster()) {
                                 // Wipe write perm for prime slave
                                 topicConfig.setPerm(topicConfig.getPerm() & (~PermName.PERM_WRITE));
                             }
@@ -384,7 +384,7 @@ public class RouteInfoManager {
             }
 
             if (MQConstants.MASTER_ID != brokerId) {
-                String masterAddr = brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
+                String masterAddr = groupInfo.getBrokerAddrs().get(MQConstants.MASTER_ID);
                 if (masterAddr != null) {
                     BrokerAddrInfo masterAddrInfo = new BrokerAddrInfo(clusterName, masterAddr);
                     BrokerLiveInfo masterLiveInfo = this.brokerLiveTable.get(masterAddrInfo);
@@ -422,9 +422,9 @@ public class RouteInfoManager {
         BrokerMemberGroup groupMember = new BrokerMemberGroup(clusterName, brokerName);
         try {
             this.lock.readLock().lockInterruptibly();
-            final BrokerData brokerData = this.brokerAddrTable.get(brokerName);
-            if (brokerData != null) {
-                groupMember.getBrokerAddrs().putAll(brokerData.getBrokerAddrs());
+            final GroupInfo groupInfo = this.brokerAddrTable.get(brokerName);
+            if (groupInfo != null) {
+                groupMember.getBrokerAddrs().putAll(groupInfo.getBrokerAddrs());
             }
         } catch (InterruptedException e) {
             log.error("Get broker member group exception", e);
@@ -587,18 +587,18 @@ public class RouteInfoManager {
 
                 boolean removeBrokerName = false;
                 boolean isMinBrokerIdChanged = false;
-                BrokerData brokerData = this.brokerAddrTable.get(brokerName);
-                if (null != brokerData) {
-                    if (!brokerData.getBrokerAddrs().isEmpty() &&
-                        unRegisterRequest.getBrokerId().equals(Collections.min(brokerData.getBrokerAddrs().keySet()))) {
+                GroupInfo groupInfo = this.brokerAddrTable.get(brokerName);
+                if (null != groupInfo) {
+                    if (!groupInfo.getBrokerAddrs().isEmpty() &&
+                        unRegisterRequest.getBrokerId().equals(Collections.min(groupInfo.getBrokerAddrs().keySet()))) {
                         isMinBrokerIdChanged = true;
                     }
-                    boolean removed = brokerData.getBrokerAddrs().entrySet().removeIf(item -> item.getValue().equals(brokerAddr));
+                    boolean removed = groupInfo.getBrokerAddrs().entrySet().removeIf(item -> item.getValue().equals(brokerAddr));
                     log.info("unregisterBroker, remove addr from brokerAddrTable {}, {}",
                         removed ? "OK" : "Failed",
                         brokerAddrInfo
                     );
-                    if (brokerData.getBrokerAddrs().isEmpty()) {
+                    if (groupInfo.getBrokerAddrs().isEmpty()) {
                         this.brokerAddrTable.remove(brokerName);
                         log.info("unregisterBroker, remove name from brokerAddrTable OK, {}",
                             brokerName
@@ -607,7 +607,7 @@ public class RouteInfoManager {
                         removeBrokerName = true;
                     } else if (isMinBrokerIdChanged) {
                         needNotifyBrokerMap.put(brokerName, new BrokerStatusChangeInfo(
-                            brokerData.getBrokerAddrs(), brokerAddr, null));
+                            groupInfo.getBrokerAddrs(), brokerAddr, null));
                     }
                 }
 
@@ -683,24 +683,24 @@ public class RouteInfoManager {
     }
 
     private boolean isNoMasterExists(String brokerName) {
-        final BrokerData brokerData = this.brokerAddrTable.get(brokerName);
-        if (brokerData == null) {
+        final GroupInfo groupInfo = this.brokerAddrTable.get(brokerName);
+        if (groupInfo == null) {
             return true;
         }
 
-        if (brokerData.getBrokerAddrs().isEmpty()) {
+        if (groupInfo.getBrokerAddrs().isEmpty()) {
             return true;
         }
 
-        return Collections.min(brokerData.getBrokerAddrs().keySet()) > 0;
+        return Collections.min(groupInfo.getBrokerAddrs().keySet()) > 0;
     }
 
     public TopicRouteData pickupTopicRouteData(final String topic) {
         TopicRouteData topicRouteData = new TopicRouteData();
         boolean foundQueueData = false;
         boolean foundBrokerData = false;
-        List<BrokerData> brokerDataList = new LinkedList<>();
-        topicRouteData.setBrokerList(brokerDataList);
+        List<GroupInfo> groupInfoList = new LinkedList<>();
+        topicRouteData.setBrokerList(groupInfoList);
 
         HashMap<String, List<String>> filterServerMap = new HashMap<>();
         topicRouteData.setFilterServerTable(filterServerMap);
@@ -718,19 +718,19 @@ public class RouteInfoManager {
             Set<String> brokerNameSet = new HashSet<>(queueDataMap.keySet());
 
             for (String brokerName : brokerNameSet) {
-                BrokerData brokerData = this.brokerAddrTable.get(brokerName);
-                if (null == brokerData) {
+                GroupInfo groupInfo = this.brokerAddrTable.get(brokerName);
+                if (null == groupInfo) {
                     continue;
                 }
-                BrokerData brokerDataClone = new BrokerData(brokerData);
+                GroupInfo groupInfoClone = new GroupInfo(groupInfo);
 
-                brokerDataList.add(brokerDataClone);
+                groupInfoList.add(groupInfoClone);
                 foundBrokerData = true;
                 if (filterServerTable.isEmpty()) {
                     continue;
                 }
-                for (final String brokerAddr : brokerDataClone.getBrokerAddrs().values()) {
-                    BrokerAddrInfo brokerAddrInfo = new BrokerAddrInfo(brokerDataClone.getCluster(), brokerAddr);
+                for (final String brokerAddr : groupInfoClone.getBrokerAddrs().values()) {
+                    BrokerAddrInfo brokerAddrInfo = new BrokerAddrInfo(groupInfoClone.getCluster(), brokerAddr);
                     List<String> filterServerList = this.filterServerTable.get(brokerAddrInfo);
                     filterServerMap.put(brokerAddr, filterServerList);
                 }
@@ -765,9 +765,9 @@ public class RouteInfoManager {
 
         boolean needActingMaster = false;
 
-        for (final BrokerData brokerData : topicRouteData.getBrokerList()) {
-            if (!brokerData.getBrokerAddrs().isEmpty()
-                && !brokerData.getBrokerAddrs().containsKey(MQConstants.MASTER_ID)) {
+        for (final GroupInfo groupInfo : topicRouteData.getBrokerList()) {
+            if (!groupInfo.getBrokerAddrs().isEmpty()
+                && !groupInfo.getBrokerAddrs().containsKey(MQConstants.MASTER_ID)) {
                 needActingMaster = true;
                 break;
             }
@@ -777,15 +777,15 @@ public class RouteInfoManager {
             return topicRouteData;
         }
 
-        for (final BrokerData brokerData : topicRouteData.getBrokerList()) {
-            final HashMap<Long, String> brokerAddrs = brokerData.getBrokerAddrs();
-            if (brokerAddrs.isEmpty() || brokerAddrs.containsKey(MQConstants.MASTER_ID) || !brokerData.isEnableActingMaster()) {
+        for (final GroupInfo groupInfo : topicRouteData.getBrokerList()) {
+            final HashMap<Long, String> brokerAddrs = groupInfo.getBrokerAddrs();
+            if (brokerAddrs.isEmpty() || brokerAddrs.containsKey(MQConstants.MASTER_ID) || !groupInfo.isEnableActingMaster()) {
                 continue;
             }
 
             // No master
             for (final QueueData queueData : topicRouteData.getQueueList()) {
-                if (!queueData.getBrokerName().equals(brokerData.getBrokerName())) {
+                if (!queueData.getBrokerName().equals(groupInfo.getBrokerName())) {
                     continue;
                 }
 
@@ -888,20 +888,20 @@ public class RouteInfoManager {
         unRegisterRequest.setClusterName(brokerAddrInfo.getClusterName());
         unRegisterRequest.setBrokerAddr(brokerAddrInfo.getBrokerAddr());
 
-        for (Entry<String, BrokerData> stringBrokerDataEntry : this.brokerAddrTable.entrySet()) {
-            BrokerData brokerData = stringBrokerDataEntry.getValue();
-            if (!brokerAddrInfo.getClusterName().equals(brokerData.getCluster())) {
+        for (Entry<String, GroupInfo> stringBrokerDataEntry : this.brokerAddrTable.entrySet()) {
+            GroupInfo groupInfo = stringBrokerDataEntry.getValue();
+            if (!brokerAddrInfo.getClusterName().equals(groupInfo.getCluster())) {
                 continue;
             }
 
-            for (Entry<Long, String> entry : brokerData.getBrokerAddrs().entrySet()) {
+            for (Entry<Long, String> entry : groupInfo.getBrokerAddrs().entrySet()) {
                 Long brokerId = entry.getKey();
                 String brokerAddr = entry.getValue();
                 if (!brokerAddr.equals(brokerAddrInfo.getBrokerAddr())) {
                     continue;
                 }
 
-                unRegisterRequest.setBrokerName(brokerData.getBrokerName());
+                unRegisterRequest.setBrokerName(groupInfo.getBrokerName());
                 unRegisterRequest.setBrokerId(brokerId);
                 return true;
             }
@@ -915,8 +915,8 @@ public class RouteInfoManager {
         RemotingTooMuchRequestException {
         for (String brokerName : needNotifyBrokerMap.keySet()) {
             BrokerStatusChangeInfo brokerStatusChangeInfo = needNotifyBrokerMap.get(brokerName);
-            BrokerData brokerData = brokerAddrTable.get(brokerName);
-            if (brokerData != null && brokerData.isEnableActingMaster()) {
+            GroupInfo groupInfo = brokerAddrTable.get(brokerName);
+            if (groupInfo != null && groupInfo.isEnableActingMaster()) {
                 notifyMinBrokerIdChanged(brokerStatusChangeInfo.getBrokerAddrs(),
                     brokerStatusChangeInfo.getOfflineBrokerAddr(), brokerStatusChangeInfo.getHaBrokerAddr());
             }
@@ -978,7 +978,7 @@ public class RouteInfoManager {
 
                 {
                     log.info("brokerAddrTable SIZE: {}", this.brokerAddrTable.size());
-                    for (Entry<String, BrokerData> next : this.brokerAddrTable.entrySet()) {
+                    for (Entry<String, GroupInfo> next : this.brokerAddrTable.entrySet()) {
                         log.info("brokerAddrTable brokerName: {} {}", next.getKey(), next.getValue());
                     }
                 }
@@ -1018,7 +1018,7 @@ public class RouteInfoManager {
             }
 
             for (String s : brokerAddrTable.keySet()) {
-                BrokerData bd = brokerAddrTable.get(s);
+                GroupInfo bd = brokerAddrTable.get(s);
                 HashMap<Long, String> brokerAddrs = bd.getBrokerAddrs();
                 if (brokerAddrs != null && !brokerAddrs.isEmpty()) {
                     Iterator<Long> it2 = brokerAddrs.keySet().iterator();

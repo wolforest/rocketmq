@@ -44,7 +44,7 @@ import org.apache.rocketmq.proxy.service.route.MessageQueueView;
 import org.apache.rocketmq.proxy.service.route.TopicRouteService;
 import org.apache.rocketmq.remoting.protocol.heartbeat.HeartbeatData;
 import org.apache.rocketmq.remoting.protocol.heartbeat.ProducerData;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 
 public class ClusterTransactionService extends AbstractTransactionService {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.PROXY_LOGGER_NAME);
@@ -101,14 +101,14 @@ public class ClusterTransactionService extends AbstractTransactionService {
     private Set<ClusterData> getClusterDataFromTopic(ProxyContext ctx, String topic) {
         try {
             MessageQueueView messageQueue = this.topicRouteService.getAllMessageQueueView(ctx, topic);
-            List<BrokerData> brokerDataList = messageQueue.getTopicRouteData().getBrokerList();
+            List<GroupInfo> groupInfoList = messageQueue.getTopicRouteData().getBrokerList();
 
-            if (brokerDataList == null) {
+            if (groupInfoList == null) {
                 return Collections.emptySet();
             }
             Set<ClusterData> res = Sets.newHashSet();
-            for (BrokerData brokerData : brokerDataList) {
-                res.add(new ClusterData(brokerData.getCluster()));
+            for (GroupInfo groupInfo : groupInfoList) {
+                res.add(new ClusterData(groupInfo.getCluster()));
             }
             return res;
         } catch (Throwable t) {
@@ -197,14 +197,14 @@ public class ClusterTransactionService extends AbstractTransactionService {
     protected void sendHeartBeatToCluster(String clusterName, HeartbeatData heartbeatData, Map<String, String> brokerAddrNameMap) {
         try {
             MessageQueueView messageQueue = this.topicRouteService.getAllMessageQueueView(ProxyContext.createForInner(this.getClass()), clusterName);
-            List<BrokerData> brokerDataList = messageQueue.getTopicRouteData().getBrokerList();
-            if (brokerDataList == null) {
+            List<GroupInfo> groupInfoList = messageQueue.getTopicRouteData().getBrokerList();
+            if (groupInfoList == null) {
                 return;
             }
-            for (BrokerData brokerData : brokerDataList) {
-                brokerAddrNameMap.put(brokerData.selectBrokerAddr(), brokerData.getBrokerName());
+            for (GroupInfo groupInfo : groupInfoList) {
+                brokerAddrNameMap.put(groupInfo.selectBrokerAddr(), groupInfo.getBrokerName());
                 heartbeatExecutors.submit(() -> {
-                    String brokerAddr = brokerData.selectBrokerAddr();
+                    String brokerAddr = groupInfo.selectBrokerAddr();
                     this.mqClientAPIFactory.getClient()
                         .sendHeartbeatOneway(brokerAddr, heartbeatData, Duration.ofSeconds(3).toMillis())
                         .exceptionally(t -> {

@@ -24,7 +24,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.rocketmq.remoting.RPCHook;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
@@ -91,17 +91,17 @@ public class TopicRouteSubCommand implements SubCommand {
         }
         queueDataList.sort(Comparator.comparing(QueueData::getBrokerName));
 
-        List<BrokerData> brokerDataList = topicRouteData.getBrokerList();
-        brokerDataList.sort(Comparator.comparing(BrokerData::getBrokerName));
+        List<GroupInfo> groupInfoList = topicRouteData.getBrokerList();
+        groupInfoList.sort(Comparator.comparing(GroupInfo::getBrokerName));
 
         System.out.printf(FORMAT, "#ClusterName", "#BrokerName", "#BrokerAddrs", "#ReadQueue", "#WriteQueue", "#Perm");
 
-        for (BrokerData brokerData : brokerDataList) {
-            String brokerName = brokerData.getBrokerName();
+        for (GroupInfo groupInfo : groupInfoList) {
+            String brokerName = groupInfo.getBrokerName();
             QueueData queueData = map.get(brokerName);
             totalReadQueue += queueData.getReadQueueNums();
             totalWriteQueue += queueData.getWriteQueueNums();
-            System.out.printf(FORMAT, brokerData.getCluster(), brokerName, brokerData.getBrokerAddrs(),
+            System.out.printf(FORMAT, groupInfo.getCluster(), brokerName, groupInfo.getBrokerAddrs(),
                     queueData.getReadQueueNums(), queueData.getWriteQueueNums(), queueData.getPerm());
         }
 

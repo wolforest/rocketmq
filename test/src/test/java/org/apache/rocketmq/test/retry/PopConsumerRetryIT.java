@@ -42,7 +42,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.test.base.BaseConf;
 import org.apache.rocketmq.test.base.IntegrationTestBase;
 import org.apache.rocketmq.test.offset.OffsetResetIT;
@@ -80,7 +80,7 @@ public class PopConsumerRetryIT extends BaseConf {
     private void switchPop(String groupName, String topicName) throws Exception {
         ClusterInfo clusterInfo = defaultMQAdminExt.examineBrokerClusterInfo();
         Set<String> brokerAddrs = clusterInfo.getBrokerAddrTable().values()
-            .stream().map(BrokerData::selectBrokerAddr).collect(Collectors.toSet());
+            .stream().map(GroupInfo::selectBrokerAddr).collect(Collectors.toSet());
         for (String brokerAddr : brokerAddrs) {
             TopicConfig topicConfig = new TopicConfig(topicName, 1, 1, 6);
             defaultMQAdminExt.createAndUpdateTopicConfig(brokerAddr, topicConfig);

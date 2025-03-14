@@ -47,7 +47,7 @@ import org.apache.rocketmq.common.domain.message.MessageQueue;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.netty.NettyRemotingClient;
 import org.apache.rocketmq.remoting.protocol.header.SendMessageRequestHeader;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.junit.After;
@@ -544,15 +544,15 @@ public class DefaultMQProducerTest {
         TopicRouteData topicRouteData = new TopicRouteData();
 
         topicRouteData.setFilterServerTable(new HashMap<>());
-        List<BrokerData> brokerDataList = new ArrayList<>();
-        BrokerData brokerData = new BrokerData();
-        brokerData.setBrokerName("BrokerA");
-        brokerData.setCluster("DefaultCluster");
+        List<GroupInfo> groupInfoList = new ArrayList<>();
+        GroupInfo groupInfo = new GroupInfo();
+        groupInfo.setBrokerName("BrokerA");
+        groupInfo.setCluster("DefaultCluster");
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(0L, "127.0.0.1:10911");
-        brokerData.setBrokerAddrs(brokerAddrs);
-        brokerDataList.add(brokerData);
-        topicRouteData.setBrokerList(brokerDataList);
+        groupInfo.setBrokerAddrs(brokerAddrs);
+        groupInfoList.add(groupInfo);
+        topicRouteData.setBrokerList(groupInfoList);
 
         List<QueueData> queueDataList = new ArrayList<>();
         QueueData queueData = new QueueData();

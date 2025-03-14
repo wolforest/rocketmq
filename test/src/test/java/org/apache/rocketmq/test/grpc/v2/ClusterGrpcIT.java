@@ -24,7 +24,7 @@ import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.proxy.grpc.v2.GrpcMessagingApplication;
 import org.apache.rocketmq.proxy.processor.DefaultMessagingProcessor;
 import org.apache.rocketmq.proxy.processor.MessagingProcessor;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.test.util.MQAdminTestUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -51,7 +51,7 @@ public class ClusterGrpcIT extends GrpcBaseIT {
         setUpServer(grpcMessagingApplication, 0, true);
 
         await().atMost(Duration.ofSeconds(40)).until(() -> {
-            Map<String, BrokerData> brokerDataMap = MQAdminTestUtils.getCluster(NAMESRV_ADDR).getBrokerAddrTable();
+            Map<String, GroupInfo> brokerDataMap = MQAdminTestUtils.getCluster(NAMESRV_ADDR).getBrokerAddrTable();
             return brokerDataMap.size() == BROKER_NUM;
         });
     }

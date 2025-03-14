@@ -38,7 +38,7 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.admin.ConsumeStats;
 import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicConfigAndQueueMapping;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicQueueMappingOne;
@@ -151,7 +151,7 @@ public class MQAdminTestUtils {
         if (clusterInfo == null) {
             return false;
         } else {
-            Map<String, BrokerData> brokers = clusterInfo.getBrokerAddrTable();
+            Map<String, GroupInfo> brokers = clusterInfo.getBrokerAddrTable();
             for (String brokerName : brokers.keySet()) {
                 HashMap<Long, String> brokerIps = brokers.get(brokerName).getBrokerAddrs();
                 for (long brokerId : brokerIps.keySet()) {

@@ -66,7 +66,7 @@ import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicList;
 import org.apache.rocketmq.remoting.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicConfigAndQueueMapping;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
@@ -135,16 +135,16 @@ public class DefaultMQAdminExtTest {
         topicList.setTopicList(topicSet);
         when(mQClientAPIImpl.getTopicListFromNameServer(anyLong())).thenReturn(topicList);
 
-        List<BrokerData> brokerDatas = new ArrayList<>();
+        List<GroupInfo> groupInfos = new ArrayList<>();
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, BROKER1_ADDR);
-        BrokerData brokerData = new BrokerData();
-        brokerData.setCluster(CLUSTER);
-        brokerData.setBrokerName(BROKER1_NAME);
-        brokerData.setBrokerAddrs(brokerAddrs);
-        brokerDatas.add(brokerData);
-        brokerDatas.add(new BrokerData(CLUSTER, BROKER2_NAME, (HashMap<Long, String>) Maps.newHashMap(MQConstants.MASTER_ID, BROKER2_ADDR)));
-        topicRouteData.setBrokerList(brokerDatas);
+        GroupInfo groupInfo = new GroupInfo();
+        groupInfo.setCluster(CLUSTER);
+        groupInfo.setBrokerName(BROKER1_NAME);
+        groupInfo.setBrokerAddrs(brokerAddrs);
+        groupInfos.add(groupInfo);
+        groupInfos.add(new GroupInfo(CLUSTER, BROKER2_NAME, (HashMap<Long, String>) Maps.newHashMap(MQConstants.MASTER_ID, BROKER2_ADDR)));
+        topicRouteData.setBrokerList(groupInfos);
         topicRouteData.setQueueList(new ArrayList<>());
         topicRouteData.setFilterServerTable(new HashMap<>());
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
@@ -155,9 +155,9 @@ public class DefaultMQAdminExtTest {
         kvTable.setTable(result);
         when(mQClientAPIImpl.getBrokerRuntimeInfo(anyString(), anyLong())).thenReturn(kvTable);
 
-        HashMap<String, BrokerData> brokerAddrTable = new HashMap<>();
-        brokerAddrTable.put(BROKER1_NAME, brokerData);
-        brokerAddrTable.put(BROKER2_NAME, new BrokerData());
+        HashMap<String, GroupInfo> brokerAddrTable = new HashMap<>();
+        brokerAddrTable.put(BROKER1_NAME, groupInfo);
+        brokerAddrTable.put(BROKER2_NAME, new GroupInfo());
         clusterInfo.setBrokerAddrTable(brokerAddrTable);
         clusterInfo.setClusterAddrTable(new HashMap<>());
         when(mQClientAPIImpl.getBrokerClusterInfo(anyLong())).thenReturn(clusterInfo);
@@ -295,7 +295,7 @@ public class DefaultMQAdminExtTest {
     @Test
     public void testExamineBrokerClusterInfo() throws InterruptedException, MQBrokerException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
         ClusterInfo clusterInfo = defaultMQAdminExt.examineBrokerClusterInfo();
-        Map<String, BrokerData> brokerList = clusterInfo.getBrokerAddrTable();
+        Map<String, GroupInfo> brokerList = clusterInfo.getBrokerAddrTable();
         assertThat(brokerList.get("default-broker").getBrokerName()).isEqualTo("default-broker");
         assertThat(brokerList.containsKey("broker-test")).isTrue();
 

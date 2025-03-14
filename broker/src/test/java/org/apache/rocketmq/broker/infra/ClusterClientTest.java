@@ -46,7 +46,7 @@ import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.QueryDataVersionResponseHeader;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.RegisterBrokerResponseHeader;
 import org.apache.rocketmq.remoting.protocol.namesrv.RegisterBrokerResult;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.store.api.MessageStore;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
 import org.junit.Assert;
@@ -218,7 +218,7 @@ public class ClusterClientTest {
         response.setRemark(null);
 
         ClusterInfo want = new ClusterInfo();
-        want.setBrokerAddrTable(new HashMap<>(Collections.singletonMap("key", new BrokerData("cluster", "broker", new HashMap<>(Collections.singletonMap(MQConstants.MASTER_ID, "127.0.0.1:10911"))))));
+        want.setBrokerAddrTable(new HashMap<>(Collections.singletonMap("key", new GroupInfo("cluster", "broker", new HashMap<>(Collections.singletonMap(MQConstants.MASTER_ID, "127.0.0.1:10911"))))));
         response.setBody(RemotingSerializable.encode(want));
 
         when(nettyRemotingClient.invokeSync(isNull(), argThat(argument -> argument.getCode() == RequestCode.GET_BROKER_CLUSTER_INFO), anyLong())).thenReturn(response);

@@ -25,7 +25,7 @@ import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.PermName;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.common.domain.topic.TopicValidator;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -91,12 +91,12 @@ public class DefaultAdminService implements AdminService {
     }
 
     @Override
-    public boolean createTopicOnBroker(String topic, int wQueueNum, int rQueueNum, List<BrokerData> curBrokerDataList,
-        List<BrokerData> sampleBrokerDataList, boolean examineTopic, int retryCheckCount) throws Exception {
+    public boolean createTopicOnBroker(String topic, int wQueueNum, int rQueueNum, List<GroupInfo> curGroupInfoList,
+        List<GroupInfo> sampleGroupInfoList, boolean examineTopic, int retryCheckCount) throws Exception {
         Set<String> curBrokerAddr = new HashSet<>();
-        if (curBrokerDataList != null) {
-            for (BrokerData brokerData : curBrokerDataList) {
-                curBrokerAddr.add(brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID));
+        if (curGroupInfoList != null) {
+            for (GroupInfo groupInfo : curGroupInfoList) {
+                curBrokerAddr.add(groupInfo.getBrokerAddrs().get(MQConstants.MASTER_ID));
             }
         }
 
@@ -106,8 +106,8 @@ public class DefaultAdminService implements AdminService {
         topicConfig.setReadQueueNums(rQueueNum);
         topicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
 
-        for (BrokerData brokerData : sampleBrokerDataList) {
-            String addr = brokerData.getBrokerAddrs() == null ? null : brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
+        for (GroupInfo groupInfo : sampleGroupInfoList) {
+            String addr = groupInfo.getBrokerAddrs() == null ? null : groupInfo.getBrokerAddrs().get(MQConstants.MASTER_ID);
             if (addr == null) {
                 continue;
             }

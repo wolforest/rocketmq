@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.rocketmq.proxy.common.Address;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
@@ -40,12 +40,12 @@ public class ProxyTopicRouteData {
         this.queueList = topicRouteData.getQueueList();
         this.brokerList = new ArrayList<>();
 
-        for (BrokerData brokerData : topicRouteData.getBrokerList()) {
+        for (GroupInfo groupInfo : topicRouteData.getBrokerList()) {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
-            proxyBrokerData.setCluster(brokerData.getCluster());
-            proxyBrokerData.setBrokerName(brokerData.getBrokerName());
-            for (Long brokerId : brokerData.getBrokerAddrs().keySet()) {
-                String brokerAddr = brokerData.getBrokerAddrs().get(brokerId);
+            proxyBrokerData.setCluster(groupInfo.getCluster());
+            proxyBrokerData.setBrokerName(groupInfo.getBrokerName());
+            for (Long brokerId : groupInfo.getBrokerAddrs().keySet()) {
+                String brokerAddr = groupInfo.getBrokerAddrs().get(brokerId);
                 HostAndPort hostAndPort = HostAndPort.fromString(brokerAddr);
 
                 proxyBrokerData.getBrokerAddrs().put(brokerId, Lists.newArrayList(new Address(Address.AddressScheme.IPv4, hostAndPort)));
@@ -58,12 +58,12 @@ public class ProxyTopicRouteData {
         this.queueList = topicRouteData.getQueueList();
         this.brokerList = new ArrayList<>();
 
-        for (BrokerData brokerData : topicRouteData.getBrokerList()) {
+        for (GroupInfo groupInfo : topicRouteData.getBrokerList()) {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
-            proxyBrokerData.setCluster(brokerData.getCluster());
-            proxyBrokerData.setBrokerName(brokerData.getBrokerName());
-            for (Long brokerId : brokerData.getBrokerAddrs().keySet()) {
-                String brokerAddr = brokerData.getBrokerAddrs().get(brokerId);
+            proxyBrokerData.setCluster(groupInfo.getCluster());
+            proxyBrokerData.setBrokerName(groupInfo.getBrokerName());
+            for (Long brokerId : groupInfo.getBrokerAddrs().keySet()) {
+                String brokerAddr = groupInfo.getBrokerAddrs().get(brokerId);
                 HostAndPort brokerHostAndPort = HostAndPort.fromString(brokerAddr);
                 HostAndPort hostAndPort = HostAndPort.fromParts(brokerHostAndPort.getHost(), port);
 
@@ -77,11 +77,11 @@ public class ProxyTopicRouteData {
         this.queueList = topicRouteData.getQueueList();
         this.brokerList = new ArrayList<>();
 
-        for (BrokerData brokerData : topicRouteData.getBrokerList()) {
+        for (GroupInfo groupInfo : topicRouteData.getBrokerList()) {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
-            proxyBrokerData.setCluster(brokerData.getCluster());
-            proxyBrokerData.setBrokerName(brokerData.getBrokerName());
-            for (Long brokerId : brokerData.getBrokerAddrs().keySet()) {
+            proxyBrokerData.setCluster(groupInfo.getCluster());
+            proxyBrokerData.setBrokerName(groupInfo.getBrokerName());
+            for (Long brokerId : groupInfo.getBrokerAddrs().keySet()) {
                 proxyBrokerData.getBrokerAddrs().put(brokerId, requestHostAndPortList);
             }
             this.brokerList.add(proxyBrokerData);
@@ -117,18 +117,18 @@ public class ProxyTopicRouteData {
             this.brokerAddrs = brokerAddrs;
         }
 
-        public BrokerData buildBrokerData() {
-            BrokerData brokerData = new BrokerData();
-            brokerData.setCluster(cluster);
-            brokerData.setBrokerName(brokerName);
+        public GroupInfo buildBrokerData() {
+            GroupInfo groupInfo = new GroupInfo();
+            groupInfo.setCluster(cluster);
+            groupInfo.setBrokerName(brokerName);
             HashMap<Long, String> buildBrokerAddress = new HashMap<>();
             brokerAddrs.forEach((k, v) -> {
                 if (!v.isEmpty()) {
                     buildBrokerAddress.put(k, v.get(0).getHostAndPort().toString());
                 }
             });
-            brokerData.setBrokerAddrs(buildBrokerAddress);
-            return brokerData;
+            groupInfo.setBrokerAddrs(buildBrokerAddress);
+            return groupInfo;
         }
     }
 

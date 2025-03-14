@@ -26,7 +26,7 @@ import org.apache.rocketmq.client.impl.mqclient.MQClientAPIFactory;
 import org.apache.rocketmq.proxy.service.route.MessageQueueView;
 import org.apache.rocketmq.proxy.service.route.TopicRouteService;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.assertj.core.util.Lists;
@@ -57,7 +57,7 @@ public class BaseServiceTest extends InitConfigTest {
 
     protected final TopicRouteData topicRouteData = new TopicRouteData();
     protected final QueueData queueData = new QueueData();
-    protected final BrokerData brokerData = new BrokerData();
+    protected final GroupInfo groupInfo = new GroupInfo();
 
     @Before
     public void before() throws Throwable {
@@ -70,12 +70,12 @@ public class BaseServiceTest extends InitConfigTest {
 
         queueData.setBrokerName(BROKER_NAME);
         topicRouteData.setQueueList(Lists.newArrayList(queueData));
-        brokerData.setCluster(CLUSTER_NAME);
-        brokerData.setBrokerName(BROKER_NAME);
+        groupInfo.setCluster(CLUSTER_NAME);
+        groupInfo.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
-        brokerData.setBrokerAddrs(brokerAddrs);
-        topicRouteData.setBrokerList(Lists.newArrayList(brokerData));
+        groupInfo.setBrokerAddrs(brokerAddrs);
+        topicRouteData.setBrokerList(Lists.newArrayList(groupInfo));
 
         when(this.topicRouteService.getAllMessageQueueView(any(), eq(ERR_TOPIC))).thenThrow(new MQClientException(ResponseCode.TOPIC_NOT_EXIST, ""));
         when(this.topicRouteService.getAllMessageQueueView(any(), eq(TOPIC))).thenReturn(new MessageQueueView(TOPIC, topicRouteData, null));

@@ -63,7 +63,7 @@ import org.apache.rocketmq.remoting.protocol.filter.FilterAPI;
 import org.apache.rocketmq.remoting.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.assertj.core.util.Lists;
@@ -127,13 +127,13 @@ public class HeartbeatSyncerTest extends InitConfigTest {
             queueData.setPerm(6);
             queueData.setBrokerName(brokerName);
             topicRouteData.getQueueList().add(queueData);
-            BrokerData brokerData = new BrokerData();
-            brokerData.setCluster(clusterName);
-            brokerData.setBrokerName(brokerName);
+            GroupInfo groupInfo = new GroupInfo();
+            groupInfo.setCluster(clusterName);
+            groupInfo.setBrokerName(brokerName);
             HashMap<Long, String> brokerAddr = new HashMap<>();
             brokerAddr.put(0L, "127.0.0.1:10911");
-            brokerData.setBrokerAddrs(brokerAddr);
-            topicRouteData.getBrokerList().add(brokerData);
+            groupInfo.setBrokerAddrs(brokerAddr);
+            topicRouteData.getBrokerList().add(groupInfo);
             MessageQueueView messageQueueView = new MessageQueueView("foo", topicRouteData, null);
             when(this.topicRouteService.getAllMessageQueueView(any(), anyString())).thenReturn(messageQueueView);
         }

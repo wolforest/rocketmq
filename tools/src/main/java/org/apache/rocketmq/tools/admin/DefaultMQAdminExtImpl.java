@@ -108,7 +108,7 @@ import org.apache.rocketmq.remoting.protocol.header.controller.ElectMasterRespon
 import org.apache.rocketmq.remoting.protocol.header.controller.GetMetaDataResponseHeader;
 import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.protocol.statictopic.TopicConfigAndQueueMapping;
@@ -331,7 +331,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
         TopicStatsTable topicStatsTable = new TopicStatsTable();
 
-        for (BrokerData bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerList()) {
             String addr = bd.selectBrokerAddr();
             if (addr != null) {
                 TopicStatsTable tst = this.mqClientInstance.getMQClientAPIImpl().getTopicStatsInfo(addr, topic, timeoutMillis);
@@ -362,7 +362,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                     return AdminToolResult.success(topicStatsTable);
                 }
                 final CountDownLatch latch = new CountDownLatch(topicRouteData.getBrokerList().size());
-                for (final BrokerData bd : topicRouteData.getBrokerList()) {
+                for (final GroupInfo bd : topicRouteData.getBrokerList()) {
                     threadPoolExecutor.submit(new Runnable() {
                         @Override
                         public void run() {
@@ -440,7 +440,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         }
         ConsumeStats result = new ConsumeStats();
 
-        for (BrokerData bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerList()) {
             String addr = bd.selectBrokerAddr();
             if (addr != null) {
                 ConsumeStats consumeStats = this.mqClientInstance.getMQClientAPIImpl().getConsumeStats(addr, consumerGroup, topic, timeoutMillis * 3);
@@ -530,7 +530,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                 final ConsumeStats result = new ConsumeStats();
                 final CountDownLatch latch = new CountDownLatch(topicRouteData.getBrokerList().size());
                 final Map<String, Double> consumerTpsMap = new ConcurrentHashMap<>(topicRouteData.getBrokerList().size());
-                for (final BrokerData bd : topicRouteData.getBrokerList()) {
+                for (final GroupInfo bd : topicRouteData.getBrokerList()) {
                     threadPoolExecutor.submit(new Runnable() {
                         @Override
                         public void run() {
@@ -615,11 +615,11 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         RemotingException, MQClientException {
         ConsumerConnection result = new ConsumerConnection();
         String topic = MQConstants.getRetryTopic(consumerGroup);
-        List<BrokerData> brokers = this.examineTopicRouteInfo(topic).getBrokerList();
-        BrokerData brokerData = brokers.get(random.nextInt(brokers.size()));
+        List<GroupInfo> brokers = this.examineTopicRouteInfo(topic).getBrokerList();
+        GroupInfo groupInfo = brokers.get(random.nextInt(brokers.size()));
         String addr = null;
-        if (brokerData != null) {
-            addr = brokerData.selectBrokerAddr();
+        if (groupInfo != null) {
+            addr = groupInfo.selectBrokerAddr();
             if (StringUtils.isNotBlank(addr)) {
                 result = this.mqClientInstance.getMQClientAPIImpl().getConsumerConnectionList(addr, consumerGroup, timeoutMillis);
             }
@@ -652,11 +652,11 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
     public ProducerConnection examineProducerConnectionInfo(String producerGroup,
         final String topic) throws RemotingException, MQClientException, InterruptedException, MQBrokerException {
         ProducerConnection result = new ProducerConnection();
-        List<BrokerData> brokers = this.examineTopicRouteInfo(topic).getBrokerList();
-        BrokerData brokerData = brokers.get(random.nextInt(brokers.size()));
+        List<GroupInfo> brokers = this.examineTopicRouteInfo(topic).getBrokerList();
+        GroupInfo groupInfo = brokers.get(random.nextInt(brokers.size()));
         String addr = null;
-        if (brokerData != null) {
-            addr = brokerData.selectBrokerAddr();
+        if (groupInfo != null) {
+            addr = groupInfo.selectBrokerAddr();
             if (StringUtils.isNotBlank(addr)) {
                 result = this.mqClientInstance.getMQClientAPIImpl().getProducerConnectionList(addr, producerGroup, timeoutMillis);
             }
@@ -808,7 +808,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         for (QueueData queueData : topicRouteData.getQueueList()) {
             topicRouteMap.put(queueData.getBrokerName(), queueData);
         }
-        for (BrokerData bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerList()) {
             String addr = bd.selectBrokerAddr();
             if (addr != null) {
                 rollbackStatsList.addAll(resetOffsetByTimestampOld(addr, topicRouteMap.get(bd.getBrokerName()), consumerGroup, topic, timestamp, force));
@@ -887,7 +887,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                 final CopyOnWriteArrayList successList = new CopyOnWriteArrayList();
                 final CopyOnWriteArrayList failureList = new CopyOnWriteArrayList();
                 final CountDownLatch latch = new CountDownLatch(topicRouteData.getBrokerList().size());
-                for (final BrokerData bd : topicRouteData.getBrokerList()) {
+                for (final GroupInfo bd : topicRouteData.getBrokerList()) {
                     threadPoolExecutor.submit(new Runnable() {
                         @Override
                         public void run() {
@@ -942,11 +942,11 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
     public Map<MessageQueue, Long> resetOffsetByTimestamp(String topic, String group, long timestamp, boolean isForce,
         boolean isC) throws RemotingException, InterruptedException, MQClientException {
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
-        List<BrokerData> brokerDatas = topicRouteData.getBrokerList();
+        List<GroupInfo> groupInfos = topicRouteData.getBrokerList();
         Map<MessageQueue, Long> allOffsetTable = new HashMap<>();
-        if (brokerDatas != null) {
-            for (BrokerData brokerData : brokerDatas) {
-                String addr = brokerData.selectBrokerAddr();
+        if (groupInfos != null) {
+            for (GroupInfo groupInfo : groupInfos) {
+                String addr = groupInfo.selectBrokerAddr();
                 if (addr != null) {
                     Map<MessageQueue, Long> offsetTable = this.mqClientInstance.getMQClientAPIImpl().invokeBrokerToResetOffset(addr, topic, group, timestamp, isForce, timeoutMillis, isC);
                     if (offsetTable != null) {
@@ -993,9 +993,9 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
     public Map<String, Map<MessageQueue, Long>> getConsumeStatus(String topic, String group,
         String clientAddr) throws RemotingException, InterruptedException, MQClientException {
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
-        List<BrokerData> brokerDatas = topicRouteData.getBrokerList();
-        if (brokerDatas != null && brokerDatas.size() > 0) {
-            String addr = brokerDatas.get(0).selectBrokerAddr();
+        List<GroupInfo> groupInfos = topicRouteData.getBrokerList();
+        if (groupInfos != null && groupInfos.size() > 0) {
+            String addr = groupInfos.get(0).selectBrokerAddr();
             if (addr != null) {
                 return this.mqClientInstance.getMQClientAPIImpl().invokeBrokerToGetConsumerStatus(addr, topic, group, clientAddr, timeoutMillis);
             }
@@ -1043,7 +1043,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         String topic) throws InterruptedException, MQBrokerException, RemotingException, MQClientException {
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
 
-        for (BrokerData bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerList()) {
             String addr = bd.selectBrokerAddr();
             if (addr != null) {
                 return this.mqClientInstance.getMQClientAPIImpl().queryTopicConsumeByWho(addr, topic, timeoutMillis);
@@ -1057,7 +1057,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         String topic) throws InterruptedException, MQBrokerException, RemotingException, MQClientException {
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
 
-        for (BrokerData bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerList()) {
             String addr = bd.selectBrokerAddr();
             if (addr != null) {
                 return this.mqClientInstance.getMQClientAPIImpl().querySubscriptionByConsumer(addr, group, topic, timeoutMillis);
@@ -1074,7 +1074,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         TopicList result = new TopicList();
 
         //Query all brokers
-        for (BrokerData bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerList()) {
             String addr = bd.selectBrokerAddr();
             if (addr != null) {
                 TopicList topicList = this.mqClientInstance.getMQClientAPIImpl().queryTopicsByConsumer(addr, group, timeoutMillis);
@@ -1098,7 +1098,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                 }
                 final TopicList result = new TopicList();
                 final CountDownLatch latch = new CountDownLatch(topicRouteData.getBrokerList().size());
-                for (final BrokerData bd : topicRouteData.getBrokerList()) {
+                for (final GroupInfo bd : topicRouteData.getBrokerList()) {
                     threadPoolExecutor.submit(new Runnable() {
                         @Override
                         public void run() {
@@ -1128,7 +1128,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         final String group) throws InterruptedException, MQBrokerException, RemotingException, MQClientException {
         List<QueueTimeSpan> spanSet = new ArrayList<>();
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
-        for (BrokerData bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerList()) {
             String addr = bd.selectBrokerAddr();
             if (addr != null) {
                 spanSet.addAll(this.mqClientInstance.getMQClientAPIImpl().queryConsumeTimeSpan(addr, topic, group, timeoutMillis));
@@ -1149,7 +1149,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
                     return AdminToolResult.success(spanSet);
                 }
                 final CountDownLatch latch = new CountDownLatch(topicRouteData.getBrokerList().size());
-                for (final BrokerData bd : topicRouteData.getBrokerList()) {
+                for (final GroupInfo bd : topicRouteData.getBrokerList()) {
                     threadPoolExecutor.submit(new Runnable() {
                         @Override
                         public void run() {
@@ -1299,10 +1299,10 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         boolean metrics) throws RemotingException, MQClientException, InterruptedException {
         String topic = MQConstants.RETRY_GROUP_TOPIC_PREFIX + consumerGroup;
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
-        List<BrokerData> brokerDatas = topicRouteData.getBrokerList();
-        if (brokerDatas != null) {
-            for (BrokerData brokerData : brokerDatas) {
-                String addr = brokerData.selectBrokerAddr();
+        List<GroupInfo> groupInfos = topicRouteData.getBrokerList();
+        if (groupInfos != null) {
+            for (GroupInfo groupInfo : groupInfos) {
+                String addr = groupInfo.selectBrokerAddr();
                 if (addr != null) {
                     return this.mqClientInstance.getMQClientAPIImpl().getConsumerRunningInfo(addr, consumerGroup, clientId, jstack, timeoutMillis);
                 }
@@ -1519,9 +1519,9 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
             Entry<MessageQueue, OffsetWrapper> next = it.next();
             MessageQueue mq = next.getKey();
             if (mq.getTopic().equals(msg.getTopic()) && mq.getQueueId() == msg.getQueueId()) {
-                BrokerData brokerData = ci.getBrokerAddrTable().get(mq.getBrokerName());
-                if (brokerData != null) {
-                    String addr = NetworkUtils.convert2IpString(brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID));
+                GroupInfo groupInfo = ci.getBrokerAddrTable().get(mq.getBrokerName());
+                if (groupInfo != null) {
+                    String addr = NetworkUtils.convert2IpString(groupInfo.getBrokerAddrs().get(MQConstants.MASTER_ID));
                     if (NetworkUtils.socketAddress2String(msg.getStoreHost()).equals(addr)) {
                         if (next.getValue().getConsumerOffset() > msg.getQueueOffset()) {
                             return true;
@@ -1549,9 +1549,9 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
             for (Entry<MessageQueue, OffsetWrapper> next : cstats.getData().getOffsetTable().entrySet()) {
                 MessageQueue mq = next.getKey();
                 if (mq.getTopic().equals(msg.getTopic()) && mq.getQueueId() == msg.getQueueId()) {
-                    BrokerData brokerData = ci.getBrokerAddrTable().get(mq.getBrokerName());
-                    if (brokerData != null) {
-                        String addr = brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
+                    GroupInfo groupInfo = ci.getBrokerAddrTable().get(mq.getBrokerName());
+                    if (groupInfo != null) {
+                        String addr = groupInfo.getBrokerAddrs().get(MQConstants.MASTER_ID);
                         if (addr.equals(NetworkUtils.socketAddress2String(msg.getStoreHost()))) {
                             if (next.getValue().getConsumerOffset() > msg.getQueueOffset()) {
                                 return true;
@@ -1571,7 +1571,7 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         String retryTopic = MQConstants.getRetryTopic(srcGroup);
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(retryTopic);
 
-        for (BrokerData bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerList()) {
             String addr = bd.selectBrokerAddr();
             if (addr != null) {
                 this.mqClientInstance.getMQClientAPIImpl().cloneGroupOffset(addr, srcGroup, destGroup, topic, isOffline, timeoutMillis);
@@ -1603,8 +1603,8 @@ public class DefaultMQAdminExtImpl implements MQAdminExt, MQAdminExtInner {
         Set<String> clusterSet = new HashSet<>();
         ClusterInfo clusterInfo = examineBrokerClusterInfo();
         TopicRouteData topicRouteData = examineTopicRouteInfo(topic);
-        BrokerData brokerData = topicRouteData.getBrokerList().get(0);
-        String brokerName = brokerData.getBrokerName();
+        GroupInfo groupInfo = topicRouteData.getBrokerList().get(0);
+        String brokerName = groupInfo.getBrokerName();
         for (Entry<String, Set<String>> next : clusterInfo.getClusterAddrTable().entrySet()) {
             if (next.getValue().contains(brokerName)) {
                 clusterSet.add(next.getKey());

@@ -23,7 +23,7 @@ import java.util.Set;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.common.utils.NetworkUtils;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -72,20 +72,20 @@ public class ClusterInfoTest {
 
     private ClusterInfo buildClusterInfo() throws Exception {
         ClusterInfo clusterInfo = new ClusterInfo();
-        HashMap<String, BrokerData> brokerAddrTable = new HashMap<>();
+        HashMap<String, GroupInfo> brokerAddrTable = new HashMap<>();
         HashMap<String, Set<String>> clusterAddrTable = new HashMap<>();
 
         //build brokerData
-        BrokerData brokerData = new BrokerData();
-        brokerData.setBrokerName("master");
-        brokerData.setCluster("DEFAULT_CLUSTER");
+        GroupInfo groupInfo = new GroupInfo();
+        groupInfo.setBrokerName("master");
+        groupInfo.setCluster("DEFAULT_CLUSTER");
 
         //build brokerAddrs
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, NetworkUtils.getLocalhostByNetworkInterface());
 
-        brokerData.setBrokerAddrs(brokerAddrs);
-        brokerAddrTable.put("master", brokerData);
+        groupInfo.setBrokerAddrs(brokerAddrs);
+        brokerAddrTable.put("master", groupInfo);
 
         Set<String> brokerNames = new HashSet<>();
         brokerNames.add("master");

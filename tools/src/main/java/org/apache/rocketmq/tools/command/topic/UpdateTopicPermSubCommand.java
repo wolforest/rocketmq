@@ -26,7 +26,7 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.common.utils.ServerUtil;
@@ -106,9 +106,9 @@ public class UpdateTopicPermSubCommand implements SubCommand {
             topicConfig.setPerm(perm);
             if (commandLine.hasOption('b')) {
                 String brokerAddr = commandLine.getOptionValue('b').trim();
-                List<BrokerData> brokerDatas = topicRouteData.getBrokerList();
+                List<GroupInfo> groupInfos = topicRouteData.getBrokerList();
                 String brokerName = null;
-                for (BrokerData data : brokerDatas) {
+                for (GroupInfo data : groupInfos) {
                     HashMap<Long, String> brokerAddrs = data.getBrokerAddrs();
                     if (brokerAddrs == null || brokerAddrs.size() == 0) {
                         continue;

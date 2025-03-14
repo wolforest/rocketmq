@@ -81,7 +81,7 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.HeartbeatData;
 import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.protocol.heartbeat.ProducerData;
 import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
@@ -249,19 +249,19 @@ public class MQClientInstance {
             Collections.sort(qds);
             for (QueueData qd : qds) {
                 if (PermName.isWriteable(qd.getPerm())) {
-                    BrokerData brokerData = null;
-                    for (BrokerData bd : route.getBrokerList()) {
+                    GroupInfo groupInfo = null;
+                    for (GroupInfo bd : route.getBrokerList()) {
                         if (bd.getBrokerName().equals(qd.getBrokerName())) {
-                            brokerData = bd;
+                            groupInfo = bd;
                             break;
                         }
                     }
 
-                    if (null == brokerData) {
+                    if (null == groupInfo) {
                         continue;
                     }
 
-                    if (!brokerData.getBrokerAddrs().containsKey(MQConstants.MASTER_ID)) {
+                    if (!groupInfo.getBrokerAddrs().containsKey(MQConstants.MASTER_ID)) {
                         continue;
                     }
 
@@ -577,8 +577,8 @@ public class MQClientInstance {
     private boolean isBrokerAddrExistInTopicRouteTable(final String addr) {
         for (Entry<String, TopicRouteData> entry : this.topicRouteTable.entrySet()) {
             TopicRouteData topicRouteData = entry.getValue();
-            List<BrokerData> bds = topicRouteData.getBrokerList();
-            for (BrokerData bd : bds) {
+            List<GroupInfo> bds = topicRouteData.getBrokerList();
+            for (GroupInfo bd : bds) {
                 if (bd.getBrokerAddrs() != null) {
                     boolean exist = bd.getBrokerAddrs().containsValue(addr);
                     if (exist)
@@ -792,7 +792,7 @@ public class MQClientInstance {
 
                         if (changed) {
 
-                            for (BrokerData bd : topicRouteData.getBrokerList()) {
+                            for (GroupInfo bd : topicRouteData.getBrokerList()) {
                                 this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
                             }
 
@@ -894,8 +894,8 @@ public class MQClientInstance {
 
     private boolean isBrokerInNameServer(final String brokerAddr) {
         for (Entry<String, TopicRouteData> itNext : this.topicRouteTable.entrySet()) {
-            List<BrokerData> brokerDatas = itNext.getValue().getBrokerList();
-            for (BrokerData bd : brokerDatas) {
+            List<GroupInfo> groupInfos = itNext.getValue().getBrokerList();
+            for (GroupInfo bd : groupInfos) {
                 boolean contain = bd.getBrokerAddrs().containsValue(brokerAddr);
                 if (contain)
                     return true;
@@ -1221,10 +1221,10 @@ public class MQClientInstance {
     public String findBrokerAddrByTopic(final String topic) {
         TopicRouteData topicRouteData = this.topicRouteTable.get(topic);
         if (topicRouteData != null) {
-            List<BrokerData> brokers = topicRouteData.getBrokerList();
+            List<GroupInfo> brokers = topicRouteData.getBrokerList();
             if (!brokers.isEmpty()) {
                 int index = random.nextInt(brokers.size());
-                BrokerData bd = brokers.get(index % brokers.size());
+                GroupInfo bd = brokers.get(index % brokers.size());
                 return bd.selectBrokerAddr();
             }
         }

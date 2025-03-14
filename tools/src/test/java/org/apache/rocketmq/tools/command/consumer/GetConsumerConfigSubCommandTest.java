@@ -25,7 +25,7 @@ import org.apache.commons.cli.Options;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.body.Connection;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.common.utils.ServerUtil;
 import org.apache.rocketmq.tools.command.SubCommandException;
 import org.apache.rocketmq.tools.command.server.ServerResponseMocker;
@@ -68,14 +68,14 @@ public class GetConsumerConfigSubCommandTest {
     private ServerResponseMocker startNameServer() {
         ClusterInfo clusterInfo = new ClusterInfo();
 
-        HashMap<String, BrokerData> brokerAddressTable = new HashMap<>();
-        BrokerData brokerData = new BrokerData();
-        brokerData.setBrokerName("mockBrokerName");
+        HashMap<String, GroupInfo> brokerAddressTable = new HashMap<>();
+        GroupInfo groupInfo = new GroupInfo();
+        groupInfo.setBrokerName("mockBrokerName");
         HashMap<Long, String> brokerAddress = new HashMap<>();
         brokerAddress.put(1L, "127.0.0.1:" + brokerMocker.listenPort());
-        brokerData.setBrokerAddrs(brokerAddress);
-        brokerData.setCluster("mockCluster");
-        brokerAddressTable.put("mockBrokerName", brokerData);
+        groupInfo.setBrokerAddrs(brokerAddress);
+        groupInfo.setCluster("mockCluster");
+        brokerAddressTable.put("mockBrokerName", groupInfo);
         clusterInfo.setBrokerAddrTable(brokerAddressTable);
 
         HashMap<String, Set<String>> clusterAddressTable = new HashMap<>();

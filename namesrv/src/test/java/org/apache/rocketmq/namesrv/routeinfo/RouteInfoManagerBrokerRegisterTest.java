@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.rocketmq.common.domain.namesrv.NamesrvConfig;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.junit.After;
 import org.junit.Assert;
@@ -56,7 +56,7 @@ public class RouteInfoManagerBrokerRegisterTest extends RouteInfoManagerTestBase
     public void terminate() {
         routeInfoManager.printAllPeriodically();
 
-        for (BrokerData bd : cluster.brokerDataMap.values()) {
+        for (GroupInfo bd : cluster.brokerDataMap.values()) {
             unregisterBrokerAll(routeInfoManager, bd);
         }
     }
@@ -85,10 +85,10 @@ public class RouteInfoManagerBrokerRegisterTest extends RouteInfoManagerTestBase
 
         String originMasterAddr = getBrokerAddr(clusterName, brokerName, MQConstants.MASTER_ID);
         TopicRouteData topicRouteData = routeInfoManager.pickupTopicRouteData(topicName);
-        BrokerData brokerDataOrigin = findBrokerDataByBrokerName(topicRouteData.getBrokerList(), brokerName);
+        GroupInfo groupInfoOrigin = findBrokerDataByBrokerName(topicRouteData.getBrokerList(), brokerName);
 
         // check origin master address
-        Assert.assertEquals(brokerDataOrigin.getBrokerAddrs().get(MQConstants.MASTER_ID), originMasterAddr);
+        Assert.assertEquals(groupInfoOrigin.getBrokerAddrs().get(MQConstants.MASTER_ID), originMasterAddr);
 
         // master changed
         String newMasterAddr = getBrokerAddr(clusterName, brokerName, 1);
@@ -102,10 +102,10 @@ public class RouteInfoManagerBrokerRegisterTest extends RouteInfoManagerTestBase
             new ArrayList<>());
 
         topicRouteData = routeInfoManager.pickupTopicRouteData(topicName);
-        brokerDataOrigin = findBrokerDataByBrokerName(topicRouteData.getBrokerList(), brokerName);
+        groupInfoOrigin = findBrokerDataByBrokerName(topicRouteData.getBrokerList(), brokerName);
 
         // check new master address
-        assertEquals(brokerDataOrigin.getBrokerAddrs().get(MQConstants.MASTER_ID), newMasterAddr);
+        assertEquals(groupInfoOrigin.getBrokerAddrs().get(MQConstants.MASTER_ID), newMasterAddr);
     }
 
     @Test

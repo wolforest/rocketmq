@@ -37,7 +37,7 @@ import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicList;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.UnRegisterBrokerRequestHeader;
 import org.apache.rocketmq.remoting.protocol.namesrv.RegisterBrokerResult;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.junit.After;
@@ -477,13 +477,13 @@ public class RouteInfoManagerNewTest {
         assertThat(orderRoute.getBrokerList()).hasSize(2);
         assertThat(orderRoute.getQueueList()).hasSize(2);
 
-        for (final BrokerData brokerData : orderRoute.getBrokerList()) {
-            if (brokerData.getBrokerAddrs().size() == 1) {
-                assertThat(brokerData.getBrokerAddrs()).containsOnlyKeys(MQConstants.MASTER_ID);
-                assertThat(brokerData.getBrokerAddrs()).containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
-            } else if (brokerData.getBrokerAddrs().size() == 2) {
-                assertThat(brokerData.getBrokerAddrs()).containsKeys(MQConstants.MASTER_ID, (long) slave1.brokerId);
-                assertThat(brokerData.getBrokerAddrs()).containsValues(master1.brokerAddr, slave1.brokerAddr);
+        for (final GroupInfo groupInfo : orderRoute.getBrokerList()) {
+            if (groupInfo.getBrokerAddrs().size() == 1) {
+                assertThat(groupInfo.getBrokerAddrs()).containsOnlyKeys(MQConstants.MASTER_ID);
+                assertThat(groupInfo.getBrokerAddrs()).containsValue(BrokerBasicInfo.slaveBroker().brokerAddr);
+            } else if (groupInfo.getBrokerAddrs().size() == 2) {
+                assertThat(groupInfo.getBrokerAddrs()).containsKeys(MQConstants.MASTER_ID, (long) slave1.brokerId);
+                assertThat(groupInfo.getBrokerAddrs()).containsValues(master1.brokerAddr, slave1.brokerAddr);
             } else {
                 throw new RuntimeException("Shouldn't reach here");
             }

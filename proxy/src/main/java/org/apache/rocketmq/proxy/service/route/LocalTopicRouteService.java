@@ -28,14 +28,14 @@ import org.apache.rocketmq.proxy.common.Address;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.ConfigurationManager;
 import org.apache.rocketmq.client.impl.mqclient.MQClientAPIFactory;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
 public class LocalTopicRouteService extends TopicRouteService {
 
     private final Broker broker;
-    private final List<BrokerData> brokerDataList;
+    private final List<GroupInfo> groupInfoList;
     private final int grpcPort;
 
     public LocalTopicRouteService(Broker broker, MQClientAPIFactory mqClientAPIFactory) {
@@ -44,8 +44,8 @@ public class LocalTopicRouteService extends TopicRouteService {
         BrokerConfig brokerConfig = this.broker.getBrokerConfig();
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, this.broker.getBrokerAddr());
-        this.brokerDataList = Lists.newArrayList(
-            new BrokerData(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(), brokerAddrs)
+        this.groupInfoList = Lists.newArrayList(
+            new GroupInfo(brokerConfig.getBrokerClusterName(), brokerConfig.getBrokerName(), brokerAddrs)
         );
         this.grpcPort = ConfigurationManager.getProxyConfig().getGrpcServerPort();
     }
@@ -87,7 +87,7 @@ public class LocalTopicRouteService extends TopicRouteService {
 
     protected TopicRouteData toTopicRouteData(TopicConfig topicConfig) {
         TopicRouteData topicRouteData = new TopicRouteData();
-        topicRouteData.setBrokerList(brokerDataList);
+        topicRouteData.setBrokerList(groupInfoList);
 
         QueueData queueData = new QueueData();
         queueData.setPerm(topicConfig.getPerm());

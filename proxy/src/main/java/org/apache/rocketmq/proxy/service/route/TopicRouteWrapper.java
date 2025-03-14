@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
@@ -29,15 +29,15 @@ public class TopicRouteWrapper {
 
     private final TopicRouteData topicRouteData;
     private final String topicName;
-    private final Map<String/* brokerName */, BrokerData> brokerNameRouteData = new HashMap<>();
+    private final Map<String/* brokerName */, GroupInfo> brokerNameRouteData = new HashMap<>();
 
     public TopicRouteWrapper(TopicRouteData topicRouteData, String topicName) {
         this.topicRouteData = topicRouteData;
         this.topicName = topicName;
 
         if (this.topicRouteData.getBrokerList() != null) {
-            for (BrokerData brokerData : this.topicRouteData.getBrokerList()) {
-                this.brokerNameRouteData.put(brokerData.getBrokerName(), brokerData);
+            for (GroupInfo groupInfo : this.topicRouteData.getBrokerList()) {
+                this.brokerNameRouteData.put(groupInfo.getBrokerName(), groupInfo);
             }
         }
     }

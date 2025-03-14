@@ -47,15 +47,15 @@ public class TopicRouteDataTest {
         brokerAddrs.put(0L, "192.168.0.47:10911");
         brokerAddrs.put(1L, "192.168.0.47:10921");
 
-        BrokerData brokerData = new BrokerData();
-        brokerData.setBrokerAddrs(brokerAddrs);
-        brokerData.setBrokerName("broker-a");
-        brokerData.setCluster("TestCluster");
+        GroupInfo groupInfo = new GroupInfo();
+        groupInfo.setBrokerAddrs(brokerAddrs);
+        groupInfo.setBrokerName("broker-a");
+        groupInfo.setCluster("TestCluster");
 
-        List<BrokerData> brokerDataList = new ArrayList<>();
-        brokerDataList.add(brokerData);
+        List<GroupInfo> groupInfoList = new ArrayList<>();
+        groupInfoList.add(groupInfo);
 
-        topicRouteData.setBrokerList(brokerDataList);
+        topicRouteData.setBrokerList(groupInfoList);
         topicRouteData.setFilterServerTable(new HashMap<>());
         topicRouteData.setQueueList(queueDataList);
 
@@ -82,15 +82,15 @@ public class TopicRouteDataTest {
         brokerAddrs.put(0L, "192.168.0.47:10911");
         brokerAddrs.put(1L, "192.168.0.47:10921");
 
-        BrokerData brokerData = new BrokerData();
-        brokerData.setBrokerAddrs(brokerAddrs);
-        brokerData.setBrokerName("broker-a");
-        brokerData.setCluster("TestCluster");
+        GroupInfo groupInfo = new GroupInfo();
+        groupInfo.setBrokerAddrs(brokerAddrs);
+        groupInfo.setBrokerName("broker-a");
+        groupInfo.setCluster("TestCluster");
 
-        List<BrokerData> brokerDataList = new ArrayList<>();
-        brokerDataList.add(brokerData);
+        List<GroupInfo> groupInfoList = new ArrayList<>();
+        groupInfoList.add(groupInfo);
 
-        topicRouteData.setBrokerList(brokerDataList);
+        topicRouteData.setBrokerList(groupInfoList);
         topicRouteData.setFilterServerTable(new HashMap<>());
         topicRouteData.setQueueList(queueDataList);
 

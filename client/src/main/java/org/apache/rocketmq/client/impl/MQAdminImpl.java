@@ -55,7 +55,7 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.header.QueryMessageRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.QueryMessageResponseHeader;
-import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.GroupInfo;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 
 public class MQAdminImpl {
@@ -86,17 +86,17 @@ public class MQAdminImpl {
             Validators.checkTopic(newTopic);
             Validators.isSystemTopic(newTopic);
             TopicRouteData topicRouteData = this.mQClientFactory.getMQClientAPIImpl().getTopicRouteInfoFromNameServer(key, timeoutMillis);
-            List<BrokerData> brokerDataList = topicRouteData.getBrokerList();
-            if (brokerDataList != null && !brokerDataList.isEmpty()) {
-                Collections.sort(brokerDataList);
+            List<GroupInfo> groupInfoList = topicRouteData.getBrokerList();
+            if (groupInfoList != null && !groupInfoList.isEmpty()) {
+                Collections.sort(groupInfoList);
 
                 boolean createOKAtLeastOnce = false;
                 MQClientException exception = null;
 
                 StringBuilder orderTopicString = new StringBuilder();
 
-                for (BrokerData brokerData : brokerDataList) {
-                    String addr = brokerData.getBrokerAddrs().get(MQConstants.MASTER_ID);
+                for (GroupInfo groupInfo : groupInfoList) {
+                    String addr = groupInfo.getBrokerAddrs().get(MQConstants.MASTER_ID);
                     if (addr != null) {
                         TopicConfig topicConfig = new TopicConfig(newTopic);
                         topicConfig.setReadQueueNums(queueNum);
@@ -119,7 +119,7 @@ public class MQAdminImpl {
                         }
 
                         if (createOK) {
-                            orderTopicString.append(brokerData.getBrokerName());
+                            orderTopicString.append(groupInfo.getBrokerName());
                             orderTopicString.append(":");
                             orderTopicString.append(queueNum);
                             orderTopicString.append(";");
@@ -329,12 +329,12 @@ public class MQAdminImpl {
 
         if (topicRouteData != null) {
             List<String> brokerAddrs = new LinkedList<>();
-            for (BrokerData brokerData : topicRouteData.getBrokerList()) {
+            for (GroupInfo groupInfo : topicRouteData.getBrokerList()) {
                 if (clusterName != null && !clusterName.isEmpty()
-                    && !clusterName.equals(brokerData.getCluster())) {
+                    && !clusterName.equals(groupInfo.getCluster())) {
                     continue;
                 }
-                String addr = brokerData.selectBrokerAddr();
+                String addr = groupInfo.selectBrokerAddr();
                 if (addr != null) {
                     brokerAddrs.add(addr);
                 }
