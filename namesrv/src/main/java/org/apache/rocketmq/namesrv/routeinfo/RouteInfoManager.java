@@ -308,8 +308,7 @@ public class RouteInfoManager {
 
             if (null != topicConfigWrapper && (isMaster || isPrimeSlave)) {
 
-                ConcurrentMap<String, TopicConfig> tcTable =
-                    topicConfigWrapper.getTopicConfigTable();
+                ConcurrentMap<String, TopicConfig> tcTable = topicConfigWrapper.getTopicConfigTable();
 
                 if (tcTable != null) {
 
@@ -709,31 +708,33 @@ public class RouteInfoManager {
         try {
             this.lock.readLock().lockInterruptibly();
             Map<String, QueueData> queueDataMap = this.topicQueueTable.get(topic);
-            if (queueDataMap != null) {
-                topicRouteData.setQueueList(new ArrayList<>(queueDataMap.values()));
-                foundQueueData = true;
+            if (queueDataMap == null) {
+                return null;
+            }
 
-                Set<String> brokerNameSet = new HashSet<>(queueDataMap.keySet());
+            topicRouteData.setQueueList(new ArrayList<>(queueDataMap.values()));
+            foundQueueData = true;
 
-                for (String brokerName : brokerNameSet) {
-                    BrokerData brokerData = this.brokerAddrTable.get(brokerName);
-                    if (null == brokerData) {
-                        continue;
-                    }
-                    BrokerData brokerDataClone = new BrokerData(brokerData);
+            Set<String> brokerNameSet = new HashSet<>(queueDataMap.keySet());
 
-                    brokerDataList.add(brokerDataClone);
-                    foundBrokerData = true;
-                    if (filterServerTable.isEmpty()) {
-                        continue;
-                    }
-                    for (final String brokerAddr : brokerDataClone.getBrokerAddrs().values()) {
-                        BrokerAddrInfo brokerAddrInfo = new BrokerAddrInfo(brokerDataClone.getCluster(), brokerAddr);
-                        List<String> filterServerList = this.filterServerTable.get(brokerAddrInfo);
-                        filterServerMap.put(brokerAddr, filterServerList);
-                    }
-
+            for (String brokerName : brokerNameSet) {
+                BrokerData brokerData = this.brokerAddrTable.get(brokerName);
+                if (null == brokerData) {
+                    continue;
                 }
+                BrokerData brokerDataClone = new BrokerData(brokerData);
+
+                brokerDataList.add(brokerDataClone);
+                foundBrokerData = true;
+                if (filterServerTable.isEmpty()) {
+                    continue;
+                }
+                for (final String brokerAddr : brokerDataClone.getBrokerAddrs().values()) {
+                    BrokerAddrInfo brokerAddrInfo = new BrokerAddrInfo(brokerDataClone.getCluster(), brokerAddr);
+                    List<String> filterServerList = this.filterServerTable.get(brokerAddrInfo);
+                    filterServerMap.put(brokerAddr, filterServerList);
+                }
+
             }
         } catch (Exception e) {
             log.error("pickupTopicRouteData Exception", e);

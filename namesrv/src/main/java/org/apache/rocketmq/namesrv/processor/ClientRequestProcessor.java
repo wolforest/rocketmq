@@ -82,20 +82,22 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
         }
 
         if (this.namesrvController.getNamesrvConfig().isOrderMessageEnable()) {
-            String orderTopicConf =
-                this.namesrvController.getKvConfigManager().getKVConfig(
-                    NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG,
-                    requestHeader.getTopic()
-                );
+            String orderTopicConf = this.namesrvController.getKvConfigManager().getKVConfig(
+                NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG,
+                requestHeader.getTopic()
+            );
             topicRouteData.setOrderTopicConf(orderTopicConf);
         }
 
         byte[] content;
         Boolean standardJsonOnly = Optional.ofNullable(requestHeader.getAcceptStandardJsonOnly()).orElse(false);
         if (request.getVersion() >= MQVersion.Version.V4_9_4.ordinal() || standardJsonOnly) {
-            content = topicRouteData.encode(SerializerFeature.BrowserCompatible,
-                SerializerFeature.QuoteFieldNames, SerializerFeature.SkipTransientField,
-                SerializerFeature.MapSortField);
+            content = topicRouteData.encode(
+                SerializerFeature.BrowserCompatible,
+                SerializerFeature.QuoteFieldNames,
+                SerializerFeature.SkipTransientField,
+                SerializerFeature.MapSortField
+            );
         } else {
             content = topicRouteData.encode();
         }
