@@ -77,7 +77,10 @@ public class RouteInfoManager {
      * @renamed from brokerAddrTable to groupMap
      */
     private final ConcurrentMap<String/* brokerName */, GroupInfo> groupMap;
-    private final ConcurrentMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
+    /**
+     * @renamed from clusterAddrTable to clusterMap
+     */
+    private final ConcurrentMap<String/* clusterName */, Set<String/* brokerName */>> clusterMap;
     private final ConcurrentMap<BrokerAddrInfo/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
     private final ConcurrentMap<BrokerAddrInfo/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
     private final ConcurrentMap<String/* topic */, Map<String/*brokerName*/, TopicQueueMappingInfo>> topicQueueMappingInfoTable;
@@ -90,7 +93,7 @@ public class RouteInfoManager {
     public RouteInfoManager(final NamesrvConfig namesrvConfig, NamesrvController namesrvController) {
         this.topicQueueTable = new ConcurrentHashMap<>(1024);
         this.groupMap = new ConcurrentHashMap<>(128);
-        this.clusterAddrTable = new ConcurrentHashMap<>(32);
+        this.clusterMap = new ConcurrentHashMap<>(32);
         this.brokerLiveTable = new ConcurrentHashMap<>(256);
         this.filterServerTable = new ConcurrentHashMap<>(256);
         this.topicQueueMappingInfoTable = new ConcurrentHashMap<>(1024);
@@ -119,7 +122,7 @@ public class RouteInfoManager {
     public ClusterInfo getAllClusterInfo() {
         ClusterInfo clusterInfoSerializeWrapper = new ClusterInfo();
         clusterInfoSerializeWrapper.setBrokerAddrTable(this.groupMap);
-        clusterInfoSerializeWrapper.setClusterAddrTable(this.clusterAddrTable);
+        clusterInfoSerializeWrapper.setClusterAddrTable(this.clusterMap);
         return clusterInfoSerializeWrapper;
     }
 
@@ -171,7 +174,7 @@ public class RouteInfoManager {
         try {
             this.lock.writeLock().lockInterruptibly();
             //get all the brokerNames fot the specified cluster
-            Set<String> brokerNames = this.clusterAddrTable.get(clusterName);
+            Set<String> brokerNames = this.clusterMap.get(clusterName);
             if (brokerNames == null || brokerNames.isEmpty()) {
                 return;
             }
@@ -241,7 +244,7 @@ public class RouteInfoManager {
             this.lock.writeLock().lockInterruptibly();
 
             //init or update the cluster info
-            Set<String> brokerNames = clusterAddrTable.computeIfAbsent(clusterName, k -> new HashSet<>());
+            Set<String> brokerNames = clusterMap.computeIfAbsent(clusterName, k -> new HashSet<>());
             brokerNames.add(brokerName);
 
             boolean registerFirst = false;
@@ -615,7 +618,7 @@ public class RouteInfoManager {
                 }
 
                 if (removeBrokerName) {
-                    Set<String> nameSet = this.clusterAddrTable.get(clusterName);
+                    Set<String> nameSet = this.clusterMap.get(clusterName);
                     if (nameSet != null) {
                         boolean removed = nameSet.remove(brokerName);
                         log.info("unregisterBroker, remove name from clusterAddrTable {}, {}",
@@ -623,7 +626,7 @@ public class RouteInfoManager {
                             brokerName);
 
                         if (nameSet.isEmpty()) {
-                            this.clusterAddrTable.remove(clusterName);
+                            this.clusterMap.remove(clusterName);
                             log.info("unregisterBroker, remove cluster from clusterAddrTable {}",
                                 clusterName
                             );
@@ -994,8 +997,8 @@ public class RouteInfoManager {
                 }
 
                 {
-                    log.info("clusterAddrTable SIZE: {}", this.clusterAddrTable.size());
-                    for (Entry<String, Set<String>> next : this.clusterAddrTable.entrySet()) {
+                    log.info("clusterAddrTable SIZE: {}", this.clusterMap.size());
+                    for (Entry<String, Set<String>> next : this.clusterMap.entrySet()) {
                         log.info("clusterAddrTable clusterName: {} {}", next.getKey(), next.getValue());
                     }
                 }
@@ -1011,7 +1014,7 @@ public class RouteInfoManager {
         TopicList topicList = new TopicList();
         try {
             this.lock.readLock().lockInterruptibly();
-            for (Map.Entry<String, Set<String>> entry : clusterAddrTable.entrySet()) {
+            for (Map.Entry<String, Set<String>> entry : clusterMap.entrySet()) {
                 topicList.getTopicList().add(entry.getKey());
                 topicList.getTopicList().addAll(entry.getValue());
             }
@@ -1042,7 +1045,7 @@ public class RouteInfoManager {
         TopicList topicList = new TopicList();
         try {
             this.lock.readLock().lockInterruptibly();
-            Set<String> brokerNameSet = this.clusterAddrTable.get(cluster);
+            Set<String> brokerNameSet = this.clusterMap.get(cluster);
             for (String brokerName : brokerNameSet) {
                 for (Entry<String, Map<String, QueueData>> topicEntry : this.topicQueueTable.entrySet()) {
                     String topic = topicEntry.getKey();
