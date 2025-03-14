@@ -310,10 +310,10 @@ public class RouteInfoManager {
 
             boolean isMaster = MQConstants.MASTER_ID == brokerId;
             boolean isPrimeSlave = !isOldVersionBroker && !isMaster
-                && brokerId == Collections.min(brokerAddrsMap.keySet());
+                && brokerId == Collections.min(brokerAddrsMap.keySet())
+            ;
 
             if (null != topicConfigWrapper && (isMaster || isPrimeSlave)) {
-
                 ConcurrentMap<String, TopicConfig> tcTable = topicConfigWrapper.getTopicConfigTable();
 
                 if (tcTable != null) {
@@ -323,6 +323,7 @@ public class RouteInfoManager {
 
                     // Delete the topics that don't exist in tcTable from the current broker
                     // Static topic is not supported currently
+                    // false in default setting
                     if (namesrvConfig.isDeleteTopicWithBrokerRegistration() && topicQueueMappingInfoMap.isEmpty()) {
                         final Set<String> oldTopicSet = topicSetOfBrokerName(brokerName);
                         final Set<String> newTopicSet = tcTable.keySet();
@@ -342,9 +343,7 @@ public class RouteInfoManager {
                     }
 
                     for (Map.Entry<String, TopicConfig> entry : tcTable.entrySet()) {
-                        if (registerFirst || this.isTopicConfigChanged(clusterName, brokerAddr,
-                            topicConfigWrapper.getDataVersion(), brokerName,
-                            entry.getValue().getTopicName())) {
+                        if (registerFirst || this.isTopicConfigChanged(clusterName, brokerAddr, topicConfigWrapper.getDataVersion(), brokerName, entry.getValue().getTopicName())) {
                             final TopicConfig topicConfig = entry.getValue();
                             // In Slave Acting Master mode, Namesrv will regard the surviving Slave with the smallest brokerId as the "agent" Master, and modify the brokerPermission to read-only.
                             if (isPrimeSlave && groupInfo.isEnableActingMaster()) {
