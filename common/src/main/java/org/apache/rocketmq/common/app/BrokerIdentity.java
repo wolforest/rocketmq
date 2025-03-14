@@ -47,10 +47,25 @@ public class BrokerIdentity {
     // load it after the localHostName is initialized
     public static final BrokerIdentity BROKER_CONTAINER_IDENTITY = new BrokerIdentity(true);
 
-    @ImportantField
-    private String brokerName = defaultBrokerName();
+    /**
+     * the rocketmq servers are grouped by:
+     *      zone -> cluster -> brokerName -> brokerId
+     * zone: datacenter
+     *      one zone can have multiple clusters
+     * cluster:
+     *      one cluster can have multiple brokers
+     * brokerName: server group
+     *      one broker can have multiple servers
+     *      group maybe a better name
+     * brokerId: server id
+     *      It is not unique among brokers
+     *      brokerId is unique in brokerName
+     *      groupNo maybe a better name
+     */
     @ImportantField
     private String brokerClusterName = DEFAULT_CLUSTER_NAME;
+    @ImportantField
+    private String brokerName = defaultBrokerName();
     @ImportantField
     private volatile long brokerId = MQConstants.MASTER_ID;
 

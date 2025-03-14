@@ -750,6 +750,7 @@ public class RouteInfoManager {
 
         topicRouteData.setTopicQueueMappingByBroker(this.topicQueueMappingInfoTable.get(topic));
 
+        // Acting master is not supported in default setting
         if (!namesrvConfig.isSupportActingMaster()) {
             return topicRouteData;
         }
