@@ -73,7 +73,10 @@ public class RouteInfoManager {
      * topic -> brokerName -> QueueData
      */
     private final ConcurrentMap<String/* topic */, Map<String, QueueData>> topicQueueTable;
-    private final ConcurrentMap<String/* brokerName */, GroupInfo> brokerAddrTable;
+    /**
+     * @renamed from brokerAddrTable to groupMap
+     */
+    private final ConcurrentMap<String/* brokerName */, GroupInfo> groupMap;
     private final ConcurrentMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
     private final ConcurrentMap<BrokerAddrInfo/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
     private final ConcurrentMap<BrokerAddrInfo/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
@@ -86,7 +89,7 @@ public class RouteInfoManager {
 
     public RouteInfoManager(final NamesrvConfig namesrvConfig, NamesrvController namesrvController) {
         this.topicQueueTable = new ConcurrentHashMap<>(1024);
-        this.brokerAddrTable = new ConcurrentHashMap<>(128);
+        this.groupMap = new ConcurrentHashMap<>(128);
         this.clusterAddrTable = new ConcurrentHashMap<>(32);
         this.brokerLiveTable = new ConcurrentHashMap<>(256);
         this.filterServerTable = new ConcurrentHashMap<>(256);
@@ -115,7 +118,7 @@ public class RouteInfoManager {
 
     public ClusterInfo getAllClusterInfo() {
         ClusterInfo clusterInfoSerializeWrapper = new ClusterInfo();
-        clusterInfoSerializeWrapper.setBrokerAddrTable(this.brokerAddrTable);
+        clusterInfoSerializeWrapper.setBrokerAddrTable(this.groupMap);
         clusterInfoSerializeWrapper.setClusterAddrTable(this.clusterAddrTable);
         return clusterInfoSerializeWrapper;
     }
@@ -140,7 +143,7 @@ public class RouteInfoManager {
             }
 
             for (QueueData queueData : queueDatas) {
-                if (!this.brokerAddrTable.containsKey(queueData.getBrokerName())) {
+                if (!this.groupMap.containsKey(queueData.getBrokerName())) {
                     log.warn("Register topic contains illegal broker, {}, {}", topic, queueData);
                     return;
                 }
@@ -243,11 +246,11 @@ public class RouteInfoManager {
 
             boolean registerFirst = false;
 
-            GroupInfo groupInfo = this.brokerAddrTable.get(brokerName);
+            GroupInfo groupInfo = this.groupMap.get(brokerName);
             if (null == groupInfo) {
                 registerFirst = true;
                 groupInfo = new GroupInfo(clusterName, brokerName, new HashMap<>());
-                this.brokerAddrTable.put(brokerName, groupInfo);
+                this.groupMap.put(brokerName, groupInfo);
             }
 
             boolean isOldVersionBroker = enableActingMaster == null;
@@ -422,7 +425,7 @@ public class RouteInfoManager {
         BrokerMemberGroup groupMember = new BrokerMemberGroup(clusterName, brokerName);
         try {
             this.lock.readLock().lockInterruptibly();
-            final GroupInfo groupInfo = this.brokerAddrTable.get(brokerName);
+            final GroupInfo groupInfo = this.groupMap.get(brokerName);
             if (groupInfo != null) {
                 groupMember.getBrokerAddrs().putAll(groupInfo.getBrokerAddrs());
             }
@@ -587,7 +590,7 @@ public class RouteInfoManager {
 
                 boolean removeBrokerName = false;
                 boolean isMinBrokerIdChanged = false;
-                GroupInfo groupInfo = this.brokerAddrTable.get(brokerName);
+                GroupInfo groupInfo = this.groupMap.get(brokerName);
                 if (null != groupInfo) {
                     if (!groupInfo.getBrokerAddrs().isEmpty() &&
                         unRegisterRequest.getBrokerId().equals(Collections.min(groupInfo.getBrokerAddrs().keySet()))) {
@@ -599,7 +602,7 @@ public class RouteInfoManager {
                         brokerAddrInfo
                     );
                     if (groupInfo.getBrokerAddrs().isEmpty()) {
-                        this.brokerAddrTable.remove(brokerName);
+                        this.groupMap.remove(brokerName);
                         log.info("unregisterBroker, remove name from brokerAddrTable OK, {}",
                             brokerName
                         );
@@ -670,7 +673,7 @@ public class RouteInfoManager {
                     continue;
                 }
 
-                if (!this.brokerAddrTable.get(brokerName).isEnableActingMaster()) {
+                if (!this.groupMap.get(brokerName).isEnableActingMaster()) {
                     continue;
                 }
 
@@ -683,7 +686,7 @@ public class RouteInfoManager {
     }
 
     private boolean isNoMasterExists(String brokerName) {
-        final GroupInfo groupInfo = this.brokerAddrTable.get(brokerName);
+        final GroupInfo groupInfo = this.groupMap.get(brokerName);
         if (groupInfo == null) {
             return true;
         }
@@ -718,7 +721,7 @@ public class RouteInfoManager {
             Set<String> brokerNameSet = new HashSet<>(queueDataMap.keySet());
 
             for (String brokerName : brokerNameSet) {
-                GroupInfo groupInfo = this.brokerAddrTable.get(brokerName);
+                GroupInfo groupInfo = this.groupMap.get(brokerName);
                 if (null == groupInfo) {
                     continue;
                 }
@@ -888,7 +891,7 @@ public class RouteInfoManager {
         unRegisterRequest.setClusterName(brokerAddrInfo.getClusterName());
         unRegisterRequest.setBrokerAddr(brokerAddrInfo.getBrokerAddr());
 
-        for (Entry<String, GroupInfo> stringBrokerDataEntry : this.brokerAddrTable.entrySet()) {
+        for (Entry<String, GroupInfo> stringBrokerDataEntry : this.groupMap.entrySet()) {
             GroupInfo groupInfo = stringBrokerDataEntry.getValue();
             if (!brokerAddrInfo.getClusterName().equals(groupInfo.getCluster())) {
                 continue;
@@ -915,7 +918,7 @@ public class RouteInfoManager {
         RemotingTooMuchRequestException {
         for (String brokerName : needNotifyBrokerMap.keySet()) {
             BrokerStatusChangeInfo brokerStatusChangeInfo = needNotifyBrokerMap.get(brokerName);
-            GroupInfo groupInfo = brokerAddrTable.get(brokerName);
+            GroupInfo groupInfo = groupMap.get(brokerName);
             if (groupInfo != null && groupInfo.isEnableActingMaster()) {
                 notifyMinBrokerIdChanged(brokerStatusChangeInfo.getBrokerAddrs(),
                     brokerStatusChangeInfo.getOfflineBrokerAddr(), brokerStatusChangeInfo.getHaBrokerAddr());
@@ -977,8 +980,8 @@ public class RouteInfoManager {
                 }
 
                 {
-                    log.info("brokerAddrTable SIZE: {}", this.brokerAddrTable.size());
-                    for (Entry<String, GroupInfo> next : this.brokerAddrTable.entrySet()) {
+                    log.info("brokerAddrTable SIZE: {}", this.groupMap.size());
+                    for (Entry<String, GroupInfo> next : this.groupMap.entrySet()) {
                         log.info("brokerAddrTable brokerName: {} {}", next.getKey(), next.getValue());
                     }
                 }
@@ -1013,12 +1016,12 @@ public class RouteInfoManager {
                 topicList.getTopicList().addAll(entry.getValue());
             }
 
-            if (brokerAddrTable.isEmpty()) {
+            if (groupMap.isEmpty()) {
                 return topicList;
             }
 
-            for (String s : brokerAddrTable.keySet()) {
-                GroupInfo bd = brokerAddrTable.get(s);
+            for (String s : groupMap.keySet()) {
+                GroupInfo bd = groupMap.get(s);
                 HashMap<Long, String> brokerAddrs = bd.getBrokerAddrs();
                 if (brokerAddrs != null && !brokerAddrs.isEmpty()) {
                     Iterator<Long> it2 = brokerAddrs.keySet().iterator();
