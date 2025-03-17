@@ -71,8 +71,9 @@ public class RouteInfoManager {
     /**
      * topicQueueTable
      * topic -> brokerName -> QueueData
+     * @renamed from getTopicByGroup to topicMap
      */
-    private final ConcurrentMap<String/* topic */, Map<String, QueueData>> topicQueueTable;
+    private final ConcurrentMap<String/* topic */, Map<String, QueueData>> topicMap;
     /**
      * @renamed from brokerAddrTable to groupMap
      */
@@ -91,7 +92,7 @@ public class RouteInfoManager {
     private final NamesrvConfig namesrvConfig;
 
     public RouteInfoManager(final NamesrvConfig namesrvConfig, NamesrvController namesrvController) {
-        this.topicQueueTable = new ConcurrentHashMap<>(1024);
+        this.topicMap = new ConcurrentHashMap<>(1024);
         this.groupMap = new ConcurrentHashMap<>(128);
         this.clusterMap = new ConcurrentHashMap<>(32);
         this.brokerLiveTable = new ConcurrentHashMap<>(256);
@@ -135,13 +136,13 @@ public class RouteInfoManager {
             this.lock.writeLock().lockInterruptibly();
 
             Map<String, QueueData> queueDataMap;
-            if (this.topicQueueTable.containsKey(topic)) {
-                queueDataMap  = this.topicQueueTable.get(topic);
-                log.info("Topic route already exist.{}, {}", topic, this.topicQueueTable.get(topic));
+            if (this.topicMap.containsKey(topic)) {
+                queueDataMap  = this.topicMap.get(topic);
+                log.info("Topic route already exist.{}, {}", topic, this.topicMap.get(topic));
             } else {
                 // check and construct queue data map
                 queueDataMap = new HashMap<>();
-                this.topicQueueTable.put(topic, queueDataMap);
+                this.topicMap.put(topic, queueDataMap);
                 log.info("Register topic route:{}, {}", topic, queueDatas);
             }
 
@@ -162,7 +163,7 @@ public class RouteInfoManager {
     public void deleteTopic(final String topic) {
         try {
             this.lock.writeLock().lockInterruptibly();
-            this.topicQueueTable.remove(topic);
+            this.topicMap.remove(topic);
         } catch (Exception e) {
             log.error("deleteTopic Exception", e);
         } finally {
@@ -179,7 +180,7 @@ public class RouteInfoManager {
                 return;
             }
             //get the store information for single topic
-            Map<String, QueueData> queueDataMap = this.topicQueueTable.get(topic);
+            Map<String, QueueData> queueDataMap = this.topicMap.get(topic);
             if (queueDataMap != null) {
                 for (String brokerName : brokerNames) {
                     final QueueData removedQD = queueDataMap.remove(brokerName);
@@ -189,7 +190,7 @@ public class RouteInfoManager {
                 }
                 if (queueDataMap.isEmpty()) {
                     log.info("deleteTopic, remove the topic all queue {} {}", clusterName, topic);
-                    this.topicQueueTable.remove(topic);
+                    this.topicMap.remove(topic);
                 }
             }
         } catch (Exception e) {
@@ -203,7 +204,7 @@ public class RouteInfoManager {
         TopicList topicList = new TopicList();
         try {
             this.lock.readLock().lockInterruptibly();
-            topicList.getTopicList().addAll(this.topicQueueTable.keySet());
+            topicList.getTopicList().addAll(this.topicMap.keySet());
         } catch (Exception e) {
             log.error("getAllTopicList Exception", e);
         } finally {
@@ -329,7 +330,7 @@ public class RouteInfoManager {
                         final Set<String> newTopicSet = tcTable.keySet();
                         final Sets.SetView<String> toDeleteTopics = Sets.difference(oldTopicSet, newTopicSet);
                         for (final String toDeleteTopic : toDeleteTopics) {
-                            Map<String, QueueData> queueDataMap = topicQueueTable.get(toDeleteTopic);
+                            Map<String, QueueData> queueDataMap = topicMap.get(toDeleteTopic);
                             final QueueData removedQD = queueDataMap.remove(brokerName);
                             if (removedQD != null) {
                                 log.info("deleteTopic, remove one broker's topic {} {} {}", brokerName, toDeleteTopic, removedQD);
@@ -337,7 +338,7 @@ public class RouteInfoManager {
 
                             if (queueDataMap.isEmpty()) {
                                 log.info("deleteTopic, remove the topic all queue {}", toDeleteTopic);
-                                topicQueueTable.remove(toDeleteTopic);
+                                topicMap.remove(toDeleteTopic);
                             }
                         }
                     }
@@ -415,7 +416,7 @@ public class RouteInfoManager {
 
     private Set<String> topicSetOfBrokerName(final String brokerName) {
         Set<String> topicOfBroker = new HashSet<>();
-        for (final Entry<String, Map<String, QueueData>> entry : this.topicQueueTable.entrySet()) {
+        for (final Entry<String, Map<String, QueueData>> entry : this.topicMap.entrySet()) {
             if (entry.getValue().containsKey(brokerName)) {
                 topicOfBroker.add(entry.getKey());
             }
@@ -451,7 +452,7 @@ public class RouteInfoManager {
         if (isChange) {
             return true;
         }
-        final Map<String, QueueData> queueDataMap = this.topicQueueTable.get(topic);
+        final Map<String, QueueData> queueDataMap = this.topicMap.get(topic);
         if (queueDataMap == null || queueDataMap.isEmpty()) {
             return true;
         }
@@ -485,11 +486,11 @@ public class RouteInfoManager {
         queueData.setPerm(topicConfig.getPerm());
         queueData.setTopicSysFlag(topicConfig.getTopicSysFlag());
 
-        Map<String, QueueData> queueDataMap = this.topicQueueTable.get(topicConfig.getTopicName());
+        Map<String, QueueData> queueDataMap = this.topicMap.get(topicConfig.getTopicName());
         if (null == queueDataMap) {
             queueDataMap = new HashMap<>();
             queueDataMap.put(brokerName, queueData);
-            this.topicQueueTable.put(topicConfig.getTopicName(), queueDataMap);
+            this.topicMap.put(topicConfig.getTopicName(), queueDataMap);
             log.info("new topic registered, {} {}", topicConfig.getTopicName(), queueData);
             return;
         }
@@ -532,7 +533,7 @@ public class RouteInfoManager {
     private int operateWritePermOfBroker(final String brokerName, final int requestCode) {
         int topicCnt = 0;
 
-        for (Entry<String, Map<String, QueueData>> entry : this.topicQueueTable.entrySet()) {
+        for (Entry<String, Map<String, QueueData>> entry : this.topicMap.entrySet()) {
             Map<String, QueueData> qdMap = entry.getValue();
 
             final QueueData qd = qdMap.get(brokerName);
@@ -650,7 +651,7 @@ public class RouteInfoManager {
     }
 
     private void cleanTopicByUnRegisterRequests(Set<String> removedBroker, Set<String> reducedBroker) {
-        Iterator<Entry<String, Map<String, QueueData>>> itMap = this.topicQueueTable.entrySet().iterator();
+        Iterator<Entry<String, Map<String, QueueData>>> itMap = this.topicMap.entrySet().iterator();
         while (itMap.hasNext()) {
             Entry<String, Map<String, QueueData>> entry = itMap.next();
 
@@ -712,7 +713,7 @@ public class RouteInfoManager {
 
         try {
             this.lock.readLock().lockInterruptibly();
-            Map<String, QueueData> queueDataMap = this.topicQueueTable.get(topic);
+            Map<String, QueueData> queueDataMap = this.topicMap.get(topic);
             if (queueDataMap == null) {
                 return null;
             }
@@ -975,8 +976,8 @@ public class RouteInfoManager {
                 this.lock.readLock().lockInterruptibly();
                 log.info("--------------------------------------------------------");
                 {
-                    log.info("topicQueueTable SIZE: {}", this.topicQueueTable.size());
-                    for (Entry<String, Map<String, QueueData>> next : this.topicQueueTable.entrySet()) {
+                    log.info("topicQueueTable SIZE: {}", this.topicMap.size());
+                    for (Entry<String, Map<String, QueueData>> next : this.topicMap.entrySet()) {
                         log.info("topicQueueTable Topic: {} {}", next.getKey(), next.getValue());
                     }
                 }
@@ -1046,7 +1047,7 @@ public class RouteInfoManager {
             this.lock.readLock().lockInterruptibly();
             Set<String> brokerNameSet = this.clusterMap.get(cluster);
             for (String brokerName : brokerNameSet) {
-                for (Entry<String, Map<String, QueueData>> topicEntry : this.topicQueueTable.entrySet()) {
+                for (Entry<String, Map<String, QueueData>> topicEntry : this.topicMap.entrySet()) {
                     String topic = topicEntry.getKey();
                     Map<String, QueueData> queueDataMap = topicEntry.getValue();
                     final QueueData qd = queueDataMap.get(brokerName);
@@ -1068,7 +1069,7 @@ public class RouteInfoManager {
         TopicList topicList = new TopicList();
         try {
             this.lock.readLock().lockInterruptibly();
-            for (Entry<String, Map<String, QueueData>> topicEntry : this.topicQueueTable.entrySet()) {
+            for (Entry<String, Map<String, QueueData>> topicEntry : this.topicMap.entrySet()) {
                 String topic = topicEntry.getKey();
                 Map<String, QueueData> queueDatas = topicEntry.getValue();
                 if (queueDatas != null && !queueDatas.isEmpty()
@@ -1089,7 +1090,7 @@ public class RouteInfoManager {
         TopicList topicList = new TopicList();
         try {
             this.lock.readLock().lockInterruptibly();
-            for (Entry<String, Map<String, QueueData>> topicEntry : this.topicQueueTable.entrySet()) {
+            for (Entry<String, Map<String, QueueData>> topicEntry : this.topicMap.entrySet()) {
                 String topic = topicEntry.getKey();
                 Map<String, QueueData> queueDatas = topicEntry.getValue();
                 if (queueDatas != null && !queueDatas.isEmpty()
@@ -1110,7 +1111,7 @@ public class RouteInfoManager {
         TopicList topicList = new TopicList();
         try {
             this.lock.readLock().lockInterruptibly();
-            for (Entry<String, Map<String, QueueData>> topicEntry : this.topicQueueTable.entrySet()) {
+            for (Entry<String, Map<String, QueueData>> topicEntry : this.topicMap.entrySet()) {
                 String topic = topicEntry.getKey();
                 Map<String, QueueData> queueDatas = topicEntry.getValue();
                 if (queueDatas != null && !queueDatas.isEmpty()
