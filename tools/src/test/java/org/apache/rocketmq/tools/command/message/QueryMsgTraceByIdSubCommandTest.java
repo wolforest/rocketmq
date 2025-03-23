@@ -77,7 +77,7 @@ public class QueryMsgTraceByIdSubCommandTest {
         GroupInfo groupInfo = new GroupInfo("mockCluster", "mockBrokerName", brokerAddress);
         groupInfo.setBrokerName("mockBrokerName");
         dataList.add(groupInfo);
-        topicRouteData.setBrokerList(dataList);
+        topicRouteData.setBrokerDatas(dataList);
 
         List<QueueData> queueDatas = new ArrayList<>();
         QueueData queueData = new QueueData();
@@ -87,7 +87,7 @@ public class QueryMsgTraceByIdSubCommandTest {
         queueData.setTopicSysFlag(1);
         queueData.setWriteQueueNums(1);
         queueDatas.add(queueData);
-        topicRouteData.setQueueList(queueDatas);
+        topicRouteData.setQueueDatas(queueDatas);
 
         return ServerResponseMocker.startServer(topicRouteData.encode());
     }

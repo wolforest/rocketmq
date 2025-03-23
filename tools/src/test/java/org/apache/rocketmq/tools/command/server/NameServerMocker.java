@@ -52,7 +52,7 @@ public class NameServerMocker {
         GroupInfo groupInfo = new GroupInfo("mockCluster", "mockBrokerName", brokerAddress);
         groupInfo.setBrokerName("mockBrokerName");
         dataList.add(groupInfo);
-        topicRouteData.setBrokerList(dataList);
+        topicRouteData.setBrokerDatas(dataList);
         // start name server
         return ServerResponseMocker.startServer(topicRouteData.encode(), extMap);
     }

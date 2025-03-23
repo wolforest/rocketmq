@@ -69,13 +69,13 @@ public class BaseServiceTest extends InitConfigTest {
         when(mqClientAPIFactory.getClient()).thenReturn(mqClientAPIExt);
 
         queueData.setBrokerName(BROKER_NAME);
-        topicRouteData.setQueueList(Lists.newArrayList(queueData));
+        topicRouteData.setQueueDatas(Lists.newArrayList(queueData));
         groupInfo.setCluster(CLUSTER_NAME);
         groupInfo.setBrokerName(BROKER_NAME);
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, BROKER_ADDR);
         groupInfo.setBrokerAddrs(brokerAddrs);
-        topicRouteData.setBrokerList(Lists.newArrayList(groupInfo));
+        topicRouteData.setBrokerDatas(Lists.newArrayList(groupInfo));
 
         when(this.topicRouteService.getAllMessageQueueView(any(), eq(ERR_TOPIC))).thenThrow(new MQClientException(ResponseCode.TOPIC_NOT_EXIST, ""));
         when(this.topicRouteService.getAllMessageQueueView(any(), eq(TOPIC))).thenReturn(new MessageQueueView(TOPIC, topicRouteData, null));

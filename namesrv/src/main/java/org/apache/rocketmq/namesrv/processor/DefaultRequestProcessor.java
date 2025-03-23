@@ -458,8 +458,8 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         RegisterTopicRequestHeader requestHeader = request.decodeCommandCustomHeader(RegisterTopicRequestHeader.class);
 
         TopicRouteData topicRouteData = TopicRouteData.decode(request.getBody(), TopicRouteData.class);
-        if (topicRouteData != null && topicRouteData.getQueueList() != null && !topicRouteData.getQueueList().isEmpty()) {
-            this.namesrvController.getRouteInfoManager().registerTopic(requestHeader.getTopic(), topicRouteData.getQueueList());
+        if (topicRouteData != null && topicRouteData.getQueueDatas() != null && !topicRouteData.getQueueDatas().isEmpty()) {
+            this.namesrvController.getRouteInfoManager().registerTopic(requestHeader.getTopic(), topicRouteData.getQueueDatas());
         }
 
         response.setCode(ResponseCode.SUCCESS);

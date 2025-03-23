@@ -53,7 +53,7 @@ public class ClientMetadata {
             return ;
         }
         {
-            for (GroupInfo bd : topicRouteData.getBrokerList()) {
+            for (GroupInfo bd : topicRouteData.getBrokerDatas()) {
                 this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
             }
         }

@@ -283,7 +283,7 @@ public class ReceiveMessageActivityTest extends BaseActivityTest {
             queueData.setPerm(PermName.PERM_READ);
             queueDatas.add(queueData);
         }
-        topicRouteData.setQueueList(queueDatas);
+        topicRouteData.setQueueDatas(queueDatas);
 
         List<GroupInfo> groupInfos = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
@@ -295,7 +295,7 @@ public class ReceiveMessageActivityTest extends BaseActivityTest {
             groupInfo.setBrokerAddrs(brokerAddrs);
             groupInfos.add(groupInfo);
         }
-        topicRouteData.setBrokerList(groupInfos);
+        topicRouteData.setBrokerDatas(groupInfos);
 
         MessageQueueView messageQueueView = new MessageQueueView(TOPIC, topicRouteData, null);
         ReceiveMessageActivity.ReceiveMessageQueueSelector selector = new ReceiveMessageActivity.ReceiveMessageQueueSelector("");

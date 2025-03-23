@@ -85,7 +85,7 @@ public class RouteInfoManagerBrokerRegisterTest extends RouteInfoManagerTestBase
 
         String originMasterAddr = getBrokerAddr(clusterName, brokerName, MQConstants.MASTER_ID);
         TopicRouteData topicRouteData = routeInfoManager.pickupTopicRouteData(topicName);
-        GroupInfo groupInfoOrigin = findBrokerDataByBrokerName(topicRouteData.getBrokerList(), brokerName);
+        GroupInfo groupInfoOrigin = findBrokerDataByBrokerName(topicRouteData.getBrokerDatas(), brokerName);
 
         // check origin master address
         Assert.assertEquals(groupInfoOrigin.getBrokerAddrs().get(MQConstants.MASTER_ID), originMasterAddr);
@@ -102,7 +102,7 @@ public class RouteInfoManagerBrokerRegisterTest extends RouteInfoManagerTestBase
             new ArrayList<>());
 
         topicRouteData = routeInfoManager.pickupTopicRouteData(topicName);
-        groupInfoOrigin = findBrokerDataByBrokerName(topicRouteData.getBrokerList(), brokerName);
+        groupInfoOrigin = findBrokerDataByBrokerName(topicRouteData.getBrokerDatas(), brokerName);
 
         // check new master address
         assertEquals(groupInfoOrigin.getBrokerAddrs().get(MQConstants.MASTER_ID), newMasterAddr);
@@ -117,7 +117,7 @@ public class RouteInfoManagerBrokerRegisterTest extends RouteInfoManagerTestBase
         unregisterBroker(routeInfoManager, cluster.brokerDataMap.get(brokerName), unregisterBrokerId);
 
         TopicRouteData topicRouteData = routeInfoManager.pickupTopicRouteData(topicName);
-        HashMap<Long, String> brokerAddrs = findBrokerDataByBrokerName(topicRouteData.getBrokerList(), brokerName).getBrokerAddrs();
+        HashMap<Long, String> brokerAddrs = findBrokerDataByBrokerName(topicRouteData.getBrokerDatas(), brokerName).getBrokerAddrs();
 
         assertFalse(brokerAddrs.containsKey(unregisterBrokerId));
     }

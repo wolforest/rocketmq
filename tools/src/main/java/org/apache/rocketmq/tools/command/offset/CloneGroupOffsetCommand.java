@@ -81,7 +81,7 @@ public class CloneGroupOffsetCommand implements SubCommand {
                 TopicRouteData topicRoute = defaultMQAdminExt.examineTopicRouteInfo(topic);
                 for (MessageQueue mq : mqs) {
                     String addr = null;
-                    for (GroupInfo groupInfo : topicRoute.getBrokerList()) {
+                    for (GroupInfo groupInfo : topicRoute.getBrokerDatas()) {
                         if (groupInfo.getBrokerName().equals(mq.getBrokerName())) {
                             addr = groupInfo.selectBrokerAddr();
                             break;

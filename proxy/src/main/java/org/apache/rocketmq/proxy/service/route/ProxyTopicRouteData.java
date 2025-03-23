@@ -37,10 +37,10 @@ public class ProxyTopicRouteData {
     }
 
     public ProxyTopicRouteData(TopicRouteData topicRouteData) {
-        this.queueList = topicRouteData.getQueueList();
+        this.queueList = topicRouteData.getQueueDatas();
         this.brokerList = new ArrayList<>();
 
-        for (GroupInfo groupInfo : topicRouteData.getBrokerList()) {
+        for (GroupInfo groupInfo : topicRouteData.getBrokerDatas()) {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
             proxyBrokerData.setCluster(groupInfo.getCluster());
             proxyBrokerData.setBrokerName(groupInfo.getBrokerName());
@@ -55,10 +55,10 @@ public class ProxyTopicRouteData {
     }
 
     public ProxyTopicRouteData(TopicRouteData topicRouteData, int port) {
-        this.queueList = topicRouteData.getQueueList();
+        this.queueList = topicRouteData.getQueueDatas();
         this.brokerList = new ArrayList<>();
 
-        for (GroupInfo groupInfo : topicRouteData.getBrokerList()) {
+        for (GroupInfo groupInfo : topicRouteData.getBrokerDatas()) {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
             proxyBrokerData.setCluster(groupInfo.getCluster());
             proxyBrokerData.setBrokerName(groupInfo.getBrokerName());
@@ -74,10 +74,10 @@ public class ProxyTopicRouteData {
     }
 
     public ProxyTopicRouteData(TopicRouteData topicRouteData, List<Address> requestHostAndPortList) {
-        this.queueList = topicRouteData.getQueueList();
+        this.queueList = topicRouteData.getQueueDatas();
         this.brokerList = new ArrayList<>();
 
-        for (GroupInfo groupInfo : topicRouteData.getBrokerList()) {
+        for (GroupInfo groupInfo : topicRouteData.getBrokerDatas()) {
             ProxyTopicRouteData.ProxyBrokerData proxyBrokerData = new ProxyTopicRouteData.ProxyBrokerData();
             proxyBrokerData.setCluster(groupInfo.getCluster());
             proxyBrokerData.setBrokerName(groupInfo.getBrokerName());
@@ -153,8 +153,8 @@ public class ProxyTopicRouteData {
 
     public TopicRouteData buildTopicRouteData() {
         TopicRouteData topicRouteData = new TopicRouteData();
-        topicRouteData.setQueueList(queueList);
-        topicRouteData.setBrokerList(brokerList.stream()
+        topicRouteData.setQueueDatas(queueList);
+        topicRouteData.setBrokerDatas(brokerList.stream()
             .map(ProxyBrokerData::buildBrokerData)
             .collect(Collectors.toList()));
         return topicRouteData;

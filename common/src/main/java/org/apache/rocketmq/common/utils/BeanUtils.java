@@ -190,21 +190,33 @@ public class BeanUtils {
 
     private static Object getArg(String cn, String property) {
         Object arg;
-        if (cn.equals("int") || cn.equals("Integer")) {
-            arg = Integer.parseInt(property);
-        } else if (cn.equals("long") || cn.equals("Long")) {
-            arg = Long.parseLong(property);
-        } else if (cn.equals("double") || cn.equals("Double")) {
-            arg = Double.parseDouble(property);
-        } else if (cn.equals("boolean") || cn.equals("Boolean")) {
-            arg = Boolean.parseBoolean(property);
-        } else if (cn.equals("float") || cn.equals("Float")) {
-            arg = Float.parseFloat(property);
-        } else if (cn.equals("String")) {
-            property = property.trim();
-            arg = property;
-        } else {
-            return null;
+        switch (cn) {
+            case "int":
+            case "Integer":
+                arg = Integer.parseInt(property);
+                break;
+            case "long":
+            case "Long":
+                arg = Long.parseLong(property);
+                break;
+            case "double":
+            case "Double":
+                arg = Double.parseDouble(property);
+                break;
+            case "boolean":
+            case "Boolean":
+                arg = Boolean.parseBoolean(property);
+                break;
+            case "float":
+            case "Float":
+                arg = Float.parseFloat(property);
+                break;
+            case "String":
+                property = property.trim();
+                arg = property;
+                break;
+            default:
+                return null;
         }
 
         return arg;

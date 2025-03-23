@@ -83,7 +83,7 @@ public class MQAdminUtils {
             }
         }
         if (routeData != null
-                && !routeData.getQueueList().isEmpty()) {
+                && !routeData.getQueueDatas().isEmpty()) {
             clientMetadata.freshTopicRoute(topic, routeData);
         }
     }
@@ -239,7 +239,7 @@ public class MQAdminUtils {
 
     public static Map<String, TopicConfigAndQueueMapping> examineTopicConfigFromRoute(String topic, TopicRouteData topicRouteData, DefaultMQAdminExt defaultMQAdminExt) throws RemotingException,  InterruptedException, MQBrokerException {
         Map<String, TopicConfigAndQueueMapping> brokerConfigMap = new HashMap<>();
-        for (GroupInfo bd : topicRouteData.getBrokerList()) {
+        for (GroupInfo bd : topicRouteData.getBrokerDatas()) {
             String broker = bd.getBrokerName();
             String addr = bd.selectBrokerAddr();
             if (addr == null) {

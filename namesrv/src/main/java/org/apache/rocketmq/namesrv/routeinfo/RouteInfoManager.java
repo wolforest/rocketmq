@@ -706,7 +706,7 @@ public class RouteInfoManager {
         boolean foundQueueData = false;
         boolean foundBrokerData = false;
         List<GroupInfo> groupInfoList = new LinkedList<>();
-        topicRouteData.setBrokerList(groupInfoList);
+        topicRouteData.setBrokerDatas(groupInfoList);
 
         HashMap<String, List<String>> filterServerMap = new HashMap<>();
         topicRouteData.setFilterServerTable(filterServerMap);
@@ -718,7 +718,7 @@ public class RouteInfoManager {
                 return null;
             }
 
-            topicRouteData.setQueueList(new ArrayList<>(queueDataMap.values()));
+            topicRouteData.setQueueDatas(new ArrayList<>(queueDataMap.values()));
             foundQueueData = true;
 
             Set<String> brokerNameSet = new HashSet<>(queueDataMap.keySet());
@@ -765,13 +765,13 @@ public class RouteInfoManager {
             return topicRouteData;
         }
 
-        if (topicRouteData.getBrokerList().isEmpty() || topicRouteData.getQueueList().isEmpty()) {
+        if (topicRouteData.getBrokerDatas().isEmpty() || topicRouteData.getQueueDatas().isEmpty()) {
             return topicRouteData;
         }
 
         boolean needActingMaster = false;
 
-        for (final GroupInfo groupInfo : topicRouteData.getBrokerList()) {
+        for (final GroupInfo groupInfo : topicRouteData.getBrokerDatas()) {
             if (!groupInfo.getBrokerAddrs().isEmpty()
                 && !groupInfo.getBrokerAddrs().containsKey(MQConstants.MASTER_ID)) {
                 needActingMaster = true;
@@ -783,14 +783,14 @@ public class RouteInfoManager {
             return topicRouteData;
         }
 
-        for (final GroupInfo groupInfo : topicRouteData.getBrokerList()) {
+        for (final GroupInfo groupInfo : topicRouteData.getBrokerDatas()) {
             final HashMap<Long, String> brokerAddrs = groupInfo.getBrokerAddrs();
             if (brokerAddrs.isEmpty() || brokerAddrs.containsKey(MQConstants.MASTER_ID) || !groupInfo.isEnableActingMaster()) {
                 continue;
             }
 
             // No master
-            for (final QueueData queueData : topicRouteData.getQueueList()) {
+            for (final QueueData queueData : topicRouteData.getQueueDatas()) {
                 if (!queueData.getBrokerName().equals(groupInfo.getBrokerName())) {
                     continue;
                 }

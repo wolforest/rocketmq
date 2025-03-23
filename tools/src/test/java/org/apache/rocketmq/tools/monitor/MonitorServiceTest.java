@@ -120,8 +120,8 @@ public class MonitorServiceTest {
         groupInfo.setBrokerName("default-broker");
         groupInfo.setBrokerAddrs(brokerAddrs);
         groupInfos.add(groupInfo);
-        topicRouteData.setBrokerList(groupInfos);
-        topicRouteData.setQueueList(new ArrayList<>());
+        topicRouteData.setBrokerDatas(groupInfos);
+        topicRouteData.setQueueDatas(new ArrayList<>());
         topicRouteData.setFilterServerTable(new HashMap<>());
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
 

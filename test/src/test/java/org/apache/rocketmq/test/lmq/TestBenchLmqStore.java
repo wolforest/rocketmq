@@ -91,7 +91,7 @@ public class TestBenchLmqStore {
         HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MQConstants.MASTER_ID, "test");
         List<GroupInfo> brokerData = Collections.singletonList(new GroupInfo("test", "test", brokerAddrs));
-        topicRouteData.setBrokerList(brokerData);
+        topicRouteData.setBrokerDatas(brokerData);
         FieldUtils.writeStaticField(BenchLmqStore.class, "lmqTopic", "test", true);
         when(mqClientAPI.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
         BenchLmqStore.doBenchOffset();

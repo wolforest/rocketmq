@@ -56,8 +56,8 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
     }
 
     public RemotingCommand getRouteInfoByTopic(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
-        RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        GetRouteInfoRequestHeader requestHeader = request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
+            RemotingCommand response = RemotingCommand.createResponseCommand(null);
+            GetRouteInfoRequestHeader requestHeader = request.decodeCommandCustomHeader(GetRouteInfoRequestHeader.class);
 
         boolean namesrvReady = needCheckNamesrvReady.get() && System.currentTimeMillis() - startupTimeMillis >= TimeUnit.SECONDS.toMillis(namesrvController.getNamesrvConfig().getWaitSecondsForService());
 

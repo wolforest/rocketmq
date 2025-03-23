@@ -96,7 +96,7 @@ public class DefaultAdminServiceTest {
             groupInfo.setBrokerAddrs(addrMap);
             groupInfo.setBrokerName("broker-" + i);
             groupInfo.setCluster("cluster");
-            topicRouteData.getBrokerList().add(groupInfo);
+            topicRouteData.getBrokerDatas().add(groupInfo);
         }
         return topicRouteData;
     }

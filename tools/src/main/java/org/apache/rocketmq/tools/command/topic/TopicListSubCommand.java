@@ -122,7 +122,7 @@ public class TopicListSubCommand implements SubCommand {
         InterruptedException {
         TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo(topic);
 
-        GroupInfo groupInfo = topicRouteData.getBrokerList().get(0);
+        GroupInfo groupInfo = topicRouteData.getBrokerDatas().get(0);
 
         String brokerName = groupInfo.getBrokerName();
 

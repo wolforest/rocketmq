@@ -35,8 +35,8 @@ public class TopicRouteWrapper {
         this.topicRouteData = topicRouteData;
         this.topicName = topicName;
 
-        if (this.topicRouteData.getBrokerList() != null) {
-            for (GroupInfo groupInfo : this.topicRouteData.getBrokerList()) {
+        if (this.topicRouteData.getBrokerDatas() != null) {
+            for (GroupInfo groupInfo : this.topicRouteData.getBrokerDatas()) {
                 this.brokerNameRouteData.put(groupInfo.getBrokerName(), groupInfo);
             }
         }
@@ -65,7 +65,7 @@ public class TopicRouteWrapper {
     }
 
     public List<QueueData> getQueueDatas() {
-        return this.topicRouteData.getQueueList();
+        return this.topicRouteData.getQueueDatas();
     }
 
     public String getOrderTopicConf() {

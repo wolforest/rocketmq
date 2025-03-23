@@ -16,12 +16,12 @@
  */
 package org.apache.rocketmq.namesrv.route;
 
+import com.alipay.sofa.common.profile.StringUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.domain.constant.MQConstants;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -55,7 +55,7 @@ public class ZoneRouteRPCHook implements RPCHook {
             return;
         }
         String zoneName = request.getExtFields().get(MQConstants.ZONE_NAME);
-        if (StringUtils.isBlank(zoneName)) {
+        if (StringUtil.isBlank(zoneName)) {
             return;
         }
         TopicRouteData topicRouteData = RemotingSerializable.decode(response.getBody(), TopicRouteData.class);
@@ -66,24 +66,24 @@ public class ZoneRouteRPCHook implements RPCHook {
     private TopicRouteData filterByZoneName(TopicRouteData topicRouteData, String zoneName) {
         List<GroupInfo> groupInfoReserved = new ArrayList<>();
         Map<String, GroupInfo> brokerDataRemoved = new HashMap<>();
-        for (GroupInfo groupInfo : topicRouteData.getBrokerList()) {
+        for (GroupInfo groupInfo : topicRouteData.getBrokerDatas()) {
             //master down, consume from slave. break nearby route rule.
             if (groupInfo.getBrokerAddrs().get(MQConstants.MASTER_ID) == null
-                || StringUtils.equalsIgnoreCase(groupInfo.getZoneName(), zoneName)) {
+                || StringUtil.equalsIgnoreCase(groupInfo.getZoneName(), zoneName)) {
                 groupInfoReserved.add(groupInfo);
             } else {
                 brokerDataRemoved.put(groupInfo.getBrokerName(), groupInfo);
             }
         }
-        topicRouteData.setBrokerList(groupInfoReserved);
+        topicRouteData.setBrokerDatas(groupInfoReserved);
 
         List<QueueData> queueDataReserved = new ArrayList<>();
-        for (QueueData queueData : topicRouteData.getQueueList()) {
+        for (QueueData queueData : topicRouteData.getQueueDatas()) {
             if (!brokerDataRemoved.containsKey(queueData.getBrokerName())) {
                 queueDataReserved.add(queueData);
             }
         }
-        topicRouteData.setQueueList(queueDataReserved);
+        topicRouteData.setQueueDatas(queueDataReserved);
         // remove filter server table by broker address
         if (topicRouteData.getFilterServerTable() != null && !topicRouteData.getFilterServerTable().isEmpty()) {
             for (Entry<String, GroupInfo> entry : brokerDataRemoved.entrySet()) {
@@ -97,4 +97,6 @@ public class ZoneRouteRPCHook implements RPCHook {
         }
         return topicRouteData;
     }
+
 }
+

@@ -327,7 +327,7 @@ public class ClusterClient {
         }
 
         TopicRouteData topicRouteData = TopicRouteData.decode(body, TopicRouteData.class);
-        for (GroupInfo groupInfo : topicRouteData.getBrokerList()) {
+        for (GroupInfo groupInfo : topicRouteData.getBrokerDatas()) {
             if (groupInfo != null
                 && groupInfo.getBrokerName().equals(brokerName)
                 && groupInfo.getCluster().equals(clusterName)) {
@@ -661,7 +661,7 @@ public class ClusterClient {
 
         TopicRouteData topicRouteData = new TopicRouteData();
         List<QueueData> queueDatas = new ArrayList<>();
-        topicRouteData.setQueueList(queueDatas);
+        topicRouteData.setQueueDatas(queueDatas);
 
         final QueueData queueData = new QueueData();
         queueData.setBrokerName(brokerName);

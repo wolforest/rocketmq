@@ -85,7 +85,7 @@ public class ClusterTopicRouteServiceTest extends BaseServiceTest {
 
         // add brokers
         TopicRouteData brokerTopicRouteData = new TopicRouteData();
-        brokerTopicRouteData.setBrokerList(Lists.newArrayList(groupInfo, broke2Data));
+        brokerTopicRouteData.setBrokerDatas(Lists.newArrayList(groupInfo, broke2Data));
 
         // add queue data
         QueueData queueData = new QueueData();
@@ -93,7 +93,7 @@ public class ClusterTopicRouteServiceTest extends BaseServiceTest {
 
         QueueData queue2Data = new QueueData();
         queue2Data.setBrokerName(BROKER2_NAME);
-        brokerTopicRouteData.setQueueList(Lists.newArrayList(queueData, queue2Data));
+        brokerTopicRouteData.setQueueDatas(Lists.newArrayList(queueData, queue2Data));
         when(this.mqClientAPIExt.getTopicRouteInfoFromNameServer(eq(BROKER_NAME), anyLong())).thenReturn(brokerTopicRouteData);
         when(this.mqClientAPIExt.getTopicRouteInfoFromNameServer(eq(BROKER2_NAME), anyLong())).thenReturn(brokerTopicRouteData);
     }

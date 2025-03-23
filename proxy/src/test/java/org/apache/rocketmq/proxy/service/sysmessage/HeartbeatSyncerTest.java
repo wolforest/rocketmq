@@ -126,14 +126,14 @@ public class HeartbeatSyncerTest extends InitConfigTest {
             queueData.setWriteQueueNums(8);
             queueData.setPerm(6);
             queueData.setBrokerName(brokerName);
-            topicRouteData.getQueueList().add(queueData);
+            topicRouteData.getQueueDatas().add(queueData);
             GroupInfo groupInfo = new GroupInfo();
             groupInfo.setCluster(clusterName);
             groupInfo.setBrokerName(brokerName);
             HashMap<Long, String> brokerAddr = new HashMap<>();
             brokerAddr.put(0L, "127.0.0.1:10911");
             groupInfo.setBrokerAddrs(brokerAddr);
-            topicRouteData.getBrokerList().add(groupInfo);
+            topicRouteData.getBrokerDatas().add(groupInfo);
             MessageQueueView messageQueueView = new MessageQueueView("foo", topicRouteData, null);
             when(this.topicRouteService.getAllMessageQueueView(any(), anyString())).thenReturn(messageQueueView);
         }
