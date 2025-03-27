@@ -454,7 +454,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final CreateTopicRequestHeader requestHeader =
-            (CreateTopicRequestHeader) request.decodeCommandCustomHeader(CreateTopicRequestHeader.class);
+            request.decodeCommandCustomHeader(CreateTopicRequestHeader.class);
 
         LOGGER.info("Broker receive request to update or create topic={}, caller address={}",
             requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
@@ -565,7 +565,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
     private synchronized RemotingCommand deleteTopic(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        DeleteTopicRequestHeader requestHeader = (DeleteTopicRequestHeader) request.decodeCommandCustomHeader(DeleteTopicRequestHeader.class);
+        DeleteTopicRequestHeader requestHeader = request.decodeCommandCustomHeader(DeleteTopicRequestHeader.class);
 
         LOGGER.info("AdminBrokerProcessor#deleteTopic: broker receive request to delete topic={}, caller={}",
             requestHeader.getTopic(), RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
@@ -773,7 +773,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         topicConfigAndMappingSerializeWrapper.setTopicQueueMappingDetailMap(this.broker.getTopicQueueMappingManager().getTopicQueueMappingTable());
 
         String content = topicConfigAndMappingSerializeWrapper.toJson();
-        if (content != null && content.length() > 0) {
+        if (content != null && !content.isEmpty()) {
             try {
                 response.setBody(content.getBytes(MQConstants.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
@@ -1481,7 +1481,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         String content = this.broker.getSubscriptionGroupManager().encode();
-        if (content != null && content.length() > 0) {
+        if (content != null && !content.isEmpty()) {
             try {
                 response.setBody(content.getBytes(MQConstants.DEFAULT_CHARSET));
             } catch (UnsupportedEncodingException e) {
@@ -1508,7 +1508,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         DeleteSubscriptionGroupRequestHeader requestHeader =
-            (DeleteSubscriptionGroupRequestHeader) request.decodeCommandCustomHeader(DeleteSubscriptionGroupRequestHeader.class);
+            request.decodeCommandCustomHeader(DeleteSubscriptionGroupRequestHeader.class);
 
         LOGGER.info("AdminBrokerProcessor#deleteSubscriptionGroup, caller={}",
             RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
@@ -1531,8 +1531,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
     private RemotingCommand getTopicStatsInfo(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        final GetTopicStatsInfoRequestHeader requestHeader =
-            (GetTopicStatsInfoRequestHeader) request.decodeCommandCustomHeader(GetTopicStatsInfoRequestHeader.class);
+        final GetTopicStatsInfoRequestHeader requestHeader = request.decodeCommandCustomHeader(GetTopicStatsInfoRequestHeader.class);
 
         final String topic = requestHeader.getTopic();
         TopicConfig topicConfig = this.broker.getTopicConfigManager().selectTopicConfig(topic);

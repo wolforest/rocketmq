@@ -206,7 +206,7 @@ public class ClusterClient {
     public String fetchNameServerAddr() {
         try {
             String addrs = this.topAddressing.fetchNSAddr();
-            if (org.apache.rocketmq.common.utils.StringUtils.isBlank(addrs)) {
+            if (StringUtils.isBlank(addrs)) {
                 return nameSrvAddr;
             }
 
