@@ -19,11 +19,16 @@ package org.apache.rocketmq.remoting.rpc;
 import java.util.concurrent.Future;
 import org.apache.rocketmq.common.domain.message.MessageQueue;
 
+/**
+ * RpcClient, depend on the brokerName(groupName),
+ *    rather than server address in request
+ * in this way, the rpc calling is transparent,
+ */
 public interface RpcClient {
 
 
     //common invoke paradigm, the logic remote addr is defined in "bname" field of request
-    //For oneway request, the sign is labeled in request, and do not need an another method named "invokeOneway"
+    //For oneway request, the sign is labeled in request, and do not need another method named "invokeOneway"
     //For one
     Future<RpcResponse>  invoke(RpcRequest request, long timeoutMs) throws RpcException;
 
