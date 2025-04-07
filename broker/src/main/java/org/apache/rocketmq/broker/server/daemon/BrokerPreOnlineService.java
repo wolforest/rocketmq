@@ -49,24 +49,24 @@ import org.apache.rocketmq.store.server.ha.core.HAConnectionStateNotificationReq
 import org.apache.rocketmq.store.domain.timer.persistence.TimerCheckpoint;
 
 /**
- * @renamed from BrokerPreOnlineService to BrokerPreOnlineThread
+ * broker pre online service
  */
-public class BrokerPreOnlineThread extends ServiceThread {
+public class BrokerPreOnlineService extends ServiceThread {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final Broker broker;
 
     private int waitBrokerIndex = 0;
 
-    public BrokerPreOnlineThread(Broker broker) {
+    public BrokerPreOnlineService(Broker broker) {
         this.broker = broker;
     }
 
     @Override
     public String getServiceName() {
         if (this.broker != null && this.broker.getBrokerConfig().isInBrokerContainer()) {
-            return broker.getBrokerIdentity().getIdentifier() + BrokerPreOnlineThread.class.getSimpleName();
+            return broker.getBrokerIdentity().getIdentifier() + BrokerPreOnlineService.class.getSimpleName();
         }
-        return BrokerPreOnlineThread.class.getSimpleName();
+        return BrokerPreOnlineService.class.getSimpleName();
     }
 
     @Override
