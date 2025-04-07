@@ -79,6 +79,12 @@ public class Broker {
 
     protected volatile boolean shutdown = false;
     protected volatile long shouldStartTime;
+
+    /**
+     * Broker isolate mode:
+     * - true: while unregister
+     * - true: while replication
+     */
     protected volatile boolean isIsolated = false;
 
     private final BrokerNettyServer brokerNettyServer;
