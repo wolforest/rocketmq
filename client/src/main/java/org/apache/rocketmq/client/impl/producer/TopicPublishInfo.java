@@ -109,17 +109,18 @@ public class TopicPublishInfo {
     public MessageQueue selectOneMessageQueue(final String lastBrokerName) {
         if (lastBrokerName == null) {
             return selectOneMessageQueue();
-        } else {
-            for (int i = 0; i < this.messageQueueList.size(); i++) {
-                int index = this.sendWhichQueue.incrementAndGet();
-                int pos = index % this.messageQueueList.size();
-                MessageQueue mq = this.messageQueueList.get(pos);
-                if (!mq.getBrokerName().equals(lastBrokerName)) {
-                    return mq;
-                }
-            }
-            return selectOneMessageQueue();
         }
+
+        for (int i = 0; i < this.messageQueueList.size(); i++) {
+            int index = this.sendWhichQueue.incrementAndGet();
+            int pos = index % this.messageQueueList.size();
+            MessageQueue mq = this.messageQueueList.get(pos);
+
+            if (!mq.getBrokerName().equals(lastBrokerName)) {
+                return mq;
+            }
+        }
+        return selectOneMessageQueue();
     }
 
     public MessageQueue selectOneMessageQueue() {
