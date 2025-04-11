@@ -2730,7 +2730,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
     private RemotingCommand updateBrokerHaInfo(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         RemotingCommand response = RemotingCommand.createResponseCommand(ExchangeHAInfoResponseHeader.class);
 
-        ExchangeHAInfoRequestHeader requestHeader = (ExchangeHAInfoRequestHeader) request.decodeCommandCustomHeader(ExchangeHAInfoRequestHeader.class);
+        ExchangeHAInfoRequestHeader requestHeader = request.decodeCommandCustomHeader(ExchangeHAInfoRequestHeader.class);
         if (requestHeader.getMasterHaAddress() != null) {
             this.broker.getMessageStore().updateHaMasterAddress(requestHeader.getMasterHaAddress());
             this.broker.getMessageStore().updateMasterAddress(requestHeader.getMasterAddress());
@@ -2740,16 +2740,13 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                 this.broker.getMessageStore().setMasterFlushedOffset(requestHeader.getMasterFlushOffset());
             }
         } else if (this.broker.getBrokerConfig().getBrokerId() == MQConstants.MASTER_ID) {
-            final ExchangeHAInfoResponseHeader responseHeader = (ExchangeHAInfoResponseHeader) response.readCustomHeader();
+            ExchangeHAInfoResponseHeader responseHeader = (ExchangeHAInfoResponseHeader) response.readCustomHeader();
             responseHeader.setMasterHaAddress(this.broker.getHAServerAddr());
             responseHeader.setMasterFlushOffset(this.broker.getMessageStore().getBrokerInitMaxOffset());
             responseHeader.setMasterAddress(this.broker.getBrokerAddr());
         }
 
-        response.setCode(ResponseCode.SUCCESS);
-        response.setRemark(null);
-
-        return response;
+        return response.setCodeAndRemark(ResponseCode.SUCCESS, null);
     }
 
     private RemotingCommand getBrokerHaStatus(ChannelHandlerContext ctx, RemotingCommand request) {

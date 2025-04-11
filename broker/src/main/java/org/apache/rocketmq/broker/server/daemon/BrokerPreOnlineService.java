@@ -131,9 +131,12 @@ public class BrokerPreOnlineService extends ServiceThread {
             String brokerAddrToWait = brokerMemberGroup.getBrokerAddrs().get(brokerIdList.get(waitBrokerIndex));
 
             try {
-                this.broker.getClusterClient().
-                    sendBrokerHaInfo(brokerAddrToWait, this.broker.getHAServerAddr(),
-                        this.broker.getMessageStore().getBrokerInitMaxOffset(), this.broker.getBrokerAddr());
+                this.broker.getClusterClient().sendBrokerHaInfo(
+                    brokerAddrToWait,
+                    this.broker.getHAServerAddr(),
+                    this.broker.getMessageStore().getBrokerInitMaxOffset(),
+                    this.broker.getBrokerAddr()
+                );
             } catch (Exception e) {
                 LOGGER.error("send ha address to {} exception, {}", brokerAddrToWait, e);
                 return false;

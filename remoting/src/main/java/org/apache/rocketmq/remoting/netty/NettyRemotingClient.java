@@ -852,7 +852,8 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         String channelRemoteAddr = RemotingHelper.parseChannelRemoteAddr(channel);
         doBeforeRpcHooks(channelRemoteAddr, request);
 
-        return super.invokeImpl(channel, request, timeoutMillis).thenCompose(responseFuture -> {
+        return super.invokeImpl(channel, request, timeoutMillis)
+        .thenCompose(responseFuture -> {
             RemotingCommand response = responseFuture.getResponseCommand();
             if (response.getCode() != ResponseCode.GO_AWAY) {
                 return CompletableFuture.completedFuture(responseFuture);
@@ -919,7 +920,8 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 });
             });
             return future;
-        }).whenComplete((v, t) -> {
+        })
+        .whenComplete((v, t) -> {
             if (t == null) {
                 doAfterRpcHooks(channelRemoteAddr, request, v.getResponseCommand());
             }
