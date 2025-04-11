@@ -987,6 +987,18 @@ public class ClusterClient {
         return this.processSendResponse(brokerName, msg, response);
     }
 
+    /**
+     * send message to specific broker
+     * called by:
+     *  - EscapeBridge
+     *
+     * @param brokerAddr brokerAddr
+     * @param brokerName brokerName
+     * @param msg msg
+     * @param group group
+     * @param timeoutMillis timeout
+     * @return future of sendResult
+     */
     public CompletableFuture<SendResult> sendMessageToSpecificBrokerAsync(String brokerAddr, final String brokerName,
         final MessageExt msg, String group,
         long timeoutMillis) {

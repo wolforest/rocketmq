@@ -79,6 +79,9 @@ public class EscapeBridge {
         }
     }
 
+    /**
+     * just for test case
+     */
     public Pair<GetMessageStatus, MessageExt> getMessage(String topic, long offset, int queueId, String brokerName, boolean deCompressBody) {
         return getMessageAsync(topic, offset, queueId, brokerName, deCompressBody).join();
     }
@@ -130,7 +133,6 @@ public class EscapeBridge {
      *  - if canNotEscape, return PutResult(SERVICE_NOT_AVAILABLE)
      *  - put message to remote messageStore
      *      - args: messageExt
-     *
      * depends on config(!canNotEscape())
      * called by
      *  - TransactionalMessageBridge
@@ -164,8 +166,8 @@ public class EscapeBridge {
 
     /**
      * depends on config(!canNotEscape())
-     *
      * called by DeliverDelayedMessageTimerTask
+     *
      * @param messageExt msg
      * @return future result
      */
@@ -208,7 +210,6 @@ public class EscapeBridge {
 
     /**
      * depends on config(!canNotEscape())
-     *
      * called by
      *  - AckMessageProcessor
      *  - ChangeInvisibleTimeProcessor

@@ -165,36 +165,38 @@ public class TopicRouteInfoManager {
             if (!this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 return;
             }
-
-            try {
-                TopicRouteData topicRouteData = clusterClient.getTopicRouteInfoFromNameServer(topic, GET_TOPIC_ROUTE_TIMEOUT);
-                if (null == topicRouteData) {
-                    log.warn("TopicRouteInfoManager: updateTopicRouteInfoFromNameServer, getTopicRouteInfoFromNameServer return null, Topic: {}.", topic);
-                    return;
-                }
-
-                if (isNeedUpdateSubscribeInfo) {
-                    this.updateSubscribeInfoTable(topicRouteData, topic);
-                }
-
-                if (isNeedUpdatePublishInfo) {
-                    this.updateTopicRouteTable(topic, topicRouteData);
-                }
-
-            } catch (RemotingException e) {
-                log.error("updateTopicRouteInfoFromNameServer Exception", e);
-            } catch (MQBrokerException e) {
-                log.error("updateTopicRouteInfoFromNameServer Exception", e);
-                if (!NamespaceUtil.isRetryTopic(topic)
-                    && ResponseCode.TOPIC_NOT_EXIST == e.getResponseCode()) {
-                    // clean no used topic
-                    cleanNoneRouteTopic(topic);
-                }
-            } finally {
-                this.lockNamesrv.unlock();
-            }
         } catch (InterruptedException e) {
             log.warn("updateTopicRouteInfoFromNameServer Exception", e);
+        }
+
+        try {
+            TopicRouteData topicRouteData = clusterClient.getTopicRouteInfoFromNameServer(topic, GET_TOPIC_ROUTE_TIMEOUT);
+            if (null == topicRouteData) {
+                log.warn("TopicRouteInfoManager: updateTopicRouteInfoFromNameServer, getTopicRouteInfoFromNameServer return null, Topic: {}.", topic);
+                return;
+            }
+
+            if (isNeedUpdateSubscribeInfo) {
+                this.updateSubscribeInfoTable(topicRouteData, topic);
+            }
+
+            if (isNeedUpdatePublishInfo) {
+                this.updateTopicRouteTable(topic, topicRouteData);
+            }
+
+        } catch (RemotingException e) {
+            log.error("updateTopicRouteInfoFromNameServer RemotingException", e);
+        } catch (MQBrokerException e) {
+            log.error("updateTopicRouteInfoFromNameServer MQBrokerException", e);
+            if (!NamespaceUtil.isRetryTopic(topic)
+                && ResponseCode.TOPIC_NOT_EXIST == e.getResponseCode()) {
+                // clean no used topic
+                cleanNoneRouteTopic(topic);
+            }
+        } catch (InterruptedException e) {
+            log.warn("updateTopicRouteInfoFromNameServer InterruptedException", e);
+        } finally {
+            this.lockNamesrv.unlock();
         }
     }
 
