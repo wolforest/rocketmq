@@ -250,7 +250,7 @@ public class ClusterClient {
     }
 
     /**
-     * update by broker scheduler (120s/次)
+     * update by broker scheduler (every 120s)
      * @param addrs addrs
      */
     public void updateNameServerAddressList(final String addrs) {

@@ -30,7 +30,7 @@ import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.common.constant.GrpcConstants;
+import org.apache.rocketmq.common.domain.constant.GrpcConstants;
 import org.apache.rocketmq.proxy.common.ProxyContext;
 import org.apache.rocketmq.proxy.config.InitConfigTest;
 import org.apache.rocketmq.proxy.grpc.pipeline.ContextInitPipeline;
@@ -83,7 +83,7 @@ public class GrpcMessagingApplicationTest extends InitConfigTest {
         metadata.put(GrpcConstants.LANGUAGE, JAVA);
         metadata.put(GrpcConstants.REMOTE_ADDRESS, REMOTE_ADDR);
         metadata.put(GrpcConstants.LOCAL_ADDRESS, LOCAL_ADDR);
-        
+
         Assert.assertNotNull(Context.current()
             .withValue(GrpcConstants.METADATA, metadata)
             .attach());

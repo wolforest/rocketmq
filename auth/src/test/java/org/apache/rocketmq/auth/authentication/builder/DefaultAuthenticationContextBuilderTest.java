@@ -26,7 +26,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelId;
 import java.nio.charset.StandardCharsets;
 import org.apache.rocketmq.auth.authentication.context.DefaultAuthenticationContext;
-import org.apache.rocketmq.common.constant.GrpcConstants;
+import org.apache.rocketmq.common.domain.constant.GrpcConstants;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
 import org.apache.rocketmq.remoting.protocol.header.SendMessageRequestHeader;
