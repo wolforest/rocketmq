@@ -511,7 +511,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     }
 
     /**
-     * update by broker scheduler (120s/次)
+     * update by broker scheduler (every 120s)
      * @param addrs addrs
      */
     @Override

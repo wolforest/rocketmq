@@ -41,9 +41,9 @@ public class FilterAPI {
                 .map(String::trim)
                 .filter(tag -> !tag.isEmpty())
                 .forEach(tag -> {
-                subscriptionData.getTagsSet().add(tag);
-                subscriptionData.getCodeSet().add(tag.hashCode());
-            });
+                    subscriptionData.getTagsSet().add(tag);
+                    subscriptionData.getCodeSet().add(tag.hashCode());
+                });
         } else {
             throw new Exception("subString split error");
         }
