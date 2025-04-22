@@ -54,6 +54,12 @@ public class ProxyTopicRouteData {
         }
     }
 
+    /**
+     * called by LocalTopicRouteService
+     *
+     * @param topicRouteData topic route data
+     * @param port grpc port
+     */
     public ProxyTopicRouteData(TopicRouteData topicRouteData, int port) {
         this.queueList = topicRouteData.getQueueDatas();
         this.brokerList = new ArrayList<>();
@@ -73,6 +79,12 @@ public class ProxyTopicRouteData {
         }
     }
 
+    /**
+     * called by RemoteTopicRouteService
+     *
+     * @param topicRouteData topic route data
+     * @param requestHostAndPortList request address list from client
+     */
     public ProxyTopicRouteData(TopicRouteData topicRouteData, List<Address> requestHostAndPortList) {
         this.queueList = topicRouteData.getQueueDatas();
         this.brokerList = new ArrayList<>();
