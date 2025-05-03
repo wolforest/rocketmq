@@ -101,12 +101,18 @@ public class GrpcChannelManager implements StartAndShutdown {
             if (resultFuture == null) {
                 continue;
             }
-            if (System.currentTimeMillis() - resultFuture.createTime > timeOutMs) {
-                resultFuture = this.resultNonceFutureMap.remove(nonce);
-                if (resultFuture != null) {
-                    resultFuture.future.complete(new ProxyRelayResult<>(ResponseCode.SYSTEM_BUSY, "call remote timeout", null));
-                }
+            if (System.currentTimeMillis() - resultFuture.createTime <= timeOutMs) {
+                continue;
             }
+
+            resultFuture = this.resultNonceFutureMap.remove(nonce);
+            if (resultFuture == null) {
+                continue;
+            }
+
+            resultFuture.future.complete(
+                new ProxyRelayResult<>(ResponseCode.SYSTEM_BUSY, "call remote timeout", null)
+            );
         }
     }
 
