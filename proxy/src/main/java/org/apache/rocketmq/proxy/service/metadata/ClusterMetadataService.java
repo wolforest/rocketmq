@@ -274,7 +274,11 @@ public class ClusterMetadataService extends AbstractStartAndShutdown implements 
 
     protected Optional<GroupInfo> findOneBroker(String topic) throws Exception {
         try {
-            return topicRouteService.getAllMessageQueueView(ProxyContext.createForInner(this.getClass()), topic).getTopicRouteData().getBrokerDatas().stream().findAny();
+            return topicRouteService.getAllMessageQueueView(ProxyContext.createForInner(this.getClass()), topic)
+                .getTopicRouteData()
+                .getBrokerDatas()
+                .stream()
+                .findAny();
         } catch (Exception e) {
             if (TopicRouteHelper.isTopicNotExistError(e)) {
                 return Optional.empty();

@@ -112,8 +112,12 @@ public class DefaultReceiptHandleManager extends AbstractStartAndShutdown implem
         this.appendStartAndShutdown(new StartAndShutdown() {
             @Override
             public void start() throws Exception {
-                scheduledExecutorService.scheduleWithFixedDelay(() -> scheduleRenewTask(), 0,
-                    ConfigurationManager.getProxyConfig().getRenewSchedulePeriodMillis(), TimeUnit.MILLISECONDS);
+                scheduledExecutorService.scheduleWithFixedDelay(
+                    () -> scheduleRenewTask(),
+                    0,
+                    ConfigurationManager.getProxyConfig().getRenewSchedulePeriodMillis(),
+                    TimeUnit.MILLISECONDS
+                );
             }
 
             @Override
@@ -125,8 +129,11 @@ public class DefaultReceiptHandleManager extends AbstractStartAndShutdown implem
     }
 
     public void addReceiptHandle(ProxyContext context, Channel channel, String group, String msgID, MessageReceiptHandle messageReceiptHandle) {
-        MapUtils.computeIfAbsent(this.receiptHandleGroupMap, new ReceiptHandleGroupKey(channel, group),
-            k -> new ReceiptHandleGroup()).put(msgID, messageReceiptHandle);
+        MapUtils.computeIfAbsent(
+            this.receiptHandleGroupMap,
+            new ReceiptHandleGroupKey(channel, group),
+            k -> new ReceiptHandleGroup()
+        ).put(msgID, messageReceiptHandle);
     }
 
     public MessageReceiptHandle removeReceiptHandle(ProxyContext context, Channel channel, String group, String msgID, String receiptHandle) {
@@ -172,7 +179,11 @@ public class DefaultReceiptHandleManager extends AbstractStartAndShutdown implem
 
     protected void renewMessage(ReceiptHandleGroupKey key, ReceiptHandleGroup group, String msgID, String handleStr) {
         try {
-            group.computeIfPresent(msgID, handleStr, messageReceiptHandle -> startRenewMessage(key, messageReceiptHandle));
+            group.computeIfPresent(
+                msgID,
+                handleStr,
+                messageReceiptHandle -> startRenewMessage(key, messageReceiptHandle)
+            );
         } catch (Exception e) {
             log.error("error when renew message. msgID:{}, handleStr:{}", msgID, handleStr, e);
         }
