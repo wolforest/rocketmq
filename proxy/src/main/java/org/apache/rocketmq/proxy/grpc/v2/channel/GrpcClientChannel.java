@@ -66,11 +66,20 @@ public class GrpcClientChannel extends ProxyChannel implements ChannelExtendAttr
     private final Object telemetryWriteLock = new Object();
     private final String clientId;
 
-    public GrpcClientChannel(ProxyRelayService proxyRelayService, GrpcClientSettingsManager grpcClientSettingsManager,
-        GrpcChannelManager grpcChannelManager, ProxyContext ctx, String clientId) {
-        super(proxyRelayService, null, new GrpcChannelId(clientId),
+    public GrpcClientChannel(
+        ProxyRelayService proxyRelayService,
+        GrpcClientSettingsManager grpcClientSettingsManager,
+        GrpcChannelManager grpcChannelManager,
+        ProxyContext ctx,
+        String clientId
+    ) {
+        super(proxyRelayService,
+            null,
+            new GrpcChannelId(clientId),
             ctx.getRemoteAddress(),
-            ctx.getLocalAddress());
+            ctx.getLocalAddress()
+        );
+
         this.grpcChannelManager = grpcChannelManager;
         this.grpcClientSettingsManager = grpcClientSettingsManager;
         this.clientId = clientId;

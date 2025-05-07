@@ -397,13 +397,15 @@ public class ClientActivity extends AbstractMessingActivity {
     protected void reportVerifyMessageResult(ProxyContext ctx, Status status, VerifyMessageResult request) {
         String nonce = request.getNonce();
         CompletableFuture<ProxyRelayResult<ConsumeMessageDirectlyResult>> responseFuture = this.grpcChannelManager.getAndRemoveResponseFuture(nonce);
-        if (responseFuture != null) {
-            try {
-                ConsumeMessageDirectlyResult result = this.buildConsumeMessageDirectlyResult(status, request);
-                responseFuture.complete(new ProxyRelayResult<>(ResponseCode.SUCCESS, "", result));
-            } catch (Throwable t) {
-                responseFuture.completeExceptionally(t);
-            }
+        if (responseFuture == null) {
+            return;
+        }
+
+        try {
+            ConsumeMessageDirectlyResult result = this.buildConsumeMessageDirectlyResult(status, request);
+            responseFuture.complete(new ProxyRelayResult<>(ResponseCode.SUCCESS, "", result));
+        } catch (Throwable t) {
+            responseFuture.completeExceptionally(t);
         }
     }
 

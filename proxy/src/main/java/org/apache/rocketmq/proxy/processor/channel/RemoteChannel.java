@@ -27,10 +27,19 @@ public class RemoteChannel extends SimpleChannel implements ChannelExtendAttribu
     protected final String remoteProxyIp;
     protected volatile String extendAttribute;
 
-    public RemoteChannel(String remoteProxyIp, String remoteAddress, String localAddress, ChannelProtocolType type, String extendAttribute) {
+    public RemoteChannel(
+        String remoteProxyIp,
+        String remoteAddress,
+        String localAddress,
+        ChannelProtocolType type,
+        String extendAttribute
+    ) {
         super(null,
             new RemoteChannelId(remoteProxyIp, remoteAddress, localAddress, type),
-            remoteAddress, localAddress);
+            remoteAddress,
+            localAddress
+        );
+
         this.type = type;
         this.remoteProxyIp = remoteProxyIp;
         this.extendAttribute = extendAttribute;
