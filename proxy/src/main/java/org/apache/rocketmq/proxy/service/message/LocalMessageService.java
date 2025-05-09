@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.rocketmq.broker.api.controller.SendMessageProcessor;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.consumer.AckResult;
 import org.apache.rocketmq.client.consumer.AckStatus;
@@ -276,10 +277,11 @@ public class LocalMessageService implements MessageService {
         SimpleChannel channel = channelManager.createInvocationChannel(ctx);
         InvocationContext invocationContext = new InvocationContext(future);
         channel.registerInvocationContext(request.getOpaque(), invocationContext);
-        ChannelHandlerContext simpleChannelHandlerContext = channel.getChannelHandlerContext();
+        ChannelHandlerContext handlerContext = channel.getChannelHandlerContext();
 
         try {
-            RemotingCommand response = broker.getBrokerNettyServer().getSendMessageProcessor().processRequest(simpleChannelHandlerContext, request);
+            SendMessageProcessor processor = broker.getBrokerNettyServer().getSendMessageProcessor();
+            RemotingCommand response = processor.processRequest(handlerContext, request);
             if (response != null) {
                 invocationContext.handle(response);
                 channel.eraseInvocationContext(request.getOpaque());
