@@ -52,7 +52,9 @@ public class ChannelManager {
             return new InvocationChannel(clientHost, localAddress);
         }
 
-        SimpleChannel channel = clientIdChannelMap.computeIfAbsent(clientId, k -> new InvocationChannel(clientHost, localAddress));
+        SimpleChannel channel = clientIdChannelMap.computeIfAbsent(
+            clientId, k -> new InvocationChannel(clientHost, localAddress)
+        );
         channel.updateLastAccessTime();
         return channel;
     }

@@ -103,7 +103,6 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
     }
 
     private RemotingCommand processSendRequest(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
-        SendMessageContext sendMessageContext;
         SendMessageRequestHeader requestHeader = parseRequestHeader(request);
         if (requestHeader == null) {
             return null;
@@ -113,7 +112,8 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         if (rewriteResult != null) {
             return rewriteResult;
         }
-        sendMessageContext = buildMsgContext(ctx, requestHeader, request);
+
+        SendMessageContext sendMessageContext = buildMsgContext(ctx, requestHeader, request);
         RemotingCommand hookResult = executeSendMessageHookBefore(sendMessageContext, request);
         if (hookResult != null) {
             return hookResult;

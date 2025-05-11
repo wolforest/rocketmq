@@ -37,6 +37,9 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 /**
  * SimpleChannel is used to handle writeAndFlush situation in processor
+ * The method writeAndFlush will be called in processor in module broker,
+ * and this method will do nothing.
+ * This design is intended to be compatible with the broker processor architecture.
  *
  * @see io.netty.channel.ChannelHandlerContext#writeAndFlush
  * @see io.netty.channel.Channel#writeAndFlush
