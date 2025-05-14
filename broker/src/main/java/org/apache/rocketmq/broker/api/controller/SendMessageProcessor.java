@@ -419,7 +419,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         }
 
         if (!isSendOk(putMessageResult, response)) {
-            executeSendMessageHook(putMessageResult, request, sendMessageContext, responseHeader, false);
+            initSendMessageContext(putMessageResult, request, sendMessageContext, responseHeader, false);
             return response;
         }
 
@@ -432,7 +432,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         }
 
         doResponse(ctx, request, response);
-        executeSendMessageHook(putMessageResult, request, sendMessageContext, responseHeader, true);
+        initSendMessageContext(putMessageResult, request, sendMessageContext, responseHeader, true);
         return null;
     }
 
@@ -548,7 +548,15 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         responseHeader.setTransactionId(MessageClientIDSetter.getUniqID(msg));
     }
 
-    private void executeSendMessageHook(PutMessageResult putMessageResult, RemotingCommand request, SendMessageContext sendMessageContext,
+    /**
+     * init SendMessageContext for sendMessageHook
+     * @param putMessageResult putMessageResult
+     * @param request request
+     * @param sendMessageContext sendMessageContext
+     * @param responseHeader responseHeader
+     * @param sendOk sendOk
+     */
+    private void initSendMessageContext(PutMessageResult putMessageResult, RemotingCommand request, SendMessageContext sendMessageContext,
         SendMessageResponseHeader responseHeader, boolean sendOk) {
         if (!hasSendMessageHook()) {
             return;
