@@ -81,7 +81,7 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
             String group = request.getGroup().getName();
 
             long actualInvisibleTime = getInvisibleTime(request);
-            SubscriptionData subscriptionData = getSubscriptionData(ctx, request, topic, writer);
+            SubscriptionData subscriptionData = buildFilter(ctx, request, topic, writer);
             if (subscriptionData == null) {
                 return;
             }
@@ -211,12 +211,18 @@ public class ReceiveMessageActivity extends AbstractMessingActivity {
         return actualInvisibleTime;
     }
 
-    private SubscriptionData getSubscriptionData(ProxyContext ctx, ReceiveMessageRequest request, String topic, ReceiveMessageResponseStreamWriter writer) {
+    private SubscriptionData buildFilter(ProxyContext ctx, ReceiveMessageRequest request, String topic, ReceiveMessageResponseStreamWriter writer) {
         FilterExpression filterExpression = request.getFilterExpression();
 
         try {
-            return FilterAPI.build(topic, filterExpression.getExpression(),
-                GrpcConverter.getInstance().buildExpressionType(filterExpression.getType()));
+            String expressionType = GrpcConverter.getInstance()
+                .buildExpressionType(filterExpression.getType());
+
+            return FilterAPI.build(
+                topic,
+                filterExpression.getExpression(),
+                expressionType
+            );
         } catch (Exception e) {
             writer.writeAndComplete(ctx, Code.ILLEGAL_FILTER_EXPRESSION, e.getMessage());
             return null;
