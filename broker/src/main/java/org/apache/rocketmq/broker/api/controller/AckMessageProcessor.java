@@ -84,7 +84,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.SUCCESS, null);
         response.setOpaque(request.getOpaque());
 
-        AckMessageRequestHeader requestHeader = (AckMessageRequestHeader) request.decodeCommandCustomHeader(AckMessageRequestHeader.class);
+        AckMessageRequestHeader requestHeader = request.decodeCommandCustomHeader(AckMessageRequestHeader.class);
 
         TopicConfig topicConfig = getTopicConfig(requestHeader, channel, response);
         if (null == topicConfig) {
