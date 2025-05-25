@@ -225,7 +225,7 @@ public class PopBufferMergeThread extends ServiceThread {
      * - MESSAGE_WAS_REMOVING
      * - NO_MATCHED_LOGIC_QUEUE
      */
-    public void mockCheckPoint(String group, String topic, int queueId, long startOffset, long invisibleTime,
+    public void addCheckPoint(String group, String topic, int queueId, long startOffset, long invisibleTime,
         long popTime, int reviveQueueId, long nextBeginOffset, String brokerName) {
         final PopCheckPoint ck = new PopCheckPoint();
         ck.setBitMap(0);
@@ -250,7 +250,6 @@ public class PopBufferMergeThread extends ServiceThread {
     /**
      * with default config, this method is useless, always return false
      * @renamed from addCk to addCheckPoint
-     * @renamed from addCheckPoint to cacheCheckPoint
      * add pop checkPoint to buffer(memory), after stored in memory:
      * 1. checkPoints will be stored periodically
      *    when this.run() method is executing
@@ -264,7 +263,7 @@ public class PopBufferMergeThread extends ServiceThread {
      * @param nextBeginOffset nextBeginOffset
      * @return boolean add status
      */
-    public boolean cacheCheckPoint(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
+    public boolean addCheckPoint(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {
         // key: point.getT() + point.getC() + point.getQ() + point.getSo() + point.getPt()
         // default is false
         if (!broker.getBrokerConfig().isEnablePopBufferMerge()) {
@@ -312,9 +311,9 @@ public class PopBufferMergeThread extends ServiceThread {
     /**
      * add ackMsg to buffer, ackMsgs will be stored in buffer(memory) and persist periodically
      * This method will do nothing, in default setting
+     * should move put ackMsg to revive topic here, and check config to enable it
      *
      * @renamed from addAk to addAckMsg
-     *
      * @param reviveQid reviveQid
      * @param ackMsg AckMsg
      * @return adding status
@@ -396,6 +395,19 @@ public class PopBufferMergeThread extends ServiceThread {
 
     public void clearOffsetQueue(String lockKey) {
         this.commitOffsets.remove(lockKey);
+    }
+
+    public int getOffsetTotalSize() {
+        int count = 0;
+        for (Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry : this.commitOffsets.entrySet()) {
+            LinkedBlockingDeque<PopCheckPointWrapper> queue = entry.getValue().get();
+            count += queue.size();
+        }
+        return count;
+    }
+
+    public int getBufferedCKSize() {
+        return this.counter.get();
     }
 
     /**
@@ -713,18 +725,6 @@ public class PopBufferMergeThread extends ServiceThread {
         }
     }
 
-    public int getOffsetTotalSize() {
-        int count = 0;
-        for (Map.Entry<String, QueueWithTime<PopCheckPointWrapper>> entry : this.commitOffsets.entrySet()) {
-            LinkedBlockingDeque<PopCheckPointWrapper> queue = entry.getValue().get();
-            count += queue.size();
-        }
-        return count;
-    }
-
-    public int getBufferedCKSize() {
-        return this.counter.get();
-    }
 
     private void markBitCAS(AtomicInteger setBits, int index) {
         while (true) {
@@ -822,7 +822,8 @@ public class PopBufferMergeThread extends ServiceThread {
         }
 
         //build msg for revive topic from checkPoint
-        MessageExtBrokerInner msgInner = broker.getBrokerNettyServer().getPopServiceManager().buildCkMsg(pointWrapper.getCk(), pointWrapper.getReviveQueueId());
+        PopServiceManager popServiceManager = broker.getBrokerNettyServer().getPopServiceManager();
+        MessageExtBrokerInner msgInner = popServiceManager.buildCkMsg(pointWrapper.getCk(), pointWrapper.getReviveQueueId());
 
         //put msg to revive topic through escapeBridge
         PutMessageResult putMessageResult = broker.getEscapeBridge().putMessageToSpecificQueue(msgInner);
