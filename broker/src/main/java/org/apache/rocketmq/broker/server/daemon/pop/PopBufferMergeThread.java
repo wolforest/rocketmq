@@ -188,7 +188,7 @@ public class PopBufferMergeThread extends ServiceThread {
      * @param point check point
      * @param reviveQueueId revive queue id
      * @param reviveQueueOffset revive queue offset
-     * @param nextBeginOffset next begin offset
+     * @param nextBeginOffset next offset
      * @return boolean
      */
     public boolean storeCheckPoint(PopCheckPoint point, int reviveQueueId, long reviveQueueOffset, long nextBeginOffset) {

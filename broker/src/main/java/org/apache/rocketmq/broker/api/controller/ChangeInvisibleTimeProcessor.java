@@ -76,7 +76,7 @@ public class ChangeInvisibleTimeProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand processRequest(final Channel channel, RemotingCommand request) throws RemotingCommandException {
-        ChangeInvisibleTimeRequestHeader requestHeader = (ChangeInvisibleTimeRequestHeader) request.decodeCommandCustomHeader(ChangeInvisibleTimeRequestHeader.class);
+        ChangeInvisibleTimeRequestHeader requestHeader = request.decodeCommandCustomHeader(ChangeInvisibleTimeRequestHeader.class);
         RemotingCommand response = createResponse(request);
         ChangeInvisibleTimeResponseHeader responseHeader = (ChangeInvisibleTimeResponseHeader) response.readCustomHeader();
 

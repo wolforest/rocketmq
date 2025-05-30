@@ -29,7 +29,9 @@ public class PopCheckPointWrapper {
     // bit for stored buffer ak
     private final AtomicInteger toStoreBits;
     private final long nextBeginOffset;
+    // topic@group@queueId
     private final String lockKey;
+    // topic + group + queueId + startOffset + popTime + brokerName
     private final String mergeKey;
     /**
      * with default config, this property is useless

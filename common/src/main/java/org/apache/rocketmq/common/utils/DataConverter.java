@@ -18,9 +18,10 @@ package org.apache.rocketmq.common.utils;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 public class DataConverter {
-    public static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
+    public static final Charset CHARSET_UTF8 = StandardCharsets.UTF_8;
 
     public static byte[] Long2Byte(Long v) {
         ByteBuffer tmp = ByteBuffer.allocate(8);
