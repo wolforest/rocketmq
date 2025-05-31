@@ -23,12 +23,13 @@ public class PopCheckPointWrapper {
     private final int reviveQueueId;
     // -1: not stored, >=0: stored, Long.MAX: storing.
     private volatile long reviveQueueOffset;
+    // nextOffset of original topic
+    private final long nextBeginOffset;
     private final PopCheckPoint ck;
     // bits for concurrent
     private final AtomicInteger bits;
     // bit for stored buffer ak
     private final AtomicInteger toStoreBits;
-    private final long nextBeginOffset;
     // topic@group@queueId
     private final String lockKey;
     // topic + group + queueId + startOffset + popTime + brokerName

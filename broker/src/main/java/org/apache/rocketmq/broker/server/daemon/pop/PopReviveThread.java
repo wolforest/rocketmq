@@ -626,6 +626,10 @@ public class PopReviveThread extends ServiceThread {
 
     protected void mergeAndRevive(ConsumeReviveObj consumeReviveObj) {
         ArrayList<PopCheckPoint> sortList = consumeReviveObj.genSortList();
+        if (sortList.isEmpty()) {
+            return;
+        }
+
         logMergeAndRevive(sortList);
 
         long newOffset = consumeReviveObj.getOldOffset();
@@ -657,9 +661,7 @@ public class PopReviveThread extends ServiceThread {
 
     private void logMergeAndRevive(ArrayList<PopCheckPoint> sortList) {
         POP_LOGGER.info("reviveQueueId={}, ck listSize={}", queueId, sortList.size());
-        if (sortList.size() == 0) {
-            return;
-        }
+
 
         POP_LOGGER.info("reviveQueueId={}, 1st ck, startOffset={}, reviveOffset={}; last ck, startOffset={}, reviveOffset={}", queueId, sortList.get(0).getStartOffset(),
             sortList.get(0).getReviveOffset(), sortList.get(sortList.size() - 1).getStartOffset(), sortList.get(sortList.size() - 1).getReviveOffset());
