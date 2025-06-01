@@ -27,6 +27,10 @@ public class ReviveContext {
      * @renamed from startScanTime to startTime
      */
     private final long startTime;
+    /**
+     * the max deliverTime of messageExt,
+     * which bulk pulled from consume queue
+     */
     private long endTime;
     /**
      * the first reviveTime of PopCheckPoint,
