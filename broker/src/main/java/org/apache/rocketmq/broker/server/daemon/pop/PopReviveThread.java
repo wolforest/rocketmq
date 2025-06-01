@@ -625,6 +625,7 @@ public class PopReviveThread extends ServiceThread {
     }
 
     protected void mergeAndRevive(ConsumeReviveObj consumeReviveObj) {
+        // sort checkpoint by reviveOffset
         ArrayList<PopCheckPoint> sortList = consumeReviveObj.genSortList();
         logMergeAndRevive(sortList);
 
