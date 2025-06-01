@@ -26,6 +26,11 @@ import java.util.List;
 public class PopCheckPoint implements Comparable<PopCheckPoint> {
     @JSONField(name = "so")
     private long startOffset;
+
+    /**
+     * pop time, which is the time when message is popped
+     * reviveTime = popTime + invisibleTime
+     */
     @JSONField(name = "pt")
     private long popTime;
     @JSONField(name = "it")

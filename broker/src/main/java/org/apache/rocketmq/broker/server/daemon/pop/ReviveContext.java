@@ -28,6 +28,10 @@ public class ReviveContext {
      */
     private final long startTime;
     private long endTime;
+    /**
+     * the first reviveTime of PopCheckPoint,
+     * which bulk pulled from revive queue
+     */
     private long firstRt;
 
     private int noMsgCount;
