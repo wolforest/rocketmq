@@ -54,6 +54,9 @@ public class PopCheckPoint implements Comparable<PopCheckPoint> {
      */
     @JSONField(name = "c")
     private String cid;
+    /**
+     * revive offset, which is the consume queue offset of messageExt
+     */
     @JSONField(name = "ro")
     private long reviveOffset;
     /**
