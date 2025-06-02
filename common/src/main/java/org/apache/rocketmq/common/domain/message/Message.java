@@ -239,6 +239,15 @@ public class Message implements Serializable {
         return 0;
     }
 
+    /**
+     * set message deliver time
+     * deliverTime =
+     *  * popTime + invisibleTime
+     *  * reviveTime + PopConstants.ackTimeInterval
+     *  * reviveTime
+     * reviveTime = popTime + invisibleTime
+     * @param timeMs  deliver time
+     */
     public void setDeliverTimeMs(long timeMs) {
         this.putProperty(MessageConst.PROPERTY_TIMER_DELIVER_MS, String.valueOf(timeMs));
     }

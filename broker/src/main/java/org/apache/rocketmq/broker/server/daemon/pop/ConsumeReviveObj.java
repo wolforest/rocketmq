@@ -39,6 +39,10 @@ public class ConsumeReviveObj {
      * the initial offset of revive topic queue
      */
     private long oldOffset;
+    /**
+     * the max deliverTime of messageExt,
+     * which bulk pulled from consume queue
+     */
     private long endTime;
     private long newOffset;
 
