@@ -639,18 +639,10 @@ public class PopReviveThread extends ServiceThread {
 
         long newOffset = consumeReviveObj.getOldOffset();
         for (PopCheckPoint popCheckPoint : sortList) {
+            // break if checkpoint.reviveTime <= maxReviveTime - 2s
             if (shouldBreakRevive(consumeReviveObj, popCheckPoint)) break;
 
-            // check normal topic, skip ck , if normal topic is not exist
-            String topic = KeyBuilder.removeRetryPrefix(popCheckPoint.getTopic(), popCheckPoint.getCId());
-            if (broker.getTopicConfigManager().selectTopicConfig(topic) == null) {
-                POP_LOGGER.warn("reviveQueueId={}, can not get normal topic {}, then continue", queueId, popCheckPoint.getTopic());
-                newOffset = popCheckPoint.getReviveOffset();
-                continue;
-            }
-
-            if (null == broker.getSubscriptionGroupManager().findSubscriptionGroupConfig(popCheckPoint.getCId())) {
-                POP_LOGGER.warn("reviveQueueId={}, can not get cid {}, then continue", queueId, popCheckPoint.getCId());
+            if (!existsTopicAndSubscription(popCheckPoint)) {
                 newOffset = popCheckPoint.getReviveOffset();
                 continue;
             }
@@ -662,6 +654,22 @@ public class PopReviveThread extends ServiceThread {
         }
 
         resetReviveOffset(consumeReviveObj, newOffset);
+    }
+
+    private boolean existsTopicAndSubscription(PopCheckPoint popCheckPoint) {
+        // check normal topic, skip ck , if normal topic is not exist
+        String topic = KeyBuilder.removeRetryPrefix(popCheckPoint.getTopic(), popCheckPoint.getCId());
+        if (broker.getTopicConfigManager().selectTopicConfig(topic) == null) {
+            POP_LOGGER.warn("reviveQueueId={}, can not get normal topic {}, then continue", queueId, popCheckPoint.getTopic());
+            return false;
+        }
+
+        if (null == broker.getSubscriptionGroupManager().findSubscriptionGroupConfig(popCheckPoint.getCId())) {
+            POP_LOGGER.warn("reviveQueueId={}, can not get cid {}, then continue", queueId, popCheckPoint.getCId());
+            return false;
+        }
+
+        return true;
     }
 
     private void logMergeAndRevive(ArrayList<PopCheckPoint> sortList) {
