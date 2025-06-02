@@ -461,14 +461,16 @@ public class PopReviveThread extends ServiceThread {
             }
 
             context.setNoMsgCount(0);
+            parseReviveMessages(context, messageList);
+            context.setOffset(context.getOffset() + messageList.size());
+
+            // break when scan time exceed reviveScanTime
+            // the default revive scan time is 10s
             long elapsedTime = System.currentTimeMillis() - context.getStartTime();
             if (elapsedTime > broker.getBrokerConfig().getReviveScanTime()) {
                 POP_LOGGER.info("reviveQueueId={}, scan timeout ", queueId);
                 break;
             }
-
-            parseReviveMessages(context, messageList);
-            context.setOffset(context.getOffset() + messageList.size());
         }
 
         context.getConsumeReviveObj().getMap().putAll(context.getMockPointMap());
