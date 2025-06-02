@@ -674,6 +674,15 @@ public class PopReviveThread extends ServiceThread {
             sortList.get(0).getReviveOffset(), sortList.get(sortList.size() - 1).getStartOffset(), sortList.get(sortList.size() - 1).getReviveOffset());
     }
 
+    /**
+     * skip, if shouldRunPopRevive is false
+     * skip, if checkPoint.reviveTime <= max reviveTime - (ackTimeInterval + 1s)
+     * default ackTimeInterval = 1s
+     *
+     * @param consumeReviveObj  consumeReviveObj
+     * @param popCheckPoint checkPoint
+     * @return boolean
+     */
     private boolean shouldBreakRevive(ConsumeReviveObj consumeReviveObj, PopCheckPoint popCheckPoint) {
         if (!shouldRunPopRevive) {
             POP_LOGGER.info("slave skip ck process, revive topic={}, reviveQueueId={}", reviveTopic, queueId);
