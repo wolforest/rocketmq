@@ -81,10 +81,14 @@ public class PopReviveThread extends ServiceThread {
     private volatile boolean shouldRunPopRevive = false;
 
     /**
-     *
+     * checkPoint -> (timestamp, result)
      */
-    private final NavigableMap<PopCheckPoint/* oldCK */, Pair<Long/* timestamp */, Boolean/* result */>> inflightReviveRequestMap
+    private final NavigableMap<PopCheckPoint, Pair<Long, Boolean>> inflightReviveRequestMap
         = Collections.synchronizedNavigableMap(new TreeMap<>());
+
+    /**
+     * the initial offset of revive topic
+     */
     private long reviveOffset;
 
     public PopReviveThread(Broker broker, String reviveTopic, int queueId) {
@@ -437,6 +441,7 @@ public class PopReviveThread extends ServiceThread {
     }
 
     protected ConsumeReviveObj consumeReviveMessage() {
+        // working offset of revive topic
         long consumeOffset = this.broker.getConsumerOffsetManager().queryOffset(PopConstants.REVIVE_GROUP, reviveTopic, queueId);
         ReviveContext context = new ReviveContext(consumeOffset, reviveOffset);
         POP_LOGGER.info("reviveQueueId={}, old offset is {} ", queueId, context.getOldOffset());
@@ -456,7 +461,8 @@ public class PopReviveThread extends ServiceThread {
             }
 
             context.setNoMsgCount(0);
-            if (System.currentTimeMillis() - context.getStartTime() > broker.getBrokerConfig().getReviveScanTime()) {
+            long elapsedTime = System.currentTimeMillis() - context.getStartTime();
+            if (elapsedTime > broker.getBrokerConfig().getReviveScanTime()) {
                 POP_LOGGER.info("reviveQueueId={}, scan timeout ", queueId);
                 break;
             }

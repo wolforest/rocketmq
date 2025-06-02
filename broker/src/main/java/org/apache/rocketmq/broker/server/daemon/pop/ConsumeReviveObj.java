@@ -35,6 +35,9 @@ public class ConsumeReviveObj {
     private final HashMap<String, PopCheckPoint> map = new HashMap<>();
     private ArrayList<PopCheckPoint> sortList;
 
+    /**
+     * the initial offset of revive topic queue
+     */
     private long oldOffset;
     private long endTime;
     private long newOffset;

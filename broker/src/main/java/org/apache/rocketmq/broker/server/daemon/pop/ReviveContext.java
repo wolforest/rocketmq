@@ -40,8 +40,19 @@ public class ReviveContext {
 
     private int noMsgCount;
 
+    /**
+     * the working offset of revive queue
+     */
     private final long consumeOffset;
+    /**
+     * the initial offset of revive queue
+     */
     private final long oldOffset;
+    /**
+     * the initial value is: max(consumeOffset, reviveOffset) + 1
+     * it changes to offset + messageList.size(),
+     *  while looping revive message
+     */
     private long offset;
 
     public ReviveContext(long consumeOffset, long reviveOffset) {
