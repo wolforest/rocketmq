@@ -74,10 +74,18 @@ import static org.apache.rocketmq.broker.server.metrics.BrokerMetricsConstant.LA
 public class PopReviveThread extends ServiceThread {
     private static final Logger POP_LOGGER = LoggerFactory.getLogger(LoggerName.ROCKETMQ_POP_LOGGER_NAME);
 
-    private final int queueId;
-    private final Broker broker;
+
     private final String reviveTopic;
+    private final int queueId;
+    private long reviveOffset;
+
     private long currentReviveMessageTimestamp = -1;
+
+    /**
+     * revive start/stop flag.
+     * default value is false.
+     * it may change while master/slave switch
+     */
     private volatile boolean shouldRunPopRevive = false;
 
     /**
@@ -86,10 +94,7 @@ public class PopReviveThread extends ServiceThread {
     private final NavigableMap<PopCheckPoint, Pair<Long, Boolean>> inflightReviveRequestMap
         = Collections.synchronizedNavigableMap(new TreeMap<>());
 
-    /**
-     * the initial offset of revive topic
-     */
-    private long reviveOffset;
+    private final Broker broker;
 
     public PopReviveThread(Broker broker, String reviveTopic, int queueId) {
         this.queueId = queueId;
@@ -806,13 +811,13 @@ public class PopReviveThread extends ServiceThread {
     private void cleanInflightMap() {
         for (Map.Entry<PopCheckPoint, Pair<Long, Boolean>> entry : inflightReviveRequestMap.entrySet()) {
             Pair<Long, Boolean> pair = entry.getValue();
-            if (pair.getObject2()) {
-                PopCheckPoint oldCK = entry.getKey();
-                broker.getConsumerOffsetManager().commitOffset(PopConstants.LOCAL_HOST, PopConstants.REVIVE_GROUP, reviveTopic, queueId, oldCK.getReviveOffset());
-                inflightReviveRequestMap.remove(oldCK);
-            } else {
+            if (!pair.getObject2()) {
                 break;
             }
+
+            PopCheckPoint oldCK = entry.getKey();
+            broker.getConsumerOffsetManager().commitOffset(PopConstants.LOCAL_HOST, PopConstants.REVIVE_GROUP, reviveTopic, queueId, oldCK.getReviveOffset());
+            inflightReviveRequestMap.remove(oldCK);
         }
     }
 
