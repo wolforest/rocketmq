@@ -21,8 +21,19 @@ import java.nio.ByteBuffer;
 
 public class CqUnit {
     private final long queueOffset;
-    private final int size;
+    /**
+     * commitLog offset
+     */
     private final long pos;
+    /**
+     * message size in commitLog
+     */
+    private final int size;
+    /**
+     * batch num:
+     * 1. if batchNum == 1, it is a normal message
+     * 2. if batchNum > 1, it is a batch message
+     */
     private final short batchNum;
     /**
      * Be careful, the tagsCode is reused as an address for extent file.

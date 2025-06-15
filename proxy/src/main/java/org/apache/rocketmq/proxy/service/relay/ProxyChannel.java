@@ -84,6 +84,13 @@ public abstract class ProxyChannel extends SimpleChannel {
                     command.setExtFields(new HashMap<>());
                 }
                 switch (command.getCode()) {
+                    /*
+                     * create by Broker2Client.checkProducerTransactionState
+                     * called by:
+                     *   channel = broker.getProducerManager().getAvailableChannel(groupId);
+                     *   broker.getBroker2Client().checkProducerTransactionState(...)
+                     *   this.broker.getRemotingServer().invokeOneway(channel, request, 10);
+                     */
                     case RequestCode.CHECK_TRANSACTION_STATE: {
                         CheckTransactionStateRequestHeader header = (CheckTransactionStateRequestHeader) command.readCustomHeader();
                         MessageExt messageExt = MessageDecoder.decode(ByteBuffer.wrap(command.getBody()), true, false, false);
@@ -91,12 +98,26 @@ public abstract class ProxyChannel extends SimpleChannel {
                         processFuture = this.processCheckTransaction(header, messageExt, relayData.getProcessResult(), relayData.getRelayFuture());
                         break;
                     }
+                    /*
+                     * create by AdminBrokerProcessor.getConsumerRunningInfo
+                     * called by:
+                     *  callConsumer(...)
+                     *  ClientChannelInfo clientChannelInfo = this.broker.getConsumerManager().findChannel(consumerGroup, clientId);
+                     *  this.broker.getBroker2Client().callClient(clientChannelInfo.getChannel(), newRequest);
+                     */
                     case RequestCode.GET_CONSUMER_RUNNING_INFO: {
                         GetConsumerRunningInfoRequestHeader header = (GetConsumerRunningInfoRequestHeader) command.readCustomHeader();
                         CompletableFuture<ProxyRelayResult<ConsumerRunningInfo>> relayFuture = this.proxyRelayService.processGetConsumerRunningInfo(context, command, header);
                         processFuture = this.processGetConsumerRunningInfo(command, header, relayFuture);
                         break;
                     }
+                    /*
+                     * create by AdminBrokerProcessor.consumeMessageDirectly
+                     * called by:
+                     *  callConsumer(...)
+                     *  ClientChannelInfo clientChannelInfo = this.broker.getConsumerManager().findChannel(consumerGroup, clientId);
+                     *  this.broker.getBroker2Client().callClient(clientChannelInfo.getChannel(), newRequest);
+                     */
                     case RequestCode.CONSUME_MESSAGE_DIRECTLY: {
                         ConsumeMessageDirectlyResultRequestHeader header = (ConsumeMessageDirectlyResultRequestHeader) command.readCustomHeader();
                         MessageExt messageExt = MessageDecoder.decode(ByteBuffer.wrap(command.getBody()), true, false, false);

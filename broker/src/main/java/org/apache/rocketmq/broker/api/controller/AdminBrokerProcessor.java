@@ -2213,7 +2213,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             byte[] body = new byte[selectMappedBufferResult.getSize()];
             selectMappedBufferResult.getByteBuffer().get(body);
             request.setBody(body);
-        } catch (UnknownHostException e) {
+        } catch (UnknownHostException ignored) {
         } finally {
             if (selectMappedBufferResult != null) {
                 selectMappedBufferResult.release();

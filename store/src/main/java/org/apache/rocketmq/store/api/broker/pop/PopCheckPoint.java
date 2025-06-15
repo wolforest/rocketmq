@@ -33,6 +33,10 @@ public class PopCheckPoint implements Comparable<PopCheckPoint> {
      */
     @JSONField(name = "pt")
     private long popTime;
+    /**
+     * the invisible time of messages
+     * default is 60s, it can be changed by MQ client
+     */
     @JSONField(name = "it")
     private long invisibleTime;
     /**
