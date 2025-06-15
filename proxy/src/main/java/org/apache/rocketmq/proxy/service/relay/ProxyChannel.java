@@ -70,6 +70,19 @@ public abstract class ProxyChannel extends SimpleChannel {
         this.localSocketAddress = NetworkUtils.string2SocketAddress(localAddress);
     }
 
+    /**
+     * hooks for 3 special requests:
+     *  - checkTransactionState
+     *  - getConsumerRunningInfo
+     *  - getConsumeQueue
+     *  - other requests do nothing but write and flush
+     * Actions for special requests:
+     *  - get network channel from ProducerManager/ConsumerManager
+     *  - call methods in ProxyRelayService
+     *
+     * @param msg msg
+     * @return channelFuture
+     */
     @Override
     public ChannelFuture writeAndFlush(Object msg) {
         CompletableFuture<Void> processFuture = new CompletableFuture<>();
