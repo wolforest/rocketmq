@@ -340,8 +340,13 @@ public class ClientActivity extends AbstractMessingActivity {
         return channel;
     }
 
-    protected GrpcClientChannel registerConsumer(ProxyContext ctx, String consumerGroup, ClientType clientType,
-                                                 List<SubscriptionEntry> subscriptionEntryList, boolean updateSubscription) {
+    protected GrpcClientChannel registerConsumer(
+        ProxyContext ctx,
+        String consumerGroup,
+        ClientType clientType,
+        List<SubscriptionEntry> subscriptionEntryList,
+        boolean updateSubscription
+    ) {
         String clientId = ctx.getClientID();
         LanguageCode languageCode = LanguageCode.valueOf(ctx.getLanguage());
 

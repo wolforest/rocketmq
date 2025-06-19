@@ -172,16 +172,37 @@ public class ConsumerManager {
         consumerGroupInfo.getSubscriptionTable().put(topic, subscriptionData);
     }
 
-    public boolean registerConsumer(final String group, final ClientChannelInfo clientChannelInfo,
-        ConsumeType consumeType, MessageModel messageModel, ConsumeFromWhere consumeFromWhere,
-        final Set<SubscriptionData> subList, boolean isNotifyConsumerIdsChangedEnable) {
-        return registerConsumer(group, clientChannelInfo, consumeType, messageModel, consumeFromWhere, subList,
-            isNotifyConsumerIdsChangedEnable, true);
+    public boolean registerConsumer(
+        String group,
+        ClientChannelInfo clientChannelInfo,
+        ConsumeType consumeType,
+        MessageModel messageModel,
+        ConsumeFromWhere consumeFromWhere,
+        Set<SubscriptionData> subList,
+        boolean isNotifyConsumerIdsChangedEnable
+    ) {
+        return registerConsumer(
+            group,
+            clientChannelInfo,
+            consumeType,
+            messageModel,
+            consumeFromWhere,
+            subList,
+            isNotifyConsumerIdsChangedEnable,
+            true
+        );
     }
 
-    public boolean registerConsumer(final String group, final ClientChannelInfo clientChannelInfo,
-        ConsumeType consumeType, MessageModel messageModel, ConsumeFromWhere consumeFromWhere,
-        final Set<SubscriptionData> subList, boolean isNotifyConsumerIdsChangedEnable, boolean updateSubscription) {
+    public boolean registerConsumer(
+        String group,
+        ClientChannelInfo clientChannelInfo,
+        ConsumeType consumeType,
+        MessageModel messageModel,
+        ConsumeFromWhere consumeFromWhere,
+        Set<SubscriptionData> subList,
+        boolean isNotifyConsumerIdsChangedEnable,
+        boolean updateSubscription
+    ) {
         long start = System.currentTimeMillis();
         ConsumerGroupInfo consumerGroupInfo = this.consumerTable.get(group);
         if (null == consumerGroupInfo) {
@@ -212,7 +233,7 @@ public class ConsumerManager {
         return r1 || r2;
     }
 
-    public boolean registerConsumerWithoutSub(final String group, final ClientChannelInfo clientChannelInfo,
+    public boolean registerConsumerWithoutSub(String group, ClientChannelInfo clientChannelInfo,
         ConsumeType consumeType, MessageModel messageModel, ConsumeFromWhere consumeFromWhere, boolean isNotifyConsumerIdsChangedEnable) {
         long start = System.currentTimeMillis();
         ConsumerGroupInfo consumerGroupInfo = this.consumerTable.get(group);
@@ -231,7 +252,7 @@ public class ConsumerManager {
         return updateChannelRst;
     }
 
-    public void unregisterConsumer(final String group, final ClientChannelInfo clientChannelInfo,
+    public void unregisterConsumer(String group, ClientChannelInfo clientChannelInfo,
         boolean isNotifyConsumerIdsChangedEnable) {
         ConsumerGroupInfo consumerGroupInfo = this.consumerTable.get(group);
         if (null == consumerGroupInfo) {
@@ -311,7 +332,7 @@ public class ConsumerManager {
         removeExpireConsumerGroupInfo();
     }
 
-    public HashSet<String> queryTopicConsumeByWho(final String topic) {
+    public HashSet<String> queryTopicConsumeByWho(String topic) {
         HashSet<String> groups = new HashSet<>();
         for (Entry<String, ConsumerGroupInfo> entry : this.consumerTable.entrySet()) {
             ConcurrentMap<String, SubscriptionData> subscriptionTable = entry.getValue().getSubscriptionTable();
