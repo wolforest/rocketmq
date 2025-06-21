@@ -382,20 +382,22 @@ public class ClientActivity extends AbstractMessingActivity {
         String nonce = request.getNonce();
         String threadStack = request.getThreadStackTrace();
         CompletableFuture<ProxyRelayResult<ConsumerRunningInfo>> responseFuture = this.grpcChannelManager.getAndRemoveResponseFuture(nonce);
-        if (responseFuture != null) {
-            try {
-                if (status.getCode().equals(Code.OK)) {
-                    ConsumerRunningInfo runningInfo = new ConsumerRunningInfo();
-                    runningInfo.setJstack(threadStack);
-                    responseFuture.complete(new ProxyRelayResult<>(ResponseCode.SUCCESS, "", runningInfo));
-                } else if (status.getCode().equals(Code.VERIFY_FIFO_MESSAGE_UNSUPPORTED)) {
-                    responseFuture.complete(new ProxyRelayResult<>(ResponseCode.NO_PERMISSION, "forbidden to verify message", null));
-                } else {
-                    responseFuture.complete(new ProxyRelayResult<>(ResponseCode.SYSTEM_ERROR, "verify message failed", null));
-                }
-            } catch (Throwable t) {
-                responseFuture.completeExceptionally(t);
+        if (responseFuture == null) {
+            return;
+        }
+
+        try {
+            if (status.getCode().equals(Code.OK)) {
+                ConsumerRunningInfo runningInfo = new ConsumerRunningInfo();
+                runningInfo.setJstack(threadStack);
+                responseFuture.complete(new ProxyRelayResult<>(ResponseCode.SUCCESS, "", runningInfo));
+            } else if (status.getCode().equals(Code.VERIFY_FIFO_MESSAGE_UNSUPPORTED)) {
+                responseFuture.complete(new ProxyRelayResult<>(ResponseCode.NO_PERMISSION, "forbidden to verify message", null));
+            } else {
+                responseFuture.complete(new ProxyRelayResult<>(ResponseCode.SYSTEM_ERROR, "verify message failed", null));
             }
+        } catch (Throwable t) {
+            responseFuture.completeExceptionally(t);
         }
     }
 
