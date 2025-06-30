@@ -89,8 +89,10 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand processCommitRequest(EndTransactionRequestHeader requestHeader, RemotingCommand response) {
+        TransactionalMessageService transactionService = this.broker.getBrokerMessageService().getTransactionalMessageService();
+
         // get prepare message
-        OperationResult result = this.broker.getBrokerMessageService().getTransactionalMessageService().commitMessage(requestHeader);
+        OperationResult result = transactionService.commitMessage(requestHeader);
         if (result.getResponseCode() != ResponseCode.SUCCESS) {
             return response.setCodeAndRemark(result.getResponseCode(), result.getResponseRemark());
         }
@@ -119,21 +121,24 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
 
         // store real message
         RemotingCommand sendResult = sendFinalMessage(msgInner);
-
-        // check store status
-        if (sendResult.getCode() == ResponseCode.SUCCESS) {
-            this.broker.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
-            // successful committed, then total num of half-messages minus 1
-            this.broker.getBrokerMessageService().getTransactionalMessageService().getTransactionMetrics().addAndGet(msgInner.getTopic(), -1);
-            BrokerMetricsManager.commitMessagesTotal.add(1, BrokerMetricsManager.newAttributesBuilder()
-                .put(LABEL_TOPIC, msgInner.getTopic())
-                .build());
-            // record the commit latency.
-            long commitLatency = (System.currentTimeMillis() - result.getPrepareMessage().getBornTimestamp()) / 1000;
-            BrokerMetricsManager.transactionFinishLatency.record(commitLatency, BrokerMetricsManager.newAttributesBuilder()
-                .put(LABEL_TOPIC, msgInner.getTopic())
-                .build());
+        if (sendResult.getCode() != ResponseCode.SUCCESS) {
+            return sendResult;
         }
+
+        // delete prepare message
+        transactionService.deletePrepareMessage(result.getPrepareMessage());
+
+        // successful committed, then total num of half-messages minus 1
+        transactionService.getTransactionMetrics().addAndGet(msgInner.getTopic(), -1);
+        BrokerMetricsManager.commitMessagesTotal.add(1, BrokerMetricsManager.newAttributesBuilder()
+            .put(LABEL_TOPIC, msgInner.getTopic())
+            .build());
+        // record the commit latency.
+        long commitLatency = (System.currentTimeMillis() - result.getPrepareMessage().getBornTimestamp()) / 1000;
+        BrokerMetricsManager.transactionFinishLatency.record(commitLatency, BrokerMetricsManager.newAttributesBuilder()
+            .put(LABEL_TOPIC, msgInner.getTopic())
+            .build());
+
         return sendResult;
     }
 

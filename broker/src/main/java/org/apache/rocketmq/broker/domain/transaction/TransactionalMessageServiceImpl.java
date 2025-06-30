@@ -108,7 +108,8 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
             boolean res = mqContext.getContextQueue().offer(data, 100, TimeUnit.MILLISECONDS);
             if (res) {
                 int totalSize = mqContext.getTotalSize().addAndGet(data.length());
-                if (totalSize > transactionalMessageBridge.getBrokerController().getBrokerConfig().getTransactionOpMsgMaxSize()) {
+                int maxSize = transactionalMessageBridge.getBrokerController().getBrokerConfig().getTransactionOpMsgMaxSize();
+                if (totalSize > maxSize) {
                     this.transactionalOpBatchService.wakeup();
                 }
                 return true;
