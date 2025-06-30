@@ -62,7 +62,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
     @Override
     public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
-        final EndTransactionRequestHeader requestHeader = (EndTransactionRequestHeader) request.decodeCommandCustomHeader(EndTransactionRequestHeader.class);
+        final EndTransactionRequestHeader requestHeader = request.decodeCommandCustomHeader(EndTransactionRequestHeader.class);
         LOGGER.debug("Transaction request:{}", requestHeader);
 
         if (BrokerRole.SLAVE == broker.getMessageStoreConfig().getBrokerRole()) {
@@ -88,29 +88,38 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand processCommitRequest(EndTransactionRequestHeader requestHeader, RemotingCommand response) {
+        // get prepare message
         OperationResult result = this.broker.getBrokerMessageService().getTransactionalMessageService().commitMessage(requestHeader);
         if (result.getResponseCode() != ResponseCode.SUCCESS) {
             return response.setCodeAndRemark(result.getResponseCode(), result.getResponseRemark());
         }
 
+        // check message whether expired
         if (rejectCommitOrRollback(requestHeader, result.getPrepareMessage())) {
             response.setCode(ResponseCode.ILLEGAL_OPERATION);
             LOGGER.warn("Message commit fail [producer end]. currentTimeMillis - bornTime > checkImmunityTime, msgId={},commitLogOffset={}, wait check",
                 requestHeader.getMsgId(), requestHeader.getCommitLogOffset());
             return response;
         }
-        RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
+
+        // validate prepare message
+        RemotingCommand res = validatePrepareMessage(result.getPrepareMessage(), requestHeader);
         if (res.getCode() != ResponseCode.SUCCESS) {
             return res;
         }
 
+        // create message of real topic
         MessageExtBrokerInner msgInner = endMessageTransaction(result.getPrepareMessage());
         msgInner.setSysFlag(MessageSysFlag.resetTransactionValue(msgInner.getSysFlag(), requestHeader.getCommitOrRollback()));
         msgInner.setQueueOffset(requestHeader.getTranStateTableOffset());
         msgInner.setPreparedTransactionOffset(requestHeader.getCommitLogOffset());
         msgInner.setStoreTimestamp(result.getPrepareMessage().getStoreTimestamp());
         MessageAccessor.clearProperty(msgInner, MessageConst.PROPERTY_TRANSACTION_PREPARED);
+
+        // store real message
         RemotingCommand sendResult = sendFinalMessage(msgInner);
+
+        // check store status
         if (sendResult.getCode() == ResponseCode.SUCCESS) {
             this.broker.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
             // successful committed, then total num of half-messages minus 1
@@ -119,7 +128,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
                 .put(LABEL_TOPIC, msgInner.getTopic())
                 .build());
             // record the commit latency.
-            Long commitLatency = (System.currentTimeMillis() - result.getPrepareMessage().getBornTimestamp()) / 1000;
+            long commitLatency = (System.currentTimeMillis() - result.getPrepareMessage().getBornTimestamp()) / 1000;
             BrokerMetricsManager.transactionFinishLatency.record(commitLatency, BrokerMetricsManager.newAttributesBuilder()
                 .put(LABEL_TOPIC, msgInner.getTopic())
                 .build());
@@ -139,7 +148,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
                 requestHeader.getMsgId(), requestHeader.getCommitLogOffset());
             return response;
         }
-        RemotingCommand res = checkPrepareMessage(result.getPrepareMessage(), requestHeader);
+        RemotingCommand res = validatePrepareMessage(result.getPrepareMessage(), requestHeader);
         if (res.getCode() == ResponseCode.SUCCESS) {
             this.broker.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
             // roll back, then total num of half-messages minus 1
@@ -155,6 +164,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
      * If you specify a custom first check time CheckImmunityTimeInSeconds,
      * And the commit/rollback request whose validity period exceeds CheckImmunityTimeInSeconds and is not checked back will be processed and failed
      * returns ILLEGAL_OPERATION 604 error
+     *
      * @param requestHeader requestHeader
      * @param messageExt messageExt
      * @return boolean
@@ -163,6 +173,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         if (requestHeader.getFromTransactionCheck()) {
             return false;
         }
+
         long transactionTimeout = broker.getBrokerConfig().getTransactionTimeOut();
 
         String checkImmunityTimeStr = messageExt.getUserProperty(MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS);
@@ -254,7 +265,7 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
         return true;
     }
 
-    private RemotingCommand checkPrepareMessage(MessageExt msgExt, EndTransactionRequestHeader requestHeader) {
+    private RemotingCommand validatePrepareMessage(MessageExt msgExt, EndTransactionRequestHeader requestHeader) {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         if (msgExt == null) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
