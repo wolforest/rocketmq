@@ -22,6 +22,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MessageQueueOpContext {
     private final AtomicInteger totalSize = new AtomicInteger(0);
     private volatile long lastWriteTimestamp;
+
+    /**
+     * queue data:
+     *  offset1, offset2, offsetN
+     */
     private final LinkedBlockingQueue<String> contextQueue;
 
     public MessageQueueOpContext(long timestamp, int queueLength) {

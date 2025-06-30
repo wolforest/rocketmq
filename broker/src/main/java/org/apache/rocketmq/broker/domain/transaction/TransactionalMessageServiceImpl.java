@@ -153,6 +153,17 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
         this.getTransactionMetrics().persist();
     }
 
+    /**
+     * build op message:
+     *  - topic: op_topic
+     *  - tag: REMOVE_TAG
+     *  - body: moreData(prepareOffset + ",")
+     *      + prepareOffset in deleteContext.get(queueId)
+     *
+     * @param queueId prepare message queueId
+     * @param moreData prepare message offset list
+     * @return op message
+     */
     public Message getOpMessage(int queueId, String moreData) {
         String opTopic = TransactionalMessageUtil.buildOpTopic();
         MessageQueueOpContext mqContext = deleteContext.get(queueId);
@@ -192,8 +203,11 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
         int l = sb.length() - moreDataLength;
         mqContext.getTotalSize().addAndGet(-l);
         mqContext.setLastWriteTimestamp(System.currentTimeMillis());
-        return new Message(opTopic, TransactionalMessageUtil.REMOVE_TAG,
-                sb.toString().getBytes(TransactionalMessageUtil.CHARSET));
+        return new Message(
+            opTopic,
+            TransactionalMessageUtil.REMOVE_TAG,
+            sb.toString().getBytes(TransactionalMessageUtil.CHARSET)
+        );
     }
 
     public long batchSendOpMessage() {
