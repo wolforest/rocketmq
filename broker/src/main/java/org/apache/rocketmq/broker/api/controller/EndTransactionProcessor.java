@@ -17,6 +17,7 @@
 package org.apache.rocketmq.broker.api.controller;
 
 import io.netty.channel.ChannelHandlerContext;
+import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.transaction.OperationResult;
 import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageUtil;
@@ -137,11 +138,15 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand processRollbackRequest(EndTransactionRequestHeader requestHeader, RemotingCommand response) {
-        OperationResult result = this.broker.getBrokerMessageService().getTransactionalMessageService().rollbackMessage(requestHeader);
+        TransactionalMessageService transactionService = this.broker.getBrokerMessageService().getTransactionalMessageService();
+
+        // get prepare message
+        OperationResult result = transactionService.rollbackMessage(requestHeader);
         if (result.getResponseCode() != ResponseCode.SUCCESS) {
             return response.setCodeAndRemark(result.getResponseCode(), result.getResponseRemark());
         }
 
+        // validate prepare message
         if (rejectCommitOrRollback(requestHeader, result.getPrepareMessage())) {
             response.setCode(ResponseCode.ILLEGAL_OPERATION);
             LOGGER.warn("Message rollback fail [producer end]. currentTimeMillis - bornTime > checkImmunityTime, msgId={},commitLogOffset={}, wait check",
@@ -149,14 +154,21 @@ public class EndTransactionProcessor implements NettyRequestProcessor {
             return response;
         }
         RemotingCommand res = validatePrepareMessage(result.getPrepareMessage(), requestHeader);
-        if (res.getCode() == ResponseCode.SUCCESS) {
-            this.broker.getBrokerMessageService().getTransactionalMessageService().deletePrepareMessage(result.getPrepareMessage());
-            // roll back, then total num of half-messages minus 1
-            this.broker.getBrokerMessageService().getTransactionalMessageService().getTransactionMetrics().addAndGet(result.getPrepareMessage().getProperty(MessageConst.PROPERTY_REAL_TOPIC), -1);
-            BrokerMetricsManager.rollBackMessagesTotal.add(1, BrokerMetricsManager.newAttributesBuilder()
-                .put(LABEL_TOPIC, result.getPrepareMessage().getProperty(MessageConst.PROPERTY_REAL_TOPIC))
-                .build());
+        if (res.getCode() != ResponseCode.SUCCESS) {
+            return res;
         }
+
+        // delete prepare message
+        transactionService.deletePrepareMessage(result.getPrepareMessage());
+        // roll back, then total num of half-messages minus 1
+
+        String realTopic = result.getPrepareMessage().getUserProperty(MessageConst.PROPERTY_REAL_TOPIC);
+        transactionService.getTransactionMetrics().addAndGet(realTopic, -1);
+
+        BrokerMetricsManager.rollBackMessagesTotal.add(1, BrokerMetricsManager.newAttributesBuilder()
+            .put(LABEL_TOPIC, result.getPrepareMessage().getProperty(MessageConst.PROPERTY_REAL_TOPIC))
+            .build());
+
         return res;
     }
 
