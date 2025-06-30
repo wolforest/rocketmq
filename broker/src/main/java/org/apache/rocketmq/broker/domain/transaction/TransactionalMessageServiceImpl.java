@@ -19,7 +19,6 @@ package org.apache.rocketmq.broker.domain.transaction;
 import org.apache.rocketmq.broker.domain.transaction.check.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.check.MessageQueueOpContext;
 import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageUtil;
-import org.apache.rocketmq.broker.domain.transaction.check.TransactionalOpBatchService;
 import org.apache.rocketmq.broker.domain.transaction.monitor.TransactionMetrics;
 import org.apache.rocketmq.common.app.config.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
@@ -207,7 +206,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
             for (Map.Entry<Integer, MessageQueueOpContext> entry : deleteContext.entrySet()) {
                 MessageQueueOpContext mqContext = entry.getValue();
                 //no msg in contextQueue
-                if (mqContext.getTotalSize().get() <= 0 || mqContext.getContextQueue().size() == 0 ||
+                if (mqContext.getTotalSize().get() <= 0 || mqContext.getContextQueue().isEmpty() ||
                         // wait for the interval
                         mqContext.getTotalSize().get() < maxSize &&
                                 startTime - mqContext.getLastWriteTimestamp() < interval) {

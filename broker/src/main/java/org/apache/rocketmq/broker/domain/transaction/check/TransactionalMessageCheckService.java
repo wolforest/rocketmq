@@ -534,7 +534,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
             HashSet<Long> set = handleMsgWithRemoveTag(opMessageExt, miniOffset, removeMap);
 
-            if (set.size() > 0) {
+            if (!set.isEmpty()) {
                 opMsgMap.put(opMessageExt.getQueueOffset(), set);
             } else {
                 doneOpOffset.add(opMessageExt.getQueueOffset());
@@ -709,7 +709,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
         getResult.setPullResult(result);
         List<MessageExt> messageExts = result.getMsgFoundList();
-        if (messageExts == null || messageExts.size() == 0) {
+        if (messageExts == null || messageExts.isEmpty()) {
             return getResult;
         }
         getResult.setMsg(messageExts.get(0));
