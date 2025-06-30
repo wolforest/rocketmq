@@ -117,6 +117,14 @@ public class TransactionalMessageBridge {
             mq.getQueueId(), offset);
     }
 
+    /**
+     * get prepare messages from store
+     *
+     * @param queueId queueId
+     * @param offset offset
+     * @param nums nums
+     * @return result
+     */
     public PullResult getHalfMessage(int queueId, long offset, int nums) {
         String group = TransactionalMessageUtil.buildConsumerGroup();
         String topic = TransactionalMessageUtil.buildHalfTopic();
