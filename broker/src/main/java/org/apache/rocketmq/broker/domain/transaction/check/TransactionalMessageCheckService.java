@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.broker.domain.transaction.check;
 
+import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;

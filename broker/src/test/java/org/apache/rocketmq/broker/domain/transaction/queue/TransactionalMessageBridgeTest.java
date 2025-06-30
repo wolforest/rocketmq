@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.domain.transaction.queue;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageBridge;
+import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageUtil;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.consumer.PullResult;

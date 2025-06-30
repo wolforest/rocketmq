@@ -18,7 +18,6 @@ package org.apache.rocketmq.broker.domain.transaction;
 
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.broker.domain.transaction.check.AbstractTransactionalMessageCheckListener;
-import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.domain.transaction.monitor.TransactionMetrics;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.message.MessageExt;

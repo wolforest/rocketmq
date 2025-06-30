@@ -18,7 +18,6 @@ package org.apache.rocketmq.broker.domain.transaction;
 
 import org.apache.rocketmq.broker.domain.transaction.check.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.check.MessageQueueOpContext;
-import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageUtil;
 import org.apache.rocketmq.broker.domain.transaction.check.TransactionalOpBatchService;
 import org.apache.rocketmq.broker.domain.transaction.monitor.TransactionMetrics;

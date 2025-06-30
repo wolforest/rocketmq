@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.broker.domain.transaction.check.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageCheckService;
-import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageBridge;
+import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageUtil;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.client.consumer.PullResult;

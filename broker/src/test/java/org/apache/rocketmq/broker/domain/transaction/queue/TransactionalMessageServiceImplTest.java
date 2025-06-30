@@ -21,7 +21,7 @@ import org.apache.rocketmq.broker.domain.transaction.OperationResult;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageServiceImpl;
 import org.apache.rocketmq.broker.domain.transaction.check.MessageQueueOpContext;
-import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageBridge;
+import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.message.Message;

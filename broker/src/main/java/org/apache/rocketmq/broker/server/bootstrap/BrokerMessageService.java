@@ -27,7 +27,7 @@ import org.apache.rocketmq.broker.domain.transaction.monitor.TransactionMetricsF
 import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageCheckService;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageService;
 import org.apache.rocketmq.broker.domain.transaction.check.DefaultTransactionalMessageCheckListener;
-import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageBridge;
+import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageBridge;
 import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageServiceImpl;
 import org.apache.rocketmq.broker.infra.EscapeBridge;
 import org.apache.rocketmq.broker.server.Broker;

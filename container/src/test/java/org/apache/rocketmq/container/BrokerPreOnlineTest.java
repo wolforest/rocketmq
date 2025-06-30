@@ -24,7 +24,7 @@ import org.apache.rocketmq.broker.server.daemon.BrokerPreOnlineService;
 import org.apache.rocketmq.broker.infra.ClusterClient;
 import org.apache.rocketmq.broker.domain.transaction.check.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageCheckService;
-import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageBridge;
+import org.apache.rocketmq.broker.domain.transaction.TransactionalMessageBridge;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.remoting.protocol.body.BrokerMemberGroup;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
