@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.domain.transaction.queue;
+package org.apache.rocketmq.broker.domain.transaction.check;
 
-import org.apache.rocketmq.broker.domain.transaction.AbstractTransactionalMessageCheckListener;
 import org.apache.rocketmq.common.domain.topic.TopicConfig;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
 import org.apache.rocketmq.common.domain.constant.PermName;

@@ -14,13 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.domain.transaction;
+package org.apache.rocketmq.broker.domain.transaction.check;
 
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.domain.transaction.queue.CheckContext;
-import org.apache.rocketmq.broker.domain.transaction.queue.GetResult;
-import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageBridge;
-import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageUtil;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
 import org.apache.rocketmq.common.lang.thread.ServiceThread;
@@ -127,7 +123,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         try {
             String topic = TopicValidator.RMQ_SYS_TRANS_HALF_TOPIC;
             Set<MessageQueue> msgQueues = transactionalMessageBridge.fetchMessageQueues(topic);
-            if (msgQueues == null || msgQueues.size() == 0) {
+            if (msgQueues == null || msgQueues.isEmpty()) {
                 log.warn("The queue of topic is empty :" + topic);
                 return;
             }
@@ -159,7 +155,14 @@ public class TransactionalMessageCheckService extends ServiceThread {
             return;
         }
 
-        PullResult removeResult = fillOpRemoveMap(context.getRemoveMap(), context.getOpQueue(), context.getOpOffset(), context.getHalfOffset(), context.getOpMsgMap(), context.getDoneOpOffset());
+        PullResult removeResult = fillOpRemoveMap(
+            context.getRemoveMap(),
+            context.getOpQueue(),
+            context.getOpOffset(),
+            context.getHalfOffset(),
+            context.getOpMsgMap(),
+            context.getDoneOpOffset()
+        );
         if (null == removeResult) {
             log.error("The queue={} check msgOffset={} with opOffset={} failed, pullResult is null", messageQueue, context.getHalfOffset(), context.getOpOffset());
             return;

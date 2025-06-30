@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.server.Broker;
-import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageUtil;
+import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageUtil;
 import org.apache.rocketmq.client.consumer.PullStatus;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;

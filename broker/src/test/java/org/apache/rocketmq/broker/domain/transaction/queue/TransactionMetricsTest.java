@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.broker.domain.transaction.queue;
 
-import org.apache.rocketmq.broker.domain.transaction.TransactionMetrics;
+import org.apache.rocketmq.broker.domain.transaction.monitor.TransactionMetrics;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

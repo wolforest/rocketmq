@@ -43,7 +43,7 @@ import org.apache.rocketmq.broker.domain.metadata.filter.ConsumerFilterData;
 import org.apache.rocketmq.broker.domain.metadata.filter.ExpressionMessageFilter;
 import org.apache.rocketmq.broker.api.plugin.BrokerPlugin;
 import org.apache.rocketmq.broker.domain.metadata.subscription.SubscriptionGroupManager;
-import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageUtil;
+import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageUtil;
 import org.apache.rocketmq.common.app.config.BrokerConfig;
 import org.apache.rocketmq.common.domain.topic.KeyBuilder;
 import org.apache.rocketmq.common.lang.lock.LockCallback;

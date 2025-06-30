@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.broker.domain.transaction.queue;
+package org.apache.rocketmq.broker.domain.transaction.check;
 
 import io.opentelemetry.api.common.Attributes;
 import java.net.InetSocketAddress;

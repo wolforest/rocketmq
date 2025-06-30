@@ -19,7 +19,7 @@ package org.apache.rocketmq.broker.api.controller;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.broker.domain.transaction.OperationResult;
-import org.apache.rocketmq.broker.domain.transaction.queue.TransactionalMessageUtil;
+import org.apache.rocketmq.broker.domain.transaction.check.TransactionalMessageUtil;
 import org.apache.rocketmq.broker.server.metrics.BrokerMetricsManager;
 import org.apache.rocketmq.common.domain.topic.TopicFilterType;
 import org.apache.rocketmq.common.domain.constant.LoggerName;

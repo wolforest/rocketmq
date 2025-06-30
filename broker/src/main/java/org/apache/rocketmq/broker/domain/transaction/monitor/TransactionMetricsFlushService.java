@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.broker.domain.transaction;
+package org.apache.rocketmq.broker.domain.transaction.monitor;
 
 import org.apache.rocketmq.broker.server.Broker;
 import org.apache.rocketmq.common.domain.constant.LoggerName;
