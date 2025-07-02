@@ -214,7 +214,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
         log.debug("Half offset {} has been committed/rolled back", context.getCounter());
         Long removedOpOffset = context.getRemoveMap().remove(context.getCounter());
         context.getOpMsgMap().get(removedOpOffset).remove(context.getCounter());
-        if (context.getOpMsgMap().get(removedOpOffset).size() != 0) {
+        if (!context.getOpMsgMap().get(removedOpOffset).isEmpty()) {
             return;
         }
 
