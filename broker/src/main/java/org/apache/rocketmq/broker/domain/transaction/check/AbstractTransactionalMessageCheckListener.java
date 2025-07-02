@@ -32,6 +32,8 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.header.CheckTransactionStateRequestHeader;
 
 /**
+ * handle check and discard messages.
+ * check message process:
  * async send check messages to client, working process:
  *  resolveHalfMsg -> executorService.run() -> sendCheckMessage
  */

@@ -32,8 +32,18 @@ public class CheckContext {
     private final AbstractTransactionalMessageCheckListener listener;
     private final long startTime;
 
+    /**
+     * commit/rollback offset list
+     */
     private final List<Long> doneOpOffset = new ArrayList<>();
+    /**
+     * offset map
+     * prepareOffset -> commitOffset
+     */
     private final HashMap<Long, Long> removeMap = new HashMap<>();
+    /**
+     * commitOffset -> Set<PrepareOffset>
+     */
     private final HashMap<Long, HashSet<Long>> opMsgMap = new HashMap<>();
 
     private MessageQueue opQueue;

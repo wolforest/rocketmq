@@ -502,6 +502,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
     }
 
     /**
+     * load commit messages from queue
      * Read op message, parse op message, and fill removeMap
      *
      * @param removeMap<halfOffset,opOffset> Half message to be remove, key:halfOffset, value: opOffset.
@@ -512,8 +513,14 @@ public class TransactionalMessageCheckService extends ServiceThread {
      * @param doneOpOffset<op_offset> Stored op messages that have been processed.
      * @return Op message result.
      */
-    private PullResult fillOpRemoveMap(HashMap<Long, Long> removeMap, MessageQueue opQueue,
-        long pullOffsetOfOp, long miniOffset, Map<Long, HashSet<Long>> opMsgMap, List<Long> doneOpOffset) {
+    private PullResult fillOpRemoveMap(
+        HashMap<Long, Long> removeMap,
+        MessageQueue opQueue,
+        long pullOffsetOfOp,
+        long miniOffset,
+        Map<Long, HashSet<Long>> opMsgMap,
+        List<Long> doneOpOffset
+    ) {
         PullResult pullResult = pullOpMsg(opQueue, pullOffsetOfOp, OP_MSG_PULL_NUMS);
         if (!handleIllegalOpMsg(pullResult, opQueue, pullOffsetOfOp)) {
             return pullResult;
