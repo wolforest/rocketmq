@@ -259,7 +259,8 @@ public class TransactionalMessageCheckService extends ServiceThread {
         long valueOfCurrentMinusBorn = System.currentTimeMillis() - context.getMsgExt().getBornTimestamp();
         String checkImmunityTimeStr = context.getMsgExt().getUserProperty(MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS);
         if (null == checkImmunityTimeStr && 0 <= valueOfCurrentMinusBorn && valueOfCurrentMinusBorn < context.getTransactionTimeout()) {
-            log.debug("New arrived, the miss offset={}, check it later checkImmunity={}, born={}", context.getCounter(), context.getTransactionTimeout(), new Date(context.getMsgExt().getBornTimestamp()));
+            log.debug("New arrived, the miss offset={}, check it later checkImmunity={}, born={}",
+                context.getCounter(), context.getTransactionTimeout(), new Date(context.getMsgExt().getBornTimestamp()));
             return false;
         }
 
@@ -399,11 +400,19 @@ public class TransactionalMessageCheckService extends ServiceThread {
      * @renamed from noNeedCheck to fillMoreOpRemoveMap
      */
     private void fillMoreOpRemoveMap(CheckContext context) {
-        long tmpOffset = context.getPullResult() != null ? context.getPullResult().getNextBeginOffset() : context.getNextOpOffset();
+        long tmpOffset = context.getPullResult() != null
+            ? context.getPullResult().getNextBeginOffset()
+            : context.getNextOpOffset();
         context.setNextOpOffset(tmpOffset);
 
-        PullResult tmpPullResult = fillOpRemoveMap(context.getRemoveMap(), context.getOpQueue(), context.getNextOpOffset(),
-            context.getHalfOffset(), context.getOpMsgMap(), context.getDoneOpOffset());
+        PullResult tmpPullResult = fillOpRemoveMap(
+            context.getRemoveMap(),
+            context.getOpQueue(),
+            context.getNextOpOffset(),
+            context.getHalfOffset(),
+            context.getOpMsgMap(),
+            context.getDoneOpOffset()
+        );
         context.setPullResult(tmpPullResult);
 
         if (context.getPullResult() == null || context.getPullResult().getPullStatus() == PullStatus.NO_NEW_MSG
