@@ -38,6 +38,7 @@ import org.apache.rocketmq.store.server.ha.core.HAConnectionState;
 import org.apache.rocketmq.store.server.store.DefaultMessageStore;
 
 public class DefaultHAClient extends ServiceThread implements HAClient {
+    private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
     /**
      * Report header buffer size. Schema: slaveMaxOffset. Format:
@@ -53,9 +54,8 @@ public class DefaultHAClient extends ServiceThread implements HAClient {
      * <p>
      */
     public static final int REPORT_HEADER_SIZE = 8;
-
-    private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private static final int READ_MAX_BUFFER_SIZE = 1024 * 1024 * 4;
+
     private final AtomicReference<String> masterHaAddress = new AtomicReference<>();
     private final AtomicReference<String> masterAddress = new AtomicReference<>();
     private final ByteBuffer reportOffset = ByteBuffer.allocate(REPORT_HEADER_SIZE);

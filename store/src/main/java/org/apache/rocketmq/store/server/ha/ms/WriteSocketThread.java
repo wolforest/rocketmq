@@ -207,7 +207,9 @@ public class WriteSocketThread extends ServiceThread {
 
         writeBody();
 
-        boolean result = !this.byteBufferHeader.hasRemaining() && !this.selectMappedBufferResult.getByteBuffer().hasRemaining();
+        boolean result = !this.byteBufferHeader.hasRemaining()
+            && !this.selectMappedBufferResult.getByteBuffer().hasRemaining();
+
         if (!this.selectMappedBufferResult.getByteBuffer().hasRemaining()) {
             this.selectMappedBufferResult.release();
             this.selectMappedBufferResult = null;

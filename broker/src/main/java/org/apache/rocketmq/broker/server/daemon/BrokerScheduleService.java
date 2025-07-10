@@ -207,7 +207,7 @@ public class BrokerScheduleService {
             LOG.error("syncBrokerMemberGroup from namesrv failed, ", e);
             return;
         }
-        if (brokerMemberGroup == null || brokerMemberGroup.getBrokerAddrs().size() == 0) {
+        if (brokerMemberGroup == null || brokerMemberGroup.getBrokerAddrs().isEmpty()) {
             LOG.warn("Couldn't find any broker member from namesrv in {}/{}", this.brokerConfig.getBrokerClusterName(), this.brokerConfig.getBrokerName());
             return;
         }

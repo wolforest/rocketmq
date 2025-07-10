@@ -16,14 +16,12 @@
  */
 package org.apache.rocketmq.store.server.ha.core;
 
-import org.apache.rocketmq.common.domain.constant.LoggerName;
-import org.apache.rocketmq.common.utils.MapUtils;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.rocketmq.common.domain.constant.LoggerName;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 public class WaitNotifyObject {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -40,6 +38,21 @@ public class WaitNotifyObject {
 
         synchronized (this) {
             this.notify();
+        }
+    }
+
+    public void wakeupAll() {
+        boolean needNotify = false;
+        for (Map.Entry<Long, AtomicBoolean> entry : this.waitingThreadTable.entrySet()) {
+            if (entry.getValue().compareAndSet(false, true)) {
+                needNotify = true;
+            }
+        }
+
+        if (needNotify) {
+            synchronized (this) {
+                this.notifyAll();
+            }
         }
     }
 
@@ -68,24 +81,12 @@ public class WaitNotifyObject {
     protected void onWaitEnd() {
     }
 
-    public void wakeupAll() {
-        boolean needNotify = false;
-        for (Map.Entry<Long, AtomicBoolean> entry : this.waitingThreadTable.entrySet()) {
-            if (entry.getValue().compareAndSet(false, true)) {
-                needNotify = true;
-            }
-        }
-
-        if (needNotify) {
-            synchronized (this) {
-                this.notifyAll();
-            }
-        }
-    }
-
     public void allWaitForRunning(long interval) {
         long currentThreadId = Thread.currentThread().getId();
-        AtomicBoolean notified = MapUtils.computeIfAbsent(this.waitingThreadTable, currentThreadId, k -> new AtomicBoolean(false));
+        AtomicBoolean notified = this.waitingThreadTable.computeIfAbsent(
+            currentThreadId,
+            k -> new AtomicBoolean(false)
+        );
         if (notified.compareAndSet(true, false)) {
             this.onWaitEnd();
             return;

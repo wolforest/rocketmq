@@ -37,7 +37,7 @@ public class FlowMonitorThread extends ServiceThread {
     @Override
     public void run() {
         while (!this.isStopped()) {
-            this.waitForRunning(1 * 1000);
+            this.waitForRunning(1_000);
             this.calculateSpeed();
         }
     }
