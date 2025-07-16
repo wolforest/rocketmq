@@ -30,7 +30,7 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.domain.queue.CqUnit;
 import org.apache.rocketmq.store.domain.queue.ReferredIterator;
-import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerEvent;
 import org.apache.rocketmq.store.domain.timer.model.TimerState;
 import org.apache.rocketmq.store.server.config.BrokerRole;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
@@ -57,13 +57,13 @@ public class TimerMessageConsumer extends ServiceThread {
     private final TimerState timerState;
     private final PerfCounter.Ticks perfCounterTicks;
     private final MessageOperator messageOperator;
-    private final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
+    private final BlockingQueue<TimerEvent> fetchedTimerMessageQueue;
 
     public TimerMessageConsumer(
             TimerState timerState,
             MessageStoreConfig storeConfig,
             MessageOperator messageOperator,
-            BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
+            BlockingQueue<TimerEvent> fetchedTimerMessageQueue,
             PerfCounter.Ticks perfCounterTicks) {
         this.timerState = timerState;
         this.storeConfig = storeConfig;
@@ -158,9 +158,9 @@ public class TimerMessageConsumer extends ServiceThread {
             long delayedTime = Long.parseLong(msgExt.getProperty(TIMER_OUT_MS));
             // use CQ offset, not offset in Message
             msgExt.setQueueOffset(offset + i);
-            TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
+            TimerEvent timerEvent = new TimerEvent(offsetPy, sizePy, delayedTime, System.currentTimeMillis(), MAGIC_DEFAULT, msgExt);
 
-            if (!loopOffer(timerRequest)) {
+            if (!loopOffer(timerEvent)) {
                 return false;
             }
 
@@ -176,8 +176,8 @@ public class TimerMessageConsumer extends ServiceThread {
         return true;
     }
 
-    private boolean loopOffer(TimerRequest timerRequest) throws InterruptedException {
-        while (!fetchedTimerMessageQueue.offer(timerRequest, 3, TimeUnit.SECONDS)) {
+    private boolean loopOffer(TimerEvent timerEvent) throws InterruptedException {
+        while (!fetchedTimerMessageQueue.offer(timerEvent, 3, TimeUnit.SECONDS)) {
             if (!isRunningEnqueue()) {
                 return false;
             }

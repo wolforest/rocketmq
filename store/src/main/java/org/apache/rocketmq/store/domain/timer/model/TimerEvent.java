@@ -23,8 +23,9 @@ import java.util.concurrent.CountDownLatch;
 
 /**
  * timer task to be scheduled, build from ConsumeQueue and CommitLog
+ * @renamed from TimerRequest to TimerEvent
  */
-public class TimerRequest {
+public class TimerEvent {
 
     /**
      * commitLog offset
@@ -64,11 +65,11 @@ public class TimerRequest {
 
     private Set<String> deleteList;
 
-    public TimerRequest(long commitLogOffset, int messageSize, long delayTime, long enqueueTime, int magic) {
+    public TimerEvent(long commitLogOffset, int messageSize, long delayTime, long enqueueTime, int magic) {
         this(commitLogOffset, messageSize, delayTime, enqueueTime, magic, null);
     }
 
-    public TimerRequest(long commitLogOffset, int messageSize, long delayTime, long enqueueTime, int magic, MessageExt msg) {
+    public TimerEvent(long commitLogOffset, int messageSize, long delayTime, long enqueueTime, int magic, MessageExt msg) {
         this.commitLogOffset = commitLogOffset;
         this.messageSize = messageSize;
         this.delayTime = delayTime;

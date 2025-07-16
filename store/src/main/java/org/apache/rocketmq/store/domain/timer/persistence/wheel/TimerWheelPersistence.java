@@ -26,7 +26,7 @@ import org.apache.rocketmq.common.domain.message.MessageExt;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
-import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerEvent;
 import org.apache.rocketmq.store.domain.timer.model.TimerState;
 import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
 import org.apache.rocketmq.store.domain.timer.persistence.ScanResult;
@@ -60,10 +60,10 @@ public class TimerWheelPersistence implements Persistence {
     }
 
     @Override
-    public boolean save(TimerRequest timerRequest) {
-        long delayedTime = timerRequest.getDelayTime();
+    public boolean save(TimerEvent timerEvent) {
+        long delayedTime = timerEvent.getDelayTime();
         int magic = TimerState.MAGIC_DEFAULT;
-        MessageExt messageExt = timerRequest.getMsg();
+        MessageExt messageExt = timerEvent.getMsg();
         LOGGER.debug("Do enqueue [{}] [{}]", new Timestamp(delayedTime), messageExt);
 
         //copy the value first, avoid concurrent problem
@@ -84,7 +84,7 @@ public class TimerWheelPersistence implements Persistence {
         String realTopic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
         Slot slot = timerWheel.getSlot(delayedTime);
 
-        long timerLogOffset = appendTimerLog(timerRequest.getCommitLogOffset(), timerRequest.getMessageSize(), delayedTime, tmpWriteTimeMs, magic, realTopic, slot.lastPos);
+        long timerLogOffset = appendTimerLog(timerEvent.getCommitLogOffset(), timerEvent.getMessageSize(), delayedTime, tmpWriteTimeMs, magic, realTopic, slot.lastPos);
         putTimerWheelSlot(timerLogOffset, delayedTime, slot,  messageExt);
 
         return -1 != timerLogOffset;
@@ -158,13 +158,13 @@ public class TimerWheelPersistence implements Persistence {
             long offsetPy = timeSbr.getByteBuffer().getLong();
             int sizePy = timeSbr.getByteBuffer().getInt();
 
-            TimerRequest timerRequest = new TimerRequest(offsetPy, sizePy, delayedTime, enqueueTime, magic);
-            timerRequest.setDeleteList(deleteUniqKeys);
+            TimerEvent timerEvent = new TimerEvent(offsetPy, sizePy, delayedTime, enqueueTime, magic);
+            timerEvent.setDeleteList(deleteUniqKeys);
 
             if (timerState.needDelete(magic) && !timerState.needRoll(magic)) {
-                result.addDeleteMsgStack(timerRequest);
+                result.addDeleteMsgStack(timerEvent);
             } else {
-                result.addNormalMsgStack(timerRequest);
+                result.addNormalMsgStack(timerEvent);
             }
 
         } catch (Exception e) {

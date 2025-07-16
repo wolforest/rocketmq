@@ -29,7 +29,7 @@ import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheelPersis
 import org.apache.rocketmq.store.server.metrics.DefaultStoreMetricsManager;
 import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
 import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
-import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerEvent;
 import org.apache.rocketmq.store.domain.timer.model.TimerState;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
 
@@ -56,8 +56,8 @@ public class TimerMessageSaver extends ServiceThread {
     private final MessageStoreConfig storeConfig;
     private final MessageOperator messageOperator;
 
-    private final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
-    private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private final BlockingQueue<TimerEvent> fetchedTimerMessageQueue;
+    private final BlockingQueue<TimerEvent> timerMessageDeliverQueue;
     private final TimerMessageProducer[] timerMessageProducers;
     private final TimerMessageQuerier[] timerMessageQueries;
     private final PerfCounter.Ticks perfCounterTicks;
@@ -68,8 +68,8 @@ public class TimerMessageSaver extends ServiceThread {
                              TimerWheel timerWheel,
                              TimerLog timerLog,
                              MessageOperator messageOperator,
-                             BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
-                             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+                             BlockingQueue<TimerEvent> fetchedTimerMessageQueue,
+                             BlockingQueue<TimerEvent> timerMessageDeliverQueue,
                              TimerMessageProducer[] timerMessageProducers,
                              TimerMessageQuerier[] timerMessageQueries,
                              TimerMetricManager metricManager,
@@ -107,23 +107,23 @@ public class TimerMessageSaver extends ServiceThread {
 
     private void fetchAndPutTimerRequest() throws Exception {
         long tmpCommitQueueOffset = timerState.currQueueOffset;
-        List<TimerRequest> timerRequests = this.fetchTimerRequests();
-        if (CollectionUtils.isEmpty(timerRequests)) {
+        List<TimerEvent> timerEvents = this.fetchTimerRequests();
+        if (CollectionUtils.isEmpty(timerEvents)) {
             timerState.commitQueueOffset = tmpCommitQueueOffset;
             timerState.maybeMoveWriteTime();
             return;
         }
 
         while (!isStopped()) {
-            CountDownLatch latch = new CountDownLatch(timerRequests.size());
-            for (TimerRequest req : timerRequests) {
+            CountDownLatch latch = new CountDownLatch(timerEvents.size());
+            for (TimerEvent req : timerEvents) {
                 req.setLatch(latch);
                 this.putToTimerWheelOrEnqueueDeliverQueue(req);
             }
 
             timerState.checkDeliverQueueLatch(latch, fetchedTimerMessageQueue, timerMessageProducers, timerMessageQueries, -1);
 
-            boolean allSuccess = timerRequests.stream().allMatch(TimerRequest::isSuccess);
+            boolean allSuccess = timerEvents.stream().allMatch(TimerEvent::isSuccess);
             if (allSuccess) {
                 break;
             }
@@ -131,66 +131,66 @@ public class TimerMessageSaver extends ServiceThread {
             ThreadUtils.sleep(50);
         }
 
-        timerState.commitQueueOffset = timerRequests.get(timerRequests.size() - 1).getMsg().getQueueOffset();
+        timerState.commitQueueOffset = timerEvents.get(timerEvents.size() - 1).getMsg().getQueueOffset();
         timerState.maybeMoveWriteTime();
     }
 
     /**
      * collect the requests
      */
-    private List<TimerRequest> fetchTimerRequests() throws InterruptedException {
-        List<TimerRequest> timerRequestList = null;
-        TimerRequest firstReq = fetchedTimerMessageQueue.poll(10, TimeUnit.MILLISECONDS);
+    private List<TimerEvent> fetchTimerRequests() throws InterruptedException {
+        List<TimerEvent> timerEventList = null;
+        TimerEvent firstReq = fetchedTimerMessageQueue.poll(10, TimeUnit.MILLISECONDS);
         if (null == firstReq) {
             return null;
         }
 
-        timerRequestList = new ArrayList<>(16);
-        timerRequestList.add(firstReq);
-        fetchMoreTimerRequests(timerRequestList);
+        timerEventList = new ArrayList<>(16);
+        timerEventList.add(firstReq);
+        fetchMoreTimerRequests(timerEventList);
 
-        return timerRequestList;
+        return timerEventList;
     }
 
-    private void fetchMoreTimerRequests(List<TimerRequest> timerRequestList) throws InterruptedException {
+    private void fetchMoreTimerRequests(List<TimerEvent> timerEventList) throws InterruptedException {
         while (true) {
-            TimerRequest tmpReq = fetchedTimerMessageQueue.poll(3, TimeUnit.MILLISECONDS);
+            TimerEvent tmpReq = fetchedTimerMessageQueue.poll(3, TimeUnit.MILLISECONDS);
             if (null == tmpReq) {
                 break;
             }
 
-            timerRequestList.add(tmpReq);
+            timerEventList.add(tmpReq);
 
-            if (timerRequestList.size() > BATCH_SIZE) {
+            if (timerEventList.size() > BATCH_SIZE) {
                 break;
             }
         }
     }
 
-    private void putToTimerWheelOrEnqueueDeliverQueue(TimerRequest timerRequest) {
+    private void putToTimerWheelOrEnqueueDeliverQueue(TimerEvent timerEvent) {
         try {
             perfCounterTicks.startTick(ENQUEUE_PUT);
 
-            DefaultStoreMetricsManager.incTimerEnqueueCount(messageOperator.getRealTopic(timerRequest.getMsg()));
-            boolean shouldFire = timerRequest.getDelayTime() < timerState.currWriteTimeMs;
+            DefaultStoreMetricsManager.incTimerEnqueueCount(messageOperator.getRealTopic(timerEvent.getMsg()));
+            boolean shouldFire = timerEvent.getDelayTime() < timerState.currWriteTimeMs;
             if (timerState.isShouldRunningDequeue() && shouldFire) {
-                timerRequest.setEnqueueTime(Long.MAX_VALUE);
-                timerMessageDeliverQueue.put(timerRequest);
+                timerEvent.setEnqueueTime(Long.MAX_VALUE);
+                timerMessageDeliverQueue.put(timerEvent);
             } else {
-                boolean success = persistence.save(timerRequest);
-                timerRequest.idempotentRelease(success || storeConfig.isTimerSkipUnknownError());
+                boolean success = persistence.save(timerEvent);
+                timerEvent.idempotentRelease(success || storeConfig.isTimerSkipUnknownError());
             }
 
             perfCounterTicks.endTick(ENQUEUE_PUT);
         } catch (Throwable t) {
-            handleTimerWheelAddingException(t, timerRequest);
+            handleTimerWheelAddingException(t, timerEvent);
         }
     }
 
-    private void handleTimerWheelAddingException(Throwable t, TimerRequest timerRequest) {
+    private void handleTimerWheelAddingException(Throwable t, TimerEvent timerEvent) {
         LOGGER.error("Unknown error", t);
         if (storeConfig.isTimerSkipUnknownError()) {
-            timerRequest.idempotentRelease(true);
+            timerEvent.idempotentRelease(true);
         } else {
             ThreadUtils.sleep(50);
         }

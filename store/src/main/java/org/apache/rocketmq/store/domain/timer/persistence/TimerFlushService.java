@@ -30,7 +30,7 @@ import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerLog;
 import org.apache.rocketmq.store.domain.timer.persistence.wheel.TimerWheel;
 import org.apache.rocketmq.store.domain.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.domain.timer.metrics.TimerMetrics;
-import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerEvent;
 import org.apache.rocketmq.store.domain.timer.model.TimerState;
 
 import static org.apache.rocketmq.store.domain.timer.model.TimerState.TIMER_TOPIC;
@@ -43,9 +43,9 @@ public class TimerFlushService extends ServiceThread {
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm:ss");
     private final MessageStore messageStore;
-    private final BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
-    private final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
-    private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private final BlockingQueue<TimerEvent> fetchedTimerMessageQueue;
+    private final BlockingQueue<List<TimerEvent>> timerMessageQueryQueue;
+    private final BlockingQueue<TimerEvent> timerMessageDeliverQueue;
     private final MessageStoreConfig storeConfig;
     private final TimerState timerState;
     private final TimerMetrics timerMetrics;
@@ -57,9 +57,9 @@ public class TimerFlushService extends ServiceThread {
                              MessageStore messageStore,
                              TimerWheel timerWheel,
                              TimerLog timerLog,
-                             BlockingQueue<TimerRequest> fetchedTimerMessageQueue,
-                             BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
-                             BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+                             BlockingQueue<TimerEvent> fetchedTimerMessageQueue,
+                             BlockingQueue<List<TimerEvent>> timerMessageQueryQueue,
+                             BlockingQueue<TimerEvent> timerMessageDeliverQueue,
                              TimerMetrics timerMetrics
 
     ) {

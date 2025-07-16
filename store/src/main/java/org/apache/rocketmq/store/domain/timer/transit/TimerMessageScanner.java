@@ -26,7 +26,7 @@ import org.apache.rocketmq.common.lang.thread.ServiceThread;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
-import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerEvent;
 import org.apache.rocketmq.store.domain.timer.model.TimerState;
 import org.apache.rocketmq.store.domain.timer.persistence.Persistence;
 import org.apache.rocketmq.store.domain.timer.persistence.ScanResult;
@@ -49,8 +49,8 @@ public class TimerMessageScanner extends ServiceThread {
     private final TimerState timerState;
     private final int commitLogFileSize;
 
-    private final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
-    private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    private final BlockingQueue<List<TimerEvent>> timerMessageQueryQueue;
+    private final BlockingQueue<TimerEvent> timerMessageDeliverQueue;
     private final TimerMessageProducer[] timerMessageProducers;
     private final TimerMessageQuerier[] timerMessageQueries;
 
@@ -62,8 +62,8 @@ public class TimerMessageScanner extends ServiceThread {
                                MessageStoreConfig storeConfig,
                                TimerWheel timerWheel,
                                TimerLog timerLog,
-                               BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
-                               BlockingQueue<TimerRequest> timerMessageDeliverQueue,
+                               BlockingQueue<List<TimerEvent>> timerMessageQueryQueue,
+                               BlockingQueue<TimerEvent> timerMessageDeliverQueue,
                                TimerMessageProducer[] timerMessageProducers,
                                TimerMessageQuerier[] timerMessageQueries,
                                TimerMetricManager metricManager,
@@ -153,31 +153,31 @@ public class TimerMessageScanner extends ServiceThread {
      * @param msgStack msg scan from persistence
      * @throws Exception exception
      */
-    private void putToQuery(LinkedList<TimerRequest> msgStack) throws Exception {
-        List<List<TimerRequest>> timerRequestListGroup = splitIntoLists(msgStack);
+    private void putToQuery(LinkedList<TimerEvent> msgStack) throws Exception {
+        List<List<TimerEvent>> timerRequestListGroup = splitIntoLists(msgStack);
         CountDownLatch countDownLatch = new CountDownLatch(msgStack.size());
         //read the deleted msg: the msg used to mark another msg is deleted
-        for (List<TimerRequest> timerRequests : timerRequestListGroup) {
-            for (TimerRequest timerRequest : timerRequests) {
-                timerRequest.setLatch(countDownLatch);
+        for (List<TimerEvent> timerEvents : timerRequestListGroup) {
+            for (TimerEvent timerEvent : timerEvents) {
+                timerEvent.setLatch(countDownLatch);
             }
-            timerMessageQueryQueue.put(timerRequests);
+            timerMessageQueryQueue.put(timerEvents);
         }
         //do we need to use loop with tryAcquire
         timerState.checkDeliverQueueLatch(countDownLatch, this.timerMessageDeliverQueue, this.timerMessageProducers, this.timerMessageQueries, this.timerState.currReadTimeMs);
     }
 
-    private List<List<TimerRequest>> splitIntoLists(List<TimerRequest> origin) {
+    private List<List<TimerEvent>> splitIntoLists(List<TimerEvent> origin) {
         //this method assume that the origin is not null;
-        List<List<TimerRequest>> lists = new LinkedList<>();
+        List<List<TimerEvent>> lists = new LinkedList<>();
         if (origin.size() < 100) {
             lists.add(origin);
             return lists;
         }
-        List<TimerRequest> currList = null;
+        List<TimerEvent> currList = null;
         int fileIndexPy = -1;
         int msgIndex = 0;
-        for (TimerRequest tr : origin) {
+        for (TimerEvent tr : origin) {
             if (fileIndexPy != tr.getCommitLogOffset() / commitLogFileSize) {
                 msgIndex = 0;
                 if (null != currList && !currList.isEmpty()) {

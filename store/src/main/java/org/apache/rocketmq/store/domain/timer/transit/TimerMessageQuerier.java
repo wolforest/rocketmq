@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.server.config.MessageStoreConfig;
-import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerEvent;
 import org.apache.rocketmq.store.domain.timer.model.TimerState;
 import org.apache.rocketmq.store.server.metrics.PerfCounter;
 
@@ -45,16 +45,16 @@ public class TimerMessageQuerier extends AbstractStateThread {
     private final TimerState timerState;
     private final MessageStoreConfig storeConfig;
     private final MessageOperator messageReader;
-    private final BlockingQueue<TimerRequest> timerMessageDeliverQueue;
-    private final BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    private final BlockingQueue<TimerEvent> timerMessageDeliverQueue;
+    private final BlockingQueue<List<TimerEvent>> timerMessageQueryQueue;
     private final PerfCounter.Ticks perfCounterTicks;
 
     public TimerMessageQuerier(
             TimerState timerState,
             MessageStoreConfig storeConfig,
             MessageOperator messageReader,
-            BlockingQueue<TimerRequest> timerMessageDeliverQueue,
-            BlockingQueue<List<TimerRequest>> timerMessageQueryQueue,
+            BlockingQueue<TimerEvent> timerMessageDeliverQueue,
+            BlockingQueue<List<TimerEvent>> timerMessageQueryQueue,
             PerfCounter.Ticks perfCounterTicks) {
         this.messageReader = messageReader;
         this.timerMessageDeliverQueue = timerMessageDeliverQueue;
@@ -76,14 +76,14 @@ public class TimerMessageQuerier extends AbstractStateThread {
         while (!this.isStopped()) {
             try {
                 setState(AbstractStateThread.WAITING);
-                List<TimerRequest> timerRequestList = timerMessageQueryQueue.poll(100L * timerState.precisionMs / 1000, TimeUnit.MILLISECONDS);
-                if (null == timerRequestList || timerRequestList.isEmpty()) {
+                List<TimerEvent> timerEventList = timerMessageQueryQueue.poll(100L * timerState.precisionMs / 1000, TimeUnit.MILLISECONDS);
+                if (null == timerEventList || timerEventList.isEmpty()) {
                     continue;
                 }
 
                 setState(AbstractStateThread.RUNNING);
-                run(timerRequestList);
-                timerRequestList.clear();
+                run(timerEventList);
+                timerEventList.clear();
             } catch (Throwable e) {
                 LOGGER.error("Error occurred in " + getServiceName(), e);
             }
@@ -92,32 +92,32 @@ public class TimerMessageQuerier extends AbstractStateThread {
         setState(AbstractStateThread.END);
     }
 
-    private void run(List<TimerRequest> timerRequestList) {
-        for (int i = 0; i < timerRequestList.size(); ) {
-            TimerRequest timerRequest = timerRequestList.get(i);
-            i = run(timerRequest, i);
+    private void run(List<TimerEvent> timerEventList) {
+        for (int i = 0; i < timerEventList.size(); ) {
+            TimerEvent timerEvent = timerEventList.get(i);
+            i = run(timerEvent, i);
         }
     }
 
-    private int run(TimerRequest timerRequest, int i) {
+    private int run(TimerEvent timerEvent, int i) {
         boolean doRes = false;
         try {
             long start = System.currentTimeMillis();
-            MessageExt msgExt = messageReader.readMessageByCommitOffset(timerRequest.getCommitLogOffset(), timerRequest.getMessageSize());
+            MessageExt msgExt = messageReader.readMessageByCommitOffset(timerEvent.getCommitLogOffset(), timerEvent.getMessageSize());
             if (null == msgExt) {
-                doRes = handleNoMsgFound(doRes, timerRequest, start);
+                doRes = handleNoMsgFound(doRes, timerEvent, start);
                 return i;
             }
 
-            if (timerState.needDelete(timerRequest.getMagic()) && !timerState.needRoll(timerRequest.getMagic())) {
-                doRes = deleteTimerRequest(doRes, timerRequest, msgExt);
+            if (timerState.needDelete(timerEvent.getMagic()) && !timerState.needRoll(timerEvent.getMagic())) {
+                doRes = deleteTimerRequest(doRes, timerEvent, msgExt);
             } else {
-                doRes = enqueueDeliverQueue(doRes, timerRequest, msgExt);
+                doRes = enqueueDeliverQueue(doRes, timerEvent, msgExt);
             }
 
             perfCounterTicks.getCounter("dequeue_get_msg").flow(System.currentTimeMillis() - start);
         } catch (Throwable e) {
-            doRes = handleUnknownException(e, timerRequest, doRes);
+            doRes = handleUnknownException(e, timerEvent, doRes);
         } finally {
             if (doRes) {
                 i++;
@@ -127,48 +127,48 @@ public class TimerMessageQuerier extends AbstractStateThread {
         return i;
     }
 
-    private boolean handleNoMsgFound(boolean doRes, TimerRequest timerRequest, long start) {
+    private boolean handleNoMsgFound(boolean doRes, TimerEvent timerEvent, long start) {
         //the timerRequest will never be processed afterwards, so idempotentRelease it
-        timerRequest.idempotentRelease();
+        timerEvent.idempotentRelease();
         doRes = true;
         perfCounterTicks.getCounter("dequeue_get_msg_miss").flow(System.currentTimeMillis() - start);
 
         return doRes;
     }
 
-    private boolean deleteTimerRequest(boolean doRes, TimerRequest timerRequest, MessageExt msgExt) {
-        if (msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY) != null && timerRequest.getDeleteList() != null) {
-            timerRequest.getDeleteList().add(msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY));
+    private boolean deleteTimerRequest(boolean doRes, TimerEvent timerEvent, MessageExt msgExt) {
+        if (msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY) != null && timerEvent.getDeleteList() != null) {
+            timerEvent.getDeleteList().add(msgExt.getProperty(MessageConst.PROPERTY_TIMER_DEL_UNIQKEY));
         }
-        timerRequest.idempotentRelease();
+        timerEvent.idempotentRelease();
         doRes = true;
 
         return doRes;
     }
 
-    private boolean enqueueDeliverQueue(boolean doRes, TimerRequest timerRequest, MessageExt msgExt) throws InterruptedException {
+    private boolean enqueueDeliverQueue(boolean doRes, TimerEvent timerEvent, MessageExt msgExt) throws InterruptedException {
         String uniqueKey = MessageClientIDSetter.getUniqID(msgExt);
         if (null == uniqueKey) {
             LOGGER.warn("No uniqueKey for msg:{}", msgExt);
         }
-        if (null != uniqueKey && timerRequest.getDeleteList() != null && !timerRequest.getDeleteList().isEmpty() && timerRequest.getDeleteList().contains(uniqueKey)) {
+        if (null != uniqueKey && timerEvent.getDeleteList() != null && !timerEvent.getDeleteList().isEmpty() && timerEvent.getDeleteList().contains(uniqueKey)) {
             doRes = true;
-            timerRequest.idempotentRelease();
+            timerEvent.idempotentRelease();
             perfCounterTicks.getCounter("dequeue_delete").flow(1);
         } else {
-            timerRequest.setMsg(msgExt);
+            timerEvent.setMsg(msgExt);
             while (!isStopped() && !doRes) {
-                doRes = timerMessageDeliverQueue.offer(timerRequest, 3, TimeUnit.SECONDS);
+                doRes = timerMessageDeliverQueue.offer(timerEvent, 3, TimeUnit.SECONDS);
             }
         }
 
         return doRes;
     }
 
-    private boolean handleUnknownException(Throwable e, TimerRequest timerRequest, boolean doRes) {
+    private boolean handleUnknownException(Throwable e, TimerEvent timerEvent, boolean doRes) {
         LOGGER.error("Unknown exception", e);
         if (storeConfig.isTimerSkipUnknownError()) {
-            timerRequest.idempotentRelease();
+            timerEvent.idempotentRelease();
             doRes = true;
         } else {
             ThreadUtils.sleep(50);

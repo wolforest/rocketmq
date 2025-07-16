@@ -17,18 +17,18 @@
 package org.apache.rocketmq.store.domain.timer.persistence;
 
 import java.util.LinkedList;
-import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerEvent;
 
 public class ScanResult {
-    LinkedList<TimerRequest> normalMsgStack = new LinkedList<>();
-    LinkedList<TimerRequest> deleteMsgStack = new LinkedList<>();
+    LinkedList<TimerEvent> normalMsgStack = new LinkedList<>();
+    LinkedList<TimerEvent> deleteMsgStack = new LinkedList<>();
     int code = 0;
 
-    public LinkedList<TimerRequest> getNormalMsgStack() {
+    public LinkedList<TimerEvent> getNormalMsgStack() {
         return normalMsgStack;
     }
 
-    public LinkedList<TimerRequest> getDeleteMsgStack() {
+    public LinkedList<TimerEvent> getDeleteMsgStack() {
         return deleteMsgStack;
     }
 
@@ -40,12 +40,12 @@ public class ScanResult {
         return code;
     }
 
-    public void addDeleteMsgStack(TimerRequest timerRequest) {
-        deleteMsgStack.add(timerRequest);
+    public void addDeleteMsgStack(TimerEvent timerEvent) {
+        deleteMsgStack.add(timerEvent);
     }
 
-    public void addNormalMsgStack(TimerRequest timerRequest) {
-        normalMsgStack.addFirst(timerRequest);
+    public void addNormalMsgStack(TimerEvent timerEvent) {
+        normalMsgStack.addFirst(timerEvent);
     }
 
     public int sizeOfDeleteMsgStack() {

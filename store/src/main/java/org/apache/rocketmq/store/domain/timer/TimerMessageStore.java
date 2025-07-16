@@ -38,7 +38,7 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.domain.timer.metrics.TimerMetricManager;
 import org.apache.rocketmq.store.domain.timer.metrics.TimerMetrics;
-import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerEvent;
 import org.apache.rocketmq.store.domain.timer.model.TimerState;
 import org.apache.rocketmq.store.domain.timer.transit.MessageOperator;
 import org.apache.rocketmq.store.domain.timer.persistence.TimerCheckpoint;
@@ -93,7 +93,7 @@ public class TimerMessageStore {
      * enqueued by TimerMessageAccepter
      * dequeued by TimerMessageSaver
      */
-    protected BlockingQueue<TimerRequest> fetchedTimerMessageQueue;
+    protected BlockingQueue<TimerEvent> fetchedTimerMessageQueue;
     /**
      * wait to execute message queue
      * the message in queue will put back to commitLog
@@ -102,12 +102,12 @@ public class TimerMessageStore {
      * enqueued by TimerMessageQuery
      * dequeued by TimerMessageDeliver
      */
-    protected BlockingQueue<TimerRequest> timerMessageDeliverQueue;
+    protected BlockingQueue<TimerEvent> timerMessageDeliverQueue;
     /**
      * enqueued by TimerMessageScanner
      * dequeued by TimerMessageQuery
      */
-    protected BlockingQueue<List<TimerRequest>> timerMessageQueryQueue;
+    protected BlockingQueue<List<TimerEvent>> timerMessageQueryQueue;
 
     private ScheduledExecutorService scheduler;
     private final TimerState timerState;

@@ -16,9 +16,9 @@
  */
 package org.apache.rocketmq.store.domain.timer.persistence;
 
-import org.apache.rocketmq.store.domain.timer.model.TimerRequest;
+import org.apache.rocketmq.store.domain.timer.model.TimerEvent;
 
 public interface Persistence {
-    boolean save(TimerRequest timerRequest);
+    boolean save(TimerEvent timerEvent);
     ScanResult scan();
 }
