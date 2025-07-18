@@ -177,6 +177,16 @@ public class TimerState {
         commitReadTimeMs = currReadTimeMs;
     }
 
+    /**
+     * get timer task running status
+     * 1. if not master:
+     *      - sync last read time from checkpoint
+     *      - return false
+     * 2. if master:
+     *      - check timer task running status
+     *
+     * @return running status
+     */
     public boolean isRunningDequeue() {
         if (!shouldRunningDequeue) {
             syncLastReadTimeMs();

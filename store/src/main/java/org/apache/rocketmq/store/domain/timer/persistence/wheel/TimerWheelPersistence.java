@@ -42,7 +42,9 @@ public class TimerWheelPersistence implements Persistence {
      *  - currReadTimeMs
      *  - currWriteTimeMs
      *  - timerRollWindowSlots
+     *      -> calculate property in config
      *  - precisionMs
+     *      -> config
      *  - dequeueStatusChangeFlag
      * called methods:
      *  - moveReadTime()

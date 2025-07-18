@@ -90,7 +90,7 @@ public class TimerMessageSaver extends ServiceThread {
     @Override
     public void run() {
         LOGGER.info(this.getServiceName() + " service start");
-        while (!this.isStopped() || fetchedTimerMessageQueue.size() != 0) {
+        while (!this.isStopped() || !fetchedTimerMessageQueue.isEmpty()) {
             try {
                 fetchAndPutTimerRequest();
             } catch (Throwable e) {
