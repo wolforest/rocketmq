@@ -57,7 +57,7 @@ public class TimerState {
     /**
      * last read timestamp of persistence.scan()
      * updated by:
-     *  - BrokerMessageService: when init
+     *  - BrokerMessageService: sync from TimerCheckPoint
      *  - TimerMessageConsumer: when broker role changed
      *  - TimerMessageRecover: when recover
      *  - TimerMessagePersistence: when scan result is empty

@@ -37,6 +37,22 @@ import org.apache.rocketmq.store.server.metrics.PerfCounter;
 public class TimerWheelPersistence implements Persistence {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+    /**
+     * used properties:
+     *  - currReadTimeMs
+     *  - currWriteTimeMs
+     *  - timerRollWindowSlots
+     *  - precisionMs
+     *  - dequeueStatusChangeFlag
+     * called methods:
+     *  - moveReadTime()
+     *      -> currReadTimeMs + precisionMs
+     *      -> commitReadTimeMs = currReadTimeMs
+     *  - needRoll()
+     *      -> magic & MAGIC_ROLL != 0
+     *  - needDelete()
+     *      -> magic & MAGIC_DELETE != 0
+     */
     private final TimerState timerState;
     private final TimerWheel timerWheel;
     private final TimerLog timerLog;
