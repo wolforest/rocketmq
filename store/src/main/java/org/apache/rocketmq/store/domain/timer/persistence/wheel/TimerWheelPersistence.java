@@ -102,7 +102,15 @@ public class TimerWheelPersistence implements Persistence {
         String realTopic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
         Slot slot = timerWheel.getSlot(delayedTime);
 
-        long timerLogOffset = appendTimerLog(timerEvent.getCommitLogOffset(), timerEvent.getMessageSize(), delayedTime, tmpWriteTimeMs, magic, realTopic, slot.lastPos);
+        long timerLogOffset = appendTimerLog(
+            timerEvent.getCommitLogOffset(),
+            timerEvent.getMessageSize(),
+            delayedTime,
+            tmpWriteTimeMs,
+            magic,
+            realTopic,
+            slot.lastPos
+        );
         putTimerWheelSlot(timerLogOffset, delayedTime, slot,  messageExt);
 
         return -1 != timerLogOffset;
