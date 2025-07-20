@@ -103,7 +103,7 @@ public class TimerWheelPersistence implements Persistence {
         Slot slot = timerWheel.getSlot(delayedTime);
 
         long timerLogOffset = appendTimerLog(
-            timerEvent.getConsumeQueueOffset(),
+            timerEvent.getCommitLogOffset(),
             timerEvent.getMessageSize(),
             delayedTime,
             tmpWriteTimeMs,
