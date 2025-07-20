@@ -178,14 +178,14 @@ public class TimerMessageScanner extends ServiceThread {
         int fileIndexPy = -1;
         int msgIndex = 0;
         for (TimerEvent tr : origin) {
-            if (fileIndexPy != tr.getCommitLogOffset() / commitLogFileSize) {
+            if (fileIndexPy != tr.getConsumeQueueOffset() / commitLogFileSize) {
                 msgIndex = 0;
                 if (null != currList && !currList.isEmpty()) {
                     lists.add(currList);
                 }
                 currList = new LinkedList<>();
                 currList.add(tr);
-                fileIndexPy = (int) (tr.getCommitLogOffset() / commitLogFileSize);
+                fileIndexPy = (int) (tr.getConsumeQueueOffset() / commitLogFileSize);
             } else {
                 assert currList != null;
                 currList.add(tr);

@@ -28,10 +28,10 @@ import java.util.concurrent.CountDownLatch;
 public class TimerEvent {
 
     /**
-     * commitLog offset
+     * consume queue offset
      * @renamed from offsetPy to commitLogOffset
      */
-    private final long commitLogOffset;
+    private final long consumeQueueOffset;
     /**
      * size of message in the commitLog
      * @renamed from sizePy to messageSize
@@ -65,12 +65,12 @@ public class TimerEvent {
 
     private Set<String> deleteList;
 
-    public TimerEvent(long commitLogOffset, int messageSize, long delayTime, long enqueueTime, int magic) {
-        this(commitLogOffset, messageSize, delayTime, enqueueTime, magic, null);
+    public TimerEvent(long consumeQueueOffset, int messageSize, long delayTime, long enqueueTime, int magic) {
+        this(consumeQueueOffset, messageSize, delayTime, enqueueTime, magic, null);
     }
 
-    public TimerEvent(long commitLogOffset, int messageSize, long delayTime, long enqueueTime, int magic, MessageExt msg) {
-        this.commitLogOffset = commitLogOffset;
+    public TimerEvent(long consumeQueueOffset, int messageSize, long delayTime, long enqueueTime, int magic, MessageExt msg) {
+        this.consumeQueueOffset = consumeQueueOffset;
         this.messageSize = messageSize;
         this.delayTime = delayTime;
         this.enqueueTime = enqueueTime;
@@ -78,8 +78,8 @@ public class TimerEvent {
         this.msg = msg;
     }
 
-    public long getCommitLogOffset() {
-        return commitLogOffset;
+    public long getConsumeQueueOffset() {
+        return consumeQueueOffset;
     }
 
     public int getMessageSize() {
@@ -139,7 +139,7 @@ public class TimerEvent {
     @Override
     public String toString() {
         return "TimerRequest{" +
-            "offsetPy=" + commitLogOffset +
+            "offsetPy=" + consumeQueueOffset +
             ", sizePy=" + messageSize +
             ", delayTime=" + delayTime +
             ", enqueueTime=" + enqueueTime +
