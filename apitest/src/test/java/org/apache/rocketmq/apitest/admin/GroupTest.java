@@ -21,7 +21,7 @@ import org.apache.rocketmq.apitest.manager.GroupManager;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
-import org.junit.Assert;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 @Test(groups = "admin")

@@ -81,7 +81,7 @@ public class TimerState {
 
     /**
      * equals currReadTimeMs in all code base,
-     * maybe useful in not opened source.
+     * maybe useful in commercial version.
      */
     public volatile long commitReadTimeMs;
 
