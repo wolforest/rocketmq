@@ -261,6 +261,7 @@ public class RouteInfoManager {
             groupInfo.setEnableActingMaster(!isOldVersionBroker && enableActingMaster);
             groupInfo.setZoneName(zoneName);
 
+            // Map: brokerId -> brokerAddr
             Map<Long, String> brokerAddrsMap = groupInfo.getBrokerAddrs();
 
             boolean isMinBrokerIdChanged = false;
@@ -273,15 +274,18 @@ public class RouteInfoManager {
                 isMinBrokerIdChanged = true;
             }
 
-            //Switch slave to master: first remove <1, IP:PORT> in namesrv, then add <0, IP:PORT>
-            //The same IP:PORT must only have one record in brokerAddrTable
+            // Switch slave to master: first remove <1, IP:PORT> in namesrv, then add <0, IP:PORT>
+            // The same IP:PORT must only have one record in brokerAddrTable
             brokerAddrsMap.entrySet().removeIf(
                 item -> null != brokerAddr
                     && brokerAddr.equals(item.getValue())
                     && brokerId != item.getKey()
             );
 
-            //If Local brokerId stateVersion bigger than the registering one,
+            // If exists same brokerId in brokerAddrTable
+            // And existing stateVersion bigger than the registering one,
+            // Then remove the brokerLiveInfo of registering one
+            // Then break the registering process
             String oldBrokerAddr = brokerAddrsMap.get(brokerId);
             if (null != oldBrokerAddr && !oldBrokerAddr.equals(brokerAddr)) {
                 BrokerLiveInfo oldBrokerInfo = brokerLiveTable.get(new BrokerAddrInfo(clusterName, oldBrokerAddr));
