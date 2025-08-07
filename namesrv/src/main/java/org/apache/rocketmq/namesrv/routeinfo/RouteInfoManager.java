@@ -304,6 +304,9 @@ public class RouteInfoManager {
                 }
             }
 
+            // If brokerId not exist in brokerAddrsMap,
+            // And has just one topic to register,
+            // break the registering process
             if (!brokerAddrsMap.containsKey(brokerId) && topicConfigWrapper.getTopicConfigTable().size() == 1) {
                 log.warn("Can't register topicConfigWrapper={} because broker[{}]={} has not registered.",
                     topicConfigWrapper.getTopicConfigTable(), brokerId, brokerAddr);
