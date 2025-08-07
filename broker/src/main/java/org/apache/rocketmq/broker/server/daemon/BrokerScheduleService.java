@@ -159,6 +159,10 @@ public class BrokerScheduleService {
         }
     }
 
+    /**
+     * register broker at a fixed interval
+     * It's better to use heart beat instead.
+     */
     private void scheduleRegisterBrokerAll() {
         scheduledFutures.add(this.scheduledExecutorService.scheduleAtFixedRate(new AbstractBrokerRunnable(getBrokerController().getBrokerIdentity()) {
             @Override
