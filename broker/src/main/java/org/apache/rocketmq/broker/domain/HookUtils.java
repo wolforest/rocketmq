@@ -174,7 +174,9 @@ public class HookUtils {
         if (TIMER_TOPIC.equals(msg.getTopic()) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_OUT_MS)) {
             return false;
         }
-        return null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELIVER_MS) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_MS) || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_SEC);
+        return null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELIVER_MS)
+            || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_MS)
+            || null != msg.getProperty(MessageConst.PROPERTY_TIMER_DELAY_SEC);
     }
 
     private static Long formatDelayTime(MessageExtBrokerInner msg) {

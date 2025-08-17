@@ -114,14 +114,16 @@ public class PopMessageProcessor implements NettyRequestProcessor {
             return response;
         }
 
+        // with proxy, exp was set by SubscriptionData.getSubString
         ExpressionMessageFilter messageFilter = null;
         if (requestHeader.getExp() != null && !requestHeader.getExp().isEmpty()) {
             messageFilter = initExpressionMessageFilter(requestHeader, response);
             if (messageFilter == null) {
                 return response;
             }
+        } else {
+            compensateSubscribeData(requestHeader);
         }
-        compensateSubscribeData(requestHeader);
 
         int reviveQid = getReviveQid(requestHeader);
         long popTime = TimeUtils.now();
@@ -822,7 +824,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
      * if reset offset was not set by admin, do nothing,
      * else get reset offset, then
      *  - remove offset from ConsumeOffsetManager.resetOffsetTable
-     *  - clear orderInfor block
+     *  - clear orderInfo block
      *  - clear pop buffer merge service's offset queue
      *  - commit offset
      *

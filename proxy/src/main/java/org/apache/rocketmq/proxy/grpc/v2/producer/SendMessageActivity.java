@@ -138,7 +138,9 @@ public class SendMessageActivity extends AbstractMessingActivity {
     protected Message buildMessage(ProxyContext context, apache.rocketmq.v2.Message protoMessage, String producerGroup) {
         String topicName = protoMessage.getTopic().getName();
 
+        // should move to processor
         validateMessageBodySize(protoMessage.getBody());
+
         Message messageExt = new Message();
         messageExt.setTopic(topicName);
         messageExt.setBody(protoMessage.getBody().toByteArray());
@@ -248,11 +250,12 @@ public class SendMessageActivity extends AbstractMessingActivity {
         }
 
         setMessageId(message, messageWithHeader);
+        setGroup(message, messageWithHeader, producerGroup);
+
         setTransactionProperty(message, messageWithHeader);
         fillDelayMessageProperty(message, messageWithHeader);
         setReconsumeTimes(message, messageWithHeader);
 
-        setGroup(message, messageWithHeader, producerGroup);
         setTraceContext(message, messageWithHeader);
         setBornHost(context, message, messageWithHeader);
         setBornTime(message, messageWithHeader);
