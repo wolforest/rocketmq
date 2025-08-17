@@ -719,7 +719,12 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
     /**
      * get consume offset for pop mode
-     * called by this.popMsgFromQueue()
+     * called by:
+     *  - this.popMsgFromQueue()
+     * functionality:
+     *  - return resetOffset if exists
+     *  - get offset if exists
+     *  - init offset if not exists
      *
      * @param topic topic
      * @param group group
@@ -756,6 +761,14 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         return Math.max(bufferOffset, offset);
     }
 
+    /**
+     * get offset from consume queue
+     * If consume from min offset:
+     *      - return min offset.
+     * If consume from max offset:
+     *      - get max offset
+     *      - commit max offset if init is true.
+     */
     private long getInitOffset(String topic, String group, int queueId, int initMode, boolean init) {
         if (ConsumeInitMode.MIN == initMode) {
             return this.broker.getMessageStore().getMinOffsetInQueue(topic, queueId);
