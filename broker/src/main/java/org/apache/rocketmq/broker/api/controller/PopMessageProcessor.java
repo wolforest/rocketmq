@@ -291,6 +291,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         }
 
         CompletableFuture<Long> getMessageFuture = CompletableFuture.completedFuture(0L);
+        // do not pop retry message if consume orderly
         if (needRetry && !requestHeader.isOrder()) {
             getMessageFuture = popRetryMessage(needRetryV1, ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo, reviveQid, popTime, randomQ, getMessageFuture);
         }
@@ -298,6 +299,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         getMessageFuture = popMessage(ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo, reviveQid, popTime, randomQ, getMessageFuture);
 
         // if not full , fetch retry again
+        // do not pop retry message if consume orderly
         if (!needRetry && getMessageResult.getMessageMapedList().size() < requestHeader.getMaxMsgNums() && !requestHeader.isOrder()) {
             getMessageFuture = popRetryMessage(needRetryV1, ctx, requestHeader, getMessageResult, messageFilter, startOffsetInfo, msgOffsetInfo, finalOrderCountInfo, reviveQid, popTime, randomQ, getMessageFuture);
         }
