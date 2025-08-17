@@ -509,6 +509,11 @@ public class ConsumerOffsetManager extends ConfigManager {
         return map.containsKey(queueId);
     }
 
+    /**
+     * get and remove reset offset
+     *  - return null if reset offset not exist
+     *  - return reset offset if reset offset exist
+     */
     public Long queryThenEraseResetOffset(String topic, String group, Integer queueId) {
         String key = topic + TOPIC_GROUP_SEPARATOR + group;
 
