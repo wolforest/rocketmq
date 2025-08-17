@@ -783,6 +783,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
     }
 
     private long getMaxOffset(String topic, int queueId) {
+        // default value of initPopOffsetByCheckMsgInMem is true
         if (this.broker.getBrokerConfig().isInitPopOffsetByCheckMsgInMem() &&
             this.broker.getMessageStore().getMinOffsetInQueue(topic, queueId) <= 0 &&
             this.broker.getMessageStore().checkInMemByConsumeOffset(topic, queueId, 0, 1)) {

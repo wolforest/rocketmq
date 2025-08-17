@@ -182,6 +182,18 @@ public class ConsumeQueueService {
         return nextOffset;
     }
 
+    /**
+     * check if matched messages in memory
+     *  - get first/last CqUnit in consume queue
+     *  - get related message(MappedByteBuffer) from commit log
+     *  - return message.isInMem()
+     *
+     * @param topic topic
+     * @param queueId queueId
+     * @param consumeOffset consume queue offset
+     * @param batchSize batch size
+     * @return true if in memory
+     */
     public boolean checkInMemByConsumeOffset(final String topic, final int queueId, long consumeOffset, int batchSize) {
         ConsumeQueueInterface consumeQueue = findConsumeQueue(topic, queueId);
         if (consumeQueue == null) {
