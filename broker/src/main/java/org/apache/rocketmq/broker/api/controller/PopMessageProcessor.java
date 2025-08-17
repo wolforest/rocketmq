@@ -725,6 +725,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
      *  - return resetOffset if exists
      *  - get offset if exists
      *  - init offset if not exists
+     *  - get offset from popBufferMergeService
      *
      * @param topic topic
      * @param group group
