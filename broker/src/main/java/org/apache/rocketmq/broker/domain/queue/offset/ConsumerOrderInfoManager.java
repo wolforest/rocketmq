@@ -140,6 +140,15 @@ public class ConsumerOrderInfoManager extends ConfigManager {
         updateLockFreeTimestamp(topic, group, queueId, orderInfo);
     }
 
+    /**
+     *
+     * @param attemptId attemptId
+     * @param topic topicName
+     * @param group consumerGroupName
+     * @param queueId queueId
+     * @param invisibleTime invisibleTime
+     * @return boolean
+     */
     public boolean checkBlock(String attemptId, String topic, String group, int queueId, long invisibleTime) {
         String key = buildKey(topic, group);
         ConcurrentHashMap<Integer/*queueId*/, OrderInfo> qs = table.get(key);
@@ -152,10 +161,10 @@ public class ConsumerOrderInfoManager extends ConfigManager {
         }
 
         OrderInfo orderInfo = qs.get(queueId);
-
         if (orderInfo == null) {
             return false;
         }
+
         return orderInfo.needBlock(attemptId, invisibleTime);
     }
 
@@ -490,27 +499,32 @@ public class ConsumerOrderInfoManager extends ConfigManager {
             if (offsetList == null || offsetList.isEmpty()) {
                 return false;
             }
+
             if (this.attemptId != null && this.attemptId.equals(attemptId)) {
                 return false;
             }
+
             int num = offsetList.size();
             int i = 0;
             if (this.invisibleTime == null || this.invisibleTime <= 0) {
                 this.invisibleTime = currentInvisibleTime;
             }
+
             long currentTime = System.currentTimeMillis();
             for (; i < num; i++) {
-                if (isNotAck(i)) {
-                    long nextVisibleTime = popTime + invisibleTime;
-                    if (offsetNextVisibleTime != null) {
-                        Long time = offsetNextVisibleTime.get(this.getQueueOffset(i));
-                        if (time != null) {
-                            nextVisibleTime = time;
-                        }
+                if (!isNotAck(i)) {
+                    continue;
+                }
+
+                long nextVisibleTime = popTime + invisibleTime;
+                if (offsetNextVisibleTime != null) {
+                    Long time = offsetNextVisibleTime.get(this.getQueueOffset(i));
+                    if (time != null) {
+                        nextVisibleTime = time;
                     }
-                    if (currentTime < nextVisibleTime) {
-                        return true;
-                    }
+                }
+                if (currentTime < nextVisibleTime) {
+                    return true;
                 }
             }
             return false;
@@ -525,20 +539,22 @@ public class ConsumerOrderInfoManager extends ConfigManager {
             int i = 0;
             long currentTime = System.currentTimeMillis();
             for (; i < num; i++) {
-                if (isNotAck(i)) {
-                    if (invisibleTime == null || invisibleTime <= 0) {
-                        return null;
+                if (!isNotAck(i)) {
+                    continue;
+                }
+
+                if (invisibleTime == null || invisibleTime <= 0) {
+                    return null;
+                }
+                long nextVisibleTime = popTime + invisibleTime;
+                if (offsetNextVisibleTime != null) {
+                    Long time = offsetNextVisibleTime.get(this.getQueueOffset(i));
+                    if (time != null) {
+                        nextVisibleTime = time;
                     }
-                    long nextVisibleTime = popTime + invisibleTime;
-                    if (offsetNextVisibleTime != null) {
-                        Long time = offsetNextVisibleTime.get(this.getQueueOffset(i));
-                        if (time != null) {
-                            nextVisibleTime = time;
-                        }
-                    }
-                    if (currentTime < nextVisibleTime) {
-                        return nextVisibleTime;
-                    }
+                }
+                if (currentTime < nextVisibleTime) {
+                    return nextVisibleTime;
                 }
             }
             return currentTime;
