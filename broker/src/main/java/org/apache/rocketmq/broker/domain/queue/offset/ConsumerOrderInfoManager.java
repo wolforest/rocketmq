@@ -141,6 +141,8 @@ public class ConsumerOrderInfoManager extends ConfigManager {
     }
 
     /**
+     * check sequential queue block status
+     *
      *
      * @param attemptId attemptId
      * @param topic topicName
@@ -168,6 +170,12 @@ public class ConsumerOrderInfoManager extends ConfigManager {
         return orderInfo.needBlock(attemptId, invisibleTime);
     }
 
+    /**
+     * clear sequential queue lock
+     * @param topic topicName
+     * @param group consumerGroupName
+     * @param queueId queueId
+     */
     public void clearBlock(String topic, String group, int queueId) {
         table.computeIfPresent(buildKey(topic, group), (key, val) -> {
             val.remove(queueId);
@@ -629,16 +637,19 @@ public class ConsumerOrderInfoManager extends ConfigManager {
             for (int i = 0; i < preOffsetList.size(); i++) {
                 preQueueOffsetSet.add(getQueueOffset(preOffsetList, i));
             }
+
             for (int i = 0; i < offsetList.size(); i++) {
                 long queueOffset = this.getQueueOffset(i);
-                if (preQueueOffsetSet.contains(queueOffset)) {
-                    int count = 1;
-                    Integer preCount = prevOffsetConsumedCount.get(queueOffset);
-                    if (preCount != null) {
-                        count = preCount + 1;
-                    }
-                    offsetConsumedCount.put(queueOffset, count);
+                if (!preQueueOffsetSet.contains(queueOffset)) {
+                    continue;
                 }
+
+                int count = 1;
+                Integer preCount = prevOffsetConsumedCount.get(queueOffset);
+                if (preCount != null) {
+                    count = preCount + 1;
+                }
+                offsetConsumedCount.put(queueOffset, count);
             }
             this.offsetConsumedCount = offsetConsumedCount;
         }

@@ -285,6 +285,8 @@ public class PopMessageProcessor implements NettyRequestProcessor {
         // only one type of retry topic is able to call popMsgFromQueue.
         boolean needRetry = randomQ % 5 == 0;
         boolean needRetryV1 = false;
+        // default value of enableRetryTopicV2 is false
+        // so needRetryV1 is false
         if (broker.getBrokerConfig().isEnableRetryTopicV2()
             && broker.getBrokerConfig().isRetrieveMessageFromPopRetryTopicV1()) {
             needRetryV1 = randomQ % 2 == 0;
