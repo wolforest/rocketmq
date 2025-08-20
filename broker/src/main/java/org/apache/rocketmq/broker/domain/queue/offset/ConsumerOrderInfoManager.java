@@ -344,14 +344,18 @@ public class ConsumerOrderInfoManager extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            ConsumerOrderInfoManager obj = RemotingSerializable.fromJson(jsonString, ConsumerOrderInfoManager.class);
-            if (obj != null) {
-                this.table = obj.table;
-                if (this.consumerOrderInfoLockManager != null) {
-                    this.consumerOrderInfoLockManager.recover(this.table);
-                }
-            }
+        if (jsonString == null) {
+            return;
+        }
+
+        ConsumerOrderInfoManager obj = RemotingSerializable.fromJson(jsonString, ConsumerOrderInfoManager.class);
+        if (obj == null) {
+            return;
+        }
+
+        this.table = obj.table;
+        if (this.consumerOrderInfoLockManager != null) {
+            this.consumerOrderInfoLockManager.recover(this.table);
         }
     }
 
