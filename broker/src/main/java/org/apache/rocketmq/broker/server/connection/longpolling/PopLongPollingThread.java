@@ -211,17 +211,21 @@ public class PopLongPollingThread extends ServiceThread {
         Runnable run = () -> {
             try {
                 final RemotingCommand response = processor.processRequest(request.getCtx(), request.getRemotingCommand());
-                if (response != null) {
-                    response.setOpaque(request.getRemotingCommand().getOpaque());
-                    response.markResponseType();
-                    NettyRemotingAbstract.writeResponse(request.getChannel(), request.getRemotingCommand(), response, future -> {
-                        if (!future.isSuccess()) {
-                            POP_LOGGER.error("ProcessRequestWrapper response to {} failed", request.getChannel().remoteAddress(), future.cause());
-                            POP_LOGGER.error(request.toString());
-                            POP_LOGGER.error(response.toString());
-                        }
-                    });
+                if (response == null) {
+                    return;
                 }
+
+                response.setOpaque(request.getRemotingCommand().getOpaque());
+                response.markResponseType();
+                NettyRemotingAbstract.writeResponse(request.getChannel(), request.getRemotingCommand(), response, future -> {
+                    if (future.isSuccess()) {
+                        return;
+                    }
+
+                    POP_LOGGER.error("ProcessRequestWrapper response to {} failed", request.getChannel().remoteAddress(), future.cause());
+                    POP_LOGGER.error(request.toString());
+                    POP_LOGGER.error(response.toString());
+                });
             } catch (Exception e1) {
                 POP_LOGGER.error("ExecuteRequestWhenWakeup run", e1);
             }

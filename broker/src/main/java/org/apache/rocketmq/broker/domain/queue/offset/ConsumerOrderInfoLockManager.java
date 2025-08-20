@@ -60,6 +60,7 @@ public class ConsumerOrderInfoLockManager {
             if (arrays.length != 2) {
                 continue;
             }
+
             String topic = arrays[0];
             String group = arrays[1];
             for (Map.Entry<Integer, ConsumerOrderInfoManager.OrderInfo> qsEntry : qs.entrySet()) {
