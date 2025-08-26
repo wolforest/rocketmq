@@ -127,8 +127,11 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         int reviveQid = getReviveQid(requestHeader);
         long popTime = TimeUtils.now();
+        // properties of rocketmq 4.x, useless in 5.x
         StringBuilder startOffsetInfo = new StringBuilder(64);
+        // properties of rocketmq 4.x, useful in 5.x
         StringBuilder msgOffsetInfo = new StringBuilder(64);
+        // properties of rocketmq 4.x, useful in 5.x
         StringBuilder orderCountInfo = initOrderCountInfo(requestHeader);
 
         GetMessageResult getMessageResult = new GetMessageResult(requestHeader.getMaxMsgNums());
@@ -747,6 +750,7 @@ public class PopMessageProcessor implements NettyRequestProcessor {
 
         // before lock checkResetOffset is false
         // after lock checkResetOffset is true
+        // why check reset offset after query offset?
         if (checkResetOffset) {
             //admin related feature
             Long resetOffset = resetPopOffset(topic, group, queueId);

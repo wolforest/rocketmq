@@ -84,6 +84,7 @@ public class ConsumerOrderInfoLockManager {
         if (lockFreeTimestamp == null) {
             return;
         }
+
         try {
             this.timeoutMap.compute(new Key(topic, group, queueId), (key, oldTimeout) -> {
                 try {
