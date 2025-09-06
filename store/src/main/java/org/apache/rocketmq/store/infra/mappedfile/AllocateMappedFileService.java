@@ -78,22 +78,22 @@ public class AllocateMappedFileService extends ServiceThread {
         }
     }
 
-    public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
+    public MappedFile putRequestAndReturnMappedFile(String filePath, String nextFilePath, int fileSize) {
         int canSubmitRequests = calculateCanSubmitRequests();
 
-        if (!putRequest(nextFilePath, fileSize, canSubmitRequests)) {
+        if (!putRequest(filePath, fileSize, canSubmitRequests)) {
             return null;
         }
         canSubmitRequests--;
 
-        putRequest(nextNextFilePath, fileSize, canSubmitRequests);
+        putRequest(nextFilePath, fileSize, canSubmitRequests);
 
         if (hasException) {
             log.warn(this.getServiceName() + " service has exception. so return null");
             return null;
         }
 
-        return waitAndReturnMappedFile(nextFilePath);
+        return waitAndReturnMappedFile(filePath);
     }
 
     private int calculateCanSubmitRequests() {
