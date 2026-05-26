@@ -114,7 +114,7 @@ public abstract class AbstractTransactionalMessageCheckListener {
             executorService = ThreadUtils.newThreadPoolExecutor(2, 5, 100, TimeUnit.SECONDS, new ArrayBlockingQueue<>(2000),
                 new ThreadFactoryImpl("Transaction-msg-check-thread", broker.getBrokerIdentity()), new CallerRunsPolicy());
         }
-    }
+        }
 
     /**
      * Inject brokerController for this listener

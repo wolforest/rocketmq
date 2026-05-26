@@ -103,11 +103,11 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
             every Half_Message store a lot of offset, split by comma
             default number of offset is 4096
          */
-        String data = messageExt.getQueueOffset() + TransactionalMessageUtil.OFFSET_SEPARATOR;
+        String offsetKey = messageExt.getQueueOffset() + TransactionalMessageUtil.OFFSET_SEPARATOR;
         try {
-            boolean res = mqContext.getContextQueue().offer(data, 100, TimeUnit.MILLISECONDS);
+            boolean res = mqContext.getContextQueue().offer(offsetKey, 100, TimeUnit.MILLISECONDS);
             if (res) {
-                int totalSize = mqContext.getTotalSize().addAndGet(data.length());
+                int totalSize = mqContext.getTotalSize().addAndGet(offsetKey.length());
                 int maxSize = transactionalMessageBridge.getBrokerController().getBrokerConfig().getTransactionOpMsgMaxSize();
                 if (totalSize > maxSize) {
                     this.transactionalOpBatchService.wakeup();
@@ -119,7 +119,7 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
         } catch (InterruptedException ignore) {
         }
 
-        Message msg = getOpMessage(queueId, data);
+        Message msg = getOpMessage(queueId, offsetKey);
         if (this.transactionalMessageBridge.writeOp(queueId, msg)) {
             log.warn("Force add remove op data. queueId={}", queueId);
             return true;
@@ -161,18 +161,18 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
      *      + prepareOffset in deleteContext.get(queueId)
      *
      * @param queueId prepare message queueId
-     * @param moreData prepare message offset list
+     * @param offsetKey prepare message offset list
      * @return op message
      */
-    public Message getOpMessage(int queueId, String moreData) {
+    public Message getOpMessage(int queueId, String offsetKey) {
         String opTopic = TransactionalMessageUtil.buildOpTopic();
-        MessageQueueOpContext mqContext = deleteContext.get(queueId);
+        MessageQueueOpContext offsetQueue = deleteContext.get(queueId);
 
-        int moreDataLength = moreData != null ? moreData.length() : 0;
+        int moreDataLength = offsetKey != null ? offsetKey.length() : 0;
         int length = moreDataLength;
         int maxSize = transactionalMessageBridge.getBrokerController().getBrokerConfig().getTransactionOpMsgMaxSize();
         if (length < maxSize) {
-            int sz = mqContext.getTotalSize().get();
+            int sz = offsetQueue.getTotalSize().get();
             if (sz > maxSize || length + sz > maxSize) {
                 length = maxSize + 100;
             } else {
@@ -182,15 +182,15 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
 
         StringBuilder sb = new StringBuilder(length);
 
-        if (moreData != null) {
-            sb.append(moreData);
+        if (offsetKey != null) {
+            sb.append(offsetKey);
         }
 
-        while (!mqContext.getContextQueue().isEmpty()) {
+        while (!offsetQueue.getContextQueue().isEmpty()) {
             if (sb.length() >= maxSize) {
                 break;
             }
-            String data = mqContext.getContextQueue().poll();
+            String data = offsetQueue.getContextQueue().poll();
             if (data != null) {
                 sb.append(data);
             }
@@ -201,8 +201,8 @@ public class TransactionalMessageServiceImpl implements TransactionalMessageServ
         }
 
         int l = sb.length() - moreDataLength;
-        mqContext.getTotalSize().addAndGet(-l);
-        mqContext.setLastWriteTimestamp(System.currentTimeMillis());
+        offsetQueue.getTotalSize().addAndGet(-l);
+        offsetQueue.setLastWriteTimestamp(System.currentTimeMillis());
         return new Message(
             opTopic,
             TransactionalMessageUtil.REMOVE_TAG,

@@ -266,7 +266,7 @@ public class TransactionalMessageCheckService extends ServiceThread {
 
         Long checkImmunityTime = checkImmunityTime(context, checkImmunityTimeStr, valueOfCurrentMinusBorn);
         if (checkImmunityTime == null) {
-            return false;
+            return true;
         }
 
         if (!isNeedCheck(context, valueOfCurrentMinusBorn, checkImmunityTime)) {

@@ -178,6 +178,7 @@ public class AckMessageProcessor implements NettyRequestProcessor {
         BatchAckMsg ackMsg = new BatchAckMsg();
         int rqId = getRqid(requestHeader, batchAck);
 
+        // offset operation
         int msgCount = commitMsg(requestHeader, response, channel, batchAck, brokerName, ackMsg);
         if (msgCount < 1) {
             return;
