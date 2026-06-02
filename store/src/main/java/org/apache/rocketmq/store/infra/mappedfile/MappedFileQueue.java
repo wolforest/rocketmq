@@ -516,30 +516,30 @@ public class MappedFileQueue implements Swappable {
                     this.mappedFileSize,
                     this.mappedFiles.size()
                 );
-            } else {
-                int index = (int) ((offset / this.mappedFileSize) - (firstMappedFile.getOffsetInFileName() / this.mappedFileSize));
-                MappedFile targetFile = null;
-                try {
-                    targetFile = this.mappedFiles.get(index);
-                } catch (Exception ignored) {
-                }
 
-                if (targetFile != null && offset >= targetFile.getOffsetInFileName()
-                    && offset < targetFile.getOffsetInFileName() + this.mappedFileSize) {
-                    return targetFile;
-                }
+                return returnFirstOnNotFound ? firstMappedFile : null;
+            }
 
-                for (MappedFile tmpMappedFile : this.mappedFiles) {
-                    if (offset >= tmpMappedFile.getOffsetInFileName()
-                        && offset < tmpMappedFile.getOffsetInFileName() + this.mappedFileSize) {
-                        return tmpMappedFile;
-                    }
+            int index = (int) ((offset / this.mappedFileSize) - (firstMappedFile.getOffsetInFileName() / this.mappedFileSize));
+            MappedFile targetFile = null;
+            try {
+                targetFile = this.mappedFiles.get(index);
+            } catch (Exception ignored) {
+            }
+
+            if (targetFile != null && offset >= targetFile.getOffsetInFileName()
+                && offset < targetFile.getOffsetInFileName() + this.mappedFileSize) {
+                return targetFile;
+            }
+
+            for (MappedFile tmpMappedFile : this.mappedFiles) {
+                if (offset >= tmpMappedFile.getOffsetInFileName()
+                    && offset < tmpMappedFile.getOffsetInFileName() + this.mappedFileSize) {
+                    return tmpMappedFile;
                 }
             }
 
-            if (returnFirstOnNotFound) {
-                return firstMappedFile;
-            }
+            return returnFirstOnNotFound ? firstMappedFile : null;
         } catch (Exception e) {
             log.error("findMappedFileByOffset Exception", e);
         }
